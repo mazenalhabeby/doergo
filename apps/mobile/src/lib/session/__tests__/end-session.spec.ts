@@ -196,7 +196,7 @@ describe('every exit is the one exit', () => {
   it('the auth context\'s sign-out, refused session, failed restore and web-only refusal all call endSession', () => {
     const ctx = read('src/contexts/auth-context.tsx');
     expect(ctx).toMatch(/const handleAuthFailure = useCallback\(async \(\) => \{\s*[^}]*await endSession\(\{ reason: 'expired'/);
-    expect(ctx).toMatch(/const logout = async[\s\S]*?await endSession\(\{ reason: opts\?\.reason \?\? 'signed-out'/);
+    expect(ctx).toMatch(/const logout = useCallback\(async[\s\S]*?await endSession\(\{ reason: opts\?\.reason \?\? 'signed-out'/);
     expect(ctx).toMatch(/getAccessPlatforms\(response\.user\) === 'web'\) \{\s*await endSession\(\{ reason: 'refused-platform'/);
     expect(ctx).toMatch(/Error loading stored auth[\s\S]*?await endSession\(/);
   });

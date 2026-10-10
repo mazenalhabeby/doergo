@@ -12,7 +12,7 @@ export { Hero, type HeroPart } from './hero';
 export { Disc, DiscRow } from './disc';
 export { PrimaryButton, GhostButton, Chip } from './button';
 export { LiveDot } from './live-dot';
-export { WidgetFrame, WidgetHeader, WidgetBoundary } from './widget-frame';
+export { WidgetBoundary } from './widget-frame';
 export { TabPill, useTabSafe, tabSafeFor, type TabPillItem } from './tab-pill';
 export { ScreenHeader, HeaderBack, type HeaderAction } from './screen-header';
 export { FilterPill, FilterRow, SearchField } from './filter';

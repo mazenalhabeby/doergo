@@ -9,6 +9,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { tabPill } from './tab-pill-files';
 import { TAB_PRIORITY } from '../tab-layout';
 
 /*
@@ -48,7 +49,7 @@ function slotWidths(pillInnerWidth: number) {
 
 describe('the tab pill fits', () => {
   it('uses the same constants the component does', () => {
-    const src = fs.readFileSync(path.join(SRC, 'components/amazen/tab-pill.tsx'), 'utf8');
+    const src = tabPill();
     expect(src).toContain(`const CAPSULE_W = ${CAPSULE_W};`);
     expect(src).toContain(`const GAP = ${GAP};`);
     expect(src).toContain(`const MIN_MARK_W = ${MIN_MARK_W};`);
@@ -110,7 +111,7 @@ describe('the footer', () => {
       Ionicon here is not a small inconsistency — it is the whole app's icon
       language failing at its most-seen point.
     */
-    const pill = read(path.join(SRC, 'components/amazen/tab-pill.tsx'));
+    const pill = tabPill(read);
     expect(pill).not.toMatch(/Ionicons/);
     expect(pill).toContain('TAB_GLYPHS');
   });
@@ -153,7 +154,7 @@ describe('the footer', () => {
  * find on a device you do not own.
  */
 describe('the footer works on both platforms', () => {
-  const pill = () => fs.readFileSync(path.join(SRC, 'components/amazen/tab-pill.tsx'), 'utf8');
+  const pill = () => tabPill();
 
   it('never sets an iOS shadow without an Android elevation', () => {
     /*
@@ -229,7 +230,7 @@ describe('the footer works on both platforms', () => {
 });
 
 describe('the bar settles without rocking', () => {
-  const pill = () => fs.readFileSync(path.join(SRC, 'components/amazen/tab-pill.tsx'), 'utf8');
+  const pill = () => tabPill();
 
   it('never overshoots, because the spring also drives a WIDTH', () => {
     /*

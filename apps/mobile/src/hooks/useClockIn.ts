@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef } from 'react';
-import * as Location from 'expo-location';
+import type * as Location from 'expo-location';
+import { getFix } from '../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import type { CompanyLocation } from '../lib/api';
 import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../island/island-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
-import { haversineDistance } from '../lib/utils';
-import { chooseClockInLocation, mayClockInRemotely } from '@hbcfield/shared/client';
+import { chooseClockInLocation, haversineDistance, mayClockInRemotely } from '@hbcfield/shared/client';
 import { connectivity } from '../offline/offline-context';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import { checkClockInLocally } from '../offline/attendance/clock-in-check';
@@ -64,35 +64,20 @@ export function useClockIn(opts: {
   const getCurrentLocation = useCallback(async (): Promise<Coords | null> => {
     setIsGettingLocation(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        toast.warning(t('attendance.locationRequired'), t('attendance.enableLocationServices'));
-        setIsGettingLocation(false);
-        return null;
-      }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      const coords = coordsOf(loc);
+      /*
+        A fresh, accurate fix — and when none comes in time, the last position
+        the OS knows rather than none (avoid Null Island, mobile-H13). That one
+        carries its OWN time: an old last-known position is not evidence of
+        where this tap happened, and both the phone and the server say so.
+      */
+      const coords = coordsOf(await getFix({ purpose: 'evidence', ask: true, orLastKnown: true }));
       setCurrentLocation(coords);
-      setIsGettingLocation(false);
       return coords;
     } catch {
-      // Fresh fix failed — fall back to last known (avoid Null Island). (mobile-H13)
-      try {
-        const last = await Location.getLastKnownPositionAsync();
-        if (last) {
-          // Carries its OWN time: an old last-known position is not evidence of
-          // where this tap happened, and both the phone and the server say so.
-          const coords = coordsOf(last);
-          setCurrentLocation(coords);
-          setIsGettingLocation(false);
-          return coords;
-        }
-      } catch {
-        /* fall through */
-      }
       toast.warning(t('attendance.locationRequired'), t('attendance.enableLocationServices'));
-      setIsGettingLocation(false);
       return null;
+    } finally {
+      setIsGettingLocation(false);
     }
   }, [t, toast]);
 

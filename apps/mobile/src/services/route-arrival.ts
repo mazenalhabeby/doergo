@@ -2,7 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import { haversineDistance } from '../lib/utils';
+import { haversineDistance } from '@hbcfield/shared/client';
 import i18n, { i18nReady } from '../i18n';
 
 /**

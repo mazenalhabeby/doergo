@@ -11,7 +11,6 @@ import { useTheme } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { resolveMediaUrl } from '../../../src/lib/api';
-import { portalColor } from '../../../src/lib/portal-ui';
 import { RequestRow } from '../../../src/components/customer/request-bits';
 import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph, CategoryGlyph } from '../../../src/components/customer/portal-glyphs';
 

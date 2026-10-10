@@ -14,6 +14,7 @@ import {
   dayOf, draftErrors, emptyDraft, errorKey, fieldLabel, formCounts, groupOf, isoDay, pageComplete, paginateForm, stillNeeded,
   type DraftPhoto, type FormDraft,
 } from '../step-form-logic';
+import { isSameDay } from '../../../lib/utils';
 
 /**
  * "Ask when a job moves here" — the sheet the job page opens when a step's
@@ -347,7 +348,6 @@ function PhotoTiles({ photos, onChange }: { photos: DraftPhoto[]; onChange: (v: 
   );
 }
 
-const sameDay = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /**
  * A day, picked IN the sheet — a row that opens a month in place.
@@ -417,7 +417,7 @@ function InlineDay({ value, onChange }: { value: string; onChange: (v: string) =
               <View key={wi} style={{ flexDirection: 'row', gap: 4 }}>
                 {week.map((d, di) => {
                   if (!d) return <View key={di} style={{ flex: 1, height: 38 }} />;
-                  const on = !!chosen && sameDay(chosen, d);
+                  const on = !!chosen && isSameDay(chosen, d);
                   return (
                     <Pressable
                       key={di}
@@ -428,7 +428,7 @@ function InlineDay({ value, onChange }: { value: string; onChange: (v: string) =
                       style={({ pressed }) => ({
                         flex: 1, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
                         backgroundColor: on ? c.accentTint : pressed ? c.well : 'transparent',
-                        borderWidth: 1.5, borderColor: on ? c.accent : sameDay(d, now) ? c.lineField : 'transparent',
+                        borderWidth: 1.5, borderColor: on ? c.accent : isSameDay(d, now) ? c.lineField : 'transparent',
                       })}
                     >
                       <AText numeric numberOfLines={1} style={{ fontSize: 14, lineHeight: 18, color: on ? c.accent : c.inkStrong }}>{String(d.getDate())}</AText>

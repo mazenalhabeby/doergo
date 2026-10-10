@@ -117,6 +117,8 @@ describe('the native card reader is never imported at module scope', () => {
  */
 describe('the scanner keeps the card on the phone', () => {
   const scan = fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8');
+  // The camera and its looks — where the photograph is taken, read and deleted.
+  const capture = fs.readFileSync(path.join(MOBILE, 'src/components/scan-card/use-card-capture.ts'), 'utf8');
   const lib = fs.readFileSync(path.join(MOBILE, 'src/lib/card-scan.ts'), 'utf8');
 
   /*
@@ -136,19 +138,26 @@ describe('the scanner keeps the card on the phone', () => {
     .readdirSync(path.join(MOBILE, 'src/components/customer'))
     .filter((f) => f.startsWith('card-'))
     .map((f) => path.join('src/components/customer', f));
-  const FEATURE = ['app/(app)/scan-card.tsx', 'src/lib/card-scan.ts', ...REVIEW];
+  // The screen's own pieces (camera, review state, save flow, review view),
+  // split out of the route so it stays a thin composition.
+  const SCREEN = fs
+    .readdirSync(path.join(MOBILE, 'src/components/scan-card'))
+    .map((f) => path.join('src/components/scan-card', f));
+  const FEATURE = ['app/(app)/scan-card.tsx', 'src/lib/card-scan.ts', ...SCREEN, ...REVIEW];
   const code = FEATURE.map((f) => stripComments(fs.readFileSync(path.join(MOBILE, f), 'utf8'))).join('\n');
 
   it('reads every part of the scanner (a shrinking file list passes anything)', () => {
     // The review is four components plus the rules they share. If a rename
     // drops them out of the scan, this says so rather than passing silently.
     expect(REVIEW.length).toBeGreaterThanOrEqual(4);
+    // The camera hook, the review hook, the save flow and the two views.
+    expect(SCREEN.length).toBeGreaterThanOrEqual(5);
   });
 
   it('deletes the photograph, including when reading it failed', () => {
     expect(code).toMatch(/\.delete\(\)/);
     // In `finally`, not on the happy path — a failed read leaves a photo too.
-    const finallyBlock = scan.slice(scan.indexOf('} finally {'));
+    const finallyBlock = capture.slice(capture.indexOf('} finally {'));
     expect(finallyBlock).toContain('delete()');
   });
 
@@ -188,7 +197,7 @@ describe('the scanner keeps the card on the phone', () => {
       `homelessFields` is its complement, and the screen must render both — one
       as rows, the other as the sentence saying what has nowhere to go.
     */
-    const review = stripComments(fs.readFileSync(path.join(MOBILE, 'app/(app)/scan-card.tsx'), 'utf8'));
+    const review = stripComments(fs.readFileSync(path.join(MOBILE, 'src/components/scan-card/card-review-screen.tsx'), 'utf8'));
     expect(review).toContain('cardFieldsFor');
     expect(review).toContain('homelessFields');
     const { cardFieldsFor, homelessFields, CARD_FIELDS } = require('../../components/customer/card-review');

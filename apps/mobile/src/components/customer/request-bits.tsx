@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
-import { portalColor } from '../../lib/portal-ui';
 import { CategoryGlyph } from './portal-glyphs';
 
 /** Status → semantic base colour (reads well on translucent tint in both themes). */

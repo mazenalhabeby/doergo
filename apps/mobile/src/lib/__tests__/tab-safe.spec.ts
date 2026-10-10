@@ -19,9 +19,9 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { tabPill } from './tab-pill-files';
 
 const TABS = path.resolve(__dirname, '../../../app/(app)/(tabs)');
-const PILL = path.resolve(__dirname, '../../components/amazen/tab-pill.tsx');
 const read = (p: string) => fs.readFileSync(p, 'utf8');
 
 /** Every tab screen, found rather than listed — a new one is covered on day one. */
@@ -80,7 +80,7 @@ describe('the tab screens leave room for the pill', () => {
       at the bottom of every screen. The two decisions are one decision and
       have to move together.
     */
-    expect(read(PILL)).toMatch(/position: 'absolute'/);
+    expect(tabPill(read)).toMatch(/position: 'absolute'/);
   });
 });
 
@@ -90,10 +90,10 @@ describe('the reservation covers the bar on every device', () => {
     gesture-handler and Reanimated, neither of which jest transforms. The first
     test asserts the numbers still match, so the copy cannot drift.
   */
-  const src = read(PILL);
+  const src = tabPill(read);
   const num = (name: string) => {
     const m = src.match(new RegExp(`const ${name} = (\\d+);`));
-    if (!m) throw new Error(`${name} is gone from tab-pill.tsx`);
+    if (!m) throw new Error(`${name} is gone from the tab pill`);
     return Number(m[1]);
   };
 

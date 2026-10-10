@@ -16,7 +16,6 @@ import { EquipmentPicker } from '../../src/components/equipment/equipment-picker
 import { useAuth } from '../../src/contexts/auth-context';
 import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
 import { documentPicker } from '../../src/lib/optional-native';
-import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';

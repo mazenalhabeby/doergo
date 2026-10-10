@@ -13,11 +13,10 @@ import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import * as Location from 'expo-location';
+import { getFix } from '../../src/lib/location-fix';
 import { tasksApi, type Task } from '../../src/lib/api';
 import { isMyRouteStop, hasArrived } from '../../src/lib/my-route';
 import { useAuth } from '../../src/contexts/auth-context';
-import { routesApi } from '../../src/lib/api';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import {
@@ -27,7 +26,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOffline } from '../../src/offline/offline-context';
 import { overlayTask } from '../../src/offline/tasks/overlay';
-import { isUnreachable } from '../../src/offline/actions/unreachable';
 import { restoreRoute } from '../../src/offline/routes/saved-route';
 import { planDay } from '../../src/offline/routes/plan-route';
 import { isStalePlan } from '../../src/lib/route-day';
@@ -44,7 +42,7 @@ const fmtDur = (s: number) => {
 };
 
 export default function RoutePlannerScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { user } = useAuth();
 
@@ -115,9 +113,7 @@ export default function RoutePlannerScreen() {
   const locateMe = async () => {
     setLocating(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') { setLocating(false); return; }
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const pos = await getFix({ purpose: 'pick', ask: true });
       setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: t('route.myLocation', 'My location') });
     } catch { /* ignore */ } finally { setLocating(false); }
   };
@@ -284,7 +280,7 @@ export default function RoutePlannerScreen() {
     // Where they are NOW, not where the phone was when the screen opened.
     let from = start;
     try {
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await getFix({ purpose: 'tap' });
       from = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: t('route.myLocation', 'My location') };
       setStart(from);
     } catch {

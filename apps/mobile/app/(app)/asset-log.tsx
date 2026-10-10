@@ -14,7 +14,6 @@ import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
 import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
 import { useAuth } from '../../src/contexts/auth-context';
 import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
-import { useTheme } from '../../src/contexts/theme-context';
 import { useToast } from '../../src/island/island-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';

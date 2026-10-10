@@ -21,6 +21,7 @@ import {
   FONT_WEIGHT,
   SHADOWS,
 } from '../lib/constants';
+import { isSameDay } from '../lib/utils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DAY_SIZE = Math.floor((SCREEN_WIDTH - SPACING.lg * 2 - SPACING.md * 2) / 7);
@@ -73,10 +74,6 @@ function getMonthGrid(year: number, month: number): (Date | null)[][] {
     grid.push(week);
   }
   return grid;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 export function DatePickerModal({

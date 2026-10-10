@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import MapView, { Marker, Region, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+import { getFix } from '../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import {
   COLORS,
@@ -204,9 +204,7 @@ export function LocationSearchPicker({
   // Use current location
   const handleUseCurrentLocation = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const loc = await getFix({ purpose: 'pick', ask: true });
       const { latitude, longitude } = loc.coords;
       mapRef.current?.animateToRegion(
         { latitude, longitude, latitudeDelta: 0.01, longitudeDelta: 0.01 },

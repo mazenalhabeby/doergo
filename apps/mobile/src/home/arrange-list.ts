@@ -115,5 +115,3 @@ export function canMove(index: number, count: number) {
   return { up: index > 0, down: index < count - 1 };
 }
 
-/** How long the UNDO line and the moved row's outline stay. */
-export const UNDO_MS = 30_000;

@@ -1,39 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
+import { Text, ActivityIndicator, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../contexts/theme-context';
-import { useToast } from '../island/island-context';
-import { MultiPageCapture } from './multi-page-capture';
-import { newPageId, readyKeys, allStaged, pendingCount, failedCount, type Page } from '../lib/page-order';
-import { MAX_PAGES } from '@hbcfield/shared/client';
-import { documentPicker } from '../lib/optional-native';
-import { stagePage, ensureJpeg } from '../lib/page-upload';
 import { useImagePicker } from '../hooks/useImagePicker';
-import { File as FsFile } from 'expo-file-system';
-import { documentsApi, type DocumentType } from '../lib/api/documents';
-import { typeGroups, type AskDocument, type AskRequirement, type AskType, type AskedRow } from '../lib/document-asks';
+import { type DocumentType } from '../lib/api/documents';
+import { typeGroups, type AskDocument, type AskRequirement } from '../lib/document-asks';
 import { useSyncStatus } from '../offline/offline-context';
 import { STILL_MINE } from '../offline/actions/outcome';
-import { uploadToPresignedUrl } from '../lib/api/attachments';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
-import { documentTypeIcon } from '../lib/document-icons';
-import { canReadText } from '../lib/ocr';
-import { readExpiryOnDevice } from '../lib/document-scan';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { PressableScale } from './pressable-scale';
-// The app's own calendar, in plain JS. `@react-native-community/datetimepicker`
-// would be a NATIVE dependency, and a native dependency means a fresh build
-// rather than an over-the-air update — a heavy price for one date field.
-import { DatePickerModal } from './date-picker-modal';
-import { DocumentScanner, type ScannedDocument } from './document-scanner';
-import { expiryPrompt, formatCalendarDate, type Rect } from '@hbcfield/shared/client';
-import { useOffline, useConnectivity } from '../offline/offline-context';
-import { createFromPhone } from '../offline/actions/queued-create';
-import { uuidv7 } from '../offline/ids';
+import { DocumentScanner } from './document-scanner';
+import { s, useSupplyPalette } from './supply-document/styles';
+import { useCredentialPhoto } from './supply-document/use-credential-photo';
+import { usePaperPages } from './supply-document/use-paper-pages';
+import { OfficeRow, TypeChooser } from './supply-document/type-chooser';
+import { CredentialSection } from './supply-document/credential-section';
+import { PagesSection } from './supply-document/pages-section';
 
 /**
  * The member supplying a document from their phone.
@@ -49,9 +31,6 @@ import { uuidv7 } from '../offline/ids';
  *   it takes the expiry date in the same breath as the photo
  *   it says plainly that this is a submission, not a certificate
  */
-
-const MAX_BYTES = 20 * 1024 * 1024;
-
 export function SupplyDocumentSheet({
   types,
   visible,
@@ -87,43 +66,12 @@ export function SupplyDocumentSheet({
   requirements?: readonly AskRequirement[];
   documents?: readonly AskDocument[];
 }) {
-  const { amazen } = useTheme();
-  const a = amazen.color;
-  /*
-    The sheet's words and surfaces, in the app's own design. Named after the
-    old palette's roles so the long form below reads unchanged.
-  */
-  const colors = {
-    textPrimary: a.inkStrong, textSecondary: a.ink, textMuted: a.inkMuted,
-    surface: a.well, surfaceRaised: a.tile, border: a.lineWell, primaryLight: a.accentTint,
-  };
-  const COLORS = { primary: a.accentSolid, white: a.accentInk };
+  const { amazen, a, colors, COLORS } = useSupplyPalette();
   const { t } = useTranslation();
-  const toast = useToast();
-  const offline = useOffline();
   const { operations } = useSyncStatus();
-  const connectivity = useConnectivity();
-  const { pickFromGallery, takePhoto } = useImagePicker();
+  const { pickFromGallery } = useImagePicker();
 
-  const officeRow = onContract ? (
-    <>
-      <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.forOffice', 'For the office')}</Text>
-      <PressableScale
-        onPress={onContract}
-        accessibilityRole="button"
-        style={[s.typeRow, { backgroundColor: colors.surfaceRaised }]}
-      >
-        <View style={[s.typeIcon, { backgroundColor: colors.surface }]}>
-          <Ionicons name="car-outline" size={19} color={colors.textSecondary} />
-        </View>
-        <View style={s.typeText}>
-          <Text style={[s.typeLabel, { color: colors.textPrimary }]} numberOfLines={1}>{t('documents.supply.contract', 'Contract for a vehicle or equipment')}</Text>
-          <Text style={[s.typeHint, { color: colors.textMuted }]} numberOfLines={1}>{t('documents.supply.contractHint', 'Rental, leasing or purchase — the office adds it')}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-      </PressableScale>
-    </>
-  ) : null;
+  const officeRow = onContract ? <OfficeRow onContract={onContract} /> : null;
 
   const suppliable = useMemo(
     () => types.filter((ty) => ty.direction !== 'ISSUED' && ty.isActive),
@@ -134,54 +82,7 @@ export function SupplyDocumentSheet({
   useEffect(() => {
     if (visible && initialTypeId) setTypeId(initialTypeId);
   }, [visible, initialTypeId]);
-  const [photo, setPhoto] = useState<{ uri: string; mimeType: string; fileSize: number; fileName: string } | null>(null);
-  const [expiresOn, setExpiresOn] = useState<Date | null>(null);
-  const [showDate, setShowDate] = useState(false);
-  const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
-  // Exactly as a barcode encoded it, when the document carried one. Parsed and
-  // CHECKED on the server — a client's own reading of it is not evidence.
-  const [scanned, setScanned] = useState<ScannedDocument | null>(null);
-  /*
-    Where the date came from.
-
-    The flow used to demand a typed expiry and then quietly overrule it with
-    whatever the server read — busywork followed by a silent override. Now the
-    document is read first and the field is filled in, so the member confirms
-    rather than types, and the label says whether the app KNOWS the date (a
-    machine-readable zone, proved by a check digit) or merely GUESSED it from
-    printed text.
-  */
-  const [dateSource, setDateSource] = useState<'MRZ' | 'TEXT' | 'NOTHING' | null>(null);
-  const [reading, setReading] = useState(false);
-  /* The name and number the server read — shown so a wrong card is caught before it is sent. */
-  const [readFields, setReadFields] = useState<{ holderName: string | null; documentNumber: string | null } | null>(null);
-  /*
-    The member has asked to set the date themselves.
-
-    Being certain is not the same as being right — a card photographed at an
-    angle produces a confident wrong answer — so the correction is always one
-    tap away. Never entered automatically: an app that quietly reopens the
-    field it just filled in has saved nobody anything.
-  */
-  const [overriding, setOverriding] = useState(false);
-  const [staged, setStaged] = useState<{
-    key: string;
-    crop: Rect | null;
-    back?: { key: string; crop: Rect | null } | null;
-  } | null>(null);
-
-  /*
-    Sheets of paper, for a type that is paper rather than a card.
-
-    Held beside the single-photo state rather than replacing it: the two flows
-    share this sheet, the type decides which is shown, and a member who changes
-    the type mid-way should not carry pages into a scanner.
-  */
-  const [pages, setPages] = useState<Page[]>([]);
-  const [pageTitle, setPageTitle] = useState('');
-  /** The scanner, opened for a SHEET rather than a card. */
-  const [scanningPage, setScanningPage] = useState(false);
 
   /*
     "What is it?", sorted by what is asked of the member — `document-asks`, the
@@ -203,90 +104,22 @@ export function SupplyDocumentSheet({
   );
   const type = selectable.find((ty) => ty.id === typeId) ?? selectable[0];
 
-  const askedLine = (row: AskedRow) => {
-    if (row.why === 'sentBack') return row.reason ? t('documents.supply.sentBackWhy', { reason: row.reason, defaultValue: 'Sent back · {{reason}}' }) : t('documents.required.state.REJECTED');
-    if (row.why === 'expired') return t('documents.required.state.EXPIRED');
-    if (row.why === 'expiring') return row.expiresOn
-      ? t('documents.supply.expiringOn', { date: formatCalendarDate(row.expiresOn.slice(0, 10)), defaultValue: 'Expires {{date}} · send the renewed one' })
-      : t('documents.required.state.EXPIRING');
-    return t('documents.supply.askedMissing', 'Asked for · not sent yet');
-  };
-
-  /* One row of "What is it?" — every row the same height, whatever its description. */
-  const typeRow = (ty: AskType, sub: string | null, o: { tone?: 'warn' | 'crit'; off?: boolean } = {}) => {
-    const full = ty as DocumentType;
-    const on = !o.off && ty.id === type?.id;
-    const hint = o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : colors.textMuted;
-    return (
-      <PressableScale
-        key={ty.id}
-        onPress={() => chooseType(ty.id)}
-        disabled={o.off}
-        accessibilityRole="radio"
-        accessibilityState={{ selected: on, disabled: !!o.off }}
-        style={[
-          s.typeRow,
-          on ? { backgroundColor: a.accentTint, borderWidth: 1.5, borderColor: a.accent } : { backgroundColor: colors.surfaceRaised },
-          o.off && { opacity: 0.6 },
-        ]}
-      >
-        <View style={[s.typeIcon, { backgroundColor: o.tone === 'crit' ? a.criticalTint : o.tone === 'warn' ? a.warnTint : colors.surface }]}>
-          <Ionicons name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)} size={19} color={o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : on ? a.accent : colors.textSecondary} />
-        </View>
-        <View style={s.typeText}>
-          <Text style={[s.typeLabel, { color: on ? a.accent : colors.textPrimary }]} numberOfLines={1}>{ty.label}</Text>
-          {sub ? <Text style={[s.typeHint, { color: hint }]} numberOfLines={1}>{sub}</Text> : null}
-        </View>
-        {on && <Ionicons name="checkmark-circle" size={20} color={a.accent} />}
-      </PressableScale>
-    );
-  };
-
-  /*
-    One rule, shared with the web.
-
-    Both surfaces had the reading wired and both still LED with the picker:
-    `needsDate` was `!!type?.hasExpiry` alone, so "Expires on — pick a date"
-    rendered the moment a type was chosen, before any photo existed, for a date
-    printed on the document about to be photographed. Filling it in afterwards
-    does not undo that — by then somebody has tapped through a calendar.
-  */
-  const prompt = expiryPrompt({
-    hasExpiry: !!type?.hasExpiry,
-    hasFile: !!photo,
-    reading,
-    source: dateSource,
-    value: expiresOn ? toIsoDate(expiresOn) : null,
-    overriding,
-  });
-
-  /*
-    ⚠️ Everything read off a photo goes WITH the photo. Removing it used to keep
-    its date, its staged upload and its barcode, so the next photo was sent
-    with the last one's expiry.
-  */
-  const clearPhoto = () => {
-    setPhoto(null);
-    setScanned(null);
-    setExpiresOn(null);
-    setDateSource(null);
-    setOverriding(false);
-    setStaged(null);
-    setReadFields(null);
-  };
+  /* A credential: one photo, read and filed (`use-credential-photo`). */
+  const cred = useCredentialPhoto({ type, setBusy, pickFromGallery });
+  /* Sheets of paper, for a type that is paper rather than a card (`use-paper-pages`). */
+  const paper = usePaperPages({ type, busy, setBusy, pickFromGallery });
 
   const reset = () => {
-    clearPhoto();
-    setPages([]);
-    setPageTitle('');
+    cred.clearPhoto();
+    paper.clearAll();
     setBusy(false);
   };
 
   /* A photo belongs to the type it was taken for — changing the type starts again. */
   const chooseType = (id: string) => {
     if (id === type?.id) return;
-    clearPhoto();
-    setPages([]);
+    cred.clearPhoto();
+    paper.clearPages();
     setTypeId(id);
   };
 
@@ -297,411 +130,16 @@ export function SupplyDocumentSheet({
     onClose();
   };
 
-  /**
-   * A photo the member already has.
-   *
-   * The quieter of the two routes: somebody handed a scan by email should not
-   * have to photograph their screen. Scanning is what the button above does,
-   * and it is the one that produces a straight, complete image.
-   */
-  const pickExisting = async () => {
-    const fromGallery = await pickFromGallery('id-document');
-    const first = Array.isArray(fromGallery) ? fromGallery[0] : fromGallery;
-    if (!first) return;
-
-    /*
-      The size has to be EXACT, not approximate.
-
-      The presigned URL signs `content-length`, so a declared size that differs
-      from the bytes actually sent is rejected by the object store as a
-      signature mismatch — a 403 with nothing in it about sizes. The image
-      picker reports `fileSize: 0` on some Android devices, which would declare
-      one byte and fail every upload from those phones.
-    */
-    const size = first.fileSize || safeFileSize(first.uri);
-    if (!size) {
-      toast.error(t('documents.supply.failed'));
-      return;
-    }
-    // Checked here as well as on the server: a 20 MB photo that fails after
-    // uploading over a site connection is a minute of somebody's time for
-    // nothing.
-    if (size > MAX_BYTES) {
-      toast.error(t('documents.supply.tooLarge'));
-      return;
-    }
-    const picked = { ...first, fileSize: size };
-    setPhoto(picked);
-    // A gallery photo carries no barcode read, so any earlier scan is stale.
-    setScanned(null);
-    if (type) void uploadAndRead(picked, type);
+  /* Filed (or queued): start clean and hand back to the screen. */
+  const finish = () => {
+    reset();
+    onSubmitted();
+    onClose();
   };
-
-  /**
-   * Upload it and ask what is on it, before anything is filed.
-   *
-   * The upload has to happen either way, so doing it now costs nothing extra
-   * and buys the member a filled-in form.
-   */
-  const uploadAndRead = useCallback(
-    async (
-      picked: { uri: string; mimeType: string; fileSize: number },
-      forType: DocumentType,
-      crop?: Rect | null,
-      back?: { uri: string; fileSize: number; crop?: Rect } | null,
-    ) => {
-      setReading(true);
-      try {
-        /*
-          READ IT HERE FIRST, before a single byte goes anywhere.
-
-          ⚠️ This flow used to upload the photograph and ask the SERVER what was
-          on it — tesseract, over the wire, after the upload finished — while
-          ML Kit sat unused in the member's pocket, already reading business
-          cards, fuel receipts and rental agreements in this same app. A member
-          on a yard's worth of signal watched a spinner for the length of an
-          upload to learn a date their phone could have read instantly.
-
-          On-device is better on every axis that matters here: it is immediate,
-          it works with one bar, it costs nothing per document, and ML Kit reads
-          a photographed page more accurately than tesseract does.
-
-          ⚠️ IT DOES NOT REPLACE THE SERVER READ, and must not. The zone's check
-          digits, and whether the name on the document is the member's, are
-          EVIDENCE — and a client's own reading of its own document is not
-          evidence. The phone fills the field; the server still decides the
-          verdict, on bytes it fetched itself.
-        */
-        const onDevice = canReadText() ? await readExpiryOnDevice(picked.uri) : null;
-        if (onDevice) {
-          setDateSource('TEXT');
-          setExpiresOn(new Date(onDevice));
-        }
-
-        const put = async (uri: string, sizeBytes: number) => {
-          // An iPhone HEIC goes up as JPEG — the server cannot read HEIC at all.
-          const jpeg = await ensureJpeg(uri, uri === picked.uri ? picked.mimeType : null);
-          const p = await documentsApi.ownUploadUrl({
-            typeId: forType.id,
-            mimeType: 'image/jpeg',
-            sizeBytes: jpeg.converted ? jpeg.bytes || sizeBytes : sizeBytes,
-          });
-          await uploadToPresignedUrl(p.url, jpeg.uri, 'image/jpeg');
-          return p.key;
-        };
-
-        const presigned = { key: await put(picked.uri, picked.fileSize) };
-        /*
-          Both sides go up.
-
-          The back was being captured and thrown away, which for a card is the
-          half that can be read at all — the categories and the machine-readable
-          zone are there, and the front has neither.
-        */
-        const backKey = back ? await put(back.uri, back.fileSize) : null;
-
-        setStaged({
-          key: presigned.key,
-          crop: crop ?? null,
-          back: backKey ? { key: backKey, crop: back?.crop ?? null } : null,
-        });
-
-        const read = await documentsApi.readOwnUpload(
-          presigned.key,
-          crop,
-          backKey ? { stagingKey: backKey, crop: back?.crop ?? null } : null,
-        );
-        /*
-          The server's answer wins where it HAS one.
-
-          A zone expiry is proved by a check digit and the phone's reading of
-          printed text is not, so MRZ must overrule it. Where the server found
-          nothing, what the phone read is kept rather than being wiped back to
-          "nothing readable" — losing a date already on screen because a second,
-          weaker reader missed it would be the worst of both.
-        */
-        setReadFields(read.fields ?? null);
-        if (read.expiresOn) {
-          setDateSource(read.source);
-          setExpiresOn(new Date(read.expiresOn));
-        } else if (!onDevice) {
-          setDateSource(read.source);
-        }
-      } catch {
-        // A failed read is not a failed upload attempt: the member can still
-        // type the date and send it. Silence beats an error about OCR.
-        // ⚠️ Only when the phone found nothing either — the upload can fail
-        // long after a perfectly good on-device read.
-        setDateSource((prev) => (prev === 'TEXT' ? prev : 'NOTHING'));
-      } finally {
-        setReading(false);
-      }
-    },
-    [],
-  );
+  const submit = async () => { if (await cred.submit()) finish(); };
+  const submitPages = async () => { if (await paper.submitPages()) finish(); };
 
   const multi = !!type?.multiPage;
-
-  /**
-   * Take one sheet and start sending it immediately.
-   *
-   * ⚠️ The upload is NOT awaited here. Somebody photographing six pages spends
-   * fifteen seconds doing it; those fifteen seconds are free upload time, and
-   * spending them idle means the member waits all over again on Send. The tile
-   * shows the sheet's own state while it goes.
-   */
-  /*
-    ⚠️ Refused offline rather than queued. Each sheet is PUT to the object store
-    as it is taken, and a queued submit naming keys whose uploads never happened
-    would fail on arrival having told the member it was sent. A flow that cannot
-    work without a connection should say so, once, up front.
-  */
-  const canAddPage = () => {
-    if (connectivity !== 'online') {
-      toast.info(t('documents.pages.needsConnection'));
-      return false;
-    }
-    if (pages.length >= MAX_PAGES) {
-      toast.info(t('documents.pages.tooMany', { count: MAX_PAGES }));
-      return false;
-    }
-    return true;
-  };
-
-  /**
-   * Add sheets and start sending them immediately.
-   *
-   * ⚠️ The uploads are NOT awaited. Somebody adding six pages spends the time
-   * doing it; those seconds are free upload time, and spending them idle means
-   * waiting all over again on Send. Each tile shows its own state while it goes.
-   */
-  const addPages = (incoming: { uri: string; mimeType?: string; name?: string }[]) => {
-    if (!type || incoming.length === 0) return;
-    const fresh: Page[] = incoming
-      .slice(0, MAX_PAGES - pages.length)
-      .map((f) => ({
-        id: newPageId(),
-        uri: f.uri,
-        mimeType: f.mimeType,
-        name: f.name,
-        state: 'compressing' as const,
-      }));
-    setPages((prev) => [...prev, ...fresh]);
-    for (const page of fresh) {
-      void stagePage(page, type.id, (next) =>
-        setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
-      );
-    }
-  };
-
-  /** One sheet, through the scanner — framed on A4, deskewed and cropped. */
-  const scanPage = () => {
-    if (!type || !canAddPage()) return;
-    setScanningPage(true);
-  };
-
-  /*
-    Several at once, out of the photo library.
-
-    Paper does not always start as paper: a hotel invoice arrives by email and
-    is already in Photos. Multi-select means six sheets in one tap instead of
-    six trips through a camera that was never needed.
-  */
-  /*
-    A PDF, straight off the phone.
-
-    Most of what this feature exists for never was paper: an invoice, a booking,
-    a flight confirmation arrives by email as a PDF. Photographing a screen
-    showing it is what members did instead, and the result was unreadable.
-  */
-  const pickFile = async () => {
-    if (!type || !canAddPage()) return;
-    const picker = documentPicker();
-    if (!picker) {
-      toast.info(t('documents.pages.noFilePicker'));
-      return;
-    }
-    const picked = await picker.getDocumentAsync({
-      /*
-        Named explicitly rather than `image/*`. The server files PDF, PNG and
-        JPEG and nothing else, so a wildcard lets somebody pick a HEIC off an
-        iPhone, watch it upload, and only then be refused. (It also contains
-        the characters that open a comment, which the DOM-globals guard's
-        stripper takes literally.)
-      */
-      type: ['application/pdf', 'image/jpeg', 'image/png'],
-      copyToCacheDirectory: true,
-      multiple: true,
-    });
-    if (picked.canceled || !picked.assets?.length) return;
-    addPages(
-      picked.assets.map((f) => ({
-        uri: f.uri,
-        mimeType:
-          f.mimeType ??
-          (f.name?.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
-        name: f.name ?? undefined,
-      })),
-    );
-  };
-
-  const pickPages = async () => {
-    if (!type || !canAddPage()) return;
-    const picked = await pickFromGallery('document', MAX_PAGES - pages.length);
-    addPages(picked.filter((p) => p.uri).map((p) => ({ uri: p.uri })));
-  };
-
-  /** A sheet that did not land, sent again — its local file was kept for this. */
-  const retryPage = (id: string) => {
-    if (!type) return;
-    const page = pages.find((p) => p.id === id);
-    if (!page) return;
-    void stagePage({ ...page, state: 'compressing' }, type.id, (next) =>
-      setPages((prev) => prev.map((p) => (p.id === next.id ? next : p))),
-    );
-  };
-
-  /**
-   * File the sheets as one document.
-   *
-   * Kept apart from `submit` on purpose — that one is about a credential: a
-   * scanned card, a read expiry, a verification queue. None of it applies here,
-   * and threading `if (multiPage)` through it would make both harder to read.
-   */
-  const submitPages = async () => {
-    if (!type || pages.length === 0 || busy) return;
-    if (!pageTitle.trim()) {
-      toast.error(t('documents.pages.needTitle'));
-      return;
-    }
-    if (!allStaged(pages)) {
-      const waiting = pendingCount(pages);
-      toast.info(
-        waiting > 0
-          ? t('documents.pages.waiting', { count: waiting })
-          : t('documents.pages.failed', { count: failedCount(pages) }),
-      );
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const keys = readyKeys(pages);
-      await documentsApi.submitOwn({
-        // The first sheet is the document; the rest are its further pages.
-        stagingKey: keys[0],
-        pageStagingKeys: keys.slice(1),
-        typeId: type.id,
-        title: pageTitle.trim(),
-      });
-      toast.success(t('documents.supply.submitted'));
-      reset();
-      onSubmitted?.();
-      onClose();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('common.error'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submit = async () => {
-    if (!type || !photo) return;
-    /*
-      ⚠️ NO LONGER REFUSED FOR A MISSING DATE.
-
-      The reader tries the machine-readable zone, then the printed text; when
-      both come up empty the member was blocked — someone standing in a van
-      holding a licence, told to type a date off a document they are trying to
-      photograph. An unfiled licence is worth strictly less than a filed one
-      with its date still to be confirmed.
-
-      The obligation moves rather than disappears: the document goes to the
-      verification queue, and the server will not APPROVE a type that has an
-      expiry until the reviewer — who has the image on a desktop screen —
-      supplies one. Until then it stands as EXPIRY_UNKNOWN on the compliance
-      board, which is chased, not silently counted as covered.
-    */
-    setBusy(true);
-    try {
-      if (offline.engine && offline.files) {
-        /*
-          Filed through the outbox, so it survives no signal and is filed once.
-          What was already uploaded while the date was being read goes as its
-          key; what was not is kept on the phone and uploaded when sent — and
-          the copy is deleted the moment the document is filed. It is a
-          photograph of somebody's passport.
-        */
-        const back = scanned?.back ?? null;
-        const body: Record<string, unknown> = {
-          typeId: type.id,
-          title: type.label,
-          ...(expiresOn ? { expiresOn: toIsoDate(expiresOn) } : {}),
-          ...(scanned?.barcodeData ? { mrzText: scanned.barcodeData } : {}),
-          ...((staged?.crop ?? scanned?.crop) ? { crop: staged?.crop ?? scanned?.crop } : {}),
-          ...((staged?.back?.crop ?? back?.crop) ? { backCrop: staged?.back?.crop ?? back?.crop } : {}),
-        };
-        if (staged?.key) body.stagingKey = staged.key;
-        else {
-          // Kept for the queue as JPEG — a HEIC queued offline is just as unreadable later.
-          const front = await ensureJpeg(photo.uri, photo.mimeType);
-          body.$front = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg', uri: front.uri })).id;
-        }
-        if (staged?.back?.key) body.backStagingKey = staged.back.key;
-        else if (back) body.$back = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
-
-        const { outcome } = await createFromPhone(offline.engine, { op: 'document.supply', lane: `document:${type.id}`, body });
-        if (outcome.kind === 'refused') {
-          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('documents.supply.failed'));
-          setBusy(false);
-          return;
-        }
-        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('documents.supply.submitted'));
-        reset();
-        onSubmitted();
-        onClose();
-        return;
-      }
-
-      // Already uploaded while the member was confirming the date.
-      const key = staged?.key ?? (await (async () => {
-        const jpeg = await ensureJpeg(photo.uri, photo.mimeType);
-        const mime = jpeg.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg';
-        const p = await documentsApi.ownUploadUrl({
-          typeId: type.id,
-          mimeType: mime,
-          sizeBytes: jpeg.converted ? jpeg.bytes || photo.fileSize : photo.fileSize,
-        });
-        await uploadToPresignedUrl(p.url, jpeg.uri, mime);
-        return p.key;
-      })());
-
-      await documentsApi.submitOwn({
-        stagingKey: key,
-        typeId: type.id,
-        title: type.label,
-        // Date only. A timestamp would put an expiry a few hours either side of
-        // midnight into the wrong day depending on where the phone is.
-        // Sent when known — read off the document or typed. Absent is allowed.
-        expiresOn: expiresOn ? toIsoDate(expiresOn) : undefined,
-        // Raw, unparsed. The server recomputes the check digits, so a client
-        // that invented a zone gets a SUSPECT verdict rather than a pass.
-        mrzText: scanned?.barcodeData,
-        // The frame, so what is FILED is the document rather than the table it
-        // was lying on.
-        crop: staged?.crop ?? scanned?.crop ?? null,
-        backStagingKey: staged?.back?.key ?? null,
-        backCrop: staged?.back?.crop ?? null,
-      });
-      toast.success(t('documents.supply.submitted'));
-      reset();
-      onSubmitted();
-      onClose();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('documents.supply.failed'));
-      setBusy(false);
-    }
-  };
 
   return (
     <BlurSheet visible={visible} onClose={close}>
@@ -743,38 +181,7 @@ export function SupplyDocumentSheet({
           )
         ) : (
           <>
-            {/*
-              What it is.
-
-              Every row the SAME HEIGHT, whether or not the type carries a
-              description. A list where one option is twice as tall as its
-              neighbours because somebody wrote two sentences about it reads as
-              an accident, and the tall one draws the eye for no reason that has
-              anything to do with what it is.
-            */}
-            <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-              {t('documents.supply.whatIsIt')}
-            </Text>
-            {groups.asked.length ? <Text style={[s.eyebrow, { color: a.warn, marginTop: 0 }]}>{t('documents.supply.groupAsked', { count: groups.asked.length, defaultValue: 'Asked for · {{count}}' })}</Text> : null}
-            <View style={s.typeList}>
-              {groups.asked.map((row) => typeRow(row.type, askedLine(row), { tone: row.why === 'sentBack' || row.why === 'expired' ? 'crit' : 'warn' }))}
-            </View>
-            {groups.checking.length ? (
-              <>
-                <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupChecking', 'Being checked')}</Text>
-                <View style={s.typeList}>
-                  {groups.checking.map((row) => typeRow(row.type, row.onPhone ? t('documents.supply.onPhone', 'On this phone · sends when you are online') : t('documents.supply.checking', 'Sent · the office is checking it'), { off: true }))}
-                </View>
-              </>
-            ) : null}
-            {groups.other.length ? (
-              <>
-                {groups.asked.length || groups.checking.length ? <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupOther', 'Something else')}</Text> : null}
-                <View style={s.typeList}>
-                  {groups.other.map((ty) => typeRow(ty, ty.description ?? null))}
-                </View>
-              </>
-            ) : null}
+            <TypeChooser groups={groups} selectedId={type?.id} onChoose={chooseType} />
 
             {officeRow}
 
@@ -785,231 +192,9 @@ export function SupplyDocumentSheet({
               accurately and are noise on a hotel invoice. The type decides,
               which is why this branches here rather than on what the file is.
             */}
-            {multi ? (
-              <>
-                <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-                  {t('documents.pages.title')}
-                </Text>
-                <TextInput
-                  value={pageTitle}
-                  onChangeText={setPageTitle}
-                  placeholder={t('documents.pages.titlePlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  editable={!busy}
-                  style={[
-                    s.titleInput,
-                    { backgroundColor: colors.surfaceRaised, color: colors.textPrimary, borderColor: colors.border },
-                  ]}
-                />
-                <Text style={[s.titleHint, { color: colors.textMuted }]}>
-                  {t('documents.pages.titleHint')}
-                </Text>
-                <MultiPageCapture
-                  pages={pages}
-                  onChange={setPages}
-                  onScan={scanPage}
-                  onLibrary={pickPages}
-                  onFile={pickFile}
-                  onRetry={retryPage}
-                  disabled={busy}
-                />
-              </>
-            ) : (
-            <>
-            {/* The photo */}
-            <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-              {t('documents.supply.theFile')}
-            </Text>
-            {photo ? (
-              <View style={[s.picked, { backgroundColor: colors.surfaceRaised }]}>
-                <View style={[s.pickedIcon, { backgroundColor: COLORS.primary }]}>
-                  <Ionicons name="checkmark" size={18} color={COLORS.white} />
-                </View>
-                <Text style={[s.pickedName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {photo.fileName}
-                </Text>
-                <Pressable onPress={clearPhoto} hitSlop={10}>
-                  <Ionicons name="close-circle" size={22} color={colors.textMuted} />
-                </Pressable>
-              </View>
-            ) : (
-              <>
-                {/*
-                  Scanning is the primary way in, and looks like it.
-
-                  The OS picker produces a card on a table at an angle with a
-                  thumb across a corner, and every check downstream then works
-                  against a bad image. Choosing an existing photo stays — some
-                  people are handed a scan by email — but it is the quieter of
-                  the two.
-
-                  Quieter as a FILLED button, not a dashed one. A dashed outline
-                  is the convention for a drop target on a desktop; on a phone
-                  it just reads as something unfinished.
-                */}
-                <PressableScale
-                  onPress={() => setScanning(true)}
-                  style={[s.scanButton, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }]}
-                >
-                  <Ionicons name="scan-outline" size={22} color={COLORS.white} />
-                  <Text style={s.scanText}>{t('documents.supply.scan')}</Text>
-                </PressableScale>
-                <PressableScale
-                  onPress={pickExisting}
-                  style={[s.pickButton, { backgroundColor: colors.surfaceRaised }]}
-                >
-                  <Ionicons name="images-outline" size={18} color={colors.textSecondary} />
-                  <Text style={[s.pickText, { color: colors.textSecondary }]}>
-                    {t('documents.supply.chooseExisting')}
-                  </Text>
-                </PressableScale>
-              </>
-            )}
-
-            {/* Its expiry — read off the document, not asked for */}
-            {prompt.state === 'READING' && (
-              <View style={[s.expiryRow, { backgroundColor: colors.surfaceRaised }]}>
-                <Ionicons name="hourglass-outline" size={18} color={colors.textMuted} />
-                <Text style={[s.expiryReading, { color: colors.textSecondary }]}>
-                  {t('documents.supply.reading')}
-                </Text>
-              </View>
-            )}
-
-            {prompt.state === 'FOUND' && (
-              /*
-                STATED, not requested. The date sits here as something the app
-                has read, with its provenance beside it — a zone expiry is
-                proved by a check digit, a date off printed text is the latest
-                one the page happened to show. Both save the typing; only one is
-                a fact, and somebody confirming it is entitled to know which.
-              */
-              <View
-                style={[
-                  s.expiryFound,
-                  prompt.certainty === 'PROVEN'
-                    ? { backgroundColor: colors.primaryLight, borderColor: COLORS.primary }
-                    : { backgroundColor: colors.surfaceRaised, borderColor: colors.border },
-                ]}
-              >
-                <View style={s.expiryRow}>
-                  <Ionicons
-                    name={prompt.certainty === 'PROVEN' ? 'shield-checkmark' : 'calendar-outline'}
-                    size={18}
-                    color={prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary}
-                  />
-                  <Text style={[s.expiryValue, { color: colors.textPrimary }]}>
-                    {t('documents.supply.expiresOnValue', {
-                      date: formatCalendarDate(prompt.value),
-                    })}
-                  </Text>
-                </View>
-                <View style={s.expiryFoot}>
-                  <Text
-                    style={[
-                      s.dateNote,
-                      { color: prompt.certainty === 'PROVEN' ? COLORS.primary : colors.textSecondary },
-                    ]}
-                  >
-                    {prompt.certainty === 'PROVEN'
-                      ? t('documents.supply.dateFromDocument')
-                      : t('documents.supply.dateGuessed')}
-                  </Text>
-                  <PressableScale onPress={() => setOverriding(true)} style={s.changeDate}>
-                    <Ionicons name="create-outline" size={13} color={colors.textSecondary} />
-                    <Text style={[s.changeDateText, { color: colors.textSecondary }]}>
-                      {t('documents.supply.changeDate')}
-                    </Text>
-                  </PressableScale>
-                </View>
-              </View>
-            )}
-
-            {/* What the server read off it — a wrong card is caught here, not by the office. */}
-            {readFields && (readFields.holderName || readFields.documentNumber) ? (
-              <View style={{ backgroundColor: colors.surfaceRaised, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, marginTop: SPACING.sm }}>
-                {readFields.holderName ? (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
-                    <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.nameOnIt', 'Name on it')}</Text>
-                    <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.holderName}</Text>
-                  </View>
-                ) : null}
-                {readFields.documentNumber ? (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: readFields.holderName ? 1 : 0, borderTopColor: colors.border }}>
-                    <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.numberOnIt', 'Number')}</Text>
-                    <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.documentNumber}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
-            {prompt.state === 'ASK' && (
-              /*
-                The last resort, and it says why it is asking. A bare date
-                button with no explanation is what the member was given before,
-                on every document that was not a passport.
-              */
-              <>
-                <Text style={[s.eyebrow, { color: colors.textMuted }]}>
-                  {t('documents.supply.expiresOn')}
-                </Text>
-                <PressableScale
-                  onPress={() => setShowDate(true)}
-                  style={[s.dateButton, { backgroundColor: colors.surfaceRaised }]}
-                >
-                  <Ionicons
-                    name="calendar-outline"
-                    size={18}
-                    color={expiresOn ? COLORS.primary : colors.textMuted}
-                  />
-                  <Text
-                    style={[
-                      s.dateText,
-                      { color: expiresOn ? colors.textPrimary : colors.textMuted },
-                      expiresOn && s.dateTextSet,
-                    ]}
-                  >
-                    {expiresOn ? expiresOn.toLocaleDateString() : t('documents.supply.pickDate')}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-                </PressableScale>
-                <Text style={[s.dateNote, { color: colors.textSecondary }]}>
-                  {prompt.reason === 'CORRECTING'
-                    ? t('documents.supply.dateCorrecting')
-                    : t('documents.supply.dateNotFound')}
-                </Text>
-              </>
-            )}
-
-            <DatePickerModal
-              visible={showDate}
-              selectedDate={expiresOn}
-              onSelect={(d) => { setExpiresOn(d); setShowDate(false); }}
-              onClear={() => { setExpiresOn(null); setShowDate(false); }}
-              onClose={() => setShowDate(false)}
-              // An expiry date is in the future — the calendar no longer
-              // assumes that for everybody.
-              title={t('documents.supply.expiresOn')}
-            />
-
-            {/* What happens next. Somebody who believes an upload covers them
-                for the work finds out on site that it does not. */}
-            {/*
-              Quiet. A yellow-bordered panel is what a warning looks like, and
-              this is not one — the submission worked, it simply is not a
-              certificate yet. Shouting it made the calmest sentence on the
-              screen the loudest thing on it.
-            */}
-            <View style={s.notice}>
-              <Ionicons name="information-circle" size={16} color={colors.textMuted} />
-              <Text style={[s.noticeText, { color: colors.textMuted }]}>
-                {t('documents.supply.reviewNotice')}
-              </Text>
-            </View>
-
+            {multi ? <PagesSection paper={paper} busy={busy} /> : <CredentialSection cred={cred} />}
           </>
         )}
-            </>
-            )}
         </ScrollView>
 
         {/*
@@ -1031,7 +216,7 @@ export function SupplyDocumentSheet({
               block is a read still in flight: sending then races the staged
               upload and sends the same photo twice.
             */
-            disabled={multi ? pages.length === 0 || busy : !photo || busy || reading}
+            disabled={multi ? paper.pages.length === 0 || busy : !cred.photo || busy || cred.reading}
             /*
               A dimmed version of the live colour is the worst disabled state
               there is: it still reads as the button, just badly rendered, so
@@ -1040,7 +225,7 @@ export function SupplyDocumentSheet({
             */
             style={[
               s.submit,
-              (multi ? pages.length === 0 || busy : !photo || busy || reading)
+              (multi ? paper.pages.length === 0 || busy : !cred.photo || busy || cred.reading)
                 ? { backgroundColor: colors.surfaceRaised }
                 : [s.submitOn, { backgroundColor: COLORS.primary, shadowColor: COLORS.primary }],
             ]}
@@ -1051,7 +236,7 @@ export function SupplyDocumentSheet({
                 <Text
                   style={[
                     s.submitText,
-                    { color: (multi ? pages.length > 0 : !!photo && !reading) ? COLORS.white : colors.textMuted },
+                    { color: (multi ? paper.pages.length > 0 : !!cred.photo && !cred.reading) ? COLORS.white : colors.textMuted },
                   ]}
                 >
                   {t('documents.supply.send')}
@@ -1078,184 +263,25 @@ export function SupplyDocumentSheet({
         component, PAGE frame, and the result becomes one more page.
       */}
       <DocumentScanner
-        visible={scanningPage}
+        visible={paper.scanningPage}
         title={type?.label ?? t('documents.supply.title')}
         twoSided={false}
         shape="PAGE"
-        onCancel={() => setScanningPage(false)}
+        onCancel={() => paper.setScanningPage(false)}
         onDone={(result) => {
-          setScanningPage(false);
-          if (result?.uri) addPages([{ uri: result.uri }]);
+          paper.setScanningPage(false);
+          if (result?.uri) paper.addPages([{ uri: result.uri }]);
         }}
       />
 
       <DocumentScanner
-        visible={scanning}
+        visible={cred.scanning}
         title={type?.label ?? t('documents.supply.title')}
         twoSided={!!type?.twoSided}
         shape={type?.scanShape ?? 'CARD'}
-        onCancel={() => setScanning(false)}
-        onDone={(result) => {
-          setScanning(false);
-          setScanned(result);
-          const picked = {
-            uri: result.uri,
-            fileName: result.fileName,
-            mimeType: result.mimeType,
-            fileSize: result.fileSize,
-          };
-          setPhoto(picked);
-          // Read it now, while they are still looking at the sheet.
-          if (type) void uploadAndRead(picked, type, result.crop, result.back);
-        }}
+        onCancel={() => cred.setScanning(false)}
+        onDone={cred.onScanned}
       />
     </BlurSheet>
   );
 }
-
-/** The file's real length, or 0 if it cannot be read. Never throws at the caller. */
-function safeFileSize(uri: string): number {
-  try {
-    return new FsFile(uri).size ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
-/** A calendar date, in the phone's own day — never a UTC-shifted one. */
-function toIsoDate(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-const s = StyleSheet.create({
-  scroll: { flexShrink: 1 },
-  body: { paddingBottom: SPACING.md },
-  subtitle: { fontSize: FONT_SIZE.base, lineHeight: 20, marginTop: SPACING.xs, marginBottom: SPACING.sm },
-  empty: { fontSize: FONT_SIZE.base, textAlign: 'center', paddingVertical: SPACING.xl },
-
-  /* Small, spaced, muted — a section marker rather than a heading competing
-     with the sheet's own title for the top of the visual hierarchy. */
-  eyebrow: {
-    fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold,
-    textTransform: 'uppercase', letterSpacing: 0.8,
-    marginTop: SPACING.lg, marginBottom: SPACING.sm,
-  },
-
-  typeList: { gap: SPACING.xs },
-  /* Fixed, so a described type and a bare one are the same size. */
-  typeRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    height: 62, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
-  },
-  typeRowOn: {
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  typeIcon: {
-    width: 38, height: 38, borderRadius: RADIUS.md,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  typeText: { flex: 1, gap: 1 },
-  typeLabel: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
-  typeHint: { fontSize: FONT_SIZE.sm },
-
-  scanButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    height: 54, borderRadius: RADIUS.lg,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  scanText: {
-    color: COLORS.white, fontSize: FONT_SIZE.xl,
-    fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2,
-  },
-  pickButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    height: 46, borderRadius: RADIUS.lg, marginTop: SPACING.sm,
-  },
-  pickText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium },
-
-  picked: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    height: 62, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
-  },
-  pickedIcon: {
-    width: 30, height: 30, borderRadius: RADIUS.full,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  pickedName: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium },
-
-  dateButton: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    height: 54, borderRadius: RADIUS.lg, paddingHorizontal: SPACING.md,
-  },
-  dateText: { flex: 1, fontSize: FONT_SIZE.lg },
-  dateTextSet: { fontWeight: FONT_WEIGHT.semibold },
-  expiryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  expiryReading: {
-    fontSize: FONT_SIZE.sm,
-  },
-  expiryFound: {
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.sm + 2,
-    paddingHorizontal: SPACING.md,
-    gap: 4,
-  },
-  expiryValue: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: FONT_WEIGHT.semibold,
-  },
-  expiryFoot: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING.sm,
-    paddingLeft: 26,
-  },
-  changeDate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  changeDateText: {
-    fontSize: FONT_SIZE.xs,
-    fontWeight: FONT_WEIGHT.medium,
-  },
-  dateNote: { fontSize: FONT_SIZE.sm, marginTop: SPACING.xs, marginLeft: SPACING.xs },
-
-  notice: {
-    flexDirection: 'row', gap: SPACING.sm, alignItems: 'flex-start',
-    marginTop: SPACING.lg, paddingHorizontal: SPACING.xs,
-  },
-  noticeText: { flex: 1, fontSize: FONT_SIZE.sm, lineHeight: 18 },
-
-  submit: {
-    alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center',
-    height: 54, borderRadius: RADIUS.lg, marginTop: SPACING.md,
-  },
-  submitOn: {
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  submitText: { fontSize: FONT_SIZE.xl, fontWeight: FONT_WEIGHT.semibold, letterSpacing: -0.2 },
-  titleInput: {
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    fontSize: FONT_SIZE.base,
-  },
-  titleHint: { fontSize: FONT_SIZE.xs, lineHeight: 16, marginTop: -2 },
-});

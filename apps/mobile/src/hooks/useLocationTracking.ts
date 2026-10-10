@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { onAppResume } from '../lib/app-resume';
 import * as Location from 'expo-location';
+import { fixPoint, getFix } from '../lib/location-fix';
 import { trackingApi, tasksApi, ApiError } from '../lib/api';
 import {
   startRouteTracking,
@@ -8,8 +9,6 @@ import {
   isRouteTrackingRunning,
   getActiveRouteTaskId,
 } from '../services/background-route-tracking';
-
-const LOCATION_TIMEOUT_MS = 10000; // 10 second timeout for one-shot GPS fixes
 
 interface LocationData {
   lat: number;
@@ -109,15 +108,8 @@ export function useLocationTracking() {
   // point so the route starts the instant the member taps "Start Driving".
   const sendLocationUpdate = useCallback(async () => {
     try {
-      const location = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Location request timed out')), LOCATION_TIMEOUT_MS),
-        ),
-      ]);
-
-      const { latitude: lat, longitude: lng } = location.coords;
-      const accuracy = location.coords.accuracy ?? undefined;
+      // Permission was asked by startTracking, the only caller.
+      const { lat, lng, accuracy } = fixPoint(await getFix({ purpose: 'evidence' }));
 
       await trackingApi.updateLocation({ lat, lng, accuracy, taskId: taskIdRef.current ?? undefined });
 
@@ -158,35 +150,9 @@ export function useLocationTracking() {
     stopRouteTracking();
   }, []);
 
-  // One-time high-accuracy location for actions (clock in/out, geofence check).
-  // Does NOT start continuous tracking — single GPS fix then stops.
-  const getOnDemandLocation = useCallback(async (): Promise<LocationData | null> => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return null;
-
-      const location = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('GPS timeout')), LOCATION_TIMEOUT_MS),
-        ),
-      ]);
-
-      return {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-        accuracy: location.coords.accuracy ?? undefined,
-      };
-    } catch {
-      return null;
-    }
-  }, []);
-
   return {
     ...state,
     startTracking,
     stopTracking,
-    refreshLocation: sendLocationUpdate,
-    getOnDemandLocation,
   };
 }

@@ -14,6 +14,7 @@ import { readClockOut, AWAY_METRES } from '../../components/home/clock-out-state
 import { formatDistance } from '@hbcfield/shared/client';
 import { lookFor, offeredTo, readThread, severityShown, severityTone, unreadFor, groupIssues } from '../../components/home/issue-status';
 import type { ShiftIssue, ShiftIssueStatus } from '../../lib/api/shift-issues';
+import { shiftCard } from './shift-card-files';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
@@ -128,7 +129,7 @@ describe('§1 — the eight states, and no ninth', () => {
     expect(st.kind).toBe('restOverdue');
     expect(st.restOverdueBy).toBe(32);
     // ⚠️ Clock out is still one tap away — the card renders it unfilled.
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).toMatch(/filled=\{st\.kind === 'working'\}/);
   });
 
@@ -180,7 +181,7 @@ describe('§1 — the eight states, and no ninth', () => {
       the clock disappearing from the home screen of somebody standing outside
       a site with no signal. Reproduced by stopping the API mid-session.
     */
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     // ⚠️ `pending` is the same absence wearing a different word.
     expect(card).toMatch(/const known = shift\.source !== 'none' && shift\.source !== 'pending';/);
     expect(card).toMatch(/if \(known && !somewhereToClockIn/);
@@ -262,7 +263,7 @@ describe('§1 — the eight states, and no ninth', () => {
     */
     const totals = code('components/home/use-schedule-totals.ts');
     const hook = code('home/remember/use-remembered.ts');
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
 
     // "Nothing ended today" and "not told yet" are the same null — hence `ready`.
     expect(totals).toMatch(/interface ScheduleTotalsView extends ScheduleTotals/);
@@ -375,13 +376,13 @@ describe('§2 — three kinds of worker', () => {
       (the hero) and during it (the strip under the discs).
     */
     // …and none at all when the Time tab hands its own totals in.
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/enabled: !given && \(!status\?\.isClockedIn \|\| schedule !== 'FIXED'\)/);
+    expect(shiftCard(code)).toMatch(/enabled: !given && \(!status\?\.isClockedIn \|\| schedule !== 'FIXED'\)/);
   });
 });
 
 // ── §9 · the twelve rules ────────────────────────────────────────────────
 describe('§9 — the twelve rules', () => {
-  const card = code('components/home/shift-clock-card.tsx');
+  const card = shiftCard(code);
 
   it('1 · one shape for all eight states', () => {
     // ONE surface, opened once and closed once. Not one per branch. (Glass or
@@ -753,7 +754,7 @@ describe('§8 — the two live contrast bugs', () => {
     expect(theme).toMatch(/inkOnGlass: '#b0cbc2'/);
     expect(theme).not.toMatch(/inkOnGlassHome|interior:/);
     expect(read('components/amazen/ground.tsx')).not.toMatch(/variant/);
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/tone="onGlass"/);
+    expect(shiftCard(code)).toMatch(/tone="onGlass"/);
   });
 
   it('warn exists as its own token, and is not crit', () => {
@@ -785,7 +786,7 @@ describe('the shift clock is a row', () => {
 // ── §11 · the clock-out sheet ────────────────────────────────────────────
 describe('§11 — the clock-out sheet', () => {
   const sheet = code('components/clock-out-sheet.tsx');
-  const card = code('components/home/shift-clock-card.tsx');
+  const card = shiftCard(code);
 
   const shift = (over: Partial<Parameters<typeof readClockOut>[0]> = {}) => ({
     workspace: 'BILLA AG',
@@ -972,21 +973,21 @@ describe('one clock for the whole feature', () => {
       zone makes a night shift clocked at 23:50 read as tomorrow to somebody
       who travelled.
     */
-    for (const f of [
-      'components/home/shift-clock-card.tsx',
-      'components/clock-out-sheet.tsx',
-      'components/issues/issue-thread-sheet.tsx',
+    for (const src of [
+      shiftCard(code),
+      code('components/clock-out-sheet.tsx'),
+      code('components/issues/issue-thread-sheet.tsx'),
     ]) {
-      expect(code(f)).not.toMatch(/toLocaleTimeString/);
-      expect(code(f)).toMatch(/clockOf/);
+      expect(src).not.toMatch(/toLocaleTimeString/);
+      expect(src).toMatch(/clockOf/);
     }
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/useTimeFormat\(\)\.formatTime/);
+    expect(shiftCard(code)).toMatch(/useTimeFormat\(\)\.formatTime/);
   });
 });
 
 describe('the Break disc asks which kind, and never insists', () => {
   const sheet = code('components/break-sheet.tsx');
-  const card = code('components/home/shift-clock-card.tsx');
+  const card = shiftCard(code);
 
   it('offers the three, and the button works with none picked', () => {
     /*

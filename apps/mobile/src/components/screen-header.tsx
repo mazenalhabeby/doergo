@@ -26,22 +26,6 @@ import { SPACING, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
  * them.
  */
 
-/** One back affordance, for the native-header stacks that cannot use the bar. */
-export function HeaderBackButton({ color, fallback }: { color: string; fallback?: Href }) {
-  const { t } = useTranslation();
-  return (
-    <TouchableOpacity
-      onPress={() => goBack(fallback)}
-      accessibilityRole="button"
-      accessibilityLabel={t('common.back', 'Back')}
-      hitSlop={12}
-      style={s.btn}
-    >
-      <Ionicons name="chevron-back" size={ICON} color={color} />
-    </TouchableOpacity>
-  );
-}
-
 /**
  * ⚠️ `canGoBack()` matters: several of these screens are also opened by a push
  * notification or a deep link, which can mount them with no history behind —

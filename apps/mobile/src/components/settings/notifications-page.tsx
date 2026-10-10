@@ -34,7 +34,6 @@ const EMAIL_LABEL: Record<MemberEmail, string> = {
  */
 export function NotificationsPage() {
   const { amazen } = useTheme();
-  const c = amazen.color;
   const { t } = useTranslation();
   const toast = useToast();
   const [permission, setPermission] = useState<{ granted: boolean } | null>(null);

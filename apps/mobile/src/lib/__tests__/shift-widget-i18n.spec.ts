@@ -8,10 +8,11 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { SHIFT_CARD_FILES } from './shift-card-files';
 
 const SRC = path.resolve(__dirname, '../..');
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
-const CARD_FILES = ['components/home/shift-clock-card.tsx', 'components/home/shift-state.ts'];
+const CARD_FILES = [...SHIFT_CARD_FILES, 'components/home/shift-state.ts'];
 
 function flat(o: Record<string, unknown>, p = '', out: Record<string, string> = {}) {
   for (const [k, v] of Object.entries(o)) {
@@ -25,7 +26,7 @@ const catalogue = Object.fromEntries(
   LOCALES.map((l) => [l, flat(JSON.parse(fs.readFileSync(path.join(SRC, `i18n/locales/${l}.json`), 'utf8')))]),
 ) as Record<(typeof LOCALES)[number], Record<string, string>>;
 
-const card = fs.readFileSync(path.join(SRC, CARD_FILES[0]), 'utf8');
+const card = SHIFT_CARD_FILES.map((f) => fs.readFileSync(path.join(SRC, f), 'utf8')).join('\n');
 /** `t('a.b', { count … })` → keys, and whether they are plural. */
 const calls = [...card.matchAll(/\bt\(\s*[`'"]([a-zA-Z0-9_.]+)[`'"]\s*(,\s*\{([\s\S]*?)\})?\s*\)/g)].map((m) => ({
   key: m[1],

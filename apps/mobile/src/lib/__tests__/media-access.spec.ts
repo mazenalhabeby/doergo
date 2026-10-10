@@ -134,11 +134,27 @@ describe('permission state is read continuously, and never guessed', () => {
     // `if (permission && !permission.granted)` was FALSE while unresolved, so
     // the scanner fell through and mounted the camera first. The gate must be
     // false-for-null, which `!x.granted` is and `x && !x.granted` is not.
+    //
+    // A JSX render (`<CameraView ` / `<CameraView/>`), not a type argument like
+    // `useRef<CameraView>`. A component that only DRAWS the viewfinder for a
+    // gated parent (the business-card scanner's `CardCamera`) passes on its
+    // parent's gate — and every file rendering it is then held to the gate
+    // itself, so moving the camera into a component cannot drop the check.
+    const GATE = /if \(!\w+\.granted\)|if \(stage === 'camera' && !\w+\.granted\)/;
+    const VIEWFINDER_PARTS: Record<string, RegExp> = {
+      'src/components/scan-card/card-camera.tsx': /<CardCamera[\s/]/,
+    };
+    const src = (f: string) => stripComments(fs.readFileSync(f, 'utf8'));
     const offenders = ALL
-      .filter((f) => stripComments(fs.readFileSync(f, 'utf8')).includes('<CameraView'))
-      .filter((f) => !/if \(!\w+\.granted\)|if \(stage === 'camera' && !\w+\.granted\)/.test(
-        stripComments(fs.readFileSync(f, 'utf8')),
-      ))
+      .filter((f) => /<CameraView[\s/]/.test(src(f))
+        || Object.values(VIEWFINDER_PARTS).some((re) => re.test(src(f))))
+      .filter((f) => {
+        const parent = VIEWFINDER_PARTS[rel(f)];
+        if (!parent) return !GATE.test(src(f));
+        const renderers = ALL.filter((g) => parent.test(src(g)));
+        // Rendered from nowhere is not "gated": that would pass anything.
+        return renderers.length === 0 || renderers.some((g) => !GATE.test(src(g)));
+      })
       .map(rel);
     expect(offenders).toEqual([]);
   });

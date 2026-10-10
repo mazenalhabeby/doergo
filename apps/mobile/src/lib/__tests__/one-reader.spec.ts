@@ -65,7 +65,8 @@ describe('the phone has one reader, and everything that reads uses it', () => {
       phone in their hand could have read instantly — and read better, because
       ML Kit beats tesseract on a photographed page.
     */
-    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document-sheet.tsx')));
+    // The read and the upload live in the credential hook since the sheet was split.
+    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')));
     expect(sheet).toContain('readExpiryOnDevice');
     // Before the presign, not after the upload.
     expect(sheet.indexOf('readExpiryOnDevice')).toBeLessThan(sheet.indexOf('ownUploadUrl'));
@@ -74,7 +75,7 @@ describe('the phone has one reader, and everything that reads uses it', () => {
   it('a device read is never wiped by a server that found nothing', () => {
     // Losing a date already on screen because a second, weaker reader missed it
     // is the worst of both.
-    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document-sheet.tsx')));
+    const sheet = stripComments(read(path.join(MOBILE, 'src/components/supply-document/use-credential-photo.ts')));
     expect(sheet).toMatch(/setDateSource\(\(prev\) =>/);
   });
 });

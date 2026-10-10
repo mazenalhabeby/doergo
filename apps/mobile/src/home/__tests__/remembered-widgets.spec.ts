@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { shiftCard } from '../../lib/__tests__/shift-card-files';
 
 /**
  * EVERY WIDGET REMEMBERS, AND NONE OF THEM GUESSES.
@@ -82,7 +83,7 @@ describe('remembering is a rule, not a fix', () => {
   });
 
   it('the shift card draws nothing rather than stating what it does not know', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/);
     expect(card).toMatch(/if \(!status\?\.isClockedIn && !totals\.ready\) return null;/);
   });

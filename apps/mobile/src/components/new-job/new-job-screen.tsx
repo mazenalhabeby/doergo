@@ -37,7 +37,6 @@ type Sheet = 'day' | 'time' | 'assign';
  */
 export function NewJobScreen() {
   const { amazen } = useTheme();
-  const c = amazen.color;
   const { t } = useTranslation();
   const tabSafe = useTabSafe();
   const r = useResponsive();

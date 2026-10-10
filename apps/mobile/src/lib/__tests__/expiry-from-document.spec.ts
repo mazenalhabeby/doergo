@@ -18,15 +18,25 @@ const WEB = path.join(MOBILE, '../web-app');
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-const SHEET = path.join(MOBILE, 'src/components/supply-document-sheet.tsx');
+/*
+  The phone's sheet is a door plus its folder: the rule lives in the
+  credential hook, the FOUND / ASK branches in the credential section. Read
+  together, so every assertion below holds of the whole flow — a check that
+  moved out of the door is still checked.
+*/
+const SHEET_DIR = path.join(MOBILE, 'src/components/supply-document');
+const SHEET = [
+  path.join(MOBILE, 'src/components/supply-document-sheet.tsx'),
+  ...fs.readdirSync(SHEET_DIR).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => path.join(SHEET_DIR, f)),
+];
 const DIALOG = path.join(
   WEB,
   'src/app/(dashboard)/my/documents/_components/supply-document-dialog.tsx',
 );
-const SURFACES: [string, string][] = [['mobile', SHEET], ['web', DIALOG]];
+const SURFACES: [string, string[]][] = [['mobile', SHEET], ['web', [DIALOG]]];
 
-describe.each(SURFACES)('%s: the document is asked before the member is', (_name, file) => {
-  const src = () => stripComments(fs.readFileSync(file, 'utf8'));
+describe.each(SURFACES)('%s: the document is asked before the member is', (_name, files) => {
+  const src = () => files.map((file) => stripComments(fs.readFileSync(file, 'utf8'))).join('\n');
 
   it('decides through the shared rule, not its own condition', () => {
     // Two copies of "when do we ask for a date" is how one surface keeps the
@@ -118,8 +128,8 @@ describe('a calendar date is not moved by a time zone', () => {
 
   it('is what both surfaces call', () => {
     // A local `new Date(iso)` in either screen reintroduces the shift.
-    for (const [, file] of SURFACES) {
-      const src = stripComments(fs.readFileSync(file, 'utf8'));
+    for (const [, files] of SURFACES) {
+      const src = files.map((file) => stripComments(fs.readFileSync(file, 'utf8'))).join('\n');
       expect(src).toContain('formatCalendarDate(prompt.value)');
       expect(src).not.toMatch(/new Date\(prompt\.value\)/);
     }

@@ -12,6 +12,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { shiftCard } from '../../lib/__tests__/shift-card-files';
 
 jest.mock('react', () => require('./hook-harness').react);
 jest.mock('../../contexts/auth-context', () => ({ useAuth: () => ({ user: mockUser }) }));
@@ -102,7 +103,7 @@ describe('a parked phone is one position', () => {
 
 describe('triggers, pinned in the source', () => {
   it('the shift card has ONE trigger set — no separate first-render ask beside a focus ask', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).not.toMatch(/first\.current/);
     expect(card).not.toMatch(/useFocusEffect\(/);
     expect(card.match(/useLiveRefresh\(/g)).toHaveLength(1);

@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AttendanceStatus, BreakStatus, TimeEntry } from '@hbcfield/shared/client';
+import { shiftCard } from './shift-card-files';
 import {
   readShiftState, targetLabel, heroParts, workingDaysLeftIn,
 } from '../../components/home/shift-state';
@@ -125,7 +126,7 @@ describe('③ — does the rest count?', () => {
   });
 
   it('the card captions a counted rest with `counted`, not `not counting now`', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).toMatch(/resting && !st\.restCounts\s*\?\s*t\('shiftClock\.countedFrozen'/);
   });
 });
@@ -220,7 +221,7 @@ describe('⑥ — three approval outcomes, not two', () => {
   it('REJECTED is NEITHER — never "counted and approved"', () =>
     expect(done('REJECTED')).toMatchObject({ awaitingApproval: false, approved: false }));
   it('the card only says approved when it is', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).toMatch(/st\.finished\.approved\s*\?\s*t\('shiftClock\.countedApproved'/);
   });
 });
@@ -241,7 +242,7 @@ describe('⑦ — a shift closed at a temporary time wins over everything', () =
 
 // ── ⑧ and the frames that know nothing ─────────────────────────────────────
 describe('whether the card draws at all (read from the card — it is JSX-side)', () => {
-  const card = code('components/home/shift-clock-card.tsx');
+  const card = shiftCard(code);
   it('nothing before the first answer', () =>
     expect(card).toMatch(/if \(shift\.source === 'pending'\) return null;/));
   it('clocked out waits for today\'s total, on the clock never does', () =>
@@ -262,7 +263,7 @@ describe('⑤ — queued is a chip on ②, not a state', () => {
     expect(st.queued).toBe(true);
   });
   it('the card shows the chip and the caption for it', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).toMatch(/st\.queued \? <Chip label=\{t\('shiftClock\.queued'/);
     expect(card).toMatch(/st\.queued && live/);
   });
@@ -274,7 +275,7 @@ describe('what a target reads as', () => {
     expect(targetLabel(m)).toBe(s);
   });
   it('the card no longer rounds a target to whole hours', () => {
-    const card = code('components/home/shift-clock-card.tsx');
+    const card = shiftCard(code);
     expect(card).not.toMatch(/Math\.round\(st\.progress\.target \/ 60\)/);
     expect(card).toMatch(/target: targetLabel\(st\.progress\.target\)/);
   });

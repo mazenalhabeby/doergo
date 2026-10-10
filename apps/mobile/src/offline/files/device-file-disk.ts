@@ -1,5 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
-import { loadImageManipulator } from '../native';
+import { downscaleImage } from '../../lib/downscale-image';
 import type { FileDisk, KeepInput } from './types';
 
 /** Longest edge a job photo is kept at. Enough to read a serial plate; a tenth of a 12 MP original. */
@@ -52,19 +52,14 @@ export class DeviceFileDisk implements FileDisk {
       return { path: dest.uri, bytes: dest.size, mime: input.mime, width: input.width, height: input.height };
     }
 
-    const lib = input.shrink !== false && SHRINKABLE.has(input.mime) ? loadImageManipulator() : null;
-    if (lib) {
-      const ctx = lib.ImageManipulator.manipulate(input.uri);
-      const { width = 0, height = 0 } = input;
-      if (Math.max(width, height) > PHOTO_MAX_EDGE) {
-        ctx.resize(width >= height ? { width: PHOTO_MAX_EDGE } : { height: PHOTO_MAX_EDGE });
-      }
-      const image = await ctx.renderAsync();
-      const saved = await image.saveAsync({ compress: PHOTO_QUALITY, format: lib.SaveFormat.JPEG });
+    const shrunk = input.shrink !== false && SHRINKABLE.has(input.mime)
+      ? await downscaleImage(input.uri, { maxEdge: PHOTO_MAX_EDGE, quality: PHOTO_QUALITY })
+      : null;
+    if (shrunk) {
       const dest = new File(dir, `${input.id}.jpg`);
       if (dest.exists) dest.delete();
-      new File(saved.uri).move(dest);
-      return { path: dest.uri, bytes: dest.size, mime: 'image/jpeg', width: saved.width, height: saved.height };
+      new File(shrunk.uri).move(dest);
+      return { path: dest.uri, bytes: dest.size, mime: 'image/jpeg', width: shrunk.width, height: shrunk.height };
     }
 
     // No manipulator in this build, or not a photo: keep it as it came.

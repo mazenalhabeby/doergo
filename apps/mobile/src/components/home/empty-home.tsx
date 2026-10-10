@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, GlassCard, Well } from '../amazen';
+import { AText } from '../amazen';
 import { widgetTitle, type WidgetRow } from '../../home/registry';
 
 /**
@@ -175,13 +175,4 @@ export function EmptyHome({
       )}
     </View>
   );
-}
-
-/** Glass on three cards only; everything else is a well. */
-export function WidgetSurface({
-  surface, children, style,
-}: { surface: 'glass' | 'well'; children: React.ReactNode; style?: object }) {
-  return surface === 'glass'
-    ? <GlassCard style={style}>{children}</GlassCard>
-    : <Well style={style}>{children}</Well>;
 }

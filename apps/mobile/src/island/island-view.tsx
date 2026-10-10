@@ -213,7 +213,6 @@ export function IslandView({
   const bodyStyle = useAnimatedStyle(() => ({ opacity: body.value, transform: [{ translateY: (1 - body.value) * 6 }] }));
 
   const msg = shown?.msg ?? null;
-  const edge = hole.kind === 'edge';
   const layout = shown?.layout ?? null;
 
   const onTap = (m: IslandMessage) => {

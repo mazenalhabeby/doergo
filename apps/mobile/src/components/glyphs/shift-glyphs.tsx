@@ -43,29 +43,7 @@ const svg = (size: number) => ({ width: size, height: size, viewBox: '0 0 24 24'
 /* ── The dial: time ────────────────────────────────────────────────────────── */
 
 /**
- * A DIAL WITH AN ARROW ENTERING IT. The dial sits right so the arrow has room
- * to run at it; the pair with ClockOutGlyph is the meaning.
- */
-export function ClockInGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
-  return (
-    <Svg {...svg(size)}>
-      <Circle cx={16.8} cy={11.2} r={6.6} fill={color} fillOpacity={0.18} />
-      <Circle cx={15.4} cy={12.4} r={6.6} fill={color} fillOpacity={0.95} />
-      <Path
-        d="M15.4 8.6V12.4l2.8 1.7"
-        fill="none"
-        stroke={contrast}
-        strokeWidth={1.9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <Path d="M8.2 12.4 4 8.6v2.5H1.4v2.6H4v2.5Z" fill={color} fillOpacity={0.95} />
-    </Svg>
-  );
-}
-
-/**
- * THE SAME DIAL, MIRRORED, with the arrow leaving.
+ * A DIAL WITH AN ARROW LEAVING IT.
  *
  * ⚠️ Not a door. A door says you are leaving the building; this says you are
  * ending a paid shift, and those are different facts — a member can clock out

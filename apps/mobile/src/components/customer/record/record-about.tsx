@@ -31,7 +31,6 @@ export function RecordAbout({
   onLanguage: () => void;
 }) {
   const { amazen } = useTheme();
-  const c = amazen.color;
   const { t } = useTranslation();
   const record = model.record!;
   const company = isCompany(record);

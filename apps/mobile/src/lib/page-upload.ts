@@ -1,5 +1,6 @@
 import { File as FsFile } from 'expo-file-system';
 import { loadImageManipulator } from '../offline/native';
+import { downscaleImage } from './downscale-image';
 import { documentsApi } from './api/documents';
 import { uploadToPresignedUrl } from './api/attachments';
 import { type Page } from './page-order';
@@ -66,14 +67,9 @@ async function compressSheet(uri: string): Promise<{ uri: string; bytes: number 
     Absent, the sheet is uploaded at the size the camera gave. Slower on a van's
     hotspot, still correct — the SERVER's bound is the load-bearing one.
   */
-  const manipulator = loadImageManipulator();
-  if (!manipulator) return { uri, bytes: fileSize(uri) };
   try {
-    const out = await manipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: MAX_EDGE } }],
-      { compress: QUALITY, format: manipulator.SaveFormat.JPEG },
-    );
+    const out = await downscaleImage(uri, { maxEdge: MAX_EDGE, quality: QUALITY });
+    if (!out) return { uri, bytes: fileSize(uri) };
     return { uri: out.uri, bytes: fileSize(out.uri) };
   } catch {
     return { uri, bytes: fileSize(uri) };

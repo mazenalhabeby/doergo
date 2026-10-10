@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { onAppStateChange } from '../../lib/app-resume';
-import * as Location from 'expo-location';
+import { getFix } from '../../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
 import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type StepSubmission, type Task, type TaskEvent } from '../../lib/api';
@@ -168,11 +168,8 @@ export function useJob(taskId: string) {
     let alive = true;
     (async () => {
       try {
-        const { granted } = await Location.getForegroundPermissionsAsync();
-        if (!granted) return;
-        const loc = await Location.getLastKnownPositionAsync()
-          ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (alive && loc) setHere({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+        const loc = await getFix({ purpose: 'nearby' });
+        if (alive) setHere({ lat: loc.coords.latitude, lng: loc.coords.longitude });
       } catch {
         // No position, no estimate.
       }

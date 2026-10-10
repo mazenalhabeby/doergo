@@ -11,7 +11,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/island/island-context';
 import { timeOffApi } from '../../../src/lib/api';
-import type { TimeOffRequest } from '../../../src/lib/api/types';
 import { FilterChip } from '../../../src/components/filter-chip';
 import {
   COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS,

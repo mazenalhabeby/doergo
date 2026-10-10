@@ -210,7 +210,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   // ⚠️ The same answer the bar reads — `tabAccessFor` in tab-layout.ts.
   const access = useMemo(() => tabAccessFor(user as never), [user]);

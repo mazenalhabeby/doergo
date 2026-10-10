@@ -21,7 +21,6 @@ import { useImagePicker } from '../../hooks/useImagePicker';
 import { avatarApi, userApi, resolveMediaUrl } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
 import { AText, GlassCard, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider } from '../amazen';
-import { ConfirmSheet } from '../confirm-sheet';
 import { centeredContent } from '../screen-container';
 import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';

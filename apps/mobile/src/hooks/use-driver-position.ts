@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import * as Location from 'expo-location';
+import { fixFailure, getFix } from '../lib/location-fix';
 import type { LatLng } from '@hbcfield/shared/client';
 import { useLiveRefresh } from './use-live-refresh';
 
@@ -25,38 +26,31 @@ function samePlace(was: LatLng | null, now: { latitude: number; longitude: numbe
   return !!was && Math.abs(was.lat - now.latitude) < 1e-5 && Math.abs(was.lng - now.longitude) < 1e-5;
 }
 
-/** The longest a button waits for a fresh fix before using the one it has. */
-const FIX_MS = 6_000;
-
 export function useDriverPosition(everyMs = 60_000) {
   const [position, setPosition] = useState<LatLng | null>(null);
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   const read = useCallback(async () => {
     try {
-      const perm = await Location.getForegroundPermissionsAsync();
-      setAllowed(perm.granted);
-      if (!perm.granted) return;
-      const last = await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000 });
-      const pos = last ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+      const pos = await getFix({ purpose: 'nearby' });
+      setAllowed(true);
       setPosition((was) => samePlace(was, pos.coords) ? was : { lat: pos.coords.latitude, lng: pos.coords.longitude });
-    } catch { /* no fix is a state (the card says so), not an error */ }
+    } catch (err) {
+      // No fix is a state (the card says so), not an error. Only a refusal is "not allowed".
+      setAllowed(fixFailure(err) !== 'denied');
+    }
   }, []);
   useLiveRefresh(read, everyMs);
 
   /** A fresh fix, right now — for the moment a button is pressed. */
   const fresh = useCallback(async (): Promise<LatLng | null> => {
     try {
-      if (!(await Location.getForegroundPermissionsAsync()).granted) return position;
       /*
         ⚠️ BOUNDED. A phone indoors or without a fix can take a minute to answer,
-        and a button must not spin that long: after FIX_MS the fix it already
-        had stands.
+        and a button must not spin that long: after the 'tap' deadline the fix it
+        already had stands.
       */
-      const pos = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('no fix')), FIX_MS)),
-      ]);
+      const pos = await getFix({ purpose: 'tap' });
       const p = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       setPosition(p);
       return p;

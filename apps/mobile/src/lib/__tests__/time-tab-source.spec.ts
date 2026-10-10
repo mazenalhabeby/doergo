@@ -5,6 +5,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { shiftCard } from './shift-card-files';
 
 const SRC = path.resolve(__dirname, '../..');
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), 'utf8');
@@ -42,7 +43,7 @@ describe('the home\'s card, with one copy of the shift', () => {
   });
 
   it('the card view never loads the shift itself', () => {
-    const card = read('components/home/shift-clock-card.tsx');
+    const card = shiftCard(read);
     const view = card.slice(card.indexOf('export function ShiftClockCardView'));
     expect(view).not.toMatch(/useShift\(\)/);
     expect(view).toMatch(/enabled: !given &&/);

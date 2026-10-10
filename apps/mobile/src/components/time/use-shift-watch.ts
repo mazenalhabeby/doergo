@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import * as Location from 'expo-location';
+import { getFix } from '../../lib/location-fix';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import type { AttendanceStatus, GeofenceExcursion } from '@hbcfield/shared/client';
@@ -52,9 +52,7 @@ export function useShiftWatch(status: AttendanceStatus | null, refresh: () => Pr
     if (Date.now() - lastBeat.current < 20_000) return;
     lastBeat.current = Date.now();
     try {
-      const { status: perm } = await Location.getForegroundPermissionsAsync();
-      if (perm !== 'granted') return;
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos = await getFix({ purpose: 'heartbeat' });
       const result = await attendanceApi.heartbeat({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy || undefined });
       if (result.autoClockedOut) {
         await stopBackgroundHeartbeat();

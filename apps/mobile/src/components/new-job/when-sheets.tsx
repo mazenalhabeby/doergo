@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { AText, PrimaryButton } from '../amazen';
 import { JobSheet, QuietButton } from '../job/job-ui';
 import { HOURS, MINUTES, isPastDay, monthGrid, two } from './new-job-logic';
+import { isSameDay } from '../../lib/utils';
 
 /**
  * "When" — the day and the hour, each in the ONE sheet (`JobSheet`).
@@ -14,7 +15,6 @@ import { HOURS, MINUTES, isPastDay, monthGrid, two } from './new-job-logic';
  * native date picker would need a store build before anybody could use it.
  */
 
-const same = (a: Date, b: Date) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /** A cell in a grid of choices — a day, an hour, a minute. */
 function Cell({ label, on, today, disabled, onPress }: { label: string; on: boolean; today?: boolean; disabled?: boolean; onPress: () => void }) {
@@ -95,8 +95,8 @@ export function DaySheet({ visible, value, onPick, onClear, onClose }: {
               <Cell
                 key={di}
                 label={String(d.getDate())}
-                on={!!value && same(value, d)}
-                today={same(d, now)}
+                on={!!value && isSameDay(value, d)}
+                today={isSameDay(d, now)}
                 disabled={isPastDay(d, now)}
                 onPress={() => pick(d)}
               />

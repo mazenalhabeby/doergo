@@ -244,34 +244,6 @@ export function isSameDay(date1: Date, date2: Date): boolean {
 }
 
 // =============================================================================
-// DISTANCE CALCULATION
-// =============================================================================
-
-/**
- * Calculate distance between two GPS points using Haversine formula
- * Returns distance in meters
- */
-export function haversineDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6371000; // Earth radius in meters
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// =============================================================================
 // DURATION & DATE FORMATTING (for attendance screens)
 // =============================================================================
 
@@ -285,37 +257,6 @@ export function formatDurationMinutes(minutes: number): string {
   return `${hours}h ${mins}m`;
 }
 
-
-// =============================================================================
-// RELATIVE TIME AGO
-// =============================================================================
-
-/**
- * Format a date as time ago (e.g., "Just now", "5m ago", "2h ago", "3d ago")
- * Used for comment timestamps, activity feeds, etc.
- */
-export function formatTimeAgo(date: string | Date, locale: string = 'en-US'): string {
-  const now = Date.now();
-  const then = new Date(date).getTime();
-  const diffMs = now - then;
-
-  if (diffMs < 0) return 'Just now';
-
-  const seconds = Math.floor(diffMs / 1000);
-  if (seconds < 60) return 'Just now';
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-
-  // Older than a week — show short date
-  return formatShortDate(date, locale);
-}
 
 // =============================================================================
 // TASK HELPERS

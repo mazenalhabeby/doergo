@@ -1,14 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNow } from '../../hooks/use-now';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { useTranslation } from 'react-i18next';
-import type { BreakType } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
-import { useShift, useShiftActions } from '../../offline/attendance/use-shift';
+import { useShift } from '../../offline/attendance/use-shift';
 import { refusedShiftCopy, refusedSpaceId } from '../../offline/attendance/refused-shift';
 import { useRefusedShift } from '../../offline/attendance/use-refused-shift';
 import { useOffline } from '../../offline/offline-context';
@@ -18,15 +16,16 @@ import { ReportIssueSheet, ShiftIssueListSheet, ShiftIssueThreadSheet } from '..
 import { useClockIn } from '../../hooks/useClockIn';
 import { useMyHandovers, useRefreshMyHandovers } from '../../hooks/useMyHandovers';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { monthName, weekdayName } from '../../lib/app-dates';
-import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
-import { stopGeofence } from '../../services/background-geofence';
-import { formatDurationMinutes as formatDuration } from '../../lib/utils';
-import { AText, CardSurface, Chip, Disc, DiscRow, Eyebrow, Hero, LiveDot } from '../amazen';
-import { BreakGlyph, ClockOutGlyph, IssueMineGlyph, IssueNewGlyph } from '../glyphs/shift-glyphs';
-import { heroParts, readShiftState, scheduleFor, targetLabel, totalsRevision } from './shift-state';
+import { AText, CardSurface, Chip, DiscRow, Eyebrow, LiveDot } from '../amazen';
+import { readShiftState, scheduleFor, totalsRevision } from './shift-state';
 import { useScheduleTotals, type ScheduleTotalsView } from './use-schedule-totals';
 import { useUnreadIssues } from './use-unread-issues';
+import { useShiftClockActions } from './shift-clock/use-shift-clock-actions';
+import { shiftCaption } from './shift-clock/shift-caption';
+import { shiftDiscs } from './shift-clock/shift-discs';
+import { ShiftHero } from './shift-clock/shift-hero';
+import { ShiftProgress } from './shift-clock/shift-progress';
+import { RefusedShiftBanner } from './shift-clock/refused-banner';
 
 /**
  * ONE GLASS SURFACE, IN EVERY STATE.
@@ -93,7 +92,6 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const toast = useToast();
   const router = useRouter();
   const c = amazen.color;
   /*
@@ -124,9 +122,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   */
   const status = shift.status;
   const breaks = shift.breaks;
-  const actions = useShiftActions();
 
-  const [busy, setBusy] = useState(false);
   /*
     ⚠️ THE CLOCK-OUT TIME IS FROZEN WHEN THE SHEET OPENS — §11 rule 4. A sheet
     left sitting on a table must not silently bill more minutes than the
@@ -243,74 +239,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
   */
   const handovers = useMyHandovers({ enabled: !!status?.isClockedIn });
 
-  const confirmClockOut = useCallback(async (input: {
-    notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[];
-  }) => {
-    setClockOutAt(null);
-    if (!entryId) return;
-    setBusy(true);
-    try {
-      /*
-        ⚠️ A MISSING FIX IS NOT A FAILURE. `ClockOutInput` says a clock-out with
-        no coordinates SKIPS the geofence check rather than faking (0,0) — so
-        location being off must not stop somebody going home. The old flow
-        returned early when `getCurrentLocation()` gave null, which is the same
-        bug as a required note wearing a different hat.
-      */
-      const fix = await clockIn.getCurrentLocation().catch(() => null);
-      const outcome = await actions.clockOut({ entryId, fix, ...input });
-      if (outcome.kind === 'refused') {
-        toast.error(
-          t('common.error'),
-          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('home.fullTime.failedToClockOut'),
-        );
-        return;
-      }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      await stopBackgroundHeartbeat();
-      await stopGeofence();
-      await refresh();
-      handovers.refetch();
-    } catch (err) {
-      toast.error(t('common.error'), (err as Error)?.message || t('home.fullTime.failedToClockOut'));
-    } finally {
-      setBusy(false);
-    }
-  }, [entryId, clockIn, actions, toast, t, refresh, handovers]);
-
-  /*
-    The rests. Both go through `useShiftActions`, so they queue with no signal
-    exactly as the clock does.
-
-    ⚠️ `ruleId` NAMES THE PLANNED REST THIS SATISFIES. Without it the server
-    picks whichever is next — which is what "take my rest now" means, and is
-    right for the Break disc. The overdue one names the rule, so the plan is
-    marked taken rather than a second rest appearing beside the one that is due.
-  */
-  const startRest = useCallback(async (input?: {
-    ruleId?: string; type?: BreakType; notes?: string;
-  }) => {
-    if (!entryId) return;
-    setBusy(true);
-    try {
-      const outcome = await actions.startRest({ entryId, ...input });
-      if (outcome.kind === 'refused') { toast.error(t('common.error'), outcome.message || t('common.error')); return; }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      await refresh();
-    } finally { setBusy(false); }
-  }, [entryId, actions, toast, t, refresh]);
-
-  const endRest = useCallback(async () => {
-    const breakId = breaks?.currentBreak?.id;
-    if (!entryId || !breakId) return;
-    setBusy(true);
-    try {
-      const outcome = await actions.endRest({ entryId, breakId });
-      if (outcome.kind === 'refused') { toast.error(t('common.error'), outcome.message || t('common.error')); return; }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      await refresh();
-    } finally { setBusy(false); }
-  }, [entryId, breaks?.currentBreak?.id, actions, toast, t, refresh]);
+  const { busy, confirmClockOut, startRest, endRest } = useShiftClockActions({ shift, entryId, clockIn, handovers });
 
   /*
     ⑧ NOT RENDERED — the eighth state, and the only one that draws nothing.
@@ -406,7 +335,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
        not change shape when it lights up. */
     : c.lineField;
 
-  const caption = captionFor();
+  const caption = shiftCaption(st, { t, clockOf, monthlyHourBudget: user?.monthlyHourBudget, live, resting });
 
   return (
     <>
@@ -433,7 +362,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
             <SyncChip entityId={entryId} />
           </View>
 
-          <View style={{ marginTop: amazen.space(3) }}>{hero()}</View>
+          <View style={{ marginTop: amazen.space(3) }}><ShiftHero st={st} resting={resting} clockOf={clockOf} /></View>
 
           {caption ? (
             /* ⚠️ `onGlass` is measured over the ground's lighter top stop —
@@ -465,113 +394,18 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
             </View>
           ) : null}
 
-          {/*
-            ⚠️ `NONE` RENDERS NO TRACK AT ALL (rule 6). A bar with no target
-            invents one, and NONE is the column's default — so the unconfigured
-            majority would be measured against a number nobody promised them.
-            `st.progress` is null for NONE by construction; this renders what it
-            is given and decides nothing.
-
-            ⚠️ AND THE TRACK IS LABELLED. A bare bar says "some of something";
-            `TODAY · 3h 12m of 8h` says which clock it is measuring, which is
-            the whole difference between FIXED and FLEXIBLE — the same bar
-            against a different promise.
-          */}
-          {st.progress ? (
-            <View style={{ marginTop: amazen.space(4) }}>
-              <View
-                style={{ height: 4, borderRadius: 2, backgroundColor: c.tile, overflow: 'hidden' }}
-                accessibilityRole="progressbar"
-                accessibilityValue={{ min: 0, max: st.progress.target, now: st.progress.done }}
-              >
-                <View
-                  style={{
-                    width: `${st.progress.past ? 100 : Math.min(100, Math.round((st.progress.done / st.progress.target) * 100))}%`,
-                    height: '100%',
-                    /* ⚠️ Past the target is `warn`, not `crit` — overtime is
-                       owed, not wrong. It means three different things per
-                       schedule kind; the colour only says "past it". */
-                    backgroundColor: st.progress.past || st.progress.done > st.progress.target ? c.warn : c.accent,
-                  }}
-                />
-              </View>
-              {live || resting ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: amazen.space(2) }}>
-                  <Eyebrow tone="onGlass">
-                    {st.schedule === 'FLEXIBLE'
-                      ? monthName(now)
-                      : t('shiftClock.today', { defaultValue: 'TODAY' })}
-                  </Eyebrow>
-                  <View style={{ flex: 1 }} />
-                  <AText variant="caption" tone="onGlass" numeric>
-                    {t('shiftClock.ofTarget', {
-                      done: formatDuration(st.progress.done),
-                      target: targetLabel(st.progress.target),
-                      defaultValue: `${formatDuration(st.progress.done)} of ${targetLabel(st.progress.target)}`,
-                    })}
-                  </AText>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
-
-          {/*
-            ⚠️ `NONE` ON THE CLOCK GETS A FIGURE, NOT A BAR. Nothing is
-            promised, so there is nothing to draw a track against — but what
-            they have worked this week is still a fact, and it is the one they
-            would otherwise have to leave the card to find.
-          */}
-          {(live || resting) && st.schedule === 'NONE' && weekSoFar !== null ? (
-            <View
-              style={{
-                flexDirection: 'row', alignItems: 'center',
-                marginTop: amazen.space(4),
-                backgroundColor: c.sunken,
-                borderRadius: amazen.radius.field,
-                paddingVertical: amazen.space(2.5),
-                paddingHorizontal: amazen.space(3.5),
-              }}
-            >
-              <AText variant="caption" tone="onGlass">
-                {t('shiftClock.thisWeek', { defaultValue: 'This week' })}
-              </AText>
-              <View style={{ flex: 1 }} />
-              <AText variant="body" tone="strong" numeric>{formatDuration(weekSoFar)}</AText>
-            </View>
-          ) : null}
+          <ShiftProgress st={st} live={live} resting={resting} now={now} weekSoFar={weekSoFar} />
         </Pressable>
 
         {refused && refusedCopy ? (
-          <View
-            accessibilityRole="alert"
-            style={{
-              marginTop: amazen.space(4),
-              backgroundColor: c.criticalTint,
-              borderRadius: amazen.radius.field,
-              padding: amazen.space(3.5),
-              gap: amazen.space(1.5),
+          <RefusedShiftBanner
+            copy={refusedCopy}
+            onTellOffice={() => {
+              setReportPrefill({ title: refusedCopy.issueTitle, body: refusedCopy.issueBody, spaceId: refusedSpaceId(refused) });
+              setReportOpen(true);
             }}
-          >
-            <AText variant="body" style={{ color: c.critical, fontFamily: amazen.font.sansMedium }}>{refusedCopy.title}</AText>
-            <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>{refusedCopy.reason}</AText>
-            <View style={{ flexDirection: 'row', gap: amazen.space(5), marginTop: amazen.space(1) }}>
-              <Pressable
-                accessibilityRole="button"
-                hitSlop={8}
-                onPress={() => {
-                  setReportPrefill({ title: refusedCopy.issueTitle, body: refusedCopy.issueBody, spaceId: refusedSpaceId(refused) });
-                  setReportOpen(true);
-                }}
-              >
-                <AText variant="caption" style={{ color: c.critical, fontFamily: amazen.font.sansMedium }}>
-                  {t('shiftClock.refused.tellOffice', { defaultValue: 'Tell my office' })}
-                </AText>
-              </Pressable>
-              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => void engine?.discard(refused.id)}>
-                <AText variant="caption" tone="onGlass">{t('shiftClock.refused.dismiss', { defaultValue: 'Dismiss' })}</AText>
-              </Pressable>
-            </View>
-          </View>
+            onDismiss={() => void engine?.discard(refused.id)}
+          />
         ) : null}
 
         {/*
@@ -589,7 +423,12 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
           is running there are four real jobs and the row is right.
         */}
         {live || resting || st.kind === 'unconfirmed' ? (
-          <DiscRow style={{ marginTop: amazen.space(5) }}>{discs()}</DiscRow>
+          <DiscRow style={{ marginTop: amazen.space(5) }}>
+            {shiftDiscs({
+              st, t, live, resting, working, entryId, unread, router, onSetRealTime,
+              startRest, endRest, setClockOutAt, setBreakOpen, setReportOpen, setListOpen,
+            })}
+          </DiscRow>
         ) : (
           <Pressable
             onPress={clockIn.openClockInModal}
@@ -627,7 +466,11 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
         <ClockOutSheet
           visible
           onClose={() => setClockOutAt(null)}
-          onConfirm={confirmClockOut}
+          onConfirm={(input) => {
+            // The frozen time goes with the sheet, before the write starts.
+            setClockOutAt(null);
+            void confirmClockOut(input);
+          }}
           isLoading={busy}
           openJobs={handovers.open}
           onFinishJob={(id) => router.push({ pathname: '/task/[id]', params: { id } } as unknown as Href)}
@@ -699,256 +542,4 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
       />
     </>
   );
-
-  /** The figure, and what it is measured against. */
-  function hero() {
-    if (st.kind === 'unconfirmed') {
-      return <AText variant="h2" tone="strong">{t('shiftClock.whenDidYouLeave', { defaultValue: 'When did you leave?' })}</AText>;
-    }
-    /*
-      ① THE HERO IS THE NEXT THING, NOT A ZERO. A 64pt `0` is the mistake the
-      old dashboard made with `0/12`, and it is the same mistake at a larger
-      size: a member reads the biggest thing on the card first, and being told
-      they have done nothing is not what they opened the app for.
-
-      ⚠️ AND IT IS SET LIKE AN AMOUNT IN EVERY CASE — integer at display size,
-      unit at decimal. `07:00` is `07` + `:00`, not a string; `84h of 160h` is
-      `84` + `h` with the rest in the caption, because the budget is context
-      and the figure is the answer.
-    */
-    if (st.kind === 'before' && st.at) {
-      /*
-        `07` + `:00` — set like an amount, so the integer carries the weight.
-        Split on the separator the member's OWN format produced rather than on
-        a hard-coded colon, because a 12-hour clock brings `AM` with it.
-      */
-      const face = clockOf(st.at);
-      const cut = face.indexOf(':');
-      return (
-        <Hero
-          parts={[{ value: cut > 0 ? face.slice(0, cut) : face, unit: cut > 0 ? face.slice(cut) : '' }]}
-          tone="strong"
-          unitTone="onGlass"
-        />
-      );
-    }
-    if (st.minutes !== null) {
-      return (
-        <Hero
-          parts={heroParts(st.minutes)}
-          tone={resting ? 'warn' : 'strong'}
-          unitTone={resting ? 'warn' : 'onGlass'}
-        />
-      );
-    }
-    return <AText variant="h2" tone="strong">{t('shiftClock.readyToStart', { defaultValue: 'Ready to start' })}</AText>;
-  }
-
-  /** `{workspace} · counted {n} · rest due {time}` — and never the word paid. */
-  function captionFor(): string {
-    if (st.kind === 'unconfirmed') {
-      return t('shiftClock.leftRunning', {
-        workspace: st.workspace ?? '',
-        time: st.at ? clockOf(st.at) : '',
-        defaultValue: `${st.workspace ?? ''}. We closed it at ${st.at ? clockOf(st.at) : ''} because it was left running.`,
-      });
-    }
-    if (st.kind === 'done' && st.finished) {
-      return [
-        st.workspace,
-        `${clockOf(st.finished.from)} → ${clockOf(st.finished.to)}`,
-        /*
-          ⚠️ THREE OUTCOMES, NOT TWO. A REJECTED entry is neither waiting nor
-          approved; saying `counted and approved` under it was a false
-          statement about the one thing the member cares about, so
-          REJECTED has its own sentence.
-        */
-        st.finished.awaitingApproval
-          ? t('shiftClock.countedWaiting', { defaultValue: 'counted, waiting for approval' })
-          : st.finished.approved
-            ? t('shiftClock.countedApproved', { defaultValue: 'counted and approved' })
-            : st.finished.rejected
-              ? t('shiftClock.countedRejected', { defaultValue: 'not approved' })
-              : null,
-      ].filter(Boolean).join(' · ');
-    }
-    /*
-      ① — THREE DIFFERENT SENTENCES, BECAUSE THE THREE ASK DIFFERENT
-      QUESTIONS. FIXED wants to know whether it is on time, FLEXIBLE whether it
-      is on track, NONE what it has done. One caption for all three would have
-      to be vague enough to be true of each, which is a sentence that answers
-      nobody.
-    */
-    if (st.kind === 'before' && st.startsInMinutes !== null && st.startsInMinutes > 0) {
-      return [
-        st.workspace,
-        t('shiftClock.startsIn', {
-          count: st.startsInMinutes,
-          defaultValue_one: 'your shift starts in a minute',
-          defaultValue_other: `your shift starts in ${st.startsInMinutes} minutes`,
-        }),
-      ].filter(Boolean).join(' · ');
-    }
-    if (st.kind === 'before' && st.schedule === 'FLEXIBLE' && st.minutes !== null) {
-      return [
-        user?.monthlyHourBudget
-          ? t('shiftClock.ofBudget', {
-              hours: user.monthlyHourBudget,
-              defaultValue: `of ${user.monthlyHourBudget}h this month`,
-            })
-          : t('shiftClock.thisMonth', { defaultValue: 'this month' }),
-        st.workingDaysLeft !== null
-          ? t('shiftClock.daysLeft', {
-              count: st.workingDaysLeft,
-              defaultValue_one: '1 working day left',
-              defaultValue_other: `${st.workingDaysLeft} working days left`,
-            })
-          : null,
-      ].filter(Boolean).join(' · ');
-    }
-    if (st.kind === 'before' && st.schedule === 'NONE' && st.minutes !== null) {
-      return [
-        t('shiftClock.workedThisWeek', { defaultValue: 'worked this week' }),
-        st.lastInOn
-          ? t('shiftClock.lastInOn', {
-              day: weekdayName(st.lastInOn),
-              defaultValue: `last in on ${weekdayName(st.lastInOn)}`,
-            })
-          : null,
-      ].filter(Boolean).join(' · ');
-    }
-    if (st.queued && live) {
-      return [st.workspace, t('shiftClock.waitingToReach', { defaultValue: 'waiting to reach the office' })]
-        .filter(Boolean).join(' · ');
-    }
-    return [
-      /*
-        ③ `Back at 11:24` replaces the workspace, because during a rest the
-        question is not where you are — it is when you are due back. Falls back
-        to the workspace when the rest was taken outside any plan, where nobody
-        said how long it is and a made-up time would be a promise.
-      */
-      resting && st.backAt
-        ? t('shiftClock.backAt', {
-            time: clockOf(st.backAt),
-            defaultValue: `Back at ${clockOf(st.backAt)}`,
-          })
-        : st.workspace,
-      st.countedMinutes !== null
-        ? resting && !st.restCounts
-          /*
-            ⚠️ ③ FREEZES THE COUNTED FIGURE AND SAYS SO. A rest that silently
-            keeps counting is the bug this sentence prevents: the number stops
-            moving and a member who does not know why assumes the app hung.
-          */
-          ? t('shiftClock.countedFrozen', {
-              counted: formatDuration(st.countedMinutes),
-              defaultValue: `counted ${formatDuration(st.countedMinutes)}, not counting now`,
-            })
-          : t('shiftClock.counted', {
-              counted: formatDuration(st.countedMinutes),
-              defaultValue: `counted ${formatDuration(st.countedMinutes)}`,
-            })
-        : null,
-      st.nextRest && st.restOverdueBy <= 0
-        ? t('shiftClock.restDue', {
-            time: clockOf(st.nextRest.dueAt),
-            defaultValue: `rest due ${clockOf(st.nextRest.dueAt)}`,
-          })
-        : null,
-    ].filter(Boolean).join(' · ');
-  }
-
-  function discs() {
-    const report = (
-      <Disc
-        key="report"
-        Glyph={IssueNewGlyph}
-        label={t('issues.reportShort', { defaultValue: 'Report' })}
-        /* Nothing to file against without a shift — §4 sends `timeEntryId`. */
-        disabled={!entryId}
-        onPress={() => setReportOpen(true)}
-      />
-    );
-    const mine = (
-      <Disc
-        key="mine"
-        Glyph={IssueMineGlyph}
-        label={t('issues.myIssuesShort', { defaultValue: 'My issues' })}
-        /* ⚠️ Unread, never a total. `Disc` renders nothing at 0. */
-        badge={unread}
-        onPress={() => setListOpen(true)}
-      />
-    );
-
-    if (st.kind === 'unconfirmed') {
-      return [
-        <Disc
-          key="fix"
-          Glyph={ClockOutGlyph}
-          label={t('shiftClock.setRealTime', { defaultValue: 'Set the real time' })}
-          filled
-          onPress={onSetRealTime ?? (() => router.push('/(app)/(tabs)/attendance' as Href))}
-        />,
-        mine,
-      ];
-    }
-
-    if (live || resting) {
-      return [
-        /*
-          ④ ⚠️ THE ONLY PLACE IN THE CATALOGUE WHERE THE FILLED DISC IS NOT THE
-          OBVIOUS ONE. Clock out is still one tap away; it is simply not what is
-          being offered, because a rest that is already late is the thing that
-          has to happen next.
-        */
-        st.kind === 'restOverdue' ? (
-          <Disc
-            key="take"
-            Glyph={BreakGlyph}
-            label={t('shiftClock.startRest', { defaultValue: 'Start the rest' })}
-            filled
-            disabled={working}
-            onPress={() => void startRest({ ruleId: st.nextRest?.ruleId })}
-          />
-        ) : null,
-        resting ? (
-          <Disc
-            key="end"
-            Glyph={BreakGlyph}
-            label={t('shiftClock.endRest', { defaultValue: 'End the rest' })}
-            filled
-            disabled={working}
-            onPress={() => void endRest()}
-          />
-        ) : null,
-        <Disc
-          key="out"
-          Glyph={ClockOutGlyph}
-          label={t('home.fullTime.clockOut')}
-          /* Filled in ② only — ③ and ④ have their own primary. */
-          filled={st.kind === 'working'}
-          disabled={working}
-          onPress={() => setClockOutAt(new Date())}
-        />,
-        st.kind === 'working' ? (
-          <Disc
-            key="break"
-            Glyph={BreakGlyph}
-            label={t('shiftClock.break', { defaultValue: 'Break' })}
-            disabled={working}
-            onPress={() => setBreakOpen(true)}
-          />
-        ) : null,
-        report,
-        mine,
-      ].filter(Boolean);
-    }
-
-    /*
-      Clocked out never reaches here — see the pill above. `discs()` answers
-      for the three states that have a ROW: ②, ③/④ and ⑦.
-    */
-    return [report, mine];
-  }
 }

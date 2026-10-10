@@ -6,7 +6,7 @@ import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'exp
 import { View } from 'react-native';
 import { onAppResume, onAppStateChange, useAppResume } from '../../src/lib/app-resume';
 import { useTranslation } from 'react-i18next';
-import * as Location from 'expo-location';
+import { getFix } from '../../src/lib/location-fix';
 import { type NotificationResponse } from 'expo-notifications';
 import { crewJoinTarget, notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
 import { CREW_JOIN_ACTION, usePushNotifications } from '../../src/hooks/usePushNotifications';
@@ -32,7 +32,7 @@ import { Role } from '@hbcfield/shared/client';
 import { MediaAccessHost } from '../../src/permissions/media-access-host';
 
 // Send a lightweight presence ping using CACHED location (no fresh GPS).
-// Runs once on app start and every 10 minutes — uses getLastKnownPositionAsync
+// Runs once on app start and every 10 minutes — getFix({ purpose: 'cached' })
 // which returns the most recent GPS fix without activating the GPS radio.
 function usePresencePing() {
   const { user } = useAuth();
@@ -40,11 +40,8 @@ function usePresencePing() {
 
   const sendPing = useCallback(async () => {
     try {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      // getLastKnownPositionAsync = NO GPS activation, uses cached OS location
-      const loc = await Location.getLastKnownPositionAsync();
-      if (!loc) return;
+      // The OS's cached position only — the GPS radio is never switched on.
+      const loc = await getFix({ purpose: 'cached' });
       await trackingApi.updateLocation({
         lat: loc.coords.latitude,
         lng: loc.coords.longitude,

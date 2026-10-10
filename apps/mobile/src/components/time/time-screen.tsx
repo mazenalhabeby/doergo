@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNow } from '../../hooks/use-now';
 import { RefreshControl, ScrollView, View } from 'react-native';
-import * as Location from 'expo-location';
+import { getFix } from '../../lib/location-fix';
 import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -133,11 +133,8 @@ export function TimeScreen() {
       let alive = true;
       void (async () => {
         try {
-          const { status: perm } = await Location.getForegroundPermissionsAsync();
-          if (perm !== 'granted') return;
-          const p = (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60_000 }))
-            ?? (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
-          if (alive && p) setFix({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy });
+          const p = await getFix({ purpose: 'nearby' });
+          if (alive) setFix({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy });
         } catch {
           /* no fix — the tiles say so */
         }

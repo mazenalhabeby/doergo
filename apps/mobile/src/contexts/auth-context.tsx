@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { onAppResume } from '../lib/app-resume';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     // authApi.login saves tokens internally
     const response = await authApi.login(email, password);
 
@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveStoredUser(response.user);
     setSignedOutByUser(false);
     setUser(response.user);
-  };
+  }, []);
 
   /*
     ⚠️ THE ONE SIGN-OUT. Profile, the onboarding pass, the customer portal and
@@ -185,31 +185,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     opens, and the server revokes A's key the moment B enrols. Only the account
     going away forgets it.
   */
-  const logout = async (opts?: LogoutOptions) => {
+  const userId = user?.id;
+  const logout = useCallback(async (opts?: LogoutOptions) => {
     try {
-      await endSession({ reason: opts?.reason ?? 'signed-out', keepUnsent: opts?.keepUnsent ?? true, userId: user?.id });
+      await endSession({ reason: opts?.reason ?? 'signed-out', keepUnsent: opts?.keepUnsent ?? true, userId });
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
       setSignedOutByUser(true);
       setUser(null);
     }
-  };
+  }, [userId]);
+
+  /*
+    ⚠️ ONE VALUE PER CHANGE, NOT PER RENDER. Every screen reads this context;
+    a fresh object on each provider render re-rendered all of them whenever
+    anything above the provider did, with nothing about the session changed.
+  */
+  const value = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    needsOnboarding: !!user && !user.onboardingCompleted,
+    login,
+    logout,
+    signedOutByUser,
+    refreshUser,
+    patchUser,
+  }), [user, isLoading, login, logout, signedOutByUser, refreshUser, patchUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        needsOnboarding: !!user && !user.onboardingCompleted,
-        login,
-        logout,
-        signedOutByUser,
-        refreshUser,
-        patchUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

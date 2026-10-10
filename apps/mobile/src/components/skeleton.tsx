@@ -28,10 +28,9 @@ interface SkeletonBaseProps {
 }
 
 function ShimmerBox({ style }: SkeletonBaseProps) {
-  const { colors, isDark } = useTheme();
+  const { isDark } = useTheme();
   const anim = useShimmer();
   const bg = isDark ? '#1e1e30' : '#e2e8f0';
-  const highlight = isDark ? '#2a2a40' : '#f1f5f9';
 
   return (
     <Animated.View

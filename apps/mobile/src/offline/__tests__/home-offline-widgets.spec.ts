@@ -38,6 +38,7 @@ jest.mock('../offline-context', () => ({
 import * as fs from 'fs';
 import * as path from 'path';
 import { mountHook, settle } from './hook-harness';
+import { shiftCard } from '../../lib/__tests__/shift-card-files';
 import { connectivity } from '../connectivity';
 import { attendanceApi } from '../../lib/api/attendance';
 import { loadShift, useShift } from '../attendance/use-shift';
@@ -193,7 +194,7 @@ describe('what the cards do with it, pinned in the source', () => {
   it('crew and the shift clock come back by themselves when the signal does', () => {
     expect(code('components/home/use-crew.ts')).toMatch(/useLiveRefresh\(refresh, REFRESH_MS, \{ onReconnect: true \}\)/);
     // The home widget's loader; the Time tab holds its own copy and does the same.
-    expect(code('components/home/shift-clock-card.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
+    expect(shiftCard(code)).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
     expect(code('components/time/time-screen.tsx')).toMatch(/useLiveRefresh\(shift\.refresh, null, \{ onReconnect: true \}\)/);
   });
 });

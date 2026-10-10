@@ -43,25 +43,6 @@ export function itemsOn(items: CalendarItem[], key: string): CalendarItem[] {
     .sort((a, b) => Number(b.allDay) - Number(a.allDay) || (a.start < b.start ? -1 : 1));
 }
 
-/** One week of the member's calendar, refreshed on focus and every two minutes; kept offline by the client. */
-export function useCalendarWeek(monday: Date) {
-  const [data, setData] = useState<CalendarRange | null>(null);
-  const [failed, setFailed] = useState(false);
-  const from = dayKey(monday), to = dayKey(addDays(monday, 6));
-  const load = useCallback(async () => {
-    try {
-      const r = await calendarApi.range({ from, to, lang: (i18n.language || 'en').slice(0, 2) });
-      setData(r);
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  }, [from, to]);
-  useLiveRefresh(load, 120_000);
-  const kinds = useMemo(() => new Map<string, DayKind>((data?.days ?? []).map((d) => [d.day, d.kind])), [data]);
-  return { data: data && data.from === from ? data : null, kinds, failed, reload: load };
-}
-
 export type CalendarView = 'day' | 'three' | 'month' | 'list';
 
 /** After a write the cached pages are stale: drop them so the next look reads fresh. */

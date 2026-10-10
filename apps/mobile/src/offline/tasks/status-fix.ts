@@ -1,4 +1,4 @@
-import * as Location from 'expo-location';
+import { getFix } from '../../lib/location-fix';
 import { TaskStatus } from '../../lib/api';
 
 /**
@@ -25,9 +25,7 @@ const JUDGED_BY_LOCATION: string[] = [TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS
 export async function takeStatusFix(to: string): Promise<StatusFix | undefined> {
   if (!JUDGED_BY_LOCATION.includes(to)) return undefined;
   try {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return undefined;
-    const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+    const loc = await getFix({ purpose: 'evidence', ask: true });
     return {
       lat: loc.coords.latitude,
       lng: loc.coords.longitude,

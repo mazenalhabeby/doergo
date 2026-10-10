@@ -73,8 +73,10 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     why: FALLBACK,
   },
   /*
-    TWO calls, and the second is NOT a no-offline-build fallback.
+    The supply sheet split into `src/components/supply-document/`; its two
+    direct calls moved with the code, one per hook — the same two as before.
 
+    The credential's is the no-offline-build fallback. The paper one is NOT:
     `submitPages` files sheets of paper as one document, and it names staging
     keys that only exist because each sheet was already PUT to the object
     store. There is nothing to queue: a queued submit citing keys whose uploads
@@ -82,9 +84,13 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     So it refuses while offline and says so, which is the honest answer for a
     flow that cannot work without a connection.
   */
-  'src/components/supply-document-sheet.tsx': {
-    calls: { 'documentsApi.submitOwn': 2 },
-    why: `${FALLBACK}, plus multi-sheet submit which cannot be queued — its pages must reach the store first`,
+  'src/components/supply-document/use-credential-photo.ts': {
+    calls: { 'documentsApi.submitOwn': 1 },
+    why: FALLBACK,
+  },
+  'src/components/supply-document/use-paper-pages.ts': {
+    calls: { 'documentsApi.submitOwn': 1 },
+    why: 'multi-sheet submit which cannot be queued — its pages must reach the store first',
   },
   /*
     The issue sheets split into one file each when they were rebuilt to
