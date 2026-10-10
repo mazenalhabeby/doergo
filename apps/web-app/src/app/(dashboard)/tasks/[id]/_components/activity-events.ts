@@ -24,7 +24,7 @@ import type { TaskEvent } from "@/lib/api"
  * the report can never describe an event differently from the page.
  */
 
-export const EVENT_CONFIG: Record<
+const EVENT_CONFIG: Record<
   string,
   { icon: LucideIcon; color: string; labelKey: string }
 > = {

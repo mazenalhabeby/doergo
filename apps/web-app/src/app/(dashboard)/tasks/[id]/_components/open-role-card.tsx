@@ -38,7 +38,7 @@ export function OpenRoleCard({ task }: { task: Task }) {
   const mayAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
 
   const { data: openForMe = [] } = useQuery({
-    queryKey: ["open-for-me"],
+    queryKey: keys.taskExtras.openForMe(),
     queryFn: () => tasksApi.openForMe(),
     enabled: open && !onIt,
     staleTime: 15_000,
@@ -47,9 +47,9 @@ export function OpenRoleCard({ task }: { task: Task }) {
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id) })
-    queryClient.invalidateQueries({ queryKey: ["open-for-me"] })
+    queryClient.invalidateQueries({ queryKey: keys.taskExtras.openForMe() })
     queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
-    queryClient.invalidateQueries({ queryKey: ["job-time", task.id] })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.time(task.id) })
   }
   const fail = (e: unknown) => {
     const err = e as { code?: string; params?: { takers?: string[] } }

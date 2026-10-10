@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useDebouncedCallback } from "@/hooks/use-debounced-value"
+import { keys } from "@/lib/query-keys"
 
 // ============================================================================
 // Field Icon
@@ -183,7 +184,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
   // Fetch the task's applicable fields + values in one call (resolved server-side
   // from the task's Task Type + global fields).
   const { data: taskValues, isLoading: loadingValues } = useQuery({
-    queryKey: ["customFieldValues", taskId],
+    queryKey: keys.taskExtras.customFieldValues(taskId),
     queryFn: () => customFieldsApi.getTaskValues(taskId),
     enabled: !!taskId,
   })
@@ -205,7 +206,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
     mutationFn: (values: { definitionId: string; value: string }[]) =>
       customFieldsApi.setTaskValues(taskId, values),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customFieldValues", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.taskExtras.customFieldValues(taskId) })
     },
     onError: (err: Error) => {
       // These fields save themselves 800ms after you stop typing, and the only
@@ -215,7 +216,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
       notify.error(err?.message || t("tasks.customFields.saveFailed"))
       // Put the server's values back on screen so what is shown is what is
       // actually stored, rather than a local edit that never landed.
-      queryClient.invalidateQueries({ queryKey: ["customFieldValues", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.taskExtras.customFieldValues(taskId) })
     },
   })
 

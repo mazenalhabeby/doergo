@@ -72,7 +72,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
   */
   const usageModules = enabledModules.filter(billsByUsage)
   const { data: usageData } = useQuery({
-    queryKey: ["module-usage"],
+    queryKey: keys.assets.usage(),
     queryFn: () => assetsApi.getUsage(),
     enabled: usageModules.length > 0,
     staleTime: 60000,

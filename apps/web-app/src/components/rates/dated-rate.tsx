@@ -7,8 +7,9 @@ import { CalendarClock, Check, History, Loader2 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { formatMoney } from "@/lib/money"
-import { formatDayKey, todayDayKey } from "@/lib/day-key"
+import { formatMoney, MONEY_LOCALE } from "@/lib/money"
+import { formatDayKey } from "@/lib/day-key"
+import { todayKey } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,14 +34,14 @@ import {
  * forget to ask, and that one would quietly re-price last month.
  */
 
-export interface RateHistoryRow {
+interface RateHistoryRow {
   cents: number | null
   /** `YYYY-MM-DD` */
   effectiveFrom: string
   state: "past" | "scheduled"
 }
 
-export type RateUnit = "hour" | "day"
+type RateUnit = "hour" | "day"
 
 /** The rate in force today from a history (oldest first) — the last row that has started. */
 export function currentOf(rows: RateHistoryRow[] | undefined): number | null {
@@ -49,10 +50,10 @@ export function currentOf(rows: RateHistoryRow[] | undefined): number | null {
   return cents
 }
 
-const useCents = (currency = "EUR") => (cents: number) => formatMoney(cents / 100, currency)
+const useCents = (currency = "EUR") => (cents: number) => formatMoney(cents, currency, MONEY_LOCALE)
 
 /** The history of one rate, newest first, with today's marked. */
-export function RateHistoryList({ rows, currency }: { rows: RateHistoryRow[]; currency?: string }) {
+function RateHistoryList({ rows, currency }: { rows: RateHistoryRow[]; currency?: string }) {
   const { t, i18n } = useTranslation()
   const cents = useCents(currency)
   if (rows.length === 0) return null
@@ -93,7 +94,7 @@ export function RateHistoryList({ rows, currency }: { rows: RateHistoryRow[]; cu
  * not yet invoiced — the server's rule — and the dialog says so. Only a start
  * day the person actually chose is sent.
  */
-export function ChangeRateDialog({
+function ChangeRateDialog({
   open,
   onOpenChange,
   title,
@@ -114,7 +115,7 @@ export function ChangeRateDialog({
 }) {
   const { t, i18n } = useTranslation()
   const cents = useCents(currency)
-  const today = todayDayKey()
+  const today = todayKey()
   const [value, setValue] = useState(currentCents != null ? String(currentCents / 100) : "")
   const [from, setFrom] = useState(today)
   const [touched, setTouched] = useState(false)

@@ -3,19 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-
-// Decode a JWT's iat/exp (no verification — display only).
-function decodeIatExp(token?: string | null): { iat?: number; exp?: number } {
-  if (!token) return {}
-  try {
-    const part = token.split(".")[1]
-    if (!part) return {}
-    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")))
-    return { iat: json.iat, exp: json.exp }
-  } catch {
-    return {}
-  }
-}
+import { decodeJwtPayload } from "@/lib/auth-session"
 
 export function TokenDebugPanel() {
   const { tokenInfo, manualRefresh, isAuthenticated } = useAuth()
@@ -40,7 +28,7 @@ export function TokenDebugPanel() {
 
   // Total token lifetime (exp − iat) drives the progress bar so it's accurate
   // for ANY JWT_ACCESS_EXPIRATION (1m, 15m, …), not a hardcoded 15m.
-  const { iat, exp } = decodeIatExp(tokenInfo.accessToken)
+  const { iat, exp } = decodeJwtPayload(tokenInfo.accessToken) ?? {}
   const totalLifetime = iat && exp && exp > iat ? exp - iat : 900
   // Warn in the last 20% of the token's life (capped at 2 min for long tokens).
   const warnThreshold = Math.min(120, Math.ceil(totalLifetime * 0.2))

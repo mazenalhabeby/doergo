@@ -1,4 +1,4 @@
-import { cn, formatDurationMinutes } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { type Break, type BreakSummary } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Coffee, Clock, TrendingUp, Users, UtensilsCrossed, Pause, RefreshCw, CheckCircle2, Calendar, UserPen } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { StatCard, formatTime, NoteCell } from "./attendance-helpers"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { formatDuration, personName, countryFromTz } from "@hbcfield/shared/client"
 import { useTimeFormat } from "@/hooks"
 
 interface BreaksTabProps {
@@ -69,13 +69,13 @@ export function BreaksTab({
                 />
                 <StatCard
                   title={t("attendance.breaks.totalBreakTime")}
-                  value={formatDurationMinutes(breakSummary.totalBreakMinutes)}
+                  value={formatDuration(breakSummary.totalBreakMinutes)}
                   icon={Clock}
                   color="amber"
                 />
                 <StatCard
                   title={t("attendance.breaks.averageBreak")}
-                  value={`${breakSummary.averageBreakMinutes}m`}
+                  value={formatDuration(breakSummary.averageBreakMinutes)}
                   icon={TrendingUp}
                   color="green"
                 />
@@ -104,11 +104,11 @@ export function BreaksTab({
                         <p className="text-xs text-amber-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDurationMinutes(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.averageMinutes || 0}m</p>
+                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(breakSummary.breaksByType?.LUNCH?.averageMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -124,11 +124,11 @@ export function BreaksTab({
                         <p className="text-xs text-blue-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDurationMinutes(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{breakSummary.breaksByType?.SHORT?.averageMinutes || 0}m</p>
+                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(breakSummary.breaksByType?.SHORT?.averageMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -144,11 +144,11 @@ export function BreaksTab({
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-foreground">{formatDurationMinutes(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
+                        <p className="text-lg font-bold text-foreground">{formatDuration(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-foreground">{breakSummary.breaksByType?.OTHER?.averageMinutes || 0}m</p>
+                        <p className="text-lg font-bold text-foreground">{formatDuration(breakSummary.breaksByType?.OTHER?.averageMinutes || 0)}</p>
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -217,7 +217,7 @@ export function BreaksTab({
                         </div>
                         <div>
                           <p className="font-medium text-foreground">
-                            {breakItem.user?.firstName} {breakItem.user?.lastName}
+                            {personName(breakItem.user)}
                           </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{t(`attendance.breaks.typeBreak.${breakTypeKey(breakItem.type)}`)}</span>
@@ -343,7 +343,7 @@ export function BreaksTab({
                               size="md"
                             />
                             <span className="font-medium text-foreground">
-                              {breakItem.user?.firstName} {breakItem.user?.lastName}
+                              {personName(breakItem.user)}
                             </span>
                           </div>
                         </TableCell>
@@ -378,7 +378,7 @@ export function BreaksTab({
                           )}
                         </TableCell>
                         <TableCell className="font-medium text-foreground">
-                          {formatDurationMinutes(breakItem.durationMinutes)}
+                          {formatDuration(breakItem.durationMinutes)}
                           {/*
                             Who entered it, when it was not the member.
 
@@ -393,7 +393,7 @@ export function BreaksTab({
                               <UserPen className="size-3" />
                               <span title={breakItem.reason || undefined}>
                                 {t("attendance.breaks.addedBy", "Added by {{name}}", {
-                                  name: `${breakItem.addedBy.firstName} ${breakItem.addedBy.lastName}`.trim(),
+                                  name: personName(breakItem.addedBy),
                                 })}
                               </span>
                             </div>

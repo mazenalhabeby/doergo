@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -85,7 +86,7 @@ export function ActivitySection({ taskId, onCountChange }: ActivitySectionProps)
                         {getEventDescription(event, t)}
                       </p>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {event.user.firstName} {event.user.lastName} · {formatTimeAgo(event.createdAt)}
+                        {personName(event.user)} · {formatTimeAgo(event.createdAt)}
                       </p>
                     </div>
                   </div>

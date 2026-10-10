@@ -4,7 +4,7 @@ import { keys } from "@/lib/query-keys"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ClipboardCheck } from "lucide-react"
-import { parseStoredStepForm, workflowStatusLabel, type StepFormField, type StepFormAnswerValue } from "@hbcfield/shared/client"
+import { personName, parseStoredStepForm, workflowStatusLabel, type StepFormField, type StepFormAnswerValue } from "@hbcfield/shared/client"
 
 import { tasksApi, type TaskStepSubmission } from "@/lib/api"
 import { stepFieldLabel } from "@/lib/step-forms"
@@ -56,7 +56,7 @@ export function StepReport({ submission, workflowStatuses }: { submission: TaskS
   const stepName = status?.name
     ? workflowStatusLabel({ name: status.name, nameKey: status.nameKey ?? null }, (k, o) => t(k, o))
     : submission.statusKey
-  const who = [submission.submittedBy.firstName, submission.submittedBy.lastName].filter(Boolean).join(" ") || t("stepForm.report.someone", "Someone")
+  const who = personName(submission.submittedBy) || t("stepForm.report.someone", "Someone")
   const when = new Date(submission.submittedAt)
   const whenText = Number.isNaN(when.getTime())
     ? ""

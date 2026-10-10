@@ -278,9 +278,9 @@ export function ClientDashboard() {
       try {
         await attendanceApi.approveEntry(entryId)
       } finally {
-        queryClient.invalidateQueries({ queryKey: ["pending-approvals"] })
-        queryClient.invalidateQueries({ queryKey: ["attendance-active"] })
-        queryClient.invalidateQueries({ queryKey: ["locationAttendanceBatch"] })
+        queryClient.invalidateQueries({ queryKey: keys.attendance.pendingApprovals() })
+        queryClient.invalidateQueries({ queryKey: keys.attendance.active() })
+        queryClient.invalidateQueries({ queryKey: keys.attendance.locationBatch() })
       }
     },
     [queryClient],

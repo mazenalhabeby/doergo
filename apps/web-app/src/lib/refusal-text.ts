@@ -10,7 +10,7 @@ import { distanceRefusalParams } from "@hbcfield/shared/client"
  */
 
 /** `t` as i18next has it — only the call this module makes. */
-export type RefusalT = (key: string, options: Record<string, unknown>) => unknown
+type RefusalT = (key: string, options: Record<string, unknown>) => unknown
 
 /**
  * The translated sentence for `code`, or undefined when the catalogue has none.

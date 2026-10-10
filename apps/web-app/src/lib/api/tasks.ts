@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { ChecklistItem, Comment, CreateTaskInput, CrewView, JobTimeReport, JobTimeView, OnBehalf, OpenRoleTask, RoleOption, RolePreview, RoleStats, StatusCountsResponse, SuggestedEmployeesResponse, Task, TaskAssignee, TaskDependency, TaskEvent, TaskHandover, TaskResponse, TaskStepSubmission, TasksListResponse, TasksQueryParams, UpdateTaskInput } from './types/tasks';
+import type { ChecklistItem, Comment, CreateTaskInput, CrewView, JobTimeReport, JobTimeView, OnBehalf, OpenRoleTask, RoleOption, RolePreview, RoleStats, StatusCountsResponse, Task, TaskAssignee, TaskDependency, TaskEvent, TaskHandover, TaskResponse, TaskStepSubmission, TasksListResponse, TasksQueryParams, UpdateTaskInput } from './types/tasks';
 import { tasksEndpoints, type ClientCopyOption, type StepFormAnswers, type TaskReport, type TaskReportCopy } from '@hbcfield/shared/client';
 
 export const tasksApi = {
@@ -258,17 +258,6 @@ export const tasksApi = {
     return response.data?.data;
   },
 
-  // Get task comments
-  getComments: async (taskId: string) => {
-    const response = await call(tasksEndpoints.comments, { id: taskId }) as ApiResponse<{ success: boolean; data: Comment[] }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
   // ── Assignees ──────────────────────────────────────────────────────────────
   addAssignee: async (taskId: string, userId: string, role?: string) => {
     const response = await call(tasksEndpoints.addAssignee, { id: taskId }, { body: { userId, role: role || 'MEMBER' } }) as ApiResponse<{ success: boolean; data: TaskAssignee }>;
@@ -305,12 +294,6 @@ export const tasksApi = {
     return response.data;
   },
 
-  reorderChecklist: async (taskId: string, itemIds: string[]) => {
-    const response = await call(tasksEndpoints.reorderChecklist, { id: taskId }, { body: { itemIds } }) as ApiResponse<{ success: boolean; data: ChecklistItem[] }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
   // ── Subtasks ─────────────────────────────────────────────────────────────
   createSubtask: async (parentId: string, data: CreateTaskInput) => {
     const response = await call(tasksEndpoints.addSubtask, { id: parentId }, { body: data }) as ApiResponse<TaskResponse>;
@@ -335,16 +318,5 @@ export const tasksApi = {
     const response = await call(tasksEndpoints.removeDependency, { id: taskId, depId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
-  },
-
-  // Get suggested employees for a task (with scoring)
-  getSuggestedEmployees: async (taskId: string) => {
-    const response = await call(tasksEndpoints.suggestedEmployees, { id: taskId }) as ApiResponse<{ success: boolean; data: SuggestedEmployeesResponse }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
   },
 };

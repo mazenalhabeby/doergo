@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { PlanGate } from "@/components/plan-gate"
 import type { LucideIcon } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -56,6 +57,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { keys } from "@/lib/query-keys"
 
 const STATUS_BADGES: Record<string, { labelKey: string; className: string; icon: LucideIcon }> = {
   PENDING_TECHNICIAN: { labelKey: "overtime.badges.awaitingEmployee", className: "bg-amber-500/15 text-amber-600 dark:text-amber-400", icon: Clock },
@@ -115,21 +117,21 @@ function OvertimePageInner() {
   const removeMutation = useMutation({
     mutationFn: (id: string) => overtimeApi.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
-      queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.history() })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.pending() })
       // The day's hours changed: what is still to bill must re-read them.
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
       notify.success(t("overtime.removed"))
     },
     onError: (e: Error) => notify.error(e.message),
   })
   const { data: pendingData, isLoading: pendingLoading, refetch: refetchPending } = useQuery({
-    queryKey: ["overtime-pending"],
+    queryKey: keys.overtime.pending(),
     queryFn: () => overtimeApi.getPendingApprovals(),
   })
 
   const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
-    queryKey: ["overtime-history", historyStatus, historyPage],
+    queryKey: keys.overtime.history(historyStatus, historyPage),
     queryFn: () => overtimeApi.getHistory({
       status: historyStatus === "all" ? undefined : historyStatus,
       page: historyPage,
@@ -181,8 +183,8 @@ function OvertimePageInner() {
     mutationFn: ({ id, data }: { id: string; data: { maxDurationMinutes: number; notes?: string } }) =>
       overtimeApi.approve(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
-      queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.pending() })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.history() })
       setApproveTarget(null)
       notify.success(t("overtime.toastApproved"))
     },
@@ -193,8 +195,8 @@ function OvertimePageInner() {
     mutationFn: ({ id, data }: { id: string; data: { reason: string } }) =>
       overtimeApi.reject(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["overtime-pending"] })
-      queryClient.invalidateQueries({ queryKey: ["overtime-history"] })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.pending() })
+      queryClient.invalidateQueries({ queryKey: keys.overtime.history() })
       setRejectTarget(null)
       notify.success(t("overtime.toastRejected"))
     },
@@ -384,7 +386,7 @@ function OvertimePageInner() {
               <DialogTitle>{t("overtime.approveTitle")}</DialogTitle>
               <DialogDescription>
                 {t("overtime.approveDescription", {
-                  name: `${approveTarget?.technician?.firstName ?? ""} ${approveTarget?.technician?.lastName ?? ""}`.trim(),
+                  name: personName(approveTarget?.technician),
                   location: approveTarget?.location?.name ?? "",
                 })}
               </DialogDescription>
@@ -446,7 +448,7 @@ function OvertimePageInner() {
               <DialogTitle>{t("overtime.rejectTitle")}</DialogTitle>
               <DialogDescription>
                 {t("overtime.rejectDescription", {
-                  name: `${rejectTarget?.technician?.firstName ?? ""} ${rejectTarget?.technician?.lastName ?? ""}`.trim(),
+                  name: personName(rejectTarget?.technician),
                 })}
               </DialogDescription>
             </DialogHeader>
@@ -530,7 +532,7 @@ function OvertimeCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-foreground">
-                {request.technician?.firstName} {request.technician?.lastName}
+                {personName(request.technician)}
               </h3>
               <Badge className={badge.className}>{t(badge!.labelKey)}</Badge>
             </div>
@@ -614,7 +616,7 @@ function HistoryCard({ request, onRemove, removing }: { request: OvertimeRequest
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-medium text-foreground text-sm">
-                {request.technician?.firstName} {request.technician?.lastName}
+                {personName(request.technician)}
               </span>
               <Badge variant="outline" className={`text-xs ${badge!.className}`}>{t(badge!.labelKey)}</Badge>
               {/* Approved overtime can be taken off as if it never was — the shift end moves back, the day is recounted. */}
@@ -689,7 +691,7 @@ function HistoryCard({ request, onRemove, removing }: { request: OvertimeRequest
         </div>
         {request.approvedBy && (
           <span className="text-xs text-muted-foreground">
-            {t("overtime.by", { name: `${request.approvedBy.firstName} ${request.approvedBy.lastName}` })}
+            {t("overtime.by", { name: personName(request.approvedBy) })}
           </span>
         )}
       </div>

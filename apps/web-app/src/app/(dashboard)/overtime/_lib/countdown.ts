@@ -23,7 +23,7 @@ export function formatCountdown(ms: number): string {
   return `${m}:${String(s).padStart(2, "0")}`
 }
 
-export type Urgency = "expired" | "critical" | "warning" | "calm"
+type Urgency = "expired" | "critical" | "warning" | "calm"
 
 /**
  * Under a minute is critical, under three is a warning.

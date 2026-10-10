@@ -26,7 +26,9 @@ import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useAuth } from "@/contexts/auth-context"
 import { useTimeFormat } from "@/hooks/use-time-format"
 import { notify } from "@/lib/toast"
-import type { ReportBranding } from "@/lib/report-pdf-options"
+import { downloadBlob } from "@/lib/download"
+import { formatReportCell, type ReportBranding } from "@/lib/report-pdf-options"
+import { dateLocale } from "@/lib/format-date"
 import { ReportExportStudio } from "@/components/reports/report-export-studio"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,7 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { localizeReportColumns, reportLabel, formatHours, toCsv } from "@hbcfield/shared/client"
+import { personName, localizeReportColumns, reportLabel, toCsv, localDateKey, todayKey } from "@hbcfield/shared/client"
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -49,16 +51,9 @@ const GRANULARITIES: { value: ReportGranularity; label: string }[] = [
   { value: "week", label: "Weekly" }, { value: "month", label: "Monthly" },
 ]
 
+// The table, its chart and the PDF read one cell formatter, in the reader's language.
 function fmt(value: unknown, format?: string): string {
-  if (value == null) return "—"
-  if (format === "hours") return formatHours(Number(value))
-  if (format === "currency") return `€${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-  if (format === "percent") return `${Number(value)}%`
-  if (format === "number") return Number(value).toLocaleString()
-  const s = String(value)
-  const d = new Date(s)
-  if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString()
-  return s
+  return formatReportCell(value, format, dateLocale())
 }
 // Through the shared builder: every cell quoted, formula-looking cells defused.
 function toCSV(result: ReportResult): string {
@@ -128,8 +123,8 @@ export default function ReportsPage() {
   const [pdfOpen, setPdfOpen] = useState(false)
   const [tsCols, setTsCols] = useState<string[]>(TIMESHEET_DEFAULT)
 
-  const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
-  const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
+  const { data: catalog } = useQuery({ queryKey: keys.reports.catalog(), queryFn: () => analyticsApi.catalog() })
+  const { data: saved } = useQuery({ queryKey: keys.reports.saved(), queryFn: () => analyticsApi.listSaved() })
   // Letterhead from what this reader may read (the profile is ADMIN-only) — hooks/use-org-letterhead.
   const { data: orgProfile } = useOrgLetterhead()
   const { data: customersData } = useQuery({ queryKey: keys.customers.list({ limit: 200 }), queryFn: () => customersApi.list({ limit: 200 }) })
@@ -165,7 +160,7 @@ export default function ReportsPage() {
       return active.savedId ? analyticsApi.updateSaved(active.savedId, input) : analyticsApi.createSaved(input)
     },
     onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ["savedReports"] })
+      qc.invalidateQueries({ queryKey: keys.reports.saved() })
       setSaveOpen(false)
       if (r) setActive({ def: r.config, name: r.name, builder: canBuild, savedId: r.id })
       notify.success(t("reports.saved", "Report saved"))
@@ -174,12 +169,12 @@ export default function ReportsPage() {
   })
   const del = useMutation({
     mutationFn: (id: string) => analyticsApi.deleteSaved(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["savedReports"] }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.saved() }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to delete"),
   })
 
   const { data: schedules } = useQuery({
-    queryKey: ["reportSchedules", active?.savedId],
+    queryKey: keys.reports.schedules(active?.savedId),
     queryFn: () => analyticsApi.listSchedules(active!.savedId!),
     enabled: !!active?.savedId && canSchedule && schedOpen,
   })
@@ -192,12 +187,12 @@ export default function ReportsPage() {
       dayOfMonth: schedForm.cadence === "monthly" ? schedForm.dayOfMonth : null,
       recipients: schedForm.recipients.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["reportSchedules"] }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.schedules() }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to schedule"),
   })
   const delSched = useMutation({
     mutationFn: (id: string) => analyticsApi.deleteSchedule(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["reportSchedules"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.reports.schedules() }),
   })
 
   const pickSaved = (r: SavedReport) => { setResult(null); setActive({ def: r.config, name: r.name, builder: false, savedId: r.id }) }
@@ -219,7 +214,7 @@ export default function ReportsPage() {
     // Emit LOCAL calendar dates as YYYY-MM-DD. Using toISOString() here converted
     // local midnight to UTC and shifted the month boundary to the previous day
     // (e.g. "last month" started on Jun 30 instead of Jul 1) for users east of UTC.
-    const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    const ymd = (d: Date) => localDateKey(d)
     const Y = now.getFullYear(), M = now.getMonth(), D = now.getDate()
     switch (dr.preset) {
       case "last_7d": return { from: ymd(new Date(Y, M, D - 6)), to: ymd(now) }
@@ -258,18 +253,15 @@ export default function ReportsPage() {
   const download = () => {
     if (!displayResult || !active) return
     const blob = new Blob([toCSV(displayResult)], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url; a.download = `${active.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
-    URL.revokeObjectURL(url)
+    downloadBlob(blob, `${active.name.replace(/\s+/g, "-").toLowerCase()}-${todayKey()}.csv`)
   }
   // Human range label for the export subtitle (preset OR custom from–to).
   const rangeLabel = (() => {
     const dr = active?.def.dateRange
     if (!dr) return undefined
     if (dr.from || dr.to) {
-      const f = dr.from ? new Date(dr.from).toLocaleDateString() : "…"
-      const to = dr.to ? new Date(dr.to).toLocaleDateString() : "now"
+      const f = dr.from ? new Date(dr.from).toLocaleDateString(dateLocale()) : "…"
+      const to = dr.to ? new Date(dr.to).toLocaleDateString(dateLocale()) : "now"
       return `${f} – ${to}`
     }
     return DATE_PRESETS.find((p) => p.value === dr.preset)?.label
@@ -464,7 +456,7 @@ export default function ReportsPage() {
                             <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
                               <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
                               <SelectContent>
-                                {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{m.firstName} {m.lastName}</SelectItem>)}
+                                {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{personName(m)}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>

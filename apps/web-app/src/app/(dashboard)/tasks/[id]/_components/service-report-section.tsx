@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDurationSeconds, personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef } from "react"
 import { errorMessage } from "@/lib/errors"
@@ -21,10 +22,11 @@ import {
 } from "lucide-react"
 import { reportsApi, reportAttachmentsApi, uploadToS3, type ReportAttachment, type PartUsed } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { formatAmount } from "@/lib/money"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { cn, formatDurationSeconds } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 interface ServiceReportSectionProps {
   taskId: string
@@ -146,6 +148,9 @@ function PhotoGallery({
 
 function PartsTable({ parts }: { parts: PartUsed[] }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  // Was a hard-coded "$" on a European product — the organization's currency.
+  const money = (amount: number) => formatAmount(amount, user?.orgCurrency)
   if (parts.length === 0) {
     return (
       <div className="text-center py-4 text-sm text-muted-foreground">
@@ -182,10 +187,10 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
               <td className="py-2 px-3 text-muted-foreground">{part.partNumber || "-"}</td>
               <td className="py-2 px-3 text-center text-muted-foreground">{part.quantity}</td>
               <td className="py-2 px-3 text-right text-muted-foreground">
-                {part.unitCost ? `$${part.unitCost.toFixed(2)}` : "-"}
+                {part.unitCost ? money(part.unitCost) : "-"}
               </td>
               <td className="py-2 px-3 text-right text-foreground font-medium">
-                {part.unitCost ? `$${(part.unitCost * part.quantity).toFixed(2)}` : "-"}
+                {part.unitCost ? money(part.unitCost * part.quantity) : "-"}
               </td>
             </tr>
           ))}
@@ -197,7 +202,7 @@ function PartsTable({ parts }: { parts: PartUsed[] }) {
                 {t("tasks.serviceReport.totalParts")}
               </td>
               <td className="py-2 px-3 text-right font-semibold text-foreground">
-                ${totalCost.toFixed(2)}
+                {money(totalCost)}
               </td>
             </tr>
           </tfoot>
@@ -538,7 +543,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
           <div>
             <p className="text-xs text-muted-foreground">{t("tasks.serviceReport.employee")}</p>
             <p className="text-sm font-semibold text-foreground">
-              {report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : t("tasks.serviceReport.unknown")}
+              {report.completedBy ? personName(report.completedBy) : t("tasks.serviceReport.unknown")}
             </p>
           </div>
         </div>
@@ -603,7 +608,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
             <SignatureDisplay
               label={t("tasks.serviceReport.employee")}
               signature={report.technicianSignature}
-              name={report.completedBy ? `${report.completedBy.firstName} ${report.completedBy.lastName}` : undefined}
+              name={report.completedBy ? personName(report.completedBy) : undefined}
             />
             <SignatureDisplay
               label={t("tasks.serviceReport.customer")}

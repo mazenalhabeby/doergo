@@ -20,7 +20,7 @@ import { dateLocale } from "@/lib/format-date"
 
 const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 
-export interface TaskCardProps {
+interface TaskCardProps {
   task: Task
   index: number
   isDragging: boolean

@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import React, { useState, useMemo } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -47,7 +48,7 @@ export function SprintCapacityBar({
         for (const a of task.assignees) {
           const key = a.user?.id ?? a.userId
           const name = a.user
-            ? `${a.user.firstName ?? ""} ${a.user.lastName ?? ""}`.trim()
+            ? personName(a.user)
             : key
           const existing = map.get(key)
           if (existing) {
@@ -60,7 +61,7 @@ export function SprintCapacityBar({
       } else if (task.assignedTo) {
         const key = task.assignedTo.id
         const name =
-          `${task.assignedTo.firstName ?? ""} ${task.assignedTo.lastName ?? ""}`.trim()
+          personName(task.assignedTo)
         const existing = map.get(key)
         if (existing) {
           existing.points += pts

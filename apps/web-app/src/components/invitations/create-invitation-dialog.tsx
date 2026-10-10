@@ -116,8 +116,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
         // A courtesy copy on creation: silent, the Copy button reports for itself.
         void copyText(code, { silent: true })
       }
-      queryClient.invalidateQueries({ queryKey: ["invitations"] })
-      queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
+      queryClient.invalidateQueries({ queryKey: keys.people.invitations() })
+      queryClient.invalidateQueries({ queryKey: keys.people.pendingInvitations() })
     },
     onError: (error: Error) => {
       notify.error(error.message || t("invitations.inviteDialog.failedToCreate"))

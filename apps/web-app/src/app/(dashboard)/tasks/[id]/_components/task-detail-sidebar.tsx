@@ -1,5 +1,6 @@
 "use client"
 
+import { personInitials, personName } from "@hbcfield/shared/client"
 import Link from "next/link"
 import type { Task } from "@/lib/api"
 import { useTranslation } from "react-i18next"
@@ -60,10 +61,6 @@ function SidebarRow({
       </div>
     </div>
   )
-}
-
-function getInitials(first: string, last: string) {
-  return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase()
 }
 
 export function TaskDetailSidebar({
@@ -130,12 +127,12 @@ export function TaskDetailSidebar({
                     >
                       <div className="size-6 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-[9px] font-semibold text-foreground">
-                          {getInitials(a.user.firstName, a.user.lastName)}
+                          {personInitials(a.user)}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <Link href={`/members/${a.userId}`} className="text-xs font-medium text-foreground truncate block hover:text-blue-600 transition-colors">
-                          {a.user.firstName} {a.user.lastName}
+                          {personName(a.user)}
                         </Link>
                       </div>
                       {isLead && (
@@ -172,11 +169,11 @@ export function TaskDetailSidebar({
               <div className="flex items-center gap-2 px-2 py-1.5">
                 <div className="size-6 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-[9px] font-semibold text-foreground">
-                    {getInitials(task.assignedTo.firstName, task.assignedTo.lastName)}
+                    {personInitials(task.assignedTo)}
                   </span>
                 </div>
                 <Link href={`/members/${task.assignedTo.id}`} className="text-xs font-medium text-foreground hover:text-blue-600 transition-colors">
-                  {task.assignedTo.firstName} {task.assignedTo.lastName}
+                  {personName(task.assignedTo)}
                 </Link>
               </div>
             ) : (
@@ -261,7 +258,7 @@ export function TaskDetailSidebar({
           {/* Created By */}
           <SidebarRow icon={User} label={t("tasks.sidebar.createdBy")}>
             <span className="text-sm text-foreground">
-              {task.createdBy ? `${task.createdBy.firstName} ${task.createdBy.lastName}` : "—"}
+              {task.createdBy ? personName(task.createdBy) : "—"}
             </span>
           </SidebarRow>
 

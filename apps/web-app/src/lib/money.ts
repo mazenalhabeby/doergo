@@ -1,67 +1,33 @@
 /**
- * An amount of money, as this product writes it.
+ * Money on the web — a thin layer over the shared cents formatter
+ * (`formatMoney(cents, currency, locale)` in `@hbcfield/shared`), which owns the
+ * Intl logic: `narrowSymbol` ("$", not "US$"), a cached formatter per
+ * locale+currency, and never throwing on a bad currency code from real data.
  *
- * ⚠️ `US$1,234.50` IS WHAT SIX COPIES OF THIS PRODUCED. Every one of them
- * passed `en-IE`, and an Irish locale disambiguates the dollar — so an invoice
- * in USD read "US$" where the person raising it expected "$". `narrowSymbol`
- * asks for the symbol a reader in that currency's own country would use.
+ * ⚠️ ONE UNIT. The shared formatter takes integer CENTS. A caller holding cents
+ * (`*Cents` fields: rates, statements) calls `formatMoney` directly; a caller
+ * holding an AMOUNT (invoice totals and lines arrive as 12.5) calls
+ * `formatAmount`, which converts once. There is deliberately no web function
+ * named formatMoney that takes an amount — that name meant amounts here and
+ * cents on the phone, and a value carried between them read 100× wrong.
  *
- * ⚠️ Which makes AUD and USD both "$", and that is the right trade here: every
- * surface that shows an amount also states the currency CODE beside it (the
- * client's copy has a Currency row; the list has a column), and a reader who
- * needs to tell A$ from $ has it. A reader who does not needs a dollar sign.
- *
- * ⚠️ THE LOCALE IS PINNED, not taken from the browser or the UI language. An
- * invoice is a record: the same document must not read "€1,234.56" on one
- * machine and "1.234,56 €" on another, and the list of invoices must not
- * disagree with the invoice it links to. The CURRENCY still comes from the
- * invoice's own field — it is the grouping and decimal marks that are fixed.
- * (The client's PDF is written in the CLIENT's language and passes that
- * language's pinned locale to `formatMoneyIn` — still one answer per document,
- * never one per machine.)
- *
- * ⚠️ And it must never throw. A bad or empty currency code arrives from real
- * data; `Intl` raises a RangeError on one, and a screen about money is the
- * worst place to trade a wrong symbol for a blank page.
+ * ⚠️ THE LOCALE IS PINNED (`MONEY_LOCALE`), not taken from the browser or the
+ * UI language. An invoice is a record: the same document must not read
+ * "€1,234.56" on one machine and "1.234,56 €" on another, and the list of
+ * invoices must not disagree with the invoice it links to. The CURRENCY still
+ * comes from the record's own field — it is the grouping and decimal marks that
+ * are fixed. (The client's PDF is written in the CLIENT's language and passes
+ * that language's pinned locale — still one answer per document, never one per
+ * machine.)
  */
+import { formatMoney, toCents } from "@hbcfield/shared/client"
 
-const LOCALE = "en-IE"
+export { formatMoney, toCents, fromCents, currencySymbol } from "@hbcfield/shared/client"
 
-export function formatMoney(amount: number, currency?: string | null): string {
-  return formatMoneyIn(amount, currency, LOCALE)
-}
+/** The pinned locale money is written in on screens that show records (invoices, rates, statements). */
+export const MONEY_LOCALE = "en-IE"
 
-/** The same rules, in a named Intl locale — for a document written in its reader's language. */
-export function formatMoneyIn(amount: number, currency: string | null | undefined, locale: string): string {
-  const code = (currency || "EUR").toUpperCase()
-  const value = Number.isFinite(amount) ? amount : 0
-
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: code,
-      currencyDisplay: "narrowSymbol",
-    }).format(value)
-  } catch {
-    /* `narrowSymbol` is ES2020; fall back to the wide symbol rather than to a
-       bare number, which loses the currency entirely. */
-    try {
-      return new Intl.NumberFormat(locale, { style: "currency", currency: code }).format(value)
-    } catch {
-      // An unknown code — say the number and the code, and stay on the screen.
-      return `${value.toFixed(2)} ${code}`
-    }
-  }
-}
-
-/** The local symbol alone ("$", "£", "CHF") — for a currency picker's label. Falls back to the code. */
-export function currencySymbol(code: string, locale: string = LOCALE): string {
-  try {
-    const part = new Intl.NumberFormat(locale, { style: "currency", currency: code, currencyDisplay: "narrowSymbol" })
-      .formatToParts(0)
-      .find((p) => p.type === "currency")
-    return part?.value ?? code
-  } catch {
-    return code
-  }
+/** An AMOUNT (12.5, not cents) as money — pinned locale unless a document names its reader's. */
+export function formatAmount(amount: number | null | undefined, currency?: string | null, locale: string = MONEY_LOCALE): string {
+  return formatMoney(toCents(amount), currency, locale)
 }

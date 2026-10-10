@@ -16,7 +16,7 @@ import {
   type CreateRotaInput,
 } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
-import { type ShiftAssignment, ShiftRecurrence } from "@hbcfield/shared/client"
+import { personName, type ShiftAssignment, ShiftRecurrence } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -132,7 +132,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
   const [deleteTarget, setDeleteTarget] = useState<ShiftAssignment | null>(null)
 
   const { data: assignments, isLoading } = useQuery({
-    queryKey: ["rota", spaceId],
+    queryKey: keys.schedules.rota(spaceId),
     queryFn: () => rotaApi.list(spaceId),
     staleTime: 30_000,
   })
@@ -202,7 +202,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
   const removeMutation = useMutation({
     mutationFn: (id: string) => rotaApi.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rota", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.schedules.rota(spaceId) })
       setDeleteTarget(null)
       notify.success(t("scheduling.rota.toast.deleted"))
     },
@@ -413,7 +413,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-foreground truncate">
-                      {a.user ? `${a.user.firstName} ${a.user.lastName}` : t("scheduling.rota.unknownMember")}
+                      {a.user ? personName(a.user) : t("scheduling.rota.unknownMember")}
                     </span>
                     <span className="text-xs text-muted-foreground">·</span>
                     <span className="text-sm text-muted-foreground truncate">
@@ -513,11 +513,11 @@ function RotaDialog({
   const [priority, setPriority] = useState(String(assignment?.priority ?? 0))
 
   const { data: employeeData } = useQuery({
-    queryKey: ["employees-for-rota"],
+    queryKey: keys.schedules.rotaPeople(),
     queryFn: () => employeesApi.list({ limit: 100, status: "active" }),
   })
   const { data: shifts } = useQuery({
-    queryKey: ["shifts", spaceId],
+    queryKey: keys.schedules.shifts(spaceId),
     queryFn: () => shiftsApi.list(spaceId),
   })
 
@@ -528,7 +528,7 @@ function RotaDialog({
     mutationFn: (data: CreateRotaInput) =>
       isEdit ? rotaApi.update(assignment!.id, data) : rotaApi.create(spaceId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["rota", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.schedules.rota(spaceId) })
       notify.success(isEdit ? t("scheduling.rota.toast.updated") : t("scheduling.rota.toast.created"))
       onOpenChange(false)
     },
@@ -589,7 +589,7 @@ function RotaDialog({
                 ) : (
                   employees.map((e) => (
                     <SelectItem key={e.id} value={e.id}>
-                      {e.firstName} {e.lastName}
+                      {personName(e)}
                     </SelectItem>
                   ))
                 )}

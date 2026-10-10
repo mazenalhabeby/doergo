@@ -1,5 +1,6 @@
 "use client"
 
+import { formatFileSize, personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import Link from "next/link"
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/user-avatar"
 import { GenericContentSkeleton } from "@/components/skeletons/primitives"
-import { PHONE_SYNC_STATES, countByState, formatAge, formatBytes, matchesSearch, reasonsOf } from "@/lib/phone-sync"
+import { PHONE_SYNC_STATES, countByState, formatAge, matchesSearch, reasonsOf } from "@/lib/phone-sync"
 
 /*
   Phone sync — whose phone is still holding work done without signal, and why.
@@ -56,7 +57,7 @@ export default function PhoneSyncPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const health = useQuery({
-    queryKey: ["phoneSyncHealth"],
+    queryKey: keys.people.phoneSyncHealth(),
     queryFn: syncApi.memberHealth,
     enabled: canView,
     // Phones report every ten minutes; asking more often shows nothing new.
@@ -93,7 +94,7 @@ export default function PhoneSyncPage() {
 
   const nameOf = (id: string) => {
     const p = personById.get(id)
-    return p ? `${p.firstName} ${p.lastName}`.trim() : t("members.phoneSync.unknownMember")
+    return p ? personName(p) : t("members.phoneSync.unknownMember")
   }
   const when = (ms: number | null) =>
     ms === null ? "—" : new Date(ms).toLocaleString(locale, { weekday: "short", hour: "2-digit", minute: "2-digit" })
@@ -215,7 +216,7 @@ export default function PhoneSyncPage() {
                               {r.oldestWaitingAt && r.waiting > 0 ? `${when(r.oldestWaitingAt)} · ${formatAge(r.oldestWaitingAt, now, locale)}` : "—"}
                             </td>
                             <td className="px-4 py-3 text-right text-muted-foreground">
-                              {r.filesWaiting > 0 ? `${r.filesWaiting} · ${formatBytes(r.bytesWaiting, locale)}` : "—"}
+                              {r.filesWaiting > 0 ? `${r.filesWaiting} · ${formatFileSize(r.bytesWaiting, locale)}` : "—"}
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{when(r.lastSuccessAt)}</td>
                             <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.appVersion}</td>
@@ -324,7 +325,7 @@ function DetailPanel({
 
       <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm tabular-nums">
         <dt className="text-muted-foreground">{t("members.phoneSync.columns.files")}</dt>
-        <dd className="text-right">{row.filesWaiting > 0 ? `${row.filesWaiting} · ${formatBytes(row.bytesWaiting, locale)}` : "—"}</dd>
+        <dd className="text-right">{row.filesWaiting > 0 ? `${row.filesWaiting} · ${formatFileSize(row.bytesWaiting, locale)}` : "—"}</dd>
         <dt className="text-muted-foreground">{t("members.phoneSync.detail.oldest")}</dt>
         <dd className="text-right">{row.waiting > 0 ? when(row.oldestWaitingAt) : "—"}</dd>
         <dt className="text-muted-foreground">{t("members.phoneSync.detail.lastSent")}</dt>

@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import {
   Check,
@@ -177,7 +178,7 @@ export function TaskProgressCard({
 
             <div className="flex flex-col">
               <span className="text-xs font-medium text-foreground leading-none">
-                {primaryUser.firstName} {primaryUser.lastName}
+                {personName(primaryUser)}
               </span>
               {(lead && members.length > 0) && (
                 <span className="text-[10px] text-muted-foreground/60 leading-none mt-0.5">

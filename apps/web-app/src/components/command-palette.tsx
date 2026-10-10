@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
@@ -38,6 +39,7 @@ import {
 import { useCommandPalette, type CommandAction } from "@/contexts/command-palette-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useActivityPanel } from "@/contexts/activity-panel-context"
+import { keys } from "@/lib/query-keys"
 
 // ---------------------------------------------------------------------------
 // Kbd badge component
@@ -88,7 +90,7 @@ export function CommandPalette() {
   }, [open])
 
   const { data: results, isFetching } = useQuery({
-    queryKey: ["globalSearch", debounced],
+    queryKey: keys.search.global(debounced),
     queryFn: () => searchApi.global(debounced),
     enabled: open && debounced.length >= 2,
     staleTime: 15_000,
@@ -283,7 +285,7 @@ export function CommandPalette() {
               <CommandItem key={`member-${m.id}`} value={`member-${m.id}`} onSelect={() => navigate(`/members/${m.id}`)} className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
                 <UserAvatar size="md" firstName={m.firstName} lastName={m.lastName} avatarUrl={m.avatarUrl} seed={m.id} />
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-sm font-medium truncate">{`${m.firstName} ${m.lastName}`.trim() || m.email || "—"}</span>
+                  <span className="text-sm font-medium truncate">{personName(m) || m.email || "—"}</span>
                   {m.email && <span className="text-xs text-muted-foreground truncate">{m.email}</span>}
                 </div>
               </CommandItem>

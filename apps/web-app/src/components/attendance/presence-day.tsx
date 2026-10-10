@@ -7,6 +7,7 @@ import { MapPin } from "lucide-react"
 import { attendanceApi } from "@/lib/api"
 import { cn, formatTimeOfDay } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
 
 type Presence = "ON_SITE" | "FIELD" | "REMOTE"
 interface PresenceChangeRow {
@@ -46,7 +47,7 @@ export function PresenceDay({
 }) {
   const { t } = useTranslation()
   const { data, isLoading } = useQuery({
-    queryKey: ["attendance", "entry-presence", entryId],
+    queryKey: keys.attendance.entryPresence(entryId),
     queryFn: () => attendanceApi.getEntryPresence(entryId),
     staleTime: 30_000,
   })

@@ -1,4 +1,4 @@
-import type { CalendarItem } from "@hbcfield/shared/client"
+import { localDateKey, type CalendarItem } from "@hbcfield/shared/client"
 
 /**
  * Where things go on the grid — pure, so the week, the day and the month draw from one answer.
@@ -9,8 +9,7 @@ import type { CalendarItem } from "@hbcfield/shared/client"
 export const HOUR_PX = 48
 
 export function dayKey(d: Date): string {
-  const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate()
-  return `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+  return localDateKey(d)
 }
 
 export function fromKey(key: string): Date {

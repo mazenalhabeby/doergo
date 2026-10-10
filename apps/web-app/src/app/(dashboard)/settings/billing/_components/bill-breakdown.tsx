@@ -13,6 +13,7 @@ import {
 } from '@hbcfield/shared/client';
 
 import { cn } from '@/lib/utils';
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * Where the money goes.
@@ -119,7 +120,7 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                   <>
                     {' '}
                     {t('billing.agreed.until', 'This rate holds until {{date}}.', {
-                      date: new Date(bill.agreement.until).toLocaleDateString(),
+                      date: new Date(bill.agreement.until).toLocaleDateString(dateLocale()),
                     })}
                   </>
                 )}

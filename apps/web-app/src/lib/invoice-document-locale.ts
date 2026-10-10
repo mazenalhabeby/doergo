@@ -1,5 +1,5 @@
 import { DEFAULT_LOCALE, normalizeLocale, issuerAddressLines, type IssuerSnapshot, type SupportedLocale } from "@hbcfield/shared/client"
-import { formatMoneyIn } from "./money"
+import { formatAmount } from "./money"
 
 /**
  * The client's copy of an invoice, in the CLIENT's language.
@@ -180,7 +180,7 @@ export function pdfText(s: string): string {
 }
 
 export function formatDocumentMoney(amount: number, currency: string | null | undefined, locale: unknown): string {
-  return pdfText(formatMoneyIn(amount, currency, INTL_LOCALE[documentLocaleOf(locale)].money))
+  return pdfText(formatAmount(amount, currency, INTL_LOCALE[documentLocaleOf(locale)].money))
 }
 
 export function formatDocumentDate(d: string | Date | null | undefined, locale: unknown): string {
@@ -225,7 +225,7 @@ export function termsSentence(
 }
 
 /** The org-profile shape the letterhead fell back to before companies existed. */
-export interface LetterheadFallback {
+interface LetterheadFallback {
   name?: string | null
   logoUrl?: string | null
   addressLine1?: string | null
@@ -238,7 +238,7 @@ export interface LetterheadFallback {
   vatId?: string | null
 }
 
-export interface DocumentIssuer {
+interface DocumentIssuer {
   name: string | null
   logoUrl: string | null
   addressLines: string[]

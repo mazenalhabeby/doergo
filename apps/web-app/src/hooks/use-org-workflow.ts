@@ -40,7 +40,7 @@ export function useWorkflow(workflowId?: string | null) {
   const needsFetch = !!resolvedId && !workflows?.find((w) => w.id === resolvedId)?.statuses?.length
 
   const { data: fetchedWorkflow, isLoading: loadingDetail } = useQuery({
-    queryKey: ["workflow", resolvedId],
+    queryKey: keys.spaces.workflow(resolvedId),
     queryFn: () => workflowsApi.getById(resolvedId!),
     enabled: !!resolvedId && needsFetch,
     staleTime: 120000,

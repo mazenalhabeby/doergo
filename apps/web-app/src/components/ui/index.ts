@@ -5,4 +5,4 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 export { Checkbox } from './checkbox';
 export { Badge, badgeVariants } from './badge';
 export { Toaster } from './sonner';
-export { Spinner, LoadingOverlay, PageLoading } from './spinner';
+export { Spinner } from './spinner';

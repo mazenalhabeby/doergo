@@ -10,6 +10,8 @@ import {
   haversineDistance,
   needsTravelEstimate,
 } from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * "Leave by 12:13" under a due date that names an hour.
@@ -34,7 +36,7 @@ export function LeaveByLine({ task }: { task: Task }) {
   const wanted = needsTravelEstimate(task as any) && !!task.assignedToId
 
   const { data: where } = useQuery({
-    queryKey: ["worker-location", task.assignedToId],
+    queryKey: keys.taskExtras.workerLocation(task.assignedToId),
     queryFn: () => trackingApi.getWorkerLocation(task.assignedToId!),
     enabled: wanted,
     // A position from a few minutes ago moves the answer by seconds; refetching
@@ -55,7 +57,7 @@ export function LeaveByLine({ task }: { task: Task }) {
   })
   if (!advice.leaveAt) return null
 
-  const time = (d: Date) => d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+  const time = (d: Date) => d.toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })
   const late = advice.state === "late"
 
   return (

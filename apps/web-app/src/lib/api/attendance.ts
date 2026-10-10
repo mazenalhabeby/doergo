@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { AttendanceListResponse, AttendanceQueryParams, AttendanceSummary, BreakRuleRow, BreakSummary, EntryBreak, EntryEditHistoryItem, NoShowRow } from './types/attendance';
+import type { AttendanceListResponse, AttendanceQueryParams, BreakRuleRow, BreakSummary, EntryBreak, EntryEditHistoryItem, NoShowRow } from './types/attendance';
 import { BreakType, attendanceEndpoints, locationsEndpoints, type Break, type CompanyLocation, type GeofenceExcursion, type TimeEntry } from '@hbcfield/shared/client';
 
 export const attendanceApi = {
@@ -340,75 +340,6 @@ export const attendanceApi = {
   },
 
   // =========================================================================
-  // REPORTS
-  // =========================================================================
-
-  // Get attendance summary for a date range
-  getSummary: async (params: { startDate: string; endDate: string; userId?: string }) => {
-
-    const response = await call(attendanceEndpoints.reportSummary, params) as ApiResponse<{
-      success: boolean;
-      data: AttendanceSummary;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Get weekly report
-  getWeeklyReport: async (params?: { weekStartDate?: string; userId?: string }) => {
-
-    const response = await call(attendanceEndpoints.reportWeekly, undefined, { query: params ?? {} }) as ApiResponse<{
-      success: boolean;
-      data: AttendanceSummary;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Get monthly report
-  getMonthlyReport: async (params?: { year?: number; month?: number; userId?: string }) => {
-
-    const response = await call(attendanceEndpoints.reportMonthly, undefined, { query: params ?? {} }) as ApiResponse<{
-      success: boolean;
-      data: AttendanceSummary;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Export attendance to CSV
-  exportToCSV: async (params: { startDate: string; endDate: string; userId?: string }) => {
-
-    const response = await call(attendanceEndpoints.reportExport, params) as ApiResponse<{
-      success: boolean;
-      data: {
-        filename: string;
-        content: string;
-        mimeType: string;
-        recordCount: number;
-      };
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // =========================================================================
   // APPROVALS
   // =========================================================================
 
@@ -473,31 +404,6 @@ export const attendanceApi = {
   rejectExcursion: async (excursionId: string) => {
     const response = await call(attendanceEndpoints.rejectExcursion, { id: excursionId }, { body: {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
     if (response.error) throw apiError(response);
-    return response.data;
-  },
-
-  // Employee reports a reason + duration (used by web clock UI if outside the ring).
-  reportExcursion: async (reason: string, requestedMinutes: number) => {
-    const response = await call(attendanceEndpoints.reportExcursion, undefined, { body: { reason, requestedMinutes } }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
-    if (response.error) throw apiError(response);
-    return response.data;
-  },
-
-  // Bulk approve entries
-  bulkApprove: async (entryIds: string[], notes?: string) => {
-    const response = await call(attendanceEndpoints.bulkApprove, undefined, { body: { entryIds, notes } }) as ApiResponse<{
-      success: boolean;
-      data: {
-        approved: string[];
-        failed: Array<{ id: string; reason: string }>;
-      };
-      message: string;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
     return response.data;
   },
 

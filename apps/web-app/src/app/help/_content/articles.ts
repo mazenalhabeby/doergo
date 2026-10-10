@@ -17,7 +17,7 @@ export interface HelpCategory {
   blurb: Localized;
 }
 
-export interface HelpArticle {
+interface HelpArticle {
   slug: string;
   category: string;
   order: number;

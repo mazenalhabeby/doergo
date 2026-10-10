@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Smartphone, Monitor, Layers, MessageCircle, Check } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
-import { ACCESS_PERMISSION_SCHEMA, moduleAllowedForExternal } from "@hbcfield/shared/client"
+import { personName, ACCESS_PERMISSION_SCHEMA, moduleAllowedForExternal } from "@hbcfield/shared/client"
 import type { AccessDraft, MobileModule, SpaceScope, AccessPlatform } from "@hbcfield/shared/client"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -542,7 +542,7 @@ export function AccessFields({
                           }
                         />
                         <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="sm" />
-                        <span className="min-w-0 flex-1 truncate text-sm">{c.firstName} {c.lastName}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm">{personName(c)}</span>
                         {/* Label by what actually confers it. Calling someone
                             "Manager" when no role says so is how a permission
                             left on a user row reads as a job title. */}

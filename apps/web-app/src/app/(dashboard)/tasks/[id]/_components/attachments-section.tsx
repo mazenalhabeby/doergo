@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
+import { formatFileSize } from "@hbcfield/shared/client"
 import { taskAttachmentsApi, uploadToS3, type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,12 +40,6 @@ const ALLOWED_TYPES = [
   "text/plain",
 ]
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
 function isImageType(fileType: string): boolean {
   return fileType.startsWith("image/")
 }
@@ -67,7 +62,7 @@ export function AttachmentsSection({
    */
   initialAttachments?: Attachment[]
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -331,7 +326,7 @@ export function AttachmentsSection({
                           {attachment.fileName}
                         </p>
                         <p className="text-xs text-white/70">
-                          {formatFileSize(attachment.fileSize)}
+                          {formatFileSize(attachment.fileSize, i18n.language)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">

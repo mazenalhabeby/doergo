@@ -17,23 +17,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
+import { keys } from "@/lib/query-keys"
 
 const AddressMap = dynamic(() => import("./address-map"), {
   ssr: false,
   loading: () => <div className="h-full w-full animate-pulse bg-muted" />,
 })
-type LPProps = {
-  lat: number | null
-  lng: number | null
-  radius: number
-  address: string
-  onLocationChange: (lat: number, lng: number) => void
-  onAddressChange: (address: string) => void
-}
 const LocationPicker = dynamic(
-  () => import("../../locations/_components/location-picker"),
+  () => import("@/components/location-picker"),
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
-) as unknown as React.ComponentType<LPProps>
+)
 
 /**
  * Addresses panel for a client record.
@@ -54,7 +47,7 @@ export function AddressesPanel({ customerId, spaceId, hasPortal, portalId, isPor
   const qc = useQueryClient()
   const [showAll, setShowAll] = useState(false)
 
-  const q = useQuery({ queryKey: ["customer-addresses", customerId], queryFn: () => customersApi.addresses(customerId) })
+  const q = useQuery({ queryKey: keys.customers.addresses(customerId), queryFn: () => customersApi.addresses(customerId) })
   /*
     The entity comes from the client's OWN portal — a space can run several with
     different entities.
@@ -64,9 +57,9 @@ export function AddressesPanel({ customerId, spaceId, hasPortal, portalId, isPor
     client in the space, which is how a company came to be told it had
     Workspaces. A client outside the portal has addresses, and that is all.
   */
-  const custPortalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId!), enabled: !!portalId })
+  const custPortalQ = useQuery({ queryKey: keys.portal.detail(portalId), queryFn: () => portalAdminApi.getPortal(portalId!), enabled: !!portalId })
   const spacePortalQ = useQuery({
-    queryKey: ["space-portal", spaceId],
+    queryKey: keys.spaces.portal(spaceId),
     queryFn: () => spacePortalApi.get(spaceId!),
     enabled: !portalId && !!spaceId && !!hasPortal && !!isPortalResident,
   })
@@ -74,7 +67,7 @@ export function AddressesPanel({ customerId, spaceId, hasPortal, portalId, isPor
   const addresses = q.data ?? []
   const primary = addresses.find((a) => a.isPrimary) ?? addresses[0] ?? null
   const others = addresses.filter((a) => a.id !== primary?.id)
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["customer-addresses", customerId] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.customers.addresses(customerId) })
   const entityLabel = portal?.entityLabel
   const label = entityLabel ? `${entityLabel}s` : t("customers.addresses", "Addresses")
   // "Assign from the catalog" only applies to the Apartment entity (the space's
@@ -215,7 +208,7 @@ function AddressDialog({ customerId, existing, isFirst, onSaved, trigger }: {
           </div>
           <div className="space-y-1">
             <Label>{t("customers.address", "Address")}</Label>
-            <LocationPicker lat={lat} lng={lng} radius={0} address={address}
+            <LocationPicker lat={lat} lng={lng} address={address}
               onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
               onAddressChange={(a) => setAddress(a)} />
           </div>
@@ -251,7 +244,7 @@ function AssignDialog({ spaceId, customerId, entityLabel, onSaved, trigger }: {
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
-  const unitsQ = useQuery({ queryKey: ["space-units", spaceId], queryFn: () => spacePortalApi.units(spaceId), enabled: open })
+  const unitsQ = useQuery({ queryKey: keys.spaces.units(spaceId), queryFn: () => spacePortalApi.units(spaceId), enabled: open })
   // Vacant = no client AND no member resident (never offer a member's home).
   const vacant = (unitsQ.data ?? []).filter((u: SpaceUnit) => !u.customerId && !u.residentUserId)
 

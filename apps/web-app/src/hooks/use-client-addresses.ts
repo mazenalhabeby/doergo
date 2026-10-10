@@ -5,7 +5,7 @@ import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { customersApi } from "@/lib/api"
 
-export interface ClientAddressOption {
+interface ClientAddressOption {
   /** "client" = the address on the client record itself; otherwise an address row id. */
   id: string
   name: string
@@ -37,7 +37,7 @@ export function useClientAddresses(customerId: string | null, opts: { enabled: b
     enabled: opts.enabled && !!id && !opts.known,
   })
   const { data: rows = [] } = useQuery({
-    queryKey: ["customer-addresses", id],
+    queryKey: keys.customers.addresses(id),
     queryFn: () => customersApi.addresses(id!),
     staleTime: 60000,
     enabled: opts.enabled && !!id,

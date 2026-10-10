@@ -19,7 +19,7 @@
 
 import type { Supported } from '@/i18n/languages';
 
-export interface UpdateCopy {
+interface UpdateCopy {
   /** Browser tab + the page's own heading. */
   title: string;
   lede: string;

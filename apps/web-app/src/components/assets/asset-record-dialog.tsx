@@ -26,13 +26,9 @@ import {
 } from "@/components/ui/dialog"
 
 const LocationPicker = dynamic(
-  () => import("@/app/(dashboard)/locations/_components/location-picker"),
+  () => import("@/components/location-picker"),
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
-) as unknown as React.ComponentType<{
-  lat: number | null; lng: number | null; radius: number; address: string
-  onLocationChange: (lat: number, lng: number) => void
-  onAddressChange: (address: string) => void
-}>
+)
 
 /** One record of a kind — an apartment, a van. */
 export interface AssetRecord {
@@ -164,7 +160,7 @@ export function AssetRecordDialog({
   const [destKind, setDestKind] = useState("")
 
   const destKindsQ = useQuery({
-    queryKey: ["asset-categories", destSpace],
+    queryKey: keys.assets.categories(destSpace),
     queryFn: () => assetsApi.getCategories(destSpace),
     enabled: open && moving && !!destSpace,
   })
@@ -326,7 +322,7 @@ export function AssetRecordDialog({
             <div className="space-y-1">
               <Label>{t("assetRecords.address", "Address")}</Label>
               <LocationPicker
-                lat={lat} lng={lng} radius={0} address={address}
+                lat={lat} lng={lng} address={address}
                 onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
                 onAddressChange={setAddress}
               />

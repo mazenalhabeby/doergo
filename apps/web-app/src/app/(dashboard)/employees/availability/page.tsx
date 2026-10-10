@@ -30,6 +30,7 @@ import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
 import { LeaveDecisionDrawer } from "./_components/leave-decision-drawer"
 import { COVER_TONE } from "./_lib/cover-labels"
+import { keys } from "@/lib/query-keys"
 
 /**
  * Schedule & Time Off — one page, two questions.
@@ -99,7 +100,7 @@ export default function ScheduleAndTimeOffPage() {
     Vienna) and its holidays. One read per window; the chart falls back to Sat+Sun until it lands.
   */
   const calendarDays = useQuery({
-    queryKey: ["calendar-team", space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")],
+    queryKey: keys.calendar.team(space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")),
     queryFn: () => calendarApi.team({ spaceId: space, from: format(days[0]!, "yyyy-MM-dd"), to: format(days[days.length - 1]!, "yyyy-MM-dd") }),
     enabled: !!space,
     staleTime: 5 * 60_000,
@@ -129,7 +130,7 @@ export default function ScheduleAndTimeOffPage() {
   // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
   const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
   const leaveQuery = useQuery({
-    queryKey: ["orgTimeOff", "window", window.start, window.end],
+    queryKey: keys.timeOff.orgWindow(window.start, window.end),
     queryFn: () => employeesApi.getOrgTimeOff(undefined, { from: window.start, to: window.end }),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
@@ -140,7 +141,7 @@ export default function ScheduleAndTimeOffPage() {
   // above the chart renders. One read serves both, so the chart's rows and the
   // panel's chips can never show a different set of people.
   const floorQuery = useQuery({
-    queryKey: ["floor-now"],
+    queryKey: keys.attendance.floorNow(),
     queryFn: () => employeesApi.getFloorNow(),
     staleTime: 30_000,
     // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
@@ -148,7 +149,7 @@ export default function ScheduleAndTimeOffPage() {
   })
 
   const coverQuery = useQuery({
-    queryKey: ["cover-range", window.start, window.end],
+    queryKey: keys.timeOff.coverRange(window.start, window.end),
     queryFn: () => employeesApi.getCoverRange(window.start, window.end),
     staleTime: 30_000,
     placeholderData: keepPreviousData,

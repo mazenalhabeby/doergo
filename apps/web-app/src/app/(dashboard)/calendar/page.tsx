@@ -24,6 +24,7 @@ import { ItemPopover } from "./_components/item-popover"
 import { EventDialog } from "./_components/event-dialog"
 import { CreateTaskDialog } from "../tasks/_components/create-task-dialog"
 import { Rail } from "./_components/rail"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The organization's own calendar.
@@ -74,7 +75,7 @@ export default function CalendarPage() {
   )
 
   const editing = useQuery({
-    queryKey: ["calendar-event", dialog?.eventId],
+    queryKey: keys.calendar.event(dialog?.eventId),
     queryFn: () => calendarApi.event(dialog!.eventId!),
     enabled: !!dialog?.eventId,
   })

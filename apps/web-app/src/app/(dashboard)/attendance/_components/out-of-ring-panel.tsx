@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { MapPin, Check, X, Timer, Loader2, Navigation } from "lucide-react"
-import { GEOFENCE_EXCURSION, type GeofenceExcursion } from "@hbcfield/shared/client"
+import { personName, GEOFENCE_EXCURSION, type GeofenceExcursion } from "@hbcfield/shared/client"
 
 import { attendanceApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { keys } from "@/lib/query-keys"
 
 // Format remaining ms as "M:SS" / "H:MM:SS".
 function fmtRemaining(ms: number): string {
@@ -35,7 +36,7 @@ export function OutOfRingPanel({ canApprove }: { canApprove: boolean }) {
   const queryClient = useQueryClient()
 
   const { data: excursions = [] } = useQuery({
-    queryKey: ["geofence-excursions", "active"],
+    queryKey: keys.attendance.activeExcursions(),
     queryFn: () => attendanceApi.listExcursions("active"),
     refetchInterval: 60_000, // safety net; realtime drives most updates
   })
@@ -49,9 +50,9 @@ export function OutOfRingPanel({ canApprove }: { canApprove: boolean }) {
   }, [excursions])
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["geofence-excursions"] })
-    queryClient.invalidateQueries({ queryKey: ["attendance-active"] })
-    queryClient.invalidateQueries({ queryKey: ["locationAttendanceBatch"] })
+    queryClient.invalidateQueries({ queryKey: keys.attendance.excursions() })
+    queryClient.invalidateQueries({ queryKey: keys.attendance.active() })
+    queryClient.invalidateQueries({ queryKey: keys.attendance.locationBatch() })
   }
 
   const approve = useMutation({
@@ -137,7 +138,7 @@ function PendingRow({
   const { t } = useTranslation()
   const formatDistance = useFormatDistance()
   const [minutes, setMinutes] = React.useState<number>(ex.requestedMinutes ?? GEOFENCE_EXCURSION.DURATION_PRESETS[0])
-  const name = `${ex.user?.firstName ?? ""} ${ex.user?.lastName ?? ""}`.trim() || t("attendance.unknownWorker", "Worker")
+  const name = personName(ex.user) || t("attendance.unknownWorker", "Worker")
 
   return (
     <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 justify-between hover:bg-orange-50/30 dark:hover:bg-orange-500/5">
@@ -209,7 +210,7 @@ function PendingRow({
 
 function ApprovedRow({ ex }: { ex: GeofenceExcursion }) {
   const { t } = useTranslation()
-  const name = `${ex.user?.firstName ?? ""} ${ex.user?.lastName ?? ""}`.trim() || t("attendance.unknownWorker", "Worker")
+  const name = personName(ex.user) || t("attendance.unknownWorker", "Worker")
   const remainingMs = ex.expiresAt ? new Date(ex.expiresAt).getTime() - Date.now() : 0
   const expired = ex.timerExpired || remainingMs <= 0
 

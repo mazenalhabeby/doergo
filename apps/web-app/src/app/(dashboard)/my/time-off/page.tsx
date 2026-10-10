@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button"
 import { ProgressRing } from "@/components/progress-ring"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { hasAccessModule, localDateKey } from "@hbcfield/shared/client"
 import type { TimeOffRequest } from "@hbcfield/shared"
+import { keys } from "@/lib/query-keys"
+import { formatMediumDate, formatMonthYear } from "@/lib/format-date"
 
 /*
   Leave products lead with three things: allowance remaining, who else is away,
@@ -121,8 +123,7 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELED: "text-slate-600 bg-slate-100 dark:text-slate-400 dark:bg-slate-500/15",
 }
 
-const toISO = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+const toISO = (d: Date) => localDateKey(d)
 const sameDay = (a: Date, b: Date) => toISO(a) === toISO(b)
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate())
 const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
@@ -130,7 +131,9 @@ const dayDiff = (a: Date, b: Date) => Math.round((b.getTime() - a.getTime()) / 8
 
 function fmt(iso?: string): string {
   if (!iso) return "—"
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+  // A bare day key is read at LOCAL midnight — `new Date("2026-10-05")` is UTC
+  // midnight, which west of Greenwich is still the 4th.
+  return formatMediumDate(/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso)
 }
 
 function monthGrid(year: number, month: number): (Date | null)[][] {
@@ -194,19 +197,19 @@ export default function MyTimeOffPage() {
   const weeks = useMemo(() => monthGrid(cursor.getFullYear(), cursor.getMonth()), [cursor])
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ["my-time-off", user?.id],
+    queryKey: keys.timeOff.mine(user?.id),
     queryFn: () => employeesApi.getTimeOff(user!.id),
     enabled: canSee && !!user?.id,
   })
   const { data: balance } = useQuery({
-    queryKey: ["my-leave-balance", user?.id],
+    queryKey: keys.timeOff.myBalance(user?.id),
     queryFn: () => employeesApi.getLeaveBalance(user!.id),
     enabled: canSee && !!user?.id,
   })
 
   const refetch = () => {
-    qc.invalidateQueries({ queryKey: ["my-time-off", user?.id] })
-    qc.invalidateQueries({ queryKey: ["my-leave-balance", user?.id] })
+    qc.invalidateQueries({ queryKey: keys.timeOff.mine(user?.id) })
+    qc.invalidateQueries({ queryKey: keys.timeOff.myBalance(user?.id) })
   }
 
   const list: TimeOffRequest[] = (requests as TimeOffRequest[]) ?? []
@@ -288,7 +291,7 @@ export default function MyTimeOffPage() {
     decides the request and the balance. Weekends, rota rest days and holidays cost nothing.
   */
   const { data: cost } = useQuery({
-    queryKey: ["leave-count", user?.id, rangeStart ? toISO(rangeStart) : null, selectedEnd ? toISO(selectedEnd) : null],
+    queryKey: keys.timeOff.count(user?.id, rangeStart ? toISO(rangeStart) : null, selectedEnd ? toISO(selectedEnd) : null),
     queryFn: () => calendarApi.countLeave(user!.id, toISO(rangeStart!), toISO(selectedEnd!)),
     enabled: !!user?.id && !!rangeStart && !!selectedEnd,
     staleTime: 60_000,
@@ -306,7 +309,7 @@ export default function MyTimeOffPage() {
 
   const canSubmit = !!reasonType && !!rangeStart && !clash && !createMut.isPending
   const weekdays = t("timeOff.my.weekdays", { defaultValue: "Mo,Tu,We,Th,Fr,Sa,Su" }).split(",")
-  const monthLabel = cursor.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+  const monthLabel = formatMonthYear(cursor)
 
   return (
     <div>

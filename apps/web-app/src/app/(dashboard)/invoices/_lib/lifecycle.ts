@@ -51,7 +51,7 @@ export interface LifecycleStep {
 }
 
 /** The chip's colours. */
-export const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
+const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
   DRAFT: { bg: "bg-slate-100 dark:bg-slate-500/20", text: "text-slate-600 dark:text-slate-400" },
   /*
     Amber, because an issued invoice sitting unsent is somebody's to-do — the

@@ -211,33 +211,3 @@ export function getPriorityConfig(priority: string): PriorityConfig {
   const normalized = priority.toUpperCase() as TaskPriority
   return PRIORITY_CONFIG[normalized] || PRIORITY_CONFIG.MEDIUM
 }
-
-// =============================================================================
-// FILTER OPTIONS
-// =============================================================================
-// =============================================================================
-// CHART COLORS (for compatibility with existing chart components)
-// =============================================================================
-// =============================================================================
-// FORM STYLES
-// =============================================================================
-// =============================================================================
-// AVATAR STYLES
-// =============================================================================
-// =============================================================================
-// API ROUTES
-// =============================================================================
-
-export const ROUTES = {
-  dashboard: "/",
-  tasks: "/tasks",
-  taskDetail: (id: string) => `/tasks/${id}`,
-  taskNew: "/tasks/new",
-  employees: "/employees",
-  employeeDetail: (id: string) => `/employees/${id}`,
-  liveMap: "/live-map",
-  organizations: "/organizations",
-  login: "/login",
-  forgotPassword: "/forgot-password",
-  resetPassword: "/reset-password",
-} as const

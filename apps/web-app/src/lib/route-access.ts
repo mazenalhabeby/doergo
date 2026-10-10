@@ -67,7 +67,7 @@ export interface AccessContext {
 export type Grant = "admin" | `org:${string}` | `any:${string}`
 
 /** Each entry must hold; an array entry holds when any one grant in it does. */
-export type Need = Grant | readonly Grant[]
+type Need = Grant | readonly Grant[]
 
 export interface AccessRule {
   /** Grants required (AND of entries; an array entry is an OR). */
@@ -93,13 +93,13 @@ export type AccessVerdict = { ok: true } | { ok: false; reason: DenyReason }
 const flag = (u: AccessUser, key: string) => u[key] === true
 
 /** `@RequirePermission(key)` — PermissionsGuard, exactly. */
-export function holdsOrgWide(u: AccessUser, key: string): boolean {
+function holdsOrgWide(u: AccessUser, key: string): boolean {
   if (isAdmin({ role: u.role ?? "" })) return true
   return flag(u, key) || accessAllows(u.access as never, key as never)
 }
 
 /** `@RequirePermissionInSpace(key)` — org-wide, or in any workspace. */
-export function holdsAnywhere(u: AccessUser, key: string): boolean {
+function holdsAnywhere(u: AccessUser, key: string): boolean {
   return holdsOrgWide(u, key) || accessAllowsAnywhere(u.access as never, key as never)
 }
 
@@ -127,7 +127,7 @@ export function evaluateRule(rule: AccessRule, ctx: AccessContext): AccessVerdic
 // ─── Shared conditions ──────────────────────────────────────────────────────
 
 /** CRM reach, as the server resolves it from the member's org role. */
-export function crmAccess(u: AccessUser): boolean {
+function crmAccess(u: AccessUser): boolean {
   return resolveCrmCaps(u.role, (u.access?.org ?? undefined) as never).canAccess
 }
 
@@ -292,7 +292,7 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
 
 // ─── Settings sections ──────────────────────────────────────────────────────
 
-export type SettingsSectionKey =
+type SettingsSectionKey =
   | "general" | "members" | "companies" | "notifications" | "holidays" | "audit-log"
   | "profile" | "security" | "my-emails"
 
@@ -381,18 +381,17 @@ const NAV_OFFER: Readonly<Record<string, (ctx: AccessContext) => boolean>> = {
     (holdsAnywhere(user, "canViewAllTasks") || holdsAnywhere(user, "canAssignTasks") || holdsOrgWide(user, "canManageUsers")),
 }
 
-export function offers(href: string, ctx: AccessContext): boolean {
+function offers(href: string, ctx: AccessContext): boolean {
   if (!mayOpen(href, ctx)) return false
   const extra = NAV_OFFER[href]
   return extra ? extra(ctx) : true
 }
 
-export const TEAM_MENU = ["/members", "/invitations", "/join-requests", "/team"] as const
-export const TIME_MENU = ["/attendance", "/issues", "/schedule", "/overtime"] as const
-export const DOCUMENTS_MENU = [
+const TEAM_MENU = ["/members", "/invitations", "/join-requests", "/team"] as const
+const TIME_MENU = ["/attendance", "/issues", "/schedule", "/overtime"] as const
+const DOCUMENTS_MENU = [
   "/documents", "/documents/all", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
-export const MANAGE_HUB = ["/members", "/members/phone-sync", "/invitations", "/join-requests", "/schedule", "/locations"] as const
 
 /** Where a nav href actually lands, for hrefs that are redirects. */
 const NAV_TARGET: Readonly<Record<string, string>> = { "/schedule": "/employees/availability" }

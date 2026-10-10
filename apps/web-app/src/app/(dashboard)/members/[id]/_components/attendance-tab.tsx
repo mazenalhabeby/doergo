@@ -11,8 +11,8 @@ import { useOvertimeAction } from "@/hooks/use-overtime-action"
 import { AttendanceStatusCell } from "@/components/attendance-status-cell"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTimeFormat } from "@/hooks"
-import { cn, formatDurationMinutes } from "@/lib/utils"
-import { countryFromTz, workedMinutes } from "@hbcfield/shared/client"
+import { cn } from "@/lib/utils"
+import { formatDuration, countryFromTz, workedMinutes } from "@hbcfield/shared/client"
 
 interface AttendanceTabProps {
   attendance: TimeEntry[] | undefined
@@ -133,13 +133,13 @@ export function AttendanceTab({
                       {entry.clockOutAt ? (
                         <>
                           <span className="font-medium tabular-nums">
-                            {formatDurationMinutes(workedMinutes(entry))}
+                            {formatDuration(workedMinutes(entry))}
                           </span>
                           {entry.totalMinutes != null &&
                             workedMinutes(entry) !== entry.totalMinutes && (
                               <span className="mt-0.5 block text-[11px] tabular-nums text-muted-foreground">
                                 {t("attendance.onSite", "{{duration}} on site", {
-                                  duration: formatDurationMinutes(entry.totalMinutes),
+                                  duration: formatDuration(entry.totalMinutes),
                                 })}
                               </span>
                             )}

@@ -8,6 +8,7 @@ import { invoiceNumberPrefix, issuerAddressLines, MAX_BANK_ACCOUNTS } from "@hbc
 
 import { legalEntitiesApi, type LegalEntity, type LegalEntityBankAccount, type LegalEntityInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { keys } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { getCountries } from "@/lib/countries"
 import { cn } from "@/lib/utils"
@@ -32,7 +33,7 @@ import { SettingCard } from "./setting-card"
  * (docs/plans/companies-legal-entities.md). Admins only: this is where clients are told to send
  * money, so every change is audited and the bank details are validated before they are saved.
  */
-const ALL_KEY = [...COMPANIES_QUERY_KEY, "all"] as const
+const ALL_KEY = keys.companies.includingInactive()
 
 export function CompaniesSection() {
   const { t } = useTranslation()

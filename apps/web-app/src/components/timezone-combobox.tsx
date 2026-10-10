@@ -5,41 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
 import { cityFromTz } from "@/lib/utils"
 import { geoFetch } from "@/lib/geocode"
-
-/** Full IANA timezone list (falls back to a curated set on old browsers). */
-const FALLBACK_TIMEZONES = [
-  "UTC",
-  "Europe/London", "Europe/Berlin", "Europe/Vienna", "Europe/Zurich",
-  "Europe/Paris", "Europe/Amsterdam", "Europe/Madrid", "Europe/Rome",
-  "Europe/Istanbul", "Europe/Moscow", "Asia/Dubai", "Asia/Kolkata",
-  "Asia/Shanghai", "Asia/Tokyo", "Asia/Singapore", "Australia/Sydney",
-  "Pacific/Auckland", "America/New_York", "America/Chicago",
-  "America/Denver", "America/Los_Angeles", "America/Sao_Paulo",
-]
-
-function allTimezones(): string[] {
-  try {
-    const all = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] })
-      .supportedValuesOf?.("timeZone")
-    if (Array.isArray(all) && all.length) return all
-  } catch {
-    /* noop */
-  }
-  return FALLBACK_TIMEZONES
-}
-
-/** Current UTC offset for a zone, e.g. "UTC+2" / "UTC+5:30" (reflects DST today). */
-function tzOffset(tz: string): string {
-  try {
-    // en-US is load-bearing here: this PARSES the "GMT+2" offset back out as data.
-    const part = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
-      .formatToParts(new Date())
-      .find((p) => p.type === "timeZoneName")?.value
-    return (part || "UTC+0").replace("GMT", "UTC")
-  } catch {
-    return ""
-  }
-}
+import { allTimezones, tzOffset } from "@/lib/timezones"
 
 /**
  * Searchable single-select over ALL IANA timezones (~418 via

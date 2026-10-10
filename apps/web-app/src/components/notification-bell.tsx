@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import {
@@ -25,6 +26,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
 
 // ============================================================================
 // Socket payload helpers
@@ -87,7 +89,7 @@ const taskLink = (d: TaskEventPayload): string | undefined => {
 const attendanceInfo = (d: AttendanceEventPayload, t: TFunction) => {
   const te = d?.timeEntry
   const u = te?.user
-  const name = d?.userName || (u ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim() : "")
+  const name = d?.userName || personName(u)
   const place = te?.isRemote ? t("attendance.my.remote", "Remote") : te?.location?.name || ""
   return { name, place }
 }
@@ -206,7 +208,7 @@ export function NotificationBell() {
 
   // ── Load the persisted inbox once, then keep live events on top ──────
   const { data: inbox } = useQuery({
-    queryKey: ["inboxNotifications"],
+    queryKey: keys.notifications.inbox(),
     queryFn: () => usersApi.getNotifications(50),
     staleTime: 60_000,
   })
@@ -264,7 +266,7 @@ export function NotificationBell() {
       subscribe<ChatEventPayload>("chat.message", (d) => {
         const m = d?.message
         if (!m || !m.senderId || m.senderId === user?.id) return
-        const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}`.trim() : t("chat.title", "Messages")
+        const name = m.sender ? personName(m.sender) : t("chat.title", "Messages")
         add("chat_message", name, (m.body || "").slice(0, 80), `chat:${m.senderId}`)
       }),
 

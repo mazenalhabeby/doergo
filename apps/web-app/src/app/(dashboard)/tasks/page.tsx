@@ -1,977 +1,149 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useRouteAccess } from "@/hooks/use-route-access"
-import { useClockGate, useOfficeStart } from "@/hooks"
-import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
 import { OfficeStartDialog } from "@/components/office-start-dialog"
 import { ClockGateDialog } from "@/components/clock-gate-dialog"
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useMemo, useRef } from "react"
 import dynamic from "next/dynamic"
-import { useTranslation } from "react-i18next"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Plus,
-  Repeat,
-  LayoutList,
-  Kanban,
-  CalendarDays,
-  RefreshCw,
-  Archive,
-} from "lucide-react"
-import { notify } from "@/lib/toast"
+import { useQueryClient } from "@tanstack/react-query"
+
+import { keys } from "@/lib/query-keys"
 
 import { useAuth } from "@/contexts/auth-context"
-import { useCommandPalette, type CommandAction } from "@/contexts/command-palette-context"
-import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useBillingLock } from "@/hooks/use-billing-lock"
-import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
-import { useSpaceWorkflow } from "@/hooks/use-space-modules"
-import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Sprint, type Epic, type TasksListResponse, type OnBehalf } from "@/lib/api"
-import { runBulk } from "@/lib/concurrency"
+import type { Task } from "@/lib/api"
 import { useSpaceModules } from "@/hooks/use-space-modules"
-import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { AssignMemberDialog } from "@/components/assign-member-dialog"
-import { useStepMove } from "@/components/step-forms/use-step-move"
-import { isStepFormRefusal, stepFormForMove } from "@/lib/step-forms"
-import { isAssignedTo } from "@/lib/task-assignment"
-import { serverErrorMessage } from "@/lib/server-error"
-import {
-  TasksViewSkeleton,
-  VIEW_MODE_STORAGE_KEY,
-  readStoredViewMode,
-  type TaskViewMode,
-} from "./_components/tasks-skeleton"
-import { Button } from "@/components/ui/button"
+import { TasksViewSkeleton } from "./_components/tasks-skeleton"
 import { SpaceTabs } from "@/components/space-tabs"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 
 import { RoleJobsSummary } from "./_components/role-jobs-summary"
-import { TaskTableRow } from "./_components/task-table-row"
-import { KanbanBoard } from "./_components/kanban-board"
-import type { GroupByOption } from "./_components/grouped-list"
 import { BulkActionBar } from "./_components/bulk-action-bar"
-import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSortDir } from "./_components/backlog-toolbar"
+import { BacklogToolbar, sortBacklogTasks } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
-import type { TaskContextMenuActions } from "./_components/task-context-menu"
+import { TasksPageHeader } from "./_components/tasks-page-header"
+import { MineScopeToggle } from "./_components/mine-scope-toggle"
+import { GroupByTabs } from "./_components/group-by-tabs"
+import { TasksErrorState, TasksEmptyState } from "./_components/tasks-states"
+import { TaskListView } from "./_components/task-list-view"
+import { TaskBoardView } from "./_components/task-board-view"
+import { TaskScheduleView } from "./_components/task-schedule-view"
+import { TasksPagination } from "./_components/tasks-pagination"
+import { TaskPlanningDialogs } from "./_components/task-planning-dialogs"
+import { TaskAssignDialog } from "./_components/task-assign-dialog"
+import { useTaskFilters } from "./_hooks/use-task-filters"
+import { useTaskStatusTabs, useBoardWorkflow } from "./_hooks/use-task-workflow"
+import { useTaskListData } from "./_hooks/use-task-list-data"
+import { useSprintPlanning } from "./_hooks/use-sprint-planning"
+import { useTaskAssign } from "./_hooks/use-task-assign"
+import { useTaskStatusChange } from "./_hooks/use-task-status-change"
+import { useTaskRowActions } from "./_hooks/use-task-row-actions"
+import { useTaskSelection } from "./_hooks/use-task-selection"
+import { useTaskBulkActions } from "./_hooks/use-task-bulk-actions"
+import { useTaskCommands } from "./_hooks/use-task-commands"
+import { useGroupByOptions } from "./_hooks/use-group-by-options"
+import { PRIORITY_ORDER, type TaskViewContext } from "./_lib/task-list"
 
 // Lazy (audit T-C1). Only ONE view renders at a time and the dialogs render on a
 // click, but all of them were in the first paint of the heaviest page in the
 // product — the create dialog alone is 1,402 lines, the timeline 702. The default
 // board (KanbanBoard / TaskTableRow) stays static so the primary path has no
-// loading flash. ssr:false: none of these renders on the server.
+// loading flash. ssr:false: none of these renders on the server. The schedule's
+// views, the grouped list and the sprint dialogs are lazy in their own files.
 // Shown only on the Recurring tab — loaded when opened, like the other alternate views.
 const RecurringPanel = dynamic(() => import("./recurring/recurring-view").then((m) => m.RecurringPanel), { ssr: false })
-const TimelineView = dynamic(() => import("./_components/timeline-view").then((m) => m.TimelineView), { ssr: false })
-const CalendarView = dynamic(() => import("./_components/calendar-view").then((m) => m.CalendarView), { ssr: false })
-const EpicRoadmap = dynamic(() => import("./_components/epic-roadmap").then((m) => m.EpicRoadmap), { ssr: false })
-const GroupedList = dynamic(() => import("./_components/grouped-list").then((m) => m.GroupedList), { ssr: false })
 const CreateTaskDialog = dynamic(() => import("./_components/create-task-dialog").then((m) => m.CreateTaskDialog), { ssr: false })
-const SprintFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.SprintFormDialog), { ssr: false })
-const CompleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.CompleteSprintDialog), { ssr: false })
-const DeleteSprintDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.DeleteSprintDialog), { ssr: false })
-const EpicFormDialog = dynamic(() => import("./_components/sprint-management").then((m) => m.EpicFormDialog), { ssr: false })
-import { hasAccessModule, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS, type StepFormAnswers } from "@hbcfield/shared/client"
+import { hasAccessModule } from "@hbcfield/shared/client"
 import { PAGE_SHELL } from "@/components/ui/page-width";
 
-// Priority sort order
-const PRIORITY_ORDER: Record<string, number> = {
-  URGENT: 0,
-  HIGH: 1,
-  MEDIUM: 2,
-  LOW: 3,
-}
-
-// ─── Optimistic update helpers ──────────────────────────────────────────────
-
-/** Snapshot all "tasks" query cache entries and return a restore function */
-function snapshotTasksCache(queryClient: ReturnType<typeof useQueryClient>) {
-  const queries = queryClient.getQueriesData<TasksListResponse>({ queryKey: keys.tasks.lists() })
-  return queries // array of [queryKey, data] tuples
-}
-
-/** Apply a task-level update across every "tasks" cache entry */
-function optimisticUpdateTask(
-  queryClient: ReturnType<typeof useQueryClient>,
-  taskId: string,
-  updater: (task: Task) => Task,
-) {
-  queryClient.setQueriesData<TasksListResponse>(
-    { queryKey: keys.tasks.lists() },
-    (old) => {
-      if (!old?.data) return old
-      return {
-        ...old,
-        data: old.data.map((t) => (t.id === taskId ? updater(t) : t)),
-      }
-    },
-  )
-}
-
-/** Restore all "tasks" cache entries from a previous snapshot */
-function restoreTasksCache(
-  queryClient: ReturnType<typeof useQueryClient>,
-  // React Query keys are arrays of whatever the caller composed them from.
-  snapshot: [readonly unknown[], TasksListResponse | undefined][],
-) {
-  for (const [key, data] of snapshot) {
-    queryClient.setQueryData(key, data)
-  }
-}
-
-// Hardcoded fallback status tabs (used when no workflow is configured)
-const FALLBACK_STATUS_TABS: StatusTabGroup[] = [
-  { key: "all", label: "All", dotColor: null, statuses: [] },
-  { key: "open", label: "Open", dotColor: "#3B82F6", statuses: ["NEW"] },
-  { key: "assigned", label: "Assigned", dotColor: "#8B5CF6", statuses: ["ASSIGNED", "ACCEPTED"] },
-  { key: "active", label: "Active", dotColor: "#F59E0B", statuses: ["EN_ROUTE", "ARRIVED", "IN_PROGRESS"] },
-  { key: "blocked", label: "Blocked", dotColor: "#EF4444", statuses: ["BLOCKED"] },
-  { key: "done", label: "Done", dotColor: "#22C55E", statuses: ["COMPLETED", "CLOSED"] },
-  { key: "canceled", label: "Canceled", dotColor: "#94A3B8", statuses: ["CANCELED"] },
-]
-
-// ViewMode + the storage key live with the skeleton that mirrors them.
-type ViewMode = TaskViewMode
-
-const GROUP_BY_STORAGE_KEY = "hbcfield-tasks-group-by"
-
-/** Board and schedule show the whole workload at once; the server caps at 500. */
-const BOARD_FETCH_LIMIT = 500
-const GROUP_BY_OPTIONS: { value: GroupByOption; label: string }[] = [
-  { value: "none", label: "None" },
-  { value: "sprint", label: "Sprint" },
-  { value: "epic", label: "Epic" },
-  { value: "assignee", label: "Assignee" },
-  { value: "priority", label: "Priority" },
-  { value: "space", label: "Space" },
-]
-
-const VIEW_OPTIONS: { mode: ViewMode; icon: typeof LayoutList; label: string }[] = [
-  { mode: "board", icon: Kanban, label: "Board" },
-  { mode: "table", icon: LayoutList, label: "List" },
-  { mode: "schedule", icon: CalendarDays, label: "Schedule" },
-]
-
-type TaskScope = "all" | "backlog" | string
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function TasksPage() {
   const { user, hasModule, hasPlanFeature, hasPermission } = useAuth()
-  const { t } = useTranslation()
-  const searchParams = useSearchParams()
   const queryClient = useQueryClient()
-  const router = useRouter()
-  const { registerActions, unregisterActions } = useCommandPalette()
 
   // Ref for focusing search input via keyboard shortcut
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  // Filter states
-  const [searchQuery, setSearchQuery] = useState("")
-  // The input stays instant; only the settled value drives the query.
-  const debouncedSearch = useDebouncedValue(searchQuery, 300)
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get("tab") || "all"
-  )
-  // Same reader the route-level skeleton uses, so the placeholder and the page
-  // always open on the same view.
-  const [viewMode, setViewMode] = useState<ViewMode>(readStoredViewMode)
-
-  const [groupBy, setGroupBy] = useState<GroupByOption>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(GROUP_BY_STORAGE_KEY)
-      if (stored && ["none", "sprint", "epic", "assignee", "priority", "space"].includes(stored)) {
-        return stored as GroupByOption
-      }
-    }
-    return "none"
-  })
-  const [page, setPage] = useState(1)
-  const limit = 20
-
-  // Sprint scope state
-  const [scope, setScope] = useState<TaskScope>("all")
-  // Epic filter state
-  const [epicFilter, setEpicFilter] = useState<string>("all")
-  // Space filter state
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(
-    searchParams.get("space") || null
-  )
-
-  // Backlog sort state
-  const [backlogSortField, setBacklogSortField] = useState<BacklogSortField>("priority")
-  const [backlogSortDir, setBacklogSortDir] = useState<BacklogSortDir>("asc")
-
-  // Sprint CRUD state
-  const [sprintFormOpen, setSprintFormOpen] = useState(false)
-  const [editingSprint, setEditingSprint] = useState<Sprint | null>(null)
-  const [completingSprint, setCompletingSprint] = useState<Sprint | null>(null)
-  const [deletingSprintId, setDeletingSprintId] = useState<string | null>(null)
-
-  // Epic CRUD state
-  const [epicFormOpen, setEpicFormOpen] = useState(false)
-  const [editingEpic, setEditingEpic] = useState<Epic | null>(null)
-
-  // Persist view mode
-  const handleViewModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode)
-    localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode)
-    // Clear epic filter when leaving schedule view (roadmap lives there)
-    if (mode !== "schedule") setEpicFilter("all")
-  }, [])
-
-  // Persist group-by
-  const handleGroupByChange = useCallback((value: GroupByOption) => {
-    setGroupBy(value)
-    localStorage.setItem(GROUP_BY_STORAGE_KEY, value)
-  }, [])
-
-  // Bulk selection state
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set())
-  const lastSelectedIndexRef = useRef<number | null>(null)
-  const filteredTasksRef = useRef<Task[]>([])
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedTaskIds(new Set())
-    lastSelectedIndexRef.current = null
-  }, [])
-
-  const handleToggleSelect = useCallback((taskId: string, shiftKey: boolean) => {
-    setSelectedTaskIds(prev => {
-      const next = new Set(prev)
-      const currentTasks = filteredTasksRef.current
-
-      if (shiftKey && lastSelectedIndexRef.current !== null) {
-        const currentIndex = currentTasks.findIndex((t: Task) => t.id === taskId)
-        if (currentIndex >= 0) {
-          const start = Math.min(lastSelectedIndexRef.current, currentIndex)
-          const end = Math.max(lastSelectedIndexRef.current, currentIndex)
-          for (let i = start; i <= end; i++) {
-            const t = currentTasks[i]
-            if (t) next.add(t.id)
-          }
-        }
-      } else {
-        if (next.has(taskId)) {
-          next.delete(taskId)
-        } else {
-          next.add(taskId)
-        }
-      }
-
-      const idx = currentTasks.findIndex((t: Task) => t.id === taskId)
-      if (idx >= 0) lastSelectedIndexRef.current = idx
-
-      return next
-    })
-  }, [])
+  // Search, tab, view, grouping, page, scope, epic, workspace, task type, mine.
+  const {
+    searchQuery, setSearchQuery, debouncedSearch,
+    activeTab,
+    viewMode, handleViewModeChange,
+    groupBy, setGroupBy, handleGroupByChange,
+    page, setPage, limit,
+    scope, setScope,
+    epicFilter, setEpicFilter,
+    selectedSpaceId, handleSpaceChange,
+    backlogSortField, setBacklogSortField,
+    backlogSortDir, setBacklogSortDir,
+    selectedWorkflowId, setSelectedWorkflowId,
+    mineOnly, setMineOnly,
+  } = useTaskFilters()
 
   // Create task dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [recurringView, setRecurringView] = useState(false)
 
-  // Assign dialog state
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
-
   // Dynamic workflow status tabs — space- AND task-type-aware.
-  // A space can hold tasks of several types (workflows); the Task Type picker
-  // below chooses which one the board/tabs reflect, defaulting to the space's
-  // (or org's) default. Everything downstream reads `activeWorkflowStatuses`.
-  const { workflows: orgWorkflows, defaultWorkflow } = useOrgWorkflow()
-  const { workflowId: spaceWorkflowId } = useSpaceWorkflow(selectedSpaceId)
-  const contextDefaultWorkflowId = (selectedSpaceId ? spaceWorkflowId : null) ?? defaultWorkflow?.id ?? null
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
-  const activeWorkflowId = selectedWorkflowId ?? contextDefaultWorkflowId
-  const { statuses: activeWorkflowStatuses, hasWorkflow } = useWorkflow(activeWorkflowId)
-  const STATUS_TABS: StatusTabGroup[] = useMemo(() => {
-    if (hasWorkflow && activeWorkflowStatuses.length > 0) {
-      return buildStatusTabs(activeWorkflowStatuses)
-    }
-    return FALLBACK_STATUS_TABS
-  }, [hasWorkflow, activeWorkflowStatuses])
-
-  // Derive the API status filter from the active tab
-
-  // The statuses behind the active tab. Sent as a group, because a tab like
-  // "active" covers several statuses and the server takes a list.
-  const activeStatuses = useMemo(() => {
-    const tab = STATUS_TABS.find((t) => t.key === activeTab)
-    return !tab || tab.key === "all" ? undefined : tab.statuses
-  }, [activeTab, STATUS_TABS])
-
-  // Board and schedule show the whole workload at once — a kanban column that
-  // says "Done 0" because the finished tasks are on page 3 is worse than no
-  // count. The table keeps real pagination.
-  const paginated = viewMode === "table"
-  const effectiveLimit = paginated ? limit : BOARD_FETCH_LIMIT
-
-  // Fetch tasks. Every filter below is applied by the SERVER: filtering in the
-  // browser only ever filtered the page that happened to be loaded, so a search
-  /*
-    Mine, or everything I oversee.
-
-    Only meaningful for somebody who can see more than their own work — a member
-    without `canViewAllTasks` already sees only their own, so a scope would be a
-    control with one real option.
-
-    Opens on ALL here, unlike the phone. A person at a desk on this screen is
-    usually running the board; a person unlocking a phone is usually asking what
-    to do next. Same control, different default, because they are different
-    questions.
-  */
-  const canSeeOthers = user?.role === "ADMIN" || hasPermission("canViewAllTasks")
-  const [mineOnly, setMineOnly] = useState(false)
-
-  // missed anything past row 20 and the totals described a different set than
-  // the rows did.
-  const taskQueryParams = useMemo(
-    () => ({
-      statuses: activeStatuses,
-      search: debouncedSearch,
-      spaceId: selectedSpaceId || undefined,
-      sprintId: scope === "all" ? undefined : scope === "backlog" ? "none" : scope,
-      epicId: epicFilter === "all" ? undefined : epicFilter,
-      page: paginated ? page : 1,
-      limit: effectiveLimit,
-      /*
-        Narrowed by the SERVER when the reader asks for their own work.
-
-        The list is paged, so filtering here would filter the page rather than
-        the work — and somebody overseeing a busy organization may not have
-        their own task in it at all. Never sent by a member who only ever sees
-        their own; their list already is that.
-      */
-      ...(canSeeOthers && mineOnly ? { assignedToMe: true } : {}),
-    }),
-    [activeStatuses, debouncedSearch, selectedSpaceId, scope, epicFilter, page, paginated, effectiveLimit, canSeeOthers, mineOnly],
-  )
-
-  const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: keys.tasks.list(taskQueryParams),
-    queryFn: () => tasksApi.list(taskQueryParams),
-    placeholderData: (prev) => prev, // keep rows on screen while a filter re-fetches
+  const { orgWorkflows, contextDefaultWorkflowId, activeWorkflowId, activeStatuses } = useTaskStatusTabs({
+    selectedSpaceId,
+    selectedWorkflowId,
+    activeTab,
   })
 
-  /*
-    How many are mine, and how many there are.
-
-    One cached reply carries both — counting rows the page has not fetched is
-    the only way a badge can be true. Asked only of somebody who has a scope to
-    switch; for everybody else the list is already the whole answer.
-  */
-  const { data: myCounts } = useQuery({
-    queryKey: keys.tasks.counts(),
-    queryFn: () => tasksApi.getStatusCounts(),
-    staleTime: 30000,
-    enabled: canSeeOthers,
+  // Every filter is applied by the SERVER — see useTaskListData.
+  const {
+    canSeeOthers, paginated,
+    tasks, meta, isLoading, isError, error, refetch,
+    myCounts, spaceTaskCounts,
+    phases, sprints, epics, spaces,
+  } = useTaskListData({
+    activeStatuses,
+    debouncedSearch,
+    selectedSpaceId,
+    scope,
+    epicFilter,
+    page,
+    limit,
+    viewMode,
+    mineOnly,
   })
-
-  // Space tab counts, grouped server-side over everything the viewer may see.
-  // Computed from the loaded page before, which is why the same tab showed 7 on
-  // page 1 and 4 on page 2.
-  const { data: spaceCounts } = useQuery({
-    queryKey: keys.tasks.counts({ groupBy: "space" }),
-    queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }),
-    staleTime: 30000,
-  })
-
-  // Fetch status counts
-
-  // Fetch phases
-  // GET /phases, /sprints, /epics are @RequirePermission('canViewAllTasks'): a member
-  // without it got three 403s on every visit to their own task list.
-  const { holds } = useRouteAccess()
-  const readsPlanning = holds("org:canViewAllTasks")
-  const { data: phases } = useQuery({
-    queryKey: keys.phases.lists(),
-    queryFn: () => phasesApi.list(),
-    staleTime: 60000,
-    enabled: readsPlanning,
-  })
-
-  // Fetch sprints
-  const { data: sprints } = useQuery({
-    queryKey: keys.sprints.lists(),
-    queryFn: () => sprintsApi.list(),
-    staleTime: 60000,
-    enabled: readsPlanning,
-  })
-
-  // Fetch epics
-  const { data: epics } = useQuery({
-    queryKey: keys.epics.lists(),
-    queryFn: () => epicsApi.list(),
-    staleTime: 60000,
-    enabled: readsPlanning,
-  })
-
-  // Fetch spaces (company locations)
-  const { data: spacesData } = useQuery({
-    queryKey: keys.locations.list(),
-    queryFn: () => locationsApi.list(),
-    staleTime: 60000,
-  })
-  const allSpaces = spacesData?.data || []
-
-  // Role-based space filtering:
-  // Admin/Dispatcher → all spaces
-  // Employee → only spaces from their assigned tasks
-  const isAdminOrManager = user?.role === "ADMIN" || hasPermission('canViewAllTasks')
-  const spaces = useMemo(() => {
-    if (isAdminOrManager) return allSpaces
-    // Filter to spaces the employee has tasks in
-    const taskList = tasksData?.data || []
-    const userSpaceIds = new Set(taskList.filter((t) => t.spaceId).map((t) => t.spaceId))
-    if (userSpaceIds.size === 0) return allSpaces
-    return allSpaces.filter((s) => userSpaceIds.has(s.id))
-  }, [isAdminOrManager, allSpaces, tasksData])
 
   // Space-aware modules
   const { hasModule: spaceHasModule } = useSpaceModules(selectedSpaceId)
   // Use space-level hasModule when a space is selected, otherwise org-level
   const effectiveHasModule = selectedSpaceId ? spaceHasModule : hasModule
 
-  // Space change handler
-  const handleSpaceChange = useCallback((spaceId: string | null) => {
-    setSelectedSpaceId(spaceId)
-    setPage(1)
-    setActiveTab("all") // Reset tab since workflow changes per space
-    setSelectedWorkflowId(null) // Reset task-type picker to the new space's default
-    setEpicFilter("all") // Reset epic filter — different space has different epics
-    // Update URL
-    const url = spaceId ? `/tasks?space=${spaceId}` : "/tasks"
-    router.replace(url, { scroll: false })
-  }, [router])
+  const planning = useSprintPlanning({ sprints, tasks, scope, setScope })
+  const { effectiveSprints, selectedSprint, sprintScopedTasks, sprintTeamSize, averageVelocity } = planning
 
-  // Sprint mutations
-  const startSprintMutation = useMutation({
-    mutationFn: (id: string) => sprintsApi.start(id),
-    onSuccess: () => {
-      notify.sprint("started", t("tasks.notify.sprintStarted"))
-      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  const completeSprintMutation = useMutation({
-    mutationFn: (id: string) => sprintsApi.complete(id),
-    onSuccess: () => {
-      notify.sprint("completed", t("tasks.notify.sprintCompleted"))
-      setCompletingSprint(null)
-      setScope("all")
-      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  const deleteSprintMutation = useMutation({
-    mutationFn: (id: string) => sprintsApi.delete(id),
-    onSuccess: () => {
-      notify.sprint("deleted", t("tasks.notify.sprintRemoved"))
-      setDeletingSprintId(null)
-      setScope("all")
-      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-
-  // Sprint helpers
-  const effectiveSprints = useMemo(() => {
-    return [...(sprints || [])].sort((a, b) => {
-      const order: Record<string, number> = { ACTIVE: 0, PLANNING: 1, COMPLETED: 2 }
-      return (order[a.status] ?? 9) - (order[b.status] ?? 9)
-    })
-  }, [sprints])
-
-  const hasActiveSprint = useMemo(() => effectiveSprints.some(s => s.status === "ACTIVE"), [effectiveSprints])
-
-  const nextPlanningSprint = useMemo(() =>
-    effectiveSprints.find(s => s.status === "PLANNING") ?? null
-  , [effectiveSprints])
-
-  const nextSprintNumber = (sprints || []).length + 1
-  const lastSprintEndDate = useMemo(() => {
-    const sorted = [...(sprints || [])].sort((a, b) =>
-      new Date(b.endDate).getTime() - new Date(a.endDate).getTime()
-    )
-    return sorted[0]?.endDate ?? null
-  }, [sprints])
-
-  const selectedSprint = useMemo(() => {
-    if (scope === "all" || scope === "backlog") return null
-    return effectiveSprints.find(s => s.id === scope) ?? null
-  }, [scope, effectiveSprints])
-
-  const handleSprintFormClose = useCallback((open: boolean) => {
-    setSprintFormOpen(open)
-    if (!open) setEditingSprint(null)
-  }, [])
-
-  const handleEditSprint = useCallback((sprint: Sprint) => {
-    setEditingSprint(sprint)
-    setSprintFormOpen(true)
-  }, [])
-
-  const handleCompleteSprintClick = useCallback((sprint: Sprint) => {
-    setCompletingSprint(sprint)
-  }, [])
-
-  const handleCompleteSprintConfirm = useCallback((_moveToNext: boolean) => {
-    if (completingSprint) {
-      completeSprintMutation.mutate(completingSprint.id)
-    }
-  }, [completingSprint, completeSprintMutation])
-
-  /*
-    Reassigning a job whose handover is still owed (shared tasks/handover.ts):
-    the list row carries no names, so the job itself is read — only while the
-    dialog is open, under the key the task page caches it by.
-  */
-  const { data: assignDetail } = useQuery({
-    queryKey: keys.tasks.detail(selectedTaskId),
-    queryFn: () => tasksApi.getById(selectedTaskId!),
-    enabled: assignDialogOpen && !!selectedTaskId,
-    staleTime: 30_000,
-  })
-  const handoverPending = useHandoverPendingText(assignDetail)
-  const [reassignNote, setReassignNote] = useState("")
-
-  // Assign mutation
-  const assignMutation = useMutation({
-    mutationFn: async (workerId: string) => {
-      if (!selectedTaskId) throw new Error(t("tasks.notify.noTaskSelected"))
-      const done = await tasksApi.assign(selectedTaskId, workerId)
-      // A note for whoever takes the job over, posted on the job.
-      if (reassignNote.trim()) await tasksApi.addComment(selectedTaskId, reassignNote.trim())
-      return done
-    },
-    onMutate: async (workerId) => {
-      if (!selectedTaskId) return
-      await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, selectedTaskId, (t) => ({
-        ...t,
-        assignedToId: workerId,
-        status: t.status === "NEW" ? "ASSIGNED" : t.status,
-      }))
-      return { snapshot }
-    },
-    onError: (e: Error, _vars, context) => {
-      if (context?.snapshot) restoreTasksCache(queryClient, context.snapshot)
-      notify.error(e.message)
-    },
-    onSuccess: () => {
-      setReassignNote("")
-      notify.success(t("tasks.notify.memberAssigned"))
-    },
-    onSettled: () => {
-      // Always refetch to sync with server
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-    },
-  })
-
-  const handleAssignClick = (taskId: string) => {
-    setSelectedTaskId(taskId)
-    setAssignDialogOpen(true)
-  }
+  const assign = useTaskAssign()
+  const { handleAssignClick } = assign
 
   const handleRefresh = () => {
     refetch()
     queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
   }
 
-  const tasks = tasksData?.data || []
-  const meta = tasksData?.meta
   const effectivePhases = phases || []
   const effectiveEpics = epics || []
 
-  // ── Smart board task-type picker ──────────────────────────────────────────
-  // Only offer the workflows that the space's tasks ACTUALLY use (a task's type
-  // is its own workflowId, else the space default) — not every org workflow. The
-  // board renders one type at a time (columns differ per workflow); default to the
-  // space's own type when present, else the first type that has tasks here.
-  const boardWorkflowCounts = useMemo(() => {
-    const scoped = selectedSpaceId ? tasks.filter((t: Task) => t.spaceId === selectedSpaceId) : tasks
-    const m = new Map<string, number>()
-    for (const tk of scoped) {
-      const wf = (tk as Task).workflowId ?? contextDefaultWorkflowId
-      if (wf) m.set(wf, (m.get(wf) ?? 0) + 1)
-    }
-    return m
-  }, [tasks, selectedSpaceId, contextDefaultWorkflowId])
-  const presentWorkflowIds = useMemo(() => new Set(boardWorkflowCounts.keys()), [boardWorkflowCounts])
-  const boardWorkflows = useMemo(
-    () => orgWorkflows.filter((w) => presentWorkflowIds.has(w.id)),
-    [orgWorkflows, presentWorkflowIds],
-  )
-  const boardWorkflowId = useMemo(() => {
-    if (selectedWorkflowId && presentWorkflowIds.has(selectedWorkflowId)) return selectedWorkflowId
-    if (contextDefaultWorkflowId && presentWorkflowIds.has(contextDefaultWorkflowId)) return contextDefaultWorkflowId
-    return boardWorkflows[0]?.id ?? contextDefaultWorkflowId ?? activeWorkflowId
-  }, [selectedWorkflowId, presentWorkflowIds, contextDefaultWorkflowId, boardWorkflows, activeWorkflowId])
-  const { statuses: boardStatuses, hasWorkflow: boardHasWorkflow } = useWorkflow(boardWorkflowId)
-  const boardKanbanColumns = useMemo(
-    () => (boardHasWorkflow && boardStatuses.length > 0 ? buildKanbanColumns(boardStatuses) : undefined),
-    [boardHasWorkflow, boardStatuses],
-  )
+  const { stepMove, workflowForTask, clockGate, officeStart, requestStatusChange, handleKanbanDrop } =
+    useTaskStatusChange({ tasks, orgWorkflows, contextDefaultWorkflowId })
 
-  /*
-    "Ask when a job moves here". A move into a step with a form opens the
-    step's dialog and goes out only with its answers. The list carries no
-    effective workflow per task, so it is the task's own type, else this
-    view's default — and when that guess is wrong the server's refusal makes
-    `useStepMove` read the job's real one and ask anyway.
-  */
-  const stepMove = useStepMove()
-  const workflowForTask = useCallback(
-    (task: Task) => {
-      const wfId = task.workflowId ?? contextDefaultWorkflowId
-      return orgWorkflows.find((w) => w.id === wfId) ?? null
-    },
-    [orgWorkflows, contextDefaultWorkflowId],
-  )
+  const { handleReorder, handleGroupChange, contextActions, recentAssignees } =
+    useTaskRowActions({ tasks, requestStatusChange })
 
-  const clockGate = useClockGate()
-  const officeStart = useOfficeStart()
-
-  // Kanban drag-and-drop status change
-  const statusChangeMutation = useMutation({
-    mutationFn: ({ taskId, status, answers, onBehalf }: { taskId: string; status: string; answers?: StepFormAnswers; onBehalf?: OnBehalf }) =>
-      tasksApi.updateStatus(taskId, status, undefined, answers, onBehalf),
-    onMutate: async ({ taskId, status }) => {
-      await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, status }))
-      return { snapshot }
-    },
-    onError: (e: Error, vars, context) => {
-      if (context?.snapshot) restoreTasksCache(queryClient, context.snapshot)
-      // Off the clock: offer to clock in, then the same move again by itself.
-      if (clockGate.intercept(e, () => statusChangeMutation.mutate(vars))) return
-      // The office starting somebody's job: say why, then the same move again.
-      if (officeStart.intercept(e, (onBehalf) => statusChangeMutation.mutate({ ...vars, onBehalf }))) return
-      // A step-form refusal is answered by the step's dialog, not a toast.
-      if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-    },
-  })
-
-  /** Every status change on this page: through the step's form when it has one. */
-  const requestStatusChange = useCallback(
-    (taskId: string, status: string) => {
-      const task = tasks.find((tk) => tk.id === taskId)
-      if (!task) {
-        statusChangeMutation.mutate({ taskId, status })
-        return
-      }
-      stepMove
-        .move({
-          task,
-          status,
-          workflow: workflowForTask(task),
-          send: (answers) => statusChangeMutation.mutateAsync({ taskId, status, answers }),
-        })
-        .catch((e: unknown) => {
-          // Anything else was already said by the mutation's own onError.
-          if (isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
-        })
-    },
-    [tasks, statusChangeMutation, stepMove, workflowForTask, t],
-  )
-
-  const handleKanbanDrop = useCallback((taskId: string, newStatus: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    // Don't do anything if dropping on the same status
-    if (task && task.status === newStatus) return
-
-    /*
-      Refuse a move the server would refuse, here rather than after a round
-      trip. A card lifts only when it can move at all, but WHERE it may land is
-      a second question: a completed task may be closed and nothing else, so
-      dropping it in "In Progress" should not travel and come back as an error.
-      Same rule the service applies.
-    */
-    if (task && !mayChangeStatus({
-      from: task.status,
-      to: newStatus,
-      allowedTargets: (STATUS_TRANSITIONS[task.status as keyof typeof STATUS_TRANSITIONS] ?? []) as string[],
-      targetIsValidStatus: true,
-      isManager: user?.role === "ADMIN" || hasPermission('canViewAllTasks'),
-      fromIsFinished: isFinishedStatus(task.status),
-    })) {
-      notify.error(t("tasks.notify.invalidTransition", {
-        defaultValue: "This task can no longer be moved there.",
-      }))
-      return
-    }
-
-    requestStatusChange(taskId, newStatus)
-  }, [tasks, requestStatusChange, user, t])
-
-  // Handle reorder within same column/group
-  const handleReorder = useCallback((taskId: string, newPosition: number, _groupKey: string) => {
-    // Real API: optimistic position update
-    const snapshot = snapshotTasksCache(queryClient)
-    optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, position: newPosition }))
-    tasksApi.update(taskId, { position: newPosition }).then(() => {
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-    }).catch((e: Error) => {
-      restoreTasksCache(queryClient, snapshot)
-      notify.error(e.message)
-    })
-  }, [queryClient])
-
-  // Handle cross-group change (drag between groups in grouped list)
-  const handleGroupChange = useCallback((taskId: string, updates: Record<string, string | null>) => {
-    // Optimistic update for cross-group drag
-    const snapshot = snapshotTasksCache(queryClient)
-    optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, ...updates }))
-    const field = Object.keys(updates)[0] || "field"
-    tasksApi.update(taskId, updates).then(() => {
-      notify.success(t("tasks.notify.taskFieldUpdated", { field: field.replace("Id", "") }))
-      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-    }).catch((e: Error) => {
-      restoreTasksCache(queryClient, snapshot)
-      notify.error(e.message)
-    })
-  }, [queryClient])
-
-  // Context menu actions
-  const contextActions: TaskContextMenuActions = useMemo(() => ({
-    onStatusChange: (taskId: string, status: string) => {
-      requestStatusChange(taskId, status)
-    },
-    onPriorityChange: (taskId: string, priority: string) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, priority }))
-      tasksApi.update(taskId, { priority }).then(() => {
-        notify.success(t("tasks.notify.priorityUpdated"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onSprintChange: (taskId: string, sprintId: string | null) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, sprintId }))
-      tasksApi.update(taskId, { sprintId }).then(() => {
-        notify.success(sprintId ? t("tasks.notify.movedToSprint") : t("tasks.notify.movedToBacklog"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onPhaseChange: (taskId: string, phaseId: string | null) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, phaseId }))
-      tasksApi.update(taskId, { phaseId }).then(() => {
-        notify.success(phaseId ? t("tasks.notify.phaseSet") : t("tasks.notify.phaseRemoved"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onEpicChange: (taskId: string, epicId: string | null) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, epicId }))
-      tasksApi.update(taskId, { epicId }).then(() => {
-        notify.success(epicId ? t("tasks.notify.epicSet") : t("tasks.notify.epicRemoved"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onStoryPointsChange: (taskId: string, points: number | null) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, storyPoints: points }))
-      tasksApi.update(taskId, { storyPoints: points }).then(() => {
-        notify.success(points ? t("tasks.notify.pointsSet", { points }) : t("tasks.notify.pointsCleared"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onSpaceChange: (taskId: string, spaceId: string | null) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, spaceId }))
-      tasksApi.update(taskId, { spaceId }).then(() => {
-        notify.success(spaceId ? t("tasks.notify.movedToSpace") : t("tasks.notify.spaceRemoved"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-    onDelete: (taskId: string) => {
-      const snapshot = snapshotTasksCache(queryClient)
-      // Optimistically remove task from cache
-      queryClient.setQueriesData<TasksListResponse>(
-        { queryKey: keys.tasks.lists() },
-        (old) => {
-          if (!old?.data) return old
-          return {
-            ...old,
-            data: old.data.filter((t) => t.id !== taskId),
-            meta: old.meta ? { ...old.meta, total: old.meta.total - 1 } : old.meta,
-          }
-        },
-      )
-      tasksApi.delete(taskId).then(() => {
-        notify.success(t("tasks.notify.taskDeleted"))
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-      }).catch((e: Error) => {
-        restoreTasksCache(queryClient, snapshot)
-        notify.error(e.message)
-      })
-    },
-  }), [requestStatusChange, queryClient])
-
-  // Build recent assignees from visible tasks for context menu
-  const recentAssignees = useMemo(() => {
-    const map = new Map<string, { id: string; firstName: string; lastName: string }>()
-    for (const task of tasks) {
-      if (task.assignedTo) {
-        map.set(task.assignedTo.id, {
-          id: task.assignedTo.id,
-          firstName: task.assignedTo.firstName ?? "",
-          lastName: task.assignedTo.lastName ?? "",
-        })
-      }
-      if (task.assignees) {
-        for (const a of task.assignees) {
-          map.set(a.user.id, {
-            id: a.user.id,
-            firstName: a.user.firstName ?? "",
-            lastName: a.user.lastName ?? "",
-          })
-        }
-      }
-    }
-    return Array.from(map.values()).slice(0, 8)
-  }, [tasks])
-
-  // Bulk action handlers
-  const handleBulkStatusChange = useCallback((taskIds: string[], status: string) => {
-    /*
-      A step that asks something is answered job by job — one form cannot be
-      one set of answers for twenty different jobs. Those are left where they
-      are and named; the rest move as before.
-    */
-    const asks = new Set(
-      taskIds.filter((id) => {
-        const task = tasks.find((tk) => tk.id === id)
-        return !!task && !!stepFormForMove({ workflow: workflowForTask(task), statusKey: status, isAssignee: isAssignedTo(task, user?.id) })
-      }),
-    )
-    const movable = taskIds.filter((id) => !asks.has(id))
-    if (asks.size > 0) {
-      notify.error(t("stepForm.bulkSkipped", {
-        count: asks.size,
-        defaultValue: "{{count}} jobs were not moved: that step asks for answers. Move them one at a time.",
-      }))
-    }
-    if (movable.length === 0) {
-      handleClearSelection()
-      return
-    }
-    runBulk(movable, (id) => tasksApi.updateStatus(id, status))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: movable.length }))
-        else notify.bulk(movable.length, t("tasks.notify.actionUpdated"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-      })
-  }, [handleClearSelection, queryClient, tasks, workflowForTask, user?.id, t])
-
-  const handleBulkPriorityChange = useCallback((taskIds: string[], priority: string) => {
-    runBulk(taskIds, (id) => tasksApi.update(id, { priority }))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      })
-  }, [handleClearSelection, queryClient])
-
-  const handleBulkSprintChange = useCallback((taskIds: string[], sprintId: string | null) => {
-    runBulk(taskIds, (id) => tasksApi.update(id, { sprintId }))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
-      })
-  }, [handleClearSelection, queryClient])
-
-  const handleBulkDelete = useCallback((taskIds: string[]) => {
-    runBulk(taskIds, (id) => tasksApi.delete(id))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.deletesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionDeleted"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
-      })
-  }, [handleClearSelection, queryClient])
-
-  const handleBulkEstimate = useCallback((taskIds: string[], points: number) => {
-    runBulk(taskIds, (id) => tasksApi.update(id, { storyPoints: points }))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionEstimated"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      })
-  }, [handleClearSelection, queryClient])
-
-  const handleBulkSpaceChange = useCallback((taskIds: string[], spaceId: string | null) => {
-    runBulk(taskIds, (id) => tasksApi.update(id, { spaceId }))
-      .then(({ failed }) => {
-        if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
-        else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
-        handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-      })
-  }, [handleClearSelection, queryClient])
-
-  // Any filter change invalidates the page number: page 3 of an unfiltered list
-  // is not page 3 of a filtered one, and asking for it returns an empty screen.
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, selectedSpaceId, scope, epicFilter, activeTab])
-
-  // Space tab counts — server-grouped over everything visible, not the page.
-  const spaceTaskCounts = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const [spaceId, n] of Object.entries(spaceCounts ?? {})) {
-      if (spaceId !== "all") counts.set(spaceId, n as number)
-    }
-    return counts
-  }, [spaceCounts])
+  // Bulk selection
+  const { selectedTaskIds, filteredTasksRef, handleClearSelection } = useTaskSelection()
+  const {
+    handleBulkStatusChange,
+    handleBulkPriorityChange,
+    handleBulkSprintChange,
+    handleBulkDelete,
+    handleBulkEstimate,
+    handleBulkSpaceChange,
+  } = useTaskBulkActions({ tasks, workflowForTask, handleClearSelection })
 
   // Sorting only. Space, sprint, epic, status-group and search are applied by
   // the server now — see taskQueryParams. Filtering here as well would narrow
@@ -987,44 +159,19 @@ export default function TasksPage() {
     })
   }, [tasks, scope, backlogSortField, backlogSortDir])
 
-  // Tasks in the selected sprint (unfiltered — for sprint indicator)
-  const sprintScopedTasks = useMemo(() => {
-    if (scope === "all" || scope === "backlog") return []
-    return tasks.filter((t: Task) => t.sprintId === scope)
-  }, [tasks, scope])
-
-  // Incomplete tasks in selected sprint (for complete sprint dialog)
-  const incompleteSprintTasks = useMemo(() => {
-    return sprintScopedTasks.filter((t: Task) => !["COMPLETED", "CLOSED", "CANCELED"].includes(t.status))
-  }, [sprintScopedTasks])
-
-  // Board-only view: when the org has multiple task types, the kanban shows one
-  // type at a time (columns differ per workflow), so scope its cards to the active
-  // type. A task's effective type is its own workflowId, else the space default.
-  // Other views (table/schedule) keep showing everything.
-  const boardTasks = useMemo(() => {
-    if (boardWorkflows.length <= 1 || !boardWorkflowId) return filteredTasks
-    return filteredTasks.filter(
-      (tk: Task) => ((tk.workflowId ?? contextDefaultWorkflowId) === boardWorkflowId),
-    )
-  }, [filteredTasks, boardWorkflows.length, boardWorkflowId, contextDefaultWorkflowId])
+  // ── Smart board task-type picker ──────────────────────────────────────────
+  const { boardWorkflowCounts, boardWorkflows, boardWorkflowId, boardKanbanColumns, boardTasks } = useBoardWorkflow({
+    tasks,
+    filteredTasks,
+    selectedSpaceId,
+    selectedWorkflowId,
+    contextDefaultWorkflowId,
+    activeWorkflowId,
+    orgWorkflows,
+  })
 
   // Sync ref for shift-click range selection
   filteredTasksRef.current = filteredTasks
-
-  const handleSelectAll = useCallback(() => {
-    setSelectedTaskIds(prev => {
-      if (prev.size === filteredTasksRef.current.length) {
-        return new Set()
-      }
-      return new Set(filteredTasksRef.current.map((t: Task) => t.id))
-    })
-  }, [])
-
-  const handleTabChange = (key: string) => {
-    setActiveTab(key)
-    setPage(1)
-  }
 
   // Pagination
   const totalPages = meta?.totalPages || 1
@@ -1047,155 +194,39 @@ export default function TasksPage() {
   const { locked: billingLocked, reason: billingLockReason } = useBillingLock()
   const canAssignTasks = hasPermission('canAssignTasks')
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
-  useKeyboardShortcuts(
-    {
-      onCreateTask: canCreateTasks ? () => setCreateDialogOpen(true) : undefined,
-      onSearch: () => searchInputRef.current?.focus(),
-      onViewChange: (view) => handleViewModeChange(view as ViewMode),
-      onClearSelection: handleClearSelection,
-    },
-    { enableTaskShortcuts: true, navigate: (path) => router.push(path) },
-  )
+  // ── Keyboard shortcuts + command palette ──────────────────────────────────
+  useTaskCommands({
+    canCreateTasks,
+    spaces,
+    searchInputRef,
+    openCreateDialog: () => setCreateDialogOpen(true),
+    openNewSprint: planning.openNewSprint,
+    showBacklog: () => { setScope("backlog"); setPage(1) },
+    handleViewModeChange,
+    handleClearSelection,
+    handleSpaceChange,
+  })
 
-  // ── Register task-specific commands with command palette ────────────────────
-  useEffect(() => {
-    const taskActions: CommandAction[] = []
+  // Available group-by options based on modules (and the fallback to "none")
+  const { availableGroupByOptions } = useGroupByOptions({
+    groupBy,
+    setGroupBy,
+    effectiveHasModule,
+    epicCount: effectiveEpics.length,
+    selectedSpaceId,
+    spaceCount: spaces.length,
+  })
 
-    if (canCreateTasks) {
-      taskActions.push({
-        id: "task-create",
-        label: "Create New Task",
-        description: "Open the create task dialog",
-        icon: Plus,
-        group: "tasks",
-        shortcut: "C",
-        onSelect: () => setCreateDialogOpen(true),
-        contextual: true,
-      })
-    }
-
-    taskActions.push({
-      id: "task-search",
-      label: "Search Tasks",
-      description: "Focus the task search input",
-      icon: Search,
-      group: "tasks",
-      shortcut: "/",
-      onSelect: () => searchInputRef.current?.focus(),
-      contextual: true,
-    })
-
-    // Sprint actions
-    taskActions.push({
-      id: "sprint-create",
-      label: "Create Sprint",
-      description: "Open the sprint form dialog",
-      icon: Plus,
-      group: "sprints",
-      onSelect: () => { setEditingSprint(null); setSprintFormOpen(true) },
-      contextual: true,
-    })
-
-    taskActions.push({
-      id: "sprint-backlog",
-      label: "View Backlog",
-      description: "Show tasks not assigned to any sprint",
-      icon: Archive,
-      group: "sprints",
-      onSelect: () => { setScope("backlog"); setPage(1) },
-      contextual: true,
-    })
-
-    // Space navigation actions
-    for (const space of spaces) {
-      taskActions.push({
-        id: `space-${space.id}`,
-        label: `Go to ${space.name} tasks`,
-        description: `Filter tasks by ${space.name} space`,
-        icon: ClipboardList,
-        group: "tasks",
-        onSelect: () => handleSpaceChange(space.id),
-        contextual: true,
-      })
-    }
-
-    const ids = taskActions.map((a) => a.id)
-    registerActions(taskActions)
-    return () => unregisterActions(ids)
-  }, [canCreateTasks, spaces, handleSpaceChange, registerActions, unregisterActions]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Available group-by options based on modules
-  const availableGroupByOptions = useMemo(() => {
-    return GROUP_BY_OPTIONS.filter(opt => {
-      if (opt.value === "none") return true
-      if (opt.value === "sprint") return effectiveHasModule('sprints')
-      if (opt.value === "epic") return effectiveHasModule('epics') && effectiveEpics.length > 0
-      if (opt.value === "assignee") return false // removed from list groups
-      if (opt.value === "priority") return true
-      if (opt.value === "space") return false // spaces handled by tabs above
-      return true
-    })
-  }, [effectiveHasModule, effectiveEpics.length, selectedSpaceId, spaces.length])
-
-  // Reset group-by when current option is not available for the selected space
-  useEffect(() => {
-    if (groupBy !== "none" && !availableGroupByOptions.some(o => o.value === groupBy)) {
-      setGroupBy("none")
-    }
-  }, [availableGroupByOptions, groupBy])
-
-  // Group-by dropdown label
-  const groupByLabel = useMemo(() => {
-    if (groupBy === "none") return "Group: None"
-    const opt = GROUP_BY_OPTIONS.find(o => o.value === groupBy)
-    return `Group: ${opt?.label ?? groupBy}`
-  }, [groupBy])
-
-  // Current view label
-  const currentViewOption = VIEW_OPTIONS.find(v => v.mode === viewMode) || VIEW_OPTIONS[0]!
-  const CurrentViewIcon = currentViewOption.icon
-
-  // Sprint dropdown label
-  const sprintDropdownLabel = useMemo(() => {
-    if (scope === "all") return "All Tasks"
-    if (scope === "backlog") return "Backlog"
-    const s = effectiveSprints.find(s => s.id === scope)
-    return s?.name ?? "Sprint"
-  }, [scope, effectiveSprints])
-
-  // Sprint indicator data
-  const sprintIndicator = useMemo(() => {
-    if (!selectedSprint) return null
-    const taskCount = sprintScopedTasks.length
-    const doneCount = sprintScopedTasks.filter((t: Task) => t.status === "COMPLETED" || t.status === "CLOSED").length
-    const totalPoints = sprintScopedTasks.reduce((sum: number, t: Task) => sum + (t.storyPoints || 0), 0)
-    const donePoints = sprintScopedTasks.filter((t: Task) => t.status === "COMPLETED" || t.status === "CLOSED").reduce((sum: number, t: Task) => sum + (t.storyPoints || 0), 0)
-    const pct = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0
-    return { taskCount, doneCount, pct, totalPoints, donePoints }
-  }, [selectedSprint, sprintScopedTasks])
-
-  // Average velocity from past sprints (for capacity bar)
-  const averageVelocity = useMemo(() => {
-    const velocityData: { sprintName: string; velocity: number }[] = [] // TODO: use sprintsApi.getVelocity() when available
-    if (velocityData.length === 0) return undefined
-    const sum = velocityData.reduce((acc, v) => acc + v.velocity, 0)
-    return Math.round(sum / velocityData.length)
-  }, [])
-
-  // Team size for selected sprint (unique assignees)
-  const sprintTeamSize = useMemo(() => {
-    if (!selectedSprint) return undefined
-    const ids = new Set<string>()
-    for (const task of sprintScopedTasks) {
-      if (task.assignees) {
-        for (const a of task.assignees) ids.add(a.user?.id ?? a.userId)
-      } else if (task.assignedToId) {
-        ids.add(task.assignedToId)
-      }
-    }
-    return ids.size || undefined
-  }, [selectedSprint, sprintScopedTasks])
+  // What every view hands its rows and cards.
+  const viewContext: TaskViewContext = {
+    sprints: sprints || [],
+    phases: effectivePhases,
+    epics: effectiveEpics,
+    spaces,
+    contextActions,
+    recentAssignees,
+  }
+  const showContent = !isLoading && !isError && filteredTasks.length > 0
 
   return (
     <div className="min-h-full bg-background">
@@ -1210,97 +241,22 @@ export default function TasksPage() {
 
       <div className={PAGE_SHELL}>
         {/* ── Header ─────────────────────────────────────────── */}
-        <div className="mb-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                {t("tasks.page.heading")} {!isLoading && total > 0 && <span className="text-muted-foreground font-normal text-lg">({total})</span>}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("tasks.page.subtitle")}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-
-          {/* Sprint and Epic filters removed — use "Group by: Sprint/Epic" instead */}
-
-
-          {/* Search */}
-          <div className="relative" data-tour="tasks-search">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              placeholder={t("tasks.page.searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={cn(
-                "pl-9 w-44 h-8 bg-muted/50 border-0 rounded-lg text-sm",
-                "focus:w-56 focus:bg-card focus:border-border focus:ring-1 focus:ring-ring",
-                "transition-all duration-200"
-              )}
-            />
-          </div>
-
-          {/* View mode toggle buttons */}
-          <div className="flex items-center rounded-lg border border-border/60 overflow-hidden" data-tour="tasks-views">
-            {VIEW_OPTIONS.map(({ mode, icon: Icon }) => (
-              <button
-                key={mode}
-                onClick={() => handleViewModeChange(mode)}
-                data-tour={`tasks-view-${mode}`}
-                title={t(`tasks.view.${mode}`)}
-                className={cn(
-                  "h-8 w-8 flex items-center justify-center transition-colors duration-150",
-                  viewMode === mode
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                )}
-              >
-                <Icon className="size-4" />
-              </button>
-            ))}
-          </div>
-
-          {/* Recurring view toggle (admins, Professional+) */}
-          {user?.role === "ADMIN" && hasPlanFeature("recurring") && (
-            <Button
-              size="sm"
-              variant={recurringView ? "default" : "outline"}
-              onClick={() => setRecurringView((v) => !v)}
-              className={cn(
-                "h-8 px-3.5 rounded-lg font-medium text-sm",
-                recurringView && "bg-blue-600 text-white hover:bg-blue-700",
-              )}
-            >
-              <Repeat className="size-4 mr-1.5" />
-              {t("tasks.page.recurring")}
-            </Button>
-          )}
-
-          {/*
-            Create Task — disabled while the account is read-only.
-
-            The server already refuses the write with 402; this only moves the
-            refusal to before the typing. A locked account with a bug in the
-            hook is still locked.
-          */}
-          {canCreateTasks && (
-            <Button
-              size="sm"
-              disabled={billingLocked}
-              title={billingLocked ? billingLockReason : undefined}
-              onClick={() => setCreateDialogOpen(true)}
-              data-tour="tasks-create"
-              className="h-8 px-3.5 rounded-lg font-medium text-sm bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-150"
-            >
-              <Plus className="size-4 mr-1.5" />
-              {t("tasks.page.newTask")}
-            </Button>
-          )}
-            </div>
-          </div>
-        </div>
+        <TasksPageHeader
+          isLoading={isLoading}
+          total={total}
+          searchInputRef={searchInputRef}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          showRecurringToggle={user?.role === "ADMIN" && hasPlanFeature("recurring")}
+          recurringView={recurringView}
+          onToggleRecurring={() => setRecurringView((v) => !v)}
+          canCreateTasks={canCreateTasks}
+          billingLocked={billingLocked}
+          billingLockReason={billingLockReason}
+          onCreateTask={() => setCreateDialogOpen(true)}
+        />
 
         {/* Tasks open to a work role: open now, overdue, minutes to take (renders nothing until used). */}
         {canSeeOthers && <RoleJobsSummary spaceId={selectedSpaceId} />}
@@ -1321,44 +277,13 @@ export default function TasksPage() {
           onChange={handleSpaceChange}
         />
 
-        {/*
-          Mine, or everything I oversee.
-
-          Beside the workspace tabs because it is the same kind of question —
-          "which slice am I looking at" — and both counts stay visible so
-          somebody working in All cannot miss that a job is theirs.
-        */}
+        {/* Mine, or everything I oversee. */}
         {canSeeOthers && (
-          <div className="mb-3 inline-flex rounded-lg border border-border bg-card p-0.5" role="group"
-               aria-label={t("tasks.myWork.scope.label", "Whose work")}>
-            {([
-              [false, t("tasks.myWork.scope.all", "All"), myCounts?.all],
-              [true, t("tasks.myWork.scope.mine", "Mine"), myCounts?.mine],
-            ] as const).map(([isMine, label, count]) => (
-              <button
-                key={label}
-                type="button"
-                aria-pressed={mineOnly === isMine}
-                onClick={() => { setMineOnly(isMine); setPage(1) }}
-                className={cn(
-                  "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition",
-                  mineOnly === isMine
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {label}
-                {typeof count === "number" && (
-                  <span className={cn(
-                    "rounded px-1.5 text-[11px] font-bold tabular-nums",
-                    mineOnly === isMine ? "bg-white/20" : "bg-muted text-muted-foreground",
-                  )}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <MineScopeToggle
+            mineOnly={mineOnly}
+            counts={myCounts}
+            onChange={(isMine) => { setMineOnly(isMine); setPage(1) }}
+          />
         )}
 
         {recurringView ? (
@@ -1369,23 +294,7 @@ export default function TasksPage() {
 
         {/* Group-by tabs (only on list view) */}
         {viewMode === "table" && availableGroupByOptions.length > 1 && (
-          <div className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50 mr-1">{t("tasks.page.group")}</span>
-            {availableGroupByOptions.map(({ value }) => (
-              <button
-                key={value}
-                onClick={() => handleGroupByChange(value)}
-                className={cn(
-                  "px-2.5 py-1 rounded-md transition-colors duration-150 whitespace-nowrap",
-                  groupBy === value
-                    ? "bg-foreground/10 text-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50 font-medium"
-                )}
-              >
-                {t(`tasks.groupBy.${value}`)}
-              </button>
-            ))}
-          </div>
+          <GroupByTabs options={availableGroupByOptions} value={groupBy} onChange={handleGroupByChange} />
         )}
 
         {/* Sprint capacity bar — shown when viewing a specific sprint */}
@@ -1420,263 +329,75 @@ export default function TasksPage() {
         {/* ── Content ────────────────────────────────────────── */}
 
         {/* Error State */}
-        {isError && (
-          <div className="bg-card rounded-xl border border-border/50 p-16 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="size-14 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
-                <ClipboardList className="size-7 text-red-500" />
-              </div>
-              <p className="text-base font-semibold text-foreground">{t("tasks.list.failedToLoad")}</p>
-              <p className="text-sm text-muted-foreground">{(error as Error)?.message}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                className="mt-2 rounded-lg"
-              >
-                <RefreshCw className="mr-1.5 size-3.5" />
-                {t("common.tryAgain")}
-              </Button>
-            </div>
-          </div>
-        )}
+        {isError && <TasksErrorState error={error} onRetry={handleRefresh} />}
 
         {/* Loading State — shimmer skeletons matching each view */}
         {isLoading && <TasksViewSkeleton view={viewMode} />}
 
         {/* Empty State */}
         {!isLoading && !isError && filteredTasks.length === 0 && (
-          <div className="bg-card rounded-xl border border-border/50 p-16 text-center">
-            <div className="flex flex-col items-center gap-3">
-              <div className="size-14 rounded-2xl bg-muted flex items-center justify-center">
-                <ClipboardList className="size-7 text-muted-foreground/50" />
-              </div>
-              <p className="text-sm font-semibold text-foreground">{t("tasks.list.noTasksFound")}</p>
-              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                {activeTab !== "all" || searchQuery || scope !== "all" || selectedSpaceId
-                  ? t("tasks.page.adjustFilters")
-                  : t("tasks.list.createFirstTask")}
-              </p>
-              {canCreateTasks && activeTab === "all" && !searchQuery && scope === "all" && !selectedSpaceId && (
-                <Button
-                  size="sm"
-                  onClick={() => setCreateDialogOpen(true)}
-                  className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
-                >
-                  <Plus className="size-4 mr-1.5" />
-                  {t("tasks.menu.newTask")}
-                </Button>
-              )}
-            </div>
-          </div>
+          <TasksEmptyState
+            filtered={!!(activeTab !== "all" || searchQuery || scope !== "all" || selectedSpaceId)}
+            canCreate={canCreateTasks && activeTab === "all" && !searchQuery && scope === "all" && !selectedSpaceId}
+            onCreateTask={() => setCreateDialogOpen(true)}
+          />
         )}
 
-        {/* List View — flat table */}
-        {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "table" && groupBy === "none" && (
-          <div data-tour="tasks-list" className="bg-card rounded-xl border border-border/50 overflow-hidden">
-            {/* Header */}
-            <div className="grid grid-cols-[24px_1fr_100px_160px_110px_110px_40px] items-center px-3 py-2 border-b border-border/40">
-              <div />
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.title")}</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.priority")}</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.assignee")}</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.columns.dueDate")}</span>
-              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t("common.status")}</span>
-              <div />
-            </div>
-
-            {filteredTasks.map((task: Task, index: number) => (
-              <TaskTableRow
-                key={task.id}
-                task={task}
-                index={index}
-                canAssign={canAssignTasks}
-                onAssign={handleAssignClick}
-                sprints={sprints || []}
-                phases={effectivePhases}
-                epics={effectiveEpics}
-                spaces={spaces}
-                contextActions={contextActions}
-                recentAssignees={recentAssignees}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* List View — grouped (replaces table when group is active) */}
-        {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "table" && groupBy !== "none" && (
-          <GroupedList
+        {/* List View — flat table, or grouped (replaces table when group is active) */}
+        {showContent && viewMode === "table" && (
+          <TaskListView
             tasks={filteredTasks}
             groupBy={groupBy}
-            sprints={sprints || []}
-            epics={effectiveEpics}
-            spaces={spaces}
             canAssign={canAssignTasks}
             onAssign={handleAssignClick}
             onGroupChange={handleGroupChange}
             onReorder={handleReorder}
-            onCreateSprint={() => { setEditingSprint(null); setSprintFormOpen(true) }}
-            onCreateEpic={() => { setEditingEpic(null); setEpicFormOpen(true) }}
-            contextActions={contextActions}
-            phases={effectivePhases}
-            recentAssignees={recentAssignees}
+            onCreateSprint={planning.openNewSprint}
+            onCreateEpic={planning.openNewEpic}
+            context={viewContext}
           />
         )}
 
         {/* Board View — always flat kanban */}
-        {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "board" && (
-          <div data-tour="tasks-board">
-          {/* Task Type tabs — a board shows one workflow at a time (columns differ
-              per type). Shown only when the SPACE's tasks span more than one type;
-              each tab is a type that actually has tasks here (not every org workflow). */}
-          {boardWorkflows.length > 1 && (
-            <div className="mb-4 flex items-center gap-1.5 flex-wrap">
-              {boardWorkflows.map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => setSelectedWorkflowId(w.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                    boardWorkflowId === w.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {w.name}
-                  <span className={cn(
-                    "text-xs tabular-nums rounded px-1.5 py-0.5",
-                    boardWorkflowId === w.id ? "bg-primary-foreground/20" : "bg-foreground/10",
-                  )}>
-                    {boardWorkflowCounts.get(w.id) ?? 0}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-          <KanbanBoard
+        {showContent && viewMode === "board" && (
+          <TaskBoardView
             tasks={boardTasks}
             columns={boardKanbanColumns}
+            boardWorkflows={boardWorkflows}
+            boardWorkflowId={boardWorkflowId}
+            boardWorkflowCounts={boardWorkflowCounts}
+            onSelectWorkflow={setSelectedWorkflowId}
             onStatusChange={handleKanbanDrop}
             onReorder={handleReorder}
             onAssignClick={handleAssignClick}
-            contextActions={contextActions}
-            sprints={sprints || []}
-            phases={effectivePhases}
-            epics={effectiveEpics}
-            spaces={spaces}
-            recentAssignees={recentAssignees}
+            context={viewContext}
           />
-          </div>
         )}
 
 
         {/* Schedule View — Roadmap + Timeline + Calendar */}
-        {!isLoading && !isError && filteredTasks.length > 0 && viewMode === "schedule" && (
-          <div data-tour="tasks-schedule" className="space-y-6">
-            {/* Roadmap section — only when space has epics module */}
-            {effectiveHasModule('epics') && (() => {
-              // Use unfiltered tasks so roadmap stays visible when epic filter is active
-              const epicIdsInView = new Set(tasks.map((t: Task) => t.epicId).filter(Boolean))
-              const visibleEpics = effectiveEpics.filter(e => epicIdsInView.has(e.id))
-              if (visibleEpics.length === 0) return null
-              return (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.roadmap")}</span>
-                    <div className="flex-1 h-px bg-border/50" />
-                  </div>
-                  <EpicRoadmap
-                    epics={visibleEpics}
-                    tasks={tasks}
-                    activeEpicId={epicFilter !== "all" && epicFilter !== "none" ? epicFilter : null}
-                    onEpicClick={(epicId) => {
-                      setEpicFilter(epicId ?? "all")
-                    }}
-                  />
-                </div>
-              )
-            })()}
-
-            {/* Timeline section */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.timeline")}</span>
-                <div className="flex-1 h-px bg-border/50" />
-              </div>
-              <TimelineView tasks={filteredTasks} phases={effectivePhases} />
-            </div>
-
-            {/* Calendar section */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.calendar")}</span>
-                <div className="flex-1 h-px bg-border/50" />
-              </div>
-              <CalendarView tasks={filteredTasks} />
-            </div>
-          </div>
+        {showContent && viewMode === "schedule" && (
+          <TaskScheduleView
+            tasks={tasks}
+            filteredTasks={filteredTasks}
+            showRoadmap={effectiveHasModule('epics')}
+            epics={effectiveEpics}
+            phases={effectivePhases}
+            epicFilter={epicFilter}
+            onEpicFilterChange={setEpicFilter}
+          />
         )}
 
         {/* Pagination */}
         {!isLoading && !isError && total > 0 && (
-          <div className="flex items-center justify-between mt-5">
-            <p className="text-xs text-muted-foreground">
-              {t("tasks.page.showingCount", { count: filteredTasks.length, total })}
-            </p>
-
-            {paginated && totalPages > 1 && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8 rounded-lg"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft className="size-3.5" />
-                </Button>
-
-                {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
-                  let pageNum: number
-                  if (totalPages <= 5) {
-                    pageNum = i + 1
-                  } else if (page <= 3) {
-                    pageNum = i + 1
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  } else {
-                    pageNum = page - 2 + i
-                  }
-
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={page === pageNum ? "default" : "ghost"}
-                      size="icon"
-                      className={cn(
-                        "size-8 rounded-lg text-xs font-medium",
-                        page === pageNum && "bg-foreground text-background hover:bg-foreground/90"
-                      )}
-                      onClick={() => setPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  )
-                })}
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-8 rounded-lg"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight className="size-3.5" />
-                </Button>
-              </div>
-            )}
-          </div>
+          <TasksPagination
+            shownCount={filteredTasks.length}
+            total={total}
+            paginated={paginated}
+            page={page}
+            totalPages={totalPages}
+            setPage={setPage}
+          />
         )}
           </>
         )}
@@ -1693,36 +414,7 @@ export default function TasksPage() {
         />
       )}
 
-      <SprintFormDialog
-        open={sprintFormOpen}
-        onOpenChange={handleSprintFormClose}
-        sprint={editingSprint}
-        nextSprintNumber={nextSprintNumber}
-        lastSprintEndDate={lastSprintEndDate}
-      />
-
-      <CompleteSprintDialog
-        open={!!completingSprint}
-        onOpenChange={(v) => !v && setCompletingSprint(null)}
-        sprint={completingSprint}
-        nextSprint={nextPlanningSprint}
-        incompleteTasks={incompleteSprintTasks}
-        onConfirm={handleCompleteSprintConfirm}
-        isPending={completeSprintMutation.isPending}
-      />
-
-      <DeleteSprintDialog
-        open={!!deletingSprintId}
-        onOpenChange={(v) => !v && setDeletingSprintId(null)}
-        onConfirm={() => deletingSprintId && deleteSprintMutation.mutate(deletingSprintId)}
-        isPending={deleteSprintMutation.isPending}
-      />
-
-      <EpicFormDialog
-        open={epicFormOpen}
-        onOpenChange={(v) => { setEpicFormOpen(v); if (!v) setEditingEpic(null) }}
-        epic={editingEpic}
-      />
+      <TaskPlanningDialogs planning={planning} />
 
       <BulkActionBar
         selectedIds={selectedTaskIds}
@@ -1737,61 +429,7 @@ export default function TasksPage() {
       />
 
       {stepMove.dialog}
-      <AssignMemberDialog
-        open={assignDialogOpen}
-        onOpenChange={(open) => {
-          setAssignDialogOpen(open)
-          if (!open) setSelectedTaskId(null)
-        }}
-        taskId={selectedTaskId}
-        spaceId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.spaceId ?? selectedSpaceId) : selectedSpaceId}
-        currentAssigneeId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignedToId ?? null) : null}
-        currentAssigneeIds={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignees?.map((a) => a.userId) ?? []) : []}
-        isAssigning={assignMutation.isPending}
-        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => { setAssignDialogOpen(false); setSelectedTaskId(null) }} note={reassignNote} onNoteChange={setReassignNote} /> : null}
-        onAssign={(memberId) => assignMutation.mutate(memberId)}
-        onSave={async (added, removed) => {
-          if (!selectedTaskId) return
-          // Optimistic update, then batch: remove first, then add
-          await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
-          const snapshot = snapshotTasksCache(queryClient)
-          optimisticUpdateTask(queryClient, selectedTaskId, (t) => {
-            let assignees = [...(t.assignees || [])]
-            assignees = assignees.filter((a) => !removed.includes(a.userId))
-            for (const memberId of added) {
-              if (!assignees.find((a) => a.userId === memberId)) {
-                // Optimistic placeholder: the real row arrives on refetch.
-                assignees.push({
-                  id: `temp-${memberId}`,
-                  userId: memberId,
-                  role: assignees.length === 0 ? ("LEAD" as const) : ("MEMBER" as const),
-                  user: { id: memberId, firstName: "", lastName: "" },
-                  createdAt: new Date().toISOString(),
-                })
-              }
-            }
-            return { ...t, assignees }
-          })
-          const ops: Promise<unknown>[] = [
-            ...removed.map(id => tasksApi.removeAssignee(selectedTaskId, id)),
-            ...added.map(id => tasksApi.addAssignee(selectedTaskId, id)),
-          ]
-          const results = await Promise.allSettled(ops)
-          // The note for whoever takes the job over (handover still owed) — posted on the job.
-          if (added.length && reassignNote.trim()) {
-            await tasksApi.addComment(selectedTaskId, reassignNote.trim()).catch(() => undefined)
-            setReassignNote("")
-          }
-          const failed = results.filter(r => r.status === "rejected").length
-          if (failed > 0) {
-            restoreTasksCache(queryClient, snapshot)
-            notify.error(t("tasks.notify.assigneeUpdatesFailed", { failed }))
-          } else {
-            notify.success(t("tasks.detail.assigneesUpdated"))
-          }
-          queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
-        }}
-      />
+      <TaskAssignDialog assign={assign} tasks={tasks} selectedSpaceId={selectedSpaceId} />
     </div>
   )
 }

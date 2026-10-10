@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -26,6 +27,7 @@ import {
   type FloorTally,
   type FloorView,
 } from "../_lib/floor-view"
+import { keys } from "@/lib/query-keys"
 
 /**
  * Who is on the floor right now.
@@ -57,7 +59,7 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
 
   const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
   const { data: spaces = [], isLoading } = useQuery({
-    queryKey: ["floor-now"],
+    queryKey: keys.attendance.floorNow(),
     queryFn: () => employeesApi.getFloorNow(),
     staleTime: 30_000,
     // @RequirePermissionInSpace('canViewSpaceAttendance') — asked only of whoever holds it.
@@ -298,7 +300,7 @@ function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime: Fmt }
                       <Avatar person={p} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12.5px] font-medium leading-tight">
-                          {p.firstName} {p.lastName}
+                          {personName(p)}
                         </span>
                         <span className={cn("block truncate text-[11px] leading-tight text-muted-foreground", l.tone)}>
                           {l.text}
@@ -382,7 +384,7 @@ function ExceptionsCard({ space, formatTime }: { space: FloorSpace; formatTime: 
                 <Avatar person={p} size="md" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13.5px] font-semibold tracking-tight">
-                    {p.firstName} {p.lastName}
+                    {personName(p)}
                   </span>
                   <span className={cn("text-[12px] font-medium", LATE_TEXT[l.tone])}>
                     {p.trade ? `${p.trade} · ` : ""}
@@ -408,12 +410,12 @@ function ExceptionsCard({ space, formatTime }: { space: FloorSpace; formatTime: 
                 <span
                   key={p.id}
                   className="flex min-w-0 max-w-full items-center gap-2 rounded-full border border-border bg-muted/40 py-1 pl-1.5 pr-3"
-                  title={`${p.firstName} ${p.lastName}${p.trade ? ` · ${p.trade}` : ""} — ${l.text}`}
+                  title={`${personName(p)}${p.trade ? ` · ${p.trade}` : ""} — ${l.text}`}
                 >
                   <Avatar person={p} />
                   <span className="min-w-0">
                     <span className="block truncate text-[12px] font-medium leading-tight">
-                      {p.firstName} {p.lastName}
+                      {personName(p)}
                     </span>
                     <span className={cn("block max-w-[16ch] truncate text-[10.5px] leading-tight text-muted-foreground", l.tone)}>
                       {l.text}

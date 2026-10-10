@@ -2,7 +2,9 @@ import i18n from "@/i18n"
 import type { OrgMember } from "@/lib/api"
 import type { PersonNodeProps, WorkerStatus } from "@/components/dashboard"
 
-import { getAvatarColor, getInitials } from "../_components/helpers"
+import { personInitials } from "@hbcfield/shared/client"
+
+import { getAvatarColor } from "../_components/helpers"
 
 /**
  * Presence classification: turning a member plus their attendance facts into
@@ -121,7 +123,7 @@ export function memberToPersonNode(
   subtitle?: string,
 ): PersonNodeProps {
   return {
-    initials: getInitials(member.firstName, member.lastName),
+    initials: personInitials(member),
     color: getAvatarColor(member.id),
     status,
     clockedIn,

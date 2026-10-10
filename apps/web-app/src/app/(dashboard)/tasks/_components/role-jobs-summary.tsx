@@ -7,11 +7,13 @@ import { ChevronDown, UsersRound } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { tasksApi } from "@/lib/api"
+import { localDateKey } from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
 
 /** The last 30 days, as `YYYY-MM-DD` from LOCAL parts (never toISOString — it shifts the day). */
 function since30(): string {
   const d = new Date(Date.now() - 30 * 86_400_000)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  return localDateKey(d)
 }
 
 /**
@@ -26,7 +28,7 @@ export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const { data } = useQuery({
-    queryKey: ["role-stats", spaceId],
+    queryKey: keys.spaces.roleStats(spaceId),
     queryFn: () => tasksApi.roleStats({ spaceId: spaceId ?? undefined, from: since30() }),
     staleTime: 60_000,
   })

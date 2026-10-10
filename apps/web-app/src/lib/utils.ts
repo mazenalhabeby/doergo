@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { formatDurationSeconds } from "@hbcfield/shared/client"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -133,45 +134,12 @@ export function formatClockString(hhmm: string | null | undefined, hour12: boole
 }
 
 /**
- * Format a duration in SECONDS — e.g. 3665 -> "1h 1m 5s", 125 -> "2m 5s", 45 -> "45s".
- *
- * Named for its unit: the shared `formatDuration` takes MINUTES, and two
- * functions called the same thing with different units let an import from the
- * wrong module print a 60× wrong figure with no type error.
- */
-export function formatDurationSeconds(seconds: number): string {
-  if (seconds < 0) return "0s"
-
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = Math.floor(seconds % 60)
-
-  const parts: string[] = []
-  if (hours > 0) parts.push(`${hours}h`)
-  if (minutes > 0) parts.push(`${minutes}m`)
-  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`)
-
-  return parts.join(" ")
-}
-
-/**
- * Format duration from milliseconds to human-readable format
- * e.g., 3665000 -> "1h 1m", 125000 -> "2m 5s"
+ * A duration in MILLISECONDS (two timestamps subtracted) — 3665000 -> "1h 1m 5s".
+ * Durations in minutes or seconds go straight to the shared `formatDuration` /
+ * `formatDurationSeconds`; this only converts the unit.
  */
 export function formatDurationMs(ms: number): string {
   return formatDurationSeconds(Math.floor(ms / 1000))
-}
-
-/**
- * Format duration from minutes to human-readable format
- * e.g., 90 -> "1h 30m", 45 -> "45m"
- */
-export function formatDurationMinutes(minutes: number | null | undefined): string {
-  if (minutes === null || minutes === undefined) return "-"
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (hours === 0) return `${mins}m`
-  return `${hours}h ${mins}m`
 }
 
 // =============================================================================

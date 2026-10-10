@@ -1,4 +1,5 @@
-import { countByState, formatBytes, matchesSearch, reasonKey, reasonsOf } from '../phone-sync'
+import { formatFileSize } from '@hbcfield/shared/client'
+import { countByState, matchesSearch, reasonKey, reasonsOf } from '../phone-sync'
 import en from '../../i18n/locales/en.json'
 import de from '../../i18n/locales/de.json'
 import es from '../../i18n/locales/es.json'
@@ -38,11 +39,11 @@ describe('phone sync', () => {
     }
   })
 
-  it('formats sizes a person reads', () => {
-    expect(formatBytes(38 * 1024 * 1024, 'en')).toBe('38 MB')
-    expect(formatBytes(9.2 * 1024 * 1024, 'en')).toBe('9.2 MB')
-    expect(formatBytes(640 * 1024, 'en')).toBe('640 KB')
-    expect(formatBytes(0, 'en')).toBe('0 KB')
+  it('formats waiting sizes through the shared formatter', () => {
+    expect(formatFileSize(38 * 1024 * 1024, 'en')).toBe('38 MB')
+    expect(formatFileSize(9.2 * 1024 * 1024, 'en')).toBe('9.2 MB')
+    expect(formatFileSize(640 * 1024, 'en')).toBe('640 KB')
+    expect(formatFileSize(0, 'en')).toBe('0 B')
   })
 
   it('searches by any words of the name or email', () => {

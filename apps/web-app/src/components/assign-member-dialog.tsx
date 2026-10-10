@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import React, { useState, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Search, Check, Loader2 } from "lucide-react"
@@ -88,7 +89,7 @@ const MemberRow = React.memo(function MemberRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground truncate">
-            {member.firstName} {member.lastName}
+            {personName(member)}
           </span>
         </div>
         <p className="text-xs text-muted-foreground truncate">{title}</p>
@@ -173,7 +174,7 @@ export function AssignMemberDialog({
     if (!search) return allMembers
     const q = search.toLowerCase()
     return allMembers.filter((m) => {
-      const fullName = `${m.firstName} ${m.lastName}`.toLowerCase()
+      const fullName = personName(m).toLowerCase()
       return fullName.includes(q) || (m.email && m.email.toLowerCase().includes(q))
     })
   }, [allMembers, search])

@@ -11,7 +11,7 @@ export interface PersonNodeTag {
   variant: TagVariant
 }
 
-export type AbsenceReason = "time_off" | "sick" | "day_off" | "unexcused"
+type AbsenceReason = "time_off" | "sick" | "day_off" | "unexcused"
 
 export interface PersonNodeProps extends WorkerAvatarProps {
   name: string

@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { BrowseLevel, ComplianceRow, ContractTemplateRow, DocumentEventRow, DocumentTypeRow, DraftDocumentRow, IssuedRegister, MatchCandidateRow, MemberDocumentRow, PendingDocumentsSummary, PendingReviewRow, RequirementRow, TemplatePreview } from './types/documents';
+import type { BrowseLevel, ComplianceRow, ContractTemplateRow, DocumentTypeRow, DraftDocumentRow, IssuedRegister, MatchCandidateRow, MemberDocumentRow, PendingDocumentsSummary, PendingReviewRow, RequirementRow, TemplatePreview } from './types/documents';
 import { documentsEndpoints } from '@hbcfield/shared/client';
 
 /**
@@ -69,11 +69,6 @@ export const documentsApi = {
   downloadUrl: async (id: string) => {
     const response = await call(documentsEndpoints.downloadUrl, { id }, { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; fileName: string } }>;
     return unwrapDocuments<any>(response);
-  },
-
-  events: async (id: string) => {
-    const response = await call(documentsEndpoints.events, { id }) as ApiResponse<{ success: boolean; data: DocumentEventRow[] }>;
-    return unwrapDocuments<any[]>(response) ?? [];
   },
 
   /** Step 1 of issuing: a link the browser PUTs the file to directly. */
@@ -210,11 +205,6 @@ export const documentsApi = {
   }) => {
     const response = await call(documentsEndpoints.submitOwn, undefined, { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
     return unwrapDocuments<MemberDocumentRow>(response);
-  },
-
-  revoke: async (id: string) => {
-    const response = await call(documentsEndpoints.revoke, { id }, { body: {} }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
   },
 
   /**
@@ -378,14 +368,6 @@ export const documentsApi = {
 
   deactivateTemplate: async (id: string) => {
     const response = await call(documentsEndpoints.deactivateTemplate, { id }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
-  },
-
-  /** Render and issue a contract to one member. */
-  issueContract: async (data: {
-    userId: string; templateId?: string; startDate?: string; weeklyHours?: number;
-  }) => {
-    const response = await call(documentsEndpoints.issueContract, undefined, { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
     return unwrapDocuments<any>(response);
   },
 

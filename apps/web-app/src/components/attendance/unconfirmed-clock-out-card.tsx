@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { keys } from "@/lib/query-keys"
 
 /** A moment as `<input type="datetime-local">` holds it, in the viewer's own zone. */
 function toLocalInput(value: string | Date): string {
@@ -44,7 +45,7 @@ export function UnconfirmedClockOutCard({ className }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   const { data: status } = useQuery({
-    queryKey: ["my-attendance-status"],
+    queryKey: keys.attendance.myStatus(),
     queryFn: () => attendanceApi.getMyStatus(),
     staleTime: 15_000,
   })
@@ -92,8 +93,8 @@ export function UnconfirmedClockOutCard({ className }: { className?: string }) {
     try {
       await attendanceApi.resolveForgotClockOut(entry.id, at.toISOString())
       notify.success(t("attendance.my.unconfirmed.saved"))
-      qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
-      qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
+      qc.invalidateQueries({ queryKey: keys.attendance.myStatus() })
+      qc.invalidateQueries({ queryKey: keys.attendance.myHistory() })
     } catch (e) {
       notify.error(errorMessage(e, t("attendance.my.unconfirmed.failed")))
     } finally {

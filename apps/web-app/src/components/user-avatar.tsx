@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { personInitials, personName } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 
 // ─── Deterministic color from user ID or name ─────────────────────────────
@@ -64,7 +65,7 @@ export const UserAvatar = React.memo(function UserAvatar({
   className,
   title,
 }: UserAvatarProps) {
-  const initials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "?"
+  const initials = personInitials({ firstName, lastName })
   const gradient = getGradient(seed || `${firstName}${lastName}`)
   const s = SIZES[size]
 
@@ -82,7 +83,7 @@ export const UserAvatar = React.memo(function UserAvatar({
         ring && "ring-[1.5px] ring-card",
         className,
       )}
-      title={title || `${firstName || ""} ${lastName || ""}`.trim()}
+      title={title || personName({ firstName, lastName })}
     >
       {avatarUrl && !imgError ? (
         <img

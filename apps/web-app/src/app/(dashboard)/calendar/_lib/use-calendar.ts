@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { CALENDAR_LAYERS, type CalendarLayer } from "@hbcfield/shared/client"
 import { calendarApi } from "@/lib/api"
 import i18n from "@/i18n"
+import { keys } from "@/lib/query-keys"
 
 export type CalendarView = "day" | "week" | "month" | "agenda"
 
@@ -65,7 +66,7 @@ export function useCalendarRange(q: { from: string; to: string; spaceId: string 
   const lang = (i18n.language || "en").slice(0, 2)
   const layers = [...q.layers].sort()
   return useQuery({
-    queryKey: ["calendar", q.from, q.to, q.spaceId ?? "me", layers.join(","), lang],
+    queryKey: keys.calendar.window(q.from, q.to, q.spaceId ?? "me", layers.join(","), lang),
     queryFn: () => calendarApi.range({ from: q.from, to: q.to, spaceId: q.spaceId, layers, lang }),
     placeholderData: keepPreviousData,
     staleTime: 30_000,

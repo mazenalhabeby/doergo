@@ -14,6 +14,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The assets no space can show.
@@ -34,13 +35,13 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
 
-  const orphansQ = useQuery({ queryKey: ["orphan-assets"], queryFn: () => assetsApi.getOrphans() })
+  const orphansQ = useQuery({ queryKey: keys.assets.orphans(), queryFn: () => assetsApi.getOrphans() })
   const orphans = orphansQ.data ?? []
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["orphan-assets"] })
-    qc.invalidateQueries({ queryKey: ["space-asset-kinds", spaceId] })
-    qc.invalidateQueries({ queryKey: ["asset-usage", spaceId] })
+    qc.invalidateQueries({ queryKey: keys.assets.orphans() })
+    qc.invalidateQueries({ queryKey: keys.assets.kinds(spaceId) })
+    qc.invalidateQueries({ queryKey: keys.assets.usage() })
   }
 
   const move = useMutation({

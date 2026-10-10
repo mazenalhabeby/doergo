@@ -25,7 +25,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useWorkflow } from "@/hooks/use-org-workflow"
-import { mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
+import { personName, mayChangeStatus, isFinishedStatus, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES, TASK_PRIORITIES } from "@/lib/constants"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { STORY_POINT_OPTIONS } from "@/lib/api"
@@ -228,7 +228,7 @@ function TaskContextMenuInner({
                       size="xs"
                       className="mr-2"
                     />
-                    {a.firstName} {a.lastName}
+                    {personName(a)}
                   </ContextMenuItem>
                 )
               })}

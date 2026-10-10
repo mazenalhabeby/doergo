@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The fault-code lookup a technician standing at the machine actually uses.
@@ -49,7 +50,7 @@ export function AssetFaults({
   const [editing, setEditing] = useState<string | null>(null)
 
   const faultsQ = useQuery({
-    queryKey: ["asset-rows", assetId, list.label, debouncedSearch],
+    queryKey: keys.assets.rows(assetId, list.label, debouncedSearch),
     queryFn: () => assetsApi.getRows(assetId, list.label, { search: debouncedSearch || undefined, limit: 100 }),
   })
 
@@ -61,7 +62,7 @@ export function AssetFaults({
   // The whole target table, once: a row names a key, and resolving each one
   // separately would be a request per row on screen.
   const partsQ = useQuery({
-    queryKey: ["asset-rows", assetId, target?.label],
+    queryKey: keys.assets.rows(assetId, target?.label),
     queryFn: () => assetsApi.getRows(assetId, target!.label, { limit: 200 }),
     enabled: !!target,
   })
@@ -96,7 +97,7 @@ export function AssetFaults({
   }
 
   const rows = faultsQ.data?.rows ?? []
-  const refresh = () => qc.invalidateQueries({ queryKey: ["asset-rows", assetId, list.label] })
+  const refresh = () => qc.invalidateQueries({ queryKey: keys.assets.rows(assetId, list.label) })
 
   const remove = useMutation({
     mutationFn: (rowId: string) => assetsApi.removeRow(assetId, rowId),

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { useWorkflow } from "@/hooks/use-org-workflow"
+import { keys } from "@/lib/query-keys"
 
 // Module/workflow resolution cascade:
 //   space.enabledModules (override) → org feature modules (default)
@@ -18,7 +19,7 @@ export function useSpaceModules(spaceId: string | null) {
   const { user, hasModule: orgHasModule } = useAuth()
 
   const { data: spaceModules, isSuccess, isError } = useQuery({
-    queryKey: ["space-modules", spaceId],
+    queryKey: keys.spaces.modules(spaceId),
     queryFn: () => locationsApi.getEffectiveModules(spaceId!),
     enabled: !!spaceId,
     staleTime: 60000,
@@ -49,7 +50,7 @@ export function useSpaceModules(spaceId: string | null) {
  */
 export function useSpaceWorkflow(spaceId: string | null) {
   const { data: spaceModules } = useQuery({
-    queryKey: ["space-modules", spaceId],
+    queryKey: keys.spaces.modules(spaceId),
     queryFn: () => locationsApi.getEffectiveModules(spaceId!),
     enabled: !!spaceId,
     staleTime: 60000,

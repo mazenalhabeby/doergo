@@ -1,5 +1,6 @@
 "use client"
 
+import { personName, todayKey } from "@hbcfield/shared/client"
 import { useMemo, useState } from "react"
 import { BreakFields, breakFitsShift, type BreakKind } from "@/components/attendance/break-fields"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -30,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { keys } from "@/lib/query-keys"
 
 interface AddAttendanceDialogProps {
   // When provided, the employee is fixed (per-employee Attendance tab).
@@ -59,10 +61,7 @@ export function AddAttendanceDialog({
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   // A shift is added once it has happened; the server refuses one that ends later than now.
-  const today = useMemo(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-  }, [])
+  const today = useMemo(() => todayKey(), [])
   const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5])
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("16:00")
@@ -82,14 +81,14 @@ export function AddAttendanceDialog({
   const [notes, setNotes] = useState("")
 
   const { data: locations, isLoading: locationsLoading } = useQuery({
-    queryKey: ["companyLocations"],
+    queryKey: keys.attendance.locationsPicker(),
     queryFn: () => attendanceApi.getLocations(),
     enabled: open,
     staleTime: 5 * 60_000, // sites rarely change — don't refetch on every open
   })
 
   const { data: employeeList, isLoading: employeesLoading } = useQuery({
-    queryKey: ["employeesForAttendance"],
+    queryKey: keys.attendance.employeesPicker(),
     queryFn: () => employeesApi.list({ status: "active", limit: 100 }),
     enabled: open && !fixedEmployee,
     staleTime: 5 * 60_000,
@@ -153,9 +152,9 @@ export function AddAttendanceDialog({
       // ["memberAttendance", id]) AND the org-wide management table (D1). The old
       // ["employeeAttendance", …] key was a dead leftover from the retired page.
       queryClient.invalidateQueries({
-        queryKey: ["memberAttendance", effectiveEmployeeId],
+        queryKey: keys.memberRecord.attendance(effectiveEmployeeId),
       })
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
       const created = res?.created ?? 0
       const skipped = res?.skipped ?? 0
       if (created > 0) {
@@ -271,7 +270,7 @@ export function AddAttendanceDialog({
                 <SelectContent>
                   {(employeeList?.data ?? []).map((emp) => (
                     <SelectItem key={emp.id} value={emp.id}>
-                      {emp.firstName} {emp.lastName}
+                      {personName(emp)}
                     </SelectItem>
                   ))}
                 </SelectContent>

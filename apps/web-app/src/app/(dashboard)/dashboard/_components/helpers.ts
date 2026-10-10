@@ -24,10 +24,6 @@ export const AVATAR_COLORS = [
   "linear-gradient(135deg, #14b8a6, #0d9488)",
 ]
 
-export function getInitials(firstName?: string, lastName?: string): string {
-  return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase()
-}
-
 function hashString(str: string): number {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
@@ -46,21 +42,6 @@ export function getAvatarColor(id: string): string {
 /** Currently clocked in (no clock-out yet). */
 export function isClockedIn(entry: TimeEntry): boolean {
   return entry.status === "CLOCKED_IN" && !entry.clockOutAt
-}
-
-/**
- * Today's date as YYYY-MM-DD in the VIEWER's timezone.
- *
- * Must not go through `toISOString()`, which formats in UTC: east of Greenwich
- * that returns yesterday's date until the UTC day rolls over (before 02:00 in
- * GMT+2), and west of it returns tomorrow's during the evening. The value keys
- * the attendance query, so a UTC date asks the server for the wrong day.
- */
-export function getTodayString(): string {
-  const now = new Date()
-  const month = `${now.getMonth() + 1}`.padStart(2, "0")
-  const day = `${now.getDate()}`.padStart(2, "0")
-  return `${now.getFullYear()}-${month}-${day}`
 }
 
 /**

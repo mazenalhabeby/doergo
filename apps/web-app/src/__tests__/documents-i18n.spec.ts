@@ -15,6 +15,7 @@ import fs from 'fs';
 import { ROUTE_RULES } from '@/lib/route-access';
 import path from 'path';
 import { unknownTokens, STARTER_TEMPLATES } from '@hbcfield/shared/client';
+import { readNavbar } from './_navbar-screen';
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 
@@ -102,10 +103,7 @@ describe('documents translations', () => {
 });
 
 describe('the documents navigation', () => {
-  const navbar = fs.readFileSync(
-    path.join(process.cwd(), 'src/components/top-navbar.tsx'),
-    'utf8',
-  );
+  const navbar = readNavbar();
 
   it('registers every document route in NAV_HREFS', () => {
     /*

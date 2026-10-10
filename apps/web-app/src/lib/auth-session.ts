@@ -30,7 +30,7 @@ import { AUTH_BASE_URL } from "./endpoints"
 export type RefreshOutcome = "ok" | "ended" | "unavailable"
 export type SessionEndReason = "expired" | "suspended" | "signed-out"
 
-export type SessionEvent =
+type SessionEvent =
   | { type: "token"; token: string }
   | { type: "ended"; reason: SessionEndReason; message?: string }
   | { type: "identity-changed"; userId: string | null }
@@ -41,7 +41,7 @@ type ChannelMessage =
   | { type: "signed-out"; from: string }
   | { type: "identity"; sub: string | null; from: string }
 
-export const AUTH_CHANNEL_NAME = "hbc-auth"
+const AUTH_CHANNEL_NAME = "hbc-auth"
 /** A NON-secret hint that a session may exist, so anonymous visits skip the refresh call. */
 export const SESSION_HINT_KEY = "hbc-auth-session"
 const STORAGE_EVENT_KEY = "hbc-auth-event"
@@ -66,7 +66,7 @@ let channelReady = false
 let sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 // ── JWT helpers (payload only — never trusted, only used for timing / identity) ─
-export function decodeJwtPayload(token: string | null): { exp?: number; sub?: string } | null {
+export function decodeJwtPayload(token: string | null | undefined): { exp?: number; iat?: number; sub?: string } | null {
   if (!token) return null
   try {
     const part = token.split(".")[1]
@@ -230,10 +230,6 @@ function ensureChannel() {
 export function getAccessToken(): string | null {
   ensureChannel()
   return accessToken
-}
-
-export function hasAccessToken(): boolean {
-  return !!getAccessToken()
 }
 
 /**

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Task, Epic } from "@/lib/api"
-import { dateLocale } from "@/lib/format-date"
+import { formatDayMonth, formatMonthYear } from "@/lib/format-date"
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
@@ -34,13 +34,6 @@ function diffDays(a: Date, b: Date): number {
   return Math.round((a.getTime() - b.getTime()) / 86400000)
 }
 
-function formatMonthYear(d: Date): string {
-  return d.toLocaleDateString(dateLocale(), { month: "short", year: "numeric" })
-}
-
-function formatShortDate(d: Date): string {
-  return d.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" })
-}
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -118,7 +111,7 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
       cursor.setMonth(cursor.getMonth() + 1)
       const monthEnd = cursor < re ? cursor : re
       ms.push({
-        label: formatMonthYear(monthStart),
+        label: formatMonthYear(monthStart, false),
         offsetDays: diffDays(monthStart, rs),
         widthDays: diffDays(new Date(monthEnd), monthStart),
       })
@@ -324,13 +317,13 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
                       {/* Start date label */}
                       {row.startDate && barPos.width > 40 && (
                         <span className="absolute -bottom-3.5 left-0 text-[8px] text-muted-foreground/60">
-                          {formatShortDate(row.startDate)}
+                          {formatDayMonth(row.startDate, false)}
                         </span>
                       )}
                       {/* End date label */}
                       {row.endDate && barPos.width > 40 && (
                         <span className="absolute -bottom-3.5 right-0 text-[8px] text-muted-foreground/60">
-                          {formatShortDate(row.endDate)}
+                          {formatDayMonth(row.endDate, false)}
                         </span>
                       )}
                     </div>

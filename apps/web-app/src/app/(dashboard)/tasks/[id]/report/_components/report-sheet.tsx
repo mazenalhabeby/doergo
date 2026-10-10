@@ -3,16 +3,16 @@
 import dynamic from "next/dynamic"
 import { Fragment, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import type { TaskReport, TaskReportFile, TaskReportPhoto } from "@hbcfield/shared/client"
+import { formatFileSize, personName, type TaskReport, type TaskReportFile, type TaskReportPhoto } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
-import { formatMoneyIn } from "@/lib/money"
+import { formatAmount } from "@/lib/money"
 import { getPriorityConfig } from "@/lib/constants"
 import { stepFieldLabel } from "@/lib/step-forms"
 import {
-  answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatFileSize, formatReportDateTime,
+  answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatReportDateTime,
   formatReportDistance, formatReportMinutes, groupEventsByDay, isImageFile, pairPhotos, partsTotal,
-  personName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
+  routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
   workSteps, letterhead, reportPills, reportFacts, type HeadToggle, type NumberedSection, type Translate,
 } from "../_lib/report-model"
 
@@ -195,7 +195,7 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
           }
           case "parts": {
             const parts = r.parts ?? []
-            const money = (n: number | null | undefined) => (n == null ? "—" : formatMoneyIn(n, h.currency, locale))
+            const money = (n: number | null | undefined) => (n == null ? "—" : formatAmount(n, h.currency, locale))
             const total = partsTotal(parts)
             return section(key, t("tasks.report.sections.parts"), (
               <div className="overflow-x-auto">

@@ -37,7 +37,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
   const [picking, setPicking] = useState("")
 
   const { data: offered = [], isLoading } = useQuery({
-    queryKey: ["space-workflows", spaceId],
+    queryKey: keys.spaces.workflows(spaceId),
     queryFn: () => workflowsApi.listForSpace(spaceId),
   })
   const { data: all = [] } = useQuery({
@@ -50,13 +50,13 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     to edit, and nothing here points back at the library afterwards.
   */
   const { data: templates = [] } = useQuery({
-    queryKey: ["workflow-library"],
+    queryKey: keys.spaces.workflowLibrary(),
     queryFn: workflowsApi.library.list,
     staleTime: 5 * 60_000,
   })
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
+    queryClient.invalidateQueries({ queryKey: keys.spaces.workflows(spaceId) })
     // A copy from the library is a new org task type, so the org list is stale too.
     queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
     // The space's own record still carries the legacy default; keep it honest.

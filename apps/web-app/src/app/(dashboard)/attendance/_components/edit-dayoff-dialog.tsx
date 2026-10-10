@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -19,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { invalidateTimeOff } from "@/lib/query-keys"
+import { keys, invalidateTimeOff } from "@/lib/query-keys"
 
 type DayOff = {
   id: string
@@ -56,7 +57,7 @@ export function EditDayOffDialog({ dayOff }: { dayOff: DayOff }) {
   }
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["attendance"] })
+    queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
     invalidateTimeOff(queryClient)
   }
 
@@ -107,7 +108,7 @@ export function EditDayOffDialog({ dayOff }: { dayOff: DayOff }) {
           <DialogTitle>{t("attendance.editDayOff.title", "Edit day off")}</DialogTitle>
           <DialogDescription>
             {t("attendance.editDayOff.description", "For {{name}}", {
-              name: `${dayOff.technician?.firstName ?? ""} ${dayOff.technician?.lastName ?? ""}`.trim(),
+              name: personName(dayOff.technician),
             })}
           </DialogDescription>
         </DialogHeader>

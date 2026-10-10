@@ -6,12 +6,13 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Timer } from "lucide-react"
 import { endOfMonth, endOfWeek, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns"
-import { formatDuration } from "@hbcfield/shared/client"
+import { personName, formatDuration } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { employeesApi, tasksApi } from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
 
 type PeriodKey = "thisWeek" | "lastWeek" | "thisMonth" | "lastMonth"
 
@@ -47,19 +48,18 @@ export default function JobTimeReportPage() {
   const range = useMemo(() => periodRange(period), [period])
 
   const { data: members } = useQuery({
-    queryKey: ["employees", "job-time-picker"],
+    queryKey: keys.employees.jobTimePicker(),
     queryFn: () => employeesApi.list({ status: "active", limit: 100 }), // the server's own maximum
     enabled: seesOthers,
     staleTime: 5 * 60_000,
   })
   const { data, isLoading } = useQuery({
-    queryKey: ["job-time-report", memberId, period],
+    queryKey: keys.taskExtras.jobTimeReport(memberId, period),
     queryFn: () => tasksApi.jobTimeReport({ userId: memberId!, from: range.from.toISOString(), to: range.to.toISOString() }),
     enabled: !!memberId,
   })
 
   const people = members?.data ?? []
-  const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
   const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   return (
@@ -81,8 +81,8 @@ export default function JobTimeReportPage() {
                 <Select value={memberId ?? undefined} onValueChange={setWho}>
                   <SelectTrigger className="w-56"><SelectValue placeholder={t("tasks.jobTime.pickMember")} /></SelectTrigger>
                   <SelectContent>
-                    {user ? <SelectItem value={user.id}>{name(user)} · {t("tasks.jobTime.you")}</SelectItem> : null}
-                    {people.filter((p) => p.id !== user?.id).map((p) => <SelectItem key={p.id} value={p.id}>{name(p)}</SelectItem>)}
+                    {user ? <SelectItem value={user.id}>{personName(user)} · {t("tasks.jobTime.you")}</SelectItem> : null}
+                    {people.filter((p) => p.id !== user?.id).map((p) => <SelectItem key={p.id} value={p.id}>{personName(p)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               ) : null}

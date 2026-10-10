@@ -18,8 +18,4 @@ export function formatDayKey(key: string, locale: string, opts: { year?: boolean
   }).format(d)
 }
 
-/** Today in the browser's own calendar — what "from today" means to the person choosing. */
-export function todayDayKey(now: Date = new Date()): string {
-  const p = (n: number) => String(n).padStart(2, "0")
-  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
-}
+// Today in the browser's own calendar: `todayKey()` / `localDateKey(d)` from @hbcfield/shared.

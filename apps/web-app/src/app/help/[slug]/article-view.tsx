@@ -13,7 +13,7 @@ import type { Lang, Localized } from '../_content/articles';
 const langOf = (lang: string | undefined): Lang => (lang?.startsWith('de') ? 'de' : 'en');
 const pick = (v: Localized, lang: string | undefined): string => v[langOf(lang)];
 
-export interface ArticleViewProps {
+interface ArticleViewProps {
   title: Localized;
   excerpt: Localized;
   categoryTitle: Localized | null;

@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
@@ -34,6 +35,7 @@ import {
   type EmployeeListItem,
 } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
+import { PriorityBadge } from "@/components/tasks/priority-badge"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -56,18 +58,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { dateLocale } from "@/lib/format-date"
 
 const LEVEL_STYLES: Record<string, string> = {
   VIEW: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
   CONTRIBUTE: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300",
   CONTROL: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-300",
-}
-
-const PRIORITY_STYLES: Record<string, string> = {
-  LOW: "border-slate-200 text-slate-500 dark:border-slate-700",
-  MEDIUM: "border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-300",
-  HIGH: "border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-300",
-  URGENT: "border-red-200 text-red-600 dark:border-red-800 dark:text-red-300",
 }
 
 const REQUEST_STATUS_STYLES: Record<SpaceShareRequestStatus, string> = {
@@ -106,21 +102,21 @@ export default function SharedSpaceViewPage() {
   const tasks: Task[] = (taskData?.data as Task[]) || []
 
   const { data: myRequests } = useQuery({
-    queryKey: ["shared-space-requests", spaceId],
+    queryKey: keys.sharedSpaces.requests(spaceId),
     queryFn: () => spaceSharingApi.listGuestRequests(spaceId),
     enabled: !!share,
   })
 
   // Workers on this space — only when the owner enabled "show workers".
   const { data: workers } = useQuery({
-    queryKey: ["shared-space-workers", spaceId],
+    queryKey: keys.sharedSpaces.workers(spaceId),
     queryFn: () => locationsApi.getAssignedMembers(spaceId),
     enabled: !!share && !!share.showWorkers,
   })
 
   // Attendance — only when the owner enabled "show attendance".
   const { data: attendance } = useQuery({
-    queryKey: ["shared-space-attendance", spaceId],
+    queryKey: keys.sharedSpaces.attendance(spaceId),
     queryFn: () => attendanceApi.getLocationEntries(spaceId, { limit: 50 }),
     enabled: !!share && !!share.showAttendance,
   })
@@ -128,7 +124,7 @@ export default function SharedSpaceViewPage() {
 
   // Live worker locations — only when the owner enabled "show tracking".
   const { data: tracked } = useQuery({
-    queryKey: ["shared-space-tracking", spaceId],
+    queryKey: keys.sharedSpaces.tracking(spaceId),
     queryFn: () => trackingApi.getSpaceWorkers(spaceId),
     enabled: !!share && !!share.showTracking,
     refetchInterval: share?.showTracking ? 30_000 : false,
@@ -147,7 +143,7 @@ export default function SharedSpaceViewPage() {
   // The auth context surfaces the share by spaceId but not its share id, which the
   // "request more" POST targets — resolve it once from /shared-spaces.
   const { data: sharedSpaces } = useQuery({
-    queryKey: ["shared-spaces"],
+    queryKey: keys.sharedSpaces.list(),
     queryFn: () => spaceSharingApi.listSharedSpaces(),
     enabled: !!share,
   })
@@ -265,20 +261,18 @@ export default function SharedSpaceViewPage() {
                           {task.status?.replace(/_/g, " ")}
                         </Badge>
                         {task.priority && (
-                          <Badge variant="outline" className={cn("text-[11px] font-medium", PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.MEDIUM)}>
-                            {t(`tasks.priority.${task.priority}`, task.priority)}
-                          </Badge>
+                          <PriorityBadge priority={task.priority} showIcon={false} className="text-[11px] font-medium" />
                         )}
                         {task.assignedTo && (
                           <span className="text-[11px] text-muted-foreground">
-                            {task.assignedTo.firstName} {task.assignedTo.lastName}
+                            {personName(task.assignedTo)}
                           </span>
                         )}
                       </div>
                     </div>
                     {task.dueDate && (
                       <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
-                        {new Date(task.dueDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                        {new Date(task.dueDate).toLocaleDateString(dateLocale(), { day: "2-digit", month: "short" })}
                       </span>
                     )}
                   </div>
@@ -299,7 +293,7 @@ export default function SharedSpaceViewPage() {
                               renders but silently refuses to select. */}
                           {workers.filter((w) => w.user?.id).map((w) => (
                             <SelectItem key={w.user!.id} value={w.user!.id}>
-                              {w.user?.firstName} {w.user?.lastName}
+                              {personName(w.user)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -325,7 +319,7 @@ export default function SharedSpaceViewPage() {
                   <UserAvatar firstName={w.user?.firstName} lastName={w.user?.lastName} seed={w.user?.id} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
-                      {w.user?.firstName} {w.user?.lastName}
+                      {personName(w.user)}
                     </p>
                     {w.currentTask ? (
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask}</p>
@@ -361,7 +355,7 @@ export default function SharedSpaceViewPage() {
                   <div key={w.id} className="flex items-center gap-3 rounded-xl border bg-card p-3">
                     <UserAvatar firstName={w.firstName} lastName={w.lastName} seed={w.id} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">{w.firstName} {w.lastName}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{personName(w)}</p>
                       {w.currentTask ? (
                         <p className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">{w.currentTask.title}</p>
                       ) : (
@@ -387,12 +381,12 @@ export default function SharedSpaceViewPage() {
             </div>
             <div className="rounded-xl border bg-card overflow-hidden">
               {attendanceEntries.slice(0, 25).map((e) => {
-                const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—")
+                const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString(dateLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—")
                 return (
                   <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <UserAvatar firstName={e.user?.firstName} lastName={e.user?.lastName} seed={e.user?.id} size="sm" />
-                      <span className="text-sm font-medium text-foreground truncate">{e.user?.firstName} {e.user?.lastName}</span>
+                      <span className="text-sm font-medium text-foreground truncate">{personName(e.user)}</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 text-[11px] text-muted-foreground tabular-nums">
                       <span>{fmt(e.clockInAt)}</span>
@@ -462,7 +456,7 @@ function AddWorkerDialog({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { data: employees } = useQuery({
-    queryKey: ["employees", "for-share"],
+    queryKey: keys.employees.shareInvite(),
     queryFn: () => employeesApi.list({ limit: 100 }),
     enabled: open,
   })
@@ -471,7 +465,7 @@ function AddWorkerDialog({
   const mutation = useMutation({
     mutationFn: (userId: string) => locationsApi.assignMember(spaceId, { userId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shared-space-workers", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.workers(spaceId) })
       notify.success(t("spaceSharing.guest.workerAdded", "Worker added to the workspace"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -492,7 +486,7 @@ function AddWorkerDialog({
               <div className="flex items-center gap-2.5 min-w-0">
                 <UserAvatar firstName={e.firstName} lastName={e.lastName} seed={e.id} size="sm" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{e.firstName} {e.lastName}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{personName(e)}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
                 </div>
               </div>
@@ -601,7 +595,7 @@ function RequestMoreDialog({
     mutationFn: () =>
       spaceSharingApi.createGuestRequest(shareId, { type, title: title.trim(), note: note.trim() || undefined }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shared-space-requests", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.requests(spaceId) })
       notify.success(t("spaceSharing.toast.requestSent"))
       setType("TASK")
       setTitle("")

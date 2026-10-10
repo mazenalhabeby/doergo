@@ -33,7 +33,7 @@ interface CodedError {
 }
 
 /** The refusal a workflow save answers with when a step's form is not acceptable. */
-export const STEP_FORM_DEFINITION_INVALID = "STEP_FORM_DEFINITION_INVALID"
+const STEP_FORM_DEFINITION_INVALID = "STEP_FORM_DEFINITION_INVALID"
 
 // ───────────────────────────────────────────────────────── the builder ──
 

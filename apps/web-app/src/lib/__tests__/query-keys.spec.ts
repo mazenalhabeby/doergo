@@ -2,7 +2,7 @@ import fs from "fs"
 import path from "path"
 import { QueryClient } from "@tanstack/react-query"
 import { apiEndpoints, queryKey } from "@hbcfield/shared/client"
-import { keys, membersPageParams, MEMBER_DIRECTORY_PAGE_SIZE } from "../query-keys"
+import { invalidateTimeOff, keys, membersPageParams, MEMBER_DIRECTORY_PAGE_SIZE } from "../query-keys"
 
 /**
  * Query keys are derived from the endpoint table: `[domain, endpoint, args]`.
@@ -157,5 +157,131 @@ describe("the migrated families stay migrated", () => {
       }
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe("the hand-named families keep the values the screens cached under", () => {
+  // These families predate the endpoint table. A changed VALUE would orphan
+  // every cached entry and, worse, every prefix invalidation still written
+  // against the old one — so the values are pinned, not just the names.
+  it("a reader and its prefix", () => {
+    expect(keys.attendance.list("loc", "ALL", "2026-10-01")).toEqual(["attendance", "loc", "ALL", "2026-10-01"])
+    expect(keys.attendance.list()).toEqual(["attendance"])
+    expect(keys.attendance.entryPresence("e1")).toEqual(["attendance", "entry-presence", "e1"])
+    expect(keys.timeOff.orgWindow("a", "b")).toEqual(["orgTimeOff", "window", "a", "b"])
+    expect(keys.rates.history("SPACE", "s1")).toEqual(["rate-history", "SPACE", "s1"])
+    expect(keys.chat.thread("c1")).toEqual(["chat", "thread", "c1"])
+    expect(keys.support.ticket("t1")).toEqual(["support", "ticket", "t1"])
+    expect(keys.companies.includingInactive()).toEqual(["legal-entities", "all"])
+  })
+
+  it("an optional trailing part passed as undefined stays in the key, as it always did", () => {
+    // `["my-leave-balance", user?.id]` before the user loads — a different entry
+    // from the prefix, exactly as when it was typed inline.
+    expect(keys.timeOff.myBalance(undefined)).toEqual(["my-leave-balance", undefined])
+    expect(keys.timeOff.myBalance()).toEqual(["my-leave-balance"])
+  })
+
+  it("`invoices.all()` still reaches the endpoint-derived invoice keys", () => {
+    const qc = cacheWith(keys.invoices.detail("i1"), keys.invoices.list("ALL", "", undefined), keys.invoices.gather({ spaceId: "s" }))
+    expect(reached(qc, keys.invoices.all())).toHaveLength(2)
+  })
+
+  it("the time-off helper reaches every screen that renders leave", () => {
+    const qc = cacheWith(
+      keys.timeOff.member("m1", "PENDING"),
+      keys.timeOff.orgApproved(),
+      keys.timeOff.orgWindow("a", "b"),
+      keys.timeOff.coverRange("a", "b"),
+      keys.timeOff.mine("u1"),
+    )
+    const invalidated: string[] = []
+    const spy = jest.spyOn(qc, "invalidateQueries").mockImplementation((f) => {
+      invalidated.push(...reached(qc, (f as { queryKey: readonly unknown[] }).queryKey))
+      return Promise.resolve()
+    })
+    invalidateTimeOff(qc, "m1")
+    spy.mockRestore()
+    expect(new Set(invalidated).size).toBe(4)
+  })
+})
+
+describe("no screen types a query key by hand", () => {
+  const SRC = path.join(process.cwd(), "src")
+  function* walk(dir: string): Generator<string> {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, e.name)
+      if (e.isDirectory()) {
+        if (e.name !== "__tests__" && e.name !== "node_modules") yield* walk(full)
+      } else if (/\.tsx?$/.test(e.name)) yield full
+    }
+  }
+
+  /**
+   * File (relative to src/) → why the keys in it are typed by hand.
+   *
+   * Only for a key that backs NO request — a client-side computation cached
+   * through React Query — so it has nothing to share a cache entry or an
+   * invalidation with. Empty today: every key in the app reads the API.
+   */
+  const LOCAL_KEYS: Record<string, string> = {}
+
+  /** Where a key array is written straight into a query or a QueryClient call. */
+  const INLINE: RegExp[] = [
+    /queryKey:\s*\[/g,
+    /\b(?:get|set)Quer(?:y|ies)Data\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\(\s*\[/g,
+    /\b(?:invalidate|refetch|reset|remove|cancel)Queries\(\s*\[/g,
+    /\b(?:prefetch|fetch)(?:Infinite)?Query\(\s*\[/g,
+    /\b(?:ensureQueryData|getQueryState)\(\s*\[/g,
+  ]
+
+  /** Comments blanked (newlines kept), so prose about an old key is not the key. */
+  function code(src: string): string {
+    return src
+      .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "))
+      .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
+  }
+
+  function inlineKeys(src: string): string[] {
+    const body = code(src)
+    const found: string[] = []
+    for (const re of INLINE) {
+      for (const m of body.matchAll(re)) {
+        const line = body.slice(0, m.index!).split("\n").length
+        found.push(`${line}: ${body.slice(m.index!, m.index! + 60).split("\n")[0]!.trim()}`)
+      }
+    }
+    return found
+  }
+
+  it("the scan recognises every way a key can be typed inline", () => {
+    for (const planted of [
+      `useQuery({ queryKey: ["x", id], queryFn })`,
+      `qc.invalidateQueries({ queryKey: ["x"] })`,
+      `qc.setQueryData(["x", id], v)`,
+      `qc.getQueryData<{ a: Array<string> }>(["x", id])`,
+      `qc.setQueriesData({ queryKey: ["x"] }, f)`,
+      `qc.prefetchQuery({ queryKey: [...keys.tasks.lists(), "more"] })`,
+    ]) {
+      expect(inlineKeys(planted)).toHaveLength(1)
+    }
+    expect(inlineKeys(`// queryKey: ["x"]\nuseQuery({ queryKey: keys.tasks.lists() })`)).toEqual([])
+  })
+
+  it("every key comes from lib/query-keys.ts", () => {
+    const offenders: string[] = []
+    for (const f of walk(SRC)) {
+      const rel = path.relative(SRC, f)
+      if (rel === path.join("lib", "query-keys.ts") || LOCAL_KEYS[rel]) continue
+      for (const hit of inlineKeys(fs.readFileSync(f, "utf8"))) offenders.push(`${rel}:${hit}`)
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it("every allow-listed file still has a key of its own, and says why", () => {
+    for (const [rel, why] of Object.entries(LOCAL_KEYS)) {
+      expect(why.length).toBeGreaterThan(20)
+      expect(inlineKeys(fs.readFileSync(path.join(SRC, rel), "utf8")).length).toBeGreaterThan(0)
+    }
   })
 })

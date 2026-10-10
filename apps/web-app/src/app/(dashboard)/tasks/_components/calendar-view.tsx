@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import React, { useMemo, useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import ReactDOM from "react-dom"
@@ -99,7 +100,7 @@ const PillTooltip = React.memo(function PillTooltip({
       </div>
       {task.assignedTo && (
         <p className="text-[11px] text-muted-foreground">
-          {task.assignedTo.firstName} {task.assignedTo.lastName}
+          {personName(task.assignedTo)}
         </p>
       )}
     </div>

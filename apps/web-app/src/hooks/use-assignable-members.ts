@@ -45,7 +45,7 @@ export function useAssignableMembers(opts: { spaceId?: string | null; enabled?: 
   })
 
   const visible = useQuery({
-    queryKey: ["visible-rosters"],
+    queryKey: keys.spaces.visibleRosters(),
     queryFn: async () => {
       const spaces = await locationsApi.list({ limit: 200 })
       const ids = (spaces?.data ?? []).map((s) => s.id).filter(Boolean)

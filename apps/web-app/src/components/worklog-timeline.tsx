@@ -11,8 +11,10 @@ import { errorMessage } from "@/lib/errors"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
-const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })
 const isImg = (m: string) => m.startsWith("image/")
 const MAX_FILES = 5
 
@@ -25,9 +27,9 @@ const MAX_FILES = 5
 export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }: { entryId: string; editable?: boolean; memberName?: string; clockOutNote?: string | null }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const q = useQuery({ queryKey: ["worklog", entryId], queryFn: () => worklogApi.list(entryId) })
+  const q = useQuery({ queryKey: keys.attendance.worklog(entryId), queryFn: () => worklogApi.list(entryId) })
   const notes = q.data ?? []
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["worklog", entryId] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.attendance.worklog(entryId) })
 
   const [draft, setDraft] = useState("")
   const [files, setFiles] = useState<File[]>([])

@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDuration } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { SectionHeader, EmptyState } from "./section-header"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The rests a workspace expects.
@@ -36,14 +38,14 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
   const [editing, setEditing] = useState<BreakRuleRow | "new" | null>(null)
 
   const { data: rules, isLoading } = useQuery({
-    queryKey: ["break-rules", spaceId],
+    queryKey: keys.schedules.breakRules(spaceId),
     queryFn: () => attendanceApi.listBreakRules({ spaceId }),
   })
 
   const remove = useMutation({
     mutationFn: (id: string) => attendanceApi.deleteBreakRule(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["break-rules", spaceId] })
+      qc.invalidateQueries({ queryKey: keys.schedules.breakRules(spaceId) })
       notify.success(t("attendance.rests.removed", "Rest removed"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -118,10 +120,7 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
                   {rule.trigger === "AFTER_WORKED"
                     ? t("attendance.rests.afterSummary", "{{mins}} minutes, after {{after}} of the shift", {
                         mins: rule.durationMinutes,
-                        after:
-                          (rule.afterMinutes ?? 0) >= 60
-                            ? `${Math.floor((rule.afterMinutes ?? 0) / 60)}h${(rule.afterMinutes ?? 0) % 60 ? ` ${(rule.afterMinutes ?? 0) % 60}m` : ""}`
-                            : `${rule.afterMinutes ?? 0}m`,
+                        after: formatDuration(rule.afterMinutes ?? 0),
                       })
                     : t("attendance.rests.windowSummary", "{{mins}} minutes, any time between {{from}} and {{to}}", {
                         mins: rule.durationMinutes,
@@ -206,7 +205,7 @@ function RestDialog({
         : attendanceApi.createBreakRule(payload)
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["break-rules", spaceId] })
+      qc.invalidateQueries({ queryKey: keys.schedules.breakRules(spaceId) })
       notify.success(rule ? t("attendance.rests.updated", "Rest updated") : t("attendance.rests.added", "Rest added"))
       onClose()
     },

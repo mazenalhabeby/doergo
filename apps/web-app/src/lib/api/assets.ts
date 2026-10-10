@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { Asset, AssetActivity, AssetCategory, AssetExpenseStatus, AssetListRow, AssetLogEntry, AssetLogPage, AssetLogSummary, AssetMoneyEntry, AssetMoneySummary, AssetProposal, AssetType, AssetUsage, AssetsQueryParams, ContractFields, ContractPreview, ContractProposalInput, ContractReading, CreateAssetCategoryInput, CreateAssetInput, CreateAssetLogInput, CreateAssetTypeInput, CustodyPeriodDto, CustodyTimeline, MaintenanceHistoryItem, OrphanAsset, PendingExpense, UpdateAssetCategoryInput, UpdateAssetInput, UpdateAssetTypeInput } from './types/assets';
+import type { Asset, AssetActivity, AssetCategory, AssetExpenseStatus, AssetListRow, AssetLogEntry, AssetLogPage, AssetLogSummary, AssetMoneyEntry, AssetMoneySummary, AssetProposal, AssetUsage, AssetsQueryParams, ContractFields, ContractPreview, ContractProposalInput, ContractReading, CreateAssetCategoryInput, CreateAssetInput, CreateAssetLogInput, CustodyPeriodDto, CustodyTimeline, MaintenanceHistoryItem, OrphanAsset, PendingExpense, UpdateAssetCategoryInput, UpdateAssetInput } from './types/assets';
 import { assetCategoriesEndpoints, assetsEndpoints } from '@hbcfield/shared/client';
 
 // Assets API methods
@@ -87,54 +87,6 @@ export const assetsApi = {
   // Delete a category
   deleteCategory: async (id: string) => {
     const response = await call(assetCategoriesEndpoints.remove, { id }) as ApiResponse<{ success: boolean; message: string }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data;
-  },
-
-  // ============================================
-  // TYPES
-  // ============================================
-
-  // Get types for a category
-  getTypes: async (categoryId: string) => {
-    const response = await call(assetCategoriesEndpoints.types, { categoryId }) as ApiResponse<{ success: boolean; data: AssetType[] }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data || [];
-  },
-
-  // Create a new type in a category
-  createType: async (categoryId: string, input: CreateAssetTypeInput) => {
-    const response = await call(assetCategoriesEndpoints.createType, { categoryId }, { body: input }) as ApiResponse<{ success: boolean; data: AssetType }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Update a type
-  updateType: async (id: string, input: UpdateAssetTypeInput) => {
-    const response = await call(assetCategoriesEndpoints.updateType, { id }, { body: input }) as ApiResponse<{ success: boolean; data: AssetType }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Delete a type
-  deleteType: async (id: string) => {
-    const response = await call(assetCategoriesEndpoints.removeType, { id }) as ApiResponse<{ success: boolean; message: string }>;
 
     if (response.error) {
       throw apiError(response);

@@ -2,16 +2,9 @@
 
 import { MapContainer, Marker } from "react-leaflet"
 import { BaseTiles } from "@/components/map/base-tiles"
-import L from "leaflet"
+import { markerIcon } from "@/lib/leaflet-icon"
 
-// Leaflet CSS is imported globally (app/globals.css). Default marker icons.
-const icon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-})
+// Leaflet CSS is imported globally (app/globals.css).
 
 /** Read-only map showing a single address marker. */
 export default function AddressMap({ lat, lng }: { lat: number; lng: number }) {
@@ -25,7 +18,7 @@ export default function AddressMap({ lat, lng }: { lat: number; lng: number }) {
       attributionControl={false}
     >
       <BaseTiles />
-      <Marker position={[lat, lng]} icon={icon} />
+      <Marker position={[lat, lng]} icon={markerIcon} />
     </MapContainer>
   )
 }

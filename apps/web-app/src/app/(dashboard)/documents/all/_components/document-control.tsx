@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
 
 /*
   Control over documents that already exist: who sees them, a new version, or
@@ -45,7 +46,7 @@ export function useDocumentControl() {
 function useRefreshDocuments() {
   const queryClient = useQueryClient()
   return () => {
-    for (const key of [["documents-sent"], ["documents-browse"], ["my-documents"], ["credential-compliance"]]) {
+    for (const key of [keys.documents.sent(), keys.documents.browse(), keys.documents.mine(), keys.documents.compliance()]) {
       queryClient.invalidateQueries({ queryKey: key })
     }
   }
@@ -221,7 +222,7 @@ function VisibilityDialog({
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: roles = [], isLoading: rolesLoading } = useQuery({
-    queryKey: ["document-visibility-roles"],
+    queryKey: keys.documents.visibilityRoles(),
     queryFn: () => documentsApi.visibilityRoles(),
     enabled: open,
     staleTime: 60_000,

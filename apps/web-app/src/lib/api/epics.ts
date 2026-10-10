@@ -21,10 +21,4 @@ export const epicsApi = {
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
-
-  delete: async (id: string) => {
-    const response = await call(epicsWebEndpoints.delete, { id }) as ApiResponse<{ success: boolean; message: string }>;
-    if (response.error) throw apiError(response);
-    return response.data;
-  },
 };

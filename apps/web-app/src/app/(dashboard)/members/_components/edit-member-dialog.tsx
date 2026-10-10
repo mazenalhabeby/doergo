@@ -1,33 +1,26 @@
 "use client"
 
 import { keys } from "@/lib/query-keys"
-import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
-import { useState, useEffect, useMemo, memo } from "react"
+import { useCompanies } from "@/components/companies/company-select"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { DatedRateField, currentOf } from "@/components/rates/dated-rate"
 import { useTranslation } from "react-i18next"
-import { Check, Copy, KeyRound, AlertTriangle, MapPin, X, Plus, ChevronsUpDown } from "lucide-react"
 import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
 import {
   organizationsApi,
-  locationsApi,
   employeesApi,
-  rateHistoryApi,
   type OrgMember,
   type UpdateMemberInput,
   type UpdateEmployeeInput,
   type ScheduleEntryInput,
-  type LocationAssignment,
 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -36,147 +29,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command"
 import { copyText } from "@/lib/clipboard"
+import { personName } from "@hbcfield/shared/client"
+import { EditSection } from "./edit-member-dialog/edit-section"
+import { EmploymentFields } from "./edit-member-dialog/employment-fields"
+import { MemberSpacesSection } from "./edit-member-dialog/member-spaces-section"
+import { MemberSecuritySection } from "./edit-member-dialog/member-security-section"
+import { useMemberEditorData } from "./edit-member-dialog/use-member-editor-data"
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const POSITION_SUGGESTIONS = [
-  "Technician", "Driver", "Accountant", "HR Manager", "Sales Representative",
-  "Office Manager", "Warehouse Worker", "Service Engineer", "Project Manager",
-  "Designer", "Developer", "Customer Support", "Delivery Driver", "Inspector",
-]
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-const PositionCombobox = memo(function PositionCombobox({
-  value,
-  onChange,
-  usedPositions,
-}: {
-  value: string
-  onChange: (value: string) => void
-  usedPositions: string[]
-}) {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const [inputValue, setInputValue] = useState(value)
-
-  const unusedSuggestions = POSITION_SUGGESTIONS.filter(
-    (s) => !usedPositions.some((u) => u.toLowerCase() === s.toLowerCase()),
-  )
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between h-9 font-normal text-sm"
-        >
-          <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || t("members.memberEditor.positionPlaceholder")}
-          </span>
-          <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command shouldFilter={true}>
-          <div className="p-2 pb-1">
-            <CommandInput
-              placeholder={t("members.memberEditor.searchOrType")}
-              value={inputValue}
-              onValueChange={(v) => {
-                setInputValue(v)
-                onChange(v)
-              }}
-            />
-          </div>
-          <div className="max-h-[200px] overflow-y-auto overflow-x-hidden overscroll-contain" onWheel={(e) => e.stopPropagation()}>
-            <CommandList className="max-h-none overflow-visible">
-              <CommandEmpty>
-                <button
-                  type="button"
-                  className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded-sm"
-                  onClick={() => {
-                    onChange(inputValue)
-                    setOpen(false)
-                  }}
-                >
-                  {t("members.memberEditor.useQuery", { query: inputValue })}
-                </button>
-              </CommandEmpty>
-              {usedPositions.length > 0 && (
-                <CommandGroup heading={t("members.memberEditor.usedInOrg")}>
-                  {usedPositions.map((pos) => (
-                    <CommandItem
-                      key={`used-${pos}`}
-                      value={pos}
-                      onSelect={() => {
-                        onChange(pos)
-                        setInputValue(pos)
-                        setOpen(false)
-                      }}
-                    >
-                      <Check className={cn("mr-2 h-3.5 w-3.5", value === pos ? "opacity-100" : "opacity-0")} />
-                      {pos}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              )}
-              {unusedSuggestions.length > 0 && (
-                <>
-                  {usedPositions.length > 0 && <CommandSeparator />}
-                  <CommandGroup heading={t("members.memberEditor.suggestions")}>
-                    {unusedSuggestions.map((pos) => (
-                      <CommandItem
-                        key={`sug-${pos}`}
-                        value={pos}
-                        onSelect={() => {
-                          onChange(pos)
-                          setInputValue(pos)
-                          setOpen(false)
-                        }}
-                      >
-                        <Check className={cn("mr-2 h-3.5 w-3.5", value === pos ? "opacity-100" : "opacity-0")} />
-                        {pos}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </>
-              )}
-            </CommandList>
-          </div>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
-})
-
-function EditSection({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 pt-1">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground shrink-0">{label}</span>
-      <div className="h-px flex-1 bg-border" />
-    </div>
-  )
-}
+// Pieces live in ./edit-member-dialog/ — the position combobox, the profile
+// box (employment + cost rates), the spaces and the password sections, and the
+// editor's reads.
 
 // ── Dialog ─────────────────────────────────────────────────────────────────────
 
@@ -276,54 +139,12 @@ export function EditMemberDialog({
     setEmploymentStartDate(m.employmentStartDate ? String(m.employmentStartDate).slice(0, 10) : "")
   }, [member])
 
+
   // ── Data (self-contained; shared query keys dedupe across pages) ──
-  // The member's own cost rate and its history — only for people who may see cost.
-  const { data: memberRates } = useQuery({
-    queryKey: ["rate-history", "MEMBER", member?.id],
-    queryFn: () => rateHistoryApi.list({ target: "MEMBER", targetId: member!.id }),
-    enabled: !!member?.id && canViewLabourCost,
-  })
-  const { data: membersData } = useQuery({
-    queryKey: keys.members.directory(),
-    queryFn: () => organizationsApi.getAllMembers(),
-    enabled: !!member,
-    staleTime: 60000,
-  })
-  const usedPositions = useMemo(() => {
-    const set = new Set<string>()
-    for (const m of membersData ?? []) if (m.position) set.add(m.position)
-    return Array.from(set).sort()
-  }, [membersData])
-
-
-  const { data: locationsData } = useQuery({
-    queryKey: keys.locations.list({ limit: 100 }),
-    queryFn: () => locationsApi.list({ limit: 100 }),
-    staleTime: 60000,
-    enabled: !!member,
-  })
-  const locations = locationsData?.data || []
-
-  /** A location assignment with the space's name folded in for display. */
-  type NamedAssignment = LocationAssignment & { locationName: string }
-
-  // ONE batched read of every space's roster, under the same key the members
-  // page reads it with (it was a request per space, keyed by how many there were).
-  const locationIds = useMemo(() => locations.map((l) => l.id).sort(), [locations])
-  const { data: rosterRows } = useQuery({
-    queryKey: keys.locations.rosterBatch(locationIds),
-    queryFn: () => locationsApi.getRosters(locationIds),
-    enabled: !!member && locationIds.length > 0,
-    staleTime: 60000,
-  })
-  const allAssignments = useMemo<NamedAssignment[] | undefined>(() => {
-    if (!rosterRows) return undefined
-    const names = new Map(locations.map((l) => [l.id, l.name]))
-    return rosterRows.map((a) => ({ ...a, locationName: names.get(a.locationId) ?? a.location?.name ?? "" }))
-  }, [rosterRows, locations])
+  const { memberRates, usedPositions, locations, allAssignments } = useMemberEditorData(member, canViewLabourCost)
 
   const { data: scheduleData } = useQuery({
-    queryKey: ["employeeSchedule", member?.id],
+    queryKey: keys.schedules.member(member?.id),
     queryFn: () => employeesApi.getSchedule(member!.id),
     enabled: !!member && scheduleType === "FIXED",
   })
@@ -359,7 +180,7 @@ export function EditMemberDialog({
       // The vacation allowance is edited here and rendered on the member's own
       // Vacation Requests page from a separately cached query — without this it
       // would keep showing the old entitlement.
-      queryClient.invalidateQueries({ queryKey: ["my-leave-balance"] })
+      queryClient.invalidateQueries({ queryKey: keys.timeOff.myBalance() })
       onSaved?.()
       onClose()
       setTempPassword(null)
@@ -382,7 +203,7 @@ export function EditMemberDialog({
   const saveScheduleMutation = useMutation({
     mutationFn: ({ memberId, schedule }: { memberId: string; schedule: ScheduleEntryInput[] }) =>
       employeesApi.setSchedule(memberId, schedule),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employeeSchedule"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.schedules.member() }),
     onError: (error: Error) => notify.error(error.message || t("members.memberEditor.failedToSaveSchedule")),
   })
 
@@ -469,9 +290,9 @@ export function EditMemberDialog({
   */
   const refreshMemberRates = () => {
     queryClient.invalidateQueries({ queryKey: keys.members.detail(member?.id) })
-    queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
+    queryClient.invalidateQueries({ queryKey: keys.rates.history("MEMBER", member?.id) })
     queryClient.invalidateQueries({ queryKey: keys.spaceMembers.all() })
-    queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+    queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
   }
 
   return (
@@ -491,7 +312,7 @@ export function EditMemberDialog({
               <UserAvatar firstName={member.firstName} lastName={member.lastName} avatarUrl={member.avatarUrl} seed={member.id} size="lg" />
               <div className="min-w-0">
                 <DialogTitle className="text-base truncate flex items-center gap-2">
-                  <span className="truncate">{member.firstName} {member.lastName}</span>
+                  <span className="truncate">{personName(member)}</span>
                   {/* Says why the employment fields are absent, rather than
                       leaving an admin to wonder what happened to them. */}
                   {isExternalMember && (
@@ -545,180 +366,29 @@ export function EditMemberDialog({
 
           {/* Job title — a free-text designation (e.g. "Logistics Manager",
               "Team Lead") independent of the permission role. */}
-          <div className="space-y-2.5 rounded-lg border border-border/60 p-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.jobTitle", "Job title")}</Label>
-              <PositionCombobox value={position} onChange={setPosition} usedPositions={usedPositions} />
-            </div>
-
-            {/* The employer on their paperwork. Hidden while the organization has one company. */}
-            <CompanyField
-              id="member-employer"
-              label={t("companies.employer")}
-              help={t("companies.employerHelp")}
-              value={employerEntityId}
-              onChange={setEmployerEntityId}
-              inheritLabel={t("companies.sameAsMain", { name: companyName(mainCompany) })}
-            />
-
-            {/*
-              Date of birth.
-
-              ⚠️ Sent as null rather than undefined when cleared: undefined
-              means "leave alone", and a birthday entered by mistake could then
-              never be removed.
-            */}
-            <div className="space-y-1.5">
-              <Label htmlFor="member-dob" className="text-xs font-medium text-muted-foreground">
-                {t("members.memberEditor.dateOfBirth", "Date of birth")}
-              </Label>
-              <Input
-                id="member-dob"
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                max={new Date().toISOString().slice(0, 10)}
-                className="h-9 rounded-lg text-sm"
-              />
-            </div>
-
-            {/* Employment type — only when the org distinguishes in-house vs external.
-                (Capacity/"max daily jobs" is now derived automatically from throughput.) */}
-            {user?.orgUsesExternalWorkers && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.employmentTypeLabel", "Employment type")}</Label>
-                <Select value={employmentType} onValueChange={setEmploymentType}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
-                    <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {!isExternalMember && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("members.memberEditor.startDateLabel")}
-              </Label>
-              <Input
-                type="date"
-                value={employmentStartDate}
-                onChange={(e) => setEmploymentStartDate(e.target.value)}
-                className="h-9"
-              />
-              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.startDateHint")}</p>
-            </div>
-            )}
-
-            {!isExternalMember && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("members.memberEditor.allowanceLabel")}
-              </Label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                value={leaveAllowance}
-                onChange={(e) => setLeaveAllowance(e.target.value)}
-                placeholder={t("members.memberEditor.allowancePlaceholder")}
-                className="h-9"
-              />
-              {/* Says what BLANK means. Without it an admin reads an empty box
-                  as "no holiday" and types a number they did not need to. */}
-              <p className="text-[11px] text-muted-foreground">{t("members.memberEditor.allowanceHint")}</p>
-            </div>
-            )}
-
-            {/*
-              ⚠️ NOT FOR AN EXTERNAL MEMBER — they work for a client or a
-              partner, not for us. We do not pay them, so there is no cost; the
-              rest of this section already hides start date and holiday for
-              exactly that reason, and an hourly cost describes the same
-              employment we do not have with them.
-
-              It sat OUTSIDE that guard and rendered for them, which is the
-              mistake being fixed.
-            */}
-            {!isExternalMember && (
-            <>
-            {/*
-              Their hourly rates — COST FIRST, and that order is the point.
-
-              ⚠️ The bill rate led here at first and it read as "what this
-              person charges", which is not what a member record is for. What
-              belongs to a PERSON is what they cost you: Ahmed costs €20 an hour
-              wherever he works. What the client pays is a fact about the
-              CONTRACT and lives on the customer workspace — which is why the
-              bill field below is usually blank and says so.
-
-              The cost field is gated on `canViewLabourCost`; the bill field is
-              not. What the work is worth is not a secret, and learning what the
-              company PAYS for that hour should not be a side effect of being
-              allowed to fix somebody's job title.
-            */}
-            {canViewLabourCost ? (
-              <DatedRateField
-                currency={user?.orgCurrency}
-                id="member-cost-rate"
-                label={t("members.memberEditor.costRateLabel")}
-                hint={t("members.memberEditor.costRateHint")}
-                /* From the dated history, like the day rate below: the member object the
-                   page opened with may not carry the cost, and does not move when a new
-                   rate is saved — the field then read "Not set" next to its own history. */
-                currentCents={memberRates?.some((r) => r.kind === "COST_HOUR") ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR")) : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)}
-                history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
-                onSubmit={async (c, from) => {
-                  await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-                  refreshMemberRates()
-                }}
-              />
-            ) : null}
-            {canViewLabourCost ? (
-              <DatedRateField
-                currency={user?.orgCurrency}
-                id="member-day-cost"
-                label={t("rates.dayCost")}
-                hint={t("rates.dayCostHint")}
-                unit="day"
-                currentCents={currentOf(memberRates?.filter((r) => r.kind === "COST_DAY"))}
-                history={memberRates?.filter((r) => r.kind === "COST_DAY")}
-                onSubmit={async (c, from) => {
-                  await employeesApi.update(member!.id, { costDayCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })
-                  refreshMemberRates()
-                }}
-              />
-            ) : (
-              /*
-                ⚠️ Say it is hidden rather than simply omitting it. A person who
-                expects a cost field and finds only a bill rate concludes the
-                product has it the wrong way round — which is exactly what was
-                reported. An absence explains nothing; this does.
-              */
-              <p className="text-[11px] text-muted-foreground">
-                {t("members.memberEditor.costRateHidden")}
-              </p>
-            )}
-            </>
-            )}
-
-            {/*
-              ⚠️ NO BILL RATE HERE, and that is the correction.
-
-              It was on this screen and read backwards, which is how it was
-              reported. What somebody COSTS is a fact about the person and
-              belongs on their record; what a CLIENT pays for their hour is a
-              fact about that client — and the same engineer is routinely worth
-              €45 at one customer and €60 at another. A single field on a person
-              cannot say that.
-
-              It lives on the assignment now: Workspaces → the customer →
-              Members, where each person has a rate for THAT client, prefilled
-              from what they would otherwise inherit.
-            */}
-          </div>
+          <EmploymentFields
+            member={member}
+            orgUsesExternalWorkers={user?.orgUsesExternalWorkers}
+            orgCurrency={user?.orgCurrency}
+            canViewLabourCost={canViewLabourCost}
+            isExternalMember={isExternalMember}
+            mainCompany={mainCompany}
+            usedPositions={usedPositions}
+            memberRates={memberRates}
+            refreshMemberRates={refreshMemberRates}
+            position={position}
+            setPosition={setPosition}
+            employerEntityId={employerEntityId}
+            setEmployerEntityId={setEmployerEntityId}
+            dateOfBirth={dateOfBirth}
+            setDateOfBirth={setDateOfBirth}
+            employmentType={employmentType}
+            setEmploymentType={setEmploymentType}
+            employmentStartDate={employmentStartDate}
+            setEmploymentStartDate={setEmploymentStartDate}
+            leaveAllowance={leaveAllowance}
+            setLeaveAllowance={setLeaveAllowance}
+          />
 
 
           {/* A schedule is the hours WE expect. Theirs are their own employer's
@@ -743,113 +413,23 @@ export function EditMemberDialog({
               single home for role + permissions. This dialog stays profile-only. */}
 
           {member && (
-            <>
-              <EditSection label={t("members.table.spaces")} />
-              <div className="flex flex-wrap gap-1.5 items-center">
-                {(() => {
-                  const memberAssignments = (allAssignments || []).filter(
-                    (a) => a.userId === member.id,
-                  )
-                  const assignedLocationIds = new Set(memberAssignments.map((a) => a.locationId))
-                  const assignedLocations = locations.filter((l) => assignedLocationIds.has(l.id))
-                  const unassignedLocations = locations.filter((l) => !assignedLocationIds.has(l.id))
-
-                  return (
-                    <>
-                      {assignedLocations.length > 0 ? (
-                        assignedLocations.map((loc) => {
-                          const assignment = memberAssignments.find((a) => a.locationId === loc.id)
-                          return (
-                            <Badge key={loc.id} variant="secondary" className="text-xs font-normal py-0.5 px-2 pr-1 gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {loc.name}
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  if (!assignment?.id) return
-                                  try {
-                                    await locationsApi.removeAssignment(loc.id, assignment.id)
-                                    invalidateAssignments()
-                                    notify.success(t("members.memberEditor.removedFrom", { name: loc.name }))
-                                  } catch { notify.error(t("members.memberEditor.failedToRemove")) }
-                                }}
-                                className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 transition-colors"
-                              >
-                                <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                              </button>
-                            </Badge>
-                          )
-                        })
-                      ) : (
-                        <span className="text-sm text-muted-foreground/50 italic">{t("members.noSpaces")}</span>
-                      )}
-                      {unassignedLocations.length > 0 && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-6 px-2 text-xs rounded-full gap-1">
-                              <Plus className="h-3 w-3" />
-                              {t("members.memberEditor.add")}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-48">
-                            {unassignedLocations.map((loc) => (
-                              <DropdownMenuItem
-                                key={loc.id}
-                                onClick={async () => {
-                                  try {
-                                    await locationsApi.assignMember(loc.id, { userId: member.id })
-                                    invalidateAssignments()
-                                    notify.success(t("members.memberEditor.assignedTo", { name: loc.name }))
-                                  } catch { notify.error(t("members.memberEditor.failedToAssign")) }
-                                }}
-                              >
-                                <MapPin className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                                {loc.name}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </>
-                  )
-                })()}
-              </div>
-            </>
+            <MemberSpacesSection
+              member={member}
+              locations={locations}
+              allAssignments={allAssignments}
+              invalidateAssignments={invalidateAssignments}
+            />
           )}
 
           <EditSection label={t("members.memberEditor.sectionSecurity")} />
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.password")}</Label>
-              {!tempPassword && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => member && resetPasswordMutation.mutate(member.id)}
-                  disabled={resetPasswordMutation.isPending}
-                  className="h-7 text-xs"
-                >
-                  <KeyRound className="h-3 w-3 mr-1.5" />
-                  {resetPasswordMutation.isPending ? t("common.generating") : t("members.memberEditor.resetPassword")}
-                </Button>
-              )}
-            </div>
-            {tempPassword ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <p className="text-xs text-amber-700 dark:text-amber-300">{t("members.memberEditor.copyPasswordWarning")}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input readOnly value={tempPassword} className="font-mono text-sm h-9" />
-                  <Button variant="outline" size="icon" onClick={handleCopyPassword} className="h-9 w-9 flex-shrink-0">
-                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <MemberSecuritySection
+            tempPassword={tempPassword}
+            copied={copied}
+            isResetting={resetPasswordMutation.isPending}
+            onReset={() => member && resetPasswordMutation.mutate(member.id)}
+            onCopy={handleCopyPassword}
+          />
         </div>
 
         <DialogFooter>

@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next"
 import { Timer } from "lucide-react"
-import { formatDuration } from "@hbcfield/shared/client"
+import { personName, formatDuration } from "@hbcfield/shared/client"
 import { useJobTime } from "@/hooks/use-job-time"
 import { UserAvatar } from "@/components/user-avatar"
 
@@ -24,7 +24,6 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
   const { data, time, live } = useJobTime(taskId, paused)
   if (!data || !time || time.travel + time.working + time.blocked === 0) return null
   const sum = time.travel + time.working + time.blocked
-  const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
   const started = data.startedBy
 
   return (
@@ -69,7 +68,7 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
           {data.byWorker.map((w) => (
             <div key={w.user.id} className="flex items-center gap-2 text-sm">
               <UserAvatar firstName={w.user.firstName} lastName={w.user.lastName} seed={w.user.id} size="xs" />
-              <span className="flex-1 truncate text-foreground">{name(w.user)}</span>
+              <span className="flex-1 truncate text-foreground">{personName(w.user)}</span>
               <span className="tabular-nums text-muted-foreground">
                 {[
                   formatDuration(w.working),
@@ -85,7 +84,7 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
 
       {started?.office ? (
         <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
-          {[t("tasks.jobTime.startedFor", { name: name(started.user), for: name(started.forUser) }), started.reason ? `“${started.reason}”` : null].filter(Boolean).join(" · ")}
+          {[t("tasks.jobTime.startedFor", { name: personName(started.user), for: personName(started.forUser) }), started.reason ? `“${started.reason}”` : null].filter(Boolean).join(" · ")}
         </p>
       ) : null}
       <p className="mt-3 text-xs text-muted-foreground">{t("tasks.jobTime.onlyInShift")}</p>

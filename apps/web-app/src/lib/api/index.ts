@@ -10,7 +10,7 @@
  */
 export { API_BASE_URL } from '../endpoints';
 export type { ApiResponse, RequestOptions } from '../http-client';
-export { authApi, clearTokens, getAccessToken, hasTokens, refreshTokens } from './auth';
+export { authApi } from './auth';
 export { analyticsApi } from './analytics';
 export { assetsApi } from './assets';
 export { attendanceApi } from './attendance';
@@ -82,7 +82,7 @@ export type { SpaceUnit } from './types/space-units';
 export type { Sprint } from './types/sprints';
 export type { Attachment } from './types/task-attachments';
 export type { CandidateState, ChecklistItem, ChecklistPerson, Comment, CreateTaskInput, CrewView, JobTimeReport, JobTimeSplit, JobTimeView, OnBehalf, OpenRoleTask, RoleOption, RolePreview, RoleStats, Task, TaskAssignee, TaskDependency, TaskEvent, TaskHandover, TaskStepSubmission, TasksListResponse, UpdateTaskInput } from './types/tasks';
-export type { InboxNotification, Worker } from './types/users';
+export type { InboxNotification } from './types/users';
 export type { StatusWorkflow, WorkflowStatus } from './types/workflows';
 export type { WorkLogAttachment, WorkLogNote } from './types/worklog';
 export { uploadToS3 } from './uploads';

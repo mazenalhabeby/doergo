@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
  * One accent color per section. Values are tailwind token pairs so both light
  * and dark modes look right (no raw hex). `chip` colors the rounded icon square.
  */
-export type SectionAccent = "primary" | "blue" | "indigo" | "violet" | "emerald" | "amber" | "sky"
+type SectionAccent = "primary" | "blue" | "indigo" | "violet" | "emerald" | "amber" | "sky"
 
 /**
  * Consistent section header used across every space-settings tab: title +

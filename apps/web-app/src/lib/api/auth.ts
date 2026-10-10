@@ -1,34 +1,11 @@
 import { ApiError, TRANSPORT_CODES, authEndpoints, isApiError } from '@hbcfield/shared/client';
 import { authHttp, call, type ApiResponse } from '../http-client';
-import {
-  getAccessToken as sessionAccessToken,
-  hasAccessToken,
-  clearSession,
-  setAccessToken,
-  refreshAccessToken,
-} from '../auth-session';
+import { clearSession, setAccessToken } from '../auth-session';
 import { apiError, localizeApiError } from '../server-error';
 
-/**
- * The access token lives IN MEMORY only (see auth-session.ts). The refresh
- * token is only ever in the gateway's httpOnly cookie.
- */
-export function getAccessToken(): string | null {
-  return sessionAccessToken();
-}
-
 /** Forget the session in this tab and every other one. */
-export function clearTokens(): void {
+function clearTokens(): void {
   clearSession();
-}
-
-export function hasTokens(): boolean {
-  return hasAccessToken();
-}
-
-/** Get a new access token with the refresh cookie. True only when one arrived. */
-export async function refreshTokens(): Promise<boolean> {
-  return (await refreshAccessToken()) === 'ok';
 }
 
 /**

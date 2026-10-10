@@ -22,7 +22,7 @@ import {
   type AccessPermissionKey,
 } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
-import { formatMoney } from "@/lib/money"
+import { formatMoney, MONEY_LOCALE } from "@/lib/money"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -139,7 +139,7 @@ export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApa
 // "who is a Mechanic at BILLA" is answered on the card rather than by reading
 // down the member list.
 
-const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents / 100, currency)
+const formatMoneyCents = (cents: number, currency: string) => formatMoney(cents, currency, MONEY_LOCALE)
 
 function SubRolesSection({ spaceId }: { spaceId: string }) {
   const money = useSpaceCurrency(spaceId)
@@ -188,7 +188,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
   })
   const refreshRoles = () => {
     queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
-    queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+    queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
   }
   const useHere = useMutation({
     mutationFn: (roleId: string) => spaceRolesApi.useHere(spaceId, roleId),
@@ -209,7 +209,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
     mutationFn: (id: string) => spaceRolesApi.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
-      queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
       setDeleteTarget(null)
       notify.success(t("scheduling.roles.toast.deleted"))
     },
@@ -452,7 +452,7 @@ function RoleDialog({
     mutationFn: () => spaceRolesApi.merge(role!.id, mergeInto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
-      queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
       queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(t("scheduling.workRoles.merged"))
       onOpenChange(false)
@@ -483,7 +483,7 @@ function RoleDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
-      queryClient.invalidateQueries({ queryKey: ["space-roles"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roleLists() })
       queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(isEdit ? t("scheduling.roles.toast.updated") : t("scheduling.roles.toast.created"))
       onOpenChange(false)
@@ -610,7 +610,7 @@ function RoleDialog({
                   history={role!.defaultDayRateHistory ?? []}
                   onSubmit={async (c, from) => {
                     await spaceRolesApi.setDefaultDayRate(role!.id, { cents: c, ...(from ? { effectiveFrom: from } : {}) })
-                    queryClient.invalidateQueries({ queryKey: ["space-roles-in-space"] })
+                    queryClient.invalidateQueries({ queryKey: keys.spaces.roles() })
                   }}
                 />
               ) : (

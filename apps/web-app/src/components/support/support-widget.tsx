@@ -11,6 +11,7 @@ import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { keys } from "@/lib/query-keys"
 
 /**
  * Tier-aware support entry point in the top navbar. Everyone can open tickets;
@@ -32,14 +33,14 @@ export function SupportButton() {
   const enabled = !!user?.organizationId;
 
   const { data: config } = useQuery({
-    queryKey: ['support', 'config'],
+    queryKey: keys.support.config(),
     queryFn: supportApi.getConfig,
     enabled,
     staleTime: 5 * 60 * 1000,
   });
 
   const { data: tickets, isLoading: ticketsLoading } = useQuery({
-    queryKey: ['support', 'tickets'],
+    queryKey: keys.support.tickets(),
     queryFn: () => supportApi.list(),
     enabled, // fetch even while closed so the launcher can show an unread badge
   });
@@ -48,7 +49,7 @@ export function SupportButton() {
   const unreadTotal = (tickets?.data ?? []).reduce((n, tk) => n + (tk.unreadForCustomer ?? 0), 0);
 
   const { data: active } = useQuery({
-    queryKey: ['support', 'ticket', activeId],
+    queryKey: keys.support.ticket(activeId),
     queryFn: () => supportApi.get(activeId as string),
     enabled: !!activeId,
   });
@@ -58,12 +59,12 @@ export function SupportButton() {
     if (!enabled) return;
     const offs = [
       subscribe<{ ticketId?: string; message?: SupportMessage }>(SocketEvents.SUPPORT_MESSAGE, (d) => {
-        qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
-        if (d?.ticketId) qc.invalidateQueries({ queryKey: ['support', 'ticket', d.ticketId] });
+        qc.invalidateQueries({ queryKey: keys.support.tickets() });
+        if (d?.ticketId) qc.invalidateQueries({ queryKey: keys.support.ticket(d.ticketId) });
       }),
       subscribe(SocketEvents.SUPPORT_TICKET_UPDATED, () => {
-        qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
-        if (activeId) qc.invalidateQueries({ queryKey: ['support', 'ticket', activeId] });
+        qc.invalidateQueries({ queryKey: keys.support.tickets() });
+        if (activeId) qc.invalidateQueries({ queryKey: keys.support.ticket(activeId) });
       }),
       subscribe<{ online?: boolean }>(SocketEvents.SUPPORT_AGENT_PRESENCE, (d) => setAgentOnline(!!d?.online)),
     ];
@@ -81,7 +82,7 @@ export function SupportButton() {
     lastReadLenRef.current[activeId] = msgLen;
     supportApi
       .markRead(activeId)
-      .then(() => qc.invalidateQueries({ queryKey: ['support', 'tickets'] }))
+      .then(() => qc.invalidateQueries({ queryKey: keys.support.tickets() }))
       .catch(() => {});
   }, [activeId, msgLen, qc]);
 
@@ -209,7 +210,7 @@ function NewTicket({ onDone, liveChat }: { onDone: (id: string) => void; liveCha
   const mut = useMutation({
     mutationFn: () => supportApi.create({ subject: subject.trim(), body: body.trim(), channel: 'WEB' }),
     onSuccess: (ticket) => {
-      qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
+      qc.invalidateQueries({ queryKey: keys.support.tickets() });
       onDone(ticket.id);
     },
   });
@@ -253,8 +254,8 @@ function Thread({ ticket }: { ticket?: SupportTicket }) {
     mutationFn: () => supportApi.reply(ticket!.id, text.trim()),
     onSuccess: () => {
       setText('');
-      qc.invalidateQueries({ queryKey: ['support', 'ticket', ticket!.id] });
-      qc.invalidateQueries({ queryKey: ['support', 'tickets'] });
+      qc.invalidateQueries({ queryKey: keys.support.ticket(ticket!.id) });
+      qc.invalidateQueries({ queryKey: keys.support.tickets() });
     },
   });
 

@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PhoneInput } from "@/components/ui/phone-input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 
-const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+import { personInitials } from "@hbcfield/shared/client"
 
 /**
  * The people you actually deal with at a company.
@@ -39,7 +39,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
   const companyId = customer.id
 
   const q = useQuery({
-    queryKey: ["customer-contacts", companyId],
+    queryKey: keys.customers.contacts(companyId),
     queryFn: () => customersApi.contacts(companyId),
   })
   const contacts = q.data ?? []
@@ -55,8 +55,8 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
     Invalidated by prefix, so it does not matter which person the link was to.
   */
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["customer-contacts", companyId] })
-    qc.invalidateQueries({ queryKey: ["customer-companies"] })
+    qc.invalidateQueries({ queryKey: keys.customers.contacts(companyId) })
+    qc.invalidateQueries({ queryKey: keys.customers.companies() })
     qc.invalidateQueries({ queryKey: keys.customers.lists() })
   }
 
@@ -144,7 +144,7 @@ function ContactRow({ link, canEdit, onPrimary, onRemove }: {
   return (
     <li className="group flex items-start gap-2.5 py-2.5 first:pt-0.5">
       <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-        {initials(p.name)}
+        {personInitials(p.name)}
       </span>
       <span className="min-w-0 flex-1">
         <a href={`/customers/${p.id}`} className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground hover:text-primary">
@@ -305,7 +305,7 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
                             className={cn("flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors",
                               personId === r.id ? "bg-primary/5" : "hover:bg-muted/50")}>
                             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                              {initials(r.name)}
+                              {personInitials(r.name)}
                             </span>
                             <span className="min-w-0 flex-1">
                               <Truncated text={r.name} className="font-medium text-foreground" />
@@ -402,7 +402,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     onError: (e: Error) => notify.error(e.message || "Could not update"),
   })
   const q = useQuery({
-    queryKey: ["customer-companies", customer.id],
+    queryKey: keys.customers.companies(customer.id),
     queryFn: () => customersApi.contactCompanies(customer.id),
   })
   /*
@@ -420,9 +420,9 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
   }).data ?? false
   const companies = q.data ?? []
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["customer-companies", customer.id] })
+    qc.invalidateQueries({ queryKey: keys.customers.companies(customer.id) })
     // …and the company's own panel, which is the other end of this link.
-    qc.invalidateQueries({ queryKey: ["customer-contacts"] })
+    qc.invalidateQueries({ queryKey: keys.customers.contacts() })
     qc.invalidateQueries({ queryKey: keys.customers.lists() })
   }
   const detach = useMutation({
@@ -482,7 +482,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
             <li key={c.id} className="group flex items-start gap-2 py-2.5 first:pt-0.5">
               <a href={`/customers/${c.company.id}`} className="flex min-w-0 flex-1 items-start gap-2.5 hover:text-primary">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-muted-foreground">
-                  {initials(c.company.name)}
+                  {personInitials(c.company.name)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-[13px] font-semibold text-foreground">

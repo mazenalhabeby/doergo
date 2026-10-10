@@ -1,11 +1,12 @@
-import { getTodayString, isClockedIn } from '../helpers'
+import { todayKey } from '@hbcfield/shared/client'
+import { isClockedIn } from '../helpers'
 
 /**
- * getTodayString keys the attendance query. It used to format via toISOString(),
+ * todayKey (shared) keys the attendance query; it replaced the dashboard's own getTodayString. It used to format via toISOString(),
  * i.e. UTC, so east of Greenwich it asked the server for YESTERDAY until the UTC
  * day rolled over — the reason a member's own shift was missing before 02:00.
  */
-describe('getTodayString', () => {
+describe('todayKey', () => {
   afterEach(() => {
     jest.useRealTimers()
   })
@@ -16,19 +17,19 @@ describe('getTodayString', () => {
   }
 
   it('formats as YYYY-MM-DD', () => {
-    expect(getTodayString()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(todayKey()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
   it('reports the LOCAL calendar day, not the UTC one', () => {
     // 00:30 local on the 18th. In any zone ahead of UTC this instant is still
     // the 17th in UTC — the old implementation returned the 17th here.
     freeze('2026-08-18T00:30:00')
-    expect(getTodayString()).toBe('2026-08-18')
+    expect(todayKey()).toBe('2026-08-18')
   })
 
   it('zero-pads single-digit months and days', () => {
     freeze('2026-01-05T12:00:00')
-    expect(getTodayString()).toBe('2026-01-05')
+    expect(todayKey()).toBe('2026-01-05')
   })
 })
 

@@ -232,11 +232,10 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                   address={locationAddress}
                   lat={locationLat}
                   lng={locationLng}
-                  onLocationChange={(addr, lat, lng) => {
-                    setLocationAddress(addr)
-                    setLocationLat(lat)
-                    setLocationLng(lng)
-                  }}
+                  variant="address"
+                  onLocationChange={(lat, lng) => { setLocationLat(lat); setLocationLng(lng) }}
+                  onAddressChange={setLocationAddress}
+                  onClear={() => { setLocationLat(null); setLocationLng(null) }}
                   disabled={updateMutation.isPending}
                 />
               </Suspense>

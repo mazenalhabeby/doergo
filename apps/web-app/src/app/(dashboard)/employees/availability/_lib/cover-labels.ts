@@ -11,7 +11,7 @@ import type { CoverVerdict, FloorSpace } from "@/lib/api"
  * same reason.
  */
 
-export type CoverLevel = CoverVerdict["level"]
+type CoverLevel = CoverVerdict["level"]
 
 /** Palette per level, from the design tokens. Semantic colour only — the leave
  *  bars themselves are told apart by TEXTURE, so hue is free to mean severity. */
@@ -25,10 +25,6 @@ export const COVER_TONE: Record<CoverLevel, { text: string; bg: string; ring: st
 /** A single character for the bar itself — the chart must read without hover. */
 export function coverMark(level: CoverLevel): string {
   return level === "ok" ? "" : level === "tight" ? "!" : "▲"
-}
-
-export function coverNeedsAttention(level: CoverLevel): boolean {
-  return level !== "ok"
 }
 
 /** The short headline. */
@@ -102,19 +98,4 @@ export const FLOOR_TONE: Record<FloorSpace["status"], string> = {
   ok:    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   tight: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   short: "bg-red-500/10 text-red-600 dark:text-red-400",
-}
-
-/** Every live state a person can be in, and how it reads. */
-export const PERSON_STATE_TONE: Record<string, { dot: string; label: string }> = {
-  busy:     { dot: "bg-blue-500",        label: "cover.state.busy" },
-  working:  { dot: "bg-emerald-500",     label: "cover.state.working" },
-  break:    { dot: "bg-amber-500",       label: "cover.state.break" },
-  expected: { dot: "bg-transparent ring-1 ring-muted-foreground/60", label: "cover.state.expected" },
-  leave:    { dot: "bg-indigo-500",      label: "cover.state.leave" },
-  rest:     { dot: "bg-muted-foreground/30", label: "cover.state.rest" },
-}
-
-/** People on the panel read in the order a manager cares about them. */
-export const PERSON_STATE_ORDER: Record<string, number> = {
-  busy: 0, working: 1, break: 2, expected: 3, leave: 4, rest: 5,
 }

@@ -21,25 +21,10 @@ export const spacePortalApi = {
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  setEntityType: async (spaceId: string, templateKey: string) => {
-    const res = await call(spacePortalWebEndpoints.setEntityType, { spaceId }, { body: { templateKey } }) as ApiResponse<{ data: SpacePortalConfig }>;
-    if (res.error) throw apiError(res);
-    return res.data!.data;
-  },
   units: async (spaceId: string): Promise<SpaceUnit[]> => {
     const res = await call(spacePortalWebEndpoints.units, { spaceId }) as ApiResponse<{ data: SpaceUnit[] }>;
     if (res.error) throw apiError(res);
     return res.data!.data ?? [];
-  },
-  addUnit: async (spaceId: string, input: { name?: string; address?: string; lat?: number; lng?: number }) => {
-    const res = await call(spacePortalWebEndpoints.addUnit, { spaceId }, { body: input }) as ApiResponse<SpaceUnit>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
-  deleteUnit: async (spaceId: string, unitId: string) => {
-    const res = await call(spacePortalWebEndpoints.deleteUnit, { spaceId, unitId }) as ApiResponse<{ success: boolean }>;
-    if (res.error) throw apiError(res);
-    return res.data;
   },
   assign: async (spaceId: string, unitId: string, customerId: string) => {
     const res = await call(spacePortalWebEndpoints.assign, { spaceId, unitId }, { body: { customerId } }) as ApiResponse<{ data: { success: boolean } }>;

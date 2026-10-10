@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
@@ -125,13 +126,13 @@ function AuditLogPageInner() {
     { value: "__all__", label: t("auditLog.allUsers") },
     ...members.map((m) => ({
       value: m.id,
-      label: `${m.firstName} ${m.lastName}`,
+      label: personName(m),
       keywords: m.email,
     })),
   ]
 
   const { data, isLoading } = useQuery({
-    queryKey: ["audit-logs", page, eventFilter, userFilter, startDate, endDate],
+    queryKey: keys.reports.auditLogs(page, eventFilter, userFilter, startDate, endDate),
     queryFn: () => organizationsApi.getAuditLogs({
       page,
       limit: 50,
@@ -261,7 +262,7 @@ function AuditLogPageInner() {
                   <div className="flex items-center gap-1.5 min-w-0">
                     {log.user ? (
                       <Link href={`/members/${log.user.id}`} className="text-xs text-foreground truncate hover:text-blue-600 transition-colors">
-                        {log.user.firstName} {log.user.lastName}
+                        {personName(log.user)}
                       </Link>
                     ) : (
                       <span className="text-xs text-muted-foreground">{t("auditLog.system")}</span>

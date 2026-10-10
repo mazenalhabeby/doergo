@@ -1,4 +1,4 @@
-import type { SyncHealthState, SyncMemberHealth } from '@hbcfield/shared/client'
+import { personName, type SyncHealthState, type SyncMemberHealth } from '@hbcfield/shared/client'
 
 /**
  * Reading a phone's sync report for the office.
@@ -63,20 +63,6 @@ export function reasonsOf(codes: Record<string, number>): { code: string; key: s
     .sort((a, b) => b.count - a.count)
 }
 
-/** 38 MB, 9.2 MB, 640 KB — one decimal only where it carries information. */
-export function formatBytes(bytes: number, locale?: string): string {
-  if (bytes <= 0) return '0 KB'
-  const units = ['KB', 'MB', 'GB']
-  let value = bytes / 1024
-  let unit = 0
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024
-    unit++
-  }
-  const digits = value < 10 && unit > 0 ? 1 : 0
-  return `${value.toLocaleString(locale, { maximumFractionDigits: digits })} ${units[unit]}`
-}
-
 /** "31 h", "4 min", "3 d" — how long something has been waiting. */
 export function formatAge(fromMs: number, nowMs: number, locale?: string): string {
   const minutes = Math.max(0, Math.round((nowMs - fromMs) / 60000))
@@ -90,6 +76,6 @@ export function matchesSearch(person: { firstName?: string; lastName?: string; e
   const q = query.trim().toLowerCase()
   if (!q) return true
   if (!person) return false
-  const hay = `${person.firstName ?? ''} ${person.lastName ?? ''} ${person.email ?? ''}`.toLowerCase()
+  const hay = `${personName(person)} ${person.email ?? ''}`.toLowerCase()
   return q.split(/\s+/).every((word) => hay.includes(word))
 }

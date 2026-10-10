@@ -3,11 +3,6 @@ import { apiError } from '../server-error';
 import { spaceRolesWebEndpoints, type PermissionSet, type SpaceRole, type SpaceRoleInSpace } from '@hbcfield/shared/client';
 
 export const spaceRolesApi = {
-  list: async () => {
-    const res = await call(spaceRolesWebEndpoints.list) as ApiResponse<{ success: boolean; data: SpaceRole[] }>;
-    if (res.error) throw apiError(res);
-    return res.data?.data || [];
-  },
   /** The roles as ONE workspace sees them: holders here, and work roles' day rates here. */
   listInSpace: async (spaceId: string) => {
     const res = await call(spaceRolesWebEndpoints.listInSpace, { spaceId }) as ApiResponse<{ success: boolean; data: SpaceRoleInSpace[] }>;

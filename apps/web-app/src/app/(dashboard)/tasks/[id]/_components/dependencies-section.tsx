@@ -14,7 +14,7 @@ import {
   Loader2,
 } from "lucide-react"
 
-import { tasksApi, type Task, type TaskDependency } from "@/lib/api"
+import { tasksApi, type Task, type TaskDependency, type WorkflowStatus } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -30,27 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { stepConfig, useRelatedStepConfigs } from "@/hooks/use-step-config"
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const STATUS_DOTS: Record<string, string> = {
-  DRAFT: "bg-slate-400",
-  NEW: "bg-blue-500",
-  ASSIGNED: "bg-purple-500",
-  ACCEPTED: "bg-purple-400",
-  EN_ROUTE: "bg-amber-500",
-  ARRIVED: "bg-amber-400",
-  IN_PROGRESS: "bg-amber-500",
-  BLOCKED: "bg-red-500",
-  COMPLETED: "bg-green-500",
-  CLOSED: "bg-slate-400",
-  CANCELED: "bg-slate-300",
-}
-
 const DEP_TYPE_LABELS: Record<string, string> = {
   FINISH_TO_START: "FS",
   START_TO_START: "SS",
@@ -75,6 +61,7 @@ const DependencyRow = memo(function DependencyRow({
   onRemove,
   isRemoving,
   canEdit,
+  workflowStatuses,
 }: {
   dep: TaskDependency
   taskId: string
@@ -82,16 +69,18 @@ const DependencyRow = memo(function DependencyRow({
   onRemove: (depId: string) => void
   isRemoving: boolean
   canEdit: boolean
+  /** The flow of the task on this page; a linked task carries no flow of its own here. */
+  workflowStatuses?: readonly WorkflowStatus[] | null
 }) {
   const linked =
     direction === "predecessor" ? dep.predecessor : dep.successor
   if (!linked) return null
 
-  const dotClass = STATUS_DOTS[linked.status] || "bg-slate-400"
+  const step = stepConfig(linked.status, workflowStatuses)
 
   return (
     <div className="group flex items-center gap-3 px-4 py-2 hover:bg-muted/40 transition-colors rounded-lg">
-      <span className={cn("size-2 rounded-full shrink-0", dotClass)} />
+      <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: step.hex }} title={step.label} />
       <Link
         href={`/tasks/${linked.id}`}
         className="text-sm font-medium text-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1 truncate"
@@ -127,11 +116,13 @@ function AddDependencyDialog({
   onOpenChange,
   taskId,
   existingDepIds,
+  workflowStatuses,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   taskId: string
   existingDepIds: Set<string>
+  workflowStatuses?: readonly WorkflowStatus[] | null
 }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -143,7 +134,7 @@ function AddDependencyDialog({
   const { data: searchResults, isLoading: searching } = useQuery({
     // Asked of the server once the typing settles: the list below still
     // narrows on every keystroke, but a request per letter is wasted.
-    queryKey: ["taskSearch", debouncedSearch],
+    queryKey: keys.taskExtras.search(debouncedSearch),
     queryFn: () => tasksApi.list({ limit: 20, search: debouncedSearch || undefined }),
     enabled: open,
     staleTime: 10000,
@@ -158,6 +149,7 @@ function AddDependencyDialog({
       return t.title.toLowerCase().includes(search.toLowerCase())
     })
   }, [searchResults, search, taskId, existingDepIds])
+  const stepOf = useRelatedStepConfigs(filteredResults, workflowStatuses)
 
   const addMutation = useMutation({
     mutationFn: (predecessorId: string) =>
@@ -218,7 +210,7 @@ function AddDependencyDialog({
               </div>
             )}
             {filteredResults.map((task: Task) => {
-              const dotClass = STATUS_DOTS[task.status] || "bg-slate-400"
+              const step = stepOf(task)
               return (
                 <button
                   key={task.id}
@@ -226,7 +218,7 @@ function AddDependencyDialog({
                   disabled={addMutation.isPending}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0"
                 >
-                  <span className={cn("size-2 rounded-full shrink-0", dotClass)} />
+                  <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: step.hex }} title={step.label} />
                   <span className="text-sm font-medium text-foreground truncate flex-1">
                     {task.title}
                   </span>
@@ -254,6 +246,8 @@ interface DependenciesSectionProps {
   successors?: TaskDependency[]
   /** May this viewer change the ordering? Space-aware, from the page. */
   canEdit?: boolean
+  /** This task's flow — how a linked task's step is drawn. */
+  workflowStatuses?: readonly WorkflowStatus[] | null
 }
 
 export const DependenciesSection = memo(function DependenciesSection({
@@ -261,6 +255,7 @@ export const DependenciesSection = memo(function DependenciesSection({
   predecessors = [],
   successors = [],
   canEdit = true,
+  workflowStatuses,
 }: DependenciesSectionProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -296,6 +291,7 @@ export const DependenciesSection = memo(function DependenciesSection({
         onOpenChange={setShowAddDialog}
         taskId={taskId}
         existingDepIds={existingDepIds}
+        workflowStatuses={workflowStatuses}
       />
 
       {/*
@@ -335,6 +331,7 @@ export const DependenciesSection = memo(function DependenciesSection({
               onRemove={(id) => removeMutation.mutate(id)}
               isRemoving={removeMutation.isPending}
               canEdit={canEdit}
+              workflowStatuses={workflowStatuses}
             />
           ))}
         </div>
@@ -358,6 +355,7 @@ export const DependenciesSection = memo(function DependenciesSection({
               onRemove={(id) => removeMutation.mutate(id)}
               isRemoving={removeMutation.isPending}
               canEdit={canEdit}
+              workflowStatuses={workflowStatuses}
             />
           ))}
         </div>

@@ -157,7 +157,7 @@ export interface InvoiceItemInput {
 
 
 /** A part fitted during a job, priced for the invoice. */
-export interface InvoiceGatherPart {
+interface InvoiceGatherPart {
   name: string;
   partNumber?: string | null;
   quantity: number;
@@ -167,7 +167,7 @@ export interface InvoiceGatherPart {
 
 
 /** One completed job the gather endpoint offers as billable work. */
-export interface InvoiceGatherEntry {
+interface InvoiceGatherEntry {
   /** This member's own resolved rates, from the ladder. */
   billRateCents?: number | null;
   costRateCents?: number | null;

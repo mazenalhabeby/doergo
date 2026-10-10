@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { useJobTime } from "@/hooks/use-job-time"
 import { useTaskPermissions } from "@/hooks/use-task-permissions"
-import { tickedByOther } from "@hbcfield/shared/client"
+import { personName, tickedByOther } from "@hbcfield/shared/client"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -49,12 +49,11 @@ const ChecklistItemRow = React.memo(function ChecklistItemRow({
   onOwner,
 }: ChecklistItemRowProps) {
   const { t } = useTranslation()
-  const name = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
   const at = item.completedAt ? new Date(item.completedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""
   const doneLine = item.isCompleted && item.completedBy
     ? tickedByOther(item)
-      ? t("tasks.checklist.doneFor", { owner: item.assignee?.firstName ?? "", name: name(item.completedBy), time: at })
-      : t("tasks.checklist.doneBy", { name: name(item.completedBy), time: at })
+      ? t("tasks.checklist.doneFor", { owner: item.assignee?.firstName ?? "", name: personName(item.completedBy), time: at })
+      : t("tasks.checklist.doneBy", { name: personName(item.completedBy), time: at })
     : null
   return (
     <div
@@ -106,13 +105,13 @@ const ChecklistItemRow = React.memo(function ChecklistItemRow({
                   item.assignee ? "border-border text-foreground hover:bg-accent" : "border-dashed border-border text-muted-foreground hover:text-foreground",
                 )}
               >
-                {item.assignee ? name(item.assignee) : t("tasks.checklist.giveTo")}
+                {item.assignee ? personName(item.assignee) : t("tasks.checklist.giveTo")}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {crew.members.map((m) => (
                 <DropdownMenuItem key={m.user.id} onSelect={() => onOwner(item.id, m.user.id)}>
-                  {item.assigneeId === m.user.id ? "✓ " : ""}{name(m.user)}
+                  {item.assigneeId === m.user.id ? "✓ " : ""}{personName(m.user)}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
@@ -129,7 +128,7 @@ const ChecklistItemRow = React.memo(function ChecklistItemRow({
             {t("tasks.checklist.takeIt")}
           </button>
         ) : item.assignee ? (
-          <span className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-muted text-muted-foreground">{name(item.assignee)}</span>
+          <span className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-muted text-muted-foreground">{personName(item.assignee)}</span>
         ) : null
       )}
 

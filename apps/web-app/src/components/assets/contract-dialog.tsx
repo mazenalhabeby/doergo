@@ -12,7 +12,7 @@ import {
   type AssetCategory, type ContractFields, type ContractPreview, type ContractReading,
 } from "@/lib/api"
 import {
-  normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn,
+  normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn, personName,
 } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
@@ -24,7 +24,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
-import { memberName } from "./holder-picker"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 
 /**
@@ -232,7 +231,7 @@ export function ContractDialog({
                 className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm text-foreground"
               >
                 <option value="">{t("contract.pickHolder", "Choose…")}</option>
-                {members.map((m) => <option key={m.id} value={m.id}>{memberName(m)}</option>)}
+                {members.map((m) => <option key={m.id} value={m.id}>{personName(m)}</option>)}
               </select>
             </div>
 
@@ -299,7 +298,7 @@ export function ContractDialog({
                       })}
                       {step.kind === "hand-over" && t("contract.stepHand", "Hands it to {{name}} from today.", {
                         name: members.find((m) => m.id === holderUserId)
-                          ? memberName(members.find((m) => m.id === holderUserId)!)
+                          ? personName(members.find((m) => m.id === holderUserId)!)
                           : "",
                       })}
                       {step.kind === "close" && t("contract.stepClose", "Closes their custody of {{name}} — later costs stop landing on it.", {

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { calendarApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
 import { copyText } from "@/lib/clipboard"
+import { keys } from "@/lib/query-keys"
 
 /**
  * "See it in Google" — optional and one-way. The link is shown once (only its hash is stored), so
@@ -18,18 +19,18 @@ export function FeedCard() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [url, setUrl] = useState<string | null>(null)
-  const { data } = useQuery({ queryKey: ["calendar-feed"], queryFn: calendarApi.feedStatus, staleTime: 60_000 })
+  const { data } = useQuery({ queryKey: keys.calendar.feed(), queryFn: calendarApi.feedStatus, staleTime: 60_000 })
   const rotate = useMutation({
     mutationFn: calendarApi.feedRotate,
     onSuccess: (r) => {
       setUrl(`${window.location.origin}${r.path}`)
-      qc.invalidateQueries({ queryKey: ["calendar-feed"] })
+      qc.invalidateQueries({ queryKey: keys.calendar.feed() })
     },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
   const revoke = useMutation({
     mutationFn: calendarApi.feedRevoke,
-    onSuccess: () => { setUrl(null); qc.invalidateQueries({ queryKey: ["calendar-feed"] }); toast.success(t("calendar.feed.revoked")) },
+    onSuccess: () => { setUrl(null); qc.invalidateQueries({ queryKey: keys.calendar.feed() }); toast.success(t("calendar.feed.revoked")) },
   })
   if (!data?.allowed) return null
 

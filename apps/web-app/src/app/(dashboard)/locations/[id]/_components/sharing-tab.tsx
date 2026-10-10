@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
+import { keys } from "@/lib/query-keys"
 
 const LEVELS: SpaceShareLevel[] = ["VIEW", "CONTRIBUTE", "CONTROL"]
 
@@ -109,7 +110,7 @@ function InviteSection({ spaceId, spaceName }: { spaceId: string; spaceName: str
         ...scope,
       }),
     onSuccess: (share) => {
-      queryClient.invalidateQueries({ queryKey: ["space-shares", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaces.shares(spaceId) })
       notify.success(t("spaceSharing.toast.invited", { org: share.guestOrgName }))
       setCode("")
       setLevel("VIEW")
@@ -215,7 +216,7 @@ function SharesSection({ spaceId }: { spaceId: string }) {
   const [revokeTarget, setRevokeTarget] = useState<SpaceShare | null>(null)
 
   const { data: shares, isLoading } = useQuery({
-    queryKey: ["space-shares", spaceId],
+    queryKey: keys.spaces.shares(spaceId),
     queryFn: () => spaceSharingApi.listShares(spaceId),
   })
 
@@ -223,7 +224,7 @@ function SharesSection({ spaceId }: { spaceId: string }) {
     mutationFn: ({ shareId, level }: { shareId: string; level: SpaceShareLevel }) =>
       spaceSharingApi.updateShare(spaceId, shareId, { level }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-shares", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaces.shares(spaceId) })
       notify.success(t("spaceSharing.toast.updated"))
     },
     onError: (err: Error) => notify.error(err.message || t("spaceSharing.toast.updateFailed")),
@@ -232,7 +233,7 @@ function SharesSection({ spaceId }: { spaceId: string }) {
   const revokeMutation = useMutation({
     mutationFn: (shareId: string) => spaceSharingApi.revokeShare(spaceId, shareId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-shares", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaces.shares(spaceId) })
       setRevokeTarget(null)
       notify.success(t("spaceSharing.toast.revoked"))
     },
@@ -379,7 +380,7 @@ function RequestsSection({ spaceId }: { spaceId: string }) {
   const queryClient = useQueryClient()
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ["space-share-requests", spaceId],
+    queryKey: keys.spaces.shareRequests(spaceId),
     queryFn: () => spaceSharingApi.listShareRequests(spaceId, "PENDING"),
   })
 
@@ -387,7 +388,7 @@ function RequestsSection({ spaceId }: { spaceId: string }) {
     mutationFn: ({ requestId, approve }: { requestId: string; approve: boolean }) =>
       spaceSharingApi.resolveRequest(requestId, approve),
     onSuccess: (_res, { approve }) => {
-      queryClient.invalidateQueries({ queryKey: ["space-share-requests", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaces.shareRequests(spaceId) })
       notify.success(approve ? t("spaceSharing.toast.requestApproved") : t("spaceSharing.toast.requestRejected"))
     },
     onError: (err: Error) => notify.error(err.message || t("spaceSharing.toast.requestFailed")),

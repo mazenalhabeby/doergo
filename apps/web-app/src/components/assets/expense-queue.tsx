@@ -8,13 +8,14 @@ import Link from "next/link"
 import { Check, ChevronDown, ChevronRight, Loader2, Receipt, X } from "lucide-react"
 
 import { assetsApi, type PendingExpense } from "@/lib/api"
-import { formatCents } from "@hbcfield/shared/client"
+import { personInitials, personName, formatCents } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { initials } from "./holder-picker"
 import { ExpenseRefuseDialog } from "./expense-refuse-dialog"
 import { logTypeLabel } from "./log-style"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * Expenses sent in from phones, waiting on somebody in the office.
@@ -32,7 +33,7 @@ export function ExpenseQueue() {
   // GET /assets/expenses/pending is @RequirePermission('canViewAllTasks') — the ORG-wide flag.
   const mayRead = useRouteAccess().holds("org:canViewAllTasks")
   const q = useQuery({
-    queryKey: ["asset-expenses-pending"],
+    queryKey: keys.assets.expensesPending(),
     queryFn: () => assetsApi.getPendingExpenses(),
     enabled: mayRead,
     // The office leaves this page open; a receipt filed at a pump should not
@@ -67,12 +68,12 @@ export function ExpenseQueue() {
               key={e.id}
               entry={e}
               onDone={() => {
-                qc.invalidateQueries({ queryKey: ["asset-expenses-pending"] })
-                qc.invalidateQueries({ queryKey: ["asset-money", e.assetId] })
-                qc.invalidateQueries({ queryKey: ["asset-custody", e.assetId] })
+                qc.invalidateQueries({ queryKey: keys.assets.expensesPending() })
+                qc.invalidateQueries({ queryKey: keys.assets.money(e.assetId) })
+                qc.invalidateQueries({ queryKey: keys.assets.custody(e.assetId) })
                 // An accepted logbook entry moves the record's readings and next due.
-                qc.invalidateQueries({ queryKey: ["asset-log", e.assetId] })
-                qc.invalidateQueries({ queryKey: ["asset-log-summary", e.assetId] })
+                qc.invalidateQueries({ queryKey: keys.assets.log(e.assetId) })
+                qc.invalidateQueries({ queryKey: keys.assets.logSummary(e.assetId) })
               }}
             />
           ))}
@@ -85,7 +86,7 @@ export function ExpenseQueue() {
 function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: () => void }) {
   const { t } = useTranslation()
   const author = entry.author
-    ? `${entry.author.firstName ?? ""} ${entry.author.lastName ?? ""}`.trim()
+    ? personName(entry.author)
     : t("expenses.someone", "Someone")
 
   const review = useMutation({
@@ -109,7 +110,7 @@ function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: () => vo
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-        {initials(author)}
+        {personInitials(author)}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
@@ -120,7 +121,7 @@ function PendingRow({ entry, onDone }: { entry: PendingExpense; onDone: () => vo
           <span className="text-muted-foreground"> · {entry.category || logTypeLabel(t, null, entry.logType)}</span>
         </p>
         <p className="truncate text-xs text-muted-foreground">
-          {author} · {new Date(entry.occurredAt).toLocaleDateString()}
+          {author} · {new Date(entry.occurredAt).toLocaleDateString(dateLocale())}
           {entry.note ? ` · ${entry.note}` : ""}
         </p>
       </div>

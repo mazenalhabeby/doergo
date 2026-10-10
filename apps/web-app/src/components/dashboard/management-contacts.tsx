@@ -1,4 +1,5 @@
 "use client"
+import { personName } from "@hbcfield/shared/client"
 import type { TFunction } from "i18next"
 
 import { useQuery } from "@tanstack/react-query"
@@ -9,6 +10,7 @@ import { notify } from "@/lib/toast"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
 import { useContactActions } from "@/hooks/use-contact-actions"
+import { keys } from "@/lib/query-keys"
 
 const PRESENCE: Record<string, { color: string; key: string; def: string }> = {
   AVAILABLE: { color: "bg-green-500", key: "presence.available", def: "Available" },
@@ -44,7 +46,7 @@ export function ManagementContacts() {
   // Contacts endpoint is accessible to ANY member (unlike /members, which needs
   // canManageUsers) — so employees can see their admins/managers.
   const { data } = useQuery({
-    queryKey: ["orgContacts"],
+    queryKey: keys.people.contacts(),
     queryFn: () => organizationsApi.getContacts(),
     staleTime: 60_000,
     // Online dots are computed client-side from lastActiveAt vs a 3-min window;
@@ -64,7 +66,7 @@ export function ManagementContacts() {
         {managers.map((m) => {
           const p = m.presence ? PRESENCE[m.presence] : null
           const online = isOnline(m.lastActiveAt)
-          const name = `${m.firstName} ${m.lastName ?? ""}`.trim()
+          const name = personName(m)
           // Show the member's job title/position only — never the ADMIN/EMPLOYEE
           // permission role as an identity label.
           const positionLabel = m.position?.trim() || ""

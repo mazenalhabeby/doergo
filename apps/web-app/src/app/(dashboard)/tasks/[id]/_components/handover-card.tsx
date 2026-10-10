@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Loader2, PauseCircle, Play, PenLine } from "lucide-react"
-import { HANDOVER_NOTE_MAX, formatDuration, owesHandover } from "@hbcfield/shared/client"
+import { personName, HANDOVER_NOTE_MAX, formatDuration, owesHandover } from "@hbcfield/shared/client"
 import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,7 +13,6 @@ import { formatTimeAgo } from "@/lib/format-date"
 import { HANDOVER_WARN_CLASS as WARN, useHandoverPendingText } from "@/components/handover-pending-notice"
 
 type PauseFacts = Pick<Task, "pausedAt" | "pausedById" | "handoverDueById" | "pausedBy" | "handoverDue" | "handovers">
-const nameOf = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
 
 /**
  * The top of a job somebody stopped (packages/shared/src/tasks/handover.ts):
@@ -53,7 +52,7 @@ export function HandoverCard({
           <span className="flex-1 text-foreground">
             {task.pausedById === meId
               ? t("tasks.handover.pausedYou", { when: formatTimeAgo(task.pausedAt) })
-              : t("tasks.handover.pausedBy", { name: nameOf(task.pausedBy), when: formatTimeAgo(task.pausedAt) })}
+              : t("tasks.handover.pausedBy", { name: personName(task.pausedBy), when: formatTimeAgo(task.pausedAt) })}
           </span>
           {canResume ? (
             <Button size="sm" onClick={onResume} disabled={resuming}>
@@ -81,7 +80,7 @@ export function HandoverCard({
           <div className="mt-3 flex items-center gap-2.5">
             <UserAvatar firstName={latest.author.firstName} lastName={latest.author.lastName} avatarUrl={latest.author.avatarUrl} seed={latest.author.id} size="sm" />
             <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{nameOf(latest.author)}</p>
+              <p className="text-sm font-medium text-foreground">{personName(latest.author)}</p>
               <p className="text-xs text-muted-foreground">
                 {[formatTimeAgo(latest.createdAt), latest.workedMinutes ? t("tasks.handover.worked", { time: formatDuration(latest.workedMinutes) }) : null]
                   .filter(Boolean)

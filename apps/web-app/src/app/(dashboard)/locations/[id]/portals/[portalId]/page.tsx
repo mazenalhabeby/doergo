@@ -5,12 +5,14 @@ import dynamic from "next/dynamic"
 
 import { useState, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon, Building2 } from "lucide-react"
 
 import { portalAdminApi, locationsApi, workflowsApi, spaceMembersApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
+import { personName, personInitials } from "@hbcfield/shared/client"
+import { getPriorityConfig } from "@/lib/constants"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
@@ -46,9 +48,6 @@ const STATUS_STYLES: Record<string, string> = {
   BLOCKED: "bg-red-500/10 text-red-600 dark:text-red-400", COMPLETED: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   CLOSED: "bg-slate-500/10 text-slate-500 dark:text-slate-400", CANCELED: "bg-slate-500/10 text-slate-500 dark:text-slate-400",
 }
-const PRIORITY_DOT: Record<string, string> = {
-  URGENT: "bg-red-500", HIGH: "bg-orange-500", MEDIUM: "bg-blue-500", LOW: "bg-slate-400",
-}
 
 export default function PortalDetailPage() {
   const params = useParams<{ id: string; portalId: string }>()
@@ -66,9 +65,9 @@ export default function PortalDetailPage() {
   const { hasModule } = useSpaceModules(spaceId)
   const spaceHasApartments = hasModule("b2c_portal")
 
-  const portalQ = useQuery({ queryKey: ["portal", portalId], queryFn: () => portalAdminApi.getPortal(portalId) })
-  const residentsQ = useQuery({ queryKey: ["portalResidents", portalId], queryFn: () => portalAdminApi.residents(portalId) })
-  const requestsQ = useQuery({ queryKey: ["portalAllRequests", portalId], queryFn: () => portalAdminApi.portalRequests(portalId) })
+  const portalQ = useQuery({ queryKey: keys.portal.detail(portalId), queryFn: () => portalAdminApi.getPortal(portalId) })
+  const residentsQ = useQuery({ queryKey: keys.portal.residents(portalId), queryFn: () => portalAdminApi.residents(portalId) })
+  const requestsQ = useQuery({ queryKey: keys.portal.allRequests(portalId), queryFn: () => portalAdminApi.portalRequests(portalId) })
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
   const spacesQ = useQuery({ queryKey: keys.locations.list({ limit: 100 }), queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
   const flowsQ = useQuery({ queryKey: keys.workflows.lists(), queryFn: () => workflowsApi.list(), staleTime: 60000 })
@@ -80,19 +79,19 @@ export default function PortalDetailPage() {
   const portal = portalQ.data
   const categories = portal?.categories ?? []
   const meta = TPL_BY_KEY[portal?.templateKey ?? ""] ?? TPL_BY_KEY.rental
-  const inv = (k: string) => qc.invalidateQueries({ queryKey: [k, portalId] })
+  const inv = (key: QueryKey) => qc.invalidateQueries({ queryKey: key })
 
   // Switch type / delete portal
   const [typePickerOpen, setTypePickerOpen] = useState(false)
   const [switchOpen, setSwitchOpen] = useState<string | null>(null)
   const switchM = useMutation({
     mutationFn: (templateKey: string) => portalAdminApi.updatePortal(portalId, { templateKey, reseed: true }),
-    onSuccess: () => { inv("portal"); setSwitchOpen(null); notify.success(t("portal.switched", "Type switched")) },
+    onSuccess: () => { inv(keys.portal.detail(portalId)); setSwitchOpen(null); notify.success(t("portal.switched", "Type switched")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const delPortalM = useMutation({
     mutationFn: () => portalAdminApi.deletePortal(portalId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["space-portals", spaceId] }); notify.success(t("portal.deleted", "Portal deleted")); backToSpace() },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.spaces.portals(spaceId) }); notify.success(t("portal.deleted", "Portal deleted")); backToSpace() },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const [delPortalOpen, setDelPortalOpen] = useState(false)
@@ -109,12 +108,12 @@ export default function PortalDetailPage() {
     mutationFn: () => catEdit === "new"
       ? portalAdminApi.createCategory({ ...catForm, portalId, key: catForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_") })
       : portalAdminApi.updateCategory((catEdit as PortalIntakeCategory).id, catForm),
-    onSuccess: () => { inv("portal"); setCatEdit(null) },
+    onSuccess: () => { inv(keys.portal.detail(portalId)); setCatEdit(null) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const delCatM = useMutation({
     mutationFn: (cid: string) => portalAdminApi.deleteCategory(cid),
-    onSuccess: () => { inv("portal"); setCatRemove(null) },
+    onSuccess: () => { inv(keys.portal.detail(portalId)); setCatRemove(null) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -147,7 +146,7 @@ export default function PortalDetailPage() {
       priority: triageForm.priority || undefined,
       assignedToId: triageForm.assignedToId || undefined,
     }),
-    onSuccess: () => { inv("portalAllRequests"); setTriageReq(null); notify.success(t("portal.requestRouted", "Request routed")) },
+    onSuccess: () => { inv(keys.portal.allRequests(portalId)); setTriageReq(null); notify.success(t("portal.requestRouted", "Request routed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -155,12 +154,12 @@ export default function PortalDetailPage() {
   const coverInputRef = useRef<HTMLInputElement>(null)
   const uploadCoverM = useMutation({
     mutationFn: (file: File) => portalAdminApi.uploadCover(portalId, file),
-    onSuccess: () => { inv("portal"); notify.success(t("portal.coverUpdated", "Cover image updated")) },
+    onSuccess: () => { inv(keys.portal.detail(portalId)); notify.success(t("portal.coverUpdated", "Cover image updated")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const removeCoverM = useMutation({
     mutationFn: () => portalAdminApi.removeCover(portalId),
-    onSuccess: () => { inv("portal"); notify.success(t("portal.coverRemoved", "Cover image removed")) },
+    onSuccess: () => { inv(keys.portal.detail(portalId)); notify.success(t("portal.coverRemoved", "Cover image removed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -168,7 +167,7 @@ export default function PortalDetailPage() {
   const [clientToRemove, setClientToRemove] = useState<Customer | null>(null)
   const removeClientM = useMutation({
     mutationFn: (cid: string) => portalAdminApi.removeResident(cid),
-    onSuccess: () => { inv("portalResidents"); setClientToRemove(null); notify.success(t("portal.clientRemoved", "Client removed")) },
+    onSuccess: () => { inv(keys.portal.residents(portalId)); setClientToRemove(null); notify.success(t("portal.clientRemoved", "Client removed")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
@@ -179,17 +178,17 @@ export default function PortalDetailPage() {
   const [customerChoice, setCustomerChoice] = useState("")
   const [code, setCode] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const availUnitsQ = useQuery({ queryKey: ["portal-available-units", portalId], queryFn: () => portalAdminApi.availableUnits(portalId), enabled: inviteOpen })
+  const availUnitsQ = useQuery({ queryKey: keys.portal.availableUnits(portalId), queryFn: () => portalAdminApi.availableUnits(portalId), enabled: inviteOpen })
   const availUnits = availUnitsQ.data ?? []
-  const availCustomersQ = useQuery({ queryKey: ["portal-available-customers", portalId], queryFn: () => portalAdminApi.availableCustomers(portalId), enabled: inviteOpen })
+  const availCustomersQ = useQuery({ queryKey: keys.portal.availableCustomers(portalId), queryFn: () => portalAdminApi.availableCustomers(portalId), enabled: inviteOpen })
   const availCustomers = availCustomersQ.data ?? []
   const resetInvite = () => { setInviteOpen(false); setCode(null); setUnitChoice(""); setCustomerChoice("") }
   const inviteM = useMutation({
     mutationFn: () => portalAdminApi.inviteResident(portalId, { customerId: customerChoice, unitId: unitChoice }),
     onSuccess: (r) => {
-      setCode(r.code ?? null); inv("portalResidents")
-      qc.invalidateQueries({ queryKey: ["portal-available-units", portalId] })
-      qc.invalidateQueries({ queryKey: ["portal-available-customers", portalId] })
+      setCode(r.code ?? null); inv(keys.portal.residents(portalId))
+      qc.invalidateQueries({ queryKey: keys.portal.availableUnits(portalId) })
+      qc.invalidateQueries({ queryKey: keys.portal.availableCustomers(portalId) })
       notify.success(t("portal.inviteCreated", "Invitation created"))
     },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
@@ -209,7 +208,7 @@ export default function PortalDetailPage() {
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
-            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{initials(portal?.name)}</div>
+            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{personInitials(portal?.name)}</div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-3xl font-bold text-foreground tracking-tight truncate">{portal?.name || "…"}</h1>
@@ -315,7 +314,7 @@ export default function PortalDetailPage() {
                     const pending = r.triaged === false
                     return (
                     <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => pending ? openTriage(r) : router.push(`/tasks/${r.id}`)}>
-                      <span className={`h-2 w-2 rounded-full shrink-0 ${PRIORITY_DOT[r.priority] ?? "bg-slate-400"}`} title={r.priority} />
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority ? "" : "bg-slate-400"}`} style={r.priority ? { backgroundColor: getPriorityConfig(r.priority).hex } : undefined} title={r.priority ? getPriorityConfig(r.priority).label : undefined} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -351,7 +350,7 @@ export default function PortalDetailPage() {
                   {residentsQ.data!.map((r: Customer) => (
                     <div key={r.id} className="group flex items-center gap-2 px-5 py-3.5 hover:bg-accent/30 transition-colors">
                       <button className="flex min-w-0 flex-1 items-center gap-4 text-left" onClick={() => router.push(`/customers/${r.id}`)}>
-                        <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{initials(r.name)}</div>
+                        <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{personInitials(r.name)}</div>
                         <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{r.name}</p>{r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}</div>
                       </button>
                       <button
@@ -380,7 +379,7 @@ export default function PortalDetailPage() {
                 <div className="divide-y divide-border/60">
                   {categories.map((c) => (
                     <div key={c.id} className="group flex items-center gap-4 px-5 py-3.5">
-                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 text-xs font-semibold ${portalTile(c.color)}`}>{initials(c.label)}</div>
+                      <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 text-xs font-semibold ${portalTile(c.color)}`}>{personInitials(c.label)}</div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">{c.label}
                           {c.urgent && <span className="text-[10px] font-semibold rounded-full bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.5">URGENT</span>}
@@ -558,7 +557,7 @@ export default function PortalDetailPage() {
               <div><Label>{t("portal.triageWorker", "Assign worker")}</Label>
                 <select value={triageForm.assignedToId} disabled={!triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50">
                   <option value="">{!triageForm.spaceId ? t("portal.triagePickSpaceFirst", "Pick a workspace first") : t("portal.triageUnassigned", "Leave unassigned")}</option>
-                  {spaceWorkers.map((m) => <option key={m.userId} value={m.userId}>{m.user?.firstName} {m.user?.lastName}</option>)}
+                  {spaceWorkers.map((m) => <option key={m.userId} value={m.userId}>{personName(m.user)}</option>)}
                 </select>
                 {triageForm.spaceId && !spaceMembersQ.isLoading && spaceWorkers.length === 0 ? (
                   <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", "No workers assigned to this workspace yet. Add members to the workspace, or leave unassigned.")}</p>
@@ -713,7 +712,3 @@ function EmptyState({ icon, title, hint, cta }: { icon: React.ReactNode; title: 
 }
 
 function Loading() { return <div className="p-10 text-center text-sm text-muted-foreground">Loading…</div> }
-
-function initials(name?: string) {
-  return (name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("") || "?"
-}

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 import type { OrganizationProfile } from "@/lib/api"
-import { formatMoney } from "@/lib/money"
+import { formatAmount, formatMoney, MONEY_LOCALE } from "@/lib/money"
 import { hoursAndDaysTotals , formatHoursMinutes, type IssuerSnapshot } from "@hbcfield/shared/client"
 import { documentIssuer, invoiceDocumentLabels } from "@/lib/invoice-document-locale"
 
@@ -97,12 +97,12 @@ function HoursDaysSummary({ items, currency }: { items: DocumentRow[]; currency:
     <div className="flex flex-wrap gap-1.5">
       {tot.hours > 0 && (
         <span className="rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-          {t("invoices.create.summaryHours", { hours: formatHoursMinutes(tot.hours), amount: money(tot.hoursCents / 100, currency) })}
+          {t("invoices.create.summaryHours", { hours: formatHoursMinutes(tot.hours), amount: formatMoney(tot.hoursCents, currency, MONEY_LOCALE) })}
         </span>
       )}
       {tot.days > 0 && (
         <span className="rounded-lg bg-teal-500/10 px-2.5 py-1 text-xs font-semibold text-teal-700 dark:text-teal-300">
-          {t("invoices.create.summaryDays", { count: tot.days, amount: money(tot.daysCents / 100, currency) })}
+          {t("invoices.create.summaryDays", { count: tot.days, amount: formatMoney(tot.daysCents, currency, MONEY_LOCALE) })}
         </span>
       )}
     </div>
@@ -119,7 +119,7 @@ export type DocumentView = "build" | "client"
   Currency SYMBOL and code still come from the invoice's own currency field.
 */
 export function money(n: number, currency: string) {
-  return formatMoney(n, currency)
+  return formatAmount(n, currency)
 }
 
 export function fmtDate(d?: string | null) {
@@ -130,7 +130,7 @@ export function fmtDate(d?: string | null) {
     : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
 }
 
-export interface InvoiceDocumentProps {
+interface InvoiceDocumentProps {
   view: DocumentView
   onView: (view: DocumentView) => void
   /**

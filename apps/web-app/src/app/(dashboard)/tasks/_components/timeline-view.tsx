@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useRef, useEffect, useState, useCallback } from "react"
-import { isTaskOverdue } from "@hbcfield/shared/client"
+import { personName, isTaskOverdue } from "@hbcfield/shared/client"
 import ReactDOM from "react-dom"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
@@ -123,7 +123,7 @@ const TaskTooltip = React.memo(function TaskTooltip({
       )}
       {task.assignedTo && (
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          {task.assignedTo.firstName} {task.assignedTo.lastName}
+          {personName(task.assignedTo)}
         </p>
       )}
     </div>

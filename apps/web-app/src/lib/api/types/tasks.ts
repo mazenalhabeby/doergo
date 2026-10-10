@@ -48,7 +48,7 @@ export interface TaskDependency {
 /** Minutes of a job's time (packages/shared/src/tasks/job-time.ts). */
 export interface JobTimeSplit { travel: number; working: number; blocked: number }
 
-export type PersonRef = { id: string; firstName: string; lastName: string };
+type PersonRef = { id: string; firstName: string; lastName: string };
 
 
 /** GET /tasks/:id/time — read, never stored; only time inside shifts counts. */
@@ -370,40 +370,6 @@ export interface TasksQueryParams {
    * the caller may already see, so it can never widen anybody's visibility.
    */
   assignedToMe?: boolean;
-}
-
-
-// Suggested employee response types
-export interface SuggestedEmployee {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  specialty: string | null | undefined;
-  workMode?: string;
-  rating: number;
-  ratingCount: number;
-  activeTaskCount: number;
-  todayTaskCount: number;
-  maxDailyJobs: number;
-  distanceKm: number | null;
-  hasLocation: boolean;
-  lastLocationUpdatedAt: string | null;
-  score: number;
-  scoreBreakdown: {
-    distance: number;
-    availability: number;
-    specialization: number;
-    workload: number;
-    rating: number;
-  };
-}
-
-
-export interface SuggestedEmployeesResponse {
-  taskId: string;
-  technicians: SuggestedEmployee[];
-  suggestedTechnicianId: string | null;
 }
 
 

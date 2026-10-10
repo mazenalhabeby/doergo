@@ -1,10 +1,11 @@
 import jsPDF from "jspdf"
 import { loadLogo } from "./pdf-common"
+import { dateLocale } from "./format-date"
+import { todayKey } from "@hbcfield/shared/client"
 import autoTable from "jspdf-autotable"
 import type { ReportResult } from "@/lib/api"
-import { formatHours } from "@hbcfield/shared/client"
 import {
-  DEFAULT_CUSTOM_PDF, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE,
+  DEFAULT_CUSTOM_PDF, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE, formatReportCell,
   type ReportBranding, type PdfTemplate, type PaperSize, type HeaderStyle, type Density,
   type CustomPdfOptions, type PdfTemplateMeta,
 } from "./report-pdf-options"
@@ -87,17 +88,9 @@ function presetFor(template: PdfTemplate, custom?: CustomPdfOptions): PdfConfig 
   }
 }
 
-/** Format a cell value the same way the on-screen table does. */
+/** Format a cell value the same way the on-screen table does — one function for both. */
 function fmt(value: unknown, format?: string): string {
-  if (value == null) return "—"
-  if (format === "hours") return formatHours(Number(value))
-  if (format === "currency") return `€${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-  if (format === "percent") return `${Number(value)}%`
-  if (format === "number") return Number(value).toLocaleString()
-  const s = String(value)
-  const d = new Date(s)
-  if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString()
-  return s
+  return formatReportCell(value, format, dateLocale())
 }
 
 /**
@@ -438,7 +431,7 @@ async function buildDoc(
   }
 
   const safe = (cfg.heading || meta.title || "report").replace(/[^\w-]+/g, "-").replace(/-+/g, "-").toLowerCase()
-  return { doc, filename: `${safe}-${new Date().toISOString().slice(0, 10)}.pdf` }
+  return { doc, filename: `${safe}-${todayKey()}.pdf` }
 }
 
 /** Build and download the PDF. */

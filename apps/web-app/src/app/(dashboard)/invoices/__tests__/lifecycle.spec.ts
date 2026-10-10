@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-import { code, strip } from "./_screen"
+import { code, listPage, strip } from "./_screen"
 import {
   primaryStep, otherSteps, statusStyle, isEditable, isDeletable,
 } from "../_lib/lifecycle"
@@ -158,9 +158,11 @@ describe("the clean document", () => {
 
 describe("both surfaces read one table", () => {
   const SURFACES = ["page.tsx", "[id]/page.tsx"]
+  // The list is the page plus the pieces it was split into — the screen, not the file.
+  const surfaceCode = (surface: string) => (surface === "page.tsx" ? listPage() : code(surface))
 
   it.each(SURFACES)("%s takes its steps from the lifecycle", (surface) => {
-    const src = code(surface)
+    const src = surfaceCode(surface)
     expect(src).toContain("primaryStep")
     expect(src).toContain("otherSteps")
     expect(src).toContain("statusStyle")
@@ -172,7 +174,7 @@ describe("both surfaces read one table", () => {
       came next — and they already disagreed about where Cancel lived. A
       lifecycle spread over two screens is a lifecycle that drifts.
     */
-    const src = code(surface)
+    const src = surfaceCode(surface)
     expect(src).not.toContain("STATUS_STYLES")
     // No screen hard-codes a destination any more.
     expect(src).not.toMatch(/status:\s*"SENT"\s*\}\s*\)/)

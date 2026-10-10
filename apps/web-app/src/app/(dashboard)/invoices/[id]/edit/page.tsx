@@ -243,8 +243,8 @@ function EditInvoiceInner({ id }: { id: string }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.invoices.detail(id) })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.all() })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
       notify.success(t("invoices.toast.updated", "Invoice updated"))
       router.push(`/invoices/${id}`)
     },

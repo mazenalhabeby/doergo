@@ -13,46 +13,6 @@ export interface BreakSummary {
 }
 
 
-export interface AttendanceSummary {
-  period: {
-    startDate: string;
-    endDate: string;
-    workDays: number;
-  };
-  summary: {
-    totalHours: number;
-    totalShifts: number;
-    activeShifts: number;
-    autoClockOuts: number;
-    standardHours: number;
-    overtimeHours: number;
-    averageShiftHours: number;
-  };
-  byUser: Array<{
-    user: {
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-    };
-    totalHours: number;
-    shifts: number;
-    autoClockOuts: number;
-    locations: string[];
-    averageShiftHours: number;
-  }>;
-  byLocation: Array<{
-    location: {
-      id: string;
-      name: string;
-    };
-    totalHours: number;
-    shifts: number;
-    uniqueTechnicians: number;
-  }>;
-}
-
-
 export interface AttendanceQueryParams {
   locationId?: string;
   date?: string;

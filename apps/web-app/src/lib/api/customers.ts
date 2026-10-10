@@ -17,11 +17,6 @@ export const customersApi = {
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  resendInvite: async (id: string) => {
-    const res = await call(customersEndpoints.resendInvite, { id }, { body: {} }) as ApiResponse<{ data?: { code?: string; emailed?: boolean } }>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
   // ── CRM activity timeline ──
   activities: async (id: string) => {
     const res = await call(customersEndpoints.activities, { id }) as ApiResponse<{ data: CustomerActivity[] }>;
@@ -119,10 +114,5 @@ export const customersApi = {
     const res = await call(customersEndpoints.update, { id }, { body: dto }) as ApiResponse<{ data: Customer }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
-  },
-  remove: async (id: string) => {
-    const res = await call(customersEndpoints.remove, { id }) as ApiResponse<{ success: boolean }>;
-    if (res.error) throw apiError(res);
-    return res.data;
   },
 };

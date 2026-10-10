@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { BUILTIN_ROLES, EXTERNAL_DEFAULT_ROLE_SLUG } from '@hbcfield/shared/client';
+import { readNavbar } from './_navbar-screen';
 
 /**
  * The External Supervisor's four permissions, audited one by one.
@@ -16,10 +17,7 @@ import { BUILTIN_ROLES, EXTERNAL_DEFAULT_ROLE_SLUG } from '@hbcfield/shared/clie
  *     makes it decorative (out-of-ring approval was offered to admins only,
  *     while the endpoint accepts canReconcileAttendance).
  */
-const navbar = fs.readFileSync(
-  path.join(process.cwd(), 'src/components/top-navbar.tsx'),
-  'utf8',
-);
+const navbar = readNavbar();
 const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
 
 /* The bar reads the route table now; these ask the table about this role. */

@@ -22,7 +22,7 @@ import {
   spaceUnitsApi,
   type SpaceUnit,
 } from "@/lib/api"
-import { jobTitleOf, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
+import { personInitials, personName, jobTitleOf, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -62,9 +62,6 @@ import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCur
  */
 
 const NONE = "__none__"
-const fullName = (p: { firstName?: string | null; lastName?: string | null }) => `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
-const initials = (p?: { firstName?: string | null; lastName?: string | null } | null) =>
-  ((p?.firstName?.[0] || "") + (p?.lastName?.[0] || "")).toUpperCase()
 
 
 /** One role's coloured dot + name, read-only. */
@@ -102,7 +99,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
     staleTime: 60_000,
   })
   const { data: unitData } = useQuery({
-    queryKey: ["space-member-units", spaceId],
+    queryKey: keys.spaces.memberUnits(spaceId),
     queryFn: () => spaceUnitsApi.list(spaceId),
     enabled: !!hasApartments,
   })
@@ -112,7 +109,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return (members ?? []).filter((m) => {
-      if (q && !`${fullName(m.user ?? {})} ${m.user?.position ?? ""}`.toLowerCase().includes(q)) return false
+      if (q && !`${personName(m.user)} ${m.user?.position ?? ""}`.toLowerCase().includes(q)) return false
       if (roleFilter !== "all" && m.workRole?.id !== roleFilter && m.spaceRole?.id !== roleFilter) return false
       if (billFilter !== "all" && (m.effectiveBillBy ?? "HOUR") !== billFilter) return false
       return true
@@ -202,11 +199,11 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar className="h-8 w-8">
                           {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
-                          <AvatarFallback className="text-xs">{initials(m.user)}</AvatarFallback>
+                          <AvatarFallback className="text-xs">{personInitials(m.user)}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <span className="flex items-center gap-1.5">
-                            <span className="truncate font-medium text-foreground">{m.user ? fullName(m.user) : t("scheduling.members.unknownMember")}</span>
+                            <span className="truncate font-medium text-foreground">{m.user ? personName(m.user) : t("scheduling.members.unknownMember")}</span>
                             {external && (
                               <Badge variant="outline" className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-700 dark:text-amber-400">
                                 {t("members.external.badge")}
@@ -386,14 +383,14 @@ function MemberPanel({
     onError: (e: Error) => notify.error(e.message),
   })
   const { data: rates } = useQuery({
-    queryKey: ["rate-history", "ASSIGNMENT", member?.id],
+    queryKey: keys.rates.history("ASSIGNMENT", member?.id),
     queryFn: () => rateHistoryApi.list({ target: "ASSIGNMENT", targetId: member!.id, spaceId }),
     enabled: !!member && isClient && !external,
   })
   const saveRate = async (patch: { billRateCents?: number | null }, from?: string) => {
     await spaceMembersApi.updateRate(spaceId, member!.id, { ...patch, ...(from ? { effectiveFrom: from } : {}) })
     invalidate()
-    queryClient.invalidateQueries({ queryKey: ["rate-history", "ASSIGNMENT", member!.id] })
+    queryClient.invalidateQueries({ queryKey: keys.rates.history("ASSIGNMENT", member!.id) })
   }
 
   const workRole = member?.workRole ? roles.find((r) => r.id === member.workRole!.id) : undefined
@@ -410,10 +407,10 @@ function MemberPanel({
               <SheetTitle className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   {member.user?.avatarUrl && <AvatarImage src={member.user.avatarUrl} alt="" />}
-                  <AvatarFallback>{initials(member.user)}</AvatarFallback>
+                  <AvatarFallback>{personInitials(member.user)}</AvatarFallback>
                 </Avatar>
                 <span className="min-w-0">
-                  <span className="block truncate">{member.user ? fullName(member.user) : t("scheduling.members.unknownMember")}</span>
+                  <span className="block truncate">{member.user ? personName(member.user) : t("scheduling.members.unknownMember")}</span>
                   <SheetDescription className="truncate text-xs">
                     {jobTitleOf({ position: member.user?.position, memberRole: member.spaceRole }) || t("scheduling.membersPage.inWorkspace")}
                   </SheetDescription>
@@ -579,7 +576,7 @@ function MemberPanel({
                 <AlertDialogHeader>
                   <AlertDialogTitle>{t("scheduling.members.removeTitle", "Remove from workspace?")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t("scheduling.members.removeConfirm", { name: member.user ? fullName(member.user) : "" })}
+                    {t("scheduling.members.removeConfirm", { name: personName(member.user) })}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -645,7 +642,7 @@ function AddMemberDialog({
   const available = candidates.filter((e) => e.isActive !== false && !assigned.has(e.id))
   const dupes = useMemo(() => {
     const seen = new Set<string>(), d = new Set<string>()
-    for (const e of available) { const n = fullName(e).toLowerCase(); if (seen.has(n)) d.add(n); seen.add(n) }
+    for (const e of available) { const n = personName(e).toLowerCase(); if (seen.has(n)) d.add(n); seen.add(n) }
     return d
   }, [available])
   const picked = roles.find((r) => r.id === roleId)
@@ -684,11 +681,11 @@ function AddMemberDialog({
                   <div className="p-2 text-center text-sm text-muted-foreground">{t("scheduling.members.noAvailable")}</div>
                 ) : available.map((e) => {
                   const title = jobTitleOf(e)
-                  const showEmail = dupes.has(fullName(e).toLowerCase())
+                  const showEmail = dupes.has(personName(e).toLowerCase())
                   return (
                     <SelectItem key={e.id} value={e.id}>
                       <span className="flex flex-col items-start">
-                        <span>{fullName(e)}</span>
+                        <span>{personName(e)}</span>
                         {(title || showEmail) && <span className="text-xs text-muted-foreground">{[title, showEmail ? e.email : null].filter(Boolean).join(" · ")}</span>}
                       </span>
                     </SelectItem>

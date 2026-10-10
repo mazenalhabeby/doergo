@@ -3,7 +3,7 @@ import { apiError } from '../server-error';
 import type { CalendarAvailability, CalendarEventDetail, CalendarEventInput, CalendarPerson, CalendarRange, CalendarSettings, LeaveCountResult } from './types/calendar';
 import { calendarEndpoints, timeOffEndpoints, type CalendarPlace, type DayKind, type ResolvedHoliday, type RsvpResponse } from '@hbcfield/shared/client';
 
-export async function calendarCall<T>(p: Promise<ApiResponse<unknown>>): Promise<T> {
+async function calendarCall<T>(p: Promise<ApiResponse<unknown>>): Promise<T> {
   const r = await p;
   if (r.error) throw apiError(r);
   const body = r.data as { data?: T } | T;

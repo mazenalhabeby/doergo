@@ -14,6 +14,7 @@ import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@
 
 type BrowserPosition = Awaited<ReturnType<typeof getBrowserPosition>>
 import type { ClockLocation } from "@/components/clock-in-picker"
+import { keys } from "@/lib/query-keys"
 
 /**
  * Turn a geolocation failure into something a person can act on.
@@ -85,7 +86,7 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
   const canClockInRemotely = mayClockInRemotely(user)
 
   const { data: status } = useQuery({
-    queryKey: ["my-attendance-status"],
+    queryKey: keys.attendance.myStatus(),
     queryFn: () => attendanceApi.getMyStatus(),
     enabled,
     staleTime: 15_000,
@@ -102,7 +103,7 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     with "You are not assigned to this location".
   */
   const { data: locationsData } = useQuery({
-    queryKey: ["my-clock-in-locations"],
+    queryKey: keys.attendance.myClockInLocations(),
     queryFn: () => attendanceApi.getClockInLocations(),
     enabled,
     staleTime: 5 * 60_000,
@@ -177,8 +178,8 @@ export function useClockIn({ enabled = true }: { enabled?: boolean } = {}) {
     },
     onSuccess: (data, action) => {
       setPickerOpen(false)
-      qc.invalidateQueries({ queryKey: ["my-attendance-status"] })
-      qc.invalidateQueries({ queryKey: ["my-attendance-history"] })
+      qc.invalidateQueries({ queryKey: keys.attendance.myStatus() })
+      qc.invalidateQueries({ queryKey: keys.attendance.myHistory() })
 
       if (action === "out") {
         // The server's own message carries the counted hours and any shortfall,

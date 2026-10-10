@@ -9,6 +9,8 @@ import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
 import { custodyDays, formatCents } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * What this member has, and what they have had.
@@ -22,7 +24,7 @@ export function HoldingsTab({ memberId }: { memberId: string }) {
   const { t } = useTranslation()
 
   const q = useQuery({
-    queryKey: ["member-custody", memberId],
+    queryKey: keys.memberRecord.custody(memberId),
     queryFn: () => assetsApi.getMemberCustody(memberId),
     enabled: !!memberId,
   })
@@ -133,9 +135,9 @@ function HoldingRow({ period }: { period: CustodyPeriodDto }) {
         </p>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" />
-          {new Date(period.startedAt).toLocaleDateString()}
+          {new Date(period.startedAt).toLocaleDateString(dateLocale())}
           {" – "}
-          {period.endedAt ? new Date(period.endedAt).toLocaleDateString() : t("custody.present", "now")}
+          {period.endedAt ? new Date(period.endedAt).toLocaleDateString(dateLocale()) : t("custody.present", "now")}
           {" · "}
           {t("custody.days", "{{count}} days", { count: days })}
         </p>

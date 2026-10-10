@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Combobox } from "@/components/ui/combobox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SettingCard } from "./setting-card"
+import { keys } from "@/lib/query-keys"
 
 /** Monday first, the way a working week is read. 0 = Sunday … 6 = Saturday. */
 const WEEK = [1, 2, 3, 4, 5, 6, 0]
@@ -63,13 +64,13 @@ function WeekendPicker({ value, onChange, disabled }: { value: number[]; onChang
 
 function useCountries() {
   const lang = useLang()
-  return useQuery({ queryKey: ["calendar-countries", lang], queryFn: () => calendarApi.countries(lang), staleTime: Infinity })
+  return useQuery({ queryKey: keys.calendar.countries(lang), queryFn: () => calendarApi.countries(lang), staleTime: Infinity })
 }
 
 function useRegions(country: string | null) {
   const lang = useLang()
   return useQuery({
-    queryKey: ["calendar-regions", country, lang],
+    queryKey: keys.calendar.regions(country, lang),
     queryFn: () => calendarApi.regions(country!, lang),
     enabled: !!country,
     staleTime: Infinity,
@@ -126,13 +127,13 @@ export function HolidaysSection() {
   const lang = useLang()
   const qc = useQueryClient()
   const year = new Date().getFullYear()
-  const { data, isLoading } = useQuery({ queryKey: ["calendar-settings", year, lang], queryFn: () => calendarApi.settings(year, lang) })
+  const { data, isLoading } = useQuery({ queryKey: keys.calendar.settings(year, lang), queryFn: () => calendarApi.settings(year, lang) })
   const [editWs, setEditWs] = useState<Ws | null>(null)
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["calendar-settings"] })
-    qc.invalidateQueries({ queryKey: ["calendar-holidays"] })
-    qc.invalidateQueries({ queryKey: ["calendar"] })
+    qc.invalidateQueries({ queryKey: keys.calendar.settings() })
+    qc.invalidateQueries({ queryKey: keys.calendar.holidays() })
+    qc.invalidateQueries({ queryKey: keys.calendar.all() })
   }
   const saveOrg = useMutation({
     mutationFn: calendarApi.updateOrg,
@@ -317,14 +318,14 @@ function HolidayList({ settings, year: thisYear }: { settings: CalendarSettings;
   const [year, setYear] = useState(thisYear)
   const [edit, setEdit] = useState<{ row?: Row | null } | null>(null)
   const { data, isLoading } = useQuery({
-    queryKey: ["calendar-holidays", scope, year, lang],
+    queryKey: keys.calendar.holidays(scope, year, lang),
     queryFn: () => calendarApi.holidays({ spaceId: scope || null, year, lang }),
   })
   const scopes = [{ id: "", name: t("holidays.organization") }, ...settings.workspaces.filter((w) => w.ownList).map((w) => ({ id: w.id, name: w.name }))]
   const done = () => {
-    qc.invalidateQueries({ queryKey: ["calendar-holidays"] })
-    qc.invalidateQueries({ queryKey: ["calendar-settings"] })
-    qc.invalidateQueries({ queryKey: ["calendar"] })
+    qc.invalidateQueries({ queryKey: keys.calendar.holidays() })
+    qc.invalidateQueries({ queryKey: keys.calendar.settings() })
+    qc.invalidateQueries({ queryKey: keys.calendar.all() })
   }
   const save = useMutation({
     mutationFn: calendarApi.saveHoliday,

@@ -37,7 +37,7 @@ export interface InvoiceBranding {
   vatId?: string | null
 }
 
-export interface InvoicePdfItem {
+interface InvoicePdfItem {
   description: string
   quantity: number
   unitPrice: number

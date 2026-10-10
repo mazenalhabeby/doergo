@@ -8,6 +8,7 @@
  *   accents or slashes, which mail clients, Windows and accounting imports
  *   each mangle differently ("Müller & Söhne" → `Mueller-Soehne`).
  */
+import { localDateKey } from "@hbcfield/shared/client"
 
 const TRANSLITERATE: Record<string, string> = { ä: "ae", ö: "oe", ü: "ue", Ä: "Ae", Ö: "Oe", Ü: "Ue", ß: "ss", "&": "and" }
 
@@ -30,8 +31,7 @@ export function dayKeyOf(value: string | Date | null | undefined): string | null
   if (!value) return null
   if (typeof value === "string") return /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null
   if (Number.isNaN(value.getTime())) return null
-  const p = (n: number) => String(n).padStart(2, "0")
-  return `${value.getFullYear()}-${p(value.getMonth() + 1)}-${p(value.getDate())}`
+  return localDateKey(value)
 }
 
 /**

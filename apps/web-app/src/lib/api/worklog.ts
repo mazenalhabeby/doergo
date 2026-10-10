@@ -29,9 +29,4 @@ export const worklogApi = {
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  deleteAttachment: async (attachmentId: string) => {
-    const res = await call(worklogEndpoints.removeAttachment, { attachmentId }) as ApiResponse<{ data: { success: boolean } }>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
 };

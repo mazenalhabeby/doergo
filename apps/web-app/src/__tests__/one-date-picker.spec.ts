@@ -46,7 +46,10 @@ const rel = (f: string) => path.relative(process.cwd(), f).replace(/\\/g, "/")
   exists to prevent.
 */
 const KNOWN_INLINE_PICKERS = [
-  "src/app/(dashboard)/tasks/_components/create-task-dialog.tsx",
+  // The New Task dialog's copies (start/due date, a DATE custom field) — the
+  // same ones, moved out of create-task-dialog.tsx when it was split.
+  "src/app/(dashboard)/tasks/_components/create-task/schedule-section.tsx",
+  "src/app/(dashboard)/tasks/_components/create-task/custom-field-input.tsx",
   "src/app/(dashboard)/tasks/_components/sprint-management.tsx",
   "src/app/(dashboard)/tasks/[id]/_components/edit-task-dialog.tsx",
   "src/app/(dashboard)/tasks/[id]/_components/inline-edit-field.tsx",
@@ -100,9 +103,13 @@ describe("one date picker", () => {
   })
 
   it("the invoice screen uses the shared one", () => {
-    const s = code(fs.readFileSync(
-      path.join(SRC, "app/(dashboard)/invoices/new/page.tsx"), "utf8",
-    ))
+    // The page plus the pieces it was split into — the screen, not the file.
+    const NEW = path.join(SRC, "app/(dashboard)/invoices/new")
+    const s = [
+      path.join(NEW, "page.tsx"),
+      ...["_components", "_lib"].flatMap((d) =>
+        fs.readdirSync(path.join(NEW, d)).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => path.join(NEW, d, f))),
+    ].map((f) => code(fs.readFileSync(f, "utf8"))).join("\n")
     // The period is a range now — the shared PeriodPicker, built on the same Calendar.
     expect(s).toMatch(/<(DatePicker|PeriodPicker)\b/)
     // …and no native date input survived there.

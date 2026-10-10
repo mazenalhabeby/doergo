@@ -1,5 +1,6 @@
 'use client';
 
+import { personInitials, personName } from "@hbcfield/shared/client"
 import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +12,7 @@ import { chatApi } from '@/lib/api';
 import { useSocketContext } from '@/contexts/socket-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useTimeFormat } from '@/hooks';
+import { keys } from "@/lib/query-keys"
 
 // ── imperative API for the rest of the app (contact "message" buttons) ────────
 interface ChatContextValue {
@@ -41,10 +43,6 @@ export function useChat() {
 }
 
 // ── presentation helpers ──────────────────────────────────────────────────────
-function initials(u?: ChatUserRef | null) {
-  if (!u) return '?';
-  return `${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase() || '?';
-}
 function presenceColor(p?: string | null) {
   return p === 'AVAILABLE' ? 'bg-emerald-500' : p === 'BUSY' ? 'bg-rose-500' : p === 'AWAY' ? 'bg-amber-500' : 'bg-muted-foreground/40';
 }
@@ -55,7 +53,7 @@ function presenceLabel(p: string | null | undefined, t: import('i18next').TFunct
   return t('chat.presence.offline', 'Offline');
 }
 function timeHM(iso: string, lang: string, hour12?: boolean) {
-  return new Date(iso).toLocaleTimeString(lang?.startsWith('de') ? 'de-DE' : 'en-US', {
+  return new Date(iso).toLocaleTimeString(lang || 'en', {
     hour: hour12 ? 'numeric' : '2-digit',
     minute: '2-digit',
     ...(hour12 === undefined ? {} : { hour12 }),
@@ -72,7 +70,7 @@ function relTime(iso: string | null, lang: string) {
   if (h < 24) return `${h}h`;
   const days = Math.floor(h / 24);
   if (days < 7) return `${days}d`;
-  return new Date(iso).toLocaleDateString(lang?.startsWith('de') ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(lang || 'en', { month: 'short', day: 'numeric' });
 }
 function dayKey(iso: string) {
   return new Date(iso).toDateString();
@@ -84,7 +82,7 @@ function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
   yest.setDate(today.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return t('chat.today', 'Today');
   if (d.toDateString() === yest.toDateString()) return t('chat.yesterday', 'Yesterday');
-  return d.toLocaleDateString(lang?.startsWith('de') ? 'de-DE' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(lang || 'en', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: number; dot?: boolean }) {
@@ -98,7 +96,7 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
         className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-muted to-muted text-[11px] font-semibold text-muted-foreground"
         style={{ fontSize: size * 0.32 }}
       >
-        {u?.avatarUrl ? <img src={u.avatarUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials(u)}
+        {u?.avatarUrl ? <img src={u.avatarUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : personInitials(u)}
       </span>
       {showDot && (
         <span
@@ -125,7 +123,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [openedConv, setOpenedConv] = useState<ChatConversation | null>(null);
 
   const { data: conversations } = useQuery({
-    queryKey: ['chat', 'conversations'],
+    queryKey: keys.chat.conversations(),
     queryFn: chatApi.conversations,
     enabled,
     staleTime: 15_000,
@@ -143,14 +141,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!enabled || !isConnected) return; // wait for the socket, else subscribe() no-ops
     const off = subscribe<{ conversationId?: string; message?: ChatMessage }>(SocketEvents.CHAT_MESSAGE, (d) => {
-      qc.invalidateQueries({ queryKey: ['chat', 'conversations'] });
-      if (d?.conversationId) qc.invalidateQueries({ queryKey: ['chat', 'thread', d.conversationId] });
+      qc.invalidateQueries({ queryKey: keys.chat.conversations() });
+      if (d?.conversationId) qc.invalidateQueries({ queryKey: keys.chat.thread(d.conversationId) });
       // Toast for an INCOMING message you're not already looking at.
       const msg = d?.message;
       if (!msg || msg.senderId === user?.id) return;
       const viewing = openRef.current && activeIdRef.current === d.conversationId;
       if (viewing) return;
-      const name = msg.sender ? `${msg.sender.firstName} ${msg.sender.lastName}`.trim() : t('chat.title', 'Messages');
+      const name = msg.sender ? personName(msg.sender) : t('chat.title', 'Messages');
       toast(name, {
         description: (msg.body ?? '').slice(0, 80),
         action: {
@@ -165,7 +163,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const openDM = useMutation({
     mutationFn: (userId: string) => chatApi.openDirect(userId),
     onSuccess: (conv) => {
-      qc.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+      qc.invalidateQueries({ queryKey: keys.chat.conversations() });
       setOpenedConv(conv);
       setActiveId(conv.id);
       setShowContacts(false);
@@ -401,8 +399,8 @@ function ConversationList({
 function ContactsPicker({ onPick, picking }: { onPick: (userId: string) => void; picking: boolean }) {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
-  const { data: contacts, isLoading } = useQuery({ queryKey: ['chat', 'contacts'], queryFn: chatApi.contacts });
-  const filtered = (contacts ?? []).filter((u) => `${u.firstName} ${u.lastName}`.toLowerCase().includes(q.toLowerCase()));
+  const { data: contacts, isLoading } = useQuery({ queryKey: keys.chat.contacts(), queryFn: chatApi.contacts });
+  const filtered = (contacts ?? []).filter((u) => personName(u).toLowerCase().includes(q.toLowerCase()));
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="border-b border-border p-3">
@@ -431,7 +429,7 @@ function ContactsPicker({ onPick, picking }: { onPick: (userId: string) => void;
               <Avatar u={u} size={38} />
               <span className="min-w-0">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-sm font-medium text-foreground">{u.firstName} {u.lastName}</span>
+                  <span className="truncate text-sm font-medium text-foreground">{personName(u)}</span>
                   {/*
                     The most important place for this marker, and the one it was
                     missing from: this is where you PICK who to talk to. Without
@@ -470,14 +468,14 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
   const recipientIds = (conversation.members ?? []).map((m) => m.id).filter((id) => id !== meId);
 
   const { data } = useQuery({
-    queryKey: ['chat', 'thread', conversationId],
+    queryKey: keys.chat.thread(conversationId),
     queryFn: () => chatApi.history(conversationId),
   });
   const messages = data?.data ?? [];
 
   // Mark read on open + on new messages.
   useEffect(() => {
-    chatApi.markRead(conversationId).then(() => qc.invalidateQueries({ queryKey: ['chat', 'conversations'] })).catch(() => {});
+    chatApi.markRead(conversationId).then(() => qc.invalidateQueries({ queryKey: keys.chat.conversations() })).catch(() => {});
   }, [conversationId, messages.length, qc]);
 
   // A message from the peer means they've stopped typing — clear it immediately
@@ -530,19 +528,19 @@ function Thread({ conversation, meId }: { conversation: ChatConversation; meId: 
     onMutate: async (body: string) => {
       setText('');
       if (taRef.current) taRef.current.style.height = 'auto';
-      await qc.cancelQueries({ queryKey: ['chat', 'thread', conversationId] });
-      const prev = qc.getQueryData<{ data: ChatMessage[]; hasMore: boolean }>(['chat', 'thread', conversationId]);
+      await qc.cancelQueries({ queryKey: keys.chat.thread(conversationId) });
+      const prev = qc.getQueryData<{ data: ChatMessage[]; hasMore: boolean }>(keys.chat.thread(conversationId));
       const optimistic: ChatMessage = {
         id: `tmp-${Date.now()}`, conversationId, senderId: meId, body, attachments: [],
         createdAt: new Date().toISOString(),
       };
-      qc.setQueryData(['chat', 'thread', conversationId], { data: [...(prev?.data ?? []), optimistic], hasMore: prev?.hasMore ?? false });
+      qc.setQueryData(keys.chat.thread(conversationId), { data: [...(prev?.data ?? []), optimistic], hasMore: prev?.hasMore ?? false });
       return { prev };
     },
-    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(['chat', 'thread', conversationId], ctx.prev); },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) qc.setQueryData(keys.chat.thread(conversationId), ctx.prev); },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['chat', 'thread', conversationId] });
-      qc.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+      qc.invalidateQueries({ queryKey: keys.chat.thread(conversationId) });
+      qc.invalidateQueries({ queryKey: keys.chat.conversations() });
     },
   });
   const send = () => { const b = text.trim(); if (b && !mut.isPending) mut.mutate(b); };

@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
 import { validateWorkflow } from "@hbcfield/shared/client"
 import { resolveTransitions, linearTransitions, toStatusKey } from "@/lib/workflow-transitions"
@@ -104,10 +104,15 @@ describe("branching survives an edit", () => {
 })
 
 describe("the component uses it", () => {
-  const src = readFileSync(
-    join(__dirname, "../app/(dashboard)/locations/_components/workflow-builder.tsx"),
-    "utf8",
-  )
+  // The builder is its entry file plus the pieces in its sibling folder.
+  const BUILDER = join(__dirname, "../app/(dashboard)/locations/_components/workflow-builder")
+  const src = [
+    readFileSync(`${BUILDER}.tsx`, "utf8"),
+    ...readdirSync(BUILDER)
+      .filter((f) => /\.tsx?$/.test(f))
+      .sort()
+      .map((f) => readFileSync(join(BUILDER, f), "utf8")),
+  ].join("\n")
 
   it("calls the resolver on every write path", () => {
     // A correct helper nobody calls is not a fix.

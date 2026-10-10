@@ -7,6 +7,7 @@ import { ArrowRightLeft, Loader2, UserMinus, UserPlus } from "lucide-react"
 
 import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
 import {
+  personName,
   planHandover, canHandOver, type CustodyPeriod, type KindShape,
 } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
@@ -17,6 +18,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
 import { HolderPicker, decodeHolders, encodeHolderList, type HolderKey } from "./holder-picker"
+import { dateLocale } from "@/lib/format-date"
 
 /** A moment -> what `<input type="datetime-local">` holds, in the viewer's own zone. */
 export function toLocalInput(d: Date): string {
@@ -77,7 +79,7 @@ export function AssetHandoverDialog({
 
   const openPeriods = periods.filter((p) => !p.endedAt)
   const nameOf = (p: CustodyPeriodDto) =>
-    p.user ? `${p.user.firstName ?? ""} ${p.user.lastName ?? ""}`.trim() || p.user.email || "—"
+    p.user ? personName(p.user) || p.user.email || "—"
       : p.customer?.name ?? "—"
 
   // The date goes into the SAME plan the server executes, so "that is in the
@@ -210,7 +212,7 @@ export function AssetHandoverDialog({
                     <span>
                       {at && !future
                         ? t("assetFacts.handover.opensAt", "Opens a new custody from {{when}}. Costs dated after this belong to them.", {
-                            when: plan.at.toLocaleString(),
+                            when: plan.at.toLocaleString(dateLocale()),
                           })
                         : t("custody.opens", "Opens a new custody from now. Costs dated after this belong to them.")}
                     </span>

@@ -60,7 +60,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { dateLocale } from "@/lib/format-date"
+import { formatMediumDate } from "@/lib/format-date"
+import { todayKey } from "@hbcfield/shared/client"
 import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // ============================================================================
@@ -91,14 +92,6 @@ function getPriorityColor(priority: string): string {
   return PRIORITIES.find((p) => p.value === priority)?.color || PRIORITIES[0]!.color
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "-"
-  return new Date(dateStr).toLocaleDateString(dateLocale(), {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
 
 // ============================================================================
 // Template Card
@@ -155,7 +148,7 @@ const TemplateCard = memo(function TemplateCard({
               {template.nextRunAt && (
                 <span className="inline-flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {t("tasks.recurring.nextRun", { date: formatDate(template.nextRunAt) })}
+                  {t("tasks.recurring.nextRun", { date: template.nextRunAt ? formatMediumDate(template.nextRunAt) : "-" })}
                 </span>
               )}
               {template.estimatedHours && (
@@ -249,7 +242,7 @@ function TemplateDialog({
   const [startDate, setStartDate] = useState(
     existingTemplate?.startDate
       ? existingTemplate.startDate.split("T")[0]
-      : new Date().toISOString().split("T")[0],
+      : todayKey(),
   )
   const [endDate, setEndDate] = useState(
     existingTemplate?.endDate ? existingTemplate.endDate.split("T")[0] : "",

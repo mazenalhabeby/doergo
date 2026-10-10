@@ -5,4 +5,3 @@ export { PersonNode, type PersonNodeProps, type PersonNodeTag, type TagVariant }
 export { WorkspaceBox, WORKSPACE_CARD, workspaceCardCols, previewMembers, type WorkspaceBoxProps } from "./workspace-box"
 export { WorkspaceGrid, sortWorkspaceBoxes, type WorkspaceGridProps } from "./workspace-grid"
 export { ActivityPanel, type ActivityPanelProps, type LiveEvent, type PendingAction } from "./activity-panel"
-export { EmployeeDetailPanel, type EmployeeDetailPanelProps } from "./employee-detail-panel"

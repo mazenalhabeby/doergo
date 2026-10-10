@@ -12,6 +12,7 @@ import type { OrgCostBreakdown, SubscriptionView } from '@hbcfield/shared/client
 
 import { BillBreakdown } from './_components/bill-breakdown';
 import { OptionsRail } from './_components/options-rail';
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * Billing & plan.
@@ -165,7 +166,7 @@ export default function BillingPage() {
                 {sub.currentPeriodEnd && !sub.cancelAtPeriodEnd && (
                   <span className="text-xs text-muted-foreground">
                     {t('billing.renewsOn', 'Renews {{date}}', {
-                      date: new Date(sub.currentPeriodEnd).toLocaleDateString(),
+                      date: new Date(sub.currentPeriodEnd).toLocaleDateString(dateLocale()),
                     })}
                   </span>
                 )}
@@ -177,7 +178,7 @@ export default function BillingPage() {
                 {sub.cancelAtPeriodEnd && sub.currentPeriodEnd && (
                   <span className="text-xs text-amber-500">
                     {t('billing.cancelsOn', 'Cancels on {{date}}', {
-                      date: new Date(sub.currentPeriodEnd).toLocaleDateString(),
+                      date: new Date(sub.currentPeriodEnd).toLocaleDateString(dateLocale()),
                     })}
                   </span>
                 )}

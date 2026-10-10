@@ -42,7 +42,7 @@ export interface LoadedImage {
   format: "PNG" | "JPEG"
 }
 
-export interface LoadImageOptions {
+interface LoadImageOptions {
   /** Longest edge in pixels; larger images are drawn smaller on a canvas first. */
   maxEdge?: number
   /** JPEG keeps a 30-photo job small; PNG keeps a logo's transparency. Default PNG. */
@@ -53,7 +53,7 @@ export interface LoadImageOptions {
 }
 
 /** The size an image is drawn at so its longest edge is at most `maxEdge`. */
-export function fitWithin(w: number, h: number, maxEdge?: number): { w: number; h: number } {
+function fitWithin(w: number, h: number, maxEdge?: number): { w: number; h: number } {
   if (!maxEdge || (w <= maxEdge && h <= maxEdge) || w <= 0 || h <= 0) return { w, h }
   const scale = maxEdge / Math.max(w, h)
   return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) }

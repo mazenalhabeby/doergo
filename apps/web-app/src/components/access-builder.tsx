@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { Save, Bell, ShieldCheck } from "lucide-react"
 import { organizationsApi } from "@/lib/api"
 import type { OrgMember } from "@/lib/api"
-import { readAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
+import { personName, readAccessDraft, serializeAccessDraft } from "@hbcfield/shared/client"
 import type { AccessDraft } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -72,7 +72,7 @@ export function AccessBuilder({
   const [watcherIds, setWatcherIds] = useState<Set<string>>(new Set())
   const [watchersTouched, setWatchersTouched] = useState(false)
   const { data: watchersData } = useQuery({
-    queryKey: ["memberWatchers", member.id],
+    queryKey: keys.memberRecord.watchers(member.id),
     queryFn: () => organizationsApi.getMemberWatchers(member.id),
     enabled: !isBulk,
   })
@@ -250,7 +250,7 @@ export function AccessBuilder({
                     <Checkbox checked={watcherIds.has(m.id)} onCheckedChange={() => toggleWatcher(m.id)} />
                     <UserAvatar firstName={m.firstName} lastName={m.lastName} avatarUrl={m.avatarUrl} seed={m.id} size="sm" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">{m.firstName} {m.lastName}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{personName(m)}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {m.role === "ADMIN" ? t("members.roles.admin", "Admin") : t("roles.manager", "Manager")}
                         {m.email ? ` · ${m.email}` : ""}

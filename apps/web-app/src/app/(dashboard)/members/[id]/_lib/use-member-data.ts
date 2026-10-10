@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { organizationsApi, employeesApi } from "@/lib/api"
+import { localDateKey } from "@hbcfield/shared/client"
 
 /**
  * Everything `/members/[id]` needs to fetch, and everything derived from it.
@@ -45,8 +46,9 @@ export function useMemberData(memberId: string) {
     const start = new Date()
     start.setDate(start.getDate() - ATTENDANCE_WINDOW_DAYS)
     return {
-      startDate: start.toISOString().slice(0, 10),
-      endDate: end.toISOString().slice(0, 10),
+      // The reader's own days — the UTC day is still yesterday after midnight in Vienna.
+      startDate: localDateKey(start),
+      endDate: localDateKey(end),
     }
   }, [])
 
@@ -64,14 +66,14 @@ export function useMemberData(memberId: string) {
   })
 
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ["memberTasks", memberId],
+    queryKey: keys.memberRecord.tasks(memberId),
     queryFn: () => employeesApi.getTasks(memberId, { limit: 5 }),
     // GET /employees/:id/tasks — @RequirePermissionInSpace('canViewAllTasks').
     enabled: !!memberId && readsWork,
   })
 
   const { data: scheduleData, isLoading: scheduleLoading } = useQuery({
-    queryKey: ["employeeSchedule", memberId],
+    queryKey: keys.schedules.member(memberId),
     queryFn: () => employeesApi.getSchedule(memberId),
     enabled: !!memberId,
   })
@@ -79,7 +81,7 @@ export function useMemberData(memberId: string) {
   // This member's space assignments in ONE call (was an N+1 fan-out over every
   // location just to build the header badges). Feeds the header and Locations tab (P2).
   const { data: memberAssignments = [] } = useQuery({
-    queryKey: ["memberLocationAssignments", memberId],
+    queryKey: keys.memberRecord.assignments(memberId),
     queryFn: () => employeesApi.getAssignments(memberId),
     enabled: !!memberId && readsWork,
     staleTime: 30_000,
@@ -87,14 +89,14 @@ export function useMemberData(memberId: string) {
 
   // ── Operational tabs (manager+ only) — each fetches ONLY when its tab is open ──
   const { data: fullTasks } = useQuery({
-    queryKey: ["memberTasksFull", memberId, tasksPage],
+    queryKey: keys.memberRecord.tasksPage(memberId, tasksPage),
     queryFn: () => employeesApi.getTasks(memberId, { page: tasksPage, limit: TASKS_PAGE_SIZE }),
     enabled: !!memberId && canViewOps && activeTab === "tasks",
     staleTime: 30_000,
   })
 
   const { data: attendance } = useQuery({
-    queryKey: ["memberAttendance", memberId, attendanceRange.startDate, attendanceRange.endDate],
+    queryKey: keys.memberRecord.attendance(memberId, attendanceRange.startDate, attendanceRange.endDate),
     queryFn: () =>
       employeesApi.getAttendance(memberId, attendanceRange.startDate, attendanceRange.endDate),
     enabled: !!memberId && canViewOps && activeTab === "attendance",
@@ -102,7 +104,7 @@ export function useMemberData(memberId: string) {
   })
 
   const { data: performance } = useQuery({
-    queryKey: ["memberPerformance", memberId],
+    queryKey: keys.memberRecord.performance(memberId),
     queryFn: () => employeesApi.getPerformance(memberId),
     enabled: !!memberId && canViewOps && activeTab === "performance",
     staleTime: 30_000,
@@ -110,7 +112,7 @@ export function useMemberData(memberId: string) {
 
   // Header stats (Score · Done · Active · This Week) — one call carries the lot.
   const { data: memberProfile } = useQuery({
-    queryKey: ["employeeProfile", memberId],
+    queryKey: keys.memberRecord.profile(memberId),
     queryFn: () => employeesApi.getById(memberId),
     enabled: !!memberId && canViewOps,
     staleTime: 60_000,
@@ -129,14 +131,14 @@ export function useMemberData(memberId: string) {
   const handleMemberSaved = useCallback(() => {
     refetchMember()
     for (const key of [
-      "employeeSchedule",
-      "memberLocationAssignments",
-      "memberTasks",
-      "memberTasksFull",
-      "memberAttendance",
-      "memberPerformance",
+      keys.schedules.member(memberId),
+      keys.memberRecord.assignments(memberId),
+      keys.memberRecord.tasks(memberId),
+      keys.memberRecord.tasksPage(memberId),
+      keys.memberRecord.attendance(memberId),
+      keys.memberRecord.performance(memberId),
     ]) {
-      queryClient.invalidateQueries({ queryKey: [key, memberId] })
+      queryClient.invalidateQueries({ queryKey: key })
     }
   }, [queryClient, refetchMember, memberId])
 

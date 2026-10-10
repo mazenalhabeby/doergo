@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
@@ -16,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { keys } from "@/lib/query-keys"
 
 // Local time formatter (kept self-contained to avoid a circular import with
 // attendance-helpers, which imports this dialog).
@@ -44,7 +46,7 @@ export function EditHistoryDialog({
   const tz = entry.timezone ?? entry.location?.timezone
 
   const { data: history = [], isLoading } = useQuery({
-    queryKey: ["entryHistory", entry.id],
+    queryKey: keys.attendance.entryHistory(entry.id),
     queryFn: () => attendanceApi.getEntryHistory(entry.id),
     enabled: open,
   })
@@ -69,7 +71,7 @@ export function EditHistoryDialog({
           {
             id: "snapshot",
             editedAt: entry.editedAt ?? entry.updatedAt,
-            editor: entry.editedBy ? `${entry.editedBy.firstName} ${entry.editedBy.lastName}`.trim() : null,
+            editor: entry.editedBy ? personName(entry.editedBy) : null,
             reason: entry.editReason ?? null,
             changes: [
               ...(entry.originalClockIn && entry.originalClockIn !== entry.clockInAt

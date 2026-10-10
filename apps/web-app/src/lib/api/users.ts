@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { InboxNotification, Worker } from './types/users';
+import type { InboxNotification } from './types/users';
 import { notificationsEndpoints, usersEndpoints } from '@hbcfield/shared/client';
 
 export const STORY_POINT_OPTIONS = [1, 2, 3, 5, 8, 13, 21] as const;
@@ -47,28 +47,6 @@ export const usersApi = {
   updateMyEmail: async (data: { newEmail: string; currentPassword: string }) => {
     const response = await call(usersEndpoints.updateEmail, undefined, { body: data }) as ApiResponse<{ success: boolean; data: { id: string; email: string } }>;
     if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  // Get all employees (DISPATCHER only)
-  getWorkers: async () => {
-    const response = await call(usersEndpoints.workers) as ApiResponse<{ success: boolean; data: Worker[] }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Get user by ID
-  getById: async (id: string) => {
-    const response = await call(usersEndpoints.get, { id }) as ApiResponse<{ success: boolean; data: Worker }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
     return response.data?.data;
   },
 

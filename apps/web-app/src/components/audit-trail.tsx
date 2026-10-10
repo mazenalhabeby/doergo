@@ -1,5 +1,6 @@
 "use client"
 
+import { personInitials, personName } from "@hbcfield/shared/client"
 import * as React from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
@@ -12,6 +13,7 @@ import { auditActionLabel } from "@/lib/audit-labels"
 import { cn } from "@/lib/utils"
 import { formatTimeAgo } from "@/lib/format-date"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,7 +71,7 @@ function useAuditTrail(
   // [resourceId, createdAt] index. `resourceType` is kept for the query key /
   // context only.
   return useQuery({
-    queryKey: ["auditTrail", resourceType, resourceId, limit],
+    queryKey: keys.reports.auditTrail(resourceType, resourceId, limit),
     queryFn: () => organizationsApi.getAuditLogs({ resourceId, limit }),
     enabled,
     staleTime: 30_000,
@@ -160,10 +162,10 @@ export function AuditTrail({
 function AuditRow({ log }: { log: AuditLogEntry }) {
   const { t } = useTranslation()
   const actorName = log.user
-    ? `${log.user.firstName} ${log.user.lastName}`.trim()
+    ? personName(log.user)
     : t("auditLog.system")
   const initials = log.user
-    ? `${(log.user.firstName || "").charAt(0)}${(log.user.lastName || "").charAt(0)}`.toUpperCase() || "?"
+    ? personInitials(log.user)
     : "•"
 
   const detail = auditRowDetail(log)
@@ -222,7 +224,7 @@ function auditRowDetail(log: AuditLogEntry): string | null {
   if (meta.role) return String(meta.role)
   if (meta.reason) return String(meta.reason)
   if (meta.email) return String(meta.email)
-  if (log.targetUser) return `${log.targetUser.firstName} ${log.targetUser.lastName}`.trim()
+  if (log.targetUser) return personName(log.targetUser)
   return null
 }
 

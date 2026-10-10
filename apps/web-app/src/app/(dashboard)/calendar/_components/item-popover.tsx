@@ -5,14 +5,14 @@ import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
-import { MEETING_PROVIDER_NAMES, meetingProvider, telHref, type CalendarItem } from "@hbcfield/shared/client"
+import { personName, MEETING_PROVIDER_NAMES, meetingProvider, telHref, type CalendarItem } from "@hbcfield/shared/client"
 import { Bell, Building2, CalendarClock, Check, Clock, ExternalLink, Flag, HelpCircle, MapPin, Navigation, Pencil, Phone, Trash2, Users, Video, X } from "lucide-react"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
 import { calendarApi, employeesApi } from "@/lib/api"
-import { invalidateTimeOff } from "@/lib/query-keys"
+import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { Input } from "@/components/ui/input"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
@@ -53,22 +53,22 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
   const qc = useQueryClient()
   const eventId = item?.ref?.type === "event" ? item.ref.id : null
   const { data: ev } = useQuery({
-    queryKey: ["calendar-event", eventId],
+    queryKey: keys.calendar.event(eventId),
     queryFn: () => calendarApi.event(eventId!),
     enabled: !!eventId,
   })
   const respond = useMutation({
     mutationFn: (r: "ACCEPTED" | "MAYBE" | "DECLINED") => calendarApi.respond(eventId!, r),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["calendar"] })
-      qc.invalidateQueries({ queryKey: ["calendar-event", eventId] })
+      qc.invalidateQueries({ queryKey: keys.calendar.all() })
+      qc.invalidateQueries({ queryKey: keys.calendar.event(eventId) })
     },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
   const cancel = useMutation({
     mutationFn: () => calendarApi.cancel(eventId!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["calendar"] })
+      qc.invalidateQueries({ queryKey: keys.calendar.all() })
       toast.success(t("calendar.canceledToast"))
       onClose()
     },
@@ -85,9 +85,9 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
     onSuccess: (_, v) => {
       toast.success(v.approved ? t("cover.decision.approved", "Approved — they are told now") : t("cover.decision.rejected", "Not approved — they are told now"))
       invalidateTimeOff(qc)
-      qc.invalidateQueries({ queryKey: ["calendar"] })
-      qc.invalidateQueries({ queryKey: ["cover-range"] })
-      qc.invalidateQueries({ queryKey: ["floor-now"] })
+      qc.invalidateQueries({ queryKey: keys.calendar.all() })
+      qc.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
+      qc.invalidateQueries({ queryKey: keys.attendance.floorNow() })
       onClose()
     },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
@@ -147,7 +147,7 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
                   {ev.attendees.map((a) => (
                     <span
                       key={a.userId}
-                      title={`${a.firstName} ${a.lastName} · ${t(`calendar.rsvpState.${a.response}`)}`}
+                      title={`${personName(a)} · ${t(`calendar.rsvpState.${a.response}`)}`}
                       className={cn(
                         "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px]",
                         a.response === "ACCEPTED" && "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",

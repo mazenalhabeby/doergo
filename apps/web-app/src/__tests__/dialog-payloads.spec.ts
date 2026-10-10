@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
 
 /**
@@ -23,6 +23,9 @@ import { join } from "path"
 interface DialogUnderTest {
   name: string
   path: string
+  /** A folder of the dialog's own pieces, read together with `path` — the
+   *  screen is the entry PLUS what was split out of it. */
+  dir?: string
   /**
    * The submit FUNCTION, not one payload object.
    *
@@ -55,6 +58,7 @@ const DIALOGS: DialogUnderTest[] = [
   {
     name: "Edit member",
     path: "app/(dashboard)/members/_components/edit-member-dialog.tsx",
+    dir: "app/(dashboard)/members/_components/edit-member-dialog",
     submitFn: "const handleSave",
     uiOnly: {
       open: "a combobox's own open state",
@@ -95,7 +99,14 @@ function regionAfter(src: string, marker: string): string {
 describe.each(DIALOGS.map((d) => [d.name, d] as [string, DialogUnderTest]))(
   "%s — nothing collected is thrown away",
   (_name, dialog) => {
-    const SRC = readFileSync(join(__dirname, "..", dialog.path), "utf8")
+    const SRC = [
+      dialog.path,
+      ...(dialog.dir
+        ? readdirSync(join(__dirname, "..", dialog.dir)).sort().map((f) => `${dialog.dir}/${f}`)
+        : []),
+    ]
+      .map((p) => readFileSync(join(__dirname, "..", p), "utf8"))
+      .join("\n")
     const stateNames = [
       ...new Set([...SRC.matchAll(/const \[(\w+), set\w+\] = useState/g)].map((m) => m[1])),
     ]

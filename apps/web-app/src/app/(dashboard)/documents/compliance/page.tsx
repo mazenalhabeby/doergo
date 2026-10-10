@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
@@ -7,6 +8,8 @@ import { useRouter } from "next/navigation"
 import { ShieldCheck, ShieldAlert, ShieldX, ArrowLeft, Inbox } from "lucide-react"
 import { documentsApi, type ComplianceRow } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /*
   The compliance board.
@@ -32,7 +35,7 @@ export default function CompliancePage() {
   const [filter, setFilter] = useState<Filter>("all")
 
   const { data: rows = [], isLoading } = useQuery<ComplianceRow[]>({
-    queryKey: ["credential-compliance"],
+    queryKey: keys.documents.compliance(),
     queryFn: () => documentsApi.compliance(),
   })
 
@@ -109,11 +112,11 @@ export default function CompliancePage() {
               {visible.map((r) => (
                 <tr key={r.id} className={cn(r.blocksDispatch && "bg-red-50 dark:bg-red-950/30")}>
                   <td className="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">
-                    {r.member.firstName} {r.member.lastName}
+                    {personName(r.member)}
                   </td>
                   <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{r.credential}</td>
                   <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">
-                    {r.expiresOn ? new Date(r.expiresOn).toLocaleDateString() : "—"}
+                    {r.expiresOn ? new Date(r.expiresOn).toLocaleDateString(dateLocale()) : "—"}
                   </td>
                   <td className="px-3 py-2">
                     <Effect row={r} />

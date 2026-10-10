@@ -12,6 +12,7 @@ import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
 
 /**
  * One table on a record — a machine's parts, an apartment's keys.
@@ -29,13 +30,13 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
   const [draft, setDraft] = useState<Record<string, string>>({})
 
   const rowsQ = useQuery({
-    queryKey: ["asset-rows", assetId, list.label, debouncedSearch, page],
+    queryKey: keys.assets.rows(assetId, list.label, debouncedSearch, page),
     queryFn: () => assetsApi.getRows(assetId, list.label, { search: debouncedSearch || undefined, page, limit: 50 }),
   })
   const rows = rowsQ.data?.rows ?? []
   const meta = rowsQ.data?.meta
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["asset-rows", assetId, list.label] })
+  const refresh = () => qc.invalidateQueries({ queryKey: keys.assets.rows(assetId, list.label) })
 
   const add = useMutation({
     mutationFn: () => assetsApi.addRow(assetId, list.label, draft),

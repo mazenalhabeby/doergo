@@ -127,12 +127,6 @@ export const workflowsApi = {
     return response.data?.data;
   },
 
-  delete: async (id: string) => {
-    const response = await call(workflowsWebEndpoints.delete, { id }) as ApiResponse<{ success: boolean; message: string }>;
-    if (response.error) throw apiError(response);
-    return response.data;
-  },
-
   addStatus: async (
     workflowId: string,
     data: {
@@ -170,17 +164,5 @@ export const workflowsApi = {
     const response = await call(workflowsWebEndpoints.deleteStatus, { workflowId, statusId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
-  },
-
-  reorderStatuses: async (workflowId: string, statusIds: string[]) => {
-    const response = await call(workflowsWebEndpoints.reorderStatuses, { workflowId }, { body: { statusIds } }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  setDefault: async (id: string) => {
-    const response = await call(workflowsWebEndpoints.setDefault, { id }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
   },
 };

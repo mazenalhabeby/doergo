@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -26,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { invalidateTimeOff } from "@/lib/query-keys"
+import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 
 const REASON_PRESETS = ["vacation", "sick", "personal", "holiday", "unpaid"] as const
@@ -42,7 +43,7 @@ export function AddDayOffDialog() {
   const [reason, setReason] = useState("")
 
   const { data: employeeList, isLoading: employeesLoading } = useQuery({
-    queryKey: ["employeesForAttendance"],
+    queryKey: keys.attendance.employeesPicker(),
     queryFn: () => employeesApi.list({ status: "active", limit: 100 }),
     enabled: open,
     staleTime: 5 * 60_000,
@@ -58,7 +59,7 @@ export function AddDayOffDialog() {
       }),
     onSuccess: () => {
       invalidateTimeOff(queryClient)
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
       notify.success(t("attendance.addDayOff.success"))
       resetAndClose()
     },
@@ -112,7 +113,7 @@ export function AddDayOffDialog() {
               <SelectContent>
                 {(employeeList?.data ?? []).map((emp) => (
                   <SelectItem key={emp.id} value={emp.id}>
-                    {emp.firstName} {emp.lastName}
+                    {personName(emp)}
                   </SelectItem>
                 ))}
               </SelectContent>

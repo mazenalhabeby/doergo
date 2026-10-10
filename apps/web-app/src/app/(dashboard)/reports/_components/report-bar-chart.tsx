@@ -13,7 +13,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RTooltip, Respon
  */
 import { CHART_COLORS } from "./chart-colors"
 
-export interface ReportBarChartProps {
+interface ReportBarChartProps {
   data: { label: string; value: number }[]
   measureLabel: string
   format: (value: number) => string

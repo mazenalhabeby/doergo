@@ -17,6 +17,7 @@ import {
   DocumentActionDialogs, DocumentRowMenu, SelectionBar, VisibilityChip,
   useDocumentControl, useRowSelection, type DocumentAction,
 } from "./document-control"
+import { keys } from "@/lib/query-keys"
 
 /*
   The filing cabinet.
@@ -74,7 +75,7 @@ export function FolderBrowser() {
   }
 
   const { data, isLoading } = useQuery<BrowseLevel>({
-    queryKey: ["documents-browse", groupBy, path.map((c) => `${c.kind}:${c.key}`).join("/")],
+    queryKey: keys.documents.browse(groupBy, path.map((c) => `${c.kind}:${c.key}`).join("/")),
     queryFn: () => documentsApi.browse(params),
     staleTime: 30_000,
   })

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { localDateKey } from "@hbcfield/shared/client"
 
 /**
  * A period of days — month presets, "outstanding", or a range of one's own.
@@ -25,7 +26,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
  * ⚠️ ISO IN, ISO OUT (`YYYY-MM-DD`), read and written from LOCAL parts, for the
  * same reason as DatePicker: a Date carries a timezone this field has none of.
  */
-export type PeriodMode = "last" | "this" | "custom"
+type PeriodMode = "last" | "this" | "custom"
 
 export interface PeriodValue {
   mode: PeriodMode
@@ -47,10 +48,6 @@ interface PeriodPickerProps {
   className?: string
 }
 
-function isoOf(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
-
 function dayOf(iso: string): Date | undefined {
   if (!iso) return undefined
   const d = parseISO(iso)
@@ -61,8 +58,8 @@ function dayOf(iso: string): Date | undefined {
 export function monthBounds(shift: number, now = new Date()): [string, string] {
   // Day 0 of the NEXT month is the last day of this one.
   return [
-    isoOf(new Date(now.getFullYear(), now.getMonth() + shift, 1)),
-    isoOf(new Date(now.getFullYear(), now.getMonth() + shift + 1, 0)),
+    localDateKey(new Date(now.getFullYear(), now.getMonth() + shift, 1)),
+    localDateKey(new Date(now.getFullYear(), now.getMonth() + shift + 1, 0)),
   ]
 }
 
@@ -191,7 +188,7 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
             selected={selected}
             defaultMonth={dayOf(from) ?? work[0]}
             onSelect={(_range, day) => {
-              const iso = isoOf(day)
+              const iso = localDateKey(day)
               if (!start) { setStart(iso); return }
               const [a, b] = iso < start ? [iso, start] : [start, iso]
               onChange(normalise(a, b))

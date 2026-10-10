@@ -25,6 +25,7 @@ import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { OrphanAssetsCard } from "./orphan-assets-card"
 import { AssetStatusChip, useAssetStatusLabel } from "@/components/assets/asset-status"
 import { AssetRetireDialog } from "@/components/assets/asset-retire-dialog"
+import { keys } from "@/lib/query-keys"
 
 /**
  * What this space owns.
@@ -89,11 +90,11 @@ export function AssetsTab({
   }
 
   const kindsQ = useQuery({
-    queryKey: ["space-asset-kinds", spaceId],
+    queryKey: keys.assets.kinds(spaceId),
     queryFn: () => assetsApi.getCategories(spaceId),
   })
   const kinds = kindsQ.data ?? []
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["space-asset-kinds", spaceId] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.assets.kinds(spaceId) })
 
   const del = useMutation({
     mutationFn: (id: string) => assetsApi.deleteCategory(id),
@@ -295,7 +296,7 @@ function KindContents({
   const [retiring, setRetiring] = useState<{ id: string; name: string; jobs: number } | null>(null)
 
   const recordsQ = useQuery({
-    queryKey: ["asset-records", kind.id, status, showRetired],
+    queryKey: keys.assets.records(kind.id, status, showRetired),
     queryFn: () => assetsApi.getAssets({
       categoryId: kind.id,
       status: status || undefined,
@@ -328,7 +329,7 @@ function KindContents({
   const refresh = () => {
     // Every filter's cache for this kind — a status change moves a record
     // between them.
-    qc.invalidateQueries({ queryKey: ["asset-records", kind.id] })
+    qc.invalidateQueries({ queryKey: keys.assets.records(kind.id) })
     onChanged()
   }
 

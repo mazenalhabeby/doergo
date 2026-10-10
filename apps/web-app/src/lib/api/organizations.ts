@@ -178,24 +178,6 @@ export const organizationsApi = {
     return response.data?.data || [];
   },
 
-  getProfileBadges: async () => {
-    const response = await call(organizationsEndpoints.profileBadges) as ApiResponse<{
-      success: boolean;
-      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } | null };
-    }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  updateProfileBadges: async (data: { showRole: boolean; showType: boolean; showSpecialty: boolean }) => {
-    const response = await call(organizationsEndpoints.updateProfileBadges, undefined, { body: data }) as ApiResponse<{
-      success: boolean;
-      data: { profileBadges: { showRole: boolean; showType: boolean; showSpecialty: boolean } };
-    }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
   getProfile: async () => {
     const response = await call(organizationsEndpoints.profile) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
     if (response.error) throw apiError(response);
@@ -210,18 +192,6 @@ export const organizationsApi = {
 
   updateNotificationPrefs: async (prefs: Record<string, boolean>) => {
     const response = await call(organizationsEndpoints.updateNotificationPrefs, undefined, { body: prefs }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  updateSecuritySettings: async (settings: Record<string, boolean | number>) => {
-    const response = await call(organizationsEndpoints.updateSecuritySettings, undefined, { body: settings }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  updateEnabledModules: async (enabledModules: string[]) => {
-    const response = await call(organizationsEndpoints.updateProfile, undefined, { body: { enabledModules } }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

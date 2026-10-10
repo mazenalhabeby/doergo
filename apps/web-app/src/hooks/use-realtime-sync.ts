@@ -96,23 +96,22 @@ const Events = {
 // refresh on a clock or an admin edit, so keep this list as the single source and
 // spread it into every attendance-affecting event (DRY).
 const ATTENDANCE_PAGE_KEYS: QueryKey[] = [
-  ["attendance"], // main tracking list — ["attendance", loc, status, ...] (prefix match)
-  ["attendance-approvals"],
-  ["attendance-breaks-active"],
-  ["attendance-breaks-history"],
-  ["attendance-breaks-summary"],
-  ["attendance-no-shows"],
-  ["geofence-excursions"],
-  ["orgTimeOff"],
-  ["availability"],
+  keys.attendance.list(), // main tracking list — ["attendance", loc, status, ...] (prefix match)
+  keys.attendance.approvals(),
+  keys.attendance.activeBreaks(),
+  keys.attendance.breakHistory(),
+  keys.attendance.breakSummary(),
+  keys.attendance.noShows(),
+  keys.attendance.excursions(),
+  keys.timeOff.org(),
 ]
 
 // The DASHBOARD attendance keys (presence tiles + per-location batch + approvals).
 const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
-  ["attendance-active"],
-  ["locationAttendanceBatch"],
-  ["pending-approvals"],
-  ["active-breaks"],
+  keys.attendance.active(),
+  keys.attendance.locationBatch(),
+  keys.attendance.pendingApprovals(),
+  keys.attendance.dashboardBreaks(),
   keys.members.directoryLite(),
 ]
 
@@ -120,7 +119,7 @@ const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
 const ALL_ATTENDANCE_KEYS: QueryKey[] = [
   // The "on the floor right now" panel on /employees/availability. It reports
   // the clock, so every clock event moves it.
-  ["floor-now"],...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
+  keys.attendance.floorNow(),...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
 
 // Everywhere a member, an invitation or a join request is rendered. One list, so
 // the four server call sites that emit `member.changed` cannot drift from what the
@@ -128,10 +127,10 @@ const ALL_ATTENDANCE_KEYS: QueryKey[] = [
 const MEMBER_KEYS: QueryKey[] = [
   keys.members.lists(),        // every member list — the /members page, the directory, the pickers
   keys.members.details(),      // /members/[id] detail
-  ["orgContacts"],             // chat / contact directory
-  ["pendingInvitations"],      // pending invites shown on /members
-  ["invitations"],             // /invitations page
-  ["join-requests"],           // /join-requests page
+  keys.people.contacts(),             // chat / contact directory
+  keys.people.pendingInvitations(),      // pending invites shown on /members
+  keys.people.invitations(),             // /invitations page
+  keys.people.joinRequests(),           // /join-requests page
   keys.locations.rosterBatches(), // space rosters, several at once (/members, the dashboard)
   keys.locations.rosters(),    // one space's roster
 ]
@@ -143,12 +142,12 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // request submitted from the portal creates a Task and announces task.created —
   // but only the task lists were invalidated, so the portal inbox stayed stale and
   // an external customer's request sat unseen until someone reloaded (audit P-D1).
-  [Events.TASK_CREATED]: [keys.tasks.lists(), keys.tasks.counts(), ["portalAllRequests"]],
+  [Events.TASK_CREATED]: [keys.tasks.lists(), keys.tasks.counts(), keys.portal.allRequests()],
   // `task` and `task-time`: the OPEN job too — its checklist, its crew, its time.
   // Only queries in use refetch, so this is the one job on screen, not every job.
-  [Events.TASK_UPDATED]: [keys.tasks.lists(), keys.tasks.counts(), ["portalAllRequests"], keys.tasks.details(), keys.tasks.times()],
+  [Events.TASK_UPDATED]: [keys.tasks.lists(), keys.tasks.counts(), keys.portal.allRequests(), keys.tasks.details(), keys.tasks.times()],
   [Events.TASK_ASSIGNED]: [keys.tasks.lists(), keys.tasks.counts()],
-  [Events.TASK_STATUS_CHANGED]: [keys.tasks.lists(), keys.tasks.counts(), ["attendance-active"], ["locationAttendanceBatch"], ["portalAllRequests"]],
+  [Events.TASK_STATUS_CHANGED]: [keys.tasks.lists(), keys.tasks.counts(), keys.attendance.active(), keys.attendance.locationBatch(), keys.portal.allRequests()],
   [Events.TASK_COMMENT_ADDED]: [keys.tasks.lists()],
   [Events.TASK_ATTACHMENT_ADDED]: [keys.tasks.lists()],
   [Events.TASK_DECLINED]: [keys.tasks.lists(), keys.tasks.counts()],
@@ -172,17 +171,17 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   [Events.ATTENDANCE_CHANGED]: ALL_ATTENDANCE_KEYS,
 
   // Availability change → refresh the dashboard roster + contacts (their dot updates)
-  [Events.PRESENCE_CHANGED]: [keys.members.directoryLite(), ["orgContacts"]],
+  [Events.PRESENCE_CHANGED]: [keys.members.directoryLite(), keys.people.contacts()],
 
   // Geofence excursion → refresh the approver panel (["geofence-excursions"]).
   // out/reported/returned change the pending list; approved/rejected/expired also
   // touch clock state (reject clocks out) so refresh the dashboard attendance too.
-  [Events.EXCURSION_OUT]: [["geofence-excursions"]],
-  [Events.EXCURSION_REQUESTED]: [["geofence-excursions"]],
-  [Events.EXCURSION_APPROVED]: [["geofence-excursions"]],
+  [Events.EXCURSION_OUT]: [keys.attendance.excursions()],
+  [Events.EXCURSION_REQUESTED]: [keys.attendance.excursions()],
+  [Events.EXCURSION_APPROVED]: [keys.attendance.excursions()],
   [Events.EXCURSION_REJECTED]: [...ALL_ATTENDANCE_KEYS], // reject clocks the worker out
-  [Events.EXCURSION_RETURNED]: [["geofence-excursions"]],
-  [Events.EXCURSION_EXPIRED]: [["geofence-excursions"]],
+  [Events.EXCURSION_RETURNED]: [keys.attendance.excursions()],
+  [Events.EXCURSION_EXPIRED]: [keys.attendance.excursions()],
 
   // Member events → refresh everywhere a member appears. Until these existed there
   // were NO member events in this map at all: another admin's edit, removal, invite
@@ -195,18 +194,19 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // A submitted request already reached the notification bell as a toast, but
   // nothing refreshed the list — so an admin sitting on /join-requests was told
   // about a request that never appeared on the page in front of them (audit A-D1).
-  [Events.JOIN_REQUEST_SUBMITTED]: [["join-requests"]],
+  [Events.JOIN_REQUEST_SUBMITTED]: [keys.people.joinRequests()],
 
-  // Leave. All three keys, always — time off is read under `employeeTimeOff` on
-  // a member's record, `orgTimeOff` on /attendance and /employees/availability,
-  // and `availability` on the calendar, which derives from it. Invalidating only
-  // the one the viewer happens to be looking at is the split `invalidateTimeOff`
-  // exists to stop (audit MD-D1), and a socket event has the same duty.
+  // Leave. Every key, always — time off is read on a member's record
+  // (`timeOff.member`) and on /attendance and /employees/availability
+  // (`timeOff.org`). Invalidating only the one the viewer happens to be looking
+  // at is the split `invalidateTimeOff` exists to stop (audit MD-D1), and a
+  // socket event has the same duty. (`["availability"]` was listed too — the key
+  // of a calendar that no longer exists, matching no query.)
   // `cover-range` and `floor-now` ride along: a decision changes the chart's
   // footer and the live floor as surely as it changes the list, and leaving
   // either behind is how two numbers on one page come to disagree.
-  [Events.TIME_OFF_REQUESTED]: [["employeeTimeOff"], ["orgTimeOff"], ["availability"], ["cover-range"]],
-  [Events.TIME_OFF_DECIDED]: [["employeeTimeOff"], ["orgTimeOff"], ["availability"], ["cover-range"], ["floor-now"]],
+  [Events.TIME_OFF_REQUESTED]: [keys.timeOff.member(), keys.timeOff.org(), keys.timeOff.coverRange()],
+  [Events.TIME_OFF_DECIDED]: [keys.timeOff.member(), keys.timeOff.org(), keys.timeOff.coverRange(), keys.attendance.floorNow()],
 
   // The CRM announced nothing at all (audit C-D2): a rep logging an activity was
   // invisible to a co-manager on the same client, and a new client never appeared
@@ -223,8 +223,8 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   [Events.CUSTOMER_CHANGED]: [
     keys.customers.lists(),       // every client list: the CRM, workspace tabs, pickers
     keys.customers.details(),     // /customers/[id]
-    ["customer-activities"],
-    ["customer-addresses"],
+    keys.customers.activities(),
+    keys.customers.addresses(),
   ],
 
   /*
@@ -239,20 +239,20 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
     scoped endpoint, so a viewer who has just LOST access refetches and gets a
     list without those documents; nothing in the payload widens anything.
   */
-  [Events.CALENDAR_CHANGED]: [["calendar"], ["calendar-event"]],
+  [Events.CALENDAR_CHANGED]: [keys.calendar.all(), keys.calendar.event()],
   // A moved Eid or a new weekend changes counts and shading everywhere at once.
-  [Events.CALENDAR_SETTINGS_CHANGED]: [["calendar"], ["calendar-settings"], ["calendar-holidays"], ["leave-count"], ["my-leave-balance"], ["cover-range"], ["calendar-team"], ["orgTimeOff"]],
+  [Events.CALENDAR_SETTINGS_CHANGED]: [keys.calendar.all(), keys.calendar.settings(), keys.calendar.holidays(), keys.timeOff.count(), keys.timeOff.myBalance(), keys.timeOff.coverRange(), keys.calendar.team(), keys.timeOff.org()],
   [Events.DOCUMENT_TYPES_CHANGED]: [
-    ["document-types"],                  // the picker on every documents screen
-    ["documents-browse"],                // the folder register
-    ["documents-sent"],                  // the issued list
-    ["document-drafts"],
-    ["document-match-candidates"],
-    ["documents-awaiting-verification"], // the verification queue
-    ["credential-compliance"],
-    ["my-documents"],
-    ["my-document-requirements"],
-    ["document-templates"],              // a template names its type
+    keys.documents.types(),                  // the picker on every documents screen
+    keys.documents.browse(),                // the folder register
+    keys.documents.sent(),                  // the issued list
+    keys.documents.drafts(),
+    keys.documents.matchCandidates(),
+    keys.documents.awaitingVerification(), // the verification queue
+    keys.documents.compliance(),
+    keys.documents.mine(),
+    keys.documents.myRequirements(),
+    keys.documents.templates(),              // a template names its type
   ],
 
   /*
@@ -267,26 +267,26 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // An expense sent in, or decided: the queue, the asset's money tab, and the
   // per-period totals on both custody tabs (only RECORDED counts there).
   [Events.ASSET_EXPENSES_CHANGED]: [
-    ["asset-expenses-pending"],
-    ["asset-money"],
-    ["asset-custody"],
-    ["member-custody"],
+    keys.assets.expensesPending(),
+    keys.assets.money(),
+    keys.assets.custody(),
+    keys.memberRecord.custody(),
   ],
   // A handover: who holds it on the record, on its timeline, in the kind's list
   // and on the member's holdings tab.
   [Events.ASSET_CUSTODY_CHANGED]: [
-    ["asset"],
-    ["asset-custody"],
-    ["asset-records"],
-    ["member-custody"],
+    keys.assets.record(),
+    keys.assets.custody(),
+    keys.assets.records(),
+    keys.memberRecord.custody(),
   ],
 
   // The no-show and shift-reminder engine writes to the entries the attendance
   // board renders — a flagged no-show, an escalation, a reminder that moves
   // `reminderState`. All four were emitted and nothing on the web listened, so the
   // board only caught up on the next manual reload (audit AT-D1).
-  [Events.NOSHOW_REMINDER]: [["attendance-no-shows"]],
-  [Events.NOSHOW_ESCALATION]: [["attendance-no-shows"]],
+  [Events.NOSHOW_REMINDER]: [keys.attendance.noShows()],
+  [Events.NOSHOW_ESCALATION]: [keys.attendance.noShows()],
   [Events.NOSHOW_RESOLVED]: ALL_ATTENDANCE_KEYS,
   [Events.SHIFT_ESCALATION_RESOLVED]: ALL_ATTENDANCE_KEYS,
   [Events.SHIFT_REMINDER]: ALL_ATTENDANCE_KEYS,
@@ -352,8 +352,7 @@ export function useRealtimeSync() {
     // Also invalidate the employee detail if an assignee is involved
     const assigneeId = data?.task?.assignedToId || data?.assignedToId || data?.workerId || data?.userId
     if (assigneeId) {
-      pendingInvalidations.current.add(JSON.stringify(["employee", assigneeId]))
-      pendingInvalidations.current.add(JSON.stringify(["employeeTasks", assigneeId]))
+      pendingInvalidations.current.add(JSON.stringify(keys.memberRecord.employee(assigneeId)))
     }
 
     // Standard invalidations for this event type

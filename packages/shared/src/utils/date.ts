@@ -59,12 +59,35 @@ export function buildSingleDayFilter(date: Date | string): { gte: Date; lte: Dat
  * @example formatDuration(45) => "45m"
  */
 export function formatDuration(minutes: number | null | undefined): string {
-  if (minutes === null || minutes === undefined) return '-';
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+  if (minutes === null || minutes === undefined || !Number.isFinite(Number(minutes))) return '-';
+  // Whole minutes: a fractional input printed "1h 30.5m".
+  const whole = Math.round(Number(minutes));
+  const hours = Math.floor(whole / 60);
+  const mins = whole % 60;
   if (hours === 0) return `${mins}m`;
   if (mins === 0) return `${hours}h`;
   return `${hours}h ${mins}m`;
+}
+
+/**
+ * A duration in SECONDS — 3665 → "1h 1m 5s", 125 → "2m 5s", 45 → "45s".
+ *
+ * Named for its unit: `formatDuration` takes MINUTES, and two functions called
+ * the same thing with different units print a 60× wrong figure with no type
+ * error. Seconds are shown — this is for things measured in seconds (a timer,
+ * a recording); work time is minutes, through `formatDuration`.
+ */
+export function formatDurationSeconds(seconds: number | null | undefined): string {
+  if (seconds === null || seconds === undefined || !Number.isFinite(Number(seconds))) return '-';
+  if (seconds < 0) return '0s';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+  return parts.join(' ');
 }
 
 /**
@@ -189,4 +212,39 @@ export function formatCalendarDate(iso: string | null | undefined): string {
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
   if (!y || !m || !d) return '-';
   return new Date(y, m - 1, d).toLocaleDateString();
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * The calendar day an instant falls on, as "YYYY-MM-DD" — in `timeZone` when
+ * one is given (a workspace's day), else in the runtime's own zone.
+ *
+ * ⚠️ `toISOString().slice(0, 10)` is the UTC day: at 00:30 in Vienna it answers
+ * YESTERDAY, so "today" opened on the wrong day for an hour or two every night.
+ * An unknown zone falls back to the runtime's day rather than throwing.
+ */
+export function localDateKey(date: Date | string | number = new Date(), timeZone?: string | null): string {
+  const d = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  if (timeZone) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(d);
+      const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+      return `${get('year')}-${get('month')}-${get('day')}`;
+    } catch {
+      /* unknown zone — the runtime's own day below */
+    }
+  }
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Today as "YYYY-MM-DD" — in `timeZone` when given, else the runtime's. */
+export function todayKey(timeZone?: string | null): string {
+  return localDateKey(new Date(), timeZone);
 }

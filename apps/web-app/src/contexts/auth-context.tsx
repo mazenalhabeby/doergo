@@ -109,7 +109,7 @@ export interface User {
 }
 
 /** An ACTIVE space shared with the current org, as surfaced in the auth context. */
-export interface SharedSpaceAccess {
+interface SharedSpaceAccess {
   spaceId: string;
   ownerOrgId: string;
   ownerOrgName: string;

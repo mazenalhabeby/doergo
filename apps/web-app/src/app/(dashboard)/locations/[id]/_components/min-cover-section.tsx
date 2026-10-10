@@ -47,9 +47,9 @@ export function MinCoverSection({ space }: { space: { id: string; minCover?: num
       qc.invalidateQueries({ queryKey: keys.locations.lists() })
       // The leave chart judges against this number, so it is stale the moment
       // the number moves.
-      qc.invalidateQueries({ queryKey: ["cover-range"] })
-      qc.invalidateQueries({ queryKey: ["orgTimeOff"] })
-      qc.invalidateQueries({ queryKey: ["floor-now"] })
+      qc.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
+      qc.invalidateQueries({ queryKey: keys.timeOff.org() })
+      qc.invalidateQueries({ queryKey: keys.attendance.floorNow() })
       notify.success(t("cover.minCover.saved", "Minimum cover saved"))
     },
     onError: (e: Error) => {

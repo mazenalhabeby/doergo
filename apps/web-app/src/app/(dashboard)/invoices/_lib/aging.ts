@@ -51,7 +51,7 @@ export function isOutstanding(inv: Pick<Invoice, "status">): boolean {
   return inv.status === "ISSUED" || inv.status === "SENT" || inv.status === "OVERDUE"
 }
 
-export interface AgingSummary {
+interface AgingSummary {
   outstanding: number
   outstandingCount: number
   overdue: number
@@ -136,7 +136,7 @@ export function byUrgency(a: Invoice, b: Invoice, now = new Date()): number {
  */
 export type Bucket = "overdue" | "open" | "draft" | "settled"
 
-export const BUCKETS: Bucket[] = ["overdue", "open", "draft", "settled"]
+const BUCKETS: Bucket[] = ["overdue", "open", "draft", "settled"]
 
 export function bucketOf(inv: Pick<Invoice, "status" | "dueDate">, now = new Date()): Bucket {
   if ((inv.status || "").toUpperCase() === "DRAFT") return "draft"
@@ -146,7 +146,7 @@ export function bucketOf(inv: Pick<Invoice, "status" | "dueDate">, now = new Dat
 }
 
 /** One bucket's rows, its count and what it comes to. */
-export interface BucketGroup {
+interface BucketGroup {
   bucket: Bucket
   rows: Invoice[]
   total: number

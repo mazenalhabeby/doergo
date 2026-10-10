@@ -1,7 +1,9 @@
 "use client"
 
+import { formatDuration } from "@hbcfield/shared/client"
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { keys } from "@/lib/query-keys"
 import { useTranslation } from "react-i18next"
 import { Coffee, Check, Clock3, AlarmClock, Loader2 } from "lucide-react"
 import { attendanceApi, type BreakPlanRow } from "@/lib/api"
@@ -17,13 +19,6 @@ import { toast } from "sonner"
  * next one coming without anything popping up in front of them. The prompting is
  * the notification's job; this is where they act.
  */
-
-/** Whole-minute gap as "1h 20m" / "20m", never "0h 20m". */
-function hm(mins: number): string {
-  const h = Math.floor(mins / 60)
-  const m = Math.round(mins % 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
 
 interface RestPanelProps {
   /** The plan frozen onto the open entry at clock-in. */
@@ -53,9 +48,11 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
   }, [])
 
   const refresh = () => {
-    void qc.invalidateQueries({ queryKey: ["attendance-status"] })
-    void qc.invalidateQueries({ queryKey: ["my-attendance"] })
-    void qc.invalidateQueries({ queryKey: ["break-status"] })
+    // The open entry (and its breaks) is read through the caller's own status.
+    // These were `attendance-status`, `my-attendance` and `break-status`, none of
+    // which any query reads — so a rest started here showed up a minute later.
+    void qc.invalidateQueries({ queryKey: keys.attendance.myStatus() })
+    void qc.invalidateQueries({ queryKey: keys.attendance.myHistory() })
   }
 
   const start = useMutation({
@@ -91,13 +88,13 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
         </div>
 
         <p className="mt-3 font-mono text-3xl font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
-          {hm(elapsed)}
+          {formatDuration(elapsed)}
         </p>
         <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
           {target
             ? over
-              ? t("attendance.rest.overBy", "{{over}} past your {{total}}", { over: hm(elapsed - target), total: hm(target) })
-              : t("attendance.rest.ofTotal", "of {{total}}", { total: hm(target) })
+              ? t("attendance.rest.overBy", "{{over}} past your {{total}}", { over: formatDuration(elapsed - target), total: formatDuration(target) })
+              : t("attendance.rest.ofTotal", "of {{total}}", { total: formatDuration(target) })
             : t("attendance.rest.untimed", "Untimed")}
           {planned && !planned.isPaid ? ` · ${t("attendance.rest.unpaid", "not counted")}` : ""}
         </p>
@@ -160,11 +157,11 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
                   : "bg-muted text-muted-foreground",
               )}
             >
-              {isDue ? t("attendance.rest.dueNow", "Due now") : t("attendance.rest.dueIn", "in {{gap}}", { gap: hm(dueIn) })}
+              {isDue ? t("attendance.rest.dueNow", "Due now") : t("attendance.rest.dueIn", "in {{gap}}", { gap: formatDuration(dueIn) })}
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {hm(next.durationMinutes)}
+            {formatDuration(next.durationMinutes)}
             {" · "}
             {next.isPaid
               ? t("attendance.rest.paidNote", "counts as work")
@@ -212,7 +209,7 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
                 <Check className="h-3.5 w-3.5 text-emerald-600" />
                 {i.name}
               </span>
-              <span className="tabular-nums text-muted-foreground">{hm(i.durationMinutes)}</span>
+              <span className="tabular-nums text-muted-foreground">{formatDuration(i.durationMinutes)}</span>
             </li>
           ))}
           {missed.map((i) => (

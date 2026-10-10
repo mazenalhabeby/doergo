@@ -164,7 +164,7 @@ function HeaderSkeleton({ centered }: { centered?: boolean }) {
   )
 }
 
-export interface DashboardPageSkeletonProps {
+interface DashboardPageSkeletonProps {
   /**
    * Which of the dashboard's layouts to stand in for. They differ structurally,
    * so a single skeleton would guarantee a jump for two of the three.

@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { RefreshCw, CheckCircle2, Check, X } from "lucide-react"
 import { type TimeEntry } from "@/lib/api"
-import { formatDurationMinutes } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { toDate, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
 import { useTimeFormat } from "@/hooks"
-import { workedMinutes } from "@hbcfield/shared/client"
+import { formatDuration, personName, workedMinutes } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { recordedOffline } from "@/lib/attendance-status"
 
@@ -139,7 +138,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 <TableCell>
                   <ClockCell at={entry.clockOutAt} tz={entry.timezone ?? entry.location?.timezone} hour12={hour12} locale={locale} />
                 </TableCell>
-                <TableCell className="font-medium tabular-nums">{formatDurationMinutes(workedMinutes(entry))}</TableCell>
+                <TableCell className="font-medium tabular-nums">{formatDuration(workedMinutes(entry))}</TableCell>
                 <TableCell>
                   <ApprovalCell entry={entry} />
                 </TableCell>
@@ -183,7 +182,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
             <DialogDescription>
               {rejectTarget && (
                 <>
-                  {rejectTarget.user?.firstName} {rejectTarget.user?.lastName} ·{" "}
+                  {personName(rejectTarget.user)} ·{" "}
                   {format(toDate(rejectTarget.clockInAt), "MMM d, yyyy")}
                 </>
               )}

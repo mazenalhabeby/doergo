@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AlertTriangle, ExternalLink, Loader2, Trash2 } from "lucide-react"
@@ -8,6 +9,7 @@ import { documentsApi, type DraftDocumentRow } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { dateLocale } from "@/lib/format-date"
 
 const MONTHS_KEY = [
   "january", "february", "march", "april", "may", "june",
@@ -134,12 +136,12 @@ export function StagedDrafts({
                 {d.title}
               </p>
               <p className="truncate text-[11.5px] text-slate-600 dark:text-slate-400">
-                {d.user.firstName} {d.user.lastName} · {d.type.label} · {period(d)}
+                {personName(d.user)} · {d.type.label} · {period(d)}
               </p>
             </div>
 
             <span className="whitespace-nowrap text-[11.5px] tabular-nums text-slate-500 dark:text-slate-400">
-              {new Date(d.createdAt).toLocaleDateString()}
+              {new Date(d.createdAt).toLocaleDateString(dateLocale())}
             </span>
 
             <div className="flex items-center gap-1">

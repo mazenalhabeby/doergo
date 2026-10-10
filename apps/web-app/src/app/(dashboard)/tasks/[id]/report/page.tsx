@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { AlertCircle, Download, FileQuestion, Loader2, RefreshCw } from "lucide-react"
-import { CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReport, type TaskReportCopy } from "@hbcfield/shared/client"
+import { personName, CLIENT_COPY_OPTIONS, type ClientCopyOption, type TaskReport, type TaskReportCopy } from "@hbcfield/shared/client"
 
 import { tasksApi } from "@/lib/api"
 import { notify } from "@/lib/toast"
@@ -113,7 +113,7 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   const headAvailable = useMemo(() => (report ? availableHeadToggles(report, tt) : null), [report, tt])
   const visible = useMemo(() => (report ? visibleSections(report, off) : []), [report, off])
   const prices = report ? showPrices(report, off) : false
-  const generatedBy = [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+  const generatedBy = personName(user)
 
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [building, setBuilding] = useState(false)

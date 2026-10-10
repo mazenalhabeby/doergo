@@ -6,7 +6,6 @@ import {
   type TaskReportEvent,
   type TaskReportIssuer,
   type TaskReportIssuerOption,
-  type TaskReportPerson,
   type TaskReportPhoto,
   type TaskReportRoute,
   type TaskReportSignature,
@@ -14,10 +13,12 @@ import {
   type TaskReportSection,
   type TaskReportStatus,
   formatDistance,
+  personName,
 } from "@hbcfield/shared/client"
 
 import { dayKeyOf, fileNamePart, pdfFileName } from "@/lib/pdf-filename"
 import { getStatusConfig } from "@/lib/constants"
+import { keys } from "@/lib/query-keys"
 import { EXCLUDED_EVENTS, getEventConfig, getEventDescription } from "../../_components/activity-events"
 
 /**
@@ -38,7 +39,7 @@ export type Translate = (key: string, options?: Record<string, unknown>) => stri
  * (comments + handover notes), and part prices is a switch on a column, not a
  * section.
  */
-export const REPORT_TOGGLES = [
+const REPORT_TOGGLES = [
   "time",
   "photos",
   "checklist",
@@ -55,7 +56,7 @@ export const REPORT_TOGGLES = [
 export type ReportToggle = (typeof REPORT_TOGGLES)[number]
 
 /** The numbered sections of the document, in print order (the header is not numbered). */
-export const NUMBERED_SECTIONS = [
+const NUMBERED_SECTIONS = [
   "request",
   "work",
   "time",
@@ -90,12 +91,12 @@ const SECTION_TOGGLE: Partial<Record<NumberedSection, ReportToggle>> = {
 }
 
 /** Does the bundle carry part prices (the office copy, or a client copy with them added back)? */
-export function hasPartPrices(r: TaskReport): boolean {
+function hasPartPrices(r: TaskReport): boolean {
   return (r.parts ?? []).some((p) => p.unitPrice != null || p.lineTotal != null)
 }
 
 /** Does a section have anything to print? A present-but-empty list is not worth a heading. */
-export function sectionHasContent(r: TaskReport, s: NumberedSection): boolean {
+function sectionHasContent(r: TaskReport, s: NumberedSection): boolean {
   if (s !== "request" && !r.meta.sections.includes(s)) return false
   switch (s) {
     case "request":
@@ -191,8 +192,8 @@ export function normalizeInclude(include: readonly ClientCopyOption[]): ClientCo
  */
 export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: readonly ClientCopyOption[], issuer: string | null = null) {
   return copy === "client"
-    ? (["task-full-report", taskId, copy, normalizeInclude(include).join(","), issuer ?? ""] as const)
-    : (["task-full-report", taskId, copy, issuer ?? ""] as const)
+    ? keys.taskExtras.fullReport(taskId, copy, normalizeInclude(include).join(","), issuer ?? "")
+    : keys.taskExtras.fullReport(taskId, copy, issuer ?? "")
 }
 
 /** The "Issued by" choice remembered for this workspace — only while it is still one of the choices. */
@@ -213,15 +214,15 @@ export function saveIssuerChoice(spaceId: string | null | undefined, issuer: str
  * Display switches on what the reader already has — nothing here changes what
  * the server sent. The company NAME always prints.
  */
-export const HEAD_TOGGLE_GROUPS = {
+const HEAD_TOGGLE_GROUPS = {
   letterhead: ["logo", "address", "contact", "registration"],
   labels: ["status", "priority", "taskType", "origin"],
   facts: ["client", "site", "equipment", "workspace", "due", "started", "finished", "worked"],
 } as const
 export type HeadToggleGroup = keyof typeof HEAD_TOGGLE_GROUPS
 export type HeadToggle = (typeof HEAD_TOGGLE_GROUPS)[HeadToggleGroup][number]
-export type FactKey = (typeof HEAD_TOGGLE_GROUPS)["facts"][number]
-export type PillKey = (typeof HEAD_TOGGLE_GROUPS)["labels"][number]
+type FactKey = (typeof HEAD_TOGGLE_GROUPS)["facts"][number]
+type PillKey = (typeof HEAD_TOGGLE_GROUPS)["labels"][number]
 export const HEAD_TOGGLES: readonly HeadToggle[] = [
   ...HEAD_TOGGLE_GROUPS.letterhead, ...HEAD_TOGGLE_GROUPS.labels, ...HEAD_TOGGLE_GROUPS.facts,
 ]
@@ -253,7 +254,7 @@ export function letterhead(issuer: TaskReportIssuer, off: ReadonlySet<HeadToggle
   }
 }
 
-export interface ReportPill { key: PillKey; text: string; /** status only: the flow's colour */ hex: string | null }
+interface ReportPill { key: PillKey; text: string; /** status only: the flow's colour */ hex: string | null }
 
 /** The labels under the title, in order — each only when it has words and is switched on. */
 export function reportPills(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Translate): ReportPill[] {
@@ -267,7 +268,7 @@ export function reportPills(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Tran
   return all.filter((p) => p.text && !off.has(p.key))
 }
 
-export interface ReportFact { key: FactKey; label: string; value: string; sub: string | null }
+interface ReportFact { key: FactKey; label: string; value: string; sub: string | null }
 
 /**
  * The detail boxes, in grid order. A box with nothing to say is not printed,
@@ -317,11 +318,6 @@ export function availableHeadToggles(r: TaskReport, t: Translate): Record<HeadTo
 
 // ─── words and numbers ──────────────────────────────────────────────────────
 
-export function personName(p: TaskReportPerson | null | undefined): string {
-  if (!p) return ""
-  return [p.firstName, p.lastName].filter(Boolean).join(" ").trim()
-}
-
 /** Minutes as people read a timesheet: "9 h 34 min", "45 min", "3 h". */
 export function formatReportMinutes(minutes: number | null | undefined, t: Translate): string {
   const total = Math.max(0, Math.round(Number(minutes) || 0))
@@ -350,7 +346,7 @@ export function formatReportDateTime(iso: string | null | undefined, tz: string 
 }
 
 /** A day key in the workspace's zone ("2026-10-09"). */
-export function zonedDayKey(iso: string | null | undefined, tz: string | null | undefined): string | null {
+function zonedDayKey(iso: string | null | undefined, tz: string | null | undefined): string | null {
   const wall = utcToZonedInput(iso ?? null, tz ?? null)
   return wall ? wall.slice(0, 10) : null
 }
@@ -377,7 +373,7 @@ export function workSteps(text: string | null | undefined): string[] | null {
 
 // ─── photos ─────────────────────────────────────────────────────────────────
 
-export interface PhotoPair {
+interface PhotoPair {
   before: TaskReportPhoto
   after: TaskReportPhoto
 }
@@ -418,7 +414,7 @@ export function isImageFile(f: { mimeType: string | null; fileName: string }): b
 
 // ─── the history ────────────────────────────────────────────────────────────
 
-export interface HistoryDay {
+interface HistoryDay {
   day: string
   items: Array<{ event: TaskReportEvent; time: string }>
 }
@@ -449,7 +445,7 @@ export function statusLabel(key: string | null | undefined, statuses: readonly T
 }
 
 /** A step's colour from the job's own flow, else the built-in one. */
-export function statusHex(key: string, statuses: readonly TaskReportStatus[]): string {
+function statusHex(key: string, statuses: readonly TaskReportStatus[]): string {
   return statuses.find((s) => s.key === key)?.color || getStatusConfig(key).hex
 }
 
@@ -517,7 +513,7 @@ export function reportFileName(r: TaskReport, jobWord: string): string {
 }
 
 /** "Created from a client request #REF", from a recurring template, as a subtask of … */
-export function originLabel(r: TaskReport, t: Translate): string | null {
+function originLabel(r: TaskReport, t: Translate): string | null {
   const o = r.request.origin
   switch (o.kind) {
     case "CUSTOMER_PORTAL":
@@ -535,13 +531,6 @@ export function partsTotal(parts: NonNullable<TaskReport["parts"]>): number | nu
   const priced = parts.filter((p) => p.lineTotal != null)
   if (!priced.length) return null
   return Math.round(priced.reduce((s, p) => s + (p.lineTotal ?? 0), 0) * 100) / 100
-}
-
-export function formatFileSize(bytes: number | null | undefined, locale: string): string {
-  if (bytes == null || !Number.isFinite(bytes)) return ""
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / 1024 / 1024).toLocaleString(locale, { maximumFractionDigits: 1 })} MB`
 }
 
 /** "PDF", "DOCX", "JPG" — the badge on a document card. */

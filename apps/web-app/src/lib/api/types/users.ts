@@ -1,23 +1,5 @@
 
 
-// Tasks API methods
-// User/Worker types
-export interface Worker {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  organizationId: string;
-  // Mobile Access Profile (JSON) — whether this worker can receive/see tasks.
-  enabledModules?: unknown;
-  lastLocation?: {
-    lat: number;
-    lng: number;
-    accuracy: number;
-    updatedAt: string;
-  } | null;
-}
-
 
 // Users API methods
 export interface InboxNotification {

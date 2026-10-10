@@ -40,7 +40,7 @@ import {
  */
 
 /** "US dollar" in the reader's language — the code stays beside it, so a missing name never hides which one it is. */
-export function currencyName(code: string, locale: string): string {
+function currencyName(code: string, locale: string): string {
   try {
     return new Intl.DisplayNames([locale], { type: "currency" }).of(code) ?? code
   } catch {
@@ -49,7 +49,7 @@ export function currencyName(code: string, locale: string): string {
 }
 
 /** "US dollar (USD, $)", or "Swiss franc (CHF)" when the symbol is the code. */
-export function currencyLabel(code: string, locale: string): string {
+function currencyLabel(code: string, locale: string): string {
   const sym = currencySymbol(code, locale)
   return sym && sym !== code ? `${currencyName(code, locale)} (${code}, ${sym})` : `${currencyName(code, locale)} (${code})`
 }

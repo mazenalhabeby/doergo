@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -57,7 +58,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import { dateLocale } from "@/lib/format-date"
+import { formatMediumDateTime } from "@/lib/format-date"
 
 const STATUS_OPTIONS_KEYS = [
   { value: "all", labelKey: "common.allStatuses" },
@@ -91,15 +92,6 @@ function getStatusBadge(status: JoinRequestStatus, t: (key: string) => string) {
   }
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(dateLocale(), {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  })
-}
 
 export default function JoinRequestsPage() {
   const { t } = useTranslation()
@@ -131,7 +123,7 @@ export default function JoinRequestsPage() {
 
   // Fetch join requests
   const { data: requestsData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["join-requests", queryParams],
+    queryKey: keys.people.joinRequests(queryParams),
     queryFn: () => joinRequestsApi.list(queryParams),
   })
 
@@ -141,12 +133,12 @@ export default function JoinRequestsPage() {
       joinRequestsApi.approve(id, data),
     onSuccess: () => {
       notify.success(t("joinRequests.approveDialog.approvedSuccessfully"))
-      queryClient.invalidateQueries({ queryKey: ["join-requests"] })
+      queryClient.invalidateQueries({ queryKey: keys.people.joinRequests() })
       // Approving ADDS a member — the roster and the contact directory are now
       // stale too. Without this the new person was missing from /members for up to
       // the global 60s staleTime (audit M-D3).
       queryClient.invalidateQueries({ queryKey: keys.members.lists() })
-      queryClient.invalidateQueries({ queryKey: ["orgContacts"] })
+      queryClient.invalidateQueries({ queryKey: keys.people.contacts() })
       closeApproveDialog()
     },
     onError: (error: Error) => {
@@ -160,7 +152,7 @@ export default function JoinRequestsPage() {
       joinRequestsApi.reject(id, data),
     onSuccess: () => {
       notify.success(t("joinRequests.rejectDialog.rejectedSuccessfully"))
-      queryClient.invalidateQueries({ queryKey: ["join-requests"] })
+      queryClient.invalidateQueries({ queryKey: keys.people.joinRequests() })
       closeRejectDialog()
     },
     onError: (error: Error) => {
@@ -323,7 +315,7 @@ export default function JoinRequestsPage() {
                     <TableCell>
                       <span className="font-medium text-foreground">
                         {req.user
-                          ? `${req.user.firstName} ${req.user.lastName}`
+                          ? personName(req.user)
                           : "-"}
                       </span>
                     </TableCell>
@@ -344,7 +336,7 @@ export default function JoinRequestsPage() {
                     <TableCell>{getStatusBadge(req.status, t)}</TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {formatDate(req.createdAt)}
+                        {formatMediumDateTime(req.createdAt)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -418,7 +410,7 @@ export default function JoinRequestsPage() {
             <DialogTitle>{t("joinRequests.approveDialog.title")}</DialogTitle>
             <DialogDescription>
               {selectedRequest?.user && t("joinRequests.approveDialog.description", {
-                name: `${selectedRequest.user.firstName} ${selectedRequest.user.lastName}`,
+                name: personName(selectedRequest.user),
                 email: selectedRequest.user.email,
               })}
             </DialogDescription>
@@ -487,7 +479,7 @@ export default function JoinRequestsPage() {
             <DialogTitle>{t("joinRequests.rejectDialog.title")}</DialogTitle>
             <DialogDescription>
               {selectedRequest?.user && t("joinRequests.rejectDialog.description", {
-                name: `${selectedRequest.user.firstName} ${selectedRequest.user.lastName}`,
+                name: personName(selectedRequest.user),
                 email: selectedRequest.user.email,
               })}
             </DialogDescription>

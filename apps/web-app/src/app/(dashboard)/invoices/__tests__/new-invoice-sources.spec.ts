@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-import { code, createScreen } from "./_screen"
+import { code, createScreen, newPage } from "./_screen"
 
 /** Where the locale files live, for the two assertions that read them. */
 const ROOT = path.join(__dirname, "..")
@@ -20,21 +20,20 @@ const ROOT = path.join(__dirname, "..")
 */
 
 
-const PAGE = "new/page.tsx"
-
 /*
-  ⚠️ `screen()`, not `code(PAGE)`, wherever the property is about what a person
+  ⚠️ `screen()`, not `newPage()`, wherever the property is about what a person
   SEES. The shell, the fields and the document live in `_components/` now so
   that creating an invoice and correcting one are the same screen; a guard
   reading only the page file would have gone quietly green on markup it can no
-  longer see. `code(PAGE)` stays for the things that genuinely belong to THIS
-  page — its sources, its gather, its grouping.
+  longer see. `newPage()` stays for the things that genuinely belong to THIS
+  page — its sources, its gather, its grouping — and reads `new/page.tsx` with
+  the `new/_components` and `new/_lib` pieces it was split into.
 */
 const screen = createScreen
 
 describe("where the work comes from", () => {
   it("offers all three sources", () => {
-    const src = code(PAGE)
+    const src = newPage()
     for (const key of ["invoices.create.fromSpace", "invoices.create.fromClient", "invoices.create.fromNothing"]) {
       expect(src).toContain(key)
     }
@@ -42,7 +41,7 @@ describe("where the work comes from", () => {
 
   it("no longer depends on a URL parameter to be usable", () => {
     // The workspace is picked IN the form; the query string only seeds it.
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toContain("setPickedSpaceId")
     expect(src).toMatch(/spaceIdFromUrl/)
   })
@@ -62,7 +61,7 @@ describe("where the work comes from", () => {
 
       What matters is the ternary: one branch each, never both.
     */
-    const src = code(PAGE)
+    const src = newPage()
     const chain = src.match(/gatherSource\s*=[\s\S]{0,500}?:\s*null/)?.[0] ?? ""
     expect(chain).toMatch(/source === "space" && spaceId/)
     expect(chain).toMatch(/source === "client" && customerId/)
@@ -75,7 +74,7 @@ describe("where the work comes from", () => {
   it("re-seeds when the source changes", () => {
     // `seeded` stops the form overwriting what somebody typed — and also meant
     // picking a SECOND workspace filled in nothing and looked broken.
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/lastSeedKey[\s\S]{0,200}setSeeded\(false\)/)
   })
 })
@@ -92,7 +91,7 @@ describe("only a workspace that is a customer can be billed", () => {
     agree.
   */
   it("filters the picker to customer workspaces", () => {
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/billableSpaces[\s\S]{0,200}kind === "CUSTOMER"/)
     // Archived is finished; Remote is not a place.
     expect(src).toMatch(/isActive !== false/)
@@ -100,13 +99,13 @@ describe("only a workspace that is a customer can be billed", () => {
   })
 
   it("renders the filtered list, not the raw one", () => {
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toContain("{billableSpaces.map(")
     expect(src).not.toMatch(/\{\(spacePage\?\.data \?\? \[\]\)\.map/)
   })
 
   it("says why the list is empty instead of showing an empty dropdown", () => {
-    expect(code(PAGE)).toContain("invoices.create.noCustomerSpaces")
+    expect(newPage()).toContain("invoices.create.noCustomerSpaces")
   })
 
   it("the SERVER refuses one too — the list is not the rule", () => {
@@ -126,13 +125,13 @@ describe("the CRM, when there is one", () => {
   it("is detected from the session, not from a request", () => {
     // It arrives with the user, so it costs nothing, cannot disagree with the
     // navigation, and needs no reload.
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/spaceModules === undefined/)
     expect(src).toContain('.includes("crm")')
   })
 
   it("hides the client source entirely when there is no CRM", () => {
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/hasCrm \?[\s\S]{0,120}fromClient/)
   })
 
@@ -147,7 +146,7 @@ describe("the CRM, when there is one", () => {
       is a name, and it says WHEN it will happen. Gating it on the name meant
       the answer to "can I do this at all" was "type something and find out".
     */
-    const src = code(PAGE)
+    const src = newPage()
     /*
       The option's visibility must NOT depend on what has been typed.
 
@@ -175,7 +174,7 @@ describe("the CRM, when there is one", () => {
       proximity match broke the moment the block between them grew, which is a
       test failing on layout rather than on behaviour.
     */
-    const gate = code(PAGE).match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
+    const gate = newPage().match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
     expect(gate).toBe('hasCrm && mayAddClient && source === "none"')
   })
 
@@ -184,7 +183,7 @@ describe("the CRM, when there is one", () => {
       `crmCaps` is the SERVER's own answer about who may create a client, so the
       offer cannot appear for somebody the server would then refuse.
     */
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/crmCaps\?\.manage|crmCaps\?\.editInfo/)
     expect(src).toMatch(/hasCrm && mayAddClient/)
   })
@@ -198,13 +197,13 @@ describe("the CRM, when there is one", () => {
       exists as a customer workspace, and adding it again makes a second version
       of one relationship for somebody to keep in step.
     */
-    const gate = code(PAGE).match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
+    const gate = newPage().match(/hasCrm && mayAddClient && source [!=]== "\w+"/)?.[0]
     expect(gate).toBe('hasCrm && mayAddClient && source === "none"')
   })
 
   it("saves the client after the invoice, and never instead of it", () => {
     // A duplicate-name refusal must not throw away a finished invoice.
-    const src = code(PAGE)
+    const src = newPage()
     const invoiceDone = src.indexOf("invoices.create.created")
     const clientSave = src.indexOf("customersApi.create")
     expect(invoiceDone).toBeGreaterThan(-1)
@@ -246,7 +245,7 @@ describe("how the labour is written up", () => {
     about the price.
   */
   it("offers all three", () => {
-    const src = code(PAGE)
+    const src = newPage()
     for (const k of ["groupByTask", "groupByMember", "groupByBoth"]) {
       expect(src).toContain(`invoices.create.${k}`)
     }
@@ -261,7 +260,7 @@ describe("how the labour is written up", () => {
       The preview renders the very array the mutation sends — not a rendering of
       the invoice, the invoice.
     */
-    const src = code(PAGE)
+    const src = newPage()
     // The document is handed `documentItems`, which is built FROM labourLines —
     // so changing the grouping changes the rows on the page.
     expect(src).toMatch(/items=\{documentItems\}/)
@@ -274,7 +273,7 @@ describe("how the labour is written up", () => {
       built the lines with another. Two arithmetics over one invoice is how a
       displayed total quietly stops matching the document it produced.
     */
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toMatch(/labourSubtotal[\s\S]{0,80}labourTotalCents\(labourLines\)/)
     // The payload maps off the very list the sheet rendered.
     expect(src).toMatch(/for \(const row of documentItems\)/)
@@ -293,7 +292,7 @@ describe("how the labour is written up", () => {
       line multiplies out is exactly the sort that dies quietly when a screen
       keeps its own copy of the rules.
     */
-    const src = code(PAGE)
+    const src = newPage()
     expect(src).toContain("buildLabourLines(")
     // The old per-entry line construction must be gone, not merely bypassed.
     expect(src).not.toMatch(/description: `\$\{e\.taskTitle\}[\s\S]{0,80}quantity: e\.hours/)
@@ -301,7 +300,7 @@ describe("how the labour is written up", () => {
 
   it("only offers it once there is labour to group", () => {
     // A control with nothing to act on is a control somebody reads as broken.
-    expect(code(PAGE)).toMatch(/entries\.some\(\(e\) => e\.include && e\.hours > 0\)/)
+    expect(newPage()).toMatch(/entries\.some\(\(e\) => e\.include && e\.hours > 0\)/)
   })
 
   it("is translated in all five languages", () => {
@@ -351,7 +350,7 @@ describe("the page has a shape", () => {
     expect(bar.indexOf("{title}")).toBeGreaterThan(sticky)
     expect(bar.indexOf("{children}")).toBeGreaterThan(bar.indexOf("{title}"))
     // And the page is the thing that names it.
-    expect(code(PAGE)).toMatch(/title=\{t\("invoices\.create\.title"\)\}/)
+    expect(newPage()).toMatch(/title=\{t\("invoices\.create\.title"\)\}/)
     expect(src()).toMatch(/lg:sticky/)
   })
 
@@ -438,7 +437,7 @@ describe("the document is the document", () => {
       iterated again by the mutation — so "what is shown" and "what is sent"
       cannot be two different computations.
     */
-    expect(code(PAGE)).toMatch(/items=\{documentItems\}/)
+    expect(newPage()).toMatch(/items=\{documentItems\}/)
     expect(code("_components/invoice-document.tsx")).toMatch(/items\.map\(/)
     expect(s).toMatch(/for \(const row of documentItems\)/)
   })

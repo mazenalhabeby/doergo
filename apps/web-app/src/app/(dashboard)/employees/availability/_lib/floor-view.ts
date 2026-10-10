@@ -1,3 +1,4 @@
+import { formatDuration } from "@hbcfield/shared/client"
 import type { FloorPerson, FloorSpace } from "@/lib/api"
 
 /**
@@ -11,10 +12,10 @@ import type { FloorPerson, FloorSpace } from "@/lib/api"
  */
 export type FloorView = "lanes" | "exceptions"
 
-export const FLOOR_VIEW_STORAGE_KEY = "hbcfield-floor-view"
+const FLOOR_VIEW_STORAGE_KEY = "hbcfield-floor-view"
 
 /** What a first-time reader sees, and the fallback when storage is unreadable. */
-export const DEFAULT_FLOOR_VIEW: FloorView = "exceptions"
+const DEFAULT_FLOOR_VIEW: FloorView = "exceptions"
 
 export function readStoredFloorView(): FloorView {
   if (typeof window === "undefined") return DEFAULT_FLOOR_VIEW
@@ -41,9 +42,9 @@ export function storeFloorView(v: FloorView): void {
    ========================================================================== */
 
 /** States that mean "was due at work today". */
-export const EXPECTED_STATES: FloorPerson["state"][] = ["busy", "working", "break", "expected"]
+const EXPECTED_STATES: FloorPerson["state"][] = ["busy", "working", "break", "expected"]
 /** States that mean "is at work now". A break has already arrived. */
-export const PRESENT_STATES: FloorPerson["state"][] = ["busy", "working", "break"]
+const PRESENT_STATES: FloorPerson["state"][] = ["busy", "working", "break"]
 
 export const isExpected = (p: FloorPerson) => EXPECTED_STATES.includes(p.state)
 export const isPresent = (p: FloorPerson) => PRESENT_STATES.includes(p.state)
@@ -78,7 +79,7 @@ export function tally(space: FloorSpace): FloorTally {
  * "due 08:00, two and a half hours ago" is, and somebody due in ten minutes is
  * not an incident at all. The colour does the triage before a word is read.
  */
-export type LateTone = "soon" | "slight" | "late"
+type LateTone = "soon" | "slight" | "late"
 
 export function lateness(p: FloorPerson): { minutes: number; tone: LateTone } | null {
   if (p.state !== "expected" || p.lateMinutes == null) return null
@@ -86,16 +87,13 @@ export function lateness(p: FloorPerson): { minutes: number; tone: LateTone } | 
   return { minutes: m, tone: m >= 45 ? "late" : m >= 5 ? "slight" : "soon" }
 }
 
-/** "2h 42m" / "18m" / "in 12m". Written here so both layouts phrase it alike. */
+/** "2h 42m" / "18m" — early or late alike. Kept here so both layouts phrase it alike. */
 export function lateLabel(minutes: number): string {
-  const abs = Math.abs(minutes)
-  const h = Math.floor(abs / 60)
-  const m = abs % 60
-  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`
+  return formatDuration(Math.abs(minutes))
 }
 
 /** Sort order within a group: the most useful person first. */
-export const STATE_ORDER: Record<FloorPerson["state"], number> = {
+const STATE_ORDER: Record<FloorPerson["state"], number> = {
   expected: 0, working: 1, busy: 2, break: 3, leave: 4, rest: 5,
 }
 

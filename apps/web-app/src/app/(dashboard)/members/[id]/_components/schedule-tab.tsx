@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useTimeFormat } from "@/hooks"
-import { invalidateSchedule } from "@/lib/query-keys"
+import { keys, invalidateSchedule } from "@/lib/query-keys"
 
 const DAY_NAME_KEYS = [
   "technicians.scheduleTab.days.sunday",
@@ -91,7 +91,7 @@ export function ScheduleTab({ employeeId, canManage }: ScheduleTabProps) {
   )
 
   const { data, isLoading } = useQuery({
-    queryKey: ["employeeSchedule", employeeId],
+    queryKey: keys.schedules.member(employeeId),
     queryFn: () => employeesApi.getSchedule(employeeId),
     enabled: !!employeeId,
     staleTime: 30_000, // avoid refetching the schedule on every tab re-open

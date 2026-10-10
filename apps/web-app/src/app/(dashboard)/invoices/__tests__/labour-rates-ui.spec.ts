@@ -1,6 +1,8 @@
 import fs from "fs"
 import path from "path"
 
+import { newPage } from "./_screen"
+
 /*
   Two rates on screen — and only where both are true.
 
@@ -14,12 +16,19 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8")
 const code = (p: string) =>
   read(p).replace(/(^|[\s{])\/\*[\s\S]*?\*\//g, "$1").replace(/(^|[^:/])\/\/[^\n]*/g, "$1")
 
-const DRAFT = "new/page.tsx"
 const MEMBER = "../members/_components/edit-member-dialog.tsx"
+/** The member editor's pieces — the screen is the entry PLUS this folder. */
+const MEMBER_DIR = "../members/_components/edit-member-dialog"
+/** Where the cost rates (and the external-member guard around them) live. */
+const MEMBER_RATES = `${MEMBER_DIR}/employment-fields.tsx`
+const memberScreen = () =>
+  [MEMBER, ...fs.readdirSync(path.join(ROOT, MEMBER_DIR)).sort().map((f) => `${MEMBER_DIR}/${f}`)]
+    .map(code)
+    .join("\n")
 
 describe("the invoice draft", () => {
   it("shows margin only when the data says two rates AND the person may see cost", () => {
-    const src = code(DRAFT)
+    const src = newPage()
     expect(src).toMatch(/showMargin =[\s\S]{0,160}canViewLabourCost/)
     expect(src).toMatch(/showMargin =[\s\S]{0,160}twoRates/)
   })
@@ -31,7 +40,7 @@ describe("the invoice draft", () => {
       question the boundary exists to control — and it would keep working after
       the strip started removing them.
     */
-    const src = code(DRAFT)
+    const src = newPage()
     expect(src).not.toMatch(/costRate\s*=\s*Number\(/)
     // The per-person panel ADDS the cost each line arrived with; it never
     // multiplies a workspace line's rate itself.
@@ -51,7 +60,7 @@ describe("the invoice draft", () => {
       a loop here, so this asserts the rate reaches it rather than how the loop
       was written.
     */
-    const src = code(DRAFT)
+    const src = newPage()
     expect(src).toMatch(/billRateCents: e\.billRateCents/)
     expect(src).toContain("buildLabourLines(")
   })
@@ -59,7 +68,7 @@ describe("the invoice draft", () => {
   it("sends the rates with the line, so an issued invoice stops moving", () => {
     // The ladder answers "what is the rate now"; a paid invoice has to keep
     // answering "what was it then".
-    const src = code(DRAFT)
+    const src = newPage()
     expect(src).toMatch(/billRateCents: line\.billRateCents/)
     expect(src).toMatch(/costRateCents: line\.costRateCents/)
     expect(src).toMatch(/billedHours: line\.billedHours/)
@@ -68,7 +77,7 @@ describe("the invoice draft", () => {
 })
 
 describe("the member editor carries COST, and only cost", () => {
-  const src = () => code(MEMBER)
+  const src = () => memberScreen()
 
   it("has no client-facing rate on it", () => {
     /*
@@ -137,8 +146,8 @@ describe("the client-facing rate lives on the assignment", () => {
     // The table's billing cell: an external member shows a dash, never a rate.
     expect(s).toMatch(/\{external \? <span className="text-muted-foreground">—<\/span> : \(\s*<div className="inline-flex flex-col items-end gap-1">/)
 
-    const member = code(MEMBER)
-    const guard = member.indexOf("{!isExternalMember && (\n            <>")
+    const member = code(MEMBER_RATES)
+    const guard = member.search(/\{!isExternalMember && \(\n\s*<>/)
     expect(guard).toBeGreaterThan(-1)
     expect(member.indexOf("costRateLabel")).toBeGreaterThan(guard)
 

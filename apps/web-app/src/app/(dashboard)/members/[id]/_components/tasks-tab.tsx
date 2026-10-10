@@ -6,19 +6,10 @@ import { useTranslation } from "react-i18next"
 
 import { useTimeFormat } from "@/hooks"
 import { type Task } from "@/lib/api"
-import { getStatusConfig } from "@/lib/constants"
+import { getStatusConfig, getPriorityConfig } from "@/lib/constants"
 
 interface TasksTabProps {
   tasks: Task[] | undefined
-}
-
-// Priority accent — a small colored dot + label, consistent with the app's
-// LOW/MEDIUM/HIGH/URGENT palette.
-const PRIORITY_HEX: Record<string, string> = {
-  LOW: "#94a3b8",
-  MEDIUM: "#3b82f6",
-  HIGH: "#f97316",
-  URGENT: "#dc2626",
 }
 
 export function TasksTab({ tasks }: TasksTabProps) {
@@ -43,7 +34,7 @@ export function TasksTab({ tasks }: TasksTabProps) {
         <div className="divide-y divide-border/60">
           {tasks.map((task: Task) => {
             const statusConfig = getStatusConfig(task.status)
-            const priorityHex = PRIORITY_HEX[task.priority ?? ""] ?? "#94a3b8"
+            const priority = task.priority ? getPriorityConfig(task.priority) : null
             return (
               <button
                 key={task.id}
@@ -54,9 +45,9 @@ export function TasksTab({ tasks }: TasksTabProps) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5 capitalize">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: priorityHex }} />
-                      {task.priority?.toLowerCase() || "—"}
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: priority?.hex ?? "#94a3b8" }} />
+                      {priority?.label ?? "—"}
                     </span>
                     <span className="hidden sm:inline">
                       {t("technicians.tasksTab.dueDateColumn")}: {task.dueDate ? formatDate(task.dueDate) : "—"}

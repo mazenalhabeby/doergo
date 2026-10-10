@@ -12,7 +12,7 @@
 /** The cap every bulk action uses. */
 export const BULK_CONCURRENCY = 4
 
-export type Settled<R> = PromiseSettledResult<R>
+type Settled<R> = PromiseSettledResult<R>
 
 /** Results in the SAME order as `items`, whatever order they finished in. */
 export async function mapWithConcurrency<T, R>(

@@ -6,7 +6,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { AlertTriangle, Check, Gauge, Loader2, Receipt, Trash2, X } from "lucide-react"
 
 import {
-  formatCents, kindMeters, logTypesForKind, findLogType,
+  formatCents, kindMeters, logTypesForKind, findLogType, personName,
   type KindShape,
 } from "@hbcfield/shared/client"
 import { assetsApi, type AssetLogDue, type AssetLogEntry } from "@/lib/api"
@@ -18,19 +18,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LogEntryDialog } from "./log-entry-dialog"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /** Every query this panel reads, so a write can refresh exactly them. */
-export const logbookKeys = (assetId: string) => [
-  ["asset-log", assetId],
-  ["asset-log-summary", assetId],
-  ["asset", assetId],
-  ["asset-money", assetId],
-  ["asset-custody", assetId],
-  ["asset-expenses-pending"],
+const logbookKeys = (assetId: string) => [
+  keys.assets.log(assetId),
+  keys.assets.logSummary(assetId),
+  keys.assets.record(assetId),
+  keys.assets.money(assetId),
+  keys.assets.custody(assetId),
+  keys.assets.expensesPending(),
 ] as const
-
-const personName = (p?: { firstName?: string; lastName?: string; name?: string } | null) =>
-  p ? (p.name ?? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()) : ""
 
 /**
  * The logbook: what has been done to this thing, by whom, and what comes next.
@@ -55,12 +54,12 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
   const meters = useMemo(() => kindMeters(shape.logTypes), [shape])
 
   const summaryQ = useQuery({
-    queryKey: ["asset-log-summary", assetId],
+    queryKey: keys.assets.logSummary(assetId),
     queryFn: () => assetsApi.getLogSummary(assetId),
   })
 
   const logQ = useInfiniteQuery({
-    queryKey: ["asset-log", assetId, typeFilter, authorFilter],
+    queryKey: keys.assets.log(assetId, typeFilter, authorFilter),
     queryFn: ({ pageParam }) =>
       assetsApi.getLog(assetId, {
         logType: typeFilter || undefined,
@@ -73,7 +72,7 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
   })
 
   const refresh = () => {
-    for (const key of logbookKeys(assetId)) qc.invalidateQueries({ queryKey: key as unknown as string[] })
+    for (const key of logbookKeys(assetId)) qc.invalidateQueries({ queryKey: key })
   }
 
   const entries = logQ.data?.pages.flatMap((p) => p.entries) ?? []
@@ -382,7 +381,7 @@ function EntryRow({
             )}
           </p>
           <p className="truncate text-xs text-muted-foreground">
-            {new Date(entry.occurredAt).toLocaleDateString()}
+            {new Date(entry.occurredAt).toLocaleDateString(dateLocale())}
             {entry.author ? ` · ${personName(entry.author)}` : ""}
             {entry.note ? ` · ${entry.note}` : ""}
           </p>

@@ -18,7 +18,8 @@ import {
 import { fetchAllPages } from "@/lib/paginate"
 import { assigneeIds } from "@/lib/task-assignment"
 
-import { getTodayString, isClockedIn } from "../_components/helpers"
+import { isClockedIn } from "../_components/helpers"
+import { todayKey } from "@hbcfield/shared/client"
 import type { AttendanceFacts } from "./build-workspace-boxes"
 import { buildPresenceDirectory } from "./presence-directory"
 import { useAuth } from "@/contexts/auth-context"
@@ -54,7 +55,7 @@ const PRESENCE_REFETCH_MS = 60_000
 /** Stable empty default — a `= []` literal would be a new identity each render. */
 const NO_MEMBERS: OrgMember[] = []
 
-export interface DashboardUser {
+interface DashboardUser {
   id?: string
   role?: string
   canViewAllTasks?: boolean
@@ -129,7 +130,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // midnight still counts — a single-day query would drop them after the date
   // rolls over. Employees can't read this (403); they fetch presence per space.
   const { data: attendanceData } = useQuery({
-    queryKey: ["attendance-active"],
+    queryKey: keys.attendance.active(),
     queryFn: () => attendanceApi.getActiveEntries(),
     staleTime: 30000,
     enabled: canReadAttendance,
@@ -141,7 +142,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // getActiveBreaks() already unwraps the envelope and resolves to Break[], so
   // the failure fallback must be an array too.
   const { data: activeBreaks } = useQuery({
-    queryKey: ["active-breaks"],
+    queryKey: keys.attendance.dashboardBreaks(),
     queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
     staleTime: 30000,
     enabled: canReadAttendance,
@@ -150,7 +151,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
   // admins see payroll-blocking approvals from anywhere, not just the Attendance tab.
   const { data: pendingApprovalsData } = useQuery({
-    queryKey: ["pending-approvals"],
+    queryKey: keys.attendance.pendingApprovals(),
     queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
     staleTime: 30000,
     enabled: canReadAttendance,
@@ -201,8 +202,8 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // Batched attendance for employees (admins use the org-wide query above), again
   // one request for all their spaces instead of one per space.
   const { data: batchAttendance } = useQuery({
-    queryKey: ["locationAttendanceBatch", locKey, getTodayString()],
-    queryFn: () => attendanceApi.getEntriesBatch(locationIds, getTodayString()),
+    queryKey: keys.attendance.locationBatch(locKey, todayKey()),
+    queryFn: () => attendanceApi.getEntriesBatch(locationIds, todayKey()),
     enabled: !canReadAttendance && locationIds.length > 0,
     staleTime: 30000,
   })

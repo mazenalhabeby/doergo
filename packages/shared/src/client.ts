@@ -36,6 +36,8 @@ export * from './workflows/step-form';
 
 // Export utility functions (date, query string building)
 export * from './utils';
+// A person's name and avatar initials, never "John null" (people/person-name.ts).
+export * from './people/person-name';
 // Reading a business card — pure rules, runs on the phone.
 export * from './crm/business-card';
 // Picking clients out of the phone's address book — the same rules, on the phone.

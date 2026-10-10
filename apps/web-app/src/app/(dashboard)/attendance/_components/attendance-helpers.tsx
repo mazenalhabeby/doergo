@@ -6,7 +6,7 @@ import { cn, formatTimeOfDay } from "@/lib/utils"
 import { type TimeEntry } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { personName, countryFromTz } from "@hbcfield/shared/client"
 import { EditHistoryDialog } from "./edit-history-dialog"
 
 // Flag reason badge config for smart auto-approval.
@@ -28,7 +28,7 @@ const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = 
   UNANCHORED: { label: "Clock not checked", className: "bg-muted text-muted-foreground border-border" },
 }
 
-export function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
+function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
   if (!reasons || reasons.length === 0) return null
   return (
     <div className="flex flex-wrap gap-1">
@@ -128,7 +128,7 @@ export function WorkerCell({ entry }: { entry: TimeEntry }) {
       />
       <div>
         <p className="font-medium text-foreground">
-          {entry.user?.firstName} {entry.user?.lastName}
+          {personName(entry.user)}
         </p>
         <p className="text-xs text-muted-foreground">
           {entry.location?.name || t("attendance.unknownLocation")}
@@ -220,12 +220,12 @@ export function ApprovalCell({ entry }: { entry: TimeEntry }) {
  * original → new times, and the reason (all already on the entry). Renders
  * nothing for untouched entries.
  */
-export function EditedBadge({ entry }: { entry: TimeEntry }) {
+function EditedBadge({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
   const [historyOpen, setHistoryOpen] = React.useState(false)
   if (!entry.isEdited) return null
 
-  const editor = entry.editedBy ? `${entry.editedBy.firstName} ${entry.editedBy.lastName}`.trim() : null
+  const editor = entry.editedBy ? personName(entry.editedBy) : null
 
   return (
     <>

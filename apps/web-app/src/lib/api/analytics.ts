@@ -50,11 +50,6 @@ export const analyticsApi = {
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  updateSchedule: async (id: string, input: Partial<ScheduleInput>) => {
-    const res = await call(analyticsWebEndpoints.updateSchedule, { id }, { body: input }) as ApiResponse<{ data: ReportSchedule }>;
-    if (res.error) throw apiError(res);
-    return res.data!.data;
-  },
   deleteSchedule: async (id: string) => {
     const res = await call(analyticsWebEndpoints.deleteSchedule, { id }) as ApiResponse<{ success: boolean }>;
     if (res.error) throw apiError(res);

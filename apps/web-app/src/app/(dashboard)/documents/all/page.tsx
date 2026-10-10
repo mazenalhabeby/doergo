@@ -21,6 +21,7 @@ import {
   useDocumentControl, useRowSelection, type DocumentAction,
 } from "./_components/document-control"
 import { Checkbox } from "@/components/ui/checkbox"
+import { keys } from "@/lib/query-keys"
 
 /*
   What the organization has sent.
@@ -79,7 +80,7 @@ export default function SentDocumentsPage() {
   const [opening, setOpening] = useState<string | null>(null)
 
   const { data, isLoading, isFetching } = useQuery<IssuedRegister>({
-    queryKey: ["documents-sent", tab, debouncedSearch, page],
+    queryKey: keys.documents.sent(tab, debouncedSearch, page),
     queryFn: () => documentsApi.listIssued({ tab, search: debouncedSearch || undefined, page }),
     // The register moves when somebody signs or opens something, neither of
     // which happens while an admin watches this screen.

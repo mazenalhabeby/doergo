@@ -1,3 +1,5 @@
+import { formatHours, formatMoney, toCents } from "@hbcfield/shared/client"
+
 /**
  * What the report export dialog needs to DRAW its choices — the template
  * catalogue, the custom options and their defaults — without the renderer.
@@ -77,4 +79,26 @@ export const CUSTOM_PDF_TEMPLATE: PdfTemplateMeta = {
   key: "custom",
   name: "Custom",
   description: "Choose colors, orientation, and which sections to include.",
+}
+
+/**
+ * One report cell as text — the on-screen table, its chart and the PDF all
+ * read this, so the three cannot drift (they were two copies of one function).
+ *
+ * `locale` is the reader's app language. Amounts go through the shared money
+ * formatter (a cost column is an AMOUNT, `quantity × unitCost`); a date-only
+ * value is a calendar day and is never shifted by the reader's time zone.
+ */
+export function formatReportCell(value: unknown, format: string | undefined, locale: string, currency?: string | null): string {
+  if (value == null) return "—"
+  if (format === "hours") return formatHours(Number(value))
+  if (format === "currency") return formatMoney(toCents(Number(value)), currency, locale)
+  if (format === "percent") return `${Number(value)}%`
+  if (format === "number") return Number(value).toLocaleString(locale)
+  const s = String(value)
+  // Read at LOCAL midnight: `new Date("2026-10-05")` is UTC midnight, which is 4 Oct west of Greenwich.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(`${s}T00:00:00`).toLocaleDateString(locale)
+  const d = new Date(s)
+  if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString(locale)
+  return s
 }

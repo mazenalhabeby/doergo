@@ -30,8 +30,8 @@ describe("the proposal queue asks for the right proposals", () => {
     expect(queue).toMatch(/spaceId\?: string/)
     expect(queue).toContain("assetsApi.getPendingProposals(spaceId)")
     // Keyed under the shared prefix, so a decision anywhere invalidates every queue.
-    expect(queue).toContain('queryKey: ["asset-proposals-pending", spaceId ?? "all"]')
-    expect(queue).toContain('invalidateQueries({ queryKey: ["asset-proposals-pending"] })')
+    expect(queue).toContain('queryKey: keys.assets.proposalsPending(spaceId ?? "all")')
+    expect(queue).toContain("invalidateQueries({ queryKey: keys.assets.proposalsPending() })")
   })
 
   it("a workspace's tab asks for its own", () => {

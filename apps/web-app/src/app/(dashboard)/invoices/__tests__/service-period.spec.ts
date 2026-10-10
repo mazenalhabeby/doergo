@@ -122,7 +122,7 @@ describe("the service period", () => {
       job is to state which days are charged for.
     */
     const src = page()
-    expect(src).toMatch(/function isoOf\(/)
+    expect(src).toMatch(/(localDateKey|todayKey)\(/)
     expect(src).not.toMatch(/toISOString\(\)\.slice\(0,\s*10\)/)
   })
 

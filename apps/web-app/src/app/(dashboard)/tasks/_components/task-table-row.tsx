@@ -1,6 +1,6 @@
 "use client"
 
-import { isOpenToRole } from "@hbcfield/shared/client"
+import { personName, isOpenToRole } from "@hbcfield/shared/client"
 import { OpenRoleChip } from "./open-role-chip"
 
 import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
@@ -193,9 +193,9 @@ function TaskTableRowInner({
         title={
           [
             task.assignees?.length
-              ? task.assignees.map((a) => `${a.user.firstName} ${a.user.lastName}`).join(", ")
+              ? task.assignees.map((a) => personName(a.user)).join(", ")
               : task.assignedTo
-                ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+                ? personName(task.assignedTo)
                 : "",
             t("tasks.row.manageAssignees"),
           ].filter(Boolean).join(" — ")
@@ -221,7 +221,7 @@ function TaskTableRowInner({
             </span>
             {task.assignees.length <= 2 && (
               <span className="text-xs text-muted-foreground truncate ml-2">
-                {task.assignees[0]!.user.firstName} {task.assignees[0]!.user.lastName}
+                {personName(task.assignees[0]!.user)}
               </span>
             )}
           </div>
@@ -235,7 +235,7 @@ function TaskTableRowInner({
               size="xs"
             />
             <span className="text-xs text-muted-foreground truncate">
-              {task.assignedTo.firstName} {task.assignedTo.lastName}
+              {personName(task.assignedTo)}
             </span>
           </div>
         ) : isOpenToRole(task) ? (

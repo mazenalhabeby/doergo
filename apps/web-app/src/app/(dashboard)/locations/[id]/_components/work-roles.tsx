@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next"
 import { CalendarClock, Lock, Pencil, Shield, Trash2, Wrench } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { formatMoney } from "@/lib/money"
+import { formatMoney, MONEY_LOCALE } from "@/lib/money"
 import { useQuery } from "@tanstack/react-query"
 import { locationsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { formatDayKey } from "@/lib/day-key"
-import { ACCESS_PERMISSION_SCHEMA, type SpaceRoleInSpace } from "@hbcfield/shared/client"
+import { personInitials, personName, ACCESS_PERMISSION_SCHEMA, type SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -30,7 +30,7 @@ export const BILL_BY: BillBy[] = ["HOUR", "DAY", "BOTH"]
 export const DEFAULT_ROLE_COLOR = "#2563eb"
 const SPACE_PERMISSIONS = ACCESS_PERMISSION_SCHEMA.filter((p) => p.scopes.includes("space"))
 
-export const roleQueryKey = (spaceId: string) => ["space-roles-in-space", spaceId] as const
+export const roleQueryKey = (spaceId: string) => keys.spaces.roles(spaceId)
 
 /** "Hour only" / "Day only" / "Hour + Day" — one place, so the card, menu and editor agree. */
 export function useBillByLabel() {
@@ -39,7 +39,7 @@ export function useBillByLabel() {
 }
 
 export function useCents(currency = "EUR") {
-  return (cents: number) => formatMoney(cents / 100, currency)
+  return (cents: number) => formatMoney(cents, currency, MONEY_LOCALE)
 }
 
 /**
@@ -109,19 +109,19 @@ function Initials({ p }: { p: { firstName?: string | null; lastName?: string | n
     <Avatar className="h-6 w-6 border-2 border-card">
       {p.avatarUrl && <AvatarImage src={p.avatarUrl} alt="" />}
       <AvatarFallback className="text-[9px]">
-        {(p.firstName?.[0] || "") + (p.lastName?.[0] || "")}
+        {personInitials(p)}
       </AvatarFallback>
     </Avatar>
   )
 }
 
 /** Who holds this role HERE — faces, then names. */
-export function RoleHolders({ holders }: { holders: SpaceRoleInSpace["holders"] }) {
+function RoleHolders({ holders }: { holders: SpaceRoleInSpace["holders"] }) {
   const { t } = useTranslation()
   if (holders.length === 0) {
     return <span className="text-xs text-muted-foreground">{t("scheduling.workRoles.nobodyHere")}</span>
   }
-  const names = holders.map((h) => `${h.firstName} ${h.lastName}`.trim())
+  const names = holders.map((h) => personName(h))
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <span className="flex -space-x-1.5">

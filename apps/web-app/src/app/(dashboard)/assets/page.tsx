@@ -31,6 +31,7 @@ import { AssetsTab } from "../locations/[id]/_components/assets-tab"
 import { ExpenseQueue } from "@/components/assets/expense-queue"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
+import { keys } from "@/lib/query-keys"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -110,7 +111,7 @@ function AllProposals() {
   const { user } = useAuth()
   const mayDecide = canManageAssetsIn(user)
   const kindsQ = useQuery({
-    queryKey: ["space-asset-kinds", "all"],
+    queryKey: keys.assets.kinds("all"),
     queryFn: () => assetsApi.getCategories(),
     enabled: mayDecide,
   })

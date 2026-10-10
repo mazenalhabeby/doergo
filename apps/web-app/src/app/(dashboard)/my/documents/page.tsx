@@ -9,13 +9,15 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { documentsApi, type MemberDocumentRow, type DocumentTypeRow, type RequirementRow } from "@/lib/api"
-import { memberMayDelete, waitingOnMember } from "@hbcfield/shared/client"
+import { formatFileSize, memberMayDelete, waitingOnMember } from "@hbcfield/shared/client"
 import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /*
   A member's own file.
@@ -39,13 +41,6 @@ const MONTHS_KEY = [
   "january", "february", "march", "april", "may", "june",
   "july", "august", "september", "october", "november", "december",
 ] as const
-
-/** Bytes, in the unit a person would say out loud. */
-function fileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
 
 /*
   A credential's standing, as a colour and a word.
@@ -79,7 +74,7 @@ function StandingChip({ standing, expiresOn }: { standing: string; expiresOn: st
 }
 
 export default function MyDocumentsPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user } = useAuth()
   /* Works for a client or partner — see the upload buttons below. Their page
      still lists documents ISSUED to them, which is where anything awaiting
@@ -96,7 +91,7 @@ export default function MyDocumentsPage() {
   const [supplying, setSupplying] = useState(false)
 
   const { data: types = [] } = useQuery<DocumentTypeRow[]>({
-    queryKey: ["document-types"],
+    queryKey: keys.documents.types(),
     queryFn: () => documentsApi.listTypes(),
   })
   // Only what they supplied themselves — on an "either" type, never the office's copy.
@@ -106,12 +101,12 @@ export default function MyDocumentsPage() {
   }
 
   const { data: documents = [], isLoading } = useQuery<MemberDocumentRow[]>({
-    queryKey: ["my-documents"],
+    queryKey: keys.documents.mine(),
     queryFn: () => documentsApi.list(),
   })
 
   const { data: requirements = [] } = useQuery<RequirementRow[]>({
-    queryKey: ["my-document-requirements"],
+    queryKey: keys.documents.myRequirements(),
     queryFn: () => documentsApi.requirements(),
   })
 
@@ -157,7 +152,7 @@ export default function MyDocumentsPage() {
       // viewer and having to come back is the most common complaint about
       // document portals.
       window.open(res.url, "_blank", "noopener,noreferrer")
-      queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -184,7 +179,7 @@ export default function MyDocumentsPage() {
     mutationFn: (id: string) => documentsApi.remove(id),
     onSuccess: () => {
       notify.success(t("documents.removed"))
-      queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -407,7 +402,7 @@ export default function MyDocumentsPage() {
                 ? `${t(`documents.months.${MONTHS_KEY[d.periodMonth - 1]}`)} ${d.periodYear}`
                 : d.periodYear
                   ? String(d.periodYear)
-                  : new Date(d.issuedAt).toLocaleDateString()
+                  : new Date(d.issuedAt).toLocaleDateString(dateLocale())
 
             return (
               <li key={d.id} className="flex items-center gap-3 bg-white px-4 py-3 dark:bg-slate-900">
@@ -482,7 +477,7 @@ export default function MyDocumentsPage() {
                     )}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-slate-500 tabular-nums dark:text-slate-400">
-                    {d.typeLabel} · {period} · {fileSize(d.sizeBytes)}
+                    {d.typeLabel} · {period} · {formatFileSize(d.sizeBytes, i18n.language)}
                   </p>
                   {/* The reason, verbatim. "Rejected" on its own is an
                       instruction to upload the same photograph again. */}

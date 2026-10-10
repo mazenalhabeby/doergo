@@ -7,6 +7,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import {
+  personName,
+  personInitials,
   MEETING_PROVIDER_NAMES, REMINDER_OFFSETS, cleanPhone, meetingProvider, spanMinutes, spanProblem, moveEndWithStart, durationText,
   type CallDirection, type MeetingMode, type PlaceKind, type Repeat, type RepeatFreq, type EventVisibility,
 } from "@hbcfield/shared/client"
@@ -153,7 +155,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   }
 
   const { data: candidates = [] } = useQuery({
-    queryKey: ["calendar-people", debouncedQ],
+    queryKey: keys.calendar.people(debouncedQ),
     queryFn: () => calendarApi.people(debouncedQ),
     enabled: pickOpen,
     staleTime: 60_000,
@@ -164,7 +166,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   const windowTo = useMemo(() => at(date, "19:00"), [date])
   const ids = people.map((p) => p.id)
   const { data: avail = [] } = useQuery({
-    queryKey: ["calendar-availability", ids.join(","), windowFrom.toISOString()],
+    queryKey: keys.calendar.availability(ids.join(","), windowFrom.toISOString()),
     queryFn: () => calendarApi.availability(ids, windowFrom.toISOString(), windowTo.toISOString()),
     enabled: open && ids.length > 0 && !allDay,
     staleTime: 30_000,
@@ -201,8 +203,8 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
       return editing ? calendarApi.update(event!.id, input) : calendarApi.create(input)
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["calendar"] })
-      qc.invalidateQueries({ queryKey: ["calendar-event"] })
+      qc.invalidateQueries({ queryKey: keys.calendar.all() })
+      qc.invalidateQueries({ queryKey: keys.calendar.event() })
       toast.success(editing ? t("calendar.savedToast") : ids.length ? t("calendar.invitedToast", { count: ids.length }) : t("calendar.createdToast"))
       onOpenChange(false)
     },
@@ -422,9 +424,9 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                 return (
                   <div key={p.id} className="grid grid-cols-[minmax(0,180px)_1fr_auto] items-center gap-3 border-b px-3 py-2 last:border-b-0">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">{p.firstName[0]}{p.lastName[0]}</span>
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-semibold text-primary">{personInitials(p)}</span>
                       <div className="min-w-0">
-                        <div className="truncate text-sm">{p.firstName} {p.lastName}</div>
+                        <div className="truncate text-sm">{personName(p)}</div>
                         <div className={cn("text-[11px]", off ? "text-amber-600 dark:text-amber-400" : busy ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400")}>
                           {!a || allDay ? " " : day?.leave ? t("calendar.onLeave") : off ? t("calendar.dayOff") : busy ? t("calendar.busy") : t("calendar.free")}
                         </div>
@@ -457,7 +459,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                       <CommandGroup>
                         {candidates.filter((c) => !ids.includes(c.id)).map((c) => (
                           <CommandItem key={c.id} value={c.id} onSelect={() => { setPeople((cur) => [...cur, c]); setQ("") }}>
-                            <span className="truncate">{c.firstName} {c.lastName}</span>
+                            <span className="truncate">{personName(c)}</span>
                             {c.position && <span className="ml-auto truncate text-xs text-muted-foreground">{c.position}</span>}
                           </CommandItem>
                         ))}

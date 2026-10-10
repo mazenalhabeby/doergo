@@ -28,7 +28,7 @@ export interface CostRow {
 }
 
 /** A job line on a CLIENT invoice — costed by the hour, as the server resolved it. */
-export interface CostedJob {
+interface CostedJob {
   include: boolean
   workerId?: string | null
   workerName?: string | null

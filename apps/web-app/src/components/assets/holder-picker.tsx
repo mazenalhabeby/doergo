@@ -8,7 +8,7 @@ import { Ban, Check, Search, Smartphone, User, X } from "lucide-react"
 
 import { customersApi } from "@/lib/api"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
-import { type KindShape } from "@hbcfield/shared/client"
+import { personInitials, personName, type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 
 /**
@@ -32,8 +32,6 @@ import { cn } from "@/lib/utils"
 */
 export type HolderKey = string
 
-export const memberName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`.trim()
-export const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
 /** "u:x" / "c:x" → what the API takes. */
 export const decodeHolders = (keys: HolderKey[]): Array<{ userId?: string; customerId?: string }> =>
@@ -95,7 +93,7 @@ export function HolderPicker({
   }
 
   const list = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("assetRecords.memberTag", "Member (staff)") }))
+    ? members.map((m) => ({ value: `u:${m.id}`, name: personName(m), sub: t("assetRecords.memberTag", "Member (staff)") }))
     : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("assetRecords.client", "Client") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loading = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
@@ -110,7 +108,7 @@ export function HolderPicker({
   const nameOf = (key: HolderKey) => {
     if (key.startsWith("u:")) {
       const m = members.find((x) => x.id === key.slice(2))
-      return m ? memberName(m) : t("assetRecords.formerMember", "Former member")
+      return m ? personName(m) : t("assetRecords.formerMember", "Former member")
     }
     return clients.find((x) => x.id === key.slice(2))?.name ?? t("assetRecords.client", "Client")
   }
@@ -187,7 +185,7 @@ export function HolderPicker({
                 )}
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-                  {initials(r.name)}
+                  {personInitials(r.name)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>

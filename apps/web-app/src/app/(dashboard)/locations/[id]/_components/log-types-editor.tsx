@@ -375,7 +375,7 @@ function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (patch: 
   )
 }
 
-export function fieldTypeLabel(t: (k: string, d: string) => string, ft: LogFieldType): string {
+function fieldTypeLabel(t: (k: string, d: string) => string, ft: LogFieldType): string {
   switch (ft) {
     case "text": return t("assetLog.fieldType.text", "Text")
     case "number": return t("assetLog.fieldType.number", "Number")

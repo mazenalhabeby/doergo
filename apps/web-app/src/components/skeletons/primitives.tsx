@@ -43,38 +43,6 @@ export function Shimmer({
 }
 
 // ============================================================================
-// Navbar Skeleton — matches the real TopNavbar layout
-// ============================================================================
-
-export function NavbarSkeleton() {
-  return (
-    <header className="sticky top-0 z-50 h-14 shrink-0 border-b border-border bg-background/80 backdrop-blur-xl">
-      <div className={cn(PAGE_WIDTH, "flex h-full items-center")}>
-        {/* Logo */}
-        <div className="mr-6 flex items-center gap-2">
-          <Shimmer className="w-6 h-6 rounded" />
-          <Shimmer className="w-20 h-5 rounded" />
-        </div>
-
-        {/* Nav items */}
-        <div className="hidden lg:flex items-center gap-1">
-          {[56, 40, 44, 48, 56, 64].map((w, i) => (
-            <Shimmer key={i} className="h-7 rounded-md" style={{ width: w }} />
-          ))}
-        </div>
-
-        {/* Right side */}
-        <div className="ml-auto flex items-center gap-2">
-          <Shimmer className="w-24 h-8 rounded-lg" />
-          <Shimmer className="w-8 h-8 rounded-full" />
-          <Shimmer className="w-8 h-8 rounded-full" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-// ============================================================================
 // Content Skeleton — generic page content placeholder
 // ============================================================================
 

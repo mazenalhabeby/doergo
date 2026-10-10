@@ -6,6 +6,7 @@ import { formatHoursMinutes } from "@hbcfield/shared/client"
 
 import { cn } from "@/lib/utils"
 import { money } from "./invoice-document"
+import { formatMoney, MONEY_LOCALE } from "@/lib/money"
 import type { CostRow } from "../_lib/labour-cost-rows"
 
 /**
@@ -131,16 +132,16 @@ export function LabourCostPanel({
                     ) : (
                       <span className="flex flex-col gap-0.5">
                         {r.hourRateCents != null && (
-                          <span><span className="mr-1.5 rounded bg-blue-100 px-1.5 py-px text-[10px] font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">{t("invoices.create.tagHour")}</span>{money(r.hourRateCents / 100, baseCurrency)} {t("invoices.create.perHour")}</span>
+                          <span><span className="mr-1.5 rounded bg-blue-100 px-1.5 py-px text-[10px] font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">{t("invoices.create.tagHour")}</span>{formatMoney(r.hourRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perHour")}</span>
                         )}
                         {r.dayRateCents != null && (
-                          <span><span className="mr-1.5 rounded bg-violet-100 px-1.5 py-px text-[10px] font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">{t("invoices.create.tagDay")}</span>{money(r.dayRateCents / 100, baseCurrency)} {t("invoices.create.perDay")}</span>
+                          <span><span className="mr-1.5 rounded bg-violet-100 px-1.5 py-px text-[10px] font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">{t("invoices.create.tagDay")}</span>{formatMoney(r.dayRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perDay")}</span>
                         )}
                       </span>
                     )}
                   </td>
                   <td className="py-2.5 pl-2 text-right tabular-nums">
-                    {r.costCents == null ? <span className="text-muted-foreground">—</span> : money(r.costCents / 100, baseCurrency)}
+                    {r.costCents == null ? <span className="text-muted-foreground">—</span> : formatMoney(r.costCents, baseCurrency, MONEY_LOCALE)}
                   </td>
                 </tr>
               ))}

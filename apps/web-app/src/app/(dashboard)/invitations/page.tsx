@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -58,7 +59,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
-import { dateLocale } from "@/lib/format-date"
+import { formatMediumDateTime } from "@/lib/format-date"
+import { keys } from "@/lib/query-keys"
 
 const STATUS_OPTIONS_KEYS = [
   { value: "all", labelKey: "common.allStatuses" },
@@ -92,15 +94,6 @@ function getRoleBadge(role: string, t: (key: string) => string) {
   }
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString(dateLocale(), {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  })
-}
 
 function isExpired(dateStr: string) {
   return new Date(dateStr) < new Date()
@@ -130,7 +123,7 @@ export default function InvitationsPage() {
 
   // Fetch invitations
   const { data: invitationsData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["invitations", queryParams],
+    queryKey: keys.people.invitations(queryParams),
     queryFn: () => invitationsApi.list(queryParams),
   })
 
@@ -141,10 +134,10 @@ export default function InvitationsPage() {
       notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
       // Remove the row from every cached invitations list immediately, then
       // reconcile in the background — no refresh needed.
-      queryClient.setQueriesData<{ data?: Invitation[] } | undefined>({ queryKey: ["invitations"] }, (old) =>
+      queryClient.setQueriesData<{ data?: Invitation[] } | undefined>({ queryKey: keys.people.invitations() }, (old) =>
         old?.data ? { ...old, data: old.data.filter((inv) => inv.id !== id) } : old,
       )
-      queryClient.invalidateQueries({ queryKey: ["invitations"] })
+      queryClient.invalidateQueries({ queryKey: keys.people.invitations() })
       setRevokeDialogOpen(false)
       setSelectedInvitation(null)
     },
@@ -316,7 +309,7 @@ export default function InvitationsPage() {
                     <TableCell>
                       {inv.createdBy ? (
                         <span className="text-foreground">
-                          {inv.createdBy.firstName} {inv.createdBy.lastName}
+                          {personName(inv.createdBy)}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">-</span>
@@ -324,7 +317,7 @@ export default function InvitationsPage() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {formatDate(inv.createdAt)}
+                        {formatMediumDateTime(inv.createdAt)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -335,7 +328,7 @@ export default function InvitationsPage() {
                             ? "text-red-600"
                             : "text-muted-foreground"
                         }`}>
-                          {formatDate(inv.expiresAt)}
+                          {formatMediumDateTime(inv.expiresAt)}
                         </span>
                       </div>
                     </TableCell>
@@ -343,7 +336,7 @@ export default function InvitationsPage() {
                       {inv.acceptedBy ? (
                         <div>
                           <span className="text-foreground">
-                            {inv.acceptedBy.firstName} {inv.acceptedBy.lastName}
+                            {personName(inv.acceptedBy)}
                           </span>
                           <div className="text-xs text-muted-foreground">{inv.acceptedBy.email}</div>
                         </div>

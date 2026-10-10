@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { documentsApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { summarisePending } from "@hbcfield/shared/client"
+import { keys } from "@/lib/query-keys"
 
 /**
  * What the signed-in person still has to do about their own documents.
@@ -34,7 +35,7 @@ export function useMyDocumentRequirements() {
   const enabled = !!user && hasPlanFeature("documents")
 
   const { data } = useQuery({
-    queryKey: ["my-pending-documents"],
+    queryKey: keys.documents.myPending(),
     queryFn: () => documentsApi.pending(),
     enabled,
     staleTime: 5 * 60 * 1000,

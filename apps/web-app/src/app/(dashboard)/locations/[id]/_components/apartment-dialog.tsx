@@ -9,7 +9,7 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { Check, User, Smartphone, Search, Ban, Plus, Trash2 } from "lucide-react"
 
 import { spaceUnitsApi, customersApi, type SpaceUnit } from "@/lib/api"
-import type { AssignablePerson } from "@/lib/assignable-members"
+import { personInitials, personName } from "@hbcfield/shared/client"
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -21,18 +21,12 @@ import {
 } from "@/components/ui/dialog"
 
 const LocationPicker = dynamic(
-  () => import("../../_components/location-picker"),
+  () => import("@/components/location-picker"),
   { ssr: false, loading: () => <div className="h-64 w-full animate-pulse rounded-lg bg-muted" /> },
-) as unknown as React.ComponentType<{
-  lat: number | null; lng: number | null; radius: number; address: string
-  onLocationChange: (lat: number, lng: number) => void
-  onAddressChange: (address: string) => void
-}>
+)
 
 // Resident is encoded as "u:<userId>" (member) or "c:<customerId>" (client).
 const encodeResident = (u?: SpaceUnit) => u?.residentUserId ? `u:${u.residentUserId}` : u?.customer ? `c:${u.customer.id}` : "none"
-const memberName = (m: AssignablePerson) => `${m.firstName} ${m.lastName}`.trim()
-const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
 export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger, hideResident, entityLabel }: {
   // apartmentPortalIds = ids of this space's B2C portals whose entity is
@@ -88,7 +82,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
 
   // Rows for the active tab.
   const rows = (tab === "members"
-    ? members.map((m) => ({ value: `u:${m.id}`, name: memberName(m), sub: t("apartments.memberTag", "Member (staff)") }))
+    ? members.map((m) => ({ value: `u:${m.id}`, name: personName(m), sub: t("apartments.memberTag", "Member (staff)") }))
     : clients.map((c) => ({ value: `c:${c.id}`, name: c.name, sub: t("customers.appAccess", "App access") }))
   ).filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()))
   const loading = tab === "members" ? membersQ.isLoading : clientsQ.isLoading
@@ -107,7 +101,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
           </div>
           <div className="space-y-1">
             <Label>{t("customers.address", "Address")}</Label>
-            <LocationPicker lat={lat} lng={lng} radius={0} address={address}
+            <LocationPicker lat={lat} lng={lng} address={address}
               onLocationChange={(la, ln) => { setLat(la); setLng(ln) }}
               onAddressChange={(a) => setAddress(a)} />
           </div>
@@ -148,7 +142,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
                     <button key={r.value} type="button" onClick={() => setResident(r.value)}
                       className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
                         sel ? "bg-primary/10" : "hover:bg-muted")}>
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{initials(r.name)}</span>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{personInitials(r.name)}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-foreground">{r.name}</span>
                         <span className="block text-[11px] text-muted-foreground">{r.sub}</span>

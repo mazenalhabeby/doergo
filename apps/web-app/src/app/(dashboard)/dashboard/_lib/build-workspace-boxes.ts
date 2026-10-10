@@ -1,9 +1,9 @@
 import i18n from "@/i18n"
-import { isTaskOverdue, canManageSpace, canManageMembersInSpace, type PresenceFreshness, type WorkPresence } from "@hbcfield/shared/client"
+import { personInitials, isTaskOverdue, canManageSpace, canManageMembersInSpace, type PresenceFreshness, type WorkPresence } from "@hbcfield/shared/client"
 import type { OrgMember, Task } from "@/lib/api"
 import type { PersonNodeProps, WorkspaceBoxProps } from "@/components/dashboard"
 
-import { getAvatarColor, getInitials } from "../_components/helpers"
+import { getAvatarColor } from "../_components/helpers"
 
 import { getEmployeeStatus, isOnline, memberToPersonNode } from "./presence"
 
@@ -359,11 +359,11 @@ export function buildWorkspaceBoxes(input: BuildWorkspaceBoxesInput): WorkspaceB
             needsReview: attendanceByUser.get(task.assignedTo.id)?.needsReview ?? false,
           })
           onTaskPeople.push({
-            initials: getInitials(task.assignedTo.firstName, task.assignedTo.lastName),
+            initials: personInitials(task.assignedTo),
             color: getAvatarColor(task.assignedTo.id),
             status: fallbackStatus.status,
             imageUrl: task.assignedTo.avatarUrl || undefined,
-            name: `${task.assignedTo.firstName} ${task.assignedTo.lastName?.[0] || ""}.`,
+            name: displayName(task.assignedTo),
             tag: fallbackStatus.tag,
             userId: task.assignedTo.id,
             role: "Employee",

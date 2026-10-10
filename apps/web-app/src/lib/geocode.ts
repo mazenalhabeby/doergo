@@ -1,4 +1,3 @@
-import { API_BASE_URL } from './endpoints';
 import { getResponse, type PlainResponse, type RequestOptions } from './http-client';
 // Helpers to turn raw geocoder payloads into a clean, human address like
 // "Kapellenstraße 30, 4664 Laakirchen" instead of the long hierarchy string
@@ -33,37 +32,6 @@ export function formatNominatimAddress(a?: NominatimAddress | null, fallback?: s
   const out = [line1, line2].filter(Boolean).join(", ")
   return out || fallback || ""
 }
-
-/**
- * The Photon (Komoot) feature properties this reads.
- *
- * Typed as the strings it actually uses rather than `any`: every field below is
- * read into a string join, so `any` bought nothing and hid the one thing worth
- * knowing — which keys this function depends on.
- */
-export interface PhotonProperties {
-  street?: string
-  name?: string
-  housenumber?: string
-  city?: string
-  county?: string
-  state?: string
-  postcode?: string
-}
-
-/** Compose the same clean address from a Photon (Komoot) feature's properties. */
-export function formatPhotonFeature(p: PhotonProperties | undefined, fallback?: string): string {
-  if (!p) return fallback ?? ""
-  const street = p.street || p.name || ""
-  const line1 = [street, p.housenumber].filter(Boolean).join(" ")
-  const city = p.city || p.county || p.state || ""
-  const line2 = [p.postcode, city].filter(Boolean).join(" ")
-  const out = [line1, line2].filter(Boolean).join(", ")
-  return out || p.name || fallback || ""
-}
-
-/** Where the geocoding proxy lives — the API base, from the one endpoints module. */
-export const geoBase = () => API_BASE_URL;
 
 /**
  * Every call to the gateway's `/geo/*` proxy goes through here — the same

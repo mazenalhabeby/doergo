@@ -48,7 +48,8 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
     mutationFn: ({ a, value }: { a: Assignment; value: boolean | null }) =>
       locationsApi.updateAssignment(a.locationId, a.id, { allowRemote: value }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["member-assignments"] })
+      // Was `["member-assignments"]`, which no query reads — the tab never moved.
+      qc.invalidateQueries({ queryKey: keys.memberRecord.assignments() })
       qc.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
       notify.success(t("attendance.away.grantSaved", "Saved"))
     },

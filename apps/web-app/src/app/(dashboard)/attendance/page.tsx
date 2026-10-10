@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEntryStatus, type BreakType } from "@/lib/api"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
-import { workedMinutes } from "@hbcfield/shared/client"
+import { personName, workedMinutes } from "@hbcfield/shared/client"
 
 // Lazy (audit AT-C1). Four tabs of which one shows, plus a dialog that renders on
 // a click — ~2,600 lines in the first paint. ssr:false: none renders on the server.
@@ -112,7 +112,7 @@ export default function AttendancePage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["attendance", selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit, sort?.key ?? null, sort?.dir ?? null],
+    queryKey: keys.attendance.list(selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit, sort?.key ?? null, sort?.dir ?? null),
     queryFn: () => {
       if (selectedLocationId === "all") {
         // Use getAllEntries for organization-wide view
@@ -145,7 +145,7 @@ export default function AttendancePage() {
 
   // Approved time-off, shown as inline "day off" rows in the tracking table.
   const { data: orgTimeOff } = useQuery({
-    queryKey: ["orgTimeOff", "APPROVED"],
+    queryKey: keys.timeOff.orgApproved(),
     queryFn: () => employeesApi.getOrgTimeOff("APPROVED"),
     enabled: canAccess && activeTab === "tracking",
     staleTime: 60_000,
@@ -164,7 +164,7 @@ export default function AttendancePage() {
         const re = r.endDate.slice(0, 10)
         if (!(rs <= rangeEnd && re >= rangeStart)) return false
         if (q) {
-          const name = `${r.technician?.firstName ?? ""} ${r.technician?.lastName ?? ""}`.toLowerCase()
+          const name = personName(r.technician).toLowerCase()
           if (!name.includes(q)) return false
         }
         return true
@@ -183,7 +183,7 @@ export default function AttendancePage() {
   // Fetch pending approvals. Runs whenever the page is open (not just on the
   // Approvals tab) so the tab's count badge is visible immediately on load.
   const { data: pendingApprovalsData, isLoading: loadingApprovals, refetch: refetchApprovals } = useQuery({
-    queryKey: ["attendance-approvals"],
+    queryKey: keys.attendance.approvals(),
     queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }),
     enabled: canAccess,
     staleTime: 30_000,
@@ -191,7 +191,7 @@ export default function AttendancePage() {
 
   // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
   const { data: noShowRows = [] } = useQuery({
-    queryKey: ["attendance-no-shows"],
+    queryKey: keys.attendance.noShows(),
     queryFn: () => attendanceApi.listNoShows({ days: 14 }),
     enabled: canAccess,
     staleTime: 30_000,
@@ -204,7 +204,7 @@ export default function AttendancePage() {
 
   // Fetch active breaks
   const { data: activeBreaks = [], isLoading: loadingActiveBreaks, refetch: refetchActiveBreaks } = useQuery({
-    queryKey: ["attendance-breaks-active"],
+    queryKey: keys.attendance.activeBreaks(),
     queryFn: () => attendanceApi.getActiveBreaks(),
     enabled: canAccess && activeTab === "breaks",
     staleTime: 30_000,
@@ -213,7 +213,7 @@ export default function AttendancePage() {
 
   // Fetch break history
   const { data: breakHistoryData, isLoading: loadingBreakHistory, refetch: refetchBreakHistory } = useQuery({
-    queryKey: ["attendance-breaks-history", breakDate, breakTypeFilter],
+    queryKey: keys.attendance.breakHistory(breakDate, breakTypeFilter),
     queryFn: () => attendanceApi.getBreakHistory({
       date: breakDate,
       type: breakTypeFilter !== "all" ? breakTypeFilter as BreakType : undefined,
@@ -226,7 +226,7 @@ export default function AttendancePage() {
 
   // Fetch break summary for the selected date
   const { data: breakSummary, isLoading: loadingBreakSummary } = useQuery({
-    queryKey: ["attendance-breaks-summary", breakDate],
+    queryKey: keys.attendance.breakSummary(breakDate),
     queryFn: () => attendanceApi.getBreakSummary({
       startDate: breakDate,
       endDate: breakDate,
@@ -241,8 +241,8 @@ export default function AttendancePage() {
       attendanceApi.endBreakManually(breakId, notes),
     onSuccess: () => {
       notify.success(t('attendance.toast.breakEnded'))
-      queryClient.invalidateQueries({ queryKey: ["attendance-breaks-active"] })
-      queryClient.invalidateQueries({ queryKey: ["attendance-breaks-history"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.activeBreaks() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.breakHistory() })
     },
     onError: (error) => {
       notify.error(error instanceof Error ? error.message : t('attendance.toast.breakEndFailed'))
@@ -256,7 +256,7 @@ export default function AttendancePage() {
     mutationFn: (entryId: string) => attendanceApi.approveEntry(entryId),
     onSuccess: () => {
       notify.success(t('attendance.toast.entryApproved'))
-      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
     },
     onError: (error) => {
       notify.error(error instanceof Error ? error.message : t('attendance.toast.approveFailed'))
@@ -271,7 +271,7 @@ export default function AttendancePage() {
     onSuccess: () => {
       notify.success(t('attendance.toast.entryRejected'))
       setRejectReason("")
-      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
     },
     onError: (error) => {
       notify.error(error instanceof Error ? error.message : t('attendance.toast.rejectFailed'))

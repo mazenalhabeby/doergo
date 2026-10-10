@@ -26,7 +26,7 @@ export interface AssetCategory {
 }
 
 
-export interface AssetType {
+interface AssetType {
   id: string;
   name: string;
   description: string | null;
@@ -157,7 +157,7 @@ export interface AssetLogDue {
 }
 
 
-export interface AssetLogCredit {
+interface AssetLogCredit {
   inCents: number;
   outCents: number;
   netCents: number;
@@ -358,18 +358,6 @@ export interface UpdateAssetCategoryInput {
 }
 
 
-export interface CreateAssetTypeInput {
-  name: string;
-  description?: string;
-}
-
-
-export interface UpdateAssetTypeInput {
-  name?: string;
-  description?: string;
-}
-
-
 export interface CreateAssetInput {
   name: string;
   serialNumber?: string;
@@ -398,7 +386,7 @@ export interface CreateAssetInput {
 
 
 /** One holder on an asset: a member OR a client, never both. */
-export interface AssetHolderInput {
+interface AssetHolderInput {
   userId?: string | null;
   customerId?: string | null;
 }
@@ -426,7 +414,7 @@ export interface UpdateAssetInput {
 
 
 /** One counted module's numbers — the same shape for assets, clients and portals. */
-export interface ModuleUsageCounts {
+interface ModuleUsageCounts {
   total: number;
   /** Records in no space — billed by nobody. For assets, listed by `getOrphans`. */
   unassigned: number;

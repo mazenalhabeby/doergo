@@ -537,7 +537,7 @@ function SharedWithUsSection() {
   const activeShared = user?.access?.sharedSpaces || []
 
   const { data: sharedSpaces } = useQuery({
-    queryKey: ["shared-spaces"],
+    queryKey: keys.sharedSpaces.list(),
     queryFn: () => spaceSharingApi.listSharedSpaces(),
   })
   const pending = (sharedSpaces || []).filter((s) => s.status === "PENDING")
@@ -546,7 +546,7 @@ function SharedWithUsSection() {
     mutationFn: ({ shareId, accept }: { shareId: string; accept: boolean }) =>
       spaceSharingApi.respondToShare(shareId, accept),
     onSuccess: (_res, { accept }) => {
-      queryClient.invalidateQueries({ queryKey: ["shared-spaces"] })
+      queryClient.invalidateQueries({ queryKey: keys.sharedSpaces.list() })
       // Full access (auth context sharedSpaces) refreshes after /auth/me reloads.
       if (accept) void refreshUser()
       notify.success(accept ? t("spaceSharing.toast.inviteAccepted") : t("spaceSharing.toast.inviteDeclined"))

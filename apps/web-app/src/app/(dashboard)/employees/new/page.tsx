@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { copyText } from "@/lib/clipboard"
+import { keys } from "@/lib/query-keys"
 
 // Specialty options
 const SPECIALTY_OPTIONS = [
@@ -70,7 +71,7 @@ export default function NewTechnicianPage() {
   const createMutation = useMutation({
     mutationFn: (data: CreateEmployeeInput) => employeesApi.create(data),
     onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: ["employees"] })
+      queryClient.invalidateQueries({ queryKey: keys.employees.all() })
       if (response?.generatedPassword) {
         setGeneratedPassword(response.generatedPassword)
         setSuccessDialog(true)

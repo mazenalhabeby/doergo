@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDuration, personName } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -7,7 +8,6 @@ import { Loader2, TimerReset } from "lucide-react"
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { formatDurationMinutes } from "@/lib/utils"
 import { overtimePreview } from "@/lib/overtime-preview"
 import { useTimeFormat } from "@/hooks/use-time-format"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { formatTime } from "./attendance-helpers"
+import { keys } from "@/lib/query-keys"
 
 /**
  * Overtime on a shift that is already closed — the member had no signal, or
@@ -47,11 +48,11 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
   const mutation = useMutation({
     mutationFn: () => attendanceApi.addOvertime(entry.id, { minutes: value, reason: reason.trim() || undefined }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
       // The member's own attendance tab offers the same action, keyed
       // ["memberAttendance", memberId, from, to] — a prefix reaches every range.
-      queryClient.invalidateQueries({ queryKey: ["memberAttendance"] })
+      queryClient.invalidateQueries({ queryKey: keys.memberRecord.attendance() })
       notify.success(t("attendance.addOvertime.success", { minutes: value, defaultValue: `Added ${value} min of overtime` }))
       setOpen(false)
     },
@@ -59,7 +60,7 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
   })
 
   if (!initial) return null
-  const name = `${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim()
+  const name = personName(entry.user)
 
   return (
     <Dialog
@@ -133,7 +134,7 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
                 <>
                   <dt className="text-muted-foreground">{t("attendance.addOvertime.countedTime", "Counted time")}</dt>
                   <dd className="text-right tabular-nums">
-                    {formatDurationMinutes(preview.countedBefore)} → {formatDurationMinutes(preview.countedAfter)}
+                    {formatDuration(preview.countedBefore)} → {formatDuration(preview.countedAfter)}
                   </dd>
                 </>
               )}

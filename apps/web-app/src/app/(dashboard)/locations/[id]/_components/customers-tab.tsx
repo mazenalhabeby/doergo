@@ -15,7 +15,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { CurrencySelect } from "@/components/rates/currency-setting"
 import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue, clientLocalePayload } from "@/lib/client-locale"
-import { customerStageLabel } from "@hbcfield/shared/client"
+import { customerStageLabel, personInitials } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Truncated } from "@/components/truncated"
 import { ClientRowsSkeleton } from "@/components/skeletons/crm"
@@ -52,7 +52,6 @@ const INDUSTRIES = [
 */
 type Filter = "all" | "companies" | "people" | "contacts" | "app"
 
-const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
 
 /**
  * The clients list — one workspace's, or the organization's.
@@ -203,7 +202,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
                 "flex h-10 w-10 shrink-0 items-center justify-center bg-muted text-sm font-semibold text-muted-foreground",
                 c.type === "COMPANY" ? "rounded-lg" : "rounded-full",
               )}>
-                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : initials(c.name)}
+                {c.type === "COMPANY" ? <Building2 className="h-4.5 w-4.5" /> : personInitials(c.name)}
               </span>
               <span className="min-w-0 flex-1">
                 <Truncated text={c.name} className="text-sm font-medium text-foreground" />

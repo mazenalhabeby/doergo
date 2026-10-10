@@ -7,6 +7,12 @@ export * from './distance';
 // Export date utilities
 export * from './date';
 
+// File sizes as a reader says them — "9,2 MB"
+export * from './file-size';
+
+// Money in ONE unit (cents), formatted per locale + currency
+export * from './money';
+
 // Export query utilities
 export * from './query';
 

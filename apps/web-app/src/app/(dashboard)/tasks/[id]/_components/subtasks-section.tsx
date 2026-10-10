@@ -11,7 +11,9 @@ import {
   Loader2,
 } from "lucide-react"
 
-import { tasksApi, type Task } from "@/lib/api"
+import { tasksApi, type Task, type WorkflowStatus } from "@/lib/api"
+import { getPriorityConfig, type StatusConfig } from "@/lib/constants"
+import { useRelatedStepConfigs } from "@/hooks/use-step-config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -19,41 +21,19 @@ import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
 
 // ---------------------------------------------------------------------------
-// Status dot color map
-// ---------------------------------------------------------------------------
-const STATUS_DOTS: Record<string, string> = {
-  DRAFT: "bg-slate-400",
-  NEW: "bg-blue-500",
-  ASSIGNED: "bg-purple-500",
-  ACCEPTED: "bg-purple-400",
-  EN_ROUTE: "bg-amber-500",
-  ARRIVED: "bg-amber-400",
-  IN_PROGRESS: "bg-amber-500",
-  BLOCKED: "bg-red-500",
-  COMPLETED: "bg-green-500",
-  CLOSED: "bg-slate-400",
-  CANCELED: "bg-slate-300",
-}
-
-const PRIORITY_ICONS: Record<string, { icon: string; color: string }> = {
-  LOW: { icon: "\u2193", color: "text-slate-400" },
-  MEDIUM: { icon: "\u2212", color: "text-blue-500" },
-  HIGH: { icon: "\u2191", color: "text-orange-500" },
-  URGENT: { icon: "\u26A0", color: "text-red-600" },
-}
-
-// ---------------------------------------------------------------------------
 // SubtaskRow
 // ---------------------------------------------------------------------------
 const SubtaskRow = memo(function SubtaskRow({
   subtask,
   index,
+  step,
 }: {
   subtask: Task
   index: number
+  step: StatusConfig
 }) {
-  const priorityInfo = PRIORITY_ICONS[subtask.priority] || PRIORITY_ICONS.MEDIUM
-  const dotClass = STATUS_DOTS[subtask.status] || "bg-slate-400"
+  const priority = getPriorityConfig(subtask.priority || "MEDIUM")
+  const PriorityIcon = priority.icon
 
   const checklist = subtask.checklistItems || []
   const completed = checklist.filter((c) => c.isCompleted).length
@@ -74,7 +54,7 @@ const SubtaskRow = memo(function SubtaskRow({
     >
       {/* Indent marker */}
       <div className="flex items-center gap-2 pl-2">
-        <span className={cn("size-2 rounded-full shrink-0", dotClass)} />
+        <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: step.hex }} title={step.label} />
       </div>
 
       {/* Title */}
@@ -83,9 +63,7 @@ const SubtaskRow = memo(function SubtaskRow({
       </span>
 
       {/* Priority */}
-      <span className={cn("text-xs font-semibold shrink-0", priorityInfo.color)}>
-        {priorityInfo.icon}
-      </span>
+      <PriorityIcon className="size-3 shrink-0" style={{ color: priority.hex }} aria-label={priority.label} />
 
       {/* Assignee avatar */}
       {subtask.assignedTo && (
@@ -119,6 +97,8 @@ interface SubtasksSectionProps {
   subtaskCount?: number
   /** May this viewer add subtasks? Space-aware, from the page. */
   canEdit?: boolean
+  /** This task's flow — a subtask without a flow of its own is drawn in it. */
+  workflowStatuses?: readonly WorkflowStatus[] | null
 }
 
 export const SubtasksSection = memo(function SubtasksSection({
@@ -126,6 +106,7 @@ export const SubtasksSection = memo(function SubtasksSection({
   subtasks: initialSubtasks,
   subtaskCount,
   canEdit = true,
+  workflowStatuses,
 }: SubtasksSectionProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -134,7 +115,7 @@ export const SubtasksSection = memo(function SubtasksSection({
 
   // Fetch subtasks
   const { data: fetchedSubtasks } = useQuery({
-    queryKey: ["subtasks", taskId],
+    queryKey: keys.taskExtras.subtasks(taskId),
     queryFn: () => tasksApi.getSubtasks(taskId),
     initialData: initialSubtasks,
     staleTime: 30000,
@@ -142,6 +123,7 @@ export const SubtasksSection = memo(function SubtasksSection({
 
   const subtasks = fetchedSubtasks || initialSubtasks || []
   const count = subtaskCount ?? subtasks.length
+  const stepOf = useRelatedStepConfigs(subtasks, workflowStatuses)
 
   // Create subtask mutation
   const createMutation = useMutation({
@@ -151,7 +133,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       notify.success(t("tasks.subtasks.created"))
       setNewTitle("")
       setShowInput(false)
-      queryClient.invalidateQueries({ queryKey: ["subtasks", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.taskExtras.subtasks(taskId) })
       queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
     },
     onError: (e: Error) => notify.error(e.message),
@@ -209,7 +191,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       {subtasks.length > 0 && (
         <div className="divide-y divide-border/30">
           {subtasks.map((subtask, index) => (
-            <SubtaskRow key={subtask.id} subtask={subtask} index={index} />
+            <SubtaskRow key={subtask.id} subtask={subtask} index={index} step={stepOf(subtask)} />
           ))}
         </div>
       )}

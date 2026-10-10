@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { ProgressRing } from "@/components/progress-ring"
-import { hasAccessModule, countryFromTz } from "@hbcfield/shared/client"
+import { formatDuration, hasAccessModule, countryFromTz, localDateKey, todayKey } from "@hbcfield/shared/client"
 import type { TimeEntry } from "@hbcfield/shared"
 import type { DateRange } from "react-day-picker"
 
@@ -21,21 +21,20 @@ import { ClockInPicker } from "@/components/clock-in-picker"
 import { ClockOutEarlyDialog } from "@/components/attendance/clock-out-early-dialog"
 import { RestPanel } from "@/components/attendance/rest-panel"
 import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clock-out-card"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
   if (!fromIso) return "—"
   const from = new Date(fromIso).getTime()
   const to = toIso ? new Date(toIso).getTime() : Date.now()
-  const mins = Math.max(0, Math.round((to - from) / 60000))
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
+  return formatDuration(Math.max(0, Math.round((to - from) / 60000)))
 }
 
 function fmtDate(iso?: string | null): string {
   if (!iso) return "—"
-  return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+  return new Date(iso).toLocaleDateString(dateLocale(), { weekday: "short", month: "short", day: "numeric" })
 }
 /**
  * The clock that is actually running.
@@ -133,7 +132,7 @@ function RangeField({
         <CalendarPicker
           mode="range"
           selected={selected}
-          onSelect={(r) => onChange(r?.from ? toISODate(r.from) : "", r?.to ? toISODate(r.to) : "")}
+          onSelect={(r) => onChange(r?.from ? localDateKey(r.from) : "", r?.to ? localDateKey(r.to) : "")}
           // Two months, because a range that crosses one is the common case —
           // "the last fortnight" should not need a click into the previous page.
           numberOfMonths={2}
@@ -148,9 +147,6 @@ function RangeField({
 }
 
 /** Local calendar day as yyyy-MM-dd — never via toISOString, which shifts to UTC. */
-function toISODate(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
 
 export default function MyAttendancePage() {
   const { t } = useTranslation()
@@ -189,8 +185,9 @@ export default function MyAttendancePage() {
   const [customFrom, setCustomFrom] = useState("")
   const [customTo, setCustomTo] = useState("")
 
+  // Days in the reader's own calendar — `toISOString()` is the UTC day, which
+  // after midnight in Vienna is still yesterday and left today's shift out.
   const range = (() => {
-    const iso = (d: Date) => d.toISOString().slice(0, 10)
     if (period === "custom") {
       // Half a range is not a question yet — until both ends are set the page
       // keeps showing the last week rather than an empty screen.
@@ -202,21 +199,20 @@ export default function MyAttendancePage() {
     const to = new Date()
     const from = new Date()
     from.setDate(from.getDate() - (period === "7" ? 6 : 29))
-    return { startDate: iso(from), endDate: iso(to) }
+    return { startDate: localDateKey(from), endDate: localDateKey(to) }
   })()
 
   const effectiveRange = range ?? (() => {
-    const iso = (d: Date) => d.toISOString().slice(0, 10)
     const to = new Date()
     const from = new Date()
     from.setDate(from.getDate() - 6)
-    return { startDate: iso(from), endDate: iso(to) }
+    return { startDate: localDateKey(from), endDate: localDateKey(to) }
   })()
 
   const { data: history, isLoading } = useQuery({
     // The range is IN the key: a different window is a different question, and
     // the answer to the old one must not be shown while this one loads.
-    queryKey: ["my-attendance-history", effectiveRange.startDate, effectiveRange.endDate],
+    queryKey: keys.attendance.myHistory(effectiveRange.startDate, effectiveRange.endDate),
     queryFn: () => attendanceApi.getMyHistory({ ...effectiveRange, limit: 200 }),
     enabled: canSee,
     // A finished period does not change; only one that includes today does.
@@ -252,9 +248,11 @@ export default function MyAttendancePage() {
 
     const buckets: { key: string; start: Date; minutes: number; label: string }[] = []
     for (let i = 0; i < dayCount; i += groupWeekly ? 7 : 1) {
-      const d = new Date(from.getTime() + i * day)
+      // Calendar steps, not 24h ones — a DST night is 23 or 25 hours long.
+      const d = new Date(from)
+      d.setDate(from.getDate() + i)
       buckets.push({
-        key: d.toISOString().slice(0, 10),
+        key: localDateKey(d),
         start: d,
         minutes: 0,
         label: groupWeekly
@@ -269,7 +267,8 @@ export default function MyAttendancePage() {
     for (const e of entries) {
       if (!e.clockInAt) continue
       const at = new Date(e.clockInAt)
-      const offset = Math.floor((at.getTime() - from.getTime()) / day)
+      const dayKey = localDateKey(at)
+      const offset = Math.round((new Date(`${dayKey}T00:00:00`).getTime() - from.getTime()) / day)
       if (offset < 0 || offset >= dayCount) continue
       const idx = groupWeekly ? Math.floor(offset / 7) : offset
       const to_ = e.clockOutAt ? new Date(e.clockOutAt).getTime() : Date.now()
@@ -277,7 +276,6 @@ export default function MyAttendancePage() {
       const bucket = buckets[idx]
       if (bucket) bucket.minutes += mins
       worked += mins
-      const dayKey = at.toISOString().slice(0, 10)
       if (!seenDays.has(dayKey)) {
         seenDays.add(dayKey)
         daysWorked++
@@ -285,14 +283,8 @@ export default function MyAttendancePage() {
     }
 
     const peak = Math.max(60, ...buckets.map((b) => b.minutes))
-    return { buckets, peak, worked, daysWorked, dayCount, groupWeekly, todayKey: new Date().toISOString().slice(0, 10) }
+    return { buckets, peak, worked, daysWorked, dayCount, groupWeekly, todayKey: todayKey() }
   })()
-
-  const hm = (mins: number) => {
-    const h = Math.floor(mins / 60)
-    const m = Math.round(mins % 60)
-    return h > 0 ? `${h}h ${m}m` : `${m}m`
-  }
 
   /*
     How far through today's shift, when the shift has a known end.
@@ -434,12 +426,12 @@ export default function MyAttendancePage() {
           </div>
 
           <div className="mt-2 flex items-baseline gap-3">
-            <p className="text-2xl font-semibold tabular-nums text-foreground">{hm(window_.worked)}</p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">{formatDuration(window_.worked)}</p>
             {window_.daysWorked > 0 && (
               <p className="text-xs text-muted-foreground">
                 {t("attendance.my.overDays", "{{days}} days · {{avg}} avg", {
                   days: window_.daysWorked,
-                  avg: hm(window_.worked / window_.daysWorked),
+                  avg: formatDuration(window_.worked / window_.daysWorked),
                 })}
               </p>
             )}
@@ -458,7 +450,7 @@ export default function MyAttendancePage() {
                         b.minutes === 0 ? "bg-muted" : isNow ? "bg-primary" : "bg-primary/35",
                       )}
                       style={{ height: `${Math.max(b.minutes === 0 ? 4 : 10, pct * 100)}%` }}
-                      title={`${b.label} · ${hm(b.minutes)}`}
+                      title={`${b.label} · ${formatDuration(b.minutes)}`}
                     />
                   </div>
                   <span

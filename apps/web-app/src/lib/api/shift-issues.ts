@@ -14,11 +14,6 @@ export const shiftIssuesApi = {
     if (res.error) throw apiError(res)
     return res.data!.data
   },
-  create: async (input: { title: string; description?: string; severity?: string; timeEntryId?: string; spaceId?: string; attachments?: WorkLogAttachmentInput[] }): Promise<ShiftIssue> => {
-    const res = await call(shiftIssuesEndpoints.create, undefined, { body: input }) as ApiResponse<{ data: ShiftIssue }>
-    if (res.error) throw apiError(res)
-    return res.data!.data
-  },
   message: async (id: string, input: { body?: string; attachments?: WorkLogAttachmentInput[] }): Promise<ShiftIssueEvent> => {
     const res = await call(shiftIssuesEndpoints.message, { id }, { body: input }) as ApiResponse<{ data: ShiftIssueEvent }>
     if (res.error) throw apiError(res)

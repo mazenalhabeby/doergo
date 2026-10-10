@@ -1,7 +1,7 @@
 import React from "react"
 import type { PaginationMeta } from "@/lib/api"
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subMonths } from "date-fns"
-import { cn, formatDurationMinutes } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { type TimeEntry, type CompanyLocation } from "@/lib/api"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ import { AlertCircle, CheckCircle2, Clock, MapPin, RefreshCw, Search, Calendar, 
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTranslation } from "react-i18next"
 import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
-import { countryFromTz } from "@hbcfield/shared/client"
+import { formatDuration, personName, countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { AddOvertimeDialog } from "./add-overtime-dialog"
 import { useOvertimeAction } from "@/hooks/use-overtime-action"
@@ -24,7 +24,7 @@ import { useTimeFormat } from "@/hooks"
 import { workedMinutes, formatHours } from "@hbcfield/shared/client"
 
 // Approved time-off shown inline as a "day off" row in the tracking table.
-export type DayOffRow = {
+type DayOffRow = {
   id: string
   startDate: string
   endDate: string
@@ -183,7 +183,7 @@ export function TrackingTab({
                     />
                     <div>
                       <p className="font-medium text-foreground">
-                        {entry.user?.firstName} {entry.user?.lastName}
+                        {personName(entry.user)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {entry.location?.name || t("attendance.unknownLocation")}
@@ -449,7 +449,7 @@ export function TrackingTab({
                           <div className="flex items-center gap-3">
                             <UserAvatar firstName={off.technician?.firstName} lastName={off.technician?.lastName} seed={off.technician?.id} size="md" />
                             <p className="font-medium text-foreground">
-                              {off.technician?.firstName} {off.technician?.lastName}
+                              {personName(off.technician)}
                             </p>
                           </div>
                         </TableCell>
@@ -536,7 +536,7 @@ export function TrackingTab({
                       </TableCell>
                       <TableCell>
                         <span className="font-medium text-foreground">
-                          {formatDurationMinutes(workedMinutes(entry))}
+                          {formatDuration(workedMinutes(entry))}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -573,7 +573,7 @@ export function TrackingTab({
                             <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                           </div>
                           {/* Managers/admins can add & edit a member's activity (with photos). */}
-                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} memberName={`${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim() || undefined} clockOutNote={entry.notes} />
+                          <WorkLogTimeline entryId={entry.id} editable={isAdmin} memberName={personName(entry.user) || undefined} clockOutNote={entry.notes} />
                         </TableCell>
                       </TableRow>
                     )}

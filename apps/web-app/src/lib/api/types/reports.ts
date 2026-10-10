@@ -57,29 +57,3 @@ export interface ServiceReportSummary {
   hasBeforePhotos: boolean;
   hasAfterPhotos: boolean;
 }
-
-
-export interface CompleteTaskInput {
-  summary: string;
-  workPerformed?: string;
-  workDuration: number;
-  technicianSignature?: string;
-  customerSignature?: string;
-  customerName?: string;
-  partsUsed?: {
-    name: string;
-    partNumber?: string;
-    quantity: number;
-    unitCost?: number;
-    notes?: string;
-  }[];
-}
-
-
-export interface UpdateReportInput {
-  summary?: string;
-  workPerformed?: string;
-  technicianSignature?: string;
-  customerSignature?: string;
-  customerName?: string;
-}

@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { ROUTE_RULES, SETTINGS_SECTION_RULES } from '@/lib/route-access';
 import { join } from 'path';
 import { NAV_OPTION, SPACE_TAB_OPTION, SETTINGS_OPTION, ADD_ON_KEYS } from '@hbcfield/shared/client';
+import { readNavbar } from './_navbar-screen';
 
 /*
   An Option that is switched off has to disappear in three places: the server
@@ -25,7 +26,7 @@ describe('every surface an Option owns is gated', () => {
   it('the navigation asks about every href in the table', () => {
     // The bar reads the route table (lib/route-access), which carries each
     // Option on the page it owns; /schedule is asked where it lands.
-    const navbar = read('components/top-navbar.tsx');
+    const navbar = readNavbar();
     expect(navbar).toContain('useRouteAccess()');
     const LANDS: Record<string, string> = { '/schedule': '/employees/availability' };
     const ungated = Object.entries(NAV_OPTION).filter(

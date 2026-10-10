@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-import { code, strip } from "./_screen"
+import { code, listPage, strip } from "./_screen"
 
 /*
   INVOICES BELONG TO A WORKSPACE THE WAY CLIENTS AND ASSETS DO.
@@ -53,7 +53,7 @@ describe("the workspace's invoices", () => {
   })
 
   it("offer only workspaces that can be billed", () => {
-    const list = code("page.tsx")
+    const list = listPage()
     expect(list).toMatch(/useSpaceScope\(\{ kind: "CUSTOMER" \}\)/)
     expect(list).toContain("SpaceTabs")
   })
@@ -63,16 +63,16 @@ describe("the workspace's invoices", () => {
       A tab row that changes nothing but the underline is worse than no tab row:
       it says the list is filtered when it is not.
     */
-    const list = code("page.tsx")
+    const list = listPage()
     expect(list).toMatch(/spaceId:\s*scope\.spaceId \?\? undefined/)
     // And the choice is part of the cache key, or the list shows stale rows.
-    expect(list).toMatch(/queryKey:\s*\["invoices",[^\]]*scope\.spaceId\]/)
+    expect(list).toMatch(/queryKey:\s*keys\.invoices\.list\([^)]*scope\.spaceId\)/)
   })
 
   it("carry the workspace into the new invoice", () => {
     // Being asked which workspace twice is the same question twice, and the
     // second answer is the one that counts.
-    expect(code("page.tsx")).toMatch(/\/invoices\/new\?spaceId=\$\{scope\.spaceId\}/)
+    expect(listPage()).toMatch(/\/invoices\/new\?spaceId=\$\{scope\.spaceId\}/)
   })
 
   it("are listed by ONE component", () => {
@@ -88,6 +88,6 @@ describe("the workspace's invoices", () => {
   it("says which workspace even when there is only one", () => {
     // The tab row hides itself when there is nothing to choose between, so the
     // subtitle has to carry the answer.
-    expect(code("page.tsx")).toContain("invoices.inWorkspace")
+    expect(listPage()).toContain("invoices.inWorkspace")
   })
 })

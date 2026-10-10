@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -9,7 +10,7 @@ import { Check, Loader2, X } from "lucide-react"
 
 import { employeesApi, type OrgTimeOffRequest } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { invalidateTimeOff } from "@/lib/query-keys"
+import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -55,9 +56,9 @@ export function LeaveDecisionDrawer({
       )
       invalidateTimeOff(queryClient)
       // The chart footer, the live panel and the calendar all move with it.
-      queryClient.invalidateQueries({ queryKey: ["cover-range"] })
-      queryClient.invalidateQueries({ queryKey: ["floor-now"] })
-      queryClient.invalidateQueries({ queryKey: ["employees-availability"] })
+      queryClient.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.floorNow() })
+      queryClient.invalidateQueries({ queryKey: keys.calendar.all() })
       onClose()
     },
     onError: (e: Error) => notify.error(e.message || t("technicians.availabilityPage.failedToProcess")),
@@ -125,7 +126,7 @@ function DrawerBody({
     rather than in a surprise on the morning.
   */
   const { data: jobs = [] } = useQuery({
-    queryKey: ["employee-tasks-window", request.technicianId, request.startDate, request.endDate],
+    queryKey: keys.timeOff.memberTasksInWindow(request.technicianId, request.startDate, request.endDate),
     queryFn: () =>
       employeesApi.getTasks(request.technicianId, {
         startDate: request.startDate.slice(0, 10),
@@ -146,7 +147,7 @@ function DrawerBody({
     <>
       <SheetHeader className="border-b border-border px-5 py-4 space-y-1">
         <SheetTitle className="text-[17px] font-semibold tracking-tight">
-          {request.technician.firstName} {request.technician.lastName}
+          {personName(request.technician)}
         </SheetTitle>
         <p className="text-[12.5px] text-muted-foreground">
           {format(parseISO(request.startDate), "d MMM")}

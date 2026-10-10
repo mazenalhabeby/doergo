@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { LEGAL_ENTITY_READ_KEYS } from "@/lib/org-letterhead"
 import { useQuery } from "@tanstack/react-query"
+import { keys } from "@/lib/query-keys"
 import { bankForInvoice, issuerSnapshotOf, type IssuerSnapshot } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import { legalEntitiesApi, type LegalEntity } from "@/lib/api"
@@ -24,7 +25,7 @@ import {
  * who may list them (and strips the bank accounts from anyone who does not invoice); this only
  * avoids asking when the answer is a refusal.
  */
-export const COMPANIES_QUERY_KEY = ["legal-entities"] as const
+export const COMPANIES_QUERY_KEY = keys.companies.all()
 
 // One list with the letterhead rule — the permissions GET /legal-entities accepts.
 const READ_PERMISSIONS = LEGAL_ENTITY_READ_KEYS
@@ -71,7 +72,7 @@ export function CountryChip({ country, className }: { country?: string | null; c
 const INHERIT = "__inherit__"
 
 /** One choice in a company picker — what the picker draws, nothing more. */
-export interface CompanyOption {
+interface CompanyOption {
   id: string
   name: string
   isMain: boolean

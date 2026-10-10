@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { MessageCircle, Phone, Users } from "lucide-react"
@@ -7,12 +8,13 @@ import { teamApi } from "@/lib/api"
 import { useContactActions } from "@/hooks/use-contact-actions"
 import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
+import { keys } from "@/lib/query-keys"
 
 export default function TeamPage() {
   const { t } = useTranslation()
   const { message } = useContactActions()
   const { data: colleagues = [], isLoading } = useQuery({
-    queryKey: ["team"],
+    queryKey: keys.people.team(),
     queryFn: () => teamApi.list(),
     staleTime: 60000,
   })
@@ -39,7 +41,7 @@ export default function TeamPage() {
             <div key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5">
               <UserAvatar firstName={c.firstName} lastName={c.lastName} avatarUrl={c.avatarUrl} seed={c.id} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">{c.firstName} {c.lastName}</p>
+                <p className="truncate text-sm font-medium text-foreground">{personName(c)}</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {c.position || t("members.roles.employee")}{c.spaceName ? ` · ${c.spaceName}` : ""}
                 </p>

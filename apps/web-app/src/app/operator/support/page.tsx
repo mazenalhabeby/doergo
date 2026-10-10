@@ -15,6 +15,7 @@
  * and talks through the same request pipeline as the rest of the app (timeout,
  * retries) — WITHOUT the signed-in member's token, which it has no use for.
  */
+import { personName } from "@hbcfield/shared/client"
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client'
 import { SocketEvents, path, type SupportTicket, type SupportMessage } from '@hbcfield/shared/client';
@@ -209,7 +210,7 @@ export default function OperatorSupportPage() {
               <div>
                 <div className="text-sm font-semibold">{active.subject}</div>
                 <div className="text-[11px] text-slate-400">
-                  {active.createdBy?.firstName} {active.createdBy?.lastName} · {active.planTierAtCreation}
+                  {personName(active.createdBy)} · {active.planTierAtCreation}
                 </div>
               </div>
               <div className="flex gap-2">

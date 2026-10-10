@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+import { readNavbar } from "./_navbar-screen"
 
 /*
   EVERY PAGE SITS IN THE SAME COLUMN.
@@ -72,7 +73,7 @@ describe("the page column", () => {
       against. If it ever stopped reading the constant, every page would keep
       lining up with a column the navigation had left.
     */
-    const nav = strip(fs.readFileSync(path.join(SRC, "components/top-navbar.tsx"), "utf8"))
+    const nav = strip(readNavbar())
     expect(nav).toContain("PAGE_WIDTH")
   })
 })
@@ -146,18 +147,34 @@ describe("money reads the same everywhere", () => {
   })
 
   it("asks for the symbol a reader of that currency would use", () => {
-    const src = fs.readFileSync(path.join(SRC, "lib/money.ts"), "utf8")
-    expect(src).toContain("narrowSymbol")
+    const { formatAmount } = require("../lib/money")
+    expect(formatAmount(1234.5, "USD")).toBe("$1,234.50")
+  })
+
+  it("has no Intl logic of its own — the shared cents formatter owns it", () => {
+    const src = strip(fs.readFileSync(path.join(SRC, "lib/money.ts"), "utf8"))
+    expect(src).not.toMatch(/Intl\./)
   })
 
   it("never throws on a currency code that came from real data", () => {
     // Intl raises a RangeError on an unknown code, and a screen about money is
     // the worst place to trade a wrong symbol for a blank page.
-    const { formatMoney } = require("../lib/money")
-    expect(formatMoney(1234.5, "USD")).toBe("$1,234.50")
-    expect(formatMoney(1234.5, "EUR")).toBe("€1,234.50")
-    expect(() => formatMoney(1, "NOT-A-CODE")).not.toThrow()
-    expect(() => formatMoney(1, "")).not.toThrow()
-    expect(formatMoney(NaN, "EUR")).toBe("€0.00")
+    const { formatAmount } = require("../lib/money")
+    expect(formatAmount(1234.5, "USD")).toBe("$1,234.50")
+    expect(formatAmount(1234.5, "EUR")).toBe("€1,234.50")
+    expect(() => formatAmount(1, "NOT-A-CODE")).not.toThrow()
+    expect(() => formatAmount(1, "")).not.toThrow()
+    expect(formatAmount(NaN, "EUR")).toBe("€0.00")
+  })
+
+  it("has one unit per name: formatMoney takes CENTS, formatAmount an amount", () => {
+    // ⚠️ The web's formatMoney used to take an amount and the phone's cents —
+    // a value carried between them read 100× wrong with no type error.
+    const { formatMoney, formatAmount, MONEY_LOCALE } = require("../lib/money")
+    expect(formatMoney(123450, "EUR", MONEY_LOCALE)).toBe(formatAmount(1234.5, "EUR"))
+    const offenders = files
+      .filter((f) => /formatMoney\([^)]*\/\s*100\b/.test(strip(fs.readFileSync(f, "utf8"))))
+      .map((f) => path.relative(SRC, f))
+    expect(offenders).toEqual([])
   })
 })

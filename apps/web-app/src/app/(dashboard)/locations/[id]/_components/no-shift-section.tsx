@@ -48,7 +48,7 @@ export function NoShiftSection({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
       qc.invalidateQueries({ queryKey: keys.locations.lists() })
-      qc.invalidateQueries({ queryKey: ["my-clock-in-locations"] })
+      qc.invalidateQueries({ queryKey: keys.attendance.myClockInLocations() })
       notify.success(t("attendance.noShift.saved", "Saved"))
     },
     onError: (e: Error) => {

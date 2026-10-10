@@ -31,7 +31,7 @@ const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOF
 
 // The same map picker used by the New-Space form — reused so the address
 // experience is identical (DRY). Dynamic-imported because Leaflet needs `window`.
-const LocationPicker = dynamic(() => import("../../_components/location-picker"), {
+const LocationPicker = dynamic(() => import("@/components/location-picker"), {
   ssr: false,
   loading: () => (
     <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/40">
@@ -47,14 +47,14 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const orgCurrency = user?.orgCurrency ?? "EUR"
   // This workspace's rates and their history, read only where they are shown (a client).
   const { data: spaceRates } = useQuery({
-    queryKey: ["rate-history", "SPACE", space.id],
+    queryKey: keys.rates.history("SPACE", space.id),
     queryFn: () => rateHistoryApi.list({ target: "SPACE", targetId: space.id }),
     enabled: space.kind === "CUSTOMER",
   })
   const saveSpaceRate = async (patch: UpdateLocationInput) => {
     await locationsApi.update(space.id, patch)
     queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
-    queryClient.invalidateQueries({ queryKey: ["rate-history", "SPACE", space.id] })
+    queryClient.invalidateQueries({ queryKey: keys.rates.history("SPACE", space.id) })
   }
 
   const [makingDefault, setMakingDefault] = useState(false)

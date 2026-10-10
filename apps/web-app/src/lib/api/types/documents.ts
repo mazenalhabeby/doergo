@@ -164,7 +164,7 @@ export interface DraftDocumentRow {
 
 
 /** One person or client a route step could resolve to. */
-export interface SignerCandidate {
+interface SignerCandidate {
   /** CONTACT is a client space's own contact — an address with no client row. */
   kind: "USER" | "CUSTOMER" | "CONTACT";
   id: string;
@@ -278,18 +278,6 @@ export interface ContractTemplateRow {
   offerValidDays: number | null;
   version: number;
   isActive: boolean;
-}
-
-
-export interface DocumentEventRow {
-  id: string;
-  type: string;
-  at: string;
-  actorId: string | null;
-  actor: { id: string; firstName: string; lastName: string } | null;
-  ip: string | null;
-  userAgent: string | null;
-  appVersion: string | null;
 }
 
 

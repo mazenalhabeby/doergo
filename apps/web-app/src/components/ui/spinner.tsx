@@ -26,33 +26,3 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
     />
   );
 }
-
-interface LoadingOverlayProps {
-  message?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-}
-
-/**
- * Full-screen or container loading overlay
- */
-export function LoadingOverlay({ message, size = 'lg' }: LoadingOverlayProps) {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[200px] gap-3">
-      <Spinner size={size} />
-      {message && (
-        <p className="text-sm text-muted-foreground animate-pulse">{message}</p>
-      )}
-    </div>
-  );
-}
-
-/**
- * Page-level loading component
- */
-export function PageLoading() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Spinner size="xl" />
-    </div>
-  );
-}

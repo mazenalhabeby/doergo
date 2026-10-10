@@ -19,7 +19,7 @@ import { Input, Button, Label } from "@/components/ui"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { WorkflowSelector } from "./workflow-selector"
 
-const LocationPicker = dynamic(() => import("./location-picker"), {
+const LocationPicker = dynamic(() => import("@/components/location-picker"), {
   ssr: false,
   loading: () => (
     <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">

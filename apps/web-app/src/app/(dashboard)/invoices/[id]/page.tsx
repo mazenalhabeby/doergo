@@ -35,9 +35,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PAGE_WIDTH } from "@/components/ui/page-width"
-import { formatMoney } from "@/lib/money"
+import { formatAmount } from "@/lib/money"
 import { InvoiceTopBar } from "../_components/invoice-shell"
-import { InvoiceDocument } from "../_components/invoice-document"
+import { InvoiceDocument, fmtDate } from "../_components/invoice-document"
 import { daysOverdue } from "../_lib/aging"
 import {
   statusStyle, primaryStep, otherSteps, isEditable, isDeletable, type LifecycleStep,
@@ -45,11 +45,7 @@ import {
 
 
 function money(n: number, currency: string) {
-  return formatMoney(n, currency)
-}
-function fmtDate(d?: string | null) {
-  if (!d) return "—"
-  return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+  return formatAmount(n, currency)
 }
 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -113,8 +109,8 @@ function InvoiceDetailInner({ id }: { id: string }) {
     onSuccess: () => {
       notify.success(t("invoices.toast.statusUpdated"))
       queryClient.invalidateQueries({ queryKey: keys.invoices.detail(id) })
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.all() })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -133,8 +129,8 @@ function InvoiceDetailInner({ id }: { id: string }) {
     mutationFn: () => invoicesApi.delete(id),
     onSuccess: () => {
       notify.success(t("invoices.toast.deleted"))
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.all() })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.gather() })
       router.push("/invoices")
     },
     onError: (e: Error) => notify.error(e.message),

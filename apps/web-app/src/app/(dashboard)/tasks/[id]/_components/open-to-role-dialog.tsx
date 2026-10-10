@@ -40,7 +40,7 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
       setOpen(false)
       queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id) })
       queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
-      queryClient.invalidateQueries({ queryKey: ["role-stats"] })
+      queryClient.invalidateQueries({ queryKey: keys.spaces.roleStats() })
     },
     onError: (e) => notify.error(serverErrorMessage(e, t, i18n.language)),
   })

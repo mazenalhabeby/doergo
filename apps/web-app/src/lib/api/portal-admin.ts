@@ -2,21 +2,10 @@ import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
 import type { Customer } from './types/customers';
 import type { PortalAssignableCustomer, PortalAvailableUnit, PortalCategoryInput, PortalDetail, PortalRequestView } from './types/portal-admin';
-import type { PortalSummary } from './types/space-portal';
-import { portalAdminWebEndpoints, type CustomerRequestView, type CustomerUnit as PortalCustomerUnit, type IntakeCategory as PortalIntakeCategory } from '@hbcfield/shared/client';
+import { portalAdminWebEndpoints, type CustomerUnit as PortalCustomerUnit, type IntakeCategory as PortalIntakeCategory } from '@hbcfield/shared/client';
 
 export const portalAdminApi = {
   // ── Portals ──
-  listPortals: async () => {
-    const res = await call(portalAdminWebEndpoints.listPortals) as ApiResponse<PortalSummary[]>;
-    if (res.error) throw apiError(res);
-    return res.data ?? [];
-  },
-  createPortal: async (templateKey: string, name?: string) => {
-    const res = await call(portalAdminWebEndpoints.createPortal, undefined, { body: { templateKey, name } }) as ApiResponse<PortalDetail>;
-    if (res.error) throw apiError(res);
-    return res.data!;
-  },
   getPortal: async (id: string) => {
     const res = await call(portalAdminWebEndpoints.getPortal, { id }) as ApiResponse<PortalDetail>;
     if (res.error) throw apiError(res);
@@ -49,11 +38,6 @@ export const portalAdminApi = {
     if (res.error) throw apiError(res);
     return res.data;
   },
-  reorderCategories: async (portalId: string, orderedIds: string[]) => {
-    const res = await call(portalAdminWebEndpoints.reorderCategories, undefined, { body: { portalId, orderedIds } }) as ApiResponse<{ success: boolean }>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
 
   // ── Residents (per portal) ──
   residents: async (portalId: string, search?: string) => {
@@ -81,40 +65,11 @@ export const portalAdminApi = {
     return res.data!;
   },
 
-  // Re-send a pending client's invite by email (uses the existing code).
-  resendInvite: async (customerId: string) => {
-    const res = await call(portalAdminWebEndpoints.resendInvite, { customerId }, { body: {} }) as ApiResponse<{ success: boolean; data?: { sentTo: string } }>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
-
   // Remove a client from the portal — revokes app access + detaches (record kept).
   removeResident: async (customerId: string) => {
     const res = await call(portalAdminWebEndpoints.removeResident, { customerId }) as ApiResponse<{ data?: { success: boolean; deactivatedUserIds: string[] } }>;
     if (res.error) throw apiError(res);
     return res.data;
-  },
-
-  // ── Units + requests (per resident) ──
-  listUnits: async (customerId?: string) => {
-    const res = await call(portalAdminWebEndpoints.listUnits, undefined, { query: { customerId } }) as ApiResponse<PortalCustomerUnit[]>;
-    if (res.error) throw apiError(res);
-    return res.data ?? [];
-  },
-  createUnit: async (input: { customerId: string; name: string; address?: string | null }) => {
-    const res = await call(portalAdminWebEndpoints.createUnit, undefined, { body: input }) as ApiResponse<PortalCustomerUnit>;
-    if (res.error) throw apiError(res);
-    return res.data!;
-  },
-  deleteUnit: async (id: string) => {
-    const res = await call(portalAdminWebEndpoints.deleteUnit, { id }) as ApiResponse<{ success: boolean }>;
-    if (res.error) throw apiError(res);
-    return res.data;
-  },
-  requests: async (customerId: string) => {
-    const res = await call(portalAdminWebEndpoints.requests, undefined, { query: { customerId } }) as ApiResponse<{ data: CustomerRequestView[] }>;
-    if (res.error) throw apiError(res);
-    return res.data?.data ?? [];
   },
   // Every request across a whole portal (office view; carries the client name).
   portalRequests: async (portalId: string) => {

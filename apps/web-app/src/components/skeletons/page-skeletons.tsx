@@ -132,51 +132,6 @@ function PaginationBar() {
   )
 }
 
-// ============================================================================
-// Page Skeletons
-// ============================================================================
-
-/** Tasks list page */
-export function TasksPageSkeleton() {
-  return (
-    <div className={PAGE_OUTER}>
-      <div className={PAGE_INNER}>
-        <PageHeader titleW="w-48" controls={2} />
-        {/* Status tabs */}
-        <div className="flex gap-2 mb-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <S key={i} className={cn("h-9 rounded-full", i === 0 ? "w-24" : "w-20")} />
-          ))}
-        </div>
-        <SummaryLine />
-        {/* Task cards */}
-        <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="bg-card rounded-xl border border-border shadow-sm p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <S className="h-6 w-20 rounded-full" />
-                    <S className="h-5 w-16 rounded-full" />
-                    <S className="h-5 w-56 rounded" />
-                  </div>
-                  <S className="h-4 w-96 rounded" />
-                  <div className="flex items-center gap-4 mt-1">
-                    <S className="h-3.5 w-24 rounded" />
-                    <S className="h-3.5 w-32 rounded" />
-                    <S className="h-3.5 w-20 rounded" />
-                  </div>
-                </div>
-                <S className="h-9 w-24 rounded-xl" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 /** Task detail page */
 export function TaskDetailPageSkeleton() {
   return (

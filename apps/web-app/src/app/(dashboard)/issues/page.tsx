@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus, X } from "lucide-react"
@@ -11,6 +12,8 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 const SEV_DOT: Record<string, string> = { LOW: "bg-slate-400", MEDIUM: "bg-blue-500", HIGH: "bg-orange-500", URGENT: "bg-red-500" }
 const SEV_TEXT: Record<string, string> = { LOW: "text-slate-600", MEDIUM: "text-blue-600", HIGH: "text-orange-600", URGENT: "text-red-600" }
@@ -23,7 +26,7 @@ const STATUS: Record<string, string> = {
   CANCELED: "text-slate-500 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:text-slate-400",
 }
 const RESOLVE_REASONS = ["Fixed on site", "Parts not available", "Needs a specialist", "Customer unavailable", "Duplicate", "Not an issue"]
-const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+const fmt = (iso: string) => new Date(iso).toLocaleString(dateLocale(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
 const isImg = (m?: string) => !!m && m.startsWith("image/")
 const Chip = ({ status }: { status: string }) => (
   <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", STATUS[status])}>{status.replace("_", " ")}</span>
@@ -36,17 +39,17 @@ export default function IssuesPage() {
   const { subscribe, isConnected } = useSocketContext()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const listQ = useQuery({ queryKey: ["shift-issues"], queryFn: () => shiftIssuesApi.list({ status: "all" }) })
+  const listQ = useQuery({ queryKey: keys.shiftIssues.list(), queryFn: () => shiftIssuesApi.list({ status: "all" }) })
   const issues = listQ.data ?? []
-  const detailQ = useQuery({ queryKey: ["shift-issue", selectedId], queryFn: () => shiftIssuesApi.get(selectedId!), enabled: !!selectedId })
+  const detailQ = useQuery({ queryKey: keys.shiftIssues.detail(selectedId), queryFn: () => shiftIssuesApi.get(selectedId!), enabled: !!selectedId })
   const issue = detailQ.data
   const openCount = issues.filter((i) => ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"].includes(i.status)).length
 
   useEffect(() => {
     if (!isConnected) return
     const refetch = () => {
-      qc.invalidateQueries({ queryKey: ["shift-issues"] })
-      if (selectedId) qc.invalidateQueries({ queryKey: ["shift-issue", selectedId] })
+      qc.invalidateQueries({ queryKey: keys.shiftIssues.list() })
+      if (selectedId) qc.invalidateQueries({ queryKey: keys.shiftIssues.detail(selectedId) })
     }
     const offs = [subscribe("shift_issue.event", refetch), subscribe("shift_issue.created", refetch)]
     return () => offs.forEach((o) => o())
@@ -109,7 +112,7 @@ export default function IssuesPage() {
           ) : (
             <IssueThread key={issue.id} issue={issue} canManage={canManage} currentUserId={user?.id}
               onBack={() => setSelectedId(null)}
-              onChanged={() => { qc.invalidateQueries({ queryKey: ["shift-issue", issue.id] }); qc.invalidateQueries({ queryKey: ["shift-issues"] }) }} />
+              onChanged={() => { qc.invalidateQueries({ queryKey: keys.shiftIssues.detail(issue.id) }); qc.invalidateQueries({ queryKey: keys.shiftIssues.list() }) }} />
           )}
         </section>
       </div>
@@ -130,7 +133,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }) }, [thread.length])
 
-  const membersQ = useQuery({ queryKey: ["issue-assignables"], queryFn: () => employeesApi.list({ limit: 100 }), enabled: assignOpen })
+  const membersQ = useQuery({ queryKey: keys.shiftIssues.assignables(), queryFn: () => employeesApi.list({ limit: 100 }), enabled: assignOpen })
   const members: EmployeeListItem[] = membersQ.data?.data ?? []
 
   const send = useMutation({
@@ -182,7 +185,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
                       <div className="p-3 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
                     ) : members.length === 0 ? (<p className="p-2 text-xs text-muted-foreground">No members</p>) : members.map((m) => (
                       <button key={m.id} onClick={() => { setAssignOpen(false); act(() => shiftIssuesApi.assign(issue.id, m.id)) }}
-                        className="block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-accent">{m.firstName} {m.lastName}</button>
+                        className="block w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-accent">{personName(m)}</button>
                     ))}
                   </div>
                 )}

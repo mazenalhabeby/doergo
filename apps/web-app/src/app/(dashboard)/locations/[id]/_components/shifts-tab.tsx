@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
+import { keys } from "@/lib/query-keys"
 
 const DEFAULT_COLOR = "#2563eb"
 
@@ -48,14 +49,14 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
 
   // Includes this space's shifts + org-wide (spaceId null) reusable shifts.
   const { data: shifts, isLoading } = useQuery({
-    queryKey: ["shifts", spaceId],
+    queryKey: keys.schedules.shifts(spaceId),
     queryFn: () => shiftsApi.list(spaceId),
   })
 
   const removeMutation = useMutation({
     mutationFn: (id: string) => shiftsApi.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.schedules.shifts(spaceId) })
       setDeleteTarget(null)
       notify.success(t("scheduling.shifts.toast.deleted"))
     },
@@ -245,7 +246,7 @@ function ShiftDialog({
     mutationFn: (data: CreateShiftInput) =>
       isEdit ? shiftsApi.update(shift!.id, data) : shiftsApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["shifts", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.schedules.shifts(spaceId) })
       notify.success(isEdit ? t("scheduling.shifts.toast.updated") : t("scheduling.shifts.toast.created"))
       onOpenChange(false)
     },

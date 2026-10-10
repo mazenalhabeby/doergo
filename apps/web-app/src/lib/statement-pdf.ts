@@ -13,7 +13,7 @@ import { fileNamePart, pdfFileName, periodPart } from "./pdf-filename"
  *
  * Labels arrive translated from the screen; this only lays them out.
  */
-export interface StatementPdfLabels {
+interface StatementPdfLabels {
   title: string
   member: string
   period: string

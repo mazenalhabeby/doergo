@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useMemo } from "react"
 import Link from "next/link"
 import { format, isSameDay, parseISO } from "date-fns"
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { COVER_TONE, coverMark, coverShort } from "../_lib/cover-labels"
 
 /** One workspace's cover for every visible day, from the server's own rule. */
-export interface CoverRangeSpace {
+interface CoverRangeSpace {
   spaceId: string
   minCover: number
   rotaKnown: boolean
@@ -318,7 +319,7 @@ function SpaceBlock({
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-[13px] font-medium leading-tight text-foreground">
-                  {p.firstName} {p.lastName}
+                  {personName(p)}
                 </span>
                 <span className="block truncate text-[11px] leading-tight text-muted-foreground">
                   {p.specialty || p.position || ""}
@@ -354,7 +355,7 @@ function SpaceBlock({
                     ? format(parseISO(bar.startDate), "d MMM")
                     : ""
 
-              const tip = `${p.firstName} ${p.lastName} — ${format(parseISO(bar.startDate), "d MMM")}${
+              const tip = `${personName(p)} — ${format(parseISO(bar.startDate), "d MMM")}${
                 from !== to ? ` – ${format(parseISO(bar.endDate), "d MMM")}` : ""
               }${pending ? ` · ${t("cover.chart.pendingTip", "pending — click to decide")}` : ` · ${t("common.approved")}`}${
                 bar.cover ? ` · ${coverShort(bar.cover, t)}` : ""

@@ -1,406 +1,30 @@
 "use client"
 
-import { keys } from "@/lib/query-keys"
-import { useState, useCallback, useRef, useEffect, memo } from "react"
+import { useState, useCallback, memo } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { notify } from "@/lib/toast"
-import { Plus, X, Loader2, AlertCircle, Upload, ClipboardList } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 
-import { workflowsApi, type WorkflowStatus } from "@/lib/api"
-import { resolveTransitions, toStatusKey } from "@/lib/workflow-transitions"
-import { workflowAdvice, validateWorkflow, moduleI18n, TYPE_CAPABILITY_MODULE, STEP_CAPABILITY_MODULE } from "@hbcfield/shared/client"
+import { resolveTransitions } from "@/lib/workflow-transitions"
+import { workflowAdvice, validateWorkflow } from "@hbcfield/shared/client"
 import { useSpaceModules } from "@/hooks/use-space-modules"
-import { CustomFieldsManager } from "@/components/custom-fields-manager"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { ColorPicker, PRESET_COLORS } from "./color-picker"
+import { PRESET_COLORS } from "./color-picker"
 import { useAuth } from "@/contexts/auth-context"
-import { StepFormEditor } from "@/components/step-forms/step-form-editor"
-import {
-  builderStepMode,
-  definitionErrors,
-  definitionRefusal,
-  draftChanged,
-  draftFromStored,
-  draftToPayload,
-  type DefinitionErrors,
-  type StepFormDraft,
-} from "@/lib/step-forms"
-
-// ============================================================================
-// TYPES
-// ============================================================================
-
-interface StatusEntry {
-  id?: string // exists if editing an existing status
-  name: string
-  color: string
-  isFinal: boolean
-  isCanceled: boolean
-  position: number
-  /**
-   * Translation key, for a step that came from a shipped template.
-   *
-   * Carried through untouched so an unedited step keeps reading in the member's
-   * language. Cleared the moment the name is edited — see `nameEdited` below —
-   * because from then on the name is theirs, not ours.
-   */
-  nameKey?: string | null
-  /**
-   * Where this step can go next.
-   *
-   * Carried through untouched when it already exists. This editor has no
-   * transition control, so synthesising a chain on save would quietly flatten a
-   * branching flow — the return path out of "Blocked" on a template forked from
-   * the library would be gone the first time somebody renamed a step here.
-   * A chain is only invented for a step that has none.
-   */
-  transitions?: string[]
-  /**
-   * What the member does at this step — gps, timer, photos, signature…
-   *
-   * This editor did not hold them, so anything built here was a status machine
-   * with no work in it: a flow that could only change colour. They are here now,
-   * which also means a template from the library keeps its behaviour when it
-   * lands in this screen instead of arriving stripped.
-   */
-  capabilities?: string[]
-  /**
-   * "Ask when a job moves here" — the step's list of questions as edited.
-   * null = NOT SET (the legacy rule decides); `{ fields: [] }` = ask nothing.
-   */
-  form: StepFormDraft
-  /** The form as loaded, so a save only sends it when it actually changed. */
-  initialForm: StepFormDraft
-  /** What the server refused on the last save, by field. */
-  formServerErrors?: DefinitionErrors
-}
-
-interface WorkflowBuilderProps {
-  /**
-   * The space this flow is being built for. Its enabled modules decide which
-   * capabilities can actually be honoured, so the warnings are specific rather
-   * than a general "some module might be off".
-   */
-  spaceId?: string | null
-  /** Task-type capabilities of the flow being edited. */
-  initialTypeCapabilities?: string[]
-  mode: "create" | "edit"
-  workflowId?: string
-  workflowName?: string
-  initialStatuses?: WorkflowStatus[]
-  onCreated?: (workflowId: string) => void
-  onSaved?: () => void
-  onCancel: () => void
-}
-
-// ============================================================================
-// TEMPLATES
-// ============================================================================
-
-/**
- * Starter flows come from the LIBRARY, not from a list in this file.
- *
- * There used to be one here, one in shared, and one in the database — three
- * answers to "what does Field Service look like", drifting apart. The library
- * is the one that a curator can add to without a deploy, and the one whose
- * templates carry capabilities and transitions rather than just names and
- * colours.
- */
-interface Template {
-  id: string
-  name: string
-  statuses: {
-    name: string
-    /** Present on a shipped step — carried into the copy so it stays translated. */
-    nameKey?: string | null
-    color: string
-    isFinal: boolean
-    isCanceled: boolean
-    capabilities?: string[]
-    form?: StepFormDraft
-  }[]
-}
-
-
-/**
- * The capabilities a step can ask for, and the module each one needs.
- *
- * Keys match `CAPABILITY_MODULE` in shared — the server derives the module
- * requirement from them, so this list is a label set, not a second source of
- * truth about what they mean.
- */
-
-/** Task-type capabilities, in the order they read best. Keys match shared. */
-const TYPE_CAPABILITY_CHIPS = [
-  // labelKey via moduleI18n so a chip and the Modules tab always read the same
-  // word for the same module — they used a different key convention, and the
-  // one here existed in no locale at all, so every chip fell back to English.
-  { key: "subtasks", labelKey: moduleI18n.label("subtasks"), label: "Subtasks" },
-  { key: "dependencies", labelKey: moduleI18n.label("dependencies"), label: "Dependencies" },
-  { key: "sprint", labelKey: moduleI18n.label("sprints"), label: "Sprints" },
-  { key: "story_points", labelKey: moduleI18n.label("story_points"), label: "Story Points" },
-  { key: "epic", labelKey: moduleI18n.label("epics"), label: "Epics" },
-  { key: "phase", labelKey: moduleI18n.label("phases"), label: "Phases" },
-  { key: "crm", labelKey: moduleI18n.label("crm"), label: "CRM" },
-] as const
-
-const BUILDER_CAPABILITIES = [
-  { key: "gps", labelKey: "workflows.capabilities.gps", label: "GPS", hintKey: "workflows.capabilities.gpsHint", hint: "Records the route while the member is at this step. Needs Route tracking." },
-  { key: "timer", labelKey: "workflows.capabilities.timer", label: "Timer", hintKey: "workflows.capabilities.timerHint", hint: "Counts time on the job. Needs Time tracking." },
-  { key: "checklist", labelKey: "workflows.capabilities.checklist", label: "Checklist", hintKey: "workflows.capabilities.checklistHint", hint: "A list to work through. Needs Checklists." },
-  { key: "photos", labelKey: "workflows.capabilities.photos", label: "Photos", hintKey: "workflows.capabilities.photosHint", hint: "Before/after or evidence photos. Needs Attachments." },
-  { key: "signature", labelKey: "workflows.capabilities.signature", label: "Signature", hintKey: "workflows.capabilities.signatureHint", hint: "Customer sign-off. Needs Service reports." },
-  { key: "report", labelKey: "workflows.capabilities.report", label: "Report", hintKey: "workflows.capabilities.reportHint", hint: "Work performed and parts used. Needs Service reports." },
-  { key: "form", labelKey: "workflows.capabilities.form", label: "Form", hintKey: "workflows.capabilities.formHint", hint: "Visit notes or an outcome form. Needs Custom fields." },
-] as const
-
-// ============================================================================
-// STATUS ROW
-// ============================================================================
-
-const StatusRow = memo(function StatusRow({
-  status,
-  index,
-  isFirst,
-  total,
-  onChange,
-  onRemove,
-  autoFocus,
-  moduleOn,
-  workflowName,
-  formsEditable,
-  crmAvailable,
-  formOpen,
-  onToggleForm,
-}: {
-  status: StatusEntry
-  index: number
-  isFirst: boolean
-  total: number
-  onChange: (index: number, updates: Partial<StatusEntry>) => void
-  onRemove: (index: number) => void
-  autoFocus?: boolean
-  /** Is this module switched on in the space? Drives the amber warning. */
-  moduleOn: (key: string) => boolean
-  /** The flow's name — the shipped capability map is read by it for a step that says nothing. */
-  workflowName: string
-  /** May this person change what a step asks? */
-  formsEditable: boolean
-  /** Does the space run the CRM (so a question can write to it)? */
-  crmAvailable: boolean
-  formOpen: boolean
-  onToggleForm: (index: number) => void
-}) {
-  const { t } = useTranslation()
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    if (autoFocus && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [autoFocus])
-
-  const getTypeBadge = () => {
-    if (isFirst) {
-      return (
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400 shrink-0">
-          {t("workflows.start")}
-        </Badge>
-      )
-    }
-    if (status.isFinal && !status.isCanceled) {
-      return (
-        <button
-          type="button"
-          onClick={() => onChange(index, { isFinal: false })}
-          className="shrink-0"
-        >
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950">
-            {t("workflows.final")}
-          </Badge>
-        </button>
-      )
-    }
-    if (status.isCanceled) {
-      return (
-        <button
-          type="button"
-          onClick={() => onChange(index, { isCanceled: false, isFinal: false })}
-          className="shrink-0"
-        >
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 cursor-pointer hover:bg-red-50 dark:hover:bg-red-950">
-            {t("workflows.canceled")}
-          </Badge>
-        </button>
-      )
-    }
-    // Show selectable options
-    return (
-      <div className="flex gap-1 shrink-0">
-        <button
-          type="button"
-          onClick={() => onChange(index, { isFinal: true, isCanceled: false })}
-          className="text-[10px] text-muted-foreground hover:text-emerald-600 transition-colors"
-        >
-          {t("workflows.builder.markFinal")}
-        </button>
-        <span className="text-[10px] text-muted-foreground">/</span>
-        <button
-          type="button"
-          onClick={() => onChange(index, { isCanceled: true, isFinal: true })}
-          className="text-[10px] text-muted-foreground hover:text-red-600 transition-colors"
-        >
-          {t("workflows.builder.markCancel")}
-        </button>
-      </div>
-    )
-  }
-
-  const caps = status.capabilities ?? []
-  // What this step asks as it stands: its own list, the standard report, or nothing.
-  const stepShape = { key: toStatusKey(status.name), isFinal: status.isFinal, capabilities: caps }
-  const formMode = builderStepMode({ ...stepShape, form: status.form }, workflowName)
-  const standardAvailable = builderStepMode({ ...stepShape, form: null }, workflowName) === "legacy"
-  const asked = formMode === "own" ? status.form?.fields.length ?? 0 : 0
-  const formInvalid =
-    Object.keys(definitionErrors(status.form)).length > 0 || Object.keys(status.formServerErrors ?? {}).length > 0
-  const toggleCap = (key: string) =>
-    onChange(index, {
-      capabilities: caps.includes(key) ? caps.filter((c) => c !== key) : [...caps, key],
-    })
-
-  return (
-    <div className="group space-y-1 py-0.5">
-      <div className="flex items-center gap-2 h-9">
-        <ColorPicker
-          value={status.color}
-          onChange={(color) => onChange(index, { color })}
-        />
-        <Input
-          ref={inputRef}
-          value={status.name}
-          onChange={(e) => onChange(index, { name: e.target.value })}
-          placeholder={t("workflows.builder.statusNamePlaceholder")}
-          className="h-8 text-sm flex-1"
-        />
-        {getTypeBadge()}
-        <button
-          type="button"
-          onClick={() => onRemove(index)}
-          disabled={total <= 1}
-          className="w-6 h-6 flex items-center justify-center text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0"
-          aria-label={t("workflows.builder.removeStatus")}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/*
-        What the member DOES at this step.
-
-        Without these a flow built here was a status machine with no work in
-        it — a task could change colour and nothing else. Each one also decides
-        a module the space has to have enabled, which the server checks when the
-        type is offered, so the refusal names the switch to turn on.
-      */}
-      <div className="flex flex-wrap gap-1 pl-8 pr-8">
-        {BUILDER_CAPABILITIES.map((cap) => {
-          const on = caps.includes(cap.key)
-          // Selected, but the module it needs is off in this space — so the step
-          // would ask for something that cannot happen. Said here, while it can
-          // still be acted on, instead of only when the type is offered.
-          const unmet = on && !moduleOn(STEP_CAPABILITY_MODULE[cap.key] ?? "")
-          return (
-            <button
-              key={cap.key}
-              type="button"
-              onClick={() => toggleCap(cap.key)}
-              title={
-                unmet
-                  ? t("workflows.capabilities.moduleOff", {
-                      module: t(moduleI18n.label(STEP_CAPABILITY_MODULE[cap.key] ?? ""), {
-                        defaultValue: STEP_CAPABILITY_MODULE[cap.key],
-                      }),
-                      defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
-                    })
-                  : t(cap.hintKey, cap.hint)
-              }
-              className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${
-                unmet
-                  ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                  : on
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                    : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {unmet && "⚠ "}
-              {t(cap.labelKey, cap.label)}
-            </button>
-          )
-        })}
-        {/*
-          "Ask when a job moves here" — what a member answers when a job moves
-          INTO this step. Any step can ask, not only the last.
-        */}
-        <button
-          type="button"
-          onClick={() => onToggleForm(index)}
-          aria-expanded={formOpen}
-          data-testid="step-form-toggle"
-          className={`ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${
-            formInvalid
-              ? "border-red-400 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300"
-              : formOpen
-                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted"
-          }`}
-        >
-          <ClipboardList className="size-3" />
-          {t("stepForm.tab", "Ask when moving here")}
-          {formMode === "legacy"
-            ? ` · ${t("stepForm.tabStandard", "standard report")}`
-            : asked > 0
-              ? ` · ${asked}`
-              : ""}
-        </button>
-      </div>
-
-      {formOpen && (
-        <div className="pl-8 pr-8 pt-1">
-          <StepFormEditor
-            stepName={status.name}
-            mode={formMode}
-            draft={status.form}
-            onChange={(form) => onChange(index, { form, formServerErrors: undefined })}
-            editable={formsEditable}
-            crmAvailable={crmAvailable}
-            serverErrors={status.formServerErrors}
-            standardAvailable={standardAvailable && formMode === "own"}
-          />
-        </div>
-      )}
-    </div>
-  )
-})
+import { draftFromStored } from "@/lib/step-forms"
+import type { StatusEntry, Template, WorkflowBuilderProps } from "./workflow-builder/types"
+import { StatusRow } from "./workflow-builder/status-row"
+import { toKey, useWorkflowSave } from "./workflow-builder/use-workflow-save"
+import { useWorkflowTemplates } from "./workflow-builder/use-workflow-templates"
+import { WorkflowProblems } from "./workflow-builder/workflow-problems"
+import { TypeCapabilityChips } from "./workflow-builder/type-capability-chips"
+import { WorkflowTemplates } from "./workflow-builder/workflow-templates"
+import { SavedWorkflowExtras } from "./workflow-builder/saved-workflow-extras"
 
 // ============================================================================
 // WORKFLOW BUILDER
 // ============================================================================
-
-/*
-  One key form for the whole screen.
-
-  This used to lowercase while the generated transition targets uppercased, and
-  it only worked because the server uppercases keys on write — a coincidence
-  holding two halves of the same feature together. Both sides call the same
-  function now.
-*/
-const toKey = toStatusKey
-
 
 /**
  * Wire each step to the next one, and every working step to the cancel step.
@@ -427,30 +51,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
   onCancel,
 }: WorkflowBuilderProps) {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
 
-  // Published starter flows, shared across every organization. Cheap and
-  // rarely changes, so it is cached rather than refetched per open.
-  const { data: library = [] } = useQuery({
-    queryKey: ["workflow-library"],
-    queryFn: workflowsApi.library.list,
-    staleTime: 5 * 60_000,
-  })
-  const templates: Template[] = library.map((tpl) => ({
-    id: tpl.id,
-    name: tpl.name,
-    statuses: [...tpl.statuses]
-      .sort((a, b) => a.position - b.position)
-      .map((st) => ({
-        name: st.name,
-        nameKey: st.nameKey ?? null,
-        color: st.color,
-        isFinal: st.isFinal,
-        isCanceled: st.isCanceled,
-        capabilities: st.capabilities ?? [],
-        form: draftFromStored(st.form),
-      })),
-  }))
+  const templates = useWorkflowTemplates()
 
   // What this SPACE has switched on. A capability whose module is off here is
   // decoration: the step would ask the member for something the space cannot do.
@@ -491,8 +93,6 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     return []
   })
   const [lastAddedIndex, setLastAddedIndex] = useState<number | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
 
   /*
     What practised flows have that this one does not — no cancel path, no way
@@ -563,151 +163,20 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     setLastAddedIndex(null)
   }, [])
 
-  const handleSave = async () => {
-    const trimmedName = name.trim()
-    if (!trimmedName) {
-      notify.error(t("workflows.builder.toast.nameRequired"))
-      return
-    }
-
-    const validStatuses = statuses.filter((s) => s.name.trim())
-    if (validStatuses.length === 0) {
-      notify.error(t("workflows.builder.toast.statusRequired"))
-      return
-    }
-
-    // A step whose questions the server would refuse is refused here, on the step.
-    const badForm = statuses.findIndex((s) => s.name.trim() && Object.keys(definitionErrors(s.form)).length > 0)
-    if (badForm >= 0) {
-      setOpenForm(badForm)
-      notify.error(t("stepForm.saveInvalid", { step: statuses[badForm]!.name.trim(), defaultValue: "{{step}}: fix the questions marked in red before saving." }))
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      if (mode === "create") {
-        // Create the workflow
-        const workflow = await workflowsApi.create({
-          name: trimmedName,
-          capabilities: typeCapabilities,
-          ...(spaceId ? { spaceId } : {}),
-        })
-        if (!workflow) throw new Error(t("workflows.builder.toast.createFailedGeneric"))
-
-        // Add statuses sequentially
-        for (let i = 0; i < validStatuses.length; i++) {
-          const s = validStatuses[i]!
-          await workflowsApi.addStatus(workflow.id, {
-            name: s.name.trim(),
-            key: toKey(s.name),
-            color: s.color,
-            position: i,
-            isFinal: s.isFinal,
-            isCanceled: s.isCanceled,
-            transitions: resolveTransitions(validStatuses, i),
-            capabilities: s.capabilities ?? [],
-            ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
-          }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
-        }
-
-        queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
-        notify.success(t("workflows.builder.toast.created"))
-        onCreated?.(workflow.id)
-      } else if (mode === "edit" && workflowId) {
-        // Update workflow name if changed
-        // Name and type capabilities travel together — one request, and no
-        // half-saved state if the second would have failed.
-        await workflowsApi.update(workflowId, {
-          ...(trimmedName !== initialName ? { name: trimmedName } : {}),
-          capabilities: typeCapabilities,
-        })
-
-        // Determine added, updated, and removed statuses
-        const existingIds = new Set(
-          (initialStatuses || []).map((s) => s.id)
-        )
-        const currentIds = new Set(
-          validStatuses.filter((s) => s.id).map((s) => s.id!)
-        )
-
-        // Delete removed statuses
-        for (const initial of initialStatuses || []) {
-          if (!currentIds.has(initial.id)) {
-            await workflowsApi.deleteStatus(workflowId, initial.id)
-          }
-        }
-
-        // Add new statuses and update existing
-        for (let i = 0; i < validStatuses.length; i++) {
-          const s = validStatuses[i]!
-          if (s.id && existingIds.has(s.id)) {
-            // Update existing
-            const original = initialStatuses?.find((os) => os.id === s.id)
-            // Sent only when it changed: omitted leaves the stored form (and its version) alone.
-            const formChanged = draftChanged(s.initialForm, s.form)
-            if (
-              original &&
-              (original.name !== s.name.trim() ||
-                original.color !== s.color ||
-                original.isFinal !== s.isFinal ||
-                original.isCanceled !== s.isCanceled ||
-                original.position !== i ||
-                formChanged)
-            ) {
-              await workflowsApi.updateStatus(workflowId, s.id, {
-                name: s.name.trim(),
-                key: toKey(s.name),
-                color: s.color,
-                position: i,
-                isFinal: s.isFinal,
-                isCanceled: s.isCanceled,
-                transitions: resolveTransitions(validStatuses, i),
-                capabilities: s.capabilities ?? [],
-                ...(formChanged ? { form: draftToPayload(s.form) } : {}),
-              }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
-            }
-          } else {
-            // Add new
-            await workflowsApi.addStatus(workflowId, {
-              name: s.name.trim(),
-              key: toKey(s.name),
-              color: s.color,
-              position: i,
-              isFinal: s.isFinal,
-              isCanceled: s.isCanceled,
-              transitions: resolveTransitions(validStatuses, i),
-              capabilities: s.capabilities ?? [],
-              ...(s.form !== null ? { form: draftToPayload(s.form) } : {}),
-            }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
-          }
-        }
-
-        queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
-        notify.success(t("workflows.builder.toast.updated"))
-        onSaved?.()
-      }
-    } catch (err) {
-      /*
-        A step's questions refused by the server: shown on the step, on the
-        fields it names — not as one English sentence in a toast.
-      */
-      const stepIndex = (err as { stepIndex?: number } | null)?.stepIndex
-      const step = stepIndex !== undefined ? statuses[stepIndex] : undefined
-      const refusal = step ? definitionRefusal(err, draftToPayload(step.form)?.fields ?? []) : null
-      if (step && refusal && stepIndex !== undefined) {
-        setStatuses((prev) => prev.map((s, j) => (j === stepIndex ? { ...s, formServerErrors: refusal } : s)))
-        setOpenForm(stepIndex)
-        notify.error(t("stepForm.saveRefused", { step: step.name.trim(), defaultValue: "{{step}}: some questions were not accepted." }))
-      } else {
-        notify.error(
-          err instanceof Error ? err.message : t("workflows.builder.toast.saveFailed")
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { isSaving, handleSave } = useWorkflowSave({
+    mode,
+    spaceId,
+    workflowId,
+    initialName,
+    initialStatuses,
+    name,
+    statuses,
+    typeCapabilities,
+    setStatuses,
+    setOpenForm,
+    onCreated,
+    onSaved,
+  })
 
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -740,29 +209,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         type is attached to a space. Guessing at transitions here to run the
         full validator would be asserting on data the builder does not have.
       */}
-      {statuses.length > 0 && problems.length > 0 && (
-        <div className="space-y-1 rounded-lg border border-red-300 bg-red-50 px-3 py-2 dark:border-red-500/30 dark:bg-red-500/10">
-          <p className="text-xs font-medium text-red-800 dark:text-red-300">
-            {t("workflows.builder.problemsTitle", "This task type cannot be used yet")}
-          </p>
-          {problems.slice(0, 4).map((p, i) => (
-            <p key={`${p.code}-${p.statusKey ?? i}`} className="flex items-start gap-2 text-xs text-red-700 dark:text-red-400">
-              <AlertCircle className="mt-px size-3.5 shrink-0" />
-              {p.message}
-            </p>
-          ))}
-          {/* Four is enough to act on. The rest are usually the same fault
-              repeated, and a list of twelve is the wall this replaced. */}
-          {problems.length > 4 && (
-            <p className="pl-5 text-xs text-red-700/80 dark:text-red-400/80">
-              {t("workflows.builder.moreProblems", {
-                count: problems.length - 4,
-                defaultValue: "and {{count}} more",
-              })}
-            </p>
-          )}
-        </div>
-      )}
+      {statuses.length > 0 && problems.length > 0 && <WorkflowProblems problems={problems} />}
 
       {/*
         What the TASK carries, as opposed to what a member does at a step.
@@ -772,46 +219,11 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         Twelve of the eighteen modules had no way to be declared by a task type
         before this row existed, which is why nothing could warn about them.
       */}
-      <div className="space-y-1.5">
-        <Label className="text-xs">{t("workflows.builder.typeCapabilities", "This task type uses")}</Label>
-        <div className="flex flex-wrap gap-1.5">
-          {TYPE_CAPABILITY_CHIPS.map((cap) => {
-            const on = typeCapabilities.includes(cap.key)
-            const unmet = on && !moduleOn(TYPE_CAPABILITY_MODULE[cap.key] ?? "")
-            return (
-              <button
-                key={cap.key}
-                type="button"
-                onClick={() =>
-                  setTypeCapabilities((prev) =>
-                    prev.includes(cap.key) ? prev.filter((c) => c !== cap.key) : [...prev, cap.key],
-                  )
-                }
-                title={
-                  unmet
-                    ? t("workflows.capabilities.moduleOff", {
-                        module: t(moduleI18n.label(TYPE_CAPABILITY_MODULE[cap.key] ?? ""), {
-                          defaultValue: TYPE_CAPABILITY_MODULE[cap.key],
-                        }),
-                        defaultValue: 'The "{{module}}" module is off in this space, so this step cannot do it yet.',
-                      })
-                    : undefined
-                }
-                className={`rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
-                  unmet
-                    ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                    : on
-                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                      : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {unmet && "⚠ "}
-                {t(cap.labelKey, cap.label)}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      <TypeCapabilityChips
+        typeCapabilities={typeCapabilities}
+        setTypeCapabilities={setTypeCapabilities}
+        moduleOn={moduleOn}
+      />
 
       {/* Statuses */}
       <div className="space-y-1.5">
@@ -847,27 +259,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
       </div>
 
       {/* Templates */}
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">{t("workflows.builder.templates")}</Label>
-        <div className="flex flex-wrap gap-1.5">
-          {templates.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() => handleApplyTemplate(tpl)}
-              title={tpl.statuses.map((st) => st.name).join(" → ")}
-              className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              {tpl.name}
-            </button>
-          ))}
-          {templates.length === 0 && (
-            <span className="text-xs text-muted-foreground/70">
-              {t("workflows.builder.noTemplates", "No starter flows available.")}
-            </span>
-          )}
-        </div>
-      </div>
+      <WorkflowTemplates templates={templates} onApply={handleApplyTemplate} />
 
       {/*
         Everything below exists only while EDITING a saved task type, because
@@ -876,56 +268,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
         saved. These used to live on a separate card list; folding them in here
         is what let that second screen go.
       */}
-      {mode === "edit" && workflowId && (
-        <>
-          {advice.length > 0 && (
-            <div className="space-y-1">
-              {advice.map((a) => (
-                <p key={a.code} className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400">
-                  <AlertCircle className="mt-px size-3.5 shrink-0" />
-                  {a.message}
-                </p>
-              ))}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              {t("workflows.builder.fields", "Fields collected on this task type")}
-            </Label>
-            <div className="rounded-lg border border-border bg-background p-2.5">
-              <CustomFieldsManager workflowId={workflowId} />
-            </div>
-          </div>
-
-          {/* Offering it SUBMITS it — a curator reads it before any other
-              organization is offered it. The wording has to say so. */}
-          <button
-            type="button"
-            disabled={submitting}
-            title={t("workflows.page.submitHint", "Offer this flow to other organizations. It is reviewed first.")}
-            onClick={async () => {
-              setSubmitting(true)
-              try {
-                const r = await workflowsApi.submitToLibrary(workflowId)
-                notify.success(
-                  r?.resubmitted
-                    ? t("workflows.page.toast.resubmitted", "Updated — it is waiting to be reviewed.")
-                    : t("workflows.page.toast.submitted", "Sent for review. It reaches other organizations once approved."),
-                )
-              } catch (e) {
-                notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong"))
-              } finally {
-                setSubmitting(false)
-              }
-            }}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
-            {t("workflows.page.submitToLibrary", "Offer to library")}
-          </button>
-        </>
-      )}
+      {mode === "edit" && workflowId && <SavedWorkflowExtras workflowId={workflowId} advice={advice} />}
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">

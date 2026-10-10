@@ -84,13 +84,6 @@ export const locationsApi = {
     return response.data?.data || [];
   },
 
-  /** @deprecated Use getAssignedMembers */
-  getAssignedTechnicians: async (locationId: string) => {
-    const response = await call(locationsEndpoints.members, { id: locationId }) as ApiResponse<{ success: boolean; data: LocationAssignment[] }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data || [];
-  },
-
   assignMember: async (locationId: string, data: AssignMemberInput) => {
     const response = await call(locationsEndpoints.assignMember, { id: locationId }, { body: data }) as ApiResponse<{ success: boolean; data: LocationAssignment }>;
     if (response.error) throw apiError(response);

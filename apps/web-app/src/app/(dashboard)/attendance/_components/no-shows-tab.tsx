@@ -11,6 +11,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useTimeFormat } from "@/hooks/use-time-format"
+import { keys } from "@/lib/query-keys"
 
 const STATE_STYLE: Record<string, string> = {
   ESCALATED: "bg-red-500/10 text-red-600 dark:text-red-400",
@@ -27,14 +28,14 @@ export function NoShowsTab() {
   const [reason, setReason] = useState("")
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["attendance-no-shows"],
+    queryKey: keys.attendance.noShows(),
     queryFn: () => attendanceApi.listNoShows({ days: 14 }),
     refetchInterval: 60_000,
   })
 
   const resolveM = useMutation({
     mutationFn: ({ id, action, reason }: { id: string; action: "excuse" | "reopen"; reason?: string }) => attendanceApi.resolveNoShow(id, action, reason),
-    onSuccess: () => { setExcuseId(null); setReason(""); qc.invalidateQueries({ queryKey: ["attendance-no-shows"] }) },
+    onSuccess: () => { setExcuseId(null); setReason(""); qc.invalidateQueries({ queryKey: keys.attendance.noShows() }) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 

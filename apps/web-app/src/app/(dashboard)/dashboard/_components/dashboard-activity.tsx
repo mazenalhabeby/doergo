@@ -2,8 +2,9 @@ import React from "react"
 import i18n from "@/i18n"
 import type { Task, OrgMember } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
+import { personInitials } from "@hbcfield/shared/client"
 import type { LiveEvent, PendingAction } from "@/components/dashboard"
-import { AVATAR_COLORS, getInitials, getAvatarColor, isClockedIn, timeAgo } from "./helpers"
+import { AVATAR_COLORS, getAvatarColor, isClockedIn, timeAgo } from "./helpers"
 
 // Single source of truth for how a task status maps to a feed dot + verb.
 const STATUS_DOT: Record<string, LiveEvent["dot"]> = {
@@ -146,7 +147,7 @@ export function buildPendingActions(opts: {
     const name = u ? shortName(u.firstName, u.lastName) : i18n.t("dashboard.pending.worker")
     actions.push({
       id: `approval-${entry.id}`,
-      initials: u ? getInitials(u.firstName, u.lastName) : "?",
+      initials: personInitials(u),
       color: getAvatarColor(entry.userId || "x"),
       title: `${name} — ${i18n.t("dashboard.pending.needsApproval")}`,
       description: flagSummary(entry.flagReasons),
@@ -159,7 +160,7 @@ export function buildPendingActions(opts: {
     const a = task.assignedTo
     actions.push({
       id: `blocked-${task.id}`,
-      initials: a ? getInitials(a.firstName, a.lastName) : "?",
+      initials: personInitials(a),
       color: getAvatarColor(a?.id || "x"),
       imageUrl: a?.avatarUrl || undefined,
       title: `${a ? shortName(a.firstName, a.lastName) : i18n.t("dashboard.pending.unassigned")} — ${i18n.t("dashboard.pending.blocked")}`,

@@ -495,7 +495,7 @@ export default function TaskDetailPage({
             {hasModule("subtasks") && (
               <div data-tour="task-subtasks">
               <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount || undefined} defaultOpen={openIfPresent(subtaskCount)}>
-                <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} canEdit={canAddWork} />
+                <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} canEdit={canAddWork} workflowStatuses={workflowStatuses} />
               </CollapsibleSection>
               </div>
             )}
@@ -522,7 +522,7 @@ export default function TaskDetailPage({
             {hasModule("dependencies") && (
               <div data-tour="task-dependencies">
               <CollapsibleSection id="dependencies" icon={Link2} title={t("tasks.sections.dependencies")} count={depCount || undefined} defaultOpen={openIfPresent(depCount)}>
-                <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} canEdit={canAddWork} />
+                <DependenciesSection taskId={id} predecessors={task.predecessors || []} successors={task.successors || []} canEdit={canAddWork} workflowStatuses={workflowStatuses} />
               </CollapsibleSection>
               </div>
             )}

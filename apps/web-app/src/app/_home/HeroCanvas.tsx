@@ -19,7 +19,7 @@ const HeroLogo = dynamic(() => import('./HeroLogo'), {
   loading: () => <HeroFallback />,
 });
 
-export function HeroFallback() {
+function HeroFallback() {
   // static, faint arrow mark for first paint / reduced motion (no WebGL)
   return (
     <div aria-hidden className="absolute inset-0 flex items-center justify-center opacity-[0.12]">

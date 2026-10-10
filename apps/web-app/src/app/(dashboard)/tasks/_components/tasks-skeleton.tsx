@@ -19,7 +19,7 @@ export const VIEW_MODE_STORAGE_KEY = "hbcfield-tasks-view-mode"
 export type TaskViewMode = "table" | "board" | "schedule"
 
 /** What a first-time visitor sees, and the fallback when storage is unreadable. */
-export const DEFAULT_VIEW_MODE: TaskViewMode = "board"
+const DEFAULT_VIEW_MODE: TaskViewMode = "board"
 
 /**
  * The view the page will open in, so the route-level skeleton draws that one

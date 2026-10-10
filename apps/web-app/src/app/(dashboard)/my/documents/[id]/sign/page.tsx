@@ -12,6 +12,7 @@ import { SignaturePad } from "@/components/signature-pad"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
 
 /*
   Signing, in a browser.
@@ -50,11 +51,11 @@ export default function SignDocumentPage() {
   )
 
   const { data: documents = [] } = useQuery<MemberDocumentRow[]>({
-    queryKey: ["my-documents"],
+    queryKey: keys.documents.mine(),
     queryFn: () => documentsApi.list(),
   })
   const { data: types = [] } = useQuery<DocumentTypeRow[]>({
-    queryKey: ["document-types"],
+    queryKey: keys.documents.types(),
     queryFn: () => documentsApi.listTypes(),
   })
 
@@ -85,7 +86,7 @@ export default function SignDocumentPage() {
       if (isAcknowledge) {
         await documentsApi.acknowledge(String(params.id))
         setStep("done")
-        queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+        queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
       } else {
         setStep("sign")
       }
@@ -105,7 +106,7 @@ export default function SignDocumentPage() {
         idempotencyKey,
       })
       setStep("done")
-      queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
       if (res?.alreadySigned) notify.success(t("documents.sign.alreadySigned"))
     } catch (e) {
       notify.error(e instanceof Error ? e.message : t("documents.sign.failed"))

@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { format, differenceInCalendarDays } from "date-fns"
@@ -65,7 +66,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { invalidateTimeOff } from "@/lib/query-keys"
+import { keys, invalidateTimeOff } from "@/lib/query-keys"
 
 const STATUS_PILLS: Record<
   TimeOffStatus,
@@ -105,11 +106,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
   const [rejectionReason, setRejectionReason] = useState("")
 
   const { data: timeOffRequests, isLoading } = useQuery({
-    queryKey: [
-      "employeeTimeOff",
-      employeeId,
-      statusFilter === "all" ? undefined : statusFilter,
-    ],
+    queryKey: keys.timeOff.member(employeeId, statusFilter === "all" ? undefined : statusFilter),
     queryFn: () =>
       employeesApi.getTimeOff(
         employeeId,
@@ -360,7 +357,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
                         <>
                           <span className="text-muted-foreground/40">·</span>
                           <span className="truncate">
-                            {request.approvedBy.firstName} {request.approvedBy.lastName}
+                            {personName(request.approvedBy)}
                           </span>
                         </>
                       )}

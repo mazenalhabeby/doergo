@@ -6,12 +6,13 @@ import Link from "next/link"
 import { ArrowRightLeft, CircleDot, Clock } from "lucide-react"
 
 import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
-import { custodyDays, formatCents, type KindShape } from "@hbcfield/shared/client"
+import { personInitials, personName, custodyDays, formatCents, type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AssetHandoverDialog } from "./asset-handover-dialog"
-import { initials } from "./holder-picker"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * Who has had this, and what it cost each of them.
@@ -34,7 +35,7 @@ export function AssetCustodyPanel({
   const qc = useQueryClient()
 
   const q = useQuery({
-    queryKey: ["asset-custody", assetId],
+    queryKey: keys.assets.custody(assetId),
     queryFn: () => assetsApi.getCustody(assetId),
   })
 
@@ -42,10 +43,10 @@ export function AssetCustodyPanel({
   const unattributed = q.data?.unattributed
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["asset-custody", assetId] })
+    qc.invalidateQueries({ queryKey: keys.assets.custody(assetId) })
     // The record header and the ledger both read who holds it.
-    qc.invalidateQueries({ queryKey: ["asset", assetId] })
-    qc.invalidateQueries({ queryKey: ["asset-money", assetId] })
+    qc.invalidateQueries({ queryKey: keys.assets.record(assetId) })
+    qc.invalidateQueries({ queryKey: keys.assets.money(assetId) })
   }
 
   if (q.isLoading) {
@@ -118,7 +119,7 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
   const { t } = useTranslation()
   const open = !period.endedAt
   const name = period.user
-    ? `${period.user.firstName ?? ""} ${period.user.lastName ?? ""}`.trim() || period.user.email || "—"
+    ? personName(period.user) || period.user.email || "—"
     : period.customer?.name ?? t("assetRecords.formerMember", "Former member")
   const days = custodyDays(period as never)
   const href = period.userId ? `/members/${period.userId}` : period.customerId ? `/customers/${period.customerId}` : null
@@ -126,7 +127,7 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
   const body = (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-        {initials(name)}
+        {personInitials(name)}
       </span>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
@@ -139,9 +140,9 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
         </p>
         <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <Clock className="h-3 w-3" />
-          {new Date(period.startedAt).toLocaleDateString()}
+          {new Date(period.startedAt).toLocaleDateString(dateLocale())}
           {" – "}
-          {period.endedAt ? new Date(period.endedAt).toLocaleDateString() : t("custody.present", "now")}
+          {period.endedAt ? new Date(period.endedAt).toLocaleDateString(dateLocale()) : t("custody.present", "now")}
           {" · "}
           {t("custody.days", "{{count}} days", { count: days })}
         </p>

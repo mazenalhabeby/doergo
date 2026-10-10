@@ -20,7 +20,7 @@ export interface WorkerLocation {
 
 
 // Route tracking types
-export interface RoutePoint {
+interface RoutePoint {
   lat: number;
   lng: number;
   accuracy?: number;
@@ -40,15 +40,4 @@ export interface TaskRoute {
   /** Road-snapped path [lat, lng], computed server-side. Null when route
    *  matching isn't configured — the map then draws the raw points. */
   matchedPath?: [number, number][] | null;
-}
-
-
-export interface WorkerCurrentRoute {
-  taskId: string;
-  taskTitle: string;
-  startTime: string | null;
-  duration: number | null; // seconds
-  distance: number; // meters
-  destination: { lat: number; lng: number } | null;
-  points: RoutePoint[];
 }

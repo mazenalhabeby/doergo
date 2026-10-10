@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils"
 export type BacklogSortField = "priority" | "createdAt" | "storyPoints" | "title"
 export type BacklogSortDir = "asc" | "desc"
 
-export interface BacklogToolbarProps {
+interface BacklogToolbarProps {
   tasks: Task[]
   selectedIds: Set<string>
   onBulkEstimate: (taskIds: string[], points: number) => void

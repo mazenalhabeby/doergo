@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
 import { Crown, Loader2, Users } from "lucide-react"
 import { toast } from "sonner"
-import { CREW_REASON_MAX } from "@hbcfield/shared/client"
+import { personName, CREW_REASON_MAX } from "@hbcfield/shared/client"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,7 +18,6 @@ import { tasksApi, type CrewView } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 type Member = CrewView["members"][number]
-const fullName = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`.trim()
 
 /**
  * The crew on a job (packages/shared/src/tasks/crew.ts): who is on it now,
@@ -67,10 +66,10 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
       {leader ? (
         <p className={cn("mt-2 text-xs", crew.leader.acting ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground")}>
           {crew.leader.acting
-            ? t("tasks.crew.acting", { name: fullName(leader.user) })
+            ? t("tasks.crew.acting", { name: personName(leader.user) })
             : crew.leader.source === "TODAY"
-              ? t("tasks.crew.leadsToday", { name: fullName(leader.user) })
-              : t("tasks.crew.leads", { name: fullName(leader.user) })}
+              ? t("tasks.crew.leadsToday", { name: personName(leader.user) })
+              : t("tasks.crew.leads", { name: personName(leader.user) })}
         </p>
       ) : null}
 
@@ -82,7 +81,7 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
             <li key={m.user.id} className="flex items-center gap-2.5 text-sm">
               <UserAvatar firstName={m.user.firstName} lastName={m.user.lastName} seed={m.user.id} size="xs" />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-foreground">{fullName(m.user)}</p>
+                <p className="truncate font-medium text-foreground">{personName(m.user)}</p>
                 <p className={cn("flex items-center gap-1.5 truncate text-xs",
                   s.tone === "stopped" ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground")}>
                   <span className={cn("size-1.5 shrink-0 rounded-full",
@@ -163,7 +162,7 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
                   to === m.user.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50")}
               >
                 <UserAvatar firstName={m.user.firstName} lastName={m.user.lastName} seed={m.user.id} size="xs" />
-                <span className="flex-1 truncate text-foreground">{fullName(m.user)}</span>
+                <span className="flex-1 truncate text-foreground">{personName(m.user)}</span>
                 <span className="text-xs text-muted-foreground">{m.joined ? t("tasks.crew.onJobShort") : t("tasks.crew.notOnJob")}</span>
               </button>
             ))}
@@ -211,7 +210,7 @@ function MemberOnJobDialog({ request, onClose, taskId }: { request: { member: Me
   const [pending, setPending] = useState(false)
   useEffect(() => { if (request) setReason("") }, [request])
   if (!request) return null
-  const name = fullName(request.member.user)
+  const name = personName(request.member.user)
   const joining = request.action === "join"
 
   const submit = async () => {

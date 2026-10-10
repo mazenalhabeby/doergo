@@ -7,14 +7,20 @@ import fs from "node:fs"
 import path from "node:path"
 
 const root = path.join(__dirname, "..")
-const read = (rel: string) =>
+const readOne = (rel: string) =>
   fs.readFileSync(path.join(root, rel), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "")
+// A path ending in "/" is a SCREEN split across files: every .ts/.tsx directly in that folder.
+const read = (rel: string) =>
+  rel.endsWith("/")
+    ? fs.readdirSync(path.join(root, rel)).filter((f) => /\.tsx?$/.test(f)).sort().map((f) => readOne(rel + f)).join("\n")
+    : readOne(rel)
 
 const PICKERS = [
   "components/assign-member-dialog.tsx",
-  "app/(dashboard)/tasks/_components/create-task-dialog.tsx",
+  // The New Task dialog: its people come from its form hook in create-task/.
+  "app/(dashboard)/tasks/_components/create-task/",
   "app/(dashboard)/customers/[id]/customer-managers.tsx",
-  "app/(dashboard)/customers/[id]/page.tsx",
+  "app/(dashboard)/customers/[id]/",
   "app/(dashboard)/locations/[id]/_components/apartment-dialog.tsx",
   "components/assets/holder-picker.tsx",
   "components/assets/contract-dialog.tsx",

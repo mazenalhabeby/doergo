@@ -8,6 +8,7 @@ import { Building2, Plus, Users, ListChecks, ChevronRight, LayoutGrid, Loader2, 
 
 import { spacePortalApi, type PortalSummary } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
+import { personInitials } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,6 +19,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
 import { SectionHeader } from "./section-header"
+import { keys } from "@/lib/query-keys"
 
 // Same portal-type language as the org Clients Portals page.
 const TEMPLATES = [
@@ -27,13 +29,12 @@ const TEMPLATES = [
   { key: "custom", label: "Units (generic)", badge: "Units", entity: "Unit", blurb: "Generic units your clients are tied to.", accent: "slate" },
 ] as const
 const BY_KEY = Object.fromEntries(TEMPLATES.map((x) => [x.key, x]))
-const portalInitials = (n?: string) => (n || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("") || "?"
 
 export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: string; hasApartments?: boolean; onOpenModules?: () => void }) {
   const { t } = useTranslation()
   const router = useRouter()
   const qc = useQueryClient()
-  const portalsQ = useQuery({ queryKey: ["space-portals", spaceId], queryFn: () => spacePortalApi.listPortals(spaceId) })
+  const portalsQ = useQuery({ queryKey: keys.spaces.portals(spaceId), queryFn: () => spacePortalApi.listPortals(spaceId) })
   const portals = portalsQ.data ?? []
   const [createOpen, setCreateOpen] = useState(false)
 
@@ -66,7 +67,7 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
               <button key={p.id} onClick={() => router.push(`/locations/${spaceId}/portals/${p.id}`)}
                 className="group rounded-2xl border border-border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
                 <div className="flex items-start justify-between gap-3">
-                  <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold", portalTile(meta.accent))}>{portalInitials(p.name)}</div>
+                  <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold", portalTile(meta.accent))}>{personInitials(p.name)}</div>
                   <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium", portalTile(meta.accent))}>{t(`portal.type.${meta.key}`, meta.badge)}</span>
                 </div>
                 <p className="mt-4 truncate font-semibold text-foreground">{p.name}</p>
@@ -85,7 +86,7 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
       )}
 
       <CreatePortalDialog spaceId={spaceId} hasApartments={hasApartments} onOpenModules={onOpenModules} open={createOpen} onOpenChange={setCreateOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: ["space-portals", spaceId] }); router.push(`/locations/${spaceId}/portals/${id}`) }} />
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: keys.spaces.portals(spaceId) }); router.push(`/locations/${spaceId}/portals/${id}`) }} />
     </div>
   )
 }

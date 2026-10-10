@@ -1,4 +1,10 @@
-import i18n from "@/i18n"
+/*
+  The GLOBAL i18next instance, not `@/i18n`: that module statically carries the
+  whole English catalogue (~360 kB raw), and importing it here for `.language`
+  put the catalogue into the first load of every page that formats a date.
+  `providers/i18n-provider.tsx` initialises this same instance for the app.
+*/
+import i18n from "i18next"
 
 /**
  * Locale-aware date and time formatting — one place.
@@ -51,6 +57,17 @@ export function formatMediumDate(value: string | number | Date): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+  })
+}
+
+/** Medium date with the time — "Aug 24, 2026, 2:30 PM" / "24. Aug. 2026, 14:30". */
+export function formatMediumDateTime(value: string | number | Date): string {
+  return new Date(value).toLocaleDateString(dateLocale(), {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   })
 }
 

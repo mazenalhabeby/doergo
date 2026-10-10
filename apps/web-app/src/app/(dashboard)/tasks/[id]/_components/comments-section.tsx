@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import { Send, Loader2 } from "lucide-react"
 
@@ -63,7 +64,7 @@ export function CommentsSection({
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 mb-0.5">
                   <span className="text-[13px] font-medium text-foreground">
-                    {comment.user.firstName} {comment.user.lastName}
+                    {personName(comment.user)}
                   </span>
                   <span className="text-[11px] text-muted-foreground/60">
                     {formatTimeAgo(comment.createdAt)}

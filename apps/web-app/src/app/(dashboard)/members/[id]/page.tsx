@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { use, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -256,7 +257,7 @@ export default function MemberProfilePage({
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h1 data-tour="page-member" className="text-2xl font-bold tracking-tight text-foreground">
-                    {member.firstName} {member.lastName}
+                    {personName(member)}
                   </h1>
                   {member.isActive && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
@@ -683,7 +684,7 @@ export default function MemberProfilePage({
                       <AttendanceTab
                         attendance={attendance}
                         employeeId={memberId}
-                        employeeName={`${member.firstName} ${member.lastName}`.trim()}
+                        employeeName={personName(member)}
                         canManage={canManage}
                       />
                     </TabsContent>

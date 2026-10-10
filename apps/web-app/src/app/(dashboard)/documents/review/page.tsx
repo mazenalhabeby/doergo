@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /*
   The review queue.
@@ -43,7 +46,7 @@ export default function ReviewQueuePage() {
   const [rejecting, setRejecting] = useState<PendingReviewRow | null>(null)
 
   const { data: rows = [], isLoading } = useQuery<PendingReviewRow[]>({
-    queryKey: ["documents-awaiting-verification"],
+    queryKey: keys.documents.awaitingVerification(),
     queryFn: () => documentsApi.awaitingVerification(),
     // A document is read in the background after it is sent. While one is
     // still being read, look again so its date arrives without a reload.
@@ -59,10 +62,10 @@ export default function ReviewQueuePage() {
   const blocking = useMemo(() => rows.filter((r) => r.blocksWork), [rows])
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["documents-awaiting-verification"] })
+    queryClient.invalidateQueries({ queryKey: keys.documents.awaitingVerification() })
     // The compliance board and every member list change with this decision.
-    queryClient.invalidateQueries({ queryKey: ["credential-compliance"] })
-    queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+    queryClient.invalidateQueries({ queryKey: keys.documents.compliance() })
+    queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
   }
 
   const open = useMutation({
@@ -147,7 +150,7 @@ export default function ReviewQueuePage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-slate-900 dark:text-slate-100">
-                      {r.member.firstName} {r.member.lastName}
+                      {personName(r.member)}
                     </span>
                     <span className="text-slate-400">·</span>
                     <span className="text-slate-600 dark:text-slate-300">{r.typeLabel}</span>
@@ -162,13 +165,13 @@ export default function ReviewQueuePage() {
                   <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                     <Clock className="h-3.5 w-3.5" />
                     <span>{t("documents.review.waitingSince", {
-                      date: new Date(r.submittedAt).toLocaleDateString(),
+                      date: new Date(r.submittedAt).toLocaleDateString(dateLocale()),
                     })}</span>
                     {r.expiresOn && (
                       <>
                         <span className="text-slate-300">·</span>
                         <span>{t("documents.review.expires", {
-                          date: new Date(r.expiresOn).toLocaleDateString(),
+                          date: new Date(r.expiresOn).toLocaleDateString(dateLocale()),
                         })}</span>
                       </>
                     )}

@@ -68,7 +68,7 @@ export interface TimeOffRequest {
  * shaped as PARTS rather than a sentence, so the screen writes the words in the
  * viewer's language. See `assessLeave` in @hbcfield/shared for the rule.
  */
-export interface CoverName {
+interface CoverName {
   id: string;
   firstName: string;
   lastName: string;
@@ -155,38 +155,4 @@ export interface FloorSpace {
   status: "ok" | "tight" | "short";
   rotaKnown: boolean;
   people: FloorPerson[];
-}
-
-
-export interface EmployeeAvailability {
-  id: string;
-  firstName: string;
-  lastName: string;
-  isAvailable: boolean;
-  onTimeOff: boolean;
-  space?: { id: string; name: string } | null;
-  schedule: {
-    startTime: string;
-    endTime: string;
-    notes?: string;
-  } | null;
-  timeOff: {
-    startDate: string;
-    endDate: string;
-    reason?: string;
-  } | null;
-}
-
-
-export interface AvailabilityResponse {
-  date: string;
-  dayOfWeek: number;
-  dayName: string;
-  technicians: EmployeeAvailability[];
-  summary: {
-    total: number;
-    available: number;
-    onTimeOff: number;
-    notScheduled: number;
-  };
 }

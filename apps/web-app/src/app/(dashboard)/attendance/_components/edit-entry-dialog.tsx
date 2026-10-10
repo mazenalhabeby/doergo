@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDuration, personName } from "@hbcfield/shared/client"
 import { useMemo, useState } from "react"
 import { BreakFields, type BreakKind } from "@/components/attendance/break-fields"
 import { useTranslation } from "react-i18next"
@@ -8,7 +9,7 @@ import { Pencil, Loader2, Trash2, Coffee, UtensilsCrossed, Pause, Plus } from "l
 
 import { attendanceApi, type TimeEntry } from "@/lib/api"
 import { notify } from "@/lib/toast"
-import { cn, utcToZonedInput, zonedInputToUtc, formatDurationMinutes } from "@/lib/utils"
+import { cn, utcToZonedInput, zonedInputToUtc } from "@/lib/utils"
 
 // Smart quick-pick reasons for editing an entry — click to fill the field
 // (click again to clear); the admin can still type a custom reason. i18n keys
@@ -38,6 +39,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { keys } from "@/lib/query-keys"
 
 export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const { t } = useTranslation()
@@ -117,7 +119,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
 
   /** The breaks already recorded on this shift — so the dialog shows what exists. */
   const { data: existingBreaks = [] } = useQuery({
-    queryKey: ["entry-breaks", entry.id],
+    queryKey: keys.attendance.entryBreaks(entry.id),
     queryFn: () => attendanceApi.entryBreaks(entry.id),
     enabled: open,
   })
@@ -181,10 +183,12 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
-      queryClient.invalidateQueries({ queryKey: ["entry-breaks", entry.id] })
-      queryClient.invalidateQueries({ queryKey: ["breaks"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.entryBreaks(entry.id) })
+      // The Breaks tab (was `["breaks"]`, which no query reads).
+      queryClient.invalidateQueries({ queryKey: keys.attendance.breakHistory() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.breakSummary() })
       notify.success(t("attendance.editEntry.success"))
       setPendingBreaks([])
       setRemovingBreaks([])
@@ -198,8 +202,8 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
   const remove = useMutation({
     mutationFn: () => attendanceApi.deleteEntry(entry.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["attendance"] })
-      queryClient.invalidateQueries({ queryKey: ["attendance-approvals"] })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.list() })
+      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
       notify.success(t("attendance.editEntry.deleteSuccess", "Entry removed"))
       setOpen(false)
     },
@@ -229,7 +233,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
           <DialogTitle>{t("attendance.editEntry.title")}</DialogTitle>
           <DialogDescription>
             {t("attendance.editEntry.description", {
-              name: `${entry.user?.firstName ?? ""} ${entry.user?.lastName ?? ""}`.trim(),
+              name: personName(entry.user),
             })}
           </DialogDescription>
         </DialogHeader>
@@ -292,7 +296,7 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                 {/* The total, because that is the number the row in the table
                     shows and the one that comes off the hours. */}
                 <span className="text-xs font-normal text-muted-foreground">
-                  {formatDurationMinutes(
+                  {formatDuration(
                     existingBreaks
                       .filter((b) => !removingBreaks.includes(b.id))
                       .reduce((sum, b) => sum + (b.durationMinutes ?? 0), 0) +
@@ -353,13 +357,13 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
                           {utcToZonedInput(b.startedAt, tz).slice(11)}
                           {b.endedAt ? `–${utcToZonedInput(b.endedAt, tz).slice(11)}` : ""}
                           <span className="ml-1.5 font-normal text-muted-foreground">
-                            {formatDurationMinutes(b.durationMinutes ?? 0)}
+                            {formatDuration(b.durationMinutes ?? 0)}
                           </span>
                         </span>
                         <span className="block truncate text-[11px] text-muted-foreground" title={b.reason || undefined}>
                           {b.addedBy
                             ? t("attendance.breaks.addedBy", "Added by {{name}}", {
-                                name: `${b.addedBy.firstName} ${b.addedBy.lastName}`.trim(),
+                                name: personName(b.addedBy),
                               })
                             : t("attendance.addBreak.byMember", "Recorded by the member")}
                           {b.reason ? ` · ${b.reason}` : ""}

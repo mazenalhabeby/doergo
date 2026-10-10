@@ -1,4 +1,4 @@
-import { readFileSync } from "fs"
+import { readFileSync, readdirSync } from "fs"
 import { join } from "path"
 
 /**
@@ -20,8 +20,21 @@ import { join } from "path"
  * belongs only on screen, add it to UI_ONLY_STATE with a reason. Either way it
  * becomes a decision someone made rather than an omission nobody noticed.
  */
+/*
+  The SCREEN, not the file: the dialog plus the pieces it is assembled from in
+  `create-task/` (its form hook, its submit hook, its sections). The state and
+  both payloads moved there when the dialog was split; reading the dialog alone
+  would examine an empty list and pass anything.
+*/
 const DIALOG = join(__dirname, "..", "create-task-dialog.tsx")
-const SRC = readFileSync(DIALOG, "utf8")
+const PIECES = join(__dirname, "..", "create-task")
+const SRC = [
+  readFileSync(DIALOG, "utf8"),
+  ...readdirSync(PIECES)
+    .filter((f) => /\.tsx?$/.test(f))
+    .sort()
+    .map((f) => readFileSync(join(PIECES, f), "utf8")),
+].join("\n")
 
 /**
  * State that deliberately never leaves the browser. Each entry is a claim that

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { tasksApi, type RoleOption } from "@/lib/api"
+import { keys } from "@/lib/query-keys"
 
 /**
  * The work roles a task in this workspace can be opened to (shared tasks/role-pool.ts).
@@ -13,7 +14,7 @@ import { tasksApi, type RoleOption } from "@/lib/api"
  */
 export function useWorkspaceWorkRoles(spaceId: string | null | undefined, enabled = true) {
   const query = useQuery<RoleOption[]>({
-    queryKey: ["role-options", spaceId],
+    queryKey: keys.spaces.roleOptions(spaceId),
     queryFn: () => tasksApi.roleOptions(spaceId!),
     enabled: !!spaceId && enabled,
     staleTime: 5 * 60_000,

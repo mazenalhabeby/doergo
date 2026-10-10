@@ -8,11 +8,11 @@
  */
 
 /** How a step advances. */
-export type TourStepAction =
+type TourStepAction =
   | "next" // advance via the Next button
   | "click" // user must click the highlighted element (do-it-with-me)
 
-export type TourPlacement = "top" | "bottom" | "left" | "right" | "auto"
+type TourPlacement = "top" | "bottom" | "left" | "right" | "auto"
 
 export interface TourStep {
   /** The `data-tour` attribute value on the target element. */

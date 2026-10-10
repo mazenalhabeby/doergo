@@ -18,6 +18,20 @@ const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), 'utf8');
 const at = (obj: any, dotted: string): unknown => dotted.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
 
 const SETTINGS = 'app/(dashboard)/settings/page.tsx';
+/**
+ * The settings SCREEN, not the file: the page is a composition now and each
+ * section lives in `settings/_components/` (helpers in `settings/_lib/`). The
+ * property is about what a person sees, so read the page plus its pieces.
+ */
+const readSettings = () =>
+  [SETTINGS, ...['_components', '_lib'].flatMap((dir) => {
+    const abs = path.join(SRC, 'app/(dashboard)/settings', dir);
+    return fs.existsSync(abs)
+      ? fs.readdirSync(abs).filter((f) => /\.tsx?$/.test(f)).map((f) => `app/(dashboard)/settings/${dir}/${f}`)
+      : [];
+  })]
+    .map(read)
+    .join('\n');
 const CARD = 'components/attendance/unconfirmed-clock-out-card.tsx';
 
 /** Literal keys under the given prefixes that a file passes to t(). */
@@ -29,7 +43,7 @@ function keysUsed(code: string, prefixes: string[]): string[] {
 
 describe('email settings and the unconfirmed clock-out card', () => {
   const used = [
-    ...keysUsed(read(SETTINGS), ['settings.notifications.', 'settings.myEmails.', 'settings.nav.myEmails']),
+    ...keysUsed(readSettings(), ['settings.notifications.', 'settings.myEmails.', 'settings.nav.myEmails']),
     ...keysUsed(read(CARD), ['attendance.my.unconfirmed.']),
   ];
 
@@ -44,7 +58,7 @@ describe('email settings and the unconfirmed clock-out card', () => {
   });
 
   it('the organization switches are the keys the sender reads, and the dead one is gone', () => {
-    const code = read(SETTINGS);
+    const code = readSettings();
     expect(code).toContain('ORG_EMAIL_SWITCH.taskAssigned');
     expect(code).toContain('ORG_EMAIL_SWITCH.taskCompleted');
     expect(code).toContain('ORG_EMAIL_SWITCH.autoClockOut');

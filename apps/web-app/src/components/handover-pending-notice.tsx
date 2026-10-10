@@ -1,7 +1,7 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { formatDuration } from "@hbcfield/shared/client"
+import { personName, formatDuration } from "@hbcfield/shared/client"
 import type { Task } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label"
 export const HANDOVER_WARN_CLASS =
   "rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
 
-const nameOf = (p?: { firstName: string; lastName: string } | null) => (p ? `${p.firstName} ${p.lastName}`.trim() : "")
 
 /**
  * "Mike hasn't written a handover yet — worked 2h 15m on it." One sentence, read
@@ -23,8 +22,8 @@ export function useHandoverPendingText(task: Pick<Task, "handoverDue"> | null | 
   const due = task?.handoverDue
   if (!due?.user) return null
   return due.workedMinutes
-    ? t("tasks.handover.notYetWorked", { name: nameOf(due.user), time: formatDuration(due.workedMinutes) })
-    : t("tasks.handover.notYet", { name: nameOf(due.user) })
+    ? t("tasks.handover.notYetWorked", { name: personName(due.user), time: formatDuration(due.workedMinutes) })
+    : t("tasks.handover.notYet", { name: personName(due.user) })
 }
 
 /**

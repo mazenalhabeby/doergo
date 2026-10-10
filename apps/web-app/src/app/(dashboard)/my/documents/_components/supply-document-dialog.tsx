@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { keys } from "@/lib/query-keys"
 
 /*
   A member supplying their own document.
@@ -221,7 +222,7 @@ export function SupplyDocumentDialog({
     },
     onSuccess: () => {
       notify.success(t("documents.supply.submitted"))
-      queryClient.invalidateQueries({ queryKey: ["my-documents"] })
+      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
       reset()
       onClose()
     },

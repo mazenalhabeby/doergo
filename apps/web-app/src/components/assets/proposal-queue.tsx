@@ -13,7 +13,7 @@ import {
   assetsApi,
   type AssetCategory, type AssetProposal, type ContractFields, type ContractPreview,
 } from "@/lib/api"
-import { normalizeKindShape, canManageAssetsIn } from "@hbcfield/shared/client"
+import { personInitials, personName, normalizeKindShape, canManageAssetsIn } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog"
-import { initials } from "./holder-picker"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
 /**
  * Pages members have sent in, waiting on somebody responsible.
@@ -58,7 +59,7 @@ export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spac
   const mayReview = useRouteAccess().holds("any:canManageAssets")
   const q = useQuery({
     // Prefixed by the shared key, so a decision invalidates every queue at once.
-    queryKey: ["asset-proposals-pending", spaceId ?? "all"],
+    queryKey: keys.assets.proposalsPending(spaceId ?? "all"),
     queryFn: () => assetsApi.getPendingProposals(spaceId),
     // @RequirePermissionInSpace('canManageAssets') — anyone else is only refused.
     enabled: mayReview,
@@ -99,7 +100,7 @@ export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spac
 function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; onReview: () => void }) {
   const { t } = useTranslation()
   const who = proposal.raisedBy
-    ? `${proposal.raisedBy.firstName ?? ""} ${proposal.raisedBy.lastName ?? ""}`.trim()
+    ? personName(proposal.raisedBy)
     : t("expenses.someone", "Someone")
   const name = nameOf(proposal.fields)
 
@@ -109,7 +110,7 @@ function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; onReview
       className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-        {initials(who)}
+        {personInitials(who)}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
@@ -121,7 +122,7 @@ function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; onReview
           )}
         </p>
         <p className="truncate text-xs text-muted-foreground">
-          {t("proposals.sentBy", "Sent by {{who}}", { who })} · {new Date(proposal.createdAt).toLocaleDateString()}
+          {t("proposals.sentBy", "Sent by {{who}}", { who })} · {new Date(proposal.createdAt).toLocaleDateString(dateLocale())}
           {/* Why the reader thought this was a contract. A verdict nobody can
               argue with is one people either trust blindly or ignore. */}
           {proposal.signals?.length ? ` · ${proposal.signals.join(", ")}` : ""}
@@ -184,15 +185,15 @@ function ReviewDialog({
   const holderUserId = proposal?.holderUserId ?? proposal?.raisedById ?? ""
 
   const previewQ = useQuery({
-    queryKey: ["proposal-preview", proposal?.id, categoryId, retire, JSON.stringify(fields)],
+    queryKey: keys.assets.proposalPreview(proposal?.id, categoryId, retire, JSON.stringify(fields)),
     queryFn: () => assetsApi.previewContract({ categoryId, holderUserId, fields, retireReplaced: retire }),
     enabled: !!proposal && !!categoryId && !!holderUserId,
   })
   const preview: ContractPreview | undefined = previewQ.data ?? undefined
 
   const done = () => {
-    qc.invalidateQueries({ queryKey: ["asset-proposals-pending"] })
-    qc.invalidateQueries({ queryKey: ["space-asset-kinds"] })
+    qc.invalidateQueries({ queryKey: keys.assets.proposalsPending() })
+    qc.invalidateQueries({ queryKey: keys.assets.kinds() })
     onClose()
   }
 
@@ -216,7 +217,7 @@ function ReviewDialog({
 
   if (!proposal) return null
   const who = proposal.holder ?? proposal.raisedBy
-  const whoName = who ? `${who.firstName ?? ""} ${who.lastName ?? ""}`.trim() : ""
+  const whoName = personName(who)
 
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose() }}>

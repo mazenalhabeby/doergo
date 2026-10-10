@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/contexts/auth-context"
 import { usersApi } from "@/lib/api"
 
-export type Presence = "AVAILABLE" | "BUSY" | "AWAY"
+type Presence = "AVAILABLE" | "BUSY" | "AWAY"
 
 /**
  * Availability options — the ONLY three self-set states. Everyone defaults to

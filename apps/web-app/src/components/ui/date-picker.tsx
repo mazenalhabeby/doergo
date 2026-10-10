@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+// Date → `YYYY-MM-DD` from the LOCAL parts, for the same reason.
+import { localDateKey } from "@hbcfield/shared/client"
 
 /**
  * Pick a date — the one way this product does it.
@@ -52,10 +54,6 @@ function parseIsoDay(iso: string): Date | undefined {
   return isValid(d) ? d : undefined
 }
 
-/** Date → `YYYY-MM-DD`, from the LOCAL parts, for the same reason. */
-function toIso(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
 
 export function DatePicker({
   value,
@@ -96,7 +94,7 @@ export function DatePicker({
           <Calendar
             mode="single"
             selected={selected}
-            onSelect={(d) => onChange(d ? toIso(d) : "")}
+            onSelect={(d) => onChange(d ? localDateKey(d) : "")}
             /*
               Two matchers, never one object: `{ before, after }` together is a
               DateInterval in react-day-picker — it disables the days BETWEEN

@@ -6,14 +6,15 @@ import { useTranslation } from "react-i18next"
 import { AlertTriangle, Download, FileText } from "lucide-react"
 
 import { organizationsApi } from "@/lib/api"
-import { formatMoney } from "@/lib/money"
-import { formatDayKey, todayDayKey } from "@/lib/day-key"
-import { formatHoursMinutes } from "@hbcfield/shared/client"
+import { formatMoney, MONEY_LOCALE } from "@/lib/money"
+import { formatDayKey } from "@/lib/day-key"
+import { formatHoursMinutes, localDateKey, todayKey } from "@hbcfield/shared/client"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
 
 /**
  * A worker's statement: their hours, per workspace, at THEIR rate with us.
@@ -32,7 +33,7 @@ function monthBounds(shift: number): [string, string] {
   const now = new Date()
   const first = new Date(now.getFullYear(), now.getMonth() + shift, 1)
   const last = new Date(now.getFullYear(), now.getMonth() + shift + 1, 0)
-  const key = (d: Date) => todayDayKey(d)
+  const key = (d: Date) => localDateKey(d)
   return [key(first), key(last)]
 }
 
@@ -50,11 +51,11 @@ export function StatementTab({ memberId }: { memberId: string }) {
   const [from, to] = preset === "lastMonth" ? monthBounds(-1) : preset === "thisMonth" ? monthBounds(0) : custom
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["member-statement", memberId, from, to],
+    queryKey: keys.memberRecord.statement(memberId, from, to),
     queryFn: () => organizationsApi.getStatement(memberId, { from, to }),
   })
 
-  const money = useMemo(() => (cents: number) => formatMoney(cents / 100, data?.currency ?? "EUR"), [data?.currency])
+  const money = useMemo(() => (cents: number) => formatMoney(cents, data?.currency ?? "EUR", MONEY_LOCALE), [data?.currency])
   const period = `${formatDayKey(from, i18n.language)} – ${formatDayKey(to, i18n.language)}`
 
   const download = async () => {
@@ -84,7 +85,7 @@ export function StatementTab({ memberId }: { memberId: string }) {
         noRate: t("members.statement.noRate"),
         generated: t("members.statement.generated"),
       },
-      { money, period, today: formatDayKey(todayDayKey(), i18n.language) },
+      { money, period, today: formatDayKey(todayKey(), i18n.language) },
     )
   }
 

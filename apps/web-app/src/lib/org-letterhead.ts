@@ -13,7 +13,7 @@
 import { isAdmin } from "@hbcfield/shared/client"
 import type { LegalEntity, OrganizationProfile } from "@/lib/api"
 
-export type LetterheadSource = "profile" | "legal-entities" | "session"
+type LetterheadSource = "profile" | "legal-entities" | "session"
 
 /** The permissions the gateway accepts on `GET /legal-entities` (READ_KEYS there). */
 export const LEGAL_ENTITY_READ_KEYS = ["canManageInvoices", "canManageWorkspaces", "crmEditInfo", "crmManageClients"] as const

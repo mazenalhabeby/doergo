@@ -1,10 +1,11 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useQueries } from "@tanstack/react-query"
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { getStatusConfig, type StatusConfig } from "@/lib/constants"
 import { useOrgWorkflow } from "./use-org-workflow"
+import { keys } from "@/lib/query-keys"
 
 /** The flow a task runs on: its own type, else its workspace's. */
 export function flowIdOf(task: { workflowId?: string | null; space?: { workflowId?: string | null } | null }): string | null {
@@ -41,7 +42,7 @@ export function useStepConfigs(tasks: ReadonlyArray<{ workflowId?: string | null
   )
   const fetched = useQueries({
     queries: missing.map((id) => ({
-      queryKey: ["workflow", id],
+      queryKey: keys.spaces.workflow(id),
       queryFn: () => workflowsApi.getById(id),
       staleTime: 120000,
       retry: 1,
@@ -66,4 +67,23 @@ export function useStepConfigs(tasks: ReadonlyArray<{ workflowId?: string | null
       return cfg
     }
   }, [byFlow])
+}
+
+/**
+ * The step look for tasks shown BESIDE another — its subtasks, its dependencies.
+ * A row that names its own flow reads that flow; a row that carries none (a
+ * dependency arrives as id/title/status only) reads the flow of the task it
+ * hangs off, `fallback`. Both used to keep a fixed colour table of their own, so
+ * a custom step ("Delivered") drew as an unknown grey dot.
+ */
+export function useRelatedStepConfigs(
+  rows: ReadonlyArray<{ workflowId?: string | null; space?: { workflowId?: string | null } | null }>,
+  fallback?: readonly WorkflowStatus[] | null,
+) {
+  const own = useStepConfigs(rows)
+  return useCallback(
+    (row: { status: string; workflowId?: string | null; space?: { workflowId?: string | null } | null }) =>
+      flowIdOf(row) ? own(row) : stepConfig(row.status, fallback),
+    [own, fallback],
+  )
 }

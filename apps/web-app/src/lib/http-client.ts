@@ -40,11 +40,11 @@ import { TRANSPORT_MESSAGES, isTransportMessage } from "./transport-messages"
 
 export { TRANSPORT_MESSAGES, isTransportMessage }
 
-export const DEFAULT_TIMEOUT_MS = 30_000
+const DEFAULT_TIMEOUT_MS = 30_000
 /** Sign-in, register, reset: a hung gateway must not hold the sign-in button for half a minute. */
-export const AUTH_TIMEOUT_MS = 15_000
+const AUTH_TIMEOUT_MS = 15_000
 /** 429 (any method) and 502/503/504 (GET) are asked again up to four times. */
-export const WEB_RETRY = { maxRetries: 4 } as const
+const WEB_RETRY = { maxRetries: 4 } as const
 
 /** auth-session's answer, in the core's words. Only `ended` means the session is over. */
 export function toRefreshResult(outcome: RefreshOutcome): RefreshResult {
@@ -54,7 +54,7 @@ export function toRefreshResult(outcome: RefreshOutcome): RefreshResult {
 }
 
 /** Names this client so the Access Profile's Web / Mobile choice is enforced server-side. */
-export function webHeaders(): Record<string, string> {
+function webHeaders(): Record<string, string> {
   return { "X-Client-Platform": "web" }
 }
 
@@ -152,7 +152,7 @@ export async function asResult<T>(promise: Promise<T>): Promise<ApiResponse<T>> 
   }
 }
 
-export interface CallOptions {
+interface CallOptions {
   /** The request body — JSON for an object, FormData as it is. */
   body?: unknown
   /** Appended with the shared `withQuery`: undefined / null / '' dropped, everything encoded. */

@@ -1,5 +1,6 @@
 "use client"
 
+import { personInitials, personName } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
 import { UserPlus, X, Check, Users, Star } from "lucide-react"
@@ -14,8 +15,6 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
-const memberInitials = (m: AssignablePerson) => `${m.firstName?.[0] ?? ""}${m.lastName?.[0] ?? ""}`.toUpperCase() || "?"
-const fullName = (m: AssignablePerson) => `${m.firstName} ${m.lastName}`.trim()
 
 /** Assigned sales managers for a CRM customer. Hidden once the customer has app
  *  access (handled by the caller) — an app customer is self-serve. */
@@ -69,7 +68,7 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
               return (
                 <DropdownMenuItem key={m.id} onSelect={(e) => { e.preventDefault(); toggle(m.id) }} className="gap-2">
                   <Avatar m={m} />
-                  <span className="min-w-0 flex-1 truncate">{fullName(m)}</span>
+                  <span className="min-w-0 flex-1 truncate">{personName(m)}</span>
                   {on && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
                 </DropdownMenuItem>
               )
@@ -86,7 +85,7 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
             <span key={m.id} className={cn("group inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2 text-xs font-medium",
               m.id === ownerId ? "border-primary/30 bg-primary/5 text-foreground" : "border-border bg-background text-foreground")}>
               <Avatar m={m} />
-              <span className="max-w-[9rem] truncate">{fullName(m)}</span>
+              <span className="max-w-[9rem] truncate">{personName(m)}</span>
               {m.id === ownerId && <span title={t("customers.primaryOwner", "Primary owner")}><Star className="h-3 w-3 fill-primary text-primary" /></span>}
               {canEdit && <button onClick={() => toggle(m.id)} title={t("common.remove", "Remove")}
                 className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive">
@@ -102,5 +101,5 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
 
 function Avatar({ m }: { m: AssignablePerson }) {
   if (m.avatarUrl) return <img src={m.avatarUrl} alt="" width={24} height={24} loading="lazy" decoding="async" className="h-6 w-6 shrink-0 rounded-full object-cover" />
-  return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{memberInitials(m)}</span>
+  return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{personInitials(m)}</span>
 }

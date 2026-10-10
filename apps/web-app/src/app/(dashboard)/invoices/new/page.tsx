@@ -4,182 +4,40 @@ import { keys } from "@/lib/query-keys"
 import { PlanGate } from "@/components/plan-gate"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Loader2, Clock, Package, FileText, ChevronDown, ChevronRight, CalendarDays } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
-import { invoicesApi, locationsApi, customersApi, spaceMembersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { locationsApi, customersApi } from "@/lib/api"
 import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
-import {
-  buildLabourLines,
-  buildWorkspaceLines,
-  labourTotalCents,
-  type LabourGrouping,
-  type LabourEntry,
-  type DayEntry,
-  type HoursEntry,
-  type PersonWork,
-  formatHoursMinutes,
-} from "@hbcfield/shared/client"
-import { formatDayKey } from "@/lib/day-key"
-import { Switch } from "@/components/ui/switch"
-import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
+import type { LabourGrouping } from "@hbcfield/shared/client"
 import {
   InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection,
 } from "../_components/invoice-shell"
-import { InvoiceDocument, money, fmtDate } from "../_components/invoice-document"
+import { InvoiceDocument, fmtDate } from "../_components/invoice-document"
 import { LabourCostPanel } from "../_components/labour-cost-panel"
 import { labourCostRows } from "../_lib/labour-cost-rows"
 import {
-  ClientFields, TermsFields, LineEditor, IssuedByField, num, type EditableLine,
+  ClientFields, TermsFields, LineEditor, IssuedByField, type EditableLine,
 } from "../_components/invoice-fields"
 import { useCompanies, useIssuerPreview } from "@/components/companies/company-select"
 import { useExchangeRate } from "../_lib/use-exchange-rate"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Combobox } from "@/components/ui/combobox"
-import { PeriodPicker, periodDays, periodQuery, type PeriodValue } from "@/components/ui/period-picker"
-import { Skeleton } from "@/components/ui/skeleton"
-
-interface PartEntry { name: string; partNumber?: string | null; quantity: number; unitCost: number }
-interface WorkEntry {
-  /*
-    ⚠️ The rate for THIS person, not one rate for the job. A single job rate is
-    wrong the moment two people with different rates work the same site — which
-    is the normal case for anyone billing labour at all. `rate` below survives
-    as the fallback for entries the ladder could not answer for.
-  */
-  billRateCents: number | null
-  costRateCents: number | null
-  taskId: string
-  taskTitle: string
-  reportId?: string | null
-  workerName?: string | null
-  hours: number
-  notes?: string | null
-  completedAt?: string | null
-  parts: PartEntry[]
-  hasReport: boolean
-  include: boolean
-  includeParts: boolean
-  workerId?: string | null
-  /** The worker's trade here; decides the heading the line sits under. */
-  workRoleId?: string | null
-  workRoleName?: string | null
-  /** False = billed by the day only: listed on the invoice, not charged by the hour. */
-  hoursBillable: boolean
-  /** How this person is billed here — decides where their COST is counted. */
-  billBy: "HOUR" | "DAY" | "BOTH"
-}
-
-/** A run of days worked at one day rate, as the screen holds it. */
-type DayRun = DayEntry & { key: string; include: boolean }
-/** A run of hours on site at one hourly rate, as the screen holds it. */
-type HourRun = HoursEntry & { key: string; include: boolean }
-/**
- * A Date → `YYYY-MM-DD`, from the LOCAL parts.
- *
- * ⚠️ Not `toISOString().slice(0,10)`. That converts to UTC first, so east of
- * Greenwich the 1st of a month becomes the 31st of the one before — and a
- * period preset called "last month" would quietly start a day early, on a
- * screen whose entire job is to say which days are being charged for.
- */
-function isoOf(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
-}
-
-function todayIso() { return isoOf(new Date()) }
-
-/** "Sarah Wagner" → "SW", for the avatar beside a gathered job. */
-function initials(name?: string | null) {
-  if (!name) return "?"
-  return name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("") || "?"
-}
-
-/** How a labour line's description reads. Remembered per browser — a convenience, not a record. */
-type LineStyle = { words: "full" | "name"; dates: boolean; tags: boolean }
-const LINE_STYLE_KEY = "hbc.invoice.lineStyle"
-const DEFAULT_LINE_STYLE: LineStyle = { words: "full", dates: true, tags: true }
-function readLineStyle(): LineStyle {
-  const fallback = DEFAULT_LINE_STYLE
-  try {
-    const v = JSON.parse(localStorage.getItem(LINE_STYLE_KEY) ?? "null")
-    if (!v || typeof v !== "object") return fallback
-    return {
-      words: v.words === "name" ? "name" : "full",
-      dates: v.dates !== false,
-      tags: v.tags !== false,
-    }
-  } catch {
-    return fallback
-  }
-}
-
-const BASIS_TONE: Record<string, string> = {
-  SHIFT: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
-  CLOCKED: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
-  COUNTED: "bg-green-500/15 text-green-700 dark:text-green-300",
-}
-
-/**
- * Which hours a person's line bills — and, where the person belongs to the
- * workspace, the switch: each choice with the hours it would bill. Choosing
- * saves it on the person in this workspace (the same setting as their panel),
- * and the line follows. Working view only, never the client's copy.
- */
-function HoursBasisChip({
-  basis, hoursByBasis, spaceId, assignmentId,
-}: {
-  basis?: string | null
-  hoursByBasis?: Record<string, number>
-  spaceId?: string | null
-  assignmentId?: string | null
-}) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const save = useMutation({
-    mutationFn: (b: "COUNTED" | "CLOCKED" | "SHIFT") => spaceMembersApi.updateRoles(spaceId!, assignmentId!, { hoursBasis: b }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
-      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
-      notify.success(t("invoices.create.basisSaved"))
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
-  if (!basis) return null
-  const chip = (
-    <span className={cn("ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold", BASIS_TONE[basis] ?? BASIS_TONE.COUNTED)}>
-      {save.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
-      {t(`scheduling.membersPage.basis.${basis}`)}
-      {spaceId && assignmentId && hoursByBasis && <ChevronDown className="size-3" />}
-    </span>
-  )
-  if (!spaceId || !assignmentId || !hoursByBasis) return chip
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("scheduling.membersPage.hoursBasis")}>
-        {chip}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
-        <DropdownMenuLabel className="text-xs">{t("scheduling.membersPage.hoursBasis")}</DropdownMenuLabel>
-        {(["COUNTED", "CLOCKED", "SHIFT"] as const).map((b) => (
-          <DropdownMenuItem key={b} onSelect={() => b !== basis && save.mutate(b)} className="flex items-center justify-between gap-3">
-            <span className={cn(b === basis && "font-semibold")}>{t(`scheduling.membersPage.basis.${b}`)}</span>
-            <span className="tabular-nums text-muted-foreground">{formatHoursMinutes(hoursByBasis[b] ?? 0)}</span>
-          </DropdownMenuItem>
-        ))}
-        <p className="px-2 pb-1.5 pt-1 text-[11px] text-muted-foreground">{t("invoices.create.basisSavedHint")}</p>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
+import type { PeriodValue } from "@/components/ui/period-picker"
+import { todayIso, type DayRun, type HourRun, type WorkEntry } from "./_lib/draft-model"
+import { useLineStyle } from "./_lib/use-line-style"
+import { useApplyLines } from "./_lib/use-apply-lines"
+import { useDraftLines } from "./_lib/use-draft-lines"
+import { useCreateInvoice } from "./_lib/use-create-invoice"
+import { useWorkGather } from "./_lib/use-work-gather"
+import { HoursBasisChip } from "./_components/hours-basis-chip"
+import { WorkSourceFields } from "./_components/work-source-fields"
+import { LabourLayoutFields } from "./_components/labour-layout-fields"
+import { AddToCrmOption } from "./_components/add-to-crm-option"
+import { BillableWork } from "./_components/billable-work"
 
 export default function NewInvoicePage() {
   return (
@@ -283,18 +141,11 @@ function NewInvoiceInner() {
   // On by default: where people have trades, the client reads the work by trade.
   const [groupByRole, setGroupByRole] = useState(true)
   // How much a labour line's description says — remembered for the next invoice.
-  const [lineStyle, setLineStyleState] = useState<LineStyle>(DEFAULT_LINE_STYLE)
-  // Read after mount: the server render has no storage, and both renders must match.
-  useEffect(() => { setLineStyleState(readLineStyle()) }, [])
-  const setLineStyle = (patch: Partial<LineStyle>) =>
-    setLineStyleState((prev) => {
-      const next = { ...prev, ...patch }
-      try { localStorage.setItem(LINE_STYLE_KEY, JSON.stringify(next)) } catch { /* private window: not remembered, still applied */ }
-      return next
-    })
+  const { lineStyle, setLineStyle } = useLineStyle()
   const [manualLines, setManualLines] = useState<EditableLine[]>([])
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [seeded, setSeeded] = useState(false)
+  const { linesFrom, applyLines } = useApplyLines({ setEntries, setDayRuns, setHourRuns })
 
   // Space (for the client header + fallback prefill).
   const { data: space } = useQuery({
@@ -355,53 +206,9 @@ function NewInvoiceInner() {
   const clients = clientPage?.data ?? []
   const mayAddClient = clientPage?.meta?.crmCaps?.manage === true || clientPage?.meta?.crmCaps?.editInfo === true
 
-  // Completed, unbilled work — from whichever end was chosen, over whichever
-  // days were named. Both ends are optional: blank means everything still
-  // outstanding, which is right for a one-off job.
-  const period = periodQuery(periodValue)
-
-  const gatherSource = source === "space" && spaceId
-    ? { spaceId, ...period }
-    : source === "client" && customerId
-      ? { customerId, ...period }
-      : null
-  /*
-    ⚠️ ALWAYS FRESH. What is still to bill moves whenever a rate, a role, a
-    clock-in or another invoice changes — often in another tab a moment ago.
-    Read on every visit and on returning to the window, never from a cache.
-  */
-  const { data: gather, isLoading: gatherLoading } = useQuery({
-    queryKey: ["invoice-gather", gatherSource],
-    queryFn: () => invoicesApi.gather(gatherSource!),
-    enabled: !!gatherSource,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    /*
-      Keep the lines on screen while another period loads — but only for the
-      SAME workspace or client, never another one's lines under a new name.
-    */
-    placeholderData: (prev, prevQuery) => {
-      const was = prevQuery?.queryKey[1] as { spaceId?: string; customerId?: string } | null | undefined
-      return was && gatherSource && was.spaceId === (gatherSource as any).spaceId && was.customerId === (gatherSource as any).customerId
-        ? prev
-        : undefined
-    },
+  const { gatherSource, gather, gatherLoading, workDays, periodFrom, periodTo } = useWorkGather({
+    source, spaceId, customerId, periodValue,
   })
-  /*
-    Every unbilled day, whatever period is chosen: marks the calendar and says
-    when older work is still waiting before the chosen dates — without it, an
-    unbilled month would never reach any invoice and nothing would say so.
-  */
-  const allSource = gatherSource ? { ...gatherSource, from: undefined, to: undefined } : null
-  const { data: allGather } = useQuery({
-    queryKey: ["invoice-gather", allSource],
-    queryFn: () => invoicesApi.gather(allSource!),
-    enabled: !!allSource,
-    staleTime: 60_000,
-  })
-  const workDays: string[] | undefined = allGather?.outstandingDays
-  // The days this invoice covers — shown, sent and stored as the same two dates.
-  const { from: periodFrom, to: periodTo } = periodDays(periodValue)
 
   /**
    * The period, as the client reads it on the document.
@@ -482,61 +289,10 @@ function NewInvoiceInner() {
     are rebuilt — keeping each line's include tick and any hours typed over —
     while the client, currency and rate fields are left alone.
   */
-  const linesFrom = useRef<unknown>(null)
   useEffect(() => {
     if (gather && seeded && linesFrom.current !== gather) applyLines(gather)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gather, seeded])
-
-  /** `fresh`: a new source (another workspace or client) — nothing of the old lists carries over. */
-  function applyLines(g: NonNullable<typeof gather>, fresh = false) {
-    // The server's previous hours per job — a line whose hours differ from them was typed over.
-    const before = linesFrom.current as typeof g | null
-    const serverHoursBefore = new Map((before?.workEntries ?? []).map((w) => [w.taskId, w.hours ?? 0]))
-    linesFrom.current = g
-      setEntries((prev) => {
-        const was = new Map((fresh ? [] : prev).map((e) => [e.taskId, e]))
-        return (g.workEntries || []).map((w) => ({
-          taskId: w.taskId,
-          taskTitle: w.taskTitle,
-          reportId: w.reportId,
-          workerName: w.workerName,
-          hours: w.hours ?? 0,
-          billRateCents: (w as { billRateCents?: number | null }).billRateCents ?? null,
-          costRateCents: (w as { costRateCents?: number | null }).costRateCents ?? null,
-          notes: w.notes,
-          completedAt: w.completedAt,
-          parts: w.parts || [],
-          hasReport: w.hasReport,
-          include: true,
-          includeParts: true,
-          workerId: w.workerId ?? null,
-          workRoleId: w.workRoleId ?? null,
-          workRoleName: w.workRoleName ?? null,
-          hoursBillable: w.hoursBillable !== false,
-          billBy: w.billBy ?? "HOUR",
-        })).map((e) => {
-          const old = was.get(e.taskId)
-          if (!old) return e
-          const typedOver = old.hours !== serverHoursBefore.get(e.taskId)
-          return { ...e, include: old.include, includeParts: old.includeParts, hours: typedOver ? old.hours : e.hours }
-        })
-      })
-      setDayRuns((prev) => {
-        const on = new Map((fresh ? [] : prev).map((d) => [d.key, d.include]))
-        return (g.dayEntries || []).map((d) => {
-          const key = `${d.workerId}|${d.fromDay}`
-          return { ...d, key, include: on.get(key) ?? true }
-        })
-      })
-      setHourRuns((prev) => {
-        const on = new Map((fresh ? [] : prev).map((h) => [h.key, h.include]))
-        return (g.hourEntries || []).map((h) => {
-          const key = `${h.workerId}|${h.fromDay}`
-          return { ...h, key, include: on.get(key) ?? true }
-        })
-      })
-  }
 
   const rateNum = Number(rate) || 0
 
@@ -549,181 +305,14 @@ function NewInvoiceInner() {
   const entryLabor = (e: WorkEntry) => (e.include && e.hoursBillable ? e.hours * entryRate(e) : 0)
   const entryParts = (e: WorkEntry) => (e.include && e.includeParts ? e.parts.reduce((s, p) => s + p.quantity * p.unitCost, 0) : 0)
 
-  /*
-    ⚠️ ONE CALCULATION, SHOWN AND SENT.
-
-    The screen used to total the work with its own loop while the mutation built
-    the lines with another — so choosing a grouping changed what was SENT and
-    nothing on screen moved, which is exactly how it was reported. Two
-    arithmetics over one invoice is also how a displayed total quietly stops
-    matching the document it produced.
-
-    So the lines are built once, here, by the shared rule; the preview renders
-    them and the mutation sends them.
-  */
-  const labourEntries = useMemo<LabourEntry[]>(
-    () =>
-      entries
-        .filter((e) => e.include)
-        .map((e) => ({
-          taskId: e.taskId,
-          taskTitle: e.taskTitle,
-          reportId: e.reportId ?? null,
-          workerName: e.workerName ?? null,
-          hours: e.hours,
-          // The form's fallback rate applies where the ladder had no answer.
-          billRateCents: e.billRateCents ?? (rateNum > 0 ? Math.round(rateNum * 100) : null),
-          costRateCents: e.costRateCents ?? null,
-          workerId: e.workerId ?? null,
-          workRoleId: e.workRoleId ?? null,
-          workRoleName: e.workRoleName ?? null,
-          hoursBillable: e.hoursBillable,
-        })),
-    [entries, rateNum],
-  )
-  const includedDays = useMemo(() => dayRuns.filter((d) => d.include), [dayRuns])
-  const includedHours = useMemo(() => hourRuns.filter((h) => h.include), [hourRuns])
-  const anyWorkRole = entries.some((e) => e.workRoleId) || dayRuns.some((d) => d.workRoleId) || hourRuns.some((h) => h.workRoleId)
   // A WORKSPACE invoice charges each person's time on site; a CLIENT invoice charges job hours.
   const siteMode = !!gather?.spaceId
-
-  const range = (from: string, to: string) => ({
-    from: formatDayKey(from, i18n.language, { year: false }),
-    to: formatDayKey(to, i18n.language, { year: false }),
+  const {
+    includedDays, includedHours, anyWorkRole, documentItems, workSubtotal, subtotal, taxAmount, total,
+  } = useDraftLines({
+    entries, dayRuns, hourRuns, manualLines, rateNum, grouping, groupByRole, lineStyle, siteMode,
+    taxPct, discount, entryParts, t, language: i18n.language,
   })
-  /*
-    One labour line's words, by the chosen style. The tag, the "72 h" and the
-    "/ hour" already say what the line is, so "hours worked" may go; the dates
-    only appear where a line covers part of the period.
-  */
-  const describe = (kind: "hours" | "days", name: string, count: number, split: boolean, fromDay: string, toDay: string) => {
-    const dated = split && lineStyle.dates
-    if (lineStyle.words === "name") {
-      return dated ? t("invoices.create.nameLineRange", { name, ...range(fromDay, toDay) }) : name
-    }
-    if (kind === "hours") {
-      return dated ? t("invoices.create.hoursLineRange", { name, ...range(fromDay, toDay) }) : t("invoices.create.hoursLine", { name })
-    }
-    return dated
-      ? t("invoices.create.daysLineRange", { name, count, ...range(fromDay, toDay) })
-      : t("invoices.create.daysLine", { name, count })
-  }
-  const labourLines = useMemo(
-    () => siteMode
-      ? buildWorkspaceLines(
-          (() => {
-            const people = new Map<string, PersonWork>()
-            const person = (id: string, name: string, roleId?: string | null, roleName?: string | null) => {
-              const p = people.get(id) ?? { workerId: id, workerName: name, workRoleId: roleId ?? null, workRoleName: roleName ?? null, hours: [], days: [], jobs: [] }
-              if (!p.workRoleId && roleId) { p.workRoleId = roleId; p.workRoleName = roleName ?? null }
-              people.set(id, p)
-              return p
-            }
-            for (const h of includedHours) person(h.workerId, h.workerName, h.workRoleId, h.workRoleName).hours.push(h)
-            for (const d of includedDays) person(d.workerId, d.workerName, d.workRoleId, d.workRoleName).days.push(d)
-            for (const e of labourEntries) {
-              if (!e.workerId) continue
-              person(e.workerId, e.workerName ?? t("invoices.create.unassignedWorker"), e.workRoleId, e.workRoleName).jobs.push(e)
-            }
-            return [...people.values()]
-          })(),
-          {
-            listJobs: grouping === "both",
-            groupByRole,
-            noRoleLabel: t("invoices.create.otherRole"),
-            describeHours: (h, split) => describe("hours", h.workerName, h.hours, split, h.fromDay, h.toDay),
-            describeDays: (d, split) => describe("days", d.workerName, d.days, split, d.fromDay, d.toDay),
-          },
-        )
-      : buildLabourLines(labourEntries, grouping, t("invoices.create.unassignedWorker"), {
-        days: includedDays,
-        groupByRole,
-        noRoleLabel: t("invoices.create.otherRole"),
-        // The reader's language and the reader's dates; the shared rule only arranges.
-        describeDays: (d, split) => describe("days", d.workerName, d.days, split, d.fromDay, d.toDay),
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [labourEntries, grouping, t, includedDays, includedHours, groupByRole, i18n.language, siteMode, lineStyle],
-  )
-
-  const labourSubtotal = useMemo(() => labourTotalCents(labourLines) / 100, [labourLines])
-
-  /*
-    THE DOCUMENT — every line, in order, exactly as it will be filed.
-
-    ⚠️ One list, rendered AND sent. The sheet below is not a picture of the
-    invoice; it is the invoice, and the mutation maps straight off this. A
-    preview built separately from the payload is a preview that eventually lies,
-    and the lie is only found by a customer holding both.
-  */
-  const documentItems = useMemo(() => {
-    const rows: Array<InvoiceItemInput & { descriptive?: boolean }> = []
-
-    for (const line of labourLines) {
-      rows.push({
-        description: line.description,
-        quantity: line.quantity,
-        unitPrice: line.unitPriceCents / 100,
-        taskId: line.taskId || undefined,
-        reportId: line.reportId || undefined,
-        billRateCents: line.billRateCents,
-        costRateCents: line.costRateCents,
-        billedHours: line.billedHours,
-        billedDays: line.billedDays,
-        lineKind: line.kind,
-        workerId: line.workerId,
-        dayFrom: line.dayFrom,
-        dayTo: line.dayTo,
-        taskIds: line.taskIds,
-        hoursBasis: line.hoursBasis ?? null,
-        descriptive: line.descriptive,
-      })
-    }
-    for (const e of entries) {
-      if (!e.include || !e.includeParts) continue
-      for (const part of e.parts) {
-        rows.push({
-          description: part.partNumber ? `${part.name} (${part.partNumber})` : part.name,
-          quantity: part.quantity,
-          unitPrice: part.unitCost,
-          taskId: e.taskId,
-          reportId: e.reportId || undefined,
-        })
-      }
-    }
-    for (const m of manualLines) {
-      if (!m.description.trim()) continue
-      rows.push({
-        description: m.description.trim(),
-        // ⚠️ `num`, not `Number`. A half-typed "3," is NaN to `Number` and would
-        // put NaN on the document; the shared parser also accepts a comma
-        // decimal, which is what most of Europe types.
-        quantity: num(m.quantity),
-        unitPrice: num(m.unitPrice),
-      })
-    }
-    return rows
-  }, [labourLines, entries, manualLines])
-  const partsSubtotal = useMemo(() => entries.reduce((s, e) => s + entryParts(e), 0), [entries])
-  const workSubtotal = labourSubtotal + partsSubtotal
-  const manualSubtotal = useMemo(
-    () => manualLines.reduce((s, m) => s + num(m.quantity) * num(m.unitPrice), 0),
-    [manualLines],
-  )
-  const subtotal = workSubtotal + manualSubtotal
-  const taxAmount = subtotal * ((Number(taxPct) || 0) / 100)
-  const total = subtotal + taxAmount - (Number(discount) || 0)
-
-  // Live per-worker hours summary from the included entries.
-  const workerSummary = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const e of entries) {
-      if (!e.include || !e.workerName || e.hours <= 0) continue
-      map.set(e.workerName, Math.round(((map.get(e.workerName) || 0) + e.hours) * 100) / 100)
-    }
-    return Array.from(map.entries()).map(([name, hours]) => ({ name, hours })).sort((a, b) => b.hours - a.hours)
-  }, [entries])
-  const totalHours = workerSummary.reduce((s, w) => s + w.hours, 0)
 
   /*
     Cost only ever comes from entries the SERVER resolved — never re-derived
@@ -754,80 +343,10 @@ function NewInvoiceInner() {
     costRows.some((r) => r.costCents != null)
 
 
-  const createMutation = useMutation({
-    mutationFn: () => {
-      const items: InvoiceItemInput[] = []
-
-      /*
-        ⚠️ THE VERY LINES THE PREVIEW RENDERED. Not rebuilt here — rebuilt is
-        how the screen and the document drift apart, and the drift is invisible
-        until a customer compares them.
-      */
-      /*
-        ⚠️ Mapped off `documentItems`, the very list the sheet rendered — not
-        rebuilt. Rebuilt is how a preview and a document drift apart, and the
-        drift is invisible until a customer is holding both.
-      */
-      for (const row of documentItems) {
-        const { descriptive: _omit, ...item } = row
-        void _omit
-        items.push(item)
-      }
-      return invoicesApi.create({
-        spaceId,
-        // Sent only when chosen — otherwise the server resolves it the same way the screen showed.
-        ...(legalEntityId ? { legalEntityId } : {}),
-        ...(source === "client" && customerId ? { customerId } : {}),
-        clientName: clientName.trim(),
-        clientEmail: clientEmail.trim() || undefined,
-        clientAddress: clientAddress.trim() || undefined,
-        currency,
-        ...exchange.payload,
-        showLineTags: lineStyle.tags,
-        taxRate: (Number(taxPct) || 0) / 100,
-        discount: Number(discount) || 0,
-        issueDate,
-        dueDate: dueDate || undefined,
-        // Kept on the invoice so it can still say which days it covers long
-        // after the gather that built it would return something different.
-        servicePeriodFrom: periodFrom || undefined,
-        servicePeriodTo: periodTo || undefined,
-        notes: notes.trim() || undefined,
-        items,
-      })
-    },
-    onSuccess: async (inv: Invoice) => {
-      notify.success(t("invoices.create.created"))
-      queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      // What it billed is no longer to bill.
-      queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
-
-      /*
-        Keep the client, if they asked — AFTER the invoice exists, and never
-        instead of it.
-
-        ⚠️ A failure here must not cost them the invoice. Adding to the CRM is a
-        convenience on top of the thing they came to do; wrapping the two in one
-        promise would let a duplicate-name refusal throw away a finished
-        invoice. So it is awaited, reported quietly, and moved past either way.
-      */
-      if (addToCrm && clientName.trim()) {
-        try {
-          await customersApi.create({
-            name: clientName.trim(),
-            email: clientEmail.trim() || undefined,
-            address: clientAddress.trim() || undefined,
-          })
-          queryClient.invalidateQueries({ queryKey: keys.customers.lists() })
-          notify.success(t("invoices.create.clientAdded"))
-        } catch {
-          notify.error(t("invoices.create.clientAddFailed"))
-        }
-      }
-
-      router.push(`/invoices/${inv.id}`)
-    },
-    onError: (e: Error) => notify.error(e.message),
+  const createMutation = useCreateInvoice({
+    t, router, queryClient, documentItems, spaceId, legalEntityId, source, customerId,
+    clientName, clientEmail, clientAddress, currency, exchange, showLineTags: lineStyle.tags, taxPct, discount,
+    issueDate, dueDate, periodFrom, periodTo, notes, addToCrm,
   })
 
   const includedCount = entries.filter((e) => e.include).length
@@ -878,256 +397,18 @@ function NewInvoiceInner() {
           <>
             {/* Where the work comes from */}
             <RailSection step={1} title={t("invoices.create.billFrom")}>
-              {/*
-            ⚠️ STACKED, not wrapped. Three options of very different lengths in
-            a flex-wrap put two on one row and the third alone underneath —
-            which reads as two choices and an afterthought rather than as one
-            choice of three. A column gives them equal weight and equal width.
-          */}
-          <div className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
-                {([
-                  ["space", t("invoices.create.fromSpace")],
-                  ...(hasCrm ? [["client", t("invoices.create.fromClient")] as const] : []),
-                  ["none", t("invoices.create.fromNothing")],
-                ] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSource(key as typeof source)}
-                    className={cn(
-                      "rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                      source === key
-                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                        : "border-border text-muted-foreground hover:border-slate-400",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {source === "space" && (
-                <div className="mt-3">
-                  <Label className="text-xs">{t("invoices.create.workspace")}</Label>
-                  {/*
-                    ⚠️ A COMBOBOX, not a <select>. A native select is a scroll
-                    with no search — fine for three customer workspaces, useless
-                    at thirty, and there is no moment where anybody notices it
-                    became useless. It just gets slower every time a customer is
-                    added.
-
-                    The app already had this component, searchable and
-                    result-capped; a second picker here would have been a second
-                    set of keyboard behaviour to get right and keep right.
-                  */}
-                  <Combobox
-                    value={pickedSpaceId}
-                    onChange={setPickedSpaceId}
-                    options={billableSpaces.map((sp) => ({
-                      value: sp.id,
-                      label: sp.name,
-                      // Searchable by address and contact too: people know a
-                      // site by where it is as often as by what it is called.
-                      keywords: [sp.address, sp.contactName].filter(Boolean).join(" "),
-                    }))}
-                    placeholder={t("invoices.create.choose")}
-                    searchPlaceholder={t("invoices.create.searchWorkspace")}
-                    className="mt-1"
-                  />
-                  {billableSpaces.length === 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.noCustomerSpaces")}</p>
-                  )}
-                </div>
-              )}
-
-              {source === "client" && (
-                <div className="mt-3">
-                  <Label className="text-xs">{t("invoices.create.client")}</Label>
-                  {/*
-                    ⚠️ This is the list that gets long. A real book of clients
-                    runs to hundreds and the query caps at 200 — so without a
-                    search box the two hundredth client is unreachable by
-                    anything except scrolling, and nobody ever notices the
-                    moment a native <select> stopped being usable. It just gets
-                    slower every time a customer is added.
-
-                    Matched on email and address as well as name: somebody
-                    looking for a client they invoiced last year remembers the
-                    town far more often than the exact registered name.
-                  */}
-                  {/*
-                    ⚠️ CRM ON, NO CLIENTS YET. An empty picker looks broken and
-                    says nothing about what to do. Say so, and offer the two
-                    ways forward: write the client in here (and, where this
-                    person may, add them to the CRM in the same step), or go
-                    to Clients.
-                  */}
-                  {clientPage && clients.length === 0 ? (
-                    <div className="mt-1 rounded-lg border border-dashed border-border p-3">
-                      <p className="text-sm font-medium text-foreground">{t("invoices.create.noClientsYet")}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {mayAddClient ? t("invoices.create.noClientsHint") : t("invoices.create.noClientsAsk")}
-                      </p>
-                      <div className="mt-2.5 grid gap-1.5">
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => {
-                            setSource("none")
-                            if (mayAddClient) setAddToCrm(true)
-                          }}
-                        >
-                          {t("invoices.create.noClientsWriteHere")}
-                        </Button>
-                        {mayAddClient && (
-                          <Button type="button" size="sm" variant="outline" asChild>
-                            <Link href="/clients">{t("invoices.create.noClientsOpen")}</Link>
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                  <Combobox
-                    value={customerId}
-                    onChange={setCustomerId}
-                    options={clients.map((c) => ({
-                      value: c.id,
-                      label: c.name,
-                      keywords: [c.email, c.address, c.phone].filter(Boolean).join(" "),
-                    }))}
-                    placeholder={t("invoices.create.choose")}
-                    searchPlaceholder={t("invoices.create.searchClient")}
-                    className="mt-1"
-                  />
-                  )}
-                  {/*
-                    The client's details fill the header below, and stay editable —
-                    an invoice sometimes goes to a different address than the one on
-                    the record, and refusing that would send people back to the CRM
-                    to edit a client in order to send one invoice.
-                  */}
-                  <p className="mt-1 text-xs text-muted-foreground">{t("invoices.create.clientFillsHeader")}</p>
-                </div>
-              )}
-
-              {source === "none" && (
-                <p className="mt-3 text-xs text-muted-foreground">{t("invoices.create.nothingHint")}</p>
-              )}
-
-              {/*
-                WHICH WORK — the service period.
-
-                ⚠️ Presets first, because the answer is nearly always "last
-                month". Somebody invoicing on the 1st should not have to reason
-                about two dates to say the obvious thing, and a pair of empty
-                calendars gives no clue a period was even expected.
-
-                Blank stays legitimate: "everything outstanding" is right for a
-                one-off, and is what this screen did before a period existed.
-              */}
-              {source !== "none" && (
-                <div className="mt-4 border-t border-border pt-3">
-                  <Label className="text-xs">{t("invoices.create.period")}</Label>
-                  <PeriodPicker
-                    className="mt-2"
-                    value={periodValue}
-                    onChange={setPeriodValue}
-                    workDays={workDays}
-                  />
-                </div>
-              )}
-
-              {/*
-                How the labour is written up — shown only once there is labour.
-
-                ⚠️ All three price the same work identically where the hours are
-                clean, so this is a choice about the DOCUMENT and never about the
-                amount. Offering it before any work has been gathered would be a
-                control with nothing to act on.
-              */}
-              {entries.some((e) => e.include && e.hours > 0) && (
-                <div className="mt-4 border-t border-border pt-3">
-                  <Label className="text-xs">{t("invoices.create.groupBy")}</Label>
-                  <div className="mt-2 grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
-                    {([
-                      ["task", t("invoices.create.groupByTask")],
-                      ["member", t("invoices.create.groupByMember")],
-                      ["both", t("invoices.create.groupByBoth")],
-                    ] as const).filter(([key]) => !siteMode || key !== "task").map(([key, label]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setGrouping(key as LabourGrouping)}
-                        className={cn(
-                          "rounded-lg border px-3 py-1.5 text-sm transition-colors",
-                          grouping === key
-                            ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                            : "border-border text-muted-foreground hover:border-slate-400",
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {grouping === "task"
-                      ? t("invoices.create.groupByTaskHint")
-                      : grouping === "member"
-                        ? t("invoices.create.groupByMemberHint")
-                        : t("invoices.create.groupByBothHint")}
-                  </p>
-                </div>
-              )}
-              {/*
-                Group under work roles — on/off per invoice, independent of how
-                the labour is written up. Offered only where somebody has a
-                trade; without one there is nothing to group by.
-              */}
-              {anyWorkRole && (
-                <div className="mt-4 border-t border-border pt-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="group-by-role" className="text-xs">{t("invoices.create.groupByRole")}</Label>
-                    <Switch id="group-by-role" checked={groupByRole} onCheckedChange={setGroupByRole} />
-                  </div>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    {groupByRole ? t("invoices.create.groupByRoleOn") : t("invoices.create.groupByRoleOff")}
-                  </p>
-                </div>
-              )}
-              {/*
-                What a labour line says. The same words go onto the client's
-                copy and the PDF — they ARE the line's text — and the tag choice
-                is saved with the invoice.
-              */}
-              <div className="mt-4 space-y-3 border-t border-border pt-3">
-                <p className="text-xs font-medium text-foreground">{t("invoices.create.lineStyle")}</p>
-                <div role="radiogroup" aria-label={t("invoices.create.lineStyle")} className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
-                  {(["full", "name"] as const).map((w) => (
-                    <button
-                      key={w}
-                      type="button"
-                      role="radio"
-                      aria-checked={lineStyle.words === w}
-                      onClick={() => setLineStyle({ words: w })}
-                      className={cn(
-                        "rounded-lg px-2.5 py-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        lineStyle.words === w ? "bg-card shadow-sm" : "hover:bg-card/60",
-                      )}
-                    >
-                      <span className="block text-xs font-semibold text-foreground">{t(`invoices.create.lineWords.${w}`)}</span>
-                      <span className="block text-[11px] text-muted-foreground">{t(`invoices.create.lineWords.${w}Example`)}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="line-dates" className="text-xs">{t("invoices.create.lineDates")}</Label>
-                  <Switch id="line-dates" checked={lineStyle.dates} onCheckedChange={(v) => setLineStyle({ dates: v })} />
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <Label htmlFor="line-tags" className="text-xs">{t("invoices.create.lineTags")}</Label>
-                  <Switch id="line-tags" checked={lineStyle.tags} onCheckedChange={(v) => setLineStyle({ tags: v })} />
-                </div>
-              </div>
+              <WorkSourceFields
+                source={source} setSource={setSource} hasCrm={hasCrm}
+                pickedSpaceId={pickedSpaceId} setPickedSpaceId={setPickedSpaceId} billableSpaces={billableSpaces}
+                clientPage={clientPage} clients={clients} mayAddClient={mayAddClient}
+                customerId={customerId} setCustomerId={setCustomerId} setAddToCrm={setAddToCrm}
+                periodValue={periodValue} setPeriodValue={setPeriodValue} workDays={workDays}
+              />
+              <LabourLayoutFields
+                entries={entries} grouping={grouping} setGrouping={setGrouping} siteMode={siteMode}
+                anyWorkRole={anyWorkRole} groupByRole={groupByRole} setGroupByRole={setGroupByRole}
+                lineStyle={lineStyle} setLineStyle={setLineStyle}
+              />
             </RailSection>
 
             <RailSection step={2} title={t("invoices.create.clientSection")}>
@@ -1156,29 +437,7 @@ function NewInvoiceInner() {
                     somebody it would then refuse.
                   */
                   hasCrm && mayAddClient && source === "none" ? (
-                    <label
-                      className={cn(
-                        "mt-2 flex items-start gap-2.5 rounded-lg border p-2.5 transition-colors",
-                        clientName.trim().length > 1
-                          ? "cursor-pointer border-border hover:border-slate-400"
-                          : "border-dashed border-border opacity-60",
-                      )}
-                    >
-                      <Checkbox
-                        className="mt-0.5"
-                        disabled={clientName.trim().length <= 1}
-                        checked={addToCrm}
-                        onCheckedChange={(v) => setAddToCrm(v === true)}
-                      />
-                      <span className="min-w-0">
-                        <span className="block text-sm text-foreground">{t("invoices.create.alsoAddClient")}</span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground">
-                          {clientName.trim().length > 1
-                            ? t("invoices.create.alsoAddClientWhen", { name: clientName.trim() })
-                            : t("invoices.create.alsoAddClientNeedsName")}
-                        </span>
-                      </span>
-                    </label>
+                    <AddToCrmOption clientName={clientName} addToCrm={addToCrm} setAddToCrm={setAddToCrm} />
                   ) : null
                 }
               />
@@ -1292,182 +551,16 @@ function NewInvoiceInner() {
 
         {/* Billable work (system-sourced) */}
         {spaceId && (
-          <div className="mb-5">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="flex items-center gap-2.5">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">4</span>
-                <span className="text-sm font-semibold text-foreground">{t("invoices.create.billableWork")}</span>
-              </span>
-              <span className="text-xs text-muted-foreground">{t("invoices.create.jobsSelected", { count: includedCount, total: entries.length })}</span>
-            </div>
-
-            {gatherLoading ? (
-              <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}</div>
-            ) : entries.length === 0 && dayRuns.length === 0 && hourRuns.length === 0 ? (
-              <div className="bg-card rounded-2xl border border-border text-center py-12">
-                <FileText className="size-10 mx-auto text-muted-foreground/20 mb-3" />
-                <p className="text-sm text-muted-foreground">{t("invoices.create.noWork")}</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">{t("invoices.create.noWorkHint")}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {entries.map((e) => {
-                  const open = expanded[e.taskId]
-                  const lineTotal = entryLabor(e) + entryParts(e)
-                  return (
-                    <div key={e.taskId} className={cn("bg-card rounded-xl border transition-colors", e.include ? "border-border" : "border-border/40 opacity-60")}>
-                      <div className="flex items-start gap-3 p-4">
-                        <Checkbox checked={e.include} onCheckedChange={(v) => setEntry(e.taskId, { include: !!v })} className="mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-medium text-foreground truncate">{e.taskTitle}</p>
-                            <span className="text-sm font-semibold tabular-nums shrink-0">{money(lineTotal, currency)}</span>
-                          </div>
-                          {/* worker · hours · date chips */}
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-muted-foreground">
-                            <span className="inline-flex items-center gap-1">
-                              <span className="size-5 rounded-full bg-brand-600/15 text-brand-700 dark:text-brand-300 text-[9px] font-semibold flex items-center justify-center">{initials(e.workerName)}</span>
-                              {e.workerName || t("invoices.create.unassignedWorker")}
-                            </span>
-                            <span className="inline-flex items-center gap-1"><Clock className="size-3" />
-                              <input
-                                type="number" min={0} step="0.25" value={e.hours}
-                                onChange={(ev) => setEntry(e.taskId, { hours: Number(ev.target.value) })}
-                                className="w-14 bg-transparent border-b border-dashed border-border focus:border-brand-600 outline-none text-xs tabular-nums text-foreground"
-                              /> h × {money(entryRate(e), currency)}
-                            </span>
-                            <span>{fmtDate(e.completedAt)}</span>
-                            {e.parts.length > 0 && <span className="inline-flex items-center gap-1"><Package className="size-3" /> {t("invoices.create.partsCount", { count: e.parts.length })}</span>}
-                          </div>
-                          {/* notes preview */}
-                          {e.notes && <p className="text-xs text-muted-foreground/80 mt-1.5 line-clamp-2">{e.notes}</p>}
-                          {/* expand for parts / full notes */}
-                          {(e.parts.length > 0 || (e.notes && e.notes.length > 120)) && (
-                            <button onClick={() => setExpanded((p) => ({ ...p, [e.taskId]: !open }))} className="mt-2 inline-flex items-center gap-1 text-[11px] text-brand-600 hover:underline">
-                              {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-                              {open ? t("invoices.create.hideDetails") : t("invoices.create.showDetails")}
-                            </button>
-                          )}
-                          {open && (
-                            <div className="mt-2 space-y-2">
-                              {e.notes && <p className="text-xs text-muted-foreground whitespace-pre-line rounded-lg bg-muted/40 p-2.5">{e.notes}</p>}
-                              {e.parts.length > 0 && (
-                                <div className="rounded-lg border border-border/60 overflow-hidden">
-                                  <div className="flex items-center justify-between px-3 py-1.5 bg-muted/30">
-                                    <span className="text-[11px] font-medium text-muted-foreground">{t("invoices.create.parts")}</span>
-                                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer">
-                                      <Checkbox checked={e.includeParts} onCheckedChange={(v) => setEntry(e.taskId, { includeParts: !!v })} className="size-3.5" />
-                                      {t("invoices.create.billParts")}
-                                    </label>
-                                  </div>
-                                  {e.parts.map((p, i) => (
-                                    <div key={i} className="flex items-center justify-between px-3 py-1.5 text-xs border-t border-border/40">
-                                      <span className="text-foreground">{p.name}{p.partNumber ? ` (${p.partNumber})` : ""}</span>
-                                      <span className="text-muted-foreground tabular-nums">{p.quantity} × {money(p.unitCost, currency)} = {money(p.quantity * p.unitCost, currency)}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/*
-              Days worked — for people billed by the day. One row per run at one
-              day rate, so a rate change inside the period is two rows here
-              exactly as it is two lines on the invoice.
-            */}
-            {hourRuns.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {hourRuns.map((h) => (
-                  <div
-                    key={h.key}
-                    className={cn("flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors", h.include ? "border-border" : "border-border/40 opacity-60")}
-                  >
-                    <Checkbox
-                      checked={h.include}
-                      onCheckedChange={(v) => setHourRuns((prev) => prev.map((x) => (x.key === h.key ? { ...x, include: !!v } : x)))}
-                      className="mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">{t("invoices.create.tagHours")}</span>
-                          {h.workerName}
-                          {h.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{h.workRoleName}</span>}
-                          <HoursBasisChip basis={h.hoursBasis} hoursByBasis={h.hoursByBasis} spaceId={gather?.spaceId} assignmentId={h.assignmentId} />
-                        </p>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums">
-                          {money(Math.round(h.hours * (h.hourRateCents ?? 0)) / 100, currency)}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="size-3" />
-                          {t("invoices.create.hoursOnSite", { hours: formatHoursMinutes(h.hours), days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
-                        </span>
-                        <span>
-                          {formatDayKey(h.fromDay, i18n.language)}
-                          {h.toDay !== h.fromDay && ` – ${formatDayKey(h.toDay, i18n.language)}`}
-                        </span>
-                      </div>
-                      {(h.noShiftDays ?? 0) > 0 && (
-                        <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
-                          {t("invoices.create.noShiftDays", { count: h.noShiftDays })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {dayRuns.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {dayRuns.map((d) => (
-                  <div
-                    key={d.key}
-                    className={cn("flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors", d.include ? "border-border" : "border-border/40 opacity-60")}
-                  >
-                    <Checkbox
-                      checked={d.include}
-                      onCheckedChange={(v) => setDayRuns((prev) => prev.map((x) => (x.key === d.key ? { ...x, include: !!v } : x)))}
-                      className="mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          <span className="mr-2 rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">{t("invoices.create.tagDays")}</span>
-                          {d.workerName}
-                          {d.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{d.workRoleName}</span>}
-                        </p>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums">
-                          {money(((d.dayRateCents ?? 0) * d.days) / 100, currency)}
-                        </span>
-                      </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarDays className="size-3" />
-                          {t("invoices.create.daysWorked", { count: d.days })} × {money((d.dayRateCents ?? 0) / 100, currency)}
-                        </span>
-                        <span>
-                          {formatDayKey(d.fromDay, i18n.language)}
-                          {d.toDay !== d.fromDay && ` – ${formatDayKey(d.toDay, i18n.language)}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <BillableWork
+            entries={entries} dayRuns={dayRuns} hourRuns={hourRuns}
+            setDayRuns={setDayRuns} setHourRuns={setHourRuns} setEntry={setEntry}
+            expanded={expanded} setExpanded={setExpanded}
+            gatherLoading={gatherLoading} includedCount={includedCount} currency={currency}
+            entryRate={entryRate} entryLabor={entryLabor} entryParts={entryParts}
+            gatherSpaceId={gather?.spaceId}
+          />
         )}
+
 
         {/*
           Lines typed by hand — the same editor the edit screen uses for the

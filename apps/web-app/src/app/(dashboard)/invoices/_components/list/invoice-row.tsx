@@ -1,0 +1,202 @@
+"use client"
+
+import { useTranslation } from "react-i18next"
+import { MoreHorizontal, XCircle, Eye } from "lucide-react"
+
+import { companyName } from "@/components/companies/company-select"
+import type { Invoice } from "@/lib/api"
+import { cn } from "@/lib/utils"
+import { dateLocale } from "@/lib/format-date"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { daysOverdue, bandFor, isOutstanding } from "../../_lib/aging"
+import { statusStyle, primaryStep, otherSteps, isDeletable, type LifecycleStep } from "../../_lib/lifecycle"
+import { formatCurrency } from "../../_lib/list-format"
+
+/** One invoice in the list — the whole row opens it; the next step sits at its end. */
+export function InvoiceRow({
+  inv, isAdmin, severalCompanies, step, stepPending, onOpen, onDelete,
+}: {
+  inv: Invoice
+  isAdmin: boolean
+  severalCompanies: boolean
+  /** Take a step, asking first where the lifecycle says to. */
+  step: (inv: Invoice, s: LifecycleStep) => void
+  stepPending: boolean
+  onOpen: (id: string) => void
+  onDelete: (inv: Invoice) => void
+}) {
+  const { t } = useTranslation()
+
+  const status = statusStyle(inv.status)
+  const primary = primaryStep(inv.status)
+  const others = otherSteps(inv.status)
+  const late = isOutstanding(inv) ? daysOverdue(inv.dueDate) : null
+  const lateBand = late !== null && late > 0 ? bandFor(late) : null
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(inv.id)}
+      onKeyDown={(e) => {
+        // ⚠️ A clickable div is unreachable without this. The
+        // whole row is the target, so it has to behave like one.
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onOpen(inv.id)
+        }
+      }}
+      className="group relative flex cursor-pointer items-center gap-4 border-b border-border/20 px-4 py-3.5 pl-5 transition-colors last:border-0 hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none"
+    >
+      {/*
+        A hairline in the age's own colour. The band is already
+        on the screen twice — as a bar and as a pill — and this
+        makes a late row findable while SCROLLING, which is how
+        this list is actually read.
+      */}
+      {lateBand && (
+        <span
+          aria-hidden
+          className={cn(
+            "absolute inset-y-0 left-0 w-[3px]",
+            lateBand === "d1_30" ? "bg-amber-400"
+            : lateBand === "d31_60" ? "bg-orange-500"
+            : lateBand === "d61_90" ? "bg-red-500"
+            : "bg-red-700",
+          )}
+        />
+      )}
+
+      {/*
+        ⚠️ THE CLIENT LEADS. The number was first and in mono at
+        100px, so "INV-DEMO-2026-0010" wrapped onto two lines in
+        every row — and it is not what anybody scans by. It is a
+        reference: needed when you have it, never searched for.
+      */}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">{inv.clientName}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
+          <span className="font-mono">{inv.invoiceNumber}</span>
+          {severalCompanies && inv.legalEntity && <span> · {companyName(inv.legalEntity)}</span>}
+          {inv.clientEmail && <span className="opacity-60"> · {inv.clientEmail}</span>}
+        </p>
+      </div>
+
+      {/* The two dates together, since they are read together. */}
+      <div className="hidden w-[8.5rem] shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:block">
+        <p className="tabular-nums">
+          {t("invoices.issuedOn", {
+            date: new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+          })}
+        </p>
+        <p className="tabular-nums">
+          {inv.dueDate
+            ? t("invoices.dueOn", {
+                date: new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+              })
+            : t("invoices.create.onReceipt")}
+        </p>
+      </div>
+
+      {/*
+        The due date alone does not say how late something is —
+        the reader has to do the arithmetic for every row. The
+        age decides whether this is a reminder or a phone call,
+        so it is stated.
+      */}
+      <div className="w-[6.5rem] shrink-0 text-right">
+        <p className="text-sm font-semibold tabular-nums text-foreground">
+          {formatCurrency(inv.total, inv.currency)}
+        </p>
+        {late !== null && late > 0 && (
+          <p className={cn(
+            "text-[11px] font-medium tabular-nums",
+            lateBand === "d1_30" ? "text-amber-600 dark:text-amber-400"
+            : lateBand === "d31_60" ? "text-orange-600 dark:text-orange-400"
+            : "text-red-600 dark:text-red-400",
+          )}>
+            {t("invoices.daysLate", { count: late })}
+          </p>
+        )}
+      </div>
+
+      <span className={cn(
+        "hidden w-[5.5rem] shrink-0 rounded-full px-2 py-0.5 text-center text-[10px] font-semibold uppercase tracking-[0.08em] md:block",
+        status.bg, status.text,
+      )}>
+        {t(`invoices.statuses.${(inv.status || "DRAFT").toLowerCase()}`)}
+      </span>
+
+      <div className="flex w-[7.5rem] shrink-0 items-center justify-end gap-1">
+        {/*
+          ⚠️ The next step, stated — and only on hover or focus
+          once the row is not the one being acted on. Fifty rows
+          each shouting an action is fifty things competing with
+          the figure beside them; revealing it keeps the column
+          quiet without burying the one action a row exists for.
+        */}
+        {isAdmin && primary && (
+          <button
+            onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
+            disabled={stepPending}
+            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground opacity-0 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+          >
+            {t(primary.labelKey)}
+          </button>
+        )}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                aria-label={t("common.more", "More")}
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                <MoreHorizontal className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={() => onOpen(inv.id)}>
+                <Eye className="mr-2 size-3.5" /> {t("invoices.actions.view")}
+              </DropdownMenuItem>
+              {/*
+                ⚠️ The SAME lifecycle the invoice page reads.
+                This row and that bar each had their own idea of
+                what came next and already disagreed about where
+                Cancel lived — and this one still offered
+                DRAFT → SENT, which the server no longer allows.
+              */}
+              {primary && (
+                <DropdownMenuItem onClick={() => step(inv, primary)}>
+                  <primary.icon className="mr-2 size-3.5" /> {t(primary.labelKey)}
+                </DropdownMenuItem>
+              )}
+              {others.filter((o) => !o.destructive).map((o) => (
+                <DropdownMenuItem key={o.to} onClick={() => step(inv, o)}>
+                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              {isDeletable(inv.status) && (
+                <DropdownMenuItem className="text-red-600" onClick={() => onDelete(inv)}>
+                  <XCircle className="mr-2 size-3.5" /> {t("common.delete")}
+                </DropdownMenuItem>
+              )}
+              {others.filter((o) => o.destructive).map((o) => (
+                <DropdownMenuItem key={o.to} className="text-red-600" onClick={() => step(inv, o)}>
+                  <o.icon className="mr-2 size-3.5" /> {t(o.labelKey)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </div>
+  )
+}

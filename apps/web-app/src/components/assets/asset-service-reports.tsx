@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDuration, personName } from "@hbcfield/shared/client"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
@@ -7,15 +8,16 @@ import { ClipboardCheck, Package, Timer } from "lucide-react"
 
 import { reportsApi, type ServiceReportSummary } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { keys } from "@/lib/query-keys"
+import { dateLocale } from "@/lib/format-date"
 
-/** Seconds of work → "1h 30m". The report stores seconds; nobody reads them. */
+/**
+ * Seconds of work → "1h 30m", or null under a minute so the card leaves the
+ * line out. The report stores seconds; nobody reads them.
+ */
 export function workDurationLabel(seconds: number | null | undefined): string | null {
   if (!seconds || seconds < 60) return null
-  const minutes = Math.round(seconds / 60)
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
+  return formatDuration(Math.round(seconds / 60))
 }
 
 /**
@@ -34,7 +36,7 @@ export function AssetServiceReports({ assetId }: { assetId: string }) {
   const { t } = useTranslation()
 
   const q = useQuery({
-    queryKey: ["asset-reports", assetId],
+    queryKey: keys.assets.reports(assetId),
     queryFn: () => reportsApi.getAssetReports(assetId, { limit: 20 }),
     enabled: !!assetId,
   })
@@ -50,7 +52,7 @@ export function AssetServiceReports({ assetId }: { assetId: string }) {
         <ClipboardCheck className="h-3.5 w-3.5" /> {t("assetFacts.reports.title", "Service reports")}
       </h3>
       {reports.map((r) => {
-        const who = r.completedBy ? `${r.completedBy.firstName ?? ""} ${r.completedBy.lastName ?? ""}`.trim() : ""
+        const who = personName(r.completedBy)
         const worked = workDurationLabel(r.workDuration)
         const parts = r.partsCount ?? 0
         return (
@@ -62,7 +64,7 @@ export function AssetServiceReports({ assetId }: { assetId: string }) {
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
               <span className="truncate text-sm font-medium text-foreground">{r.taskTitle}</span>
               <span className="shrink-0 text-xs text-muted-foreground">
-                {new Date(r.completedAt).toLocaleDateString()}
+                {new Date(r.completedAt).toLocaleDateString(dateLocale())}
               </span>
             </div>
             {r.summary && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{r.summary}</p>}

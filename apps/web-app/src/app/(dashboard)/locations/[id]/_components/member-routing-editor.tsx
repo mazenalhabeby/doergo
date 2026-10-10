@@ -8,7 +8,7 @@ import { Bell, MessageCircle, PenLine, Save, Loader2 } from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { spaceMembersApi } from "@/lib/api"
-import { type SpaceMember } from "@hbcfield/shared/client"
+import { personName, personInitials, type SpaceMember } from "@hbcfield/shared/client"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -197,11 +197,11 @@ function PeoplePicker({
               <Avatar className="h-6 w-6">
                 {m.user?.avatarUrl && <AvatarImage src={m.user.avatarUrl} alt="" />}
                 <AvatarFallback className="text-[9px]">
-                  {(m.user?.firstName?.[0] || "") + (m.user?.lastName?.[0] || "")}
+                  {personInitials(m.user)}
                 </AvatarFallback>
               </Avatar>
               <span className="min-w-0 flex-1 truncate text-sm text-foreground">
-                {m.user?.firstName} {m.user?.lastName}
+                {personName(m.user)}
               </span>
               {m.spaceRole && (
                 <Badge

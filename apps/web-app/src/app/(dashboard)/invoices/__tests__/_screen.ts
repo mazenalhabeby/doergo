@@ -41,8 +41,34 @@ export function components(): string {
     .join("\n")
 }
 
+/** Every .ts/.tsx file under a folder, comments stripped, in a stable order. */
+function folder(rel: string): string {
+  const dir = path.join(INVOICES, rel)
+  if (!fs.existsSync(dir)) return ""
+  return fs
+    .readdirSync(dir)
+    .filter((f) => /\.tsx?$/.test(f))
+    .sort()
+    .map((f) => strip(fs.readFileSync(path.join(dir, f), "utf8")))
+    .join("\n")
+}
+
+/**
+ * The New Invoice PAGE — `new/page.tsx` plus the pieces it was split into
+ * (`new/_components`, `new/_lib`). These belong to this page alone, so a guard
+ * about "this page's sources, gather, grouping" reads them as one.
+ */
+export const newPage = () => `${code("new/page.tsx")}\n${folder("new/_lib")}\n${folder("new/_components")}`
+
+/**
+ * The invoice LIST — `page.tsx` plus the pieces it was split into
+ * (`_components/list`, and the formatter in `_lib/list-format.ts`). Kept out of
+ * `components()`, which is the shared invoice-document screen.
+ */
+export const listPage = () => `${code("page.tsx")}\n${folder("_components/list")}\n${code("_lib/list-format.ts")}`
+
 /** The New Invoice screen, as assembled. */
-export const createScreen = () => `${code("new/page.tsx")}\n${components()}`
+export const createScreen = () => `${newPage()}\n${components()}`
 
 /** The Edit Invoice screen, as assembled. */
 export const editScreen = () => `${code("[id]/edit/page.tsx")}\n${components()}`

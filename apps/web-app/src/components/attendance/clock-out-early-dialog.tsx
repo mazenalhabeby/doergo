@@ -1,5 +1,6 @@
 "use client"
 
+import { formatDuration } from "@hbcfield/shared/client"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { LogOut, Loader2, AlertTriangle } from "lucide-react"
@@ -40,9 +41,7 @@ export function ClockOutEarlyDialog({
   const { formatTime } = useTimeFormat()
   const [reason, setReason] = useState("")
 
-  const h = Math.floor(shortfallMinutes / 60)
-  const m = shortfallMinutes % 60
-  const short = h > 0 ? `${h}h ${m}m` : `${m}m`
+  const short = formatDuration(shortfallMinutes)
 
   return (
     <Dialog

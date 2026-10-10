@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Loader2, UserCheck } from "lucide-react"
-import { OFFICE_START_REASON_MAX } from "@hbcfield/shared/client"
+import { personName, OFFICE_START_REASON_MAX } from "@hbcfield/shared/client"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,7 +43,7 @@ export function OfficeStartDialog({
   const max = localInput(new Date())
   const chosen = at ? new Date(at) : null
   const outside = !!chosen && ((clockInAt && chosen < new Date(clockInAt)) || chosen.getTime() > Date.now() + 60_000)
-  const me = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim()
+  const me = personName(user)
   const preview = useMemo(
     () => t("tasks.officeStart.preview", { me, name, time: chosen ? chosen.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "", reason: reason.trim() }),
     [t, me, name, chosen, reason],

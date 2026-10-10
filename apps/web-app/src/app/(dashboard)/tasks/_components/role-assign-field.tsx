@@ -11,6 +11,7 @@ import { useFormatDistance } from "@/hooks/use-format-distance"
 import { useWorkspaceWorkRoles } from "@/hooks/use-workspace-work-roles"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { keys } from "@/lib/query-keys"
 
 export interface RoleAssignValue {
   roleId: string | null
@@ -53,7 +54,7 @@ export function RoleAssignField({
   const { roles, loaded } = useWorkspaceWorkRoles(spaceId)
   const isLoading = !loaded
   const { data: preview } = useQuery({
-    queryKey: ["role-preview", spaceId, value.roleId, lat, lng],
+    queryKey: keys.spaces.rolePreview(spaceId, value.roleId, lat, lng),
     queryFn: () => tasksApi.rolePreview({ spaceId, roleId: value.roleId!, lat, lng }),
     enabled: !!value.roleId,
     staleTime: 30_000,

@@ -1,14 +1,14 @@
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
-import type { TaskReport, TaskReportPhoto, TaskReportSignature } from "@hbcfield/shared/client"
+import { formatFileSize, personName, type TaskReport, type TaskReportPhoto, type TaskReportSignature } from "@hbcfield/shared/client"
 
 import { PDF_PALETTE, PDF_TABLE_THEME, loadImage, loadLogo, pdfSafeText, rgbTuple, type LoadedImage, type Rgb } from "@/lib/pdf-common"
-import { formatMoneyIn } from "@/lib/money"
+import { formatAmount } from "@/lib/money"
 import { mapWithLimit } from "@/lib/pdf-text"
 import { stepFieldLabel } from "@/lib/step-forms"
 import {
-  answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatFileSize, formatReportDateTime,
-  formatReportDistance, formatReportMinutes, groupEventsByDay, pairPhotos, partsTotal, personName,
+  answerText, eventDotHex, eventSentence, fileTypeBadge, formatDayHeading, formatReportDateTime,
+  formatReportDistance, formatReportMinutes, groupEventsByDay, pairPhotos, partsTotal,
   reportFileName, routePath, safeImageUrl, sectionNumbers, signatureName, signatureRole, statusLabel,
   workSteps, letterhead, reportPills, reportFacts, factRows, type HeadToggle, type NumberedSection, type Translate,
 } from "./report-model"
@@ -30,7 +30,7 @@ import {
  * breaking rows.
  */
 
-export interface JobReportPdfInput {
+interface JobReportPdfInput {
   report: TaskReport
   visible: readonly NumberedSection[]
   showPrices: boolean
@@ -360,7 +360,7 @@ export async function buildJobReportPdf(input: JobReportPdfInput): Promise<jsPDF
       case "parts": {
         heading(section, t("tasks.report.sections.parts"))
         const parts = r.parts ?? []
-        const money = (n: number | null | undefined) => (n == null ? "—" : formatMoneyIn(n, r.header.currency, locale))
+        const money = (n: number | null | undefined) => (n == null ? "—" : formatAmount(n, r.header.currency, locale))
         const head = [t("tasks.report.parts.part"), t("tasks.report.parts.number"), t("tasks.report.parts.qty")]
         if (input.showPrices) head.push(t("tasks.report.parts.unit"), t("tasks.report.parts.total"))
         const totalAll = partsTotal(parts)

@@ -1,5 +1,6 @@
 "use client"
 
+import { personName } from "@hbcfield/shared/client"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AssetStatusChip } from "@/components/assets/asset-status"
+import { keys } from "@/lib/query-keys"
 
 const PAGE_SIZE = 50
 
@@ -52,7 +54,7 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
   }, [typed])
 
   const { data, isLoading } = useQuery({
-    queryKey: ["assets", "all", search, showRetired, page],
+    queryKey: keys.assets.allList(search, showRetired, page),
     queryFn: () =>
       assetsApi.getAssets({
         search: search || undefined,
@@ -118,7 +120,7 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
               const holders = a.holders ?? []
               const first = holders[0]
               const firstName = first?.user
-                ? `${first.user.firstName ?? ""} ${first.user.lastName ?? ""}`.trim()
+                ? personName(first.user)
                 : first?.customer?.name ?? ""
               return (
                 <tr key={a.id} className="border-t border-border hover:bg-muted/30">

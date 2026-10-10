@@ -16,13 +16,13 @@
  * The server stays the authority: this only stops offering a button whose only
  * outcome is a refusal.
  */
-export interface RecordCrmCaps {
+interface RecordCrmCaps {
   work?: boolean
   editInfo?: boolean
   manage?: boolean
 }
 
-export interface ClientRecordActions {
+interface ClientRecordActions {
   editInfo: boolean
   setStage: boolean
   /** The composer, the quick reminder and the timeline's done/snooze/delete. */

@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { AvailabilityResponse, CoverRangeSpace, FloorSpace, LeaveBalance, OrgTimeOffRequest, ScheduleEntry, ScheduleEntryInput, TimeOffRequest, TimeOffStatus } from './types/employees';
+import type { CoverRangeSpace, FloorSpace, LeaveBalance, OrgTimeOffRequest, ScheduleEntry, ScheduleEntryInput, TimeOffRequest, TimeOffStatus } from './types/employees';
 import type { Task } from './types/tasks';
 import { employeesEndpoints, timeOffEndpoints, type CompanyLocation, type CreateEmployeeInput, type EmployeeListItem, type EmployeeProfile, type EmployeeStats, type EmployeesQueryParams, type PerformanceMetrics, type TimeEntry, type UpdateEmployeeInput } from '@hbcfield/shared/client';
 
@@ -79,20 +79,6 @@ export const employeesApi = {
     }
 
     return response.data?.data;
-  },
-
-  // Deactivate employee (soft delete)
-  deactivate: async (id: string) => {
-    const response = await call(employeesEndpoints.deactivate, { id }) as ApiResponse<{
-      success: boolean;
-      message: string;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data;
   },
 
   // Get performance metrics
@@ -351,49 +337,5 @@ export const employeesApi = {
       throw apiError(response);
     }
     return response.data;
-  },
-
-  // Bulk approve/reject time-off requests
-  bulkApproveTimeOff: async (timeOffIds: string[], approved: boolean, rejectionReason?: string) => {
-    const response = await call(timeOffEndpoints.bulkApprove, undefined, { body: { timeOffIds, approved, rejectionReason } }) as ApiResponse<{
-      success: boolean;
-      data: { succeeded: number; failed: number; total: number };
-    }>;
-    if (response.error) throw apiError(response);
-    return response.data?.data;
-  },
-
-  // ========================================================================
-  // AVAILABILITY
-  // ========================================================================
-
-  // Get all employees availability for a date
-  getAvailability: async (date?: string) => {
-
-    const response = await call(employeesEndpoints.availability, { date }) as ApiResponse<{
-      success: boolean;
-      data: AvailabilityResponse;
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data;
-  },
-
-  // Get availability for a date range (single API call)
-  getAvailabilityRange: async (startDate: string, endDate: string) => {
-
-    const response = await call(employeesEndpoints.availability, { startDate, endDate }) as ApiResponse<{
-      success: boolean;
-      data: AvailabilityResponse[];
-    }>;
-
-    if (response.error) {
-      throw apiError(response);
-    }
-
-    return response.data?.data || [];
   },
 };
