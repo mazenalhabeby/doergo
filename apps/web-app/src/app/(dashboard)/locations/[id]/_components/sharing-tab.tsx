@@ -42,7 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
 
@@ -339,15 +339,13 @@ function SharesSection({ spaceId }: { spaceId: string }) {
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!revokeTarget}
-        onOpenChange={(open) => { if (!open) setRevokeTarget(null) }}
+      <ConfirmTargetDialog
+        target={revokeTarget}
+        onClose={() => setRevokeTarget(null)}
         title={t("spaceSharing.shares.revokeTitle")}
         description={t("spaceSharing.shares.revokeConfirm", { org: revokeTarget?.guestOrgName })}
         confirmLabel={t("spaceSharing.shares.revoke")}
-        onConfirm={(e) => { e.preventDefault(); if (revokeTarget) revokeMutation.mutate(revokeTarget.id) }}
-        destructive
-        pending={revokeMutation.isPending}
+        mutation={revokeMutation}
       />
     </div>
   )

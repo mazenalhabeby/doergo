@@ -101,3 +101,31 @@ export function ConfirmDialog({
     </AlertDialog>
   )
 }
+
+/**
+ * The common case: a row picked for removal (`target`), confirmed by running a
+ * mutation on its id. The dialog stays open while the mutation runs — the
+ * caller clears the target when it settles.
+ */
+export function ConfirmTargetDialog<T extends { id: string }>({
+  target,
+  onClose,
+  mutation,
+  destructive = true,
+  ...rest
+}: {
+  target: T | null
+  onClose: () => void
+  mutation: { mutate: (id: string) => void; isPending: boolean }
+} & Omit<ConfirmDialogProps, "open" | "onOpenChange" | "onConfirm" | "pending" | "trigger">) {
+  return (
+    <ConfirmDialog
+      {...rest}
+      open={!!target}
+      onOpenChange={(open) => { if (!open) onClose() }}
+      onConfirm={(e) => { e.preventDefault(); if (target) mutation.mutate(target.id) }}
+      destructive={destructive}
+      pending={mutation.isPending}
+    />
+  )
+}

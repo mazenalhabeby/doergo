@@ -6,10 +6,6 @@ import { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  AlertCircle,
   Users,
   MoreHorizontal,
   CheckCircle2,
@@ -23,9 +19,8 @@ import {
   type JoinRequest,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { ListPageHeader, ListPager, ListTableError, ListTableLoading, pageRange } from "@/components/list-page"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -57,7 +52,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
 import { formatMediumDateTime } from "@/lib/format-date"
 
 const STATUS_OPTIONS_KEYS = [
@@ -214,51 +208,22 @@ export default function JoinRequestsPage() {
   const totalPages = meta?.totalPages || 1
   const total = meta?.total || 0
 
-  const startItem = total > 0 ? (page - 1) * limit + 1 : 0
-  const endItem = Math.min(page * limit, total)
+  const { startItem, endItem } = pageRange(page, limit, total)
 
   return (
     <div className="min-h-full bg-background">
       <div className="max-w-screen-xl mx-auto px-6 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 data-tour="page-join-requests" className="text-3xl font-bold text-foreground tracking-tight">
-                {t("joinRequests.title")}
-              </h1>
-              <p className="mt-1.5 text-muted-foreground">
-                {t("joinRequests.subtitle")}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Status Filter */}
-              <Select value={statusFilter} onValueChange={handleStatusChange}>
-                <SelectTrigger className="w-[160px] h-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm">
-                  <SelectValue placeholder={t("common.filterByStatus")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS_KEYS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {t(option.labelKey)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Refresh */}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => refetch()}
-                disabled={isLoading}
-                className="h-11 w-11 bg-card/80 backdrop-blur-sm border-border/80 rounded-xl shadow-sm hover:shadow-md transition-all"
-              >
-                <RefreshCw className={cn("size-4", isLoading && "animate-spin")} />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ListPageHeader
+          tour="page-join-requests"
+          title={t("joinRequests.title")}
+          subtitle={t("joinRequests.subtitle")}
+          statusFilter={statusFilter}
+          onStatusChange={handleStatusChange}
+          statusOptions={STATUS_OPTIONS_KEYS}
+          isLoading={isLoading}
+          onRefresh={() => refetch()}
+        ></ListPageHeader>
 
         {/* Summary */}
         {total > 0 && (
@@ -272,20 +237,9 @@ export default function JoinRequestsPage() {
         {/* Table */}
         <div className="bg-card rounded-xl border border-border/80 shadow-sm overflow-hidden">
           {isLoading ? (
-            <div className="p-6 space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-lg" />
-              ))}
-            </div>
+            <ListTableLoading />
           ) : isError ? (
-            <div className="p-12 text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">{t("joinRequests.failedToLoad")}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{(error as Error)?.message}</p>
-              <Button variant="outline" className="rounded-xl" onClick={() => refetch()}>
-                {t("common.tryAgain")}
-              </Button>
-            </div>
+            <ListTableError title={t("joinRequests.failedToLoad")} error={error} onRetry={() => refetch()} />
           ) : requests.length === 0 ? (
             <div className="p-16 text-center">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -369,35 +323,7 @@ export default function JoinRequestsPage() {
             </Table>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-border">
-                <p className="text-sm text-muted-foreground">
-                  {t("common.page", { page, totalPages })}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    {t("common.previous")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                  >
-                    {t("common.next")}
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
+            <ListPager page={page} totalPages={totalPages} setPage={setPage} />
           </>
         )}
         </div>

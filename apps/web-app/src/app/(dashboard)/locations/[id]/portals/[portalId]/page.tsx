@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmDialog, ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { copyText } from "@/lib/clipboard"
 
 // Lazy (audit P-C1). Both are dialogs that render on a click; the CustomerForm
@@ -584,16 +584,14 @@ export default function PortalDetailPage() {
       />
 
       {/* Remove client from the portal */}
-      <ConfirmDialog
-        open={!!clientToRemove}
-        onOpenChange={(o) => !o && setClientToRemove(null)}
+      <ConfirmTargetDialog
+        target={clientToRemove}
+        onClose={() => setClientToRemove(null)}
         title={t("portal.removeClientTitle", "Remove {{name}} from this portal?", { name: clientToRemove?.name })}
         description={t("portal.removeClientWarn", "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.")}
         cancelLabel={t("common.cancel", "Cancel")}
         confirmLabel={t("portal.removeClientConfirm", "Remove client")}
-        onConfirm={(e) => { e.preventDefault(); if (clientToRemove) removeClientM.mutate(clientToRemove.id) }}
-        destructive
-        pending={removeClientM.isPending}
+        mutation={removeClientM}
       />
 
       {/* Invite client */}

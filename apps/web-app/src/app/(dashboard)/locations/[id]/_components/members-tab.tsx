@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ConfirmDialog } from "@/components/confirm-dialog"
+import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { RoutingSection } from "./routing-section"
 import { DatedRateField } from "@/components/rates/dated-rate"
@@ -363,15 +363,13 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
         />
       )}
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+      <ConfirmTargetDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
         title={t("scheduling.roles.deleteTitle")}
         description={t("scheduling.roles.deleteConfirm", { name: deleteTarget?.name })}
         confirmLabel={t("common.delete")}
-        onConfirm={(e) => { e.preventDefault(); if (deleteTarget) removeMutation.mutate(deleteTarget.id) }}
-        destructive
-        pending={removeMutation.isPending}
+        mutation={removeMutation}
       />
     </div>
   )
