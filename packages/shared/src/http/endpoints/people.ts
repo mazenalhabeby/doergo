@@ -26,8 +26,6 @@ export const employeesEndpoints = defineEndpoints('employees', {
   get: endpoint<Id, EmployeeProfile>({ method: 'GET', path: (a) => path`/employees/${a.id}`, keep: true }),
   create: endpoint<void, EmployeeProfile, CreateEmployeeInput>({ method: 'POST', path: () => '/employees' }),
   update: endpoint<Id, EmployeeProfile, UpdateEmployeeInput>({ method: 'PATCH', path: (a) => path`/employees/${a.id}` }),
-  deactivate: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/employees/${a.id}` }),
-  stats: endpoint<Id, unknown>({ method: 'GET', path: (a) => path`/employees/${a.id}/stats`, keep: true }),
   performance: endpoint<Id & { period?: string; startDate?: string; endDate?: string }, unknown>({
     method: 'GET',
     path: ({ id, ...q }) => withQuery(path`/employees/${id}/performance`, q),
@@ -96,10 +94,6 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
   }),
   /** The office removes a request. */
   removeManaged: endpoint<{ timeOffId: string }, void>({ method: 'DELETE', path: (a) => path`/employees/time-off/${a.timeOffId}/manage` }),
-  bulkApprove: endpoint<void, unknown, { ids: string[]; approved?: boolean; rejectionReason?: string }>({
-    method: 'POST',
-    path: () => '/employees/time-off/bulk-approve',
-  }),
   /** Leave entered by the office for somebody. */
   manual: endpoint<void, TimeOffRequest, Record<string, unknown>>({ method: 'POST', path: () => '/employees/time-off/manual' }),
 });

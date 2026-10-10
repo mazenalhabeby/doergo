@@ -125,16 +125,10 @@ export const tasksEndpoints = defineEndpoints('tasks', {
     path: (a) => path`/tasks/${a.id}/checklist/${a.itemId}`,
   }),
   removeChecklistItem: endpoint<Id & { itemId: string }, void>({ method: 'DELETE', path: (a) => path`/tasks/${a.id}/checklist/${a.itemId}` }),
-  reorderChecklist: endpoint<Id, ChecklistItem[], { itemIds: string[] }>({ method: 'PATCH', path: (a) => path`/tasks/${a.id}/checklist/reorder` }),
   subtasks: endpoint<Id, Task[]>({ method: 'GET', path: (a) => path`/tasks/${a.id}/subtasks` }),
   addSubtask: endpoint<Id, Task, Record<string, unknown>>({ method: 'POST', path: (a) => path`/tasks/${a.id}/subtasks` }),
   addDependency: endpoint<Id, unknown, { dependsOnId: string; type?: string }>({ method: 'POST', path: (a) => path`/tasks/${a.id}/dependencies` }),
   removeDependency: endpoint<Id & { depId: string }, void>({ method: 'DELETE', path: (a) => path`/tasks/${a.id}/dependencies/${a.depId}` }),
-  /**
-   * ⚠️ `suggested-employees`. The web's tasksApi still asks
-   * `/tasks/:id/suggested-technicians`, which the gateway does not serve.
-   */
-  suggestedEmployees: endpoint<Id, unknown[]>({ method: 'GET', path: (a) => path`/tasks/${a.id}/suggested-employees` }),
 
   // ── attachments (presign → PUT to storage → confirm) ──
   attachmentPresign: endpoint<Id, PresignedUpload, { fileName: string; fileType: string }>({
@@ -154,7 +148,6 @@ export const tasksEndpoints = defineEndpoints('tasks', {
   // ── the service report ──
   /** The report a finished job was closed with — `null` when there is none. Kept offline. */
   report: endpoint<Id, ServiceReport | null>({ method: 'GET', path: (a) => path`/tasks/${a.id}/report`, keep: true }),
-  complete: endpoint<Id, ServiceReport, Record<string, unknown>>({ method: 'POST', path: (a) => path`/tasks/${a.id}/complete` }),
 
   // ── workspace maintenance ──
   resyncSpace: endpoint<{ spaceId: string }, unknown>({ method: 'POST', path: (a) => path`/tasks/resync/${a.spaceId}` }),
@@ -163,16 +156,6 @@ export const tasksEndpoints = defineEndpoints('tasks', {
 
 /** A service report's own routes (`/reports/:id/...`) and an asset's maintenance history. */
 export const reportsEndpoints = defineEndpoints('reports', {
-  update: endpoint<Id, ServiceReport, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/reports/${a.id}` }),
-  addPart: endpoint<Id, unknown, { name: string; partNumber?: string; quantity?: number; unitCost?: number; notes?: string }>({
-    method: 'POST',
-    path: (a) => path`/reports/${a.id}/parts`,
-  }),
-  updatePart: endpoint<Id & { partId: string }, unknown, Record<string, unknown>>({
-    method: 'PATCH',
-    path: (a) => path`/reports/${a.id}/parts/${a.partId}`,
-  }),
-  removePart: endpoint<Id & { partId: string }, void>({ method: 'DELETE', path: (a) => path`/reports/${a.id}/parts/${a.partId}` }),
   attachmentPresign: endpoint<Id, PresignedUpload, Record<string, unknown>>({ method: 'POST', path: (a) => path`/reports/${a.id}/attachments/presign` }),
   attachmentConfirm: endpoint<Id, unknown, Record<string, unknown>>({ method: 'POST', path: (a) => path`/reports/${a.id}/attachments` }),
   removeAttachment: endpoint<Id & { attachmentId: string }, void>({

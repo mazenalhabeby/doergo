@@ -65,8 +65,6 @@ export const organizationsEndpoints = defineEndpoints('organizations', {
   }),
   watchers: endpoint<Id, unknown[]>({ method: 'GET', path: (a) => path`/organizations/members/${a.id}/watchers` }),
   setWatchers: endpoint<Id, unknown, { watcherIds: string[] }>({ method: 'PUT', path: (a) => path`/organizations/members/${a.id}/watchers` }),
-  setHome: endpoint<Id, unknown, Record<string, unknown>>({ method: 'PUT', path: (a) => path`/organizations/members/${a.id}/home` }),
-  clearHome: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/organizations/members/${a.id}/home` }),
   /** The people a member may contact (the Managers group). */
   contacts: endpoint<void, Colleague[]>({ method: 'GET', path: () => '/organizations/contacts', keep: true }),
   transferOwnership: endpoint<void, void, { newOwnerId: string }>({ method: 'POST', path: () => '/organizations/transfer-ownership' }),
@@ -88,10 +86,7 @@ export const organizationsEndpoints = defineEndpoints('organizations', {
   updateLeavePolicy: endpoint<void, unknown, { defaultLeaveAllowance: number }>({ method: 'PATCH', path: () => '/organizations/leave-policy' }),
   profile: endpoint<void, unknown>({ method: 'GET', path: () => '/organizations/profile' }),
   updateProfile: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/profile' }),
-  profileBadges: endpoint<void, unknown>({ method: 'GET', path: () => '/organizations/profile-badges' }),
-  updateProfileBadges: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/profile-badges' }),
   updateNotificationPrefs: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/notification-prefs' }),
-  updateSecuritySettings: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/security-settings' }),
   auditLogs: endpoint<Record<string, string | number | undefined> | void, unknown[]>({ method: 'GET', path: (q) => withQuery('/organizations/audit-logs', q || undefined) }),
 });
 

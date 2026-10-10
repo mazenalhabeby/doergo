@@ -39,7 +39,7 @@ describe('kept responses', () => {
       verdict(E.worklog.list, { entryId: 'e1' }),
       verdict(E.auth.me, undefined),
       verdict(E.billing.bill, undefined),
-      verdict(E.tracking.workers, undefined),
+      verdict(E.tracking.worker, { id: 'w1' }),
       verdict(E.sync.pull, { scope: 'tasks' as never }),
       // Presence — who is on NOW (the Crew card). Stale is wrong, not old.
       verdict(E.attendance.allEntries, { status: 'CLOCKED_IN', limit: 300 }),

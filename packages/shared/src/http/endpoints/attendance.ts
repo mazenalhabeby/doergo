@@ -153,7 +153,6 @@ export const attendanceEndpoints = defineEndpoints('attendance', {
   }),
   approve: endpoint<Id, TimeEntry, { notes?: string }>({ method: 'POST', path: (a) => path`/attendance/approvals/${a.id}/approve` }),
   reject: endpoint<Id, TimeEntry, { reason: string }>({ method: 'POST', path: (a) => path`/attendance/approvals/${a.id}/reject` }),
-  bulkApprove: endpoint<void, unknown, { entryIds: string[]; notes?: string }>({ method: 'POST', path: () => '/attendance/approvals/bulk-approve' }),
 
   // ── away from the site ──
   reportExcursion: endpoint<void, GeofenceExcursion, { reason: string; requestedMinutes: number }>({
@@ -175,12 +174,6 @@ export const attendanceEndpoints = defineEndpoints('attendance', {
   extraTimePending: endpoint<void, TimeEntry[]>({ method: 'GET', path: () => '/attendance/extra-time/pending', keep: true }),
   approveExtraTime: endpoint<Id, unknown, { minutes: number }>({ method: 'POST', path: (a) => path`/attendance/extra-time/${a.id}/approve` }),
   rejectExtraTime: endpoint<Id, unknown>({ method: 'POST', path: (a) => path`/attendance/extra-time/${a.id}/reject` }),
-
-  // ── reports ──
-  reportSummary: endpoint<Q, unknown>({ method: 'GET', path: (q) => withQuery('/attendance/reports/summary', q), keep: true }),
-  reportWeekly: endpoint<Q | void, unknown>({ method: 'GET', path: (q) => withQuery('/attendance/reports/weekly', q || undefined), keep: true }),
-  reportMonthly: endpoint<Q | void, unknown>({ method: 'GET', path: (q) => withQuery('/attendance/reports/monthly', q || undefined), keep: true }),
-  reportExport: endpoint<Q, unknown>({ method: 'GET', path: (q) => withQuery('/attendance/reports/export', q) }),
 });
 
 /** A session's work log: timestamped notes (optionally with photos) during a clock-in. */

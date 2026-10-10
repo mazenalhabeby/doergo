@@ -10,5 +10,4 @@ export const epicsWebEndpoints = defineEndpoints('epics', {
   list: endpoint<void, unknown>({ method: 'GET', path: () => '/epics' }),
   create: endpoint<void, unknown, unknown>({ method: 'POST', path: () => '/epics' }),
   update: endpoint<{ id: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/epics/${a.id}` }),
-  delete: endpoint<{ id: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/epics/${a.id}` }),
 });

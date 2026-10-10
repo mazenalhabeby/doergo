@@ -107,8 +107,4 @@ export const assetCategoriesEndpoints = defineEndpoints('assetCategories', {
   create: endpoint<void, unknown, Record<string, unknown>>({ method: 'POST', path: () => '/asset-categories' }),
   update: endpoint<Id, unknown, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/asset-categories/${a.id}` }),
   remove: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/asset-categories/${a.id}` }),
-  types: endpoint<{ categoryId: string }, unknown[]>({ method: 'GET', path: (a) => path`/asset-categories/${a.categoryId}/types`, keep: true }),
-  createType: endpoint<{ categoryId: string }, unknown, Record<string, unknown>>({ method: 'POST', path: (a) => path`/asset-categories/${a.categoryId}/types` }),
-  updateType: endpoint<Id, unknown, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/asset-types/${a.id}` }),
-  removeType: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/asset-types/${a.id}` }),
 });

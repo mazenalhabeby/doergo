@@ -62,14 +62,12 @@ export const documentsEndpoints = defineEndpoints('documents', {
     path: (q) => withQuery('/documents/sent', q || undefined),
     keep: true,
   }),
-  events: endpoint<Id, unknown[]>({ method: 'GET', path: (a) => path`/documents/${a.id}/events`, keep: true }),
   chain: endpoint<Id, DocumentChainView>({ method: 'GET', path: (a) => path`/documents/${a.id}/chain`, keep: true }),
   /** Mint a link — the "opened" event. Never kept. */
   downloadUrl: endpoint<Id, { url: string; fileName: string }>({ method: 'POST', path: (a) => path`/documents/${a.id}/download-url` }),
   requirements: endpoint<{ userId?: string } | void, unknown[]>({ method: 'GET', path: (q) => withQuery('/documents/requirements', q || undefined), keep: true }),
   pending: endpoint<void, unknown>({ method: 'GET', path: () => '/documents/pending', keep: true }),
   compliance: endpoint<void, unknown[]>({ method: 'GET', path: () => '/documents/compliance', keep: true }),
-  routeCandidates: endpoint<Record<string, string | undefined> | void, unknown[]>({ method: 'GET', path: (q) => withQuery('/documents/route-candidates', q || undefined) }),
   matchCandidates: endpoint<void, unknown[]>({ method: 'GET', path: () => '/documents/match-candidates' }),
 
   // ── issuing (presign, then file it) ──
@@ -81,7 +79,6 @@ export const documentsEndpoints = defineEndpoints('documents', {
   awaitingVerification: endpoint<void, unknown[]>({ method: 'GET', path: () => '/documents/awaiting-verification', keep: true }),
   verify: endpoint<Id, unknown, { expiresOn?: string | null }>({ method: 'POST', path: (a) => path`/documents/${a.id}/verify` }),
   reject: endpoint<Id, unknown, { reason: string }>({ method: 'POST', path: (a) => path`/documents/${a.id}/reject` }),
-  revoke: endpoint<Id, unknown>({ method: 'POST', path: (a) => path`/documents/${a.id}/revoke` }),
   remove: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/documents/${a.id}` }),
   setVisibility: endpoint<void, { updated: number }, { documentIds: string[]; hiddenFromMember?: boolean; roleIds?: string[] | null }>({
     method: 'POST',
@@ -105,7 +102,6 @@ export const documentsEndpoints = defineEndpoints('documents', {
     path: (a) => path`/documents/${a.id}/sign`,
   }),
   acknowledge: endpoint<Id, { success: boolean }>({ method: 'POST', path: (a) => path`/documents/${a.id}/acknowledge` }),
-  sendBack: endpoint<Id, unknown, { reason?: string }>({ method: 'POST', path: (a) => path`/documents/${a.id}/send-back` }),
 
   // ── contract templates ──
   templates: endpoint<{ includeInactive?: boolean } | void, unknown[]>({ method: 'GET', path: (q) => withQuery('/documents/templates', q || undefined) }),
@@ -113,7 +109,6 @@ export const documentsEndpoints = defineEndpoints('documents', {
   previewTemplate: endpoint<void, unknown, { body?: string; title?: string; memberId?: string }>({ method: 'POST', path: () => '/documents/templates/preview' }),
   updateTemplate: endpoint<Id, unknown, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/documents/templates/${a.id}` }),
   deactivateTemplate: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/documents/templates/${a.id}` }),
-  issueContract: endpoint<void, MemberDocument, Record<string, unknown>>({ method: 'POST', path: () => '/documents/issue-contract' }),
 });
 
 /** A CLIENT signing from an emailed link — no session; the token in the body is the authority. */

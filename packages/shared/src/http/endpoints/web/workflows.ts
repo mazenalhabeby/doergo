@@ -20,10 +20,7 @@ export const workflowsWebEndpoints = defineEndpoints('workflows', {
   create: endpoint<void, unknown, unknown>({ method: 'POST', path: () => '/workflows' }),
   submitToLibrary: endpoint<{ id: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/workflows/${a.id}/submit-to-library` }),
   update: endpoint<{ id: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/workflows/${a.id}` }),
-  delete: endpoint<{ id: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/workflows/${a.id}` }),
   addStatus: endpoint<{ workflowId: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/workflows/${a.workflowId}/statuses` }),
   updateStatus: endpoint<{ workflowId: string; statusId: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/workflows/${a.workflowId}/statuses/${a.statusId}` }),
   deleteStatus: endpoint<{ workflowId: string; statusId: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/workflows/${a.workflowId}/statuses/${a.statusId}` }),
-  reorderStatuses: endpoint<{ workflowId: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/workflows/${a.workflowId}/statuses/reorder` }),
-  setDefault: endpoint<{ id: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/workflows/${a.id}/set-default` }),
 });

@@ -33,7 +33,6 @@ export const customersEndpoints = defineEndpoints('customers', {
   get: endpoint<Id, unknown>({ method: 'GET', path: (a) => path`/customers/${a.id}`, keep: true }),
   create: endpoint<void, unknown, Record<string, unknown>>({ method: 'POST', path: () => '/customers' }),
   update: endpoint<Id, unknown, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/customers/${a.id}` }),
-  remove: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/customers/${a.id}` }),
   /**
    * What the caller owes clients today — the home Clients card. Its key carries
    * the member's own day, so yesterday's list can never answer for today. Kept
@@ -75,7 +74,6 @@ export const customersEndpoints = defineEndpoints('customers', {
 
   // ── the client portal invitation ──
   invite: endpoint<Id, { code?: string; email?: string }, { email?: string; portalId?: string }>({ method: 'POST', path: (a) => path`/customers/${a.id}/invite` }),
-  resendInvite: endpoint<Id, { code?: string; emailed?: boolean }>({ method: 'POST', path: (a) => path`/customers/${a.id}/resend-invite` }),
 
   // ── clients from the phone's address book ──
   /** The organization's clients as HASHED keys — the phone marks "already a client" on the device. */

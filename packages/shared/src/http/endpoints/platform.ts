@@ -48,10 +48,6 @@ export const authEndpoints = defineEndpoints('auth', {
   resetPassword: endpoint<void, void, { token: string; newPassword: string }>({ method: 'POST', path: () => '/auth/reset-password', public: true }),
   changePassword: endpoint<void, void, { currentPassword: string; newPassword: string }>({ method: 'POST', path: () => '/auth/change-password' }),
   deleteAccount: endpoint<void, void, { password: string }>({ method: 'DELETE', path: () => '/auth/account' }),
-  sessions: endpoint<void, unknown[]>({ method: 'GET', path: () => '/auth/sessions' }),
-  revokeSession: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/auth/sessions/${a.id}` }),
-  revokeAllSessions: endpoint<void, void>({ method: 'DELETE', path: () => '/auth/sessions' }),
-  devices: endpoint<void, unknown[]>({ method: 'GET', path: () => '/auth/devices' }),
   removeDevice: endpoint<{ deviceId: string }, void>({ method: 'DELETE', path: (a) => path`/auth/devices/${a.deviceId}` }),
   biometricEnroll: endpoint<void, unknown, Record<string, unknown>>({ method: 'POST', path: () => '/auth/biometric/enroll' }),
   biometricChallenge: endpoint<void, unknown, Record<string, unknown>>({ method: 'POST', path: () => '/auth/biometric/challenge', public: true }),
@@ -59,12 +55,9 @@ export const authEndpoints = defineEndpoints('auth', {
 });
 
 export const usersEndpoints = defineEndpoints('users', {
-  me: endpoint<void, User>({ method: 'GET', path: () => '/users/me', keep: true }),
   /** Your own profile, presence, time format, language. */
   updateMe: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/users/me' }),
   updateEmail: endpoint<void, unknown, { email: string; password?: string }>({ method: 'PATCH', path: () => '/users/me/email' }),
-  get: endpoint<Id, User>({ method: 'GET', path: (a) => path`/users/${a.id}` }),
-  workers: endpoint<void, User[]>({ method: 'GET', path: () => '/users/workers' }),
   /** Multipart: `file`. */
   uploadAvatar: endpoint<void, { avatarUrl: string }, unknown>({ method: 'POST', path: () => '/users/avatar/upload', upload: true }),
   removeAvatar: endpoint<void, unknown>({ method: 'DELETE', path: () => '/users/avatar' }),
@@ -95,7 +88,6 @@ export const geoEndpoints = defineEndpoints('geo', {
   search: endpoint<{ q: string; session?: string; lat?: number; lon?: number; limit?: number }, unknown>({ method: 'GET', path: (q) => withQuery('/geo/search', q) }),
   place: endpoint<{ id: string; session?: string }, { result: unknown | null }>({ method: 'GET', path: (q) => withQuery('/geo/place', q) }),
   reverse: endpoint<{ lat: number; lon: number }, { result: unknown | null }>({ method: 'GET', path: (q) => withQuery('/geo/reverse', q) }),
-  timezone: endpoint<{ lat: number; lon: number }, { timezone: string | null }>({ method: 'GET', path: (q) => withQuery('/geo/timezone', q) }),
 });
 
 /** The offline protocol (shared sync/protocol.ts). Never kept by the response cache — it has its own store. */
@@ -121,14 +113,7 @@ export const trackingEndpoints = defineEndpoints('tracking', {
   location: endpoint<void, unknown, LocationFix>({ method: 'POST', path: () => '/tracking/location' }),
   /** A buffered burst of route points (the phone's background tracker). */
   locationBatch: endpoint<void, unknown, { taskId?: string; points: LocationFix[]; [k: string]: unknown }>({ method: 'POST', path: () => '/tracking/location/batch' }),
-  workers: endpoint<void, unknown[]>({ method: 'GET', path: () => '/tracking/workers', keep: false }),
   spaceWorkers: endpoint<{ spaceId: string }, unknown[]>({ method: 'GET', path: (a) => path`/tracking/spaces/${a.spaceId}/workers`, keep: false }),
   worker: endpoint<Id, unknown>({ method: 'GET', path: (a) => path`/tracking/workers/${a.id}`, keep: false }),
-  currentRoute: endpoint<Id, unknown>({ method: 'GET', path: (a) => path`/tracking/workers/${a.id}/current-route`, keep: false }),
-  workerHistory: endpoint<Id & { from?: string; to?: string }, unknown>({
-    method: 'GET',
-    path: ({ id, ...q }) => withQuery(path`/tracking/workers/${id}/history`, q),
-    keep: false,
-  }),
   taskRoute: endpoint<{ taskId: string }, unknown>({ method: 'GET', path: (a) => path`/tracking/tasks/${a.taskId}/route`, keep: false }),
 });

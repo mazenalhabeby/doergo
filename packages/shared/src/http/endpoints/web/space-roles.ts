@@ -7,7 +7,6 @@ import { defineEndpoints, endpoint } from '../../core/define';
 import { path } from '../../core/path';
 
 export const spaceRolesWebEndpoints = defineEndpoints('spaceRoles', {
-  list: endpoint<void, unknown>({ method: 'GET', path: () => '/space-roles' }),
   listInSpace: endpoint<{ spaceId: string }, unknown>({ method: 'GET', path: (a) => path`/spaces/${a.spaceId}/roles` }),
   setDayRate: endpoint<{ spaceId: string; roleId: string }, unknown, unknown>({ method: 'PUT', path: (a) => path`/spaces/${a.spaceId}/roles/${a.roleId}/day-rate` }),
   setDefaultDayRate: endpoint<{ roleId: string }, unknown, unknown>({ method: 'PUT', path: (a) => path`/space-roles/${a.roleId}/day-rate` }),

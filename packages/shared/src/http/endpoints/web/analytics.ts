@@ -16,6 +16,5 @@ export const analyticsWebEndpoints = defineEndpoints('analytics', {
   deleteSaved: endpoint<{ id: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/analytics/reports/${a.id}` }),
   listSchedules: endpoint<void, unknown>({ method: 'GET', path: () => '/analytics/schedules' }),
   createSchedule: endpoint<void, unknown, unknown>({ method: 'POST', path: () => '/analytics/schedules' }),
-  updateSchedule: endpoint<{ id: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/analytics/schedules/${a.id}` }),
   deleteSchedule: endpoint<{ id: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/analytics/schedules/${a.id}` }),
 });
