@@ -171,7 +171,7 @@ export class AssetCatalogService {
     }
 
     if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
+      throw new NotFoundException('Category not found'); // another org's: no existence oracle
     }
 
     // Renaming: the clash is with the OTHER kinds in the same space, not the
@@ -246,7 +246,7 @@ export class AssetCatalogService {
     }
 
     if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
+      throw new NotFoundException('Category not found'); // another org's: no existence oracle
     }
 
     /*
@@ -300,7 +300,7 @@ export class AssetCatalogService {
     }
 
     if (category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
+      throw new NotFoundException('Category not found'); // another org's: no existence oracle
     }
 
     // Check for duplicate name in same category
@@ -353,7 +353,7 @@ export class AssetCatalogService {
     }
 
     if (category.organizationId !== query.organizationId) {
-      throw new ForbiddenException('Category does not belong to your organization');
+      throw new NotFoundException('Category not found'); // another org's: no existence oracle
     }
 
     const types = await this.prisma.assetType.findMany({
@@ -390,7 +390,7 @@ export class AssetCatalogService {
     }
 
     if (type.category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Type does not belong to your organization');
+      throw new NotFoundException('Type not found'); // another org's: no existence oracle
     }
 
     // Check for duplicate name if changing name
@@ -448,7 +448,7 @@ export class AssetCatalogService {
     }
 
     if (type.category.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Type does not belong to your organization');
+      throw new NotFoundException('Type not found'); // another org's: no existence oracle
     }
 
     // Set assets' typeId to null instead of blocking delete

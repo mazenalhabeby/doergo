@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { canAccessTask, isTaskAssignee, isWithinTaskBoundary } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { holdsOpenRole } from '@hbcfield/shared';
@@ -59,11 +59,23 @@ export class TaskAccessService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Throws 403 unless the caller may touch the task. */
+  /**
+   * Throws unless the caller may touch the task: 404 outside the caller's
+   * boundary, 403 inside it.
+   *
+   * ⚠️ OUTSIDE the boundary the answer must be byte-for-byte the "no such task"
+   * answer. A 403 there confirms that the id is a real task in some other
+   * organization — the same oracle the documents and the job report already
+   * close with a 404. Inside the boundary the caller may know the task exists
+   * (it is on their board), so "you may not" stays 403.
+   */
   async assert(task: any, data: TaskAccessFacts, opts: TaskAccessOptions = {}): Promise<void> {
     if (await this.allows(task, data, opts)) return;
 
-    const { userId, canViewAllTasks, viewAllSpaceIds } = data;
+    const { userId, organizationId, sharedSpaceIds, canViewAllTasks, viewAllSpaceIds } = data;
+    if (!task || !isWithinTaskBoundary(task, { userId, organizationId, sharedSpaceIds } as never)) {
+      throw new NotFoundException('Task not found');
+    }
     /*
       Log WHY, not just that. These fields are the whole rule: which space the
       task is in, which spaces the caller holds, whether they hold it org-wide.

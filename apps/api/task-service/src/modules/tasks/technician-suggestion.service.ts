@@ -54,7 +54,8 @@ export class TechnicianSuggestionService {
     }
 
     if (task.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Task is not in your organization');
+      // Another organization's task: the same answer as no task (no existence oracle).
+      throw new NotFoundException('Task not found');
     }
 
     // The same authority the assignment itself needs — asked against THIS task's

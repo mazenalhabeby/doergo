@@ -71,7 +71,7 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
 
   it('still refuses another organization’s asset', async () => {
     prisma.asset.findUnique.mockResolvedValue({ ...asset(0), organizationId: 'other-org' });
-    await expect(del()).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(del()).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('404s a missing asset', async () => {

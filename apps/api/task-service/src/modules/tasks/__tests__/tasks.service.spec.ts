@@ -392,7 +392,7 @@ describe('TasksService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for ADMIN accessing a task outside their org', async () => {
+    it('should answer 404 (not 403) for ADMIN accessing a task outside their org — no existence oracle', async () => {
       // Admins see all tasks in THEIR org; a task in another org is denied.
       const taskInOtherOrg = { ...mockTask, createdById: 'other-user', organizationId: 'other-org' };
       mockPrismaService.task.findUnique.mockResolvedValue(taskInOtherOrg);
@@ -404,7 +404,7 @@ describe('TasksService', () => {
           userRole: Role.ADMIN,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException for TECHNICIAN not assigned to task', async () => {
@@ -1053,7 +1053,7 @@ describe('TasksService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for task in different organization', async () => {
+    it('should answer 404 (not 403) for a task in a different organization — no existence oracle', async () => {
       const taskInOtherOrg = { ...mockTask, organizationId: 'other-org' };
       mockPrismaService.task.findUnique.mockResolvedValue(taskInOtherOrg);
 
@@ -1064,7 +1064,7 @@ describe('TasksService', () => {
           userRole: Role.EMPLOYEE, canViewAllTasks: true,
           organizationId: 'org-123',
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -645,7 +645,8 @@ export class TaskRecordsService {
 
     // Authorization: CLIENT (org owner) can delete any task in their organization
     if (task.organizationId !== data.organizationId) {
-      throw new ForbiddenException('You can only delete tasks in your organization');
+      // Another organization's task: the same answer as no task (no existence oracle).
+      throw new NotFoundException('Task not found');
     }
 
     // Don't allow deleting in-progress or completed tasks

@@ -427,7 +427,7 @@ export class AssetsService {
     }
 
     if (asset.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Asset does not belong to your organization');
+      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
     }
 
     return success(await this.withHolders(asset));
@@ -470,7 +470,7 @@ export class AssetsService {
     }
 
     if (asset.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Asset does not belong to your organization');
+      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
     }
 
     this.assertDates(data, asset);
@@ -686,7 +686,7 @@ export class AssetsService {
     }
 
     if (asset.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Asset does not belong to your organization');
+      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
     }
 
     // An asset's VALUE is its history — the maintenance record attached to that
@@ -737,7 +737,7 @@ export class AssetsService {
     }
 
     if (asset.organizationId !== data.organizationId) {
-      throw new ForbiddenException('Asset does not belong to your organization');
+      throw new NotFoundException('Asset not found'); // another org's: no existence oracle
     }
 
     const page = Math.max(1, data.page || 1);

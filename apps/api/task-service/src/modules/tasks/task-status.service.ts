@@ -84,7 +84,9 @@ export class TaskStatusService {
     const onTheJob =
       task.assignedToId === data.userId ||
       !!(await this.prisma.taskAssignee.findFirst({ where: { taskId: task.id, userId: data.userId }, select: { id: true } }));
-    if (!onTheJob || task.organizationId !== data.organizationId) {
+    // Another organization's task answers exactly like a missing one.
+    if (task.organizationId !== data.organizationId) throw new NotFoundException('Task not found');
+    if (!onTheJob) {
       throw new ForbiddenException({ message: 'Only somebody on this job can resume it', code: 'TASK_REASSIGNED' });
     }
     if (task.pausedAt) {
@@ -189,12 +191,12 @@ export class TaskStatusService {
       // Cancellation authorization (new access-flag model).
       if (data.userRole === Role.ADMIN) {
         if (task.createdById !== data.userId && task.organizationId !== data.organizationId) {
-          throw new ForbiddenException('You can only cancel tasks in your organization');
+          throw new NotFoundException('Task not found'); // another org's task: no existence oracle
         }
       } else if (data.canViewAllTasks) {
         // "View all tasks" grant → can cancel any task in their org.
         if (task.organizationId !== data.organizationId) {
-          throw new ForbiddenException('You can only cancel tasks in your organization');
+          throw new NotFoundException('Task not found'); // another org's task: no existence oracle
         }
       } else {
         // No org-wide authority: cannot cancel (assigned users execute, they

@@ -102,32 +102,32 @@ describe('TasksService — per-task authorization', () => {
       // A stale assignment: the member moved orgs, the TaskAssignee row remains.
       await expect(
         attempt(task({ organizationId: OTHER_ORG, assignedToId: 'caller-1' }), {}),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('refuses a task in another organization to a co-assignee', async () => {
       await expect(
         attempt(task({ organizationId: OTHER_ORG, assignees: [{ userId: 'caller-1' }] }), {}),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('refuses an ADMIN a task outside their org even when they created it', async () => {
       // The old rule denied only when NEITHER held, so creating it was enough.
       await expect(
         attempt(task({ organizationId: OTHER_ORG, createdById: 'caller-1' }), { userRole: Role.ADMIN }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('refuses an ADMIN of another org a task in this one', async () => {
       await expect(
         attempt(task({ organizationId: OTHER_ORG }), { userRole: Role.ADMIN }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('refuses a view-all grant across the boundary', async () => {
       await expect(
         attempt(task({ organizationId: OTHER_ORG }), { canViewAllTasks: true }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

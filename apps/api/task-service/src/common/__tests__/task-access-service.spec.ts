@@ -70,9 +70,31 @@ describe('TaskAccessService — the one task gate', () => {
     // A task of ANOTHER organization, open to a role; the lookup would say "holds it".
     prisma.spaceAssignment.findFirst.mockResolvedValue({ user: { role: Role.EMPLOYEE, enabledModules: null, isExternal: false } });
     const foreign = task({ organizationId: 'org-2', openRoleId: 'role-1', openSpotsLeft: 1 });
-    await expect(gate.assert(foreign, crewMember, { roleHolderMayRead: true })).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(gate.assert(foreign, crewMember, { roleHolderMayRead: true })).rejects.toBeInstanceOf(NotFoundException);
     expect(prisma.spaceAssignment.findFirst).not.toHaveBeenCalled();
     expect(prisma.taskAssignee.findFirst).not.toHaveBeenCalled();
+  });
+
+  /*
+    No existence oracle. Outside the boundary the refusal must be the SAME answer
+    as a task that does not exist — a 403 there told a stranger "this id is a
+    real task somewhere" (found by probing prod, 2026-10-10). Inside the boundary
+    the caller may know it exists, so "you may not" stays 403.
+  */
+  it('another organization’s task answers exactly like a missing one', async () => {
+    const gate = new TaskAccessService(prisma);
+    const foreign = gate.assert(task({ organizationId: 'org-2' }), { ...crewMember, userRole: Role.ADMIN, canViewAllTasks: true });
+    const missing = gate.assert(null, crewMember);
+    await expect(foreign).rejects.toBeInstanceOf(NotFoundException);
+    await expect(missing).rejects.toBeInstanceOf(NotFoundException);
+    const msg = async (p: Promise<void>) => p.catch((e) => e.message);
+    expect(await msg(gate.assert(task({ organizationId: 'org-2' }), crewMember))).toBe(await msg(gate.assert(null, crewMember)));
+  });
+
+  it('a task in a space SHARED with the caller is inside the boundary — refused with 403, not hidden', async () => {
+    const gate = new TaskAccessService(prisma);
+    const shared = task({ organizationId: 'org-2', spaceId: 'shared-space' });
+    await expect(gate.assert(shared, { ...crewMember, sharedSpaceIds: ['shared-space'] })).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('the role-holder exemption never covers a write', async () => {
