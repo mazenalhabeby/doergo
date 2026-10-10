@@ -1293,7 +1293,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `PrismaModule`, `PrismaService` | Shared database access |
 | `AnimatedLogo` | Shared logo component (from `@hbcfield/shared/components`) |
 | `Roles`, `Public`, `CurrentUser` | NestJS decorators (from `@hbcfield/shared`) |
-| `RolesGuard`, `hasRole()` | Role-based access control guard |
+| `hasRole()` | Role check. ⚠️ Guard CLASSES live only in the gateway (`common/guards`) — Nest injects `Reflector` by class identity; the unused, drifted copies in shared were deleted 2026-10-11 |
 | `isAdmin()`, `isManager()`, `isTechnician()` | Role check helpers with legacy normalization |
 | `canAccessPlatform()`, `canAccessWeb()`, `canAccessMobile()` | Platform access checks |
 | `canCreateTasks()`, `canViewAllTasks()`, `canAssignTasks()`, `canManageUsers()` | Permission checks with role fallback |
@@ -1320,6 +1320,13 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `formatNumberFor()`, `pluralFormFor()` | Numbers and one/other plurals per locale — shared by the push and email renderers |
 | `documentTypeVisibleTo()`, `visibleTypeWhere()`, `visibleTypeSelfWhere()` | Who may SEE documents of a type — one rule in three shapes (predicate / documents `where` / catalogue `where`). Empty list = no restriction |
 | `assertMemberInScope()`, `memberScopeFilter()` | "Is this person in my crew?" — one rule for both services |
+| `memberAccessOf()`, `orgAllows()`, `ORG_ACCESS_SELECT` | THE access resolver (access/org-access.ts): org role + space roles + shares, legacy flags per `ACCESS_IGNORE_LEGACY_FLAGS`, an inactive role grants nothing. Sign-in, refresh, token validation, sockets, reviewer lookups and the grant ceiling all call it — never `buildResolvedAccess` by hand |
+| `assertFoundInOrg()` | "Missing" and "another organization's" answer the same 404 (no existence oracle). `found-in-org-guard.spec.ts` fails on a hand-written copy |
+| `personSearchOr()`, `PERSON_BRIEF_SELECT` | Find a person by name/email (Prisma `OR`), and the `{id, firstName, lastName, email}` select |
+| `countBillableUsage()` | Per-space usage the BILL charges and the Modules tab shows — one function, so they cannot disagree |
+| `getRedisConfig()` | The only reader of REDIS_HOST/PORT/PASSWORD (takes any `{ get(key) }`) |
+| `workspaceZone()`, `zonedParts()`, `toISODateString()`, `localDateKey()`, `dayKeyIn()` | Which zone "today" is in (workspace → org → UTC); a zone's wall clock (one cached formatter); a DATE column's day; an instant's local day |
+| `putToPresignedUrl()`, `LANGUAGE_CHOICES` | The presigned-upload PUT (web + phone pass their own body); the app language picker list |
 | `SUPPORTED_CURRENCIES`, `parseCurrency()`, `resolveInvoiceCurrency()`, `workspaceCurrency()`, `crossRate()`, `parseExchangeRate()`, `toOrganizationCurrency()` | Which currency an amount is in, and converting it only through a known rate (billing/currency.ts) |
 | `formatDistance()`, `distanceParts()`, `distanceRefusalParams()` | THE distance formatter — "85 m", "850 m", "1.2 km", "9,631 km", per locale, no-break space. Mobile `lib/distance`, web `useFormatDistance` only bind the locale. Distance refusals are CODED (`TOO_FAR_TO_ARRIVE`/`TOO_FAR_TO_START`/`OUTSIDE_GEOFENCE`/`AWAY_NOT_ALLOWED` + `params.distanceMetres/radiusMetres`); `distance-display-guard.spec.ts` fails on a hand-built km/m |
 | `toClientCopy()`, `parseReportCopy()`, `parseClientCopyInclude()`, `CLIENT_COPY_OPTIONS`, `safeSignatureDataUrl()`, `toReportRoute()`, `portalRequestReference()` | The job report (tasks/task-report.ts): the client copy cut from what it keeps, the copy parameter, a signature fit to draw, the tracked route as printed, the `#AB12CD` reference |
