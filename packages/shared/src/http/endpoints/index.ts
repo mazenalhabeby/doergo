@@ -2,8 +2,10 @@
  * THE endpoint table — every path both apps call, defined once.
  *
  * Add an endpoint where its domain lives (see ../README.md). A web-only or
- * admin-only domain gets its own file here (e.g. `workflows.ts`,
- * `platform-admin.ts`) and a line in `apiEndpoints` below — same pattern.
+ * admin-only domain gets its own file here (e.g. `workflows.ts`) and a line in
+ * `apiEndpoints` below — same pattern. The operator console's `/platform/*`
+ * routes are the one exception: `platform-admin.ts` exports its own registry,
+ * `platformEndpoints` (an operator token, never a member's).
  */
 import { assetCategoriesEndpoints, assetsEndpoints } from './assets';
 import { attendanceEndpoints, overtimeEndpoints, shiftIssuesEndpoints, worklogEndpoints } from './attendance';
@@ -26,6 +28,7 @@ export * from './documents';
 export * from './organization';
 export * from './people';
 export * from './platform';
+export * from './platform-admin';
 export * from './portal';
 export * from './tasks';
 

@@ -1,112 +1,124 @@
 /**
- * Every call the console makes, typed and grouped by area. Screens call these;
- * nothing else builds a URL. Parameters go through `path` (encoded) and `query`.
+ * Every call the console makes, grouped by area, as the screens like to call
+ * them. Each one is `api.call(platformEndpoints.<domain>.<key>, args, { body })`
+ * — the route, its method and the encoding of its parameters live ONCE in the
+ * shared table (packages/shared/src/http/endpoints/platform-admin.ts). Nothing
+ * here builds a URL.
  */
-import { path, query, request, requestPage } from './client';
+import { platformEndpoints as P } from '@hbcfield/shared/client';
+import { api } from './client';
 import type {
-  AuditRow, BillingAlertRow, BillingMode, InboxView, LoginResponse, MailStatus, Me, Msg, OrgDetail, OrgRow, Overview,
-  PinnedOrg, PriceList, SessionResponse, StaffUser, StripeStatus, Team, Ticket, TRule, TStaff, Tpl,
+  AuditRow, BillingMode, InboxView, OrgRow, Page, PinnedOrg, Team, TRule,
 } from './types';
 
 type Sig = { signal?: AbortSignal };
 
+/** A cursor page, unwrapped to what the screens read. */
+function toPage<T>(raw: { data?: T[] | null; nextCursor?: string | null } | null): Page<T> {
+  return { data: raw?.data ?? [], nextCursor: raw?.nextCursor ?? null };
+}
+
 export const authApi = {
-  login: (body: { email: string; password: string; code?: string }) =>
-    request<LoginResponse>('/platform/auth/login', { body, session: false }),
-  me: () => request<Me>('/platform/auth/me'),
-  logout: () => request<{ signedOut: boolean }>('/platform/auth/logout', { body: {} }),
-  refresh: () => request<SessionResponse>('/platform/auth/refresh', { body: {} }),
+  /** `auth: false` comes from the definition (public): a 401 here is a wrong password, not an ended session. */
+  login: (body: { email: string; password: string; code?: string }) => api.call(P.auth.login, undefined, { body }),
+  me: () => api.call(P.auth.me),
+  logout: () => api.call(P.auth.logout, undefined, { body: {} }),
+  refresh: () => api.call(P.auth.refresh, undefined, { body: {} }),
   changePassword: (currentPassword: string, newPassword: string) =>
-    request<SessionResponse & { id: string }>('/platform/auth/change-password', { body: { currentPassword, newPassword } }),
+    api.call(P.auth.changePassword, undefined, { body: { currentPassword, newPassword } }),
   /** While 2FA is on, `code` (a current one) is required to re-key. */
-  setup2fa: (code?: string) =>
-    request<SessionResponse & { secret: string; otpauthUri: string }>('/platform/auth/2fa/setup', { body: code ? { code } : {} }),
-  enable2fa: (code: string) => request<SessionResponse>('/platform/auth/2fa/enable', { body: { code } }),
-  disable2fa: (code: string) => request<SessionResponse>('/platform/auth/2fa/disable', { body: { code } }),
+  setup2fa: (code?: string) => api.call(P.auth.setup2fa, undefined, { body: code ? { code } : {} }),
+  enable2fa: (code: string) => api.call(P.auth.enable2fa, undefined, { body: { code } }),
+  disable2fa: (code: string) => api.call(P.auth.disable2fa, undefined, { body: { code } }),
 };
 
 export const orgsApi = {
-  overview: (o: Sig = {}) => request<Overview>('/platform/overview', o),
-  list: (p: { search?: string; status?: string; cursor?: string | null }, o: Sig = {}) =>
-    requestPage<OrgRow>(`/platform/orgs${query({ search: p.search, status: p.status === 'all' ? undefined : p.status, cursor: p.cursor ?? undefined })}`, o),
-  detail: (id: string, o: Sig = {}) => request<OrgDetail>(path`/platform/orgs/${id}`, o),
-  extendTrial: (id: string, days = 14) => request(path`/platform/orgs/${id}/extend-trial`, { body: { days } }),
-  endTrial: (id: string) => request(path`/platform/orgs/${id}/end-trial`, { body: {} }),
-  suspend: (id: string) => request(path`/platform/orgs/${id}/suspend`, { body: {} }),
-  reactivate: (id: string) => request(path`/platform/orgs/${id}/reactivate`, { body: {} }),
+  overview: (o: Sig = {}) => api.call(P.orgs.overview, undefined, o),
+  list: async (p: { search?: string; status?: string; cursor?: string | null }, o: Sig = {}): Promise<Page<OrgRow>> =>
+    toPage(
+      await api.call(
+        P.orgs.list,
+        { search: p.search, status: p.status === 'all' ? undefined : p.status, cursor: p.cursor ?? undefined },
+        { ...o, unwrap: 'raw' },
+      ),
+    ),
+  detail: (id: string, o: Sig = {}) => api.call(P.orgs.detail, { id }, o),
+  extendTrial: (id: string, days = 14) => api.call(P.orgs.extendTrial, { id }, { body: { days } }),
+  endTrial: (id: string) => api.call(P.orgs.endTrial, { id }, { body: {} }),
+  suspend: (id: string) => api.call(P.orgs.suspend, { id }, { body: {} }),
+  reactivate: (id: string) => api.call(P.orgs.reactivate, { id }, { body: {} }),
   setBillingMode: (id: string, mode: BillingMode, invoiceDueDays?: number) =>
-    request(path`/platform/orgs/${id}/billing-mode`, { body: { mode, ...(invoiceDueDays ? { invoiceDueDays } : {}) } }),
+    api.call(P.orgs.setBillingMode, { id }, { body: { mode, ...(invoiceDueDays ? { invoiceDueDays } : {}) } }),
   setAgreedPrice: (id: string, body: { monthlyCents: number; until: string | null; note: string | null }) =>
-    request(path`/platform/orgs/${id}/agreed-price`, { body }),
-  clearAgreedPrice: (id: string) => request(path`/platform/orgs/${id}/agreed-price`, { method: 'DELETE' }),
+    api.call(P.orgs.setAgreedPrice, { id }, { body }),
+  clearAgreedPrice: (id: string) => api.call(P.orgs.clearAgreedPrice, { id }),
 };
 
 export const billingApi = {
-  alerts: () => request<BillingAlertRow[]>('/platform/billing-alerts'),
-  ack: (id: string) => request(path`/platform/billing-alerts/${id}/ack`, { body: {} }),
+  alerts: () => api.call(P.alerts.list),
+  ack: (id: string) => api.call(P.alerts.ack, { id }, { body: {} }),
 };
 
 export const systemApi = {
-  mail: () => request<MailStatus>('/platform/mail'),
+  mail: () => api.call(P.system.mail),
 };
 
 export const staffApi = {
-  list: () => request<StaffUser[]>('/platform/users'),
+  list: () => api.call(P.staff.list),
   create: (body: { email: string; firstName: string; lastName: string; role: string; password: string }) =>
-    request<StaffUser>('/platform/users', { body }),
-  update: (id: string, body: { role?: string; isActive?: boolean }) =>
-    request<StaffUser>(path`/platform/users/${id}`, { method: 'PATCH', body }),
-  reset2fa: (id: string) => request(path`/platform/users/${id}/reset-2fa`, { body: {} }),
+    api.call(P.staff.create, undefined, { body }),
+  update: (id: string, body: { role?: string; isActive?: boolean }) => api.call(P.staff.update, { id }, { body }),
+  reset2fa: (id: string) => api.call(P.staff.reset2fa, { id }, { body: {} }),
 };
 
 export const pricingApi = {
-  list: () => request<PriceList>('/platform/pricing'),
-  stripe: () => request<StripeStatus>('/platform/pricing/stripe'),
+  list: () => api.call(P.pricing.list),
+  stripe: () => api.call(P.pricing.stripe),
 };
 
 export const supportApi = {
-  inbox: (view: InboxView, o: Sig = {}) => request<Ticket[]>(`/platform/support/inbox${query({ view })}`, o),
-  thread: (id: string, o: Sig = {}) => request<Ticket & { messages?: Msg[] }>(path`/platform/support/tickets/${id}`, o),
-  reply: (id: string, body: string, isInternalNote: boolean) =>
-    request(path`/platform/support/tickets/${id}/messages`, { body: { body, isInternalNote } }),
-  setStatus: (id: string, status: string) => request(path`/platform/support/tickets/${id}/status`, { body: { status } }),
+  inbox: (view: InboxView, o: Sig = {}) => api.call(P.support.inbox, { view }, o),
+  thread: (id: string, o: Sig = {}) => api.call(P.support.ticket, { id }, o),
+  reply: (id: string, body: string, isInternalNote: boolean) => api.call(P.support.reply, { id }, { body: { body, isInternalNote } }),
+  setStatus: (id: string, status: string) => api.call(P.support.setStatus, { id }, { body: { status } }),
   /** `{}` self-claims; `{ teamId }` re-routes (null = triage). */
-  assign: (id: string, body: { teamId?: string | null }) => request(path`/platform/support/tickets/${id}/assign`, { body }),
-  markRead: (id: string) => request(path`/platform/support/tickets/${id}/read`, { body: {} }),
+  assign: (id: string, body: { teamId?: string | null }) => api.call(P.support.assign, { id }, { body }),
+  markRead: (id: string) => api.call(P.support.markRead, { id }, { body: {} }),
 };
 
 export const teamsApi = {
-  staff: () => request<TStaff[]>('/platform/support/teams/staff'),
-  list: () => request<Team[]>('/platform/support/teams'),
-  create: (name: string) => request<Team>('/platform/support/teams', { body: { name } }),
+  staff: () => api.call(P.supportTeams.staff),
+  list: () => api.call(P.supportTeams.list),
+  create: (name: string) => api.call(P.supportTeams.create, undefined, { body: { name } }),
   update: (teamId: string, patch: Partial<Pick<Team, 'name' | 'color' | 'description' | 'isActive'>>) =>
-    request<Team>(path`/platform/support/teams/${teamId}`, { method: 'PUT', body: patch }),
-  remove: (teamId: string) => request(path`/platform/support/teams/${teamId}`, { method: 'DELETE' }),
+    api.call(P.supportTeams.update, { teamId }, { body: patch }),
+  remove: (teamId: string) => api.call(P.supportTeams.remove, { teamId }),
   addMember: (teamId: string, platformUserId: string, teamRole: 'MANAGER' | 'AGENT') =>
-    request(path`/platform/support/teams/${teamId}/members`, { body: { platformUserId, teamRole } }),
-  removeMember: (teamId: string, platformUserId: string) =>
-    request(path`/platform/support/teams/${teamId}/members/${platformUserId}`, { method: 'DELETE' }),
+    api.call(P.supportTeams.addMember, { teamId }, { body: { platformUserId, teamRole } }),
+  removeMember: (teamId: string, platformUserId: string) => api.call(P.supportTeams.removeMember, { teamId, platformUserId }),
   upsertRule: (teamId: string, rule: Partial<TRule> & { conditions: TRule['conditions'] }) =>
-    request(path`/platform/support/teams/${teamId}/rules`, { body: rule }),
-  deleteRule: (ruleId: string) => request(path`/platform/support/teams/rules/${ruleId}`, { method: 'DELETE' }),
-  pinnedOrgs: (teamId: string) => request<PinnedOrg[]>(path`/platform/support/teams/${teamId}/pinned-orgs`),
-  pinOrg: (organizationId: string, teamId: string | null) =>
-    request('/platform/support/teams/pin-org', { body: { organizationId, teamId } }),
+    api.call(P.supportTeams.upsertRule, { teamId }, { body: rule }),
+  deleteRule: (ruleId: string) => api.call(P.supportTeams.deleteRule, { ruleId }),
+  pinnedOrgs: (teamId: string): Promise<PinnedOrg[]> => api.call(P.supportTeams.pinnedOrgs, { teamId }),
+  pinOrg: (organizationId: string, teamId: string | null) => api.call(P.supportTeams.pinOrg, undefined, { body: { organizationId, teamId } }),
 };
 
 export const libraryApi = {
-  list: () => request<Tpl[]>('/platform/library/templates'),
+  list: () => api.call(P.library.list),
   save: (id: string | null, body: Record<string, unknown>) =>
-    id
-      ? request<Tpl>(path`/platform/library/templates/${id}`, { method: 'PATCH', body })
-      : request<Tpl>('/platform/library/templates', { body }),
-  publish: (id: string, isPublished: boolean) =>
-    request(path`/platform/library/templates/${id}/publish`, { method: 'PATCH', body: { isPublished } }),
-  remove: (id: string) => request(path`/platform/library/templates/${id}`, { method: 'DELETE' }),
-  importFromOrg: (workflowId: string) => request(path`/platform/library/templates/import/${workflowId}`, { body: {} }),
+    id ? api.call(P.library.update, { id }, { body }) : api.call(P.library.create, undefined, { body }),
+  publish: (id: string, isPublished: boolean) => api.call(P.library.publish, { id }, { body: { isPublished } }),
+  remove: (id: string) => api.call(P.library.remove, { id }),
+  importFromOrg: (workflowId: string) => api.call(P.library.importFromOrg, { workflowId }, { body: {} }),
 };
 
 export const auditApi = {
-  list: (p: { cursor?: string | null; organizationId?: string }, o: Sig = {}) =>
-    requestPage<AuditRow>(`/platform/audit${query({ cursor: p.cursor ?? undefined, organizationId: p.organizationId, limit: 50 })}`, o),
+  list: async (p: { cursor?: string | null; organizationId?: string }, o: Sig = {}): Promise<Page<AuditRow>> =>
+    toPage(
+      await api.call(
+        P.audit.list,
+        { cursor: p.cursor ?? undefined, organizationId: p.organizationId, limit: 50 },
+        { ...o, unwrap: 'raw' },
+      ),
+    ),
 };

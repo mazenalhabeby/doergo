@@ -1,11 +1,12 @@
 /**
  * The console's formatters — one for money, one for dates.
  *
- * Local rather than from @hbcfield/shared: the admin image is built without the
- * workspace packages (its Dockerfile installs `--filter @hbcfield/admin...` and
- * copies only apps/admin), and pulling shared in means building it inside that
- * image. Two tiny functions are not worth that; they live HERE and nowhere else
- * in the console.
+ * Local on purpose, not @hbcfield/shared's `formatCents`/`formatShortDate`:
+ * those answer a different question. `formatCents` prints "€4186.73" with no
+ * grouping and decides decimals by whether the amount is whole, and has no
+ * dash for a missing value; `formatShortDate` has no year. The console needs
+ * grouped, explicitly rounded-or-exact euros and full dates, so these live
+ * HERE and nowhere else in the console.
  */
 
 /**

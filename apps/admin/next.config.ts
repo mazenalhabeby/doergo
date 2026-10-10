@@ -43,6 +43,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   poweredByHeader: false,
+  // The shared HTTP core and endpoint table (@hbcfield/shared/client) — the
+  // same way the web app takes it.
+  transpilePackages: ['@hbcfield/shared'],
   // Internal operator console — never indexed, hardened headers.
   async headers() {
     return [

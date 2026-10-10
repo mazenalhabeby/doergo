@@ -14,6 +14,7 @@ core/query-keys.ts    queryKey(def | 'domain.key', args) — derived, determinis
 core/result.ts        toResult(promise) → { status, data, error, errorCode, errorParams } — the web's non-throwing shape
 types.ts              answer shapes both apps declared (CrewView, JobTimeView, OrgMember, CalendarEventDetail…)
 endpoints/*.ts        the table, by domain; `apiEndpoints` is the registry
+endpoints/platform-admin.ts  the operator console's `/platform/*` routes — its OWN registry, `platformEndpoints`
 ```
 
 ## How an app plugs in
@@ -44,8 +45,11 @@ the caller's `signal`; transport failures as `ApiError` with status 0.
 - **Phone**: SecureStore `getToken`, `refreshSession()` mapped, `timeoutMs: 15000`, `dedupeGets: true` +
   `sessionKey: () => knownOwner`, `cache` → response-cache.ts (`req.keep ?? isKeptResponse(req.path)`),
   `observe` → connectivity + server clock, `messages` → `networkErrorText`. `ApiError.statusCode` still works.
-- **Console**: no `refresh` (a 401 calls `onSessionEnded('unauthorized')`), `fetchCache: 'no-store'`,
-  `credentials: 'omit'`, `unwrap: 'raw'` for cursor pages, `observe.error` for the 2FA-enrolment code.
+- **Console** (`apps/admin/lib/api/client.ts`): no `refresh` (a 401 calls `onSessionEnded('unauthorized')`;
+  the console slides its token itself), `fetchCache: 'no-store'`, `credentials: 'omit'`, `timeoutMs: 20000`,
+  `observe.error` for `PLATFORM_2FA_ENROLMENT_REQUIRED`. Calls go through `platformEndpoints` (an operator
+  token reaches every customer, so its routes stay out of the member apps' `apiEndpoints`); the cursor lists
+  (`orgs.list`, `audit.list`) are called with `unwrap: 'raw'` to keep `nextCursor`.
 
 ## Adding an endpoint
 

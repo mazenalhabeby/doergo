@@ -73,6 +73,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@hbcfield/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       next:
         specifier: ^15.5.27
         version: 15.5.27(@babel/core@7.29.7)(@playwright/test@1.63.0)(@types/node@22.19.15)(babel-plugin-react-compiler@1.0.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -89,6 +92,9 @@ importers:
         specifier: ^4.8.1
         version: 4.8.3
     devDependencies:
+      '@types/jest':
+        specifier: ^29.5.14
+        version: 29.5.14
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.15
@@ -104,6 +110,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.27(postcss@8.5.28)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@22.19.15)(ts-node@10.9.2(@types/node@22.19.15)(typescript@5.9.3))
       postcss:
         specifier: ^8.5.23
         version: 8.5.28
