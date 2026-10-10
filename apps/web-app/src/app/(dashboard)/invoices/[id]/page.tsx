@@ -16,16 +16,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 // Types only: the builder (and jsPDF, ~350 kB) loads on the Download / Print click.
 import type { InvoicePdfData, InvoiceBranding } from "@/lib/invoice-pdf"
 import { documentLocaleOf, pdfLocaleFor } from "@/lib/invoice-document-locale"
@@ -432,59 +423,40 @@ function InvoiceDetailInner({ id }: { id: string }) {
         emails the invoice — the button records a delivery the person performs
         themselves — and "Mark as sent" reads exactly like a button that sends.
       */}
-      <AlertDialog open={!!confirmStep} onOpenChange={(open) => !open && setConfirmStep(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("invoices.markSent.title")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("invoices.markSent.desc", { number: inv.invoiceNumber, client: inv.clientName })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-lg"
-              onClick={() => {
-                const to = confirmStep?.to
-                setConfirmStep(null)
-                if (to) statusMutation.mutate(to)
-              }}
-            >
-              {t("invoices.actions.send")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!confirmStep}
+        onOpenChange={(open) => !open && setConfirmStep(null)}
+        title={t("invoices.markSent.title")}
+        description={t("invoices.markSent.desc", { number: inv.invoiceNumber, client: inv.clientName })}
+        cancelClassName="rounded-lg"
+        confirmClassName="rounded-lg"
+        confirmLabel={t("invoices.actions.send")}
+        onConfirm={() => {
+          const to = confirmStep?.to
+          setConfirmStep(null)
+          if (to) statusMutation.mutate(to)
+        }}
+      />
 
       {/* ── Delete confirmation ─────────────────────────────────────────── */}
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("invoices.delete.title", "Delete this draft invoice?")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("invoices.delete.desc", {
-                defaultValue:
-                  "{{number}} for {{client}} — {{total}} — and all of its line items will be deleted. This cannot be undone.",
-                number: inv.invoiceNumber,
-                client: inv.clientName,
-                total: money(inv.total, inv.currency),
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-lg bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate()}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={t("invoices.delete.title", "Delete this draft invoice?")}
+        description={t("invoices.delete.desc", {
+          defaultValue:
+            "{{number}} for {{client}} — {{total}} — and all of its line items will be deleted. This cannot be undone.",
+          number: inv.invoiceNumber,
+          client: inv.clientName,
+          total: money(inv.total, inv.currency),
+        })}
+        cancelClassName="rounded-lg"
+        destructive
+        confirmClassName="rounded-lg focus:ring-red-600"
+        confirmDisabled={deleteMutation.isPending}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => deleteMutation.mutate()}
+      />
     </div>
   )
 }

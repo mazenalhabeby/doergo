@@ -25,16 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   Popover,
   PopoverContent,
@@ -277,54 +268,49 @@ export function CompleteSprintDialog({
   const incompleteCount = incompleteTasks.length
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("tasks.sprint.completeTitle", { name: sprint.name })}</AlertDialogTitle>
-          <AlertDialogDescription className="sr-only">
-            {t("tasks.sprint.completeDescription")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        {incompleteCount > 0 && (
-          <div className="flex items-start gap-3 py-2">
-            <Checkbox
-              id="move-incomplete"
-              checked={moveIncomplete}
-              onCheckedChange={(checked) => setMoveIncomplete(!!checked)}
-            />
-            <div className="space-y-0.5">
-              <label htmlFor="move-incomplete" className="text-sm font-medium text-foreground cursor-pointer">
-                {t("tasks.sprint.moveRemaining", { count: incompleteCount })}
-              </label>
-              <p className="text-xs text-muted-foreground">
-                {nextSprint
-                  ? t("tasks.sprint.tasksMovedToSprint", { name: nextSprint.name })
-                  : t("tasks.sprint.tasksMovedToBacklog")}
-              </p>
-            </div>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("tasks.sprint.completeTitle", { name: sprint.name })}
+      description={t("tasks.sprint.completeDescription")}
+      descriptionClassName="sr-only"
+      confirmLabel={
+        <>
+          {isPending ? <Loader2 className="size-4 animate-spin mr-1" /> : <CheckCircle2 className="size-4 mr-1" />}
+          {t("tasks.sprint.completeButton")}
+        </>
+      }
+      onConfirm={() => onConfirm(moveIncomplete)}
+      confirmClassName="bg-blue-600 hover:bg-blue-700"
+      cancelDisabled={isPending}
+      confirmDisabled={isPending}
+    >
+      {incompleteCount > 0 && (
+        <div className="flex items-start gap-3 py-2">
+          <Checkbox
+            id="move-incomplete"
+            checked={moveIncomplete}
+            onCheckedChange={(checked) => setMoveIncomplete(!!checked)}
+          />
+          <div className="space-y-0.5">
+            <label htmlFor="move-incomplete" className="text-sm font-medium text-foreground cursor-pointer">
+              {t("tasks.sprint.moveRemaining", { count: incompleteCount })}
+            </label>
+            <p className="text-xs text-muted-foreground">
+              {nextSprint
+                ? t("tasks.sprint.tasksMovedToSprint", { name: nextSprint.name })
+                : t("tasks.sprint.tasksMovedToBacklog")}
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
-        {incompleteCount === 0 && (
-          <p className="text-sm text-muted-foreground py-2">
-            {t("tasks.sprint.allComplete")}
-          </p>
-        )}
-
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => onConfirm(moveIncomplete)}
-            className="bg-blue-600 hover:bg-blue-700"
-            disabled={isPending}
-          >
-            {isPending ? <Loader2 className="size-4 animate-spin mr-1" /> : <CheckCircle2 className="size-4 mr-1" />}
-            {t("tasks.sprint.completeButton")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      {incompleteCount === 0 && (
+        <p className="text-sm text-muted-foreground py-2">
+          {t("tasks.sprint.allComplete")}
+        </p>
+      )}
+    </ConfirmDialog>
   )
 }
 
@@ -542,26 +528,21 @@ export function DeleteSprintDialog({
 }) {
   const { t } = useTranslation()
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("tasks.sprint.deleteTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {t("tasks.sprint.deleteDescription")}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>{t("common.cancel")}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-red-600 hover:bg-red-700"
-            disabled={isPending}
-          >
-            {isPending && <Loader2 className="size-4 animate-spin mr-1" />}
-            {t("common.delete")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t("tasks.sprint.deleteTitle")}
+      description={t("tasks.sprint.deleteDescription")}
+      confirmLabel={
+        <>
+          {isPending && <Loader2 className="size-4 animate-spin mr-1" />}
+          {t("common.delete")}
+        </>
+      }
+      onConfirm={onConfirm}
+      destructive
+      cancelDisabled={isPending}
+      confirmDisabled={isPending}
+    />
   )
 }

@@ -21,10 +21,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { copyText } from "@/lib/clipboard"
 
 // Lazy (audit P-C1). Both are dialogs that render on a click; the CustomerForm
@@ -462,14 +459,17 @@ export default function PortalDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!switchOpen} onOpenChange={(o) => !o && setSwitchOpen(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" />{t("portal.switchTitle", "Switch portal type?")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("portal.switchWarn", "This replaces the issue categories with the new type’s defaults. Clients and their requests are kept.")}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => switchOpen && switchM.mutate(switchOpen)} disabled={switchM.isPending}>{t("portal.switchConfirm", "Switch & reset categories")}</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!switchOpen}
+        onOpenChange={(o) => !o && setSwitchOpen(null)}
+        titleClassName="flex items-center gap-2"
+        title={<><AlertTriangle className="h-4 w-4 text-amber-500" />{t("portal.switchTitle", "Switch portal type?")}</>}
+        description={t("portal.switchWarn", "This replaces the issue categories with the new type’s defaults. Clients and their requests are kept.")}
+        cancelLabel={t("common.cancel", "Cancel")}
+        confirmLabel={t("portal.switchConfirm", "Switch & reset categories")}
+        onConfirm={() => switchOpen && switchM.mutate(switchOpen)}
+        confirmDisabled={switchM.isPending}
+      />
 
       {/* Delete portal — type-the-name to confirm */}
       <Dialog open={delPortalOpen} onOpenChange={(o) => !delPortalM.isPending && setDelPortalOpen(o)}>
@@ -571,32 +571,30 @@ export default function PortalDetailPage() {
       </Dialog>
 
       {/* Category delete */}
-      <AlertDialog open={!!catRemove} onOpenChange={(o) => !o && setCatRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("portal.deleteCategoryTitle", "Delete “{{label}}”?", { label: catRemove?.label })}</AlertDialogTitle>
-            <AlertDialogDescription>{t("portal.deleteCategoryWarn", "Clients can no longer pick this category for new requests. Existing requests keep their category.")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => catRemove && delCatM.mutate(catRemove.id)} disabled={delCatM.isPending}>{t("common.delete", "Delete")}</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!catRemove}
+        onOpenChange={(o) => !o && setCatRemove(null)}
+        title={t("portal.deleteCategoryTitle", "Delete “{{label}}”?", { label: catRemove?.label })}
+        description={t("portal.deleteCategoryWarn", "Clients can no longer pick this category for new requests. Existing requests keep their category.")}
+        cancelLabel={t("common.cancel", "Cancel")}
+        confirmLabel={t("common.delete", "Delete")}
+        onConfirm={() => catRemove && delCatM.mutate(catRemove.id)}
+        destructive
+        confirmDisabled={delCatM.isPending}
+      />
 
       {/* Remove client from the portal */}
-      <AlertDialog open={!!clientToRemove} onOpenChange={(o) => !o && setClientToRemove(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("portal.removeClientTitle", "Remove {{name}} from this portal?", { name: clientToRemove?.name })}</AlertDialogTitle>
-            <AlertDialogDescription>{t("portal.removeClientWarn", "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeClientM.isPending}>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={(e) => { e.preventDefault(); if (clientToRemove) removeClientM.mutate(clientToRemove.id) }} disabled={removeClientM.isPending}>
-              {removeClientM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t("portal.removeClientConfirm", "Remove client")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!clientToRemove}
+        onOpenChange={(o) => !o && setClientToRemove(null)}
+        title={t("portal.removeClientTitle", "Remove {{name}} from this portal?", { name: clientToRemove?.name })}
+        description={t("portal.removeClientWarn", "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.")}
+        cancelLabel={t("common.cancel", "Cancel")}
+        confirmLabel={t("portal.removeClientConfirm", "Remove client")}
+        onConfirm={(e) => { e.preventDefault(); if (clientToRemove) removeClientM.mutate(clientToRemove.id) }}
+        destructive
+        pending={removeClientM.isPending}
+      />
 
       {/* Invite client */}
       <Dialog open={inviteOpen} onOpenChange={(o) => { if (!o) resetInvite() }}>

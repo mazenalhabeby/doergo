@@ -38,16 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 
 const RECURRENCES: ShiftRecurrence[] = [
@@ -461,25 +452,16 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
         />
       )}
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("scheduling.rota.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("scheduling.rota.deleteConfirm")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={(e) => { e.preventDefault(); if (deleteTarget) removeMutation.mutate(deleteTarget.id) }}
-              disabled={removeMutation.isPending}
-            >
-              {removeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        title={t("scheduling.rota.deleteTitle")}
+        description={t("scheduling.rota.deleteConfirm")}
+        confirmLabel={t("common.delete")}
+        onConfirm={(e) => { e.preventDefault(); if (deleteTarget) removeMutation.mutate(deleteTarget.id) }}
+        destructive
+        pending={removeMutation.isPending}
+      />
     </div>
   )
 }

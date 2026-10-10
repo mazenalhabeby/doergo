@@ -15,16 +15,7 @@ import { useTranslation } from "react-i18next"
 import { formatFileSize } from "@hbcfield/shared/client"
 import { taskAttachmentsApi, uploadToS3, type Attachment } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 const ALLOWED_TYPES = [
@@ -366,34 +357,23 @@ export function AttachmentsSection({
       </div>
 
       {/* Delete Confirmation */}
-      <AlertDialog
+      <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("tasks.attachments.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("tasks.attachments.deleteDescription", { name: deleteTarget?.fileName })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                deleteTarget && deleteMutation.mutate(deleteTarget.id)
-              }
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteMutation.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                t("common.delete")
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t("tasks.attachments.deleteTitle")}
+        description={t("tasks.attachments.deleteDescription", { name: deleteTarget?.fileName })}
+        confirmLabel={
+          deleteMutation.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            t("common.delete")
+          )
+        }
+        onConfirm={() =>
+          deleteTarget && deleteMutation.mutate(deleteTarget.id)
+        }
+        destructive
+      />
     </div>
   )
 }

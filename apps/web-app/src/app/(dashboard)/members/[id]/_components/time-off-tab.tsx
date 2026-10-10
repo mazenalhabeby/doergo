@@ -44,16 +44,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   Select,
   SelectContent,
@@ -415,32 +406,19 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       </div>
 
       {/* Approve Confirmation Dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={!!approveTarget}
         onOpenChange={(open) => !open && setApproveTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('technicians.timeOffTab.approveDialog.title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {approveTarget && t('technicians.timeOffTab.approveDialog.description', {
-                dates: `${format(new Date(approveTarget.startDate), "MMM d")} - ${format(new Date(approveTarget.endDate), "MMM d, yyyy")}`
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                approveTarget && approveMutation.mutate(approveTarget.id)
-              }
-              disabled={approveMutation.isPending}
-            >
-              {approveMutation.isPending ? t('common.approving') : t('common.approved')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t('technicians.timeOffTab.approveDialog.title')}
+        description={approveTarget && t('technicians.timeOffTab.approveDialog.description', {
+          dates: `${format(new Date(approveTarget.startDate), "MMM d")} - ${format(new Date(approveTarget.endDate), "MMM d, yyyy")}`
+        })}
+        confirmLabel={approveMutation.isPending ? t('common.approving') : t('common.approved')}
+        onConfirm={() =>
+          approveTarget && approveMutation.mutate(approveTarget.id)
+        }
+        confirmDisabled={approveMutation.isPending}
+      />
 
       {/* Reject Dialog */}
       <Dialog

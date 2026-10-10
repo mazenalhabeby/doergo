@@ -44,16 +44,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 const FIELD_TYPES: { value: CustomFieldType; labelKey: string; icon: typeof Type }[] = [
   { value: "TEXT", labelKey: "customFields.fieldTypes.TEXT", icon: Type },
@@ -420,25 +411,15 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
         />
       )}
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("customFields.deleteTitle", { name: deleteTarget?.name })}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("customFields.deleteDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        title={t("customFields.deleteTitle", { name: deleteTarget?.name })}
+        description={t("customFields.deleteDescription")}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        destructive
+      />
     </div>
   )
 }

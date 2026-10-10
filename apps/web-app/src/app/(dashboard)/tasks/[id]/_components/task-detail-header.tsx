@@ -19,16 +19,9 @@ import {
 
 import { Button } from "@/components/ui/button"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -142,37 +135,33 @@ export function TaskDetailHeader({
               to appear for anyone on an unfinished task, so Edit 403'd on save
               and Cancel sat one click away for people without the permission. */}
           {!isCompleted && !isCanceled && canCancel && (
-            <AlertDialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {canCancel && (
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
-                        <Trash2 className="size-4 mr-2" />
-                        {t("tasks.detail.cancelRequest")}
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("tasks.detail.cancelRequestTitle")}</AlertDialogTitle>
-                  <AlertDialogDescription>{t("tasks.detail.cancelRequestDescription")}</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t("tasks.detail.keepRequest")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={onCancelTask} className="bg-red-600 hover:bg-red-700">
-                    {t("tasks.detail.cancelRequestConfirm")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+              trigger={
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {canCancel && (
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
+                          <Trash2 className="size-4 mr-2" />
+                          {t("tasks.detail.cancelRequest")}
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              }
+              title={t("tasks.detail.cancelRequestTitle")}
+              description={t("tasks.detail.cancelRequestDescription")}
+              cancelLabel={t("tasks.detail.keepRequest")}
+              confirmLabel={t("tasks.detail.cancelRequestConfirm")}
+              onConfirm={onCancelTask}
+              destructive
+            />
           )}
         </div>
       </div>

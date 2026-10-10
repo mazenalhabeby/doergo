@@ -42,16 +42,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
 
@@ -348,27 +339,16 @@ function SharesSection({ spaceId }: { spaceId: string }) {
         </div>
       )}
 
-      <AlertDialog open={!!revokeTarget} onOpenChange={(open) => { if (!open) setRevokeTarget(null) }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("spaceSharing.shares.revokeTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("spaceSharing.shares.revokeConfirm", { org: revokeTarget?.guestOrgName })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={revokeMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={(e) => { e.preventDefault(); if (revokeTarget) revokeMutation.mutate(revokeTarget.id) }}
-              disabled={revokeMutation.isPending}
-            >
-              {revokeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t("spaceSharing.shares.revoke")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!revokeTarget}
+        onOpenChange={(open) => { if (!open) setRevokeTarget(null) }}
+        title={t("spaceSharing.shares.revokeTitle")}
+        description={t("spaceSharing.shares.revokeConfirm", { org: revokeTarget?.guestOrgName })}
+        confirmLabel={t("spaceSharing.shares.revoke")}
+        onConfirm={(e) => { e.preventDefault(); if (revokeTarget) revokeMutation.mutate(revokeTarget.id) }}
+        destructive
+        pending={revokeMutation.isPending}
+      />
     </div>
   )
 }

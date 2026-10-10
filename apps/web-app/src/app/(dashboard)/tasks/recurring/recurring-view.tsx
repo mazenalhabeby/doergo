@@ -50,16 +50,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { formatMediumDate } from "@/lib/format-date"
 import { todayKey } from "@hbcfield/shared/client"
 import { PAGE_SHELL } from "@/components/ui/page-width";
@@ -740,28 +731,15 @@ export function RecurringPanel({
         />
       )}
 
-      <AlertDialog
+      <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("tasks.recurring.deleteTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("tasks.recurring.deleteDescription", { name: deleteTarget?.title })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t("tasks.recurring.deleteTitle")}
+        description={t("tasks.recurring.deleteDescription", { name: deleteTarget?.title })}
+        confirmLabel={t("common.delete")}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+        destructive
+      />
     </div>
   )
 }

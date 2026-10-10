@@ -48,16 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { CreateInvitationDialog } from "@/components/invitations/create-invitation-dialog"
 import { formatMediumDateTime } from "@/lib/format-date"
 import { keys } from "@/lib/query-keys"
@@ -411,26 +402,16 @@ export default function InvitationsPage() {
       />
 
       {/* Revoke Confirmation Dialog */}
-      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("invitations.revokeDialog.title")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("invitations.revokeDialog.description")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmRevoke}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={revokeMutation.isPending}
-            >
-              {revokeMutation.isPending ? t("common.revoking") : t("invitations.revokeDialog.revokeButton")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={revokeDialogOpen}
+        onOpenChange={setRevokeDialogOpen}
+        title={t("invitations.revokeDialog.title")}
+        description={t("invitations.revokeDialog.description")}
+        confirmLabel={revokeMutation.isPending ? t("common.revoking") : t("invitations.revokeDialog.revokeButton")}
+        onConfirm={confirmRevoke}
+        destructive
+        confirmDisabled={revokeMutation.isPending}
+      />
     </div>
   )
 }

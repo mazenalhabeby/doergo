@@ -33,16 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
@@ -571,27 +562,16 @@ function MemberPanel({
               </section>
             </div>
 
-            <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("scheduling.members.removeTitle", "Remove from workspace?")}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t("scheduling.members.removeConfirm", { name: personName(member.user) })}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={remove.isPending}>{t("common.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700"
-                    onClick={(e) => { e.preventDefault(); remove.mutate() }}
-                    disabled={remove.isPending}
-                  >
-                    {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {t("scheduling.members.remove", "Remove")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmDialog
+              open={confirmRemove}
+              onOpenChange={setConfirmRemove}
+              title={t("scheduling.members.removeTitle", "Remove from workspace?")}
+              description={t("scheduling.members.removeConfirm", { name: personName(member.user) })}
+              confirmLabel={t("scheduling.members.remove", "Remove")}
+              onConfirm={(e) => { e.preventDefault(); remove.mutate() }}
+              destructive
+              pending={remove.isPending}
+            />
           </>
         )}
       </SheetContent>

@@ -55,16 +55,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PAGE_SHELL } from "@/components/ui/page-width";
 
 // Module color mapping for pills
@@ -255,24 +246,15 @@ export default function SpacesPage() {
         />
 
         {/* Re-sync all spaces confirmation */}
-        <AlertDialog open={resyncAllOpen} onOpenChange={setResyncAllOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("locations.resyncAllTasksConfirmTitle")}</AlertDialogTitle>
-              <AlertDialogDescription>{t("locations.resyncAllTasksConfirmDescription")}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={resyncAllMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={(e) => { e.preventDefault(); resyncAllMutation.mutate() }}
-                disabled={resyncAllMutation.isPending}
-              >
-                {resyncAllMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t("locations.resyncAllTasks")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          open={resyncAllOpen}
+          onOpenChange={setResyncAllOpen}
+          title={t("locations.resyncAllTasksConfirmTitle")}
+          description={t("locations.resyncAllTasksConfirmDescription")}
+          confirmLabel={t("locations.resyncAllTasks")}
+          onConfirm={(e) => { e.preventDefault(); resyncAllMutation.mutate() }}
+          pending={resyncAllMutation.isPending}
+        />
       </div>
     </div>
   )

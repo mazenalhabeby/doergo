@@ -10,16 +10,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { locationsApi, workflowsApi, type CompanyLocation } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { WorkflowSelector } from "../../_components/workflow-selector"
 import { SpaceWorkflowsSection } from "./space-workflows-section"
 import { WorkflowBuilder } from "../../_components/workflow-builder"
@@ -209,25 +200,17 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
         </div>
       )}
 
-      <AlertDialog open={confirmResync} onOpenChange={setConfirmResync}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("locations.resyncTasksConfirmTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("locations.resyncTasksConfirmDescription")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmResync(false)
-                resyncMutation.mutate()
-              }}
-            >
-              {t("locations.resyncTasks")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmResync}
+        onOpenChange={setConfirmResync}
+        title={t("locations.resyncTasksConfirmTitle")}
+        description={t("locations.resyncTasksConfirmDescription")}
+        confirmLabel={t("locations.resyncTasks")}
+        onConfirm={() => {
+          setConfirmResync(false)
+          resyncMutation.mutate()
+        }}
+      />
     </div>
   )
 }
