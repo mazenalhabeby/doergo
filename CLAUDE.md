@@ -1338,6 +1338,7 @@ NestFactory.createMicroservice(AppModule, createMicroserviceOptions());
 | `NAV_OPTION`, `SPACE_TAB_OPTION`, `SETTINGS_OPTION` | Which surface each Option owns. The navbar, workspace tabs and settings list all read these — adding an Option is adding a row |
 | `joinCodeCandidates()`, `JOIN_CODE_MAX_LENGTH` | Telling an org join code from an invitation code |
 | `assertServiceOk()`, `unwrapServiceResult()` | A service's `{ success: false, … }` reply as the HTTP error it is — `code`/`params` always travel (microservices/service-result.ts) |
+| `createApiClient()`, `apiEndpoints`, `path`, `withQuery()`, `queryKey()`, `ApiError`, `toResult()` (`http/`, README there) | THE HTTP core for web, phone and console: envelope by shape, one 401→refresh→retry (tri-state: only `invalid` ends the session), 429/5xx/network retry policy, GET merge per session, offline-cache hooks — and every endpoint path defined once (438, verified against the gateway). Never `fetch` outside it except presigned S3 URLs |
 | `safeEqual()` | Constant-time secret compare (both sides hashed first; empty expected never matches). Node only — not in `client.ts` |
 | `redactUrlForLog()` | A request URL safe to log: bearer secrets in the path (feed token, invitation/join code, push token) masked, query dropped |
 | `clampListLimit()`, `clampListPage()` | A request's `limit`/`page` made safe for Prisma (NaN → fallback, capped at 200) |

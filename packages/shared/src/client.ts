@@ -159,3 +159,7 @@ export * from './app-release/release-notes';
 export * from './platform/permissions';
 export * from './platform/session';
 export * from './platform/support-scope';
+
+// The ONE HTTP core every app's API access is built on, and the endpoint table
+// (http/README.md). Browser / React Native safe: no Node APIs, no DOM types.
+export * from './http';

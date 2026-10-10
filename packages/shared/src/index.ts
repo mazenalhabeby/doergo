@@ -195,3 +195,6 @@ export * from './access/permission-whitelist';
 export * from './access/org-access';
 // What a member may upload, and how big — one definition (constants/upload-rules.ts).
 export * from './constants/upload-rules';
+
+// The shared HTTP core and endpoint table (http/README.md) — also on the client entry.
+export * from './http';
