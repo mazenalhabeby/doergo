@@ -2,19 +2,7 @@
 
 /* The template editor's form building blocks: a numbered step, a labelled field, a plain select. */
 
-export function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <div className="mb-3 flex items-center gap-2.5">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900">
-          {n}
-        </span>
-        <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      </div>
-      <div className="pl-[34px]">{children}</div>
-    </section>
-  )
-}
+export { Step } from "../../_components/editor-step"
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (

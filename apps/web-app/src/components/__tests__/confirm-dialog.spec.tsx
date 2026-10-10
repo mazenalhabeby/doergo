@@ -11,7 +11,7 @@ jest.mock('react-i18next', () => ({
 }))
 
 // eslint-disable-next-line import/first
-import { ConfirmDialog, type ConfirmDialogProps } from '../confirm-dialog'
+import { ConfirmDialog, ConfirmTargetDialog, type ConfirmDialogProps } from '../confirm-dialog'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -88,4 +88,42 @@ it('extra content sits between the text and the buttons', () => {
   const extra = dialog.querySelector('[data-testid="extra"]')!
   const footerButton = dialog.querySelector('button')!
   expect(extra.compareDocumentPosition(footerButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+})
+
+describe('ConfirmTargetDialog', () => {
+  function showTarget(target: { id: string } | null, isPending = false) {
+    const mutation = { mutate: jest.fn(), isPending }
+    const onClose = jest.fn()
+    act(() =>
+      root.render(
+        <ConfirmTargetDialog target={target} onClose={onClose} mutation={mutation} title="Delete?" description="Sure?" confirmLabel="Delete" />,
+      ),
+    )
+    const dialog = document.querySelector('[role="alertdialog"]') as HTMLElement | null
+    return { dialog, mutation, onClose }
+  }
+
+  it('is closed while nothing is picked', () => {
+    expect(showTarget(null).dialog).toBeNull()
+  })
+
+  it('runs the mutation on the picked id, stays open, and is red', () => {
+    const { dialog, mutation } = showTarget({ id: 'row-1' })
+    const action = Array.from(dialog!.querySelectorAll('button')).pop()!
+    expect(action.className).toContain('bg-red-600')
+    act(() => action.click())
+    expect(mutation.mutate).toHaveBeenCalledWith('row-1')
+    expect(document.querySelector('[role="alertdialog"]')).not.toBeNull()
+  })
+
+  it('Cancel clears the target; a running mutation disables both buttons', () => {
+    const { dialog, onClose } = showTarget({ id: 'row-1' })
+    const cancel = Array.from(dialog!.querySelectorAll('button')).find((b) => b.textContent === 'common.cancel')!
+    act(() => cancel.click())
+    expect(onClose).toHaveBeenCalled()
+
+    const busy = showTarget({ id: 'row-1' }, true)
+    const buttons = Array.from(busy.dialog!.querySelectorAll('button'))
+    expect(buttons.every((b) => b.disabled)).toBe(true)
+  })
 })

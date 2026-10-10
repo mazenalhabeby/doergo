@@ -293,6 +293,22 @@ export function EmployeeNewPageSkeleton() {
   return <TaskNewPageSkeleton />
 }
 
+/** A month as a 7-column grid: the weekday row, then five weeks. */
+function CalendarGridSkeleton() {
+  return (
+    <div className="bg-card rounded-xl border border-border shadow-sm p-5">
+      <div className="grid grid-cols-7 gap-2">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <S key={i} className="h-6 w-full rounded" />
+        ))}
+        {Array.from({ length: 35 }).map((_, i) => (
+          <S key={i} className="h-20 w-full rounded-lg" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /** Availability page */
 export function AvailabilityPageSkeleton() {
   return (
@@ -307,17 +323,7 @@ export function AvailabilityPageSkeleton() {
             <S className="h-11 w-11 rounded-xl" />
           </div>
         </div>
-        {/* Calendar grid */}
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <S key={i} className="h-6 w-full rounded" />
-            ))}
-            {Array.from({ length: 35 }).map((_, i) => (
-              <S key={i} className="h-20 w-full rounded-lg" />
-            ))}
-          </div>
-        </div>
+        <CalendarGridSkeleton />
       </div>
     </div>
   )
@@ -477,17 +483,7 @@ export function SchedulePageSkeleton() {
       <div className={PAGE_INNER}>
         <PageHeader titleW="w-36" controls={2} hasAction={false} />
         <TabStrip count={3} />
-        {/* Calendar grid */}
-        <div className="bg-card rounded-xl border border-border shadow-sm p-5">
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <S key={i} className="h-6 w-full rounded" />
-            ))}
-            {Array.from({ length: 35 }).map((_, i) => (
-              <S key={i} className="h-20 w-full rounded-lg" />
-            ))}
-          </div>
-        </div>
+        <CalendarGridSkeleton />
       </div>
     </div>
   )
