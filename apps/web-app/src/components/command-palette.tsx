@@ -2,6 +2,7 @@
 
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useTranslation } from "react-i18next"
@@ -77,14 +78,13 @@ export function CommandPalette() {
 
   // --- Live global search (debounced) ---
   const [query, setQuery] = useState("")
-  const [debounced, setDebounced] = useState("")
-  useEffect(() => {
-    const h = setTimeout(() => setDebounced(query.trim()), 250)
-    return () => clearTimeout(h)
-  }, [query])
+  const settled = useDebouncedValue(query.trim(), 250)
+  // An empty box is empty at once — reopening the palette must not briefly
+  // search the last term while the settled value catches up.
+  const debounced = query.trim() ? settled : ""
   // Clear the query whenever the palette closes.
   useEffect(() => {
-    if (!open) { setQuery(""); setDebounced("") }
+    if (!open) setQuery("")
   }, [open])
 
   const { data: results, isFetching } = useQuery({

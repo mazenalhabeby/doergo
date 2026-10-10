@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic"
 
 import { useState, useMemo, useEffect } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
 import { Clock, XCircle, ClipboardCheck, Coffee, UserX } from "lucide-react"
 import { format } from "date-fns"
@@ -53,7 +54,8 @@ export default function AttendancePage() {
     format(new Date(), "yyyy-MM-dd")
   )
   const [page, setPage] = useState(1)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  // Server-side search across all pages, once the typing settles.
+  const debouncedSearch = useDebouncedValue(searchQuery.trim(), 350)
 
   // Server-side sort across ALL pages. Click a column to cycle asc → desc → off;
   // any change resets to page 1 so the sorted set starts from the top.
@@ -63,15 +65,10 @@ export default function AttendancePage() {
     setSort((cur) => (cur?.key !== key ? { key, dir: "asc" } : cur.dir === "asc" ? { key, dir: "desc" } : null))
   }
 
-  // Debounce the search box → server-side search across all pages; reset to
-  // page 1 whenever the term changes.
+  // A new search term starts from page 1.
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(searchQuery.trim())
-      setPage(1)
-    }, 350)
-    return () => clearTimeout(t)
-  }, [searchQuery])
+    setPage(1)
+  }, [debouncedSearch])
   const limit = 20
 
   // Normalized date range (guards against an inverted To < From).

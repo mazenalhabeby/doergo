@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 
 interface BreadcrumbContextType {
   overrides: Map<string, string>;
@@ -34,8 +34,13 @@ export function BreadcrumbProvider({ children }: { children: ReactNode }) {
     setOverrides(new Map());
   }, []);
 
+  const value = useMemo(
+    () => ({ overrides, setOverride, clearOverride, clearAll }),
+    [overrides, setOverride, clearOverride, clearAll],
+  );
+
   return (
-    <BreadcrumbContext.Provider value={{ overrides, setOverride, clearOverride, clearAll }}>
+    <BreadcrumbContext.Provider value={value}>
       {children}
     </BreadcrumbContext.Provider>
   );

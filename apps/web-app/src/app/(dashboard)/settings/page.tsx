@@ -416,7 +416,7 @@ function GeneralSection() {
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 shrink-0 rounded-xl border border-border bg-muted/40 grid place-items-center overflow-hidden">
                 {profile?.logoUrl
-                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={profile.logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={profile.logoUrl} alt="Logo" decoding="async" className="h-full w-full object-contain" />
                   : <ImageIcon className="h-6 w-6 text-muted-foreground/50" />}
               </div>
               <div className="min-w-0">

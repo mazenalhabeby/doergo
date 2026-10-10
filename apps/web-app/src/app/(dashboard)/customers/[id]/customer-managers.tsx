@@ -101,6 +101,6 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
 }
 
 function Avatar({ m }: { m: AssignablePerson }) {
-  if (m.avatarUrl) return <img src={m.avatarUrl} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
+  if (m.avatarUrl) return <img src={m.avatarUrl} alt="" width={24} height={24} loading="lazy" decoding="async" className="h-6 w-6 shrink-0 rounded-full object-cover" />
   return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{memberInitials(m)}</span>
 }

@@ -24,7 +24,7 @@ export function HeroFallback() {
   return (
     <div aria-hidden className="absolute inset-0 flex items-center justify-center opacity-[0.12]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/favicon.svg" alt="" className="h-[34vh] w-auto grayscale" />
+      <img src="/favicon.svg" alt="" width={48} height={48} decoding="async" className="h-[34vh] w-auto grayscale" />
     </div>
   );
 }

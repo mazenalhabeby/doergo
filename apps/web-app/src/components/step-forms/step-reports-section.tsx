@@ -88,7 +88,7 @@ export function StepReport({ submission, workflowStatuses }: { submission: TaskS
               return url ? (
                 <a key={id} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-lg border bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={submission.files[id]?.fileName ?? ""} className="size-full object-cover" />
+                  <img src={url} alt={submission.files[id]?.fileName ?? ""} loading="lazy" decoding="async" className="size-full object-cover" />
                 </a>
               ) : (
                 <div key={id} className="flex aspect-square items-center justify-center rounded-lg border border-dashed text-[10px] text-muted-foreground">
@@ -103,7 +103,7 @@ export function StepReport({ submission, workflowStatuses }: { submission: TaskS
         const url = typeof v === "string" ? fileUrl(v) : undefined
         return url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt={stepFieldLabel(field, tr)} className="h-20 rounded-md border bg-white p-1" />
+          <img src={url} alt={stepFieldLabel(field, tr)} loading="lazy" decoding="async" className="h-20 rounded-md border bg-white p-1" />
         ) : (
           <span className="text-muted-foreground">{t("stepForm.report.fileGone", "Removed")}</span>
         )

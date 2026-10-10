@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Package, Pencil, Plus, Search, ShieldAlert, Trash2, Wrench, X } from "lucide-react"
@@ -43,12 +44,13 @@ export function AssetFaults({
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   // null = closed, "new" = adding, otherwise the id of the row being edited.
   const [editing, setEditing] = useState<string | null>(null)
 
   const faultsQ = useQuery({
-    queryKey: ["asset-rows", assetId, list.label, search],
-    queryFn: () => assetsApi.getRows(assetId, list.label, { search: search || undefined, limit: 100 }),
+    queryKey: ["asset-rows", assetId, list.label, debouncedSearch],
+    queryFn: () => assetsApi.getRows(assetId, list.label, { search: debouncedSearch || undefined, limit: 100 }),
   })
 
   // The first link column, whatever the customer called it, and the table it

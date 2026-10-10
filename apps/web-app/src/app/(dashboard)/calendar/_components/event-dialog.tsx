@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -80,6 +81,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   const [visibility, setVisibility] = useState<EventVisibility>("BUSY")
   const [pickOpen, setPickOpen] = useState(false)
   const [q, setQ] = useState("")
+  const debouncedQ = useDebouncedValue(q, 300)
   // How and where (shared calendar/meeting.ts — the server keeps only what the mode uses).
   const [mode, setMode] = useState<MeetingMode>("IN_PERSON")
   const [place, setPlace] = useState<PlaceKind>("OFFICE")
@@ -150,8 +152,8 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   }
 
   const { data: candidates = [] } = useQuery({
-    queryKey: ["calendar-people", q],
-    queryFn: () => calendarApi.people(q),
+    queryKey: ["calendar-people", debouncedQ],
+    queryFn: () => calendarApi.people(debouncedQ),
     enabled: pickOpen,
     staleTime: 60_000,
   })

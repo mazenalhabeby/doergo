@@ -299,6 +299,8 @@ export function AttachmentsSection({
                       <img
                         src={attachment.fileUrl}
                         alt={attachment.fileName}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>

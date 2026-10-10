@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useTimeFormat, useFormatDistance } from "@/hooks"
 import dynamic from "next/dynamic"
@@ -35,10 +35,13 @@ function MapLoading() {
 }
 
 // Dynamic import for map to avoid SSR issues
-const RouteMapView = dynamic(() => import("./route-map-view"), {
+// Memoised: the task page re-renders for many reasons (comments, timers,
+// socket updates); the map only needs to when its points change, and TanStack
+// Query keeps the points array's identity until the data really changes.
+const RouteMapView = memo(dynamic(() => import("./route-map-view"), {
   ssr: false,
   loading: () => <MapLoading />,
-})
+}))
 
 interface RoutePoint {
   lat: number
@@ -95,6 +98,30 @@ function useLiveElapsedTime(startTime: string | null, isLive: boolean) {
   return elapsed
 }
 
+/*
+  The live clock ticks once a second while a route is EN_ROUTE. It used to tick
+  at the section's root, so the whole section — Leaflet map included —
+  re-rendered every second for as long as a drive lasted. Only these two little
+  readouts depend on it, so only they own the ticker; the map renders when the
+  route data changes.
+*/
+function useDisplayDuration(routeData: RouteData, isLive: boolean): number {
+  const liveElapsed = useLiveElapsedTime(routeData.startTime || null, isLive)
+  // API returns duration in seconds, convert to milliseconds for consistency.
+  // Live elapsed is already in milliseconds.
+  return isLive ? liveElapsed : ((routeData.duration || 0) * 1000)
+}
+
+function AverageSpeedValue({ routeData, isLive }: { routeData: RouteData; isLive: boolean }) {
+  const duration = useDisplayDuration(routeData, isLive)
+  return <>{calculateAverageSpeed(routeData.distance, duration)}</>
+}
+
+function DurationValue({ routeData, isLive }: { routeData: RouteData; isLive: boolean }) {
+  const duration = useDisplayDuration(routeData, isLive)
+  return <>{formatDurationMs(duration)}</>
+}
+
 export function RouteTrackingSection({
   routeData,
   isLoading,
@@ -105,7 +132,6 @@ export function RouteTrackingSection({
   const formatDistance = useFormatDistance()
   const [showMap, setShowMap] = useState(true)
   const isLive = routeData?.status === "EN_ROUTE"
-  const liveElapsed = useLiveElapsedTime(routeData?.startTime || null, isLive)
 
   // Loading state
   if (isLoading) {
@@ -146,9 +172,6 @@ export function RouteTrackingSection({
   }
 
   const stage = getRouteStage()
-  // API returns duration in seconds, convert to milliseconds for consistency
-  // Live elapsed is already in milliseconds
-  const displayDuration = isLive ? liveElapsed : ((routeData.duration || 0) * 1000)
   const hasRoutePoints = routeData.points.length > 1
 
   return (
@@ -183,7 +206,7 @@ export function RouteTrackingSection({
             <Gauge className="size-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{t("tasks.route.avgSpeed")}</span>
             <span className="text-sm font-semibold text-foreground">
-              {calculateAverageSpeed(routeData.distance, displayDuration)}
+              <AverageSpeedValue routeData={routeData} isLive={isLive} />
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -248,7 +271,7 @@ export function RouteTrackingSection({
                   <div className="flex items-center gap-1">
                     <Timer className="size-3 text-muted-foreground" />
                     <span className="text-[11px] font-semibold text-foreground tabular-nums">
-                      {formatDurationMs(displayDuration)}
+                      <DurationValue routeData={routeData} isLive={isLive} />
                     </span>
                     {isLive && <span className="size-1.5 rounded-full bg-blue-500 animate-pulse" />}
                   </div>

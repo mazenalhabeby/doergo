@@ -10,10 +10,15 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
+// The choices only: the renderer (and jsPDF, ~350 kB) loads when the dialog
+// first previews or exports — see loadRenderer below.
 import {
-  exportReportPdf, renderReportPdfPreview, PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE, DEFAULT_CUSTOM_PDF,
-  type ReportBranding, type PdfTemplate, type CustomPdfOptions, type ReportPdfMeta,
-} from "@/lib/report-pdf"
+  PDF_TEMPLATES, CUSTOM_PDF_TEMPLATE, DEFAULT_CUSTOM_PDF,
+  type ReportBranding, type PdfTemplate, type CustomPdfOptions,
+} from "@/lib/report-pdf-options"
+import type { ReportPdfMeta } from "@/lib/report-pdf"
+
+const loadRenderer = () => import("@/lib/report-pdf")
 import type { ReportResult } from "@/lib/api"
 
 const ACCENTS = ["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "#D97706"]
@@ -126,6 +131,7 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
     setBusy(true)
     const handle = setTimeout(async () => {
       try {
+        const { renderReportPdfPreview } = await loadRenderer()
         const url = await renderReportPdfPreview(result, meta, branding, template, template === "custom" ? custom : undefined)
         if (cancelled) { URL.revokeObjectURL(url); return }
         pendingRef.current = url
@@ -174,6 +180,7 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
     if (!result) return
     setDownloading(true)
     try {
+      const { exportReportPdf } = await loadRenderer()
       await exportReportPdf(result, meta, branding, template, template === "custom" ? custom : undefined)
     } catch (e) {
       notify.error(e instanceof Error ? e.message : "Failed to export PDF")

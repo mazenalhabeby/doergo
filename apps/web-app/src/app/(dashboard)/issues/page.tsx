@@ -220,7 +220,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setViewer(null)}>
           <button type="button" onClick={() => setViewer(null)} className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"><X className="h-5 w-5" /></button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={viewer} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+          <img src={viewer} alt="" decoding="async" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
@@ -272,7 +272,7 @@ function ThreadItem({ e, mine, onOpenImage }: { e: ShiftIssueEvent; mine: boolea
               {e.attachments.map((a) => isImg(a.mimeType) ? (
                 <button key={a.id} type="button" onClick={() => onOpenImage(a.url ?? a.fileUrl)} className="overflow-hidden rounded-lg transition-transform hover:scale-[1.03]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-24 w-24 rounded-lg object-cover" />
+                  <img src={a.url ?? a.fileUrl} alt={a.fileName} width={96} height={96} loading="lazy" decoding="async" className="h-24 w-24 rounded-lg object-cover" />
                 </button>
               ) : (<a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="text-xs underline">{a.fileName}</a>))}
             </div>

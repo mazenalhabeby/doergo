@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { LucideIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -71,13 +72,14 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const router = useRouter()
 
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [filter, setFilter] = useState<Filter>("all")
 
   const listQ = useQuery({
     // The filter is IN the key: a different segment is a different question, and
     // the server answers each one — filtering a fetched page in the browser
     // would show twelve rows of a hundred and a total that disagreed with them.
-    queryKey: ["space-customers", spaceId ?? "all", search, filter],
+    queryKey: ["space-customers", spaceId ?? "all", debouncedSearch, filter],
     queryFn: () =>
       customersApi.list({
         spaceId,
@@ -95,7 +97,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
           select from nothing.
         */
         portalResident: spaceId ? undefined : false,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
         limit: 100,
       }),
   })

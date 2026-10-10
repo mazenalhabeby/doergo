@@ -103,7 +103,7 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
                       isImg(a.mimeType) ? (
                         <button key={a.id} type="button" onClick={() => setViewer(a.url ?? a.fileUrl)} className="block h-16 w-16 overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.04]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={a.url ?? a.fileUrl} alt={a.fileName} className="h-full w-full object-cover" />
+                          <img src={a.url ?? a.fileUrl} alt={a.fileName} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                         </button>
                       ) : (
                         <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted">
@@ -177,7 +177,7 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
             <X className="h-5 w-5" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={viewer} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
+          <img src={viewer} alt="" decoding="async" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

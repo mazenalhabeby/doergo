@@ -1,12 +1,14 @@
-'use client';
-
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
 import { isSameAppPath } from '@/lib/safe-links';
 
 /**
- * Help-article Markdown renderer. Styled inline (the project has no typography
+ * Help-article Markdown renderer. Deliberately NOT a client component: the
+ * article page renders it on the server, so react-markdown never ships to the
+ * browser. Keep it free of hooks and browser APIs.
+ *
+ * Styled inline (the project has no typography
  * plugin). Internal /help links use next/link for client-side nav.
  */
 export function Markdown({ children }: { children: string }) {

@@ -87,7 +87,18 @@ export default async function BlogPostPage({ params }: Params) {
         {post.cover && (
           <div className="px-6 pt-8 sm:px-10">
             {/* eslint-disable-next-line @next/next/no-img-element -- author-provided static asset */}
-            <img src={post.cover} alt="" className="w-full rounded-xl border border-white/[0.08]" />
+            {/* width/height reserve the space (cover images are ~1.91:1, the
+                Open Graph shape) so the article does not jump when it lands;
+                h-auto keeps the real proportions once loaded. */}
+            <img
+              src={post.cover}
+              alt=""
+              width={1200}
+              height={630}
+              decoding="async"
+              fetchPriority="high"
+              className="h-auto w-full rounded-xl border border-white/[0.08]"
+            />
           </div>
         )}
 

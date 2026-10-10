@@ -423,14 +423,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, user?.id, user?.guidesSeen, tourId, start, availableTours])
 
-  const value: TourContextValue = {
+  // Memoised: every page reads this context, and a fresh object each render
+  // re-rendered all of them whenever the tour host did.
+  const value = useMemo<TourContextValue>(() => ({
     start,
     stop,
     availableTours,
     contextualTourId,
     activeTourId: tourId,
     isTourCompleted: (id) => storage.isCompleted(id),
-  }
+  }), [start, stop, availableTours, contextualTourId, tourId])
 
   return (
     <Ctx.Provider value={value}>

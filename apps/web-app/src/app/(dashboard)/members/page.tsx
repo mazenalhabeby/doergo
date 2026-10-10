@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, memo, useEffect } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
@@ -567,11 +568,7 @@ export default function MembersPage() {
 
   const [search, setSearch] = useState("")
   // Debounced value drives the query so typing doesn't mint a request per keystroke (P7).
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => clearTimeout(t)
-  }, [search])
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [roleFilter, setRoleFilter] = useState("all")
 
   /*

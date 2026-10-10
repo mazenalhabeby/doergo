@@ -71,6 +71,8 @@ function PhotoGallery({
         <img
           src={current.fileUrl}
           alt={current.fileName}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -125,6 +127,7 @@ function PhotoGallery({
           <img
             src={current.fileUrl}
             alt={current.fileName}
+            decoding="async"
             className="max-w-full max-h-full object-contain"
           />
           <button
@@ -225,6 +228,8 @@ function SignatureDisplay({ label, signature, name }: { label: string; signature
         <img
           src={signature}
           alt={t("tasks.serviceReport.signatureAlt", { label })}
+          loading="lazy"
+          decoding="async"
           className="h-20 w-full object-contain"
         />
         {name && (

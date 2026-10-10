@@ -90,6 +90,7 @@ export const UserAvatar = React.memo(function UserAvatar({
           alt=""
           className="size-full object-cover"
           loading="lazy"
+          decoding="async"
           onError={() => setImgError(true)}
         />
       ) : (

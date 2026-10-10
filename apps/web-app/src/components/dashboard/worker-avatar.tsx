@@ -65,7 +65,7 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
         style={{ background: color }}
       >
         {imageUrl ? (
-          <img src={imageUrl} alt={initials} className="w-full h-full object-cover" />
+          <img src={imageUrl} alt={initials} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         ) : (
           initials
         )}

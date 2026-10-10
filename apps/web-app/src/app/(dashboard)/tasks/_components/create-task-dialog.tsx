@@ -1617,6 +1617,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
                         <img
                           src={URL.createObjectURL(file)}
                           alt={file.name}
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                         <button

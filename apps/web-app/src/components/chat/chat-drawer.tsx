@@ -98,7 +98,7 @@ function Avatar({ u, size = 40, dot = true }: { u?: ChatUserRef | null; size?: n
         className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-muted to-muted text-[11px] font-semibold text-muted-foreground"
         style={{ fontSize: size * 0.32 }}
       >
-        {u?.avatarUrl ? <img src={u.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials(u)}
+        {u?.avatarUrl ? <img src={u.avatarUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials(u)}
       </span>
       {showDot && (
         <span
@@ -184,6 +184,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
+  const openDMMutate = openDM.mutate;
+
   const openMessages = useCallback(() => {
     setOpen(true);
     setActiveId(null);
@@ -205,13 +207,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
       setOpen(true);
       setShowContacts(false);
-      openDM.mutate(userId);
+      openDMMutate(userId);
     },
-    [canMessage, openDM, t],
+    // `mutate` is stable; the mutation OBJECT is new every render, so depending
+    // on it made this callback — and the whole chat context — change each time.
+    [canMessage, openDMMutate, t],
+  );
+
+  const chatValue = useMemo(
+    () => ({ openMessages, openChatWith, canMessage, unread }),
+    [openMessages, openChatWith, canMessage, unread],
   );
 
   return (
-    <ChatContext.Provider value={{ openMessages, openChatWith, canMessage, unread }}>
+    <ChatContext.Provider value={chatValue}>
       {children}
       {enabled && open && (
         <>

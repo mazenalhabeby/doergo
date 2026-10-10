@@ -377,7 +377,7 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                 */}
                 {logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoUrl} alt="" className="h-7 max-w-[9rem] object-contain" />
+                  <img src={logoUrl} alt="" decoding="async" className="h-7 max-w-[9rem] object-contain" />
                 ) : (
                   <span className="grid size-7 place-items-center rounded-lg bg-brand-600 text-xs font-bold text-white">
                     {(from.name ?? "H").slice(0, 1).toUpperCase()}

@@ -25,7 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { exportInvoicePdf, renderInvoicePdfUrl, type InvoicePdfData, type InvoiceBranding } from "@/lib/invoice-pdf"
+// Types only: the builder (and jsPDF, ~350 kB) loads on the Download / Print click.
+import type { InvoicePdfData, InvoiceBranding } from "@/lib/invoice-pdf"
 import { documentLocaleOf, pdfLocaleFor } from "@/lib/invoice-document-locale"
 import { CLIENT_LOCALE_OPTIONS, clientLocaleName } from "@/lib/client-locale"
 import type { SupportedLocale } from "@hbcfield/shared/client"
@@ -143,12 +144,16 @@ function InvoiceDetailInner({ id }: { id: string }) {
   const download = async () => {
     if (!inv) return
     setBusy(true)
-    try { await exportInvoicePdf(toPdfData(inv, pdfLocaleFor(inv, pdfLocaleOverride)), branding) } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
+    try {
+      const { exportInvoicePdf } = await import("@/lib/invoice-pdf")
+      await exportInvoicePdf(toPdfData(inv, pdfLocaleFor(inv, pdfLocaleOverride)), branding)
+    } catch (e) { notify.error(e instanceof Error ? e.message : "PDF failed") } finally { setBusy(false) }
   }
   const print = async () => {
     if (!inv) return
     setBusy(true)
     try {
+      const { renderInvoicePdfUrl } = await import("@/lib/invoice-pdf")
       const url = await renderInvoicePdfUrl(toPdfData(inv, pdfLocaleFor(inv, pdfLocaleOverride)), branding)
       const w = window.open(url, "_blank")
       if (w) { w.onload = () => { try { w.focus(); w.print() } catch { /* pop-up print blocked */ } } }

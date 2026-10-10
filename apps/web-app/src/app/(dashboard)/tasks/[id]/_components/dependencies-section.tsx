@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { notify } from "@/lib/toast"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -134,12 +135,15 @@ function AddDependencyDialog({
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [depType, setDepType] = useState("FINISH_TO_START")
 
   // Search tasks
   const { data: searchResults, isLoading: searching } = useQuery({
-    queryKey: ["taskSearch", search],
-    queryFn: () => tasksApi.list({ limit: 20 }),
+    // Asked of the server once the typing settles: the list below still
+    // narrows on every keystroke, but a request per letter is wasted.
+    queryKey: ["taskSearch", debouncedSearch],
+    queryFn: () => tasksApi.list({ limit: 20, search: debouncedSearch || undefined }),
     enabled: open,
     staleTime: 10000,
   })

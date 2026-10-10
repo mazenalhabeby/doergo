@@ -239,7 +239,7 @@ export default function PortalDetailPage() {
           <div className="relative aspect-[9/16] w-[168px] shrink-0 overflow-hidden rounded-[24px] border-[5px] border-foreground/15 bg-muted shadow-lg">
             {portal?.coverImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={portal.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              <img src={portal.coverImageUrl} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
                 <ImageIcon className="h-6 w-6" />

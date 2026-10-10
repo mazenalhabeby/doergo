@@ -82,7 +82,7 @@ export function MobileAppInterstitial() {
           {/* Authentic app-icon squircle — the real brand mark on white */}
           <div className="mx-auto flex h-[76px] w-[76px] items-center justify-center rounded-[22px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon.svg" alt="" className="h-11 w-11" />
+            <img src="/favicon.svg" alt="" width={44} height={44} className="h-11 w-11" />
           </div>
 
           {/* Trust cue */}

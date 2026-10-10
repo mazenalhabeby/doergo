@@ -115,7 +115,7 @@ export function ActivityPanel({ events, pending, className }: ActivityPanelProps
                     style={{ background: action.color }}
                   >
                     {action.imageUrl ? (
-                      <img src={action.imageUrl} alt={action.initials} className="w-full h-full object-cover" />
+                      <img src={action.imageUrl} alt={action.initials} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       action.initials
                     )}

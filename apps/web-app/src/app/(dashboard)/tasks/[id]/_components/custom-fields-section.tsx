@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, memo } from "react"
+import { useState, useEffect, useCallback, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -31,27 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-
-// ============================================================================
-// Helper: debounce
-// ============================================================================
-
-function useDebounce(callback: () => void, delay: number) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const debouncedFn = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    timeoutRef.current = setTimeout(callback, delay)
-  }, [callback, delay])
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
-    }
-  }, [])
-
-  return debouncedFn
-}
+import { useDebouncedCallback } from "@/hooks/use-debounced-value"
 
 // ============================================================================
 // Field Icon
@@ -249,7 +229,7 @@ export function CustomFieldsSection({ taskId }: { taskId: string }) {
     }
   }, [localValues, saveMutation])
 
-  const debouncedSave = useDebounce(saveValues, 800)
+  const debouncedSave = useDebouncedCallback(saveValues, 800)
 
   const handleChange = useCallback(
     (definitionId: string, value: string) => {

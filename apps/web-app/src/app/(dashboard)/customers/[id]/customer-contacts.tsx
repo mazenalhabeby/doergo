@@ -7,6 +7,7 @@ import { Building2, Check, Mail, Phone, Plus, Star, Trash2, UserPlus, Users } fr
 
 import { customersApi, type Customer, type CustomerContactLink } from "@/lib/api"
 import { notify } from "@/lib/toast"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { cn } from "@/lib/utils"
 import { Truncated } from "@/components/truncated"
 import { Button } from "@/components/ui/button"
@@ -204,6 +205,8 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<"find" | "create">(startName ? "create" : "find")
   const [search, setSearch] = useState("")
+  // The box answers at once; the request waits for the typing to settle.
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [personId, setPersonId] = useState<string | null>(null)
   const [role, setRole] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
@@ -221,15 +224,15 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
       company is exactly who you are looking for, and hiding them is how a
       duplicate gets created.
     */
-    queryKey: ["contact-search", search, mine ? "COMPANY" : "PERSON"],
+    queryKey: ["contact-search", debouncedSearch, mine ? "COMPANY" : "PERSON"],
     queryFn: () =>
       customersApi.list({
-        search, limit: 8, contacts: "all", portalResident: false,
+        search: debouncedSearch, limit: 8, contacts: "all", portalResident: false,
         type: mine ? "COMPANY" : "PERSON",
       }),
     // Two characters, because one matches most of the book and the request is
     // wasted; the dialog is unusable without any search at all.
-    enabled: open && search.trim().length >= 2,
+    enabled: open && debouncedSearch.trim().length >= 2,
   })
   // Everything the server returned, minus this record itself.
   const selfId = mine?.personId ?? companyId

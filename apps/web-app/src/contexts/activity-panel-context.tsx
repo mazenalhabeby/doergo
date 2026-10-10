@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react"
 
 interface ActivityPanelContextType {
   isOpen: boolean
@@ -22,8 +22,10 @@ export function ActivityPanelProvider({ children }: { children: React.ReactNode 
   const [present, setPresent] = useState(false)
   const toggle = useCallback(() => setIsOpen(prev => !prev), [])
 
+  const value = useMemo(() => ({ isOpen, toggle, present, setPresent }), [isOpen, toggle, present])
+
   return (
-    <ActivityPanelContext.Provider value={{ isOpen, toggle, present, setPresent }}>
+    <ActivityPanelContext.Provider value={value}>
       {children}
     </ActivityPanelContext.Provider>
   )

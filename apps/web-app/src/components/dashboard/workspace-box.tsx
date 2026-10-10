@@ -536,7 +536,7 @@ const SideStatusBox = React.memo(function SideStatusBox({ label, people, variant
                 style={{ background: person.color }}
               >
                 {person.imageUrl ? (
-                  <img src={person.imageUrl} alt={person.initials} className="w-full h-full object-cover" />
+                  <img src={person.imageUrl} alt={person.initials} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 ) : (
                   person.initials
                 )}
@@ -606,7 +606,7 @@ const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0, canSeeAbs
         style={{ background: person.color }}
       >
         {person.imageUrl ? (
-          <img src={person.imageUrl} alt={person.initials} className="w-full h-full object-cover opacity-100" />
+          <img src={person.imageUrl} alt={person.initials} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-100" />
         ) : (
           person.initials
         )}

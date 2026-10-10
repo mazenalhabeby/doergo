@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Loader2, Plus, Search, Trash2 } from "lucide-react"
@@ -23,12 +24,13 @@ export function AssetListTable({ assetId, list }: { assetId: string; list: KindL
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [page, setPage] = useState(1)
   const [draft, setDraft] = useState<Record<string, string>>({})
 
   const rowsQ = useQuery({
-    queryKey: ["asset-rows", assetId, list.label, search, page],
-    queryFn: () => assetsApi.getRows(assetId, list.label, { search: search || undefined, page, limit: 50 }),
+    queryKey: ["asset-rows", assetId, list.label, debouncedSearch, page],
+    queryFn: () => assetsApi.getRows(assetId, list.label, { search: debouncedSearch || undefined, page, limit: 50 }),
   })
   const rows = rowsQ.data?.rows ?? []
   const meta = rowsQ.data?.meta

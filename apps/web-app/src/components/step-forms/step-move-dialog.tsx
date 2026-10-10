@@ -272,7 +272,7 @@ export function StepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit,
                 <div key={it.key} className="relative aspect-square overflow-hidden rounded-lg border bg-muted">
                   {f && (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={f.preview} alt={f.file.name} className="size-full object-cover" />
+                    <img src={f.preview} alt={f.file.name} decoding="async" className="size-full object-cover" />
                   )}
                   <button
                     type="button"

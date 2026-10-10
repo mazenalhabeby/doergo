@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
@@ -73,12 +74,13 @@ export default function SentDocumentsPage() {
   const [view, setView] = useState<"attention" | "files">("attention")
   const [tab, setTab] = useState<Tab>("awaiting")
   const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [page, setPage] = useState(1)
   const [opening, setOpening] = useState<string | null>(null)
 
   const { data, isLoading, isFetching } = useQuery<IssuedRegister>({
-    queryKey: ["documents-sent", tab, search, page],
-    queryFn: () => documentsApi.listIssued({ tab, search: search || undefined, page }),
+    queryKey: ["documents-sent", tab, debouncedSearch, page],
+    queryFn: () => documentsApi.listIssued({ tab, search: debouncedSearch || undefined, page }),
     // The register moves when somebody signs or opens something, neither of
     // which happens while an admin watches this screen.
     staleTime: 30_000,

@@ -9,7 +9,7 @@ import { organizationsApi } from "@/lib/api"
 import { formatMoney } from "@/lib/money"
 import { formatDayKey, todayDayKey } from "@/lib/day-key"
 import { formatHoursMinutes } from "@hbcfield/shared/client"
-import { exportStatementPdf } from "@/lib/statement-pdf"
+import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -57,8 +57,17 @@ export function StatementTab({ memberId }: { memberId: string }) {
   const money = useMemo(() => (cents: number) => formatMoney(cents / 100, data?.currency ?? "EUR"), [data?.currency])
   const period = `${formatDayKey(from, i18n.language)} – ${formatDayKey(to, i18n.language)}`
 
-  const download = () => {
+  const download = async () => {
     if (!data) return
+    // The PDF builder (and jsPDF with it) loads on the click, not with the
+    // member profile — most visits to a profile never download a statement.
+    let exportStatementPdf: typeof import("@/lib/statement-pdf").exportStatementPdf
+    try {
+      ;({ exportStatementPdf } = await import("@/lib/statement-pdf"))
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : "PDF failed")
+      return
+    }
     exportStatementPdf(
       data,
       {

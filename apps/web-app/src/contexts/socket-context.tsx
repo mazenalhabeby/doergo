@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react"
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react"
 import { io, Socket } from "socket.io-client"
 import { useTranslation } from "react-i18next"
 import { SocketEvents } from "@hbcfield/shared/client"
@@ -124,8 +124,12 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     socketRef.current?.emit(event, payload)
   }, [])
 
+  // Stable unless the connection flips: every realtime hook in the app reads
+  // this context, and a fresh object each render re-rendered all of them.
+  const value = useMemo(() => ({ isConnected, subscribe, emit }), [isConnected, subscribe, emit])
+
   return (
-    <SocketContext.Provider value={{ isConnected, subscribe, emit }}>
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   )

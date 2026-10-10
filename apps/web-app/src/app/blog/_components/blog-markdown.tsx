@@ -30,7 +30,12 @@ export function BlogMarkdown({ children }: { children: string }) {
             src={typeof src === "string" ? resolveBlogAssetUrl(src) : undefined}
             alt={alt ?? ""}
             loading="lazy"
-            className="my-8 w-full rounded-xl border border-white/[0.08]"
+            decoding="async"
+            // Reserves a 16:9 box before the file arrives (no jump in the text
+            // below); once loaded, h-auto lets the real proportions win.
+            width={1600}
+            height={900}
+            className="my-8 h-auto w-full rounded-xl border border-white/[0.08]"
           />
         ),
         a: ({ href, ...rest }) => {
