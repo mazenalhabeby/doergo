@@ -14,6 +14,7 @@ import { SupplyDocumentDialog } from "./_components/supply-document-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
+import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { keys } from "@/lib/query-keys"
@@ -86,7 +87,6 @@ export default function MyDocumentsPage() {
   const [activeType, setActiveType] = useState<string | null>(null)
   const [year, setYear] = useState<number | null>(null)
   const [search, setSearch] = useState("")
-  const [opening, setOpening] = useState<string | null>(null)
   const [exported, setExported] = useState<{ title: string; url: string }[] | null>(null)
   const [supplying, setSupplying] = useState(false)
 
@@ -142,19 +142,8 @@ export default function MyDocumentsPage() {
 
   const awaiting = documents.filter((d) => d.needsSignature)
 
-  const open = useMutation({
-    mutationFn: (id: string) => documentsApi.downloadUrl(id),
-    onMutate: (id) => setOpening(id),
-    onSettled: () => setOpening(null),
-    onSuccess: (res) => {
-      if (!res?.url) return
-      // A new tab rather than a same-tab navigation: losing the list to a PDF
-      // viewer and having to come back is the most common complaint about
-      // document portals.
-      window.open(res.url, "_blank", "noopener,noreferrer")
-      queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
-    },
-    onError: (e: Error) => notify.error(e.message),
+  const { open, opening } = useOpenDocument({
+    onOpened: () => queryClient.invalidateQueries({ queryKey: keys.documents.mine() }),
   })
 
   /*

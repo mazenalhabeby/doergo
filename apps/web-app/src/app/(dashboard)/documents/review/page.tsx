@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { notify } from "@/lib/toast"
+import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
@@ -42,7 +43,6 @@ export default function ReviewQueuePage() {
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const [opening, setOpening] = useState<string | null>(null)
   const [rejecting, setRejecting] = useState<PendingReviewRow | null>(null)
 
   const { data: rows = [], isLoading } = useQuery<PendingReviewRow[]>({
@@ -68,15 +68,7 @@ export default function ReviewQueuePage() {
     queryClient.invalidateQueries({ queryKey: keys.documents.mine() })
   }
 
-  const open = useMutation({
-    mutationFn: (id: string) => documentsApi.downloadUrl(id),
-    onMutate: (id) => setOpening(id),
-    onSettled: () => setOpening(null),
-    onSuccess: (res: any) => {
-      if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    },
-    onError: (e: Error) => notify.error(e.message),
-  })
+  const { open, opening } = useOpenDocument()
 
   const verify = useMutation({
     mutationFn: ({ id, expiresOn }: { id: string; expiresOn?: string | null }) => documentsApi.verify(id, expiresOn),

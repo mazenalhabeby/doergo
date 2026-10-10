@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import {
   Folder, FolderOpen, FileText, ChevronRight, Eye, Loader2,
   User, Calendar, Layers, Clock,
@@ -10,7 +10,7 @@ import {
 import { documentsApi, type BrowseLevel, type BrowseFolder, type IssuedRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/user-avatar"
-import { notify } from "@/lib/toast"
+import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -60,7 +60,6 @@ export function FolderBrowser() {
   const { t, i18n } = useTranslation()
   const [groupBy, setGroupBy] = useState<GroupBy>("type")
   const [path, setPath] = useState<Crumb[]>([])
-  const [opening, setOpening] = useState<string | null>(null)
 
   // The path IS the query — each crumb narrows it exactly as the server reads it.
   const params = {
@@ -88,15 +87,8 @@ export function FolderBrowser() {
   const [action, setAction] = useState<{ kind: DocumentAction; rows: IssuedRow[] } | null>(null)
   const act = (kind: DocumentAction, rows: IssuedRow[]) => setAction({ kind, rows })
 
-  const open = useMutation({
-    mutationFn: (id: string) => documentsApi.downloadUrl(id),
-    onMutate: (id: string) => setOpening(id),
-    onSettled: () => setOpening(null),
-    onSuccess: (res: any) => {
-      if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    },
-    onError: (e: any) =>
-      notify.error(e?.message ?? t("documents.all.openFailed", "Could not open the document")),
+  const { open, opening } = useOpenDocument({
+    errorMessage: (e) => e?.message ?? t("documents.all.openFailed", "Could not open the document"),
   })
 
   const folderLabel = (f: BrowseFolder) =>

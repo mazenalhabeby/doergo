@@ -9,7 +9,6 @@ import {
   Plus,
   Trash2,
   Pencil,
-  Loader2,
   Play,
   Calendar,
   Clock,
@@ -17,7 +16,7 @@ import {
   ChevronLeft,
   MapPin,
   GitBranch,
-  X
+  X,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 
@@ -30,6 +29,7 @@ import {
   type RecurringFrequency,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { SaveDialogFooter } from "@/components/save-dialog-footer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -46,7 +46,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -532,19 +531,13 @@ function TemplateDialog({
             )}
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!title.trim() || mutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? t("common.save") : t("common.create")}
-          </Button>
-        </DialogFooter>
+        <SaveDialogFooter
+          onCancel={() => onOpenChange(false)}
+          onSave={() => mutation.mutate()}
+          disabled={!title.trim() || mutation.isPending}
+          pending={mutation.isPending}
+          isEditing={isEditing}
+        />
       </DialogContent>
     </Dialog>
   )

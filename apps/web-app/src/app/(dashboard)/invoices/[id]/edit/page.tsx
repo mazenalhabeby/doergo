@@ -362,16 +362,8 @@ function EditInvoiceInner({ id }: { id: string }) {
           showTags={showLineTags}
           view={view}
           onView={setView}
-          clientName={clientName}
-          clientEmail={clientEmail}
-          clientAddress={clientAddress}
-          issueDate={issueDate}
-          dueDate={dueDate}
-          periodLabel={periodLabel}
-          currency={currency}
-          taxPct={taxPct}
-          discount={discount}
-          notes={notes}
+          /* The header as the form holds it — the same names on both sides. */
+          {...{ clientName, clientEmail, clientAddress, issueDate, dueDate, periodLabel, currency, taxPct, discount, notes }}
           items={documentItems}
           subtotal={subtotal}
           taxAmount={taxAmount}

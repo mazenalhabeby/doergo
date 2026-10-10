@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft, Search, Loader2, Eye, PenLine, MailOpen, CheckCircle2,
@@ -13,7 +13,7 @@ import { documentsApi, type IssuedRegister, type IssuedRow, type DocumentChain }
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserAvatar } from "@/components/user-avatar"
-import { notify } from "@/lib/toast"
+import { useOpenDocument } from "@/hooks/use-open-document"
 import { cn } from "@/lib/utils"
 import { FolderBrowser } from "./_components/folder-browser"
 import {
@@ -77,7 +77,6 @@ export default function SentDocumentsPage() {
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
   const [page, setPage] = useState(1)
-  const [opening, setOpening] = useState<string | null>(null)
 
   const { data, isLoading, isFetching } = useQuery<IssuedRegister>({
     queryKey: keys.documents.sent(tab, debouncedSearch, page),
@@ -119,15 +118,8 @@ export default function SentDocumentsPage() {
     if (fallback) setTab(fallback)
   }, [counts, tab])
 
-  const open = useMutation({
-    mutationFn: (id: string) => documentsApi.downloadUrl(id),
-    onMutate: (id: string) => setOpening(id),
-    onSettled: () => setOpening(null),
-    onSuccess: (res: any) => {
-      if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    },
-    onError: (e: any) =>
-      notify.error(e?.message ?? t("documents.all.openFailed", "Could not open the document")),
+  const { open, opening } = useOpenDocument({
+    errorMessage: (e) => e?.message ?? t("documents.all.openFailed", "Could not open the document"),
   })
 
   return (
