@@ -3374,7 +3374,7 @@
     "toApprove_other": "{{count}} Schichten freizugeben",
     "openAttendance": "Anwesenheit öffnen",
     "min": "{{n}} Min.",
-    "hoursMin": "{{h}} Std. {{m}}",
+    "hoursMin": "{{h}} h {{m}}",
     "group": {
       "late": "Zu spät",
       "missed": "Heute nicht erschienen",
