@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useNow } from '../hooks/use-now';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -54,11 +55,7 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
     for every change a reader could see, which on a screen somebody leaves open
     through a shift is a battery cost with no audience.
   */
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useNow(60_000);
 
   const run = async (kind: 'start' | 'end' | 'later', fn: () => Promise<unknown>, ok: string) => {
     setBusy(kind);

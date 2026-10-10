@@ -113,7 +113,7 @@ describe('triggers, pinned in the source', () => {
   });
 
   it('the minute tick asks only while the app is in the foreground', () => {
-    expect(code('hooks/use-live-refresh.ts')).toMatch(/if \(AppState\.currentState === 'active'\) ask\(\)/);
+    expect(code('hooks/use-live-refresh.ts')).toMatch(/if \(isAppActive\(\)\) ask\(\)/);
   });
 
   it('the engine joins a pull already on its way rather than starting another', () => {

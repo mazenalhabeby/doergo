@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SocketEvents, type SupportTicket } from '@hbcfield/shared/client';
+import { appendMessage, debounce, isPlaceable } from '../../src/components/chat/live-thread';
+import { useAppResume } from '../../src/lib/app-resume';
 import { useTheme } from '../../src/contexts/theme-context';
 import { useSocketContext } from '../../src/contexts/socket-context';
 import { ScreenContainer, ScreenHeader, goBack as leaveScreen } from '../../src/components';
@@ -56,7 +58,6 @@ export default function SupportScreen() {
     },
   });
   const loadListRef = useRef<(() => Promise<void>) | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
 
   const liveChat = !!config?.liveChat;
 
@@ -81,7 +82,6 @@ export default function SupportScreen() {
       setView('thread');
       setError(null);
       supportApi.markRead(id).catch(() => {});
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 50);
     } catch {
       setError(t('support.loadError', 'Could not load support. Check your connection.'));
     }
@@ -119,19 +119,56 @@ export default function SupportScreen() {
       .map((p) => ({ id: p.id, authorType: 'CUSTOMER', body: p.body.body, pendingSync: true }) as unknown as NonNullable<SupportTicket['messages']>[number]);
     return [...server, ...onPhone];
   }, [active, replyCreate.pending]);
+  /*
+    ⚠️ A MESSAGE ON THE SOCKET IS ADDED, NOT RELOADED (chat/live-thread.ts).
+    One reply used to cost the config, the ticket list and the whole ticket —
+    and again for the ticket-updated event that follows every reply. The open
+    ticket now takes the message from the payload; the list (status, unread)
+    reloads once per burst, without the config; the ticket itself only when
+    the payload cannot be placed.
+  */
+  const later = useRef<{ list: ReturnType<typeof debounce>; ticket: ReturnType<typeof debounce> } | null>(null);
+  if (!later.current) {
+    later.current = {
+      list: debounce(() => {
+        void supportApi.list().then((l) => setTickets(l ?? [])).catch(() => undefined);
+      }, 1000),
+      ticket: debounce(() => {
+        const open = activeRef.current;
+        if (open) void supportApi.get(open.id).then((tk) => { if (activeRef.current?.id === tk.id) setActive(tk); }).catch(() => undefined);
+      }, 1000),
+    };
+  }
+  useEffect(() => () => { later.current?.list.cancel(); later.current?.ticket.cancel(); }, []);
+  // The socket is closed in the background: catch up on the app's one throttled resume.
+  useAppResume(() => {
+    later.current!.list.call();
+    if (activeRef.current) later.current!.ticket.call();
+  });
+
+  const reversedMessages = useMemo(() => [...shownMessages].reverse(), [shownMessages]);
+
   useEffect(() => {
     if (!isAuthenticated) return;
     const offs = [
       subscribe(SocketEvents.SUPPORT_MESSAGE, (d: any) => {
-        loadList();
+        later.current!.list.call();
         const open = activeRef.current;
-        if (open && d?.ticketId === open.id) supportApi.get(open.id).then(setActive).catch(() => {});
+        if (!open || d?.ticketId !== open.id) return;
+        const msg = d?.message;
+        if (isPlaceable(msg) && !(msg as { isInternalNote?: boolean }).isInternalNote) {
+          setActive((cur) => (cur && cur.id === open.id
+            ? { ...cur, status: d?.ticket?.status ?? cur.status, messages: appendMessage(cur.messages ?? [], msg as NonNullable<SupportTicket['messages']>[number]) }
+            : cur));
+        } else if (!isPlaceable(msg)) {
+          later.current!.ticket.call();
+        }
       }),
-      subscribe(SocketEvents.SUPPORT_TICKET_UPDATED, () => loadList()),
+      subscribe(SocketEvents.SUPPORT_TICKET_UPDATED, () => later.current!.list.call()),
       subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: any) => setAgentOnline(!!d?.online)),
     ];
     return () => offs.forEach((o) => o());
-  }, [isAuthenticated, subscribe, loadList]);
+  }, [isAuthenticated, subscribe]);
 
   const submitNew = async () => {
     if (subject.trim().length < 2 || body.trim().length < 1) return;
@@ -175,8 +212,12 @@ export default function SupportScreen() {
       }
       setReply('');
       setError(null);
-      if (outcome.kind === 'done') setActive(await supportApi.get(active.id));
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+      // Delivered: the server's copy goes into the thread (the socket's echo is the same id).
+      if (outcome.kind === 'done') {
+        const sent = outcome.response;
+        if (isPlaceable(sent)) setActive((cur) => (cur && cur.id === active.id ? { ...cur, messages: appendMessage(cur.messages ?? [], sent as NonNullable<SupportTicket['messages']>[number]) } : cur));
+        else setActive(await supportApi.get(active.id));
+      }
     } catch {
       setError(t('support.sendError', 'Could not send. Please try again.'));
     } finally {
@@ -249,30 +290,15 @@ export default function SupportScreen() {
               </Text>
             )}
           </View>
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: SPACING.sm }}>
-            {shownTickets.length === 0 ? (
-              <Text style={[styles.empty, { color: colors.textSecondary }]}>{t('support.empty', 'No tickets yet.')}</Text>
-            ) : (
-              shownTickets.map((tk) => (
-                <TouchableOpacity
-                  key={tk.id}
-                  // A request still on the phone has no thread on the server to open yet.
-                  disabled={!!(tk as { pendingSync?: boolean }).pendingSync}
-                  onPress={() => openTicket(tk.id)}
-                  style={[styles.ticketRow, { borderColor: colors.border }]}
-                >
-                  <View style={[styles.dot, { backgroundColor: ['OPEN', 'PENDING_AGENT', 'PENDING_CUSTOMER'].includes(tk.status) ? COLORS.primary : colors.border }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.ticketSubject, { color: colors.textPrimary }]} numberOfLines={1}>{tk.subject}</Text>
-                    <Text style={[styles.ticketMeta, { color: colors.textSecondary }]}>
-                      {(tk as { pendingSync?: boolean }).pendingSync ? t('offline.chip.waiting') : t(`support.status.${tk.status}`, tk.status)}
-                    </Text>
-                  </View>
-                  {!!tk.unreadForCustomer && <View style={styles.badge}><Text style={styles.badgeText}>{tk.unreadForCustomer}</Text></View>}
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
+          <FlatList
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: SPACING.sm }}
+            data={shownTickets}
+            keyExtractor={(tk) => tk.id}
+            initialNumToRender={14}
+            ListEmptyComponent={<Text style={[styles.empty, { color: colors.textSecondary }]}>{t('support.empty', 'No tickets yet.')}</Text>}
+            renderItem={({ item }) => <TicketRow ticket={item} onOpen={openTicket} />}
+          />
           <TouchableOpacity style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }]} onPress={() => setView('new')}>
             <Text style={styles.primaryBtnText}>{t('support.newTicket', 'New request')}</Text>
           </TouchableOpacity>
@@ -300,24 +326,19 @@ export default function SupportScreen() {
         </KeyboardAvoidingView>
       ) : (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <ScrollView
-            ref={scrollRef}
+          {/* Inverted: the newest at the bottom, in view without scrolling; only what is on screen is drawn. */}
+          <FlatList
+            inverted
             style={{ flex: 1 }}
             contentContainerStyle={{ padding: SPACING.md, paddingBottom: SPACING.sm }}
-          >
-            {shownMessages.map((m) => {
-              const mine = m.authorType === 'CUSTOMER';
-              const pending = !!(m as { pendingSync?: boolean }).pendingSync;
-              return (
-                <View key={m.id} style={[styles.bubbleRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
-                  <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, pending && { opacity: 0.7 }]}>
-                    <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{m.body}</Text>
-                    {pending && <Ionicons name="time-outline" size={11} color="#fff" style={{ alignSelf: 'flex-end', marginTop: 2 }} accessibilityLabel={t('offline.chip.waiting')} />}
-                  </View>
-                </View>
-              );
-            })}
-          </ScrollView>
+            data={reversedMessages}
+            keyExtractor={(m) => m.id}
+            keyboardShouldPersistTaps="handled"
+            initialNumToRender={20}
+            renderItem={({ item }) => (
+              <SupportBubble body={item.body} mine={item.authorType === 'CUSTOMER'} pending={!!(item as { pendingSync?: boolean }).pendingSync} />
+            )}
+          />
           <View style={[styles.replyBar, { borderColor: colors.border, paddingBottom: SPACING.sm + bottomPad }]}>
             <TextInput
               value={reply}
@@ -337,6 +358,44 @@ export default function SupportScreen() {
     </View>
   );
 }
+
+/* ---------------- rows: memoised ---------------- */
+
+const TicketRow = memo(function TicketRow({ ticket: tk, onOpen }: { ticket: SupportTicket; onOpen: (id: string) => void }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const pendingSync = !!(tk as { pendingSync?: boolean }).pendingSync;
+  return (
+    <TouchableOpacity
+      // A request still on the phone has no thread on the server to open yet.
+      disabled={pendingSync}
+      onPress={() => onOpen(tk.id)}
+      style={[styles.ticketRow, { borderColor: colors.border }]}
+    >
+      <View style={[styles.dot, { backgroundColor: ['OPEN', 'PENDING_AGENT', 'PENDING_CUSTOMER'].includes(tk.status) ? COLORS.primary : colors.border }]} />
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.ticketSubject, { color: colors.textPrimary }]} numberOfLines={1}>{tk.subject}</Text>
+        <Text style={[styles.ticketMeta, { color: colors.textSecondary }]}>
+          {pendingSync ? t('offline.chip.waiting') : t(`support.status.${tk.status}`, tk.status)}
+        </Text>
+      </View>
+      {!!tk.unreadForCustomer && <View style={styles.badge}><Text style={styles.badgeText}>{tk.unreadForCustomer}</Text></View>}
+    </TouchableOpacity>
+  );
+});
+
+const SupportBubble = memo(function SupportBubble({ body, mine, pending }: { body: string; mine: boolean; pending: boolean }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.bubbleRow, { justifyContent: mine ? 'flex-end' : 'flex-start' }]}>
+      <View style={[styles.bubble, mine ? { backgroundColor: COLORS.primary } : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }, pending && { opacity: 0.7 }]}>
+        <Text style={{ color: mine ? '#fff' : colors.textPrimary, fontSize: FONT_SIZE.sm }}>{body}</Text>
+        {pending && <Ionicons name="time-outline" size={11} color="#fff" style={{ alignSelf: 'flex-end', marginTop: 2 }} accessibilityLabel={t('offline.chip.waiting')} />}
+      </View>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

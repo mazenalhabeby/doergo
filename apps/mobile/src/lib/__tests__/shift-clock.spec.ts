@@ -427,7 +427,7 @@ describe('§9 — the twelve rules', () => {
 
   it('5 · elapsed derives from clockInAt, never a mount-time counter', () => {
     // The tick moves `now`; it does not accumulate.
-    expect(card).toMatch(/setInterval\(\(\) => setNow\(new Date\(\)\)/);
+    expect(card).toMatch(/const nowMs = useNow\(30_000\);\s*const now = useMemo\(\(\) => new Date\(nowMs\), \[nowMs\]\)/);
     expect(card).not.toMatch(/setElapsed|elapsed \+|\+\+/);
   });
 

@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, Pressable, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { CachedImage } from '../../../src/components/cached-image';
 import { Tabs, type Href } from 'expo-router';
 import { useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { splitTabs, tabAccessFor, tabVisible } from '../../../src/lib/tab-layout';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
-import { AnimatedLogo } from '../../../src/components';
+import { AnimatedLogo } from '../../../src/components/animated-logo';
 import { TabPill } from '../../../src/components/amazen';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
@@ -78,7 +79,7 @@ function ProfileButton() {
           { backgroundColor: avatarUrl ? colors.surface : (isDark ? COLORS.primary + '25' : COLORS.primary) },
         ]}>
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.profileImage} />
+            <CachedImage uri={avatarUrl} style={styles.profileImage} />
           ) : (
             <Text style={[styles.profileInitials, { color: isDark ? COLORS.primary : '#fff' }]}>{initial}</Text>
           )}

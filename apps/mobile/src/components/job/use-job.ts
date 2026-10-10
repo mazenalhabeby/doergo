@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { onAppStateChange } from '../../lib/app-resume';
 import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
@@ -150,8 +150,8 @@ export function useJob(taskId: string) {
     const check = () => { hasArrivalPrompt(task.id).then((v) => { if (active) setHasArrived(v); }); };
     check();
     const timer = setInterval(check, 30000);
-    const sub = AppState.addEventListener('change', (next) => { if (next === 'active') check(); });
-    return () => { active = false; clearInterval(timer); sub.remove(); };
+    const off = onAppStateChange((next) => { if (next === 'active') check(); });
+    return () => { active = false; clearInterval(timer); off(); };
   }, [task?.id, task?.status]);
 
   /* ---------------- where the phone is, for "leave by" ---------------- */

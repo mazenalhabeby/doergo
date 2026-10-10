@@ -3,7 +3,8 @@ import { RefusedShiftNotifier } from '../../src/offline/attendance/refused-shift
 import { OfflineSocketPoke } from '../../src/offline/components/offline-socket-poke';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'expo-router';
-import { AppState, AppStateStatus, View } from 'react-native';
+import { View } from 'react-native';
+import { onAppResume, onAppStateChange, useAppResume } from '../../src/lib/app-resume';
 import { useTranslation } from 'react-i18next';
 import * as Location from 'expo-location';
 import { type NotificationResponse } from 'expo-notifications';
@@ -60,27 +61,24 @@ function usePresencePing() {
     // Initial ping with cached location
     sendPing();
 
-    // Repeat every 10 minutes (was 4 — reduced to save battery/data)
-    intervalRef.current = setInterval(sendPing, 10 * 60 * 1000);
+    // Repeat every 10 minutes (was 4 — reduced to save battery/data), only in front.
+    const startTimer = () => {
+      if (!intervalRef.current) intervalRef.current = setInterval(sendPing, 10 * 60 * 1000);
+    };
+    const stopTimer = () => {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    };
+    startTimer();
 
-    // Only ping on foreground resume, not continuously
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'active') {
-        sendPing();
-        if (!intervalRef.current) {
-          intervalRef.current = setInterval(sendPing, 10 * 60 * 1000);
-        }
-      } else {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      }
-    });
+    // The timer follows the app exactly; the catch-up ping rides the app's ONE
+    // throttled resume (lib/app-resume) with everything else that refreshes.
+    const offState = onAppStateChange((state) => (state === 'active' ? startTimer() : stopTimer()));
+    const offResume = onAppResume(() => void sendPing());
 
     return () => {
-      sub.remove();
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      offState();
+      offResume();
+      stopTimer();
     };
   }, [user?.role, sendPing]);
 }
@@ -198,17 +196,8 @@ export default function AppLayout() {
     }
   }, [registerForPushNotifications]);
 
-  // Re-register when app comes to foreground (in case token changed)
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      if (nextState === 'active' && isRegistered) {
-        // Token might have changed, re-register
-        registerForPushNotifications();
-      }
-    });
-
-    return () => subscription.remove();
-  }, [isRegistered, registerForPushNotifications]);
+  // Re-register when app comes to foreground (in case token changed) — on the app's one throttled resume.
+  useAppResume(() => { registerForPushNotifications(); }, isRegistered);
 
   // Log push registration errors
   useEffect(() => {

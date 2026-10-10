@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import React, { memo, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, SectionList, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,16 +15,23 @@ import { AText, Ground, HeaderBack, ScreenHeader, Well, WellDivider, useTabSafe 
 import { Banner, SectionLabel } from '../job/job-ui';
 import { SendGlyph } from '../job/job-glyphs';
 import { PersonAvatar, presenceKey } from '../people/person-avatar';
+import { useAppResume } from '../../lib/app-resume';
+import { appendMessage, applyToConversations, bubbleShape, debounce, isPlaceable, markReadLocally } from './live-thread';
 
 /**
  * CHAT — your conversations, one conversation, and starting a new one.
  *
- * ⚠️ THE LOGIC IS THE OLD SCREEN'S, UNCHANGED: the outbox send (a message
- * written with no signal is in the thread at once, with a clock, and sends
- * itself), the socket (a new message reloads the thread; "typing" shows for
- * 3.5 s), the deep links (?conversationId from a push, ?userId from Team),
- * and the closed conversation (a workspace no longer shared: history stays,
- * the composer goes). Only the drawing changed.
+ * The outbox send (a message written with no signal is in the thread at
+ * once, with a clock, and sends itself), "typing" for 3.5 s, the deep links
+ * (?conversationId from a push, ?userId from Team), and the closed
+ * conversation (a workspace no longer shared: history stays, the composer
+ * goes).
+ *
+ * ⚠️ A MESSAGE ON THE SOCKET IS ADDED, NOT RELOADED (live-thread.ts). It used
+ * to reload the list AND the whole history AND mark read — three requests and
+ * a redraw of every bubble per message. The thread and the list are
+ * virtualised (an inverted FlatList: the newest at the bottom, no scrolling
+ * to the end by hand).
  *
  * ⚠️ NO TAB BAR IN A CONVERSATION — it needs the room, and the keyboard would
  * sit on the bar. The screen tells the bar through its options (`tabBarHidden`).
@@ -47,9 +54,6 @@ function timeHM(iso: string, lang: string, hour12?: boolean) {
     ...(hour12 === undefined ? {} : { hour12 }),
   });
 }
-function dayKey(iso: string) {
-  return new Date(iso).toDateString();
-}
 function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
   const d = new Date(iso);
   const today = new Date();
@@ -64,7 +68,6 @@ function dayLabel(iso: string, lang: string, t: import('i18next').TFunction) {
 export function ChatScreen() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
-  const { hour12 } = useTimeFormat();
   const { amazen } = useTheme();
   const c = amazen.color;
   const tabSafe = useTabSafe();
@@ -76,6 +79,8 @@ export function ChatScreen() {
   const meId = user?.id;
 
   const [view, setView] = useState<ChatView>('list');
+  const viewRef = useRef<ChatView>('list');
+  viewRef.current = view;
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [contacts, setContacts] = useState<ChatUserRef[]>([]);
   const [active, setActive] = useState<ChatConversation | null>(null);
@@ -84,12 +89,13 @@ export function ChatScreen() {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [peerTyping, setPeerTyping] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
   // Whether the open thread was reached from the in-screen list (→ back returns to
   // the list) vs. a deep-link from the Team tab (→ back leaves to the Team screen).
   const threadFromListRef = useRef(false);
   const activeRef = useRef<ChatConversation | null>(null);
   activeRef.current = active;
+  const conversationsRef = useRef<ChatConversation[]>([]);
+  conversationsRef.current = conversations;
 
   // Publish the open conversation so the global notifier can suppress its toast.
   useEffect(() => {
@@ -114,15 +120,39 @@ export function ChatScreen() {
   const openConversation = useCallback(async (conv: ChatConversation) => {
     setActive(conv);
     setView('thread');
+    setMessages([]);
     try {
       const h = await chatApi.history(conv.id);
       setMessages(h.data);
-      chatApi.markRead(conv.id).then(loadList).catch(() => {});
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 50);
+      // Read here — the list's count clears on the phone; no second request for the whole list.
+      chatApi.markRead(conv.id).then(() => setConversations((l) => markReadLocally(l, conv.id))).catch(() => {});
     } catch {
       setError(t('chat.loadError', 'Could not load messages.'));
     }
-  }, [loadList, t]);
+  }, [t]);
+
+  /*
+    The fallbacks, each debounced so a burst is ONE request: the list when a
+    message names a conversation this phone has never listed, the thread when
+    a payload carries no message, and the read mark for the open thread.
+  */
+  const loadListRef = useRef(loadList);
+  loadListRef.current = loadList;
+  const later = useRef<{ list: ReturnType<typeof debounce>; thread: ReturnType<typeof debounce>; read: ReturnType<typeof debounce> } | null>(null);
+  if (!later.current) {
+    later.current = {
+      list: debounce(() => void loadListRef.current(), 1000),
+      thread: debounce(() => {
+        const open = activeRef.current;
+        if (open) void chatApi.history(open.id).then((h) => { if (activeRef.current?.id === open.id) setMessages(h.data); }).catch(() => undefined);
+      }, 1000),
+      read: debounce(() => {
+        const open = activeRef.current;
+        if (open) void chatApi.markRead(open.id).catch(() => undefined);
+      }, 1000),
+    };
+  }
+  useEffect(() => () => { later.current?.list.cancel(); later.current?.thread.cancel(); later.current?.read.flush(); }, []);
 
   useEffect(() => {
     loadList();
@@ -144,15 +174,21 @@ export function ChatScreen() {
     if (!isAuthenticated) return;
     const offs = [
       subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
-        loadList();
+        const msg = d?.message;
+        const convId: string | undefined = d?.conversationId ?? msg?.conversationId;
         const open = activeRef.current;
-        if (open && d?.conversationId === open.id) {
+        const isOpen = !!open && !!convId && convId === open.id && viewRef.current === 'thread';
+        // The list: the row moves up with the message; an unknown conversation reloads it (debounced).
+        if (isPlaceable(msg) && conversationsRef.current.some((cv) => cv.id === convId)) {
+          setConversations((l) => applyToConversations(l, { conversationId: convId, message: msg }, { meId, openId: isOpen ? convId : null }).list);
+        } else {
+          later.current!.list.call();
+        }
+        if (isOpen) {
           setPeerTyping(false); // a message means they stopped typing
-          chatApi.history(open.id).then((h) => {
-            setMessages(h.data);
-            setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-          }).catch(() => {});
-          chatApi.markRead(open.id).catch(() => {});
+          if (isPlaceable(msg)) setMessages((m) => appendMessage(m, msg as ChatMessage));
+          else later.current!.thread.call();
+          if (msg?.senderId !== meId) later.current!.read.call();
         }
       }),
       subscribe(SocketEvents.CHAT_TYPING, (d: any) => {
@@ -164,7 +200,17 @@ export function ChatScreen() {
       }),
     ];
     return () => offs.forEach((o) => o());
-  }, [isAuthenticated, subscribe, loadList, meId]);
+  }, [isAuthenticated, subscribe, meId]);
+
+  /*
+    The socket is closed while the app is in the background, so whatever was
+    said meanwhile never arrived on it: catch up on the app's one throttled
+    resume (lib/app-resume).
+  */
+  useAppResume(() => {
+    later.current!.list.call();
+    if (activeRef.current && viewRef.current === 'thread') later.current!.thread.call();
+  });
 
   // Back navigation:
   //  • contacts → list
@@ -189,7 +235,8 @@ export function ChatScreen() {
   const startChat = useCallback(async (userId: string, fromList: boolean) => {
     try {
       const conv = await chatApi.openDirect(userId);
-      await loadList();
+      // A new thread is not in the list yet; the list catches up behind the thread.
+      void loadList();
       threadFromListRef.current = fromList;
       openConversation(conv);
     } catch {
@@ -224,9 +271,7 @@ export function ChatScreen() {
     itself. Delivered in the background: the thread reloads.
   */
   const chatCreate = useQueuedCreate<{ body: string; sentAt: string }>('chat.send', {
-    onAccepted: () => {
-      if (active) void chatApi.history(active.id).then((h) => setMessages(h.data)).catch(() => undefined);
-    },
+    onAccepted: () => later.current!.thread.call(),
   });
   const shownMessages = useMemo(() => {
     if (!active) return messages;
@@ -244,7 +289,6 @@ export function ChatScreen() {
     const body = text.trim();
     if (!active || !body) return;
     setText('');
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
     try {
       const outcome = await chatCreate.run(
         { lane: `chat:${active.id}`, params: { conversationId: active.id }, body: { body, sentAt: new Date().toISOString() } },
@@ -256,9 +300,11 @@ export function ChatScreen() {
         return;
       }
       setError(null);
-      if (outcome.kind === 'done') {
-        const h = await chatApi.history(active.id);
-        setMessages(h.data);
+      // Delivered: the server's copy takes the outbox's place (the socket's echo is the same id).
+      if (outcome.kind === 'done' && isPlaceable(outcome.response)) {
+        const sent = outcome.response as ChatMessage;
+        setMessages((m) => appendMessage(m, sent));
+        setConversations((l) => applyToConversations(l, { conversationId: sent.conversationId, message: sent }, { meId, openId: sent.conversationId }).list);
       }
     } catch {
       setText(body);
@@ -269,165 +315,124 @@ export function ChatScreen() {
 
   /* ---------------- the drawing ---------------- */
 
+  // Newest first for the inverted list; each row's bubble shape from its chronological neighbours.
+  const threadRows = useMemo(
+    () => shownMessages.map((m, i) => ({ m, shape: bubbleShape(shownMessages, i) })).reverse(),
+    [shownMessages],
+  );
+  const openFromList = useCallback((cv: ChatConversation) => {
+    threadFromListRef.current = true;
+    void openConversation(cv);
+  }, [openConversation]);
+  const startFromContacts = useCallback((id: string) => void startChat(id, true), [startChat]);
+
   const navigation = useNavigation();
   const inThread = view === 'thread';
   useEffect(() => {
     navigation.setOptions({ tabBarHidden: inThread } as never);
   }, [navigation, inThread]);
 
-  const time = (iso: string) => timeHM(iso, i18n.language, hour12);
   const composerOpen = inThread && !!active && !active.isClosed;
 
   let body: React.ReactNode;
   if (view === 'list') {
     body = (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }}>
-        {error ? <Banner tone="critical" text={error} /> : null}
-        {loading ? (
+      <FlatList
+        data={loading ? [] : conversations}
+        keyExtractor={(cv) => cv.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe }}
+        initialNumToRender={14}
+        windowSize={9}
+        ListHeaderComponent={error ? <View style={{ marginBottom: amazen.space(3) }}><Banner tone="critical" text={error} /></View> : null}
+        ListEmptyComponent={loading ? (
           <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
-        ) : conversations.length === 0 ? (
+        ) : (
           <Well style={{ padding: amazen.space(6), alignItems: 'center', gap: amazen.space(2) }}>
             <AText variant="body" tone="strong">{t('chat.emptyTitle', 'No conversations yet')}</AText>
             <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('chat.emptyBody', 'Start one with anybody on your team.')}</AText>
           </Well>
-        ) : (
-          <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-            {conversations.map((cv, i) => {
-              const unread = cv.unread ?? 0;
-              const last = cv.lastMessage;
-              const mine = last?.senderId === meId;
-              return (
-                <React.Fragment key={cv.id}>
-                  {i > 0 ? <WellDivider /> : null}
-                  <Pressable
-                    onPress={() => { threadFromListRef.current = true; void openConversation(cv); }}
-                    accessibilityRole="button"
-                    style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}
-                  >
-                    <PersonAvatar person={cv.otherMember} presence={cv.otherMember?.presence ?? null} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5, fontFamily: unread ? amazen.font.sansMedium : amazen.font.sans }}>
-                          {conversationTitle(cv, i18n.language)}
-                        </AText>
-                        {cv.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}
-                        {cv.isClosed ? <Tag label={t('chat.closed', 'Closed')} /> : null}
-                      </View>
-                      <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: unread ? c.inkStrong : c.inkMuted }}>
-                        {last ? `${mine ? `${t('chat.you', 'You')}: ` : ''}${last.body}` : t('chat.noMessagesYet', 'No messages yet')}
-                      </AText>
-                    </View>
-                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      {cv.lastMessageAt ? <AText variant="caption" tone="muted" numeric style={{ fontSize: 11.5 }}>{whenShort(cv.lastMessageAt, i18n.language, hour12, t)}</AText> : null}
-                      {unread ? (
-                        <View style={{ minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center' }}>
-                          <AText variant="caption" tone="accentInk" numeric style={{ fontSize: 11 }}>{String(unread)}</AText>
-                        </View>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                </React.Fragment>
-              );
-            })}
-          </Well>
         )}
-      </ScrollView>
+        renderItem={({ item, index }) => (
+          <ConversationRow
+            conv={item}
+            first={index === 0}
+            last={index === conversations.length - 1}
+            mine={item.lastMessage?.senderId === meId}
+            onOpen={openFromList}
+          />
+        )}
+      />
     );
   } else if (view === 'contacts') {
     const avail = contacts.filter((u) => presenceKey(u.presence) === 'AVAILABLE');
     const rest = contacts.filter((u) => presenceKey(u.presence) !== 'AVAILABLE');
-    const group = (label: string, list: ChatUserRef[]) => (list.length ? (
-      <View style={{ gap: amazen.space(2) }}>
-        <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{label}</SectionLabel>
-        <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-          {list.map((u, i) => (
-            <React.Fragment key={u.id}>
-              {i > 0 ? <WellDivider /> : null}
-              <Pressable onPress={() => void startChat(u.id, true)} accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}>
-                <PersonAvatar person={u} presence={u.presence ?? null} />
-                <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{`${u.firstName} ${u.lastName}`}</AText>
-                  {u.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}
-                </View>
-              </Pressable>
-            </React.Fragment>
-          ))}
-        </Well>
-      </View>
-    ) : null);
+    const sections = [
+      { key: 'avail', title: t('chat.availableNow', 'Available'), data: avail },
+      { key: 'rest', title: t('chat.everyoneElse', 'Everyone else'), data: rest },
+    ].filter((g) => g.data.length > 0);
     body = (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }}>
-        {error ? <Banner tone="critical" text={error} /> : null}
-        {contacts.length === 0 ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('chat.noContacts', 'Nobody to message yet.')}</AText>
-        ) : (
-          <>
-            {group(t('chat.availableNow', 'Available'), avail)}
-            {group(t('chat.everyoneElse', 'Everyone else'), rest)}
-          </>
+      <SectionList
+        sections={sections}
+        keyExtractor={(u) => u.id}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe }}
+        initialNumToRender={16}
+        ListHeaderComponent={error ? <View style={{ marginBottom: amazen.space(3) }}><Banner tone="critical" text={error} /></View> : null}
+        ListEmptyComponent={<AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('chat.noContacts', 'Nobody to message yet.')}</AText>}
+        renderSectionHeader={({ section }) => (
+          <SectionLabel style={{ paddingHorizontal: amazen.space(1), marginBottom: amazen.space(2), marginTop: section.key === sections[0]?.key ? 0 : amazen.space(3) }}>{section.title}</SectionLabel>
         )}
-      </ScrollView>
+        renderItem={({ item, index, section }) => (
+          <ContactRow person={item} first={index === 0} last={index === section.data.length - 1} onPick={startFromContacts} />
+        )}
+      />
     );
   } else {
     body = (
       <>
-        <ScrollView
-          ref={scrollRef}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(3), gap: 3 }}
-          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
-        >
-          {error ? <Banner tone="critical" text={error} /> : null}
-          {shownMessages.length === 0 ? (
-            <View style={{ alignItems: 'center', gap: amazen.space(2), paddingVertical: amazen.space(10) }}>
-              <PersonAvatar person={active?.otherMember} size={64} />
-              <AText variant="caption" tone="onGlass">{t('chat.sayHello', 'Say hello')}</AText>
-            </View>
-          ) : null}
-          {shownMessages.map((m, i) => {
-            const prev = shownMessages[i - 1];
-            const next = shownMessages[i + 1];
-            const pending = !!(m as { pendingSync?: boolean }).pendingSync;
-            const mine = m.senderId === meId;
-            const newDay = !prev || dayKey(prev.createdAt) !== dayKey(m.createdAt);
-            const lastOfGroup = !next || next.senderId !== m.senderId || dayKey(next.createdAt) !== dayKey(m.createdAt);
-            const grouped = !!prev && !newDay && prev.senderId === m.senderId;
-            return (
-              <View key={m.id}>
-                {newDay ? (
-                  <View style={{ alignItems: 'center', paddingVertical: amazen.space(3) }}>
-                    <SectionLabel>{dayLabel(m.createdAt, i18n.language, t)}</SectionLabel>
-                  </View>
-                ) : null}
-                <View
-                  style={{
-                    alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%', paddingHorizontal: 13, paddingVertical: 10,
-                    backgroundColor: mine ? c.accentTint : c.well,
-                    borderRadius: 20,
-                    // A group reads as one: the corner toward the next bubble tightens.
-                    ...(mine
-                      ? { borderTopRightRadius: grouped ? 6 : 20, borderBottomRightRadius: lastOfGroup ? 6 : 20 }
-                      : { borderTopLeftRadius: grouped ? 6 : 20, borderBottomLeftRadius: lastOfGroup ? 6 : 20 }),
-                  }}
-                >
-                  <AText variant="body" tone="strong" style={{ fontSize: 14.5, lineHeight: 20 }}>{m.body}</AText>
-                </View>
-                {lastOfGroup || pending ? (
-                  <AText variant="caption" tone={pending ? 'warn' : 'muted'} numeric style={{ alignSelf: mine ? 'flex-end' : 'flex-start', fontSize: 10.5, marginTop: 3, marginBottom: 8, marginHorizontal: 6 }}>
-                    {pending ? `◷ ${t('offline.chip.waiting')}` : time(m.sentAt ?? m.createdAt)}
-                  </AText>
-                ) : null}
+        {error ? <View style={{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(2) }}><Banner tone="critical" text={error} /></View> : null}
+        {threadRows.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', gap: amazen.space(2), paddingVertical: amazen.space(10) }}>
+            <PersonAvatar person={active?.otherMember} size={64} />
+            <AText variant="caption" tone="onGlass">{t('chat.sayHello', 'Say hello')}</AText>
+          </View>
+        ) : (
+          /*
+            INVERTED: the newest message is row 0 and sits at the bottom, so a
+            thread opens at its end and a new message lands in view without
+            anybody scrolling — and only the rows on screen are drawn.
+          */
+          <FlatList
+            inverted
+            data={threadRows}
+            keyExtractor={(r) => r.m.id}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingTop: amazen.space(3) }}
+            initialNumToRender={20}
+            maxToRenderPerBatch={20}
+            windowSize={11}
+            ListHeaderComponent={peerTyping ? (
+              <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 4, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: c.well, marginTop: 3 }} accessibilityLabel={`${active?.otherMember?.firstName ?? ''} ${t('chat.typing', 'is typing…')}`}>
+                {[0, 1, 2].map((d) => <View key={d} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.inkMuted }} />)}
               </View>
-            );
-          })}
-          {peerTyping ? (
-            <View style={{ alignSelf: 'flex-start', flexDirection: 'row', gap: 4, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 18, backgroundColor: c.well }} accessibilityLabel={`${active?.otherMember?.firstName ?? ''} ${t('chat.typing', 'is typing…')}`}>
-              {[0, 1, 2].map((d) => <View key={d} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.inkMuted }} />)}
-            </View>
-          ) : null}
-        </ScrollView>
+            ) : null}
+            renderItem={({ item }) => (
+              <MessageRow
+                body={item.m.body}
+                at={item.m.sentAt ?? item.m.createdAt}
+                day={item.m.createdAt}
+                mine={item.m.senderId === meId}
+                pending={!!(item.m as { pendingSync?: boolean }).pendingSync}
+                newDay={item.shape.newDay}
+                grouped={item.shape.grouped}
+                lastOfGroup={item.shape.lastOfGroup}
+              />
+            )}
+          />
+        )}
         {composerOpen ? (
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(2), paddingHorizontal: amazen.space(3.5), paddingTop: amazen.space(2), paddingBottom: bottomPad }}>
             <TextInput
@@ -482,6 +487,112 @@ export function ChatScreen() {
     </Ground>
   );
 }
+
+/* ---------------- rows: memoised, one per conversation / person / message ---------------- */
+
+/** One conversation, drawing its own slice of the well (rounded at the ends) — so the list can be virtualised. */
+const ConversationRow = memo(function ConversationRow({ conv: cv, first, last, mine, onOpen }: {
+  conv: ChatConversation; first: boolean; last: boolean; mine: boolean; onOpen: (cv: ChatConversation) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const { hour12 } = useTimeFormat();
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const unread = cv.unread ?? 0;
+  const lastMsg = cv.lastMessage;
+  const r = amazen.radius.panel;
+  return (
+    <View style={{ backgroundColor: c.well, paddingHorizontal: amazen.space(3.5), borderTopLeftRadius: first ? r : 0, borderTopRightRadius: first ? r : 0, borderBottomLeftRadius: last ? r : 0, borderBottomRightRadius: last ? r : 0 }}>
+      {first ? null : <WellDivider />}
+      <Pressable
+        onPress={() => onOpen(cv)}
+        accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}
+      >
+        <PersonAvatar person={cv.otherMember} presence={cv.otherMember?.presence ?? null} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5, fontFamily: unread ? amazen.font.sansMedium : amazen.font.sans }}>
+              {conversationTitle(cv, i18n.language)}
+            </AText>
+            {cv.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}
+            {cv.isClosed ? <Tag label={t('chat.closed', 'Closed')} /> : null}
+          </View>
+          <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: unread ? c.inkStrong : c.inkMuted }}>
+            {lastMsg ? `${mine ? `${t('chat.you', 'You')}: ` : ''}${lastMsg.body}` : t('chat.noMessagesYet', 'No messages yet')}
+          </AText>
+        </View>
+        <View style={{ alignItems: 'flex-end', gap: 4 }}>
+          {cv.lastMessageAt ? <AText variant="caption" tone="muted" numeric style={{ fontSize: 11.5 }}>{whenShort(cv.lastMessageAt, i18n.language, hour12, t)}</AText> : null}
+          {unread ? (
+            <View style={{ minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center' }}>
+              <AText variant="caption" tone="accentInk" numeric style={{ fontSize: 11 }}>{String(unread)}</AText>
+            </View>
+          ) : null}
+        </View>
+      </Pressable>
+    </View>
+  );
+});
+
+const ContactRow = memo(function ContactRow({ person: u, first, last, onPick }: {
+  person: ChatUserRef; first: boolean; last: boolean; onPick: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const r = amazen.radius.panel;
+  return (
+    <View style={{ backgroundColor: c.well, paddingHorizontal: amazen.space(3.5), borderTopLeftRadius: first ? r : 0, borderTopRightRadius: first ? r : 0, borderBottomLeftRadius: last ? r : 0, borderBottomRightRadius: last ? r : 0 }}>
+      {first ? null : <WellDivider />}
+      <Pressable onPress={() => onPick(u.id)} accessibilityRole="button"
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}>
+        <PersonAvatar person={u} presence={u.presence ?? null} />
+        <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{`${u.firstName} ${u.lastName}`}</AText>
+          {u.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}
+        </View>
+      </Pressable>
+    </View>
+  );
+});
+
+/** One bubble. Primitives only, so an appended message redraws one row, not the thread. */
+const MessageRow = memo(function MessageRow({ body, at, day, mine, pending, newDay, grouped, lastOfGroup }: {
+  body: string; at: string; day: string; mine: boolean; pending: boolean; newDay: boolean; grouped: boolean; lastOfGroup: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const { hour12 } = useTimeFormat();
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  return (
+    <View style={{ marginTop: 3 }}>
+      {newDay ? (
+        <View style={{ alignItems: 'center', paddingVertical: amazen.space(3) }}>
+          <SectionLabel>{dayLabel(day, i18n.language, t)}</SectionLabel>
+        </View>
+      ) : null}
+      <View
+        style={{
+          alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%', paddingHorizontal: 13, paddingVertical: 10,
+          backgroundColor: mine ? c.accentTint : c.well,
+          borderRadius: 20,
+          // A group reads as one: the corner toward the next bubble tightens.
+          ...(mine
+            ? { borderTopRightRadius: grouped ? 6 : 20, borderBottomRightRadius: lastOfGroup ? 6 : 20 }
+            : { borderTopLeftRadius: grouped ? 6 : 20, borderBottomLeftRadius: lastOfGroup ? 6 : 20 }),
+        }}
+      >
+        <AText variant="body" tone="strong" style={{ fontSize: 14.5, lineHeight: 20 }}>{body}</AText>
+      </View>
+      {lastOfGroup || pending ? (
+        <AText variant="caption" tone={pending ? 'warn' : 'muted'} numeric style={{ alignSelf: mine ? 'flex-end' : 'flex-start', fontSize: 10.5, marginTop: 3, marginBottom: 8, marginHorizontal: 6 }}>
+          {pending ? `◷ ${t('offline.chip.waiting')}` : timeHM(at, i18n.language, hour12)}
+        </AText>
+      ) : null}
+    </View>
+  );
+});
 
 function presenceText(p: string | null | undefined, t: import('i18next').TFunction) {
   if (p === 'AVAILABLE') return t('chat.presence.active', 'Active now');

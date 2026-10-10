@@ -7,7 +7,7 @@ import { usePendingFor } from '../../offline/offline-context';
 import { AText } from '../amazen';
 import { Pill } from '../job/job-ui';
 import { hasHour, sameDay } from '../home/my-work';
-import type { JobBand, RowRight, RowWho } from './jobs-logic';
+import { sameJobRowProps, type JobBand, type RowRight, type RowWho } from './jobs-logic';
 
 /**
  * One job in a well — `jobRow()`: a dot, the title (● when urgent), who and
@@ -28,7 +28,7 @@ export const JobRow = memo(function JobRow({
   place,
   right,
   stepLabel,
-  onPress,
+  onOpen,
 }: {
   /** The job's id — for its changes still on their way (as the old `SyncChip` read them). */
   id: string;
@@ -41,7 +41,8 @@ export const JobRow = memo(function JobRow({
   place: string | null;
   right: RowRight;
   stepLabel: string;
-  onPress: () => void;
+  /** Stable across renders (the list's `open`), called with this row's id. */
+  onOpen: (id: string) => void;
 }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
@@ -66,7 +67,7 @@ export const JobRow = memo(function JobRow({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onOpen(id)}
       accessibilityRole="button"
       accessibilityLabel={[title, whoText, place, stepLabel].filter(Boolean).join(', ')}
       style={({ pressed }) => ({
@@ -104,4 +105,4 @@ export const JobRow = memo(function JobRow({
       </View>
     </Pressable>
   );
-});
+}, sameJobRowProps);

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, View } from 'react-native';
+import { CachedImage } from '../cached-image';
 import { useTranslation } from 'react-i18next';
 import { router, type Href, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
@@ -253,7 +254,7 @@ export function ProfileScreen() {
                 {avatarLoading ? (
                   <ActivityIndicator color={c.accent} />
                 ) : shownAvatarUri ? (
-                  <Image source={{ uri: shownAvatarUri }} style={{ width: 96, height: 96 }} />
+                  <CachedImage uri={shownAvatarUri} style={{ width: 96, height: 96 }} />
                 ) : (
                   <AText variant="h2" tone="accent" style={{ fontSize: 32, lineHeight: 40 }}>{getInitials(user?.firstName, user?.lastName)}</AText>
                 )}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
+import { CachedImage } from '../cached-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -262,7 +263,7 @@ export function ScreenHeader({
           })}
         >
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
+            <CachedImage uri={avatarUrl} style={{ width: '100%', height: '100%' }} />
           ) : (
             <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium, fontSize: 15 }}>
               {initials}

@@ -45,7 +45,7 @@ describe('my-work widget — the card source', () => {
     expect(code).not.toMatch(/useMemo\(\(\) => startOfDay\(new Date\(\)\), \[\]\)/);
     expect(code).not.toMatch(/useMemo\(\(\) => weekOf\(new Date\(\)\), \[\]\)/);
     expect(code).toContain('msUntilNextDay()');
-    expect(code).toMatch(/AppState\.addEventListener\('change'/);
+    expect(code).toMatch(/onAppStateChange\(\(st\) => \{ if \(st === 'active'\) syncDay\(\); \}\)/);
     expect(code).toMatch(/useFocusEffect\(useCallback\(\(\) => \{\s*syncDay\(\);/);
   });
 

@@ -27,8 +27,8 @@ describe('a new version is noticed more than once per launch', () => {
   */
   it('re-checks when the app comes back to the foreground', () => {
     const src = stripComments(read(CONTEXT));
-    expect(src).toContain('AppState.addEventListener');
-    expect(src).toMatch(/state === 'active'[\s\S]{0,120}run\(\)/);
+    // The app's one throttled resume (lib/app-resume) — never a listener of its own.
+    expect(src).toMatch(/onAppResume\(\(\) => void run\(\)\)/);
   });
 
   it('is throttled, because foregrounding happens far more often than a release', () => {

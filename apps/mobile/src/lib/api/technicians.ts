@@ -66,6 +66,11 @@ export const availabilityApi = {
     const endpoint = buildUrlWithQuery('/employees/availability', { date });
     return fetchWithAuth<AvailabilityResponse>(endpoint, { method: 'GET' });
   },
+  /** Every day from `startDate` to `endDate` (YYYY-MM-DD, inclusive) in ONE request — one entry per day. */
+  getForRange: async (startDate: string, endDate: string): Promise<AvailabilityResponse[]> => {
+    const endpoint = buildUrlWithQuery('/employees/availability', { startDate, endDate });
+    return fetchWithAuth<AvailabilityResponse[]>(endpoint, { method: 'GET' });
+  },
 };
 
 // Schedule API

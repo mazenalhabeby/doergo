@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { memo, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator,
   Linking, Platform, RefreshControl, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -310,7 +310,8 @@ export default function RoutePlannerScreen() {
     if (url) Linking.openURL(url).catch(() => setError(t('route.navFailed', 'Could not open that map app.')));
   }, [result, orderedStops, arrivedIds, start, t]);
 
-  const navTo = (stop: RouteStop) => startNavigation(stop);
+  // One callback for every pick row, so `memo(PickRow)` holds.
+  const toggleStop = useCallback((id: string) => setSelected((p) => ({ ...p, [id]: !p[id] })), []);
 
   const selectedCount = stops.length;
   const insets = useSafeAreaInsets();
@@ -519,91 +520,61 @@ export default function RoutePlannerScreen() {
           </View>
         }
       >
-        <ScrollView
+        {/*
+          ⚠️ VIRTUALISED. A dispatcher's day can hold a lot of located tasks to
+          pick from; the sheet drew every one on open. The sheet's drag lives on
+          its header only (detent-sheet.tsx), so the body is free to be a list.
+        */}
+        <FlatList<Task | RouteStop>
+          data={loading ? [] : result ? orderedStops : tasks}
+          keyExtractor={(x) => x.id}
+          extraData={result ? aheadIds : selected}
+          initialNumToRender={12}
+          windowSize={9}
           contentContainerStyle={{ paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl }}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={COLORS.primary} />}
-        >
-          {loading ? (
+          ListEmptyComponent={loading ? (
             <ActivityIndicator style={{ marginVertical: SPACING.xl }} color={COLORS.primary} />
-          ) : tasks.length === 0 ? (
+          ) : (
             <View style={styles.empty}>
               <Ionicons name="map-outline" size={40} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                 {t('route.noStops', 'No tasks with a location. Add a location to a task to route to it.')}
               </Text>
             </View>
-          ) : result ? (
-            orderedStops.map((s, i) => (
-              <View key={s.id} style={styles.legRow}>
-                <View style={styles.legRail}>
-                  <View style={[styles.legDot, { backgroundColor: !aheadIds.has(s.id) ? COLORS.success : COLORS.primary }]}>
-                    {!aheadIds.has(s.id)
-                      ? <Ionicons name="checkmark" size={15} color="#fff" />
-                      : <Text style={styles.legDotText}>{i + 1}</Text>}
-                  </View>
-                  {i < orderedStops.length - 1 && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
-                </View>
-                <View style={styles.legBody}>
-                  <Text
-                    style={[styles.legTitle, { color: !aheadIds.has(s.id) ? colors.textMuted : colors.textPrimary }]}
-                    numberOfLines={1}
-                  >
-                    {s.label}
-                  </Text>
-                  {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
-                  {/* The drive that gets you here — the number a rep plans the
-                      morning around, and the reason the order matters. */}
-                  {!!legTo(i) && (
-                    <Text style={[styles.legDrive, { color: colors.textMuted }]}>
-                      {formatDistance(legTo(i)!.meters)} · {fmtDur(legTo(i)!.seconds)}
-                    </Text>
-                  )}
-                </View>
-                <TouchableOpacity onPress={() => navTo(s)} hitSlop={8} style={[styles.legNav, { borderColor: colors.border }]}>
-                  <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
-                </TouchableOpacity>
-              </View>
-            ))
-          ) : (
-            tasks.map((x) => {
-              const on = !!selected[x.id];
-              return (
-                <TouchableOpacity
-                  key={x.id}
-                  onPress={() => setSelected((p) => ({ ...p, [x.id]: !on }))}
-                  activeOpacity={0.7}
-                  style={[styles.pickRow, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? 'rgba(37,99,235,0.06)' : 'transparent' }]}
-                >
-                  <Ionicons
-                    name={on ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={22}
-                    color={on ? COLORS.primary : colors.textMuted}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>{x.title}</Text>
-                    {!!x.locationAddress && (
-                      <Text style={[styles.pickAddr, { color: colors.textMuted }]} numberOfLines={1}>{x.locationAddress}</Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })
           )}
-
-          {/*
+          renderItem={({ item, index }) => {
+            if (result) {
+              const s = item as RouteStop;
+              const leg = legTo(index);
+              return (
+                <LegRow
+                  stop={s}
+                  index={index}
+                  last={index === orderedStops.length - 1}
+                  done={!aheadIds.has(s.id)}
+                  drive={leg ? `${formatDistance(leg.meters)} · ${fmtDur(leg.seconds)}` : null}
+                  onNav={startNavigation}
+                />
+              );
+            }
+            const x = item as Task;
+            return <PickRow id={x.id} title={x.title} address={x.locationAddress ?? null} on={!!selected[x.id]} onToggle={toggleStop} />;
+          }}
+          /*
             No app picker here any more. It was a preference chosen before
             anyone knew what the phone had, so it could point at an app that
             was not installed — and the link that produced failed silently.
             The choice is offered at the moment of navigating, and only when
             there is genuinely something to choose between.
-          */}
-          {!!result && orderedStops.length > 1 && (
+          */
+          ListFooterComponent={!!result && orderedStops.length > 1 ? (
             <Text style={[styles.navNote, { color: colors.textMuted }]}>
               {t('route.multiStopNote', 'Start navigation opens the whole route. Use the arrow beside a stop to drive to just that one.')}
             </Text>
-          )}
-        </ScrollView>
+          ) : null}
+        />
       </DetentSheet>
 
       {/*
@@ -646,6 +617,57 @@ export default function RoutePlannerScreen() {
     </View>
   );
 }
+
+/** One stop of an ordered route: its number (or a tick once behind you), where, and the drive to it. */
+const LegRow = memo(function LegRow({ stop: s, index: i, last, done, drive, onNav }: {
+  stop: RouteStop; index: number; last: boolean; done: boolean; drive: string | null; onNav: (s: RouteStop) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.legRow}>
+      <View style={styles.legRail}>
+        <View style={[styles.legDot, { backgroundColor: done ? COLORS.success : COLORS.primary }]}>
+          {done
+            ? <Ionicons name="checkmark" size={15} color="#fff" />
+            : <Text style={styles.legDotText}>{i + 1}</Text>}
+        </View>
+        {!last && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
+      </View>
+      <View style={styles.legBody}>
+        <Text style={[styles.legTitle, { color: done ? colors.textMuted : colors.textPrimary }]} numberOfLines={1}>
+          {s.label}
+        </Text>
+        {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
+        {/* The drive that gets you here — the number a rep plans the
+            morning around, and the reason the order matters. */}
+        {!!drive && <Text style={[styles.legDrive, { color: colors.textMuted }]}>{drive}</Text>}
+      </View>
+      <TouchableOpacity onPress={() => onNav(s)} hitSlop={8} style={[styles.legNav, { borderColor: colors.border }]}>
+        <Ionicons name="navigate-outline" size={16} color={COLORS.primary} />
+      </TouchableOpacity>
+    </View>
+  );
+});
+
+/** One task to pick for the route — ticked or not. */
+const PickRow = memo(function PickRow({ id, title, address, on, onToggle }: {
+  id: string; title: string; address: string | null; on: boolean; onToggle: (id: string) => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity
+      onPress={() => onToggle(id)}
+      activeOpacity={0.7}
+      style={[styles.pickRow, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? 'rgba(37,99,235,0.06)' : 'transparent' }]}
+    >
+      <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={on ? COLORS.primary : colors.textMuted} />
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
+        {!!address && <Text style={[styles.pickAddr, { color: colors.textMuted }]} numberOfLines={1}>{address}</Text>}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

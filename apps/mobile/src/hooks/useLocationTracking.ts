@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AppState } from 'react-native';
+import { onAppResume } from '../lib/app-resume';
 import * as Location from 'expo-location';
 import { trackingApi, tasksApi, ApiError } from '../lib/api';
 import {
@@ -102,10 +102,7 @@ export function useLocationTracking() {
 
   useEffect(() => {
     void reconcile();
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') void reconcile();
-    });
-    return () => sub.remove();
+    return onAppResume(() => void reconcile());
   }, [reconcile]);
 
   // One-shot foreground fix → also seeds lastLocation and sends an immediate

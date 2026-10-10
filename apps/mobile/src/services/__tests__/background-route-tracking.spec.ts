@@ -60,7 +60,12 @@ const at = (s: number) => new Date(Date.UTC(2026, 8, 30, 6, 0, s)).toISOString()
 const loc = (lat: number, lng: number, s: number, accuracy = 5) => ({
   coords: { latitude: lat, longitude: lng, accuracy }, timestamp: Date.parse(at(s)),
 });
-const pending = () => JSON.parse(store.get('route_pending_bursts:mike') ?? '[]') as { points: unknown[] }[];
+// Held points live in chunks under an index (route-buffer.ts); the old single value is folded in on first touch.
+const pending = () => {
+  const index = JSON.parse(store.get('route_pending_bursts:mike:index') ?? '[]') as { id: string }[];
+  const legacy = JSON.parse(store.get('route_pending_bursts:mike') ?? '[]') as { points: unknown[] }[];
+  return [...legacy, ...index.map((e) => JSON.parse(store.get(`route_pending_bursts:mike:${e.id}`) ?? '{"points":[]}') as { points: unknown[] })];
+};
 const heldCount = () => pending().reduce((n, b) => n + b.points.length, 0);
 
 beforeEach(() => {
@@ -158,7 +163,12 @@ describe('delivering points', () => {
     trackingApi.updateLocationBatch.mockResolvedValue({});
     await flushPendingRoute();
     const sizes = trackingApi.updateLocationBatch.mock.calls.map((c: any) => c[0].points.length);
-    expect(sizes).toEqual([500, 500, 200]);
+    // Three requests, none over 500, every point sent once — and nothing left held.
+    expect(sizes).toHaveLength(3);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(500);
+    expect(sizes.reduce((a: number, b: number) => a + b, 0)).toBe(1200);
+    expect(heldCount()).toBe(0);
+    expect(store.has('route_pending_bursts:mike')).toBe(false);
   });
 
   it('never keeps a GPS jump', async () => {

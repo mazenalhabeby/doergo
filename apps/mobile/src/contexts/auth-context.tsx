@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { AppState, type AppStateStatus } from 'react-native';
+import { onAppResume } from '../lib/app-resume';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
   authApi,
@@ -120,19 +120,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // change an admin made on the web (enabledModules/platform/scope) takes effect
   // without needing a cold restart. Only fires on background→active transitions
   // while authenticated.
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  // On the app's one throttled resume (lib/app-resume) — a background→active transition.
   const isAuthedRef = useRef(false);
   isAuthedRef.current = !!user;
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
-      const prev = appStateRef.current;
-      appStateRef.current = next;
-      if (next === 'active' && prev.match(/inactive|background/) && isAuthedRef.current) {
-        void refreshUser();
-      }
-    });
-    return () => sub.remove();
-  }, [refreshUser]);
+  useEffect(() => onAppResume(() => {
+    if (isAuthedRef.current) void refreshUser();
+  }), [refreshUser]);
 
   const loadStoredAuth = async () => {
     try {

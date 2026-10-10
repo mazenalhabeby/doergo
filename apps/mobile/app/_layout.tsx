@@ -44,7 +44,7 @@ import { UpdateRequired } from '../src/components/update-required';
 import { UpdateBanner } from '../src/components/update-banner';
 import { UpdatePage } from '../src/components/update-page';
 import { VersionProvider, useVersionStatus } from '../src/contexts/version-context';
-import { AnimatedSplash } from '../src/components';
+import { AnimatedSplash } from '../src/components/animated-splash';
 import { ErrorBoundary } from '../src/components/error-boundary';
 import { LocationConsentModal } from '../src/components/LocationConsentModal';
 import { applyOrientationPolicy } from '../src/lib/orientation';

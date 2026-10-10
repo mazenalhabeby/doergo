@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
+import { isAppActive, onAppResume } from '../lib/app-resume';
 import { useFocusEffect } from 'expo-router';
 import { connectivity, type Connectivity } from '../offline/connectivity';
 import { HomeCardKeyContext, HomeLoadContext } from '../home/home-load-context';
@@ -95,7 +95,7 @@ export function useLiveRefresh(
       resume below catches up the moment it matters.
     */
     const id = everyMs == null ? null : setInterval(() => {
-      if (AppState.currentState === 'active') ask();
+      if (isAppActive()) ask();
     }, everyMs);
     return () => {
       focused.current = false;
@@ -109,8 +109,8 @@ export function useLiveRefresh(
       under the other tabs, and resuming the app on Tasks used to refresh every
       home card behind it; returning to the home asks anyway (focus).
     */
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active' && focused.current) ask(); });
-    return () => sub.remove();
+    // The app's one throttled resume (lib/app-resume) — a glance away and back asks nothing.
+    return onAppResume(() => { if (focused.current) ask(); });
   }, [ask]);
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export function useLiveRefresh(
     return connectivity.subscribe((now) => {
       const back = now === 'online' && was !== 'online';
       was = now;
-      if (!back || !focused.current || AppState.currentState !== 'active') return;
+      if (!back || !focused.current || !isAppActive()) return;
       void Promise.resolve(opts.current.beforeReconnect?.())
         .catch(() => undefined)
         .then(ask);

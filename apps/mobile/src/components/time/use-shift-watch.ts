@@ -9,6 +9,9 @@ import { attendanceApi } from '../../lib/api/attendance';
 import { useExcursionSync } from '../../hooks/useExcursionSync';
 import { startBackgroundHeartbeat, stopBackgroundHeartbeat } from '../../services/background-heartbeat';
 import { startGeofenceForSpace, stopGeofence } from '../../services/background-geofence';
+import { isAppActive, onAppStateChange } from '../../lib/app-resume';
+import { useNow } from '../../hooks/use-now';
+import { graceCountdown, heartbeatDue } from './time-logic';
 
 /**
  * WHILE SOMEBODY IS ON THE CLOCK — where they are against the site, and the
@@ -16,6 +19,7 @@ import { startGeofenceForSpace, stopGeofence } from '../../services/background-g
  *
  * Moved out of the Time tab unchanged in behaviour:
  *  • a heartbeat on focus, on clock-in, and every 5 minutes while on the clock
+ *    AND in front (behind another app the background heartbeat carries it);
  *    — the heartbeat is what OPENS an excursion; the status alone never does;
  *  • background heartbeat and native geofencing re-armed on focus, because an
  *    app restart stops both while the shift keeps running;
@@ -32,7 +36,6 @@ export function useShiftWatch(status: AttendanceStatus | null, refresh: () => Pr
   const clockedIn = !!status?.isClockedIn;
   const [outside, setOutside] = useState<{ metres: number } | null>(null);
   const [excursion, setExcursion] = useState<GeofenceExcursion | null>(null);
-  const [countdown, setCountdown] = useState('');
   const [reporting, setReporting] = useState(false);
 
   // The server's excursion rides on the status.
@@ -76,29 +79,28 @@ export function useShiftWatch(status: AttendanceStatus | null, refresh: () => Pr
     }, [heartbeat, clockedIn, status?.currentEntry?.location]),
   );
 
+  /*
+    Every five minutes WHILE THE APP IS IN FRONT (heartbeatDue). Behind another
+    app the background heartbeat and native geofencing carry the shift — the
+    server gets the same calls from them — and on the way back a beat goes at
+    once if one is due.
+  */
   useEffect(() => {
     if (!clockedIn) return;
     void heartbeat();
-    const id = setInterval(() => void heartbeat(), 5 * 60 * 1000);
-    return () => clearInterval(id);
+    const beatIfDue = () => {
+      if (heartbeatDue(lastBeat.current, Date.now(), isAppActive())) void heartbeat();
+    };
+    const id = setInterval(beatIfDue, 30_000);
+    const off = onAppStateChange((st) => { if (st === 'active') beatIfDue(); });
+    return () => { clearInterval(id); off(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockedIn]);
 
-  useEffect(() => {
-    if (excursion?.status !== 'APPROVED' || !excursion.expiresAt) { setCountdown(''); return; }
-    const target = new Date(excursion.expiresAt).getTime();
-    const tick = () => {
-      const total = Math.floor(Math.max(0, target - Date.now()) / 1000);
-      const h = Math.floor(total / 3600);
-      const m = Math.floor((total % 3600) / 60);
-      const s = total % 60;
-      const pad = (n: number) => String(n).padStart(2, '0');
-      setCountdown(h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [excursion?.status, excursion?.expiresAt]);
+  // The grace countdown: a one-second clock only while one runs, paused in the background.
+  const graceRunning = excursion?.status === 'APPROVED' && !!excursion.expiresAt;
+  const nowMs = useNow(1000, graceRunning);
+  const countdown = graceRunning ? graceCountdown(new Date(excursion!.expiresAt!).getTime(), nowMs) : '';
 
   useExcursionSync(useCallback(() => { void refresh(); }, [refresh]), user?.id);
 

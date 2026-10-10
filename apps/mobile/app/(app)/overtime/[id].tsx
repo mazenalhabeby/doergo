@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNow } from '../../../src/hooks/use-now';
 import {
   View,
   Text,
@@ -39,7 +40,6 @@ export default function OvertimeRequestScreen() {
   const [reason, setReason] = useState('');
 
   // Overtime countdown
-  const [remainingMinutes, setRemainingMinutes] = useState<number | null>(null);
 
   const fetchRequest = useCallback(async () => {
     try {
@@ -56,21 +56,12 @@ export default function OvertimeRequestScreen() {
     fetchRequest();
   }, [fetchRequest]);
 
-  // Countdown timer for approved overtime
-  useEffect(() => {
-    if (request?.status !== 'APPROVED' || !request.overtimeEndAt) return;
-
-    const update = () => {
-      const end = new Date(request.overtimeEndAt!).getTime();
-      const now = Date.now();
-      const remaining = Math.max(0, Math.round((end - now) / 60000));
-      setRemainingMinutes(remaining);
-    };
-
-    update();
-    const interval = setInterval(update, 30000);
-    return () => clearInterval(interval);
-  }, [request?.status, request?.overtimeEndAt]);
+  // Countdown for approved overtime — derived from the clock, which pauses in the background.
+  const counting = request?.status === 'APPROVED' && !!request.overtimeEndAt;
+  const nowMs = useNow(30_000, counting);
+  const remainingMinutes = counting
+    ? Math.max(0, Math.round((new Date(request!.overtimeEndAt!).getTime() - nowMs) / 60000))
+    : null;
 
   const respond = useQueuedCreate('overtime.respond', { idField: null });
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
-import { AppState } from 'react-native';
+import { onAppResume } from '../lib/app-resume';
 import * as Notifications from 'expo-notifications';
 import { setNotificationSuppressor } from '../lib/notification-suppression';
 import { notificationTime, reminderAnswered } from './attendance/answered-reminders';
@@ -187,8 +187,7 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         });
         unsubscribers.push(() => setResponseCache(null));
         unsubscribers.push(connectivity.subscribe((state) => void (state === 'online' && live.flush())));
-        const portalAppState = AppState.addEventListener('change', (st) => void (st === 'active' && live.flush()));
-        unsubscribers.push(() => portalAppState.remove());
+        unsubscribers.push(onAppResume(() => void live.flush()));
         void live.flush();
         return;
       }
@@ -262,15 +261,15 @@ export function OfflineProvider({ children, variant = 'staff' }: {
       unsubscribers.push(live.subscribe(() => void clearAnsweredReminders()));
       void clearAnsweredReminders();
 
-      const appState = AppState.addEventListener('change', (s) => {
-        if (s !== 'active') return;
+      // The app's one throttled resume (lib/app-resume); reconnecting flushes on its own.
+      const offResume = onAppResume(() => {
         void live.flush();
         void flushPendingRoute();
         void flushKeptCheckIns();
         void avatar.flush();
         void clearAnsweredReminders();
       });
-      unsubscribers.push(() => appState.remove());
+      unsubscribers.push(offResume);
       void live.syncAll().then(fillMediaCache);
     })().catch((err) => {
       console.warn('[offline] could not start:', err);

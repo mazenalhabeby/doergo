@@ -4,6 +4,7 @@ type LocalAuthenticationLib = typeof import('expo-local-authentication');
 type CryptoLib = typeof import('expo-crypto');
 type DocumentPickerLib = typeof import('expo-document-picker');
 type ContactsLib = typeof import('expo-contacts');
+type ImageLib = typeof import('expo-image');
 
 /*
   ⚠️ NATIVE LIBRARIES ADDED AFTER A STORE BUILD ARE NEVER IMPORTED AT MODULE SCOPE.
@@ -60,4 +61,15 @@ export function documentPicker(): DocumentPickerLib | null {
 export function expoContacts(): ContactsLib | null {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return optional('ExpoContacts', () => require('expo-contacts') as ContactsLib);
+}
+
+/**
+ * expo-image — avatars with a memory + disk cache. In package.json since
+ * 2026-07-31, so every store build the OTA trains reach carries it; asked
+ * first anyway, because `expo-image` binds `ExpoImage` (module AND view) the
+ * moment it is evaluated. Null: the caller draws React Native's own Image.
+ */
+export function expoImage(): ImageLib | null {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return optional('ExpoImage', () => require('expo-image') as ImageLib);
 }

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Animated as RNAnimated, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import { onAppStateChange } from '../../lib/app-resume';
+import { Animated as RNAnimated, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { daysLate, hasAccessModule } from '@hbcfield/shared/client';
@@ -117,8 +118,8 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
   }, []);
   useEffect(() => {
     const timer = setTimeout(syncDay, msUntilNextDay() + 1000);
-    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') syncDay(); });
-    return () => { clearTimeout(timer); sub.remove(); };
+    const off = onAppStateChange((st) => { if (st === 'active') syncDay(); });
+    return () => { clearTimeout(timer); off(); };
   }, [todayMs, syncDay]);
 
   /*

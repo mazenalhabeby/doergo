@@ -153,6 +153,9 @@ export function JobsScreen({
     router.push((sheet ? `/task/${task.id}?sheet=${encodeURIComponent(sheet)}` : ROUTES.taskDetail(task.id)) as Href);
   }, [r.isSplit]);
 
+  // One callback for every row, so `memo(JobRow)` holds (see sameJobRowProps).
+  const openById = useCallback((id: string) => open({ id }), [open]);
+
   const labelFor = useCallback((task: ListTask) => {
     if (task.status === 'BLOCKED' && !stepsFor(task, flows)?.some((s) => s.key === 'BLOCKED')) return t('status.BLOCKED');
     return stepLabelFor(task, flows, t as never);
@@ -293,7 +296,7 @@ export function JobsScreen({
               place={placeOf(item as never)}
               right={rowRight(item, f)}
               stepLabel={labelFor(item)}
-              onPress={() => open(item)}
+              onOpen={openById}
             />
           );
           return (

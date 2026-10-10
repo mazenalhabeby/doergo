@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useNow } from './use-now';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '../lib/api';
 
@@ -16,14 +16,9 @@ export function useJobTime(taskId: string | null | undefined) {
     enabled: !!taskId,
     staleTime: 60_000,
   });
-  const [now, setNow] = useState(() => Date.now());
   const live = !!query.data?.live;
-  useEffect(() => {
-    if (!live) return;
-    setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(timer);
-  }, [live]);
+  // Paused in the background; moved at once when the job goes live or the app comes back.
+  const now = useNow(30_000, live);
   return { view: query.data ?? null, now };
 }
 

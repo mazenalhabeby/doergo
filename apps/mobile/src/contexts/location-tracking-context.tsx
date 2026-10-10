@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useLocationTracking, type RouteDestinationInput } from '../hooks/useLocationTracking';
 
 interface LocationTrackingContextType {
@@ -20,19 +20,15 @@ const LocationTrackingContext = createContext<LocationTrackingContextType>({
 });
 
 export function LocationTrackingProvider({ children }: { children: ReactNode }) {
-  const tracking = useLocationTracking();
+  const { isTracking, activeTaskId, lastLocation, error, startTracking, stopTracking } = useLocationTracking();
+  // ⚠️ Stable: rebuilt only when one of these changes, not on every render of the app layout.
+  const value = useMemo(
+    () => ({ isTracking, activeTaskId, lastLocation, error, startTracking, stopTracking }),
+    [isTracking, activeTaskId, lastLocation, error, startTracking, stopTracking],
+  );
 
   return (
-    <LocationTrackingContext.Provider
-      value={{
-        isTracking: tracking.isTracking,
-        activeTaskId: tracking.activeTaskId,
-        lastLocation: tracking.lastLocation,
-        error: tracking.error,
-        startTracking: tracking.startTracking,
-        stopTracking: tracking.stopTracking,
-      }}
-    >
+    <LocationTrackingContext.Provider value={value}>
       {children}
     </LocationTrackingContext.Provider>
   );

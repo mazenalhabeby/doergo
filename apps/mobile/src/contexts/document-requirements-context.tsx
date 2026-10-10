@@ -1,7 +1,7 @@
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
-import { AppState } from 'react-native';
+import { onAppResume } from '../lib/app-resume';
 import { useAuth } from './auth-context';
 import { documentsApi } from '../lib/api/documents';
 import { orgHasAddOn } from '@hbcfield/shared/client';
@@ -186,10 +186,8 @@ export function DocumentRequirementsProvider({ children }: { children: React.Rea
 
   useEffect(() => {
     if (!enabled) return;
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void refresh();   // throttled — see MIN_INTERVAL_MS
-    });
-    return () => sub.remove();
+    // The app's one throttled resume; `refresh` throttles again — see MIN_INTERVAL_MS.
+    return onAppResume(() => void refresh());
   }, [enabled, refresh]);
 
   const value = useMemo<DocumentRequirementsValue>(() => ({

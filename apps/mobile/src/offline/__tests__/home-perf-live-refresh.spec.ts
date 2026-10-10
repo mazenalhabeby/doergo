@@ -26,6 +26,7 @@ jest.mock('react-native', () => {
 
 import { AppState } from 'react-native';
 import { focus, mountHook, settle } from './hook-harness';
+import { __resetAppResume } from '../../lib/app-resume';
 import { connectivity } from '../connectivity';
 import { LIVE_REFRESH_COALESCE_MS, useLiveRefresh, type LiveRefreshOptions } from '../../hooks/use-live-refresh';
 
@@ -47,8 +48,18 @@ beforeEach(() => {
   focus.focused = true;
   focus.epoch = 0;
   appState.currentState = 'active';
+  __resetAppResume();
   connectivity.setNetwork('up');
 });
+
+/** A real return to the app: React Native reports the background first; the resume is the app's ONE, at most every 30 s. */
+function comeBack() {
+  appState.currentState = 'background';
+  appState.mockEmit('background');
+  jest.advanceTimersByTime(31_000);
+  appState.currentState = 'active';
+  appState.mockEmit('active');
+}
 afterEach(() => {
   jest.useRealTimers();
 });
@@ -97,15 +108,26 @@ describe('what does NOT trigger one', () => {
     focus.focused = false;
     m.render();
     jest.advanceTimersByTime(LIVE_REFRESH_COALESCE_MS * 2);
-    appState.mockEmit('active');
+    comeBack();
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
   it('resuming on the home asks once', () => {
     mountHook(useSubject);
     jest.advanceTimersByTime(LIVE_REFRESH_COALESCE_MS * 2);
-    appState.mockEmit('active');
+    comeBack();
     expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('a glance away and back inside 30 s asks nothing (the app\'s one throttled resume)', () => {
+    mountHook(useSubject);
+    jest.advanceTimersByTime(LIVE_REFRESH_COALESCE_MS * 2);
+    appState.currentState = 'background';
+    appState.mockEmit('background');
+    jest.advanceTimersByTime(5_000);
+    appState.currentState = 'active';
+    appState.mockEmit('active');
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
 

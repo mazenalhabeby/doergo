@@ -257,6 +257,41 @@ export function placeOf(task: Pick<Task, 'locationAddress'> & { space?: { name?:
   return first || task.space?.name?.trim() || null;
 }
 
+/* ---------------- a row redraws only when what it shows changed ---------------- */
+
+/** Same right-hand fact? By VALUE — `rowRight` builds a new object on every render. */
+export function sameRowRight(a: RowRight, b: RowRight): boolean {
+  if (a === b) return true;
+  if (a.kind !== b.kind) return false;
+  if (a.kind === 'late') return a.days === (b as { days: number }).days;
+  if (a.kind === 'due') return a.at === (b as { at: string }).at;
+  return true;
+}
+
+/** Same "who has it"? By value, for the same reason. */
+export function sameRowWho(a: RowWho, b: RowWho): boolean {
+  if (a === b) return true;
+  if (a == null || b == null) return false;
+  if (a.kind !== b.kind) return false;
+  return a.kind !== 'name' || a.name === (b as { name: string }).name;
+}
+
+/**
+ * ⚠️ THE ROW'S MEMO. `memo(JobRow)` compared `who` and `right` by reference,
+ * and both are rebuilt for every row on every render of the list — so every
+ * visible row redrew whenever anything on the screen changed (a keystroke in
+ * search, a chip). Everything else a row takes is a primitive or a stable
+ * callback (`onOpen(id)`).
+ */
+export function sameJobRowProps<P extends { who: RowWho; right: RowRight }>(a: P, b: P): boolean {
+  for (const k of Object.keys(a) as (keyof P)[]) {
+    if (k === 'who' || k === 'right') continue;
+    if (a[k] !== b[k]) return false;
+  }
+  if (Object.keys(b).length !== Object.keys(a).length) return false;
+  return sameRowWho(a.who, b.who) && sameRowRight(a.right, b.right);
+}
+
 /* ---------------- the empty well ---------------- */
 
 type EmptyKind = 'search' | 'blocked' | 'history' | 'none';

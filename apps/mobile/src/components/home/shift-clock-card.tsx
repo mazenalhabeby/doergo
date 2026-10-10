@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNow } from '../../hooks/use-now';
 import { Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
@@ -152,11 +153,8 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
     this only says "the clock moved, read it again". A phone that slept through
     lunch is right the instant it wakes, because nothing was being counted.
   */
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
+  const nowMs = useNow(30_000);
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
 
   const refresh = shift.refresh;
   /*

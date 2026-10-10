@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useNow } from '../../hooks/use-now';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -52,11 +53,8 @@ export function ExtraTimeScreen() {
   const [busy, setBusy] = useState(false);
 
   // The minute moves, so "past the end" does too — derived, never counted up.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
+  const nowMs = useNow(30_000);
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
 
   const load = useCallback(async () => {
     try {

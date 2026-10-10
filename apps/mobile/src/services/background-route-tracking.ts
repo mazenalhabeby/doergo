@@ -8,6 +8,7 @@ import i18n from '../i18n';
 import { requestBackgroundLocationConsent } from './location-consent';
 import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
 import { cleanRoutePoints, type RoutePoint } from '@hbcfield/shared/client';
+import { createRouteBuffer, PENDING_PREFIX, type FlushPoint, type PendingBurst } from './route-buffer';
 
 /**
  * Background route tracking.
@@ -49,12 +50,14 @@ const LAST_POINT_KEY = 'route_last_point';
 /*
   ⚠️ ONE LIST PER MEMBER. A route is where a person drove. A device-wide list
   meant the points member A collected in a tunnel were uploaded with member B's
-  token as soon as B signed in — onto B's route, as B's movements. The key now
-  carries the session owner (the token's `sub`), only the owner's list is ever
-  sent, and `forgetRouteData` removes every list at the end of a session.
+  token as soon as B signed in — onto B's route, as B's movements. The keys
+  carry the session owner (the token's `sub`), only the owner's points are ever
+  sent, and `forgetRouteData` removes every key at the end of a session.
+
+  ⚠️ HELD IN SMALL CHUNKS (route-buffer.ts), not one value rewritten whole —
+  that was up to ~400 KB of JSON written per burst, every 30 s, offline.
 */
-const PENDING_KEY = 'route_pending_bursts';
-const pendingKey = (owner: string) => `${PENDING_KEY}:${owner}`;
+const PENDING_KEY = PENDING_PREFIX;
 // Ceiling on what we hold without signal: at ~20 m per point about 100 km of
 // route, under 1 MB on the phone. Past it the OLDEST points go, because the
 // recent ones describe where the member is now.
@@ -69,67 +72,12 @@ interface RawLocation {
   timestamp: number;
 }
 
-interface FlushPoint {
-  lat: number;
-  lng: number;
-  accuracy?: number;
-  timestamp?: string;
-}
-
 // Flips to true once we learn the batch endpoint isn't available (older server)
 // so we stop paying a guaranteed-failing batch request before each fallback.
 // Module-scoped: persists while the tracking session's process is alive.
 let batchUnsupported = false;
 
-/** A burst of points waiting for a working connection. */
-interface PendingBurst {
-  taskId?: string;
-  points: FlushPoint[];
-}
-
-async function loadPending(owner: string): Promise<PendingBurst[]> {
-  try {
-    const raw = await AsyncStorage.getItem(pendingKey(owner));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as PendingBurst[];
-    if (!Array.isArray(parsed)) return [];
-    const cutoff = Date.now() - MAX_PENDING_AGE_MS;
-    return parsed.filter((b) => {
-      if (!b?.points?.length) return false;
-      const stamp = b.points[0].timestamp ? Date.parse(b.points[0].timestamp) : NaN;
-      return Number.isNaN(stamp) || stamp >= cutoff;
-    });
-  } catch {
-    // Unreadable or corrupt — start clean rather than fail the flush.
-    return [];
-  }
-}
-
-async function savePending(owner: string, bursts: PendingBurst[]): Promise<void> {
-  try {
-    if (!bursts.length) {
-      await AsyncStorage.removeItem(pendingKey(owner));
-      return;
-    }
-    // Trim from the front — oldest points are the least useful.
-    const trimmed = [...bursts];
-    let total = trimmed.reduce((n, b) => n + b.points.length, 0);
-    while (total > MAX_PENDING_POINTS && trimmed.length) {
-      const excess = total - MAX_PENDING_POINTS;
-      const first = trimmed[0];
-      if (first.points.length <= excess) {
-        total -= first.points.length;
-        trimmed.shift();
-      } else {
-        first.points = first.points.slice(excess);
-        total -= excess;
-      }
-    }
-    await AsyncStorage.setItem(pendingKey(owner), JSON.stringify(trimmed));
-  } catch (err) {
-    console.warn('[Route] Could not persist pending points:', err);
-  }
-}
+const held = createRouteBuffer(AsyncStorage, { maxPoints: MAX_PENDING_POINTS, maxAgeMs: MAX_PENDING_AGE_MS });
 
 /**
  * Send one burst. Returns the points still undelivered — empty means the server
@@ -218,21 +166,22 @@ async function flushQueue(fresh: PendingBurst[]): Promise<void> {
   // Whose points these are: the member the token belongs to. Nobody → nothing is sent or kept.
   const owner = await sessionOwnerId();
   if (!owner) return;
-  const queue: PendingBurst[] = [...(await loadPending(owner)), ...fresh];
-  if (!queue.length) return;
+  // What was held goes first, oldest first; one failure means the connection is
+  // down, and trying the rest would only hold the radio up for nothing.
+  const allHeldSent = await held.drain(owner, (b) => sendBurst(b.taskId, b.points), BATCH_MAX_POINTS);
+  if (!allHeldSent) {
+    await held.append(owner, fresh);
+    return;
+  }
   const remaining: PendingBurst[] = [];
-
-  for (let i = 0; i < queue.length; i++) {
-    const left = await sendBurst(queue[i].taskId, queue[i].points);
+  for (let i = 0; i < fresh.length; i++) {
+    const left = await sendBurst(fresh[i].taskId, fresh[i].points);
     if (left.length) {
-      // One failure means the connection is down; trying the rest would only
-      // hold the radio up for nothing. Keep them all for the next burst.
-      remaining.push({ taskId: queue[i].taskId, points: left }, ...queue.slice(i + 1));
+      remaining.push({ taskId: fresh[i].taskId, points: left }, ...fresh.slice(i + 1));
       break;
     }
   }
-
-  await savePending(owner, remaining);
+  await held.append(owner, remaining);
 }
 
 // ── Background task — runs in a separate JS context, no React state access ──

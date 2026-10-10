@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useNow } from '../../hooks/use-now';
 import { StyleSheet, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
@@ -18,11 +19,7 @@ export function FreshnessLabel({ at }: { at: number | null }) {
   const { colors } = useTheme();
   const { formatTime } = useTimeFormat();
   // Re-read once a minute, so a screen left open ages on its own.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useNow(60_000);
 
   const f = freshnessOf(at, now);
   if (f.kind === 'never') return null;

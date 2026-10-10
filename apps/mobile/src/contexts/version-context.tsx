@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { onAppResume } from '../lib/app-resume';
 import { checkVersion, type VersionStatus } from '../lib/version-gate';
 
 /**
@@ -77,14 +77,16 @@ export function VersionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     void run(true);
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void run();
-    });
-    return () => sub.remove();
+    // The app's one throttled resume (lib/app-resume); `run` throttles again to 15 min.
+    return onAppResume(() => void run());
   }, [run]);
 
+  // ⚠️ A stable value: a fresh object here re-rendered every consumer on every render of the root.
+  const refresh = useCallback(() => run(true), [run]);
+  const value = useMemo(() => ({ status, refresh }), [status, refresh]);
+
   return (
-    <VersionContext.Provider value={{ status, refresh: () => run(true) }}>
+    <VersionContext.Provider value={value}>
       {children}
     </VersionContext.Provider>
   );

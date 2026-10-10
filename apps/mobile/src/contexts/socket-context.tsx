@@ -36,8 +36,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return subscribe(SocketEvents.MEMBER_ACCESS_UPDATED, () => { void refreshUser(); });
   }, [isAuthenticated, subscribe, refreshUser]);
 
+  // ⚠️ Stable: a fresh object re-rendered every subscriber each time the app layout rendered.
+  const value = useMemo(() => ({ isConnected, isAuthenticated, subscribe, emit }), [isConnected, isAuthenticated, subscribe, emit]);
+
   return (
-    <SocketContext.Provider value={{ isConnected, isAuthenticated, subscribe, emit }}>
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   );

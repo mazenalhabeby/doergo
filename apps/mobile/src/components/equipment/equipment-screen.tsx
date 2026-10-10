@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -215,93 +215,86 @@ export function EquipmentScreen() {
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader title={t('myAssets.title', 'My equipment')} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
-      <ScrollView
+      {/*
+        ⚠️ VIRTUALISED. "Sent in" is everything a member ever logged or claimed
+        — it only grows — and it was drawn in full on open, inside one
+        ScrollView. It is the list now; what is due and what you hold (a few
+        things) ride above it as the header. Each row draws its own slice of
+        the well, as on Jobs.
+      */}
+      <FlatList
+        data={items}
+        keyExtractor={(i) => i.key}
+        initialNumToRender={12}
+        windowSize={9}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
+        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={c.accent} colors={[c.accent]} />}
-      >
-        {stale ? <Banner tone="warn" text={t('equipment.stale', 'Could not load just now — this is what the app last knew.')} action={{ label: t('common.retry', 'Try again'), onPress: () => void load(true) }} /> : null}
+        ListHeaderComponent={
+          <View style={{ gap: amazen.space(3) }}>
+            {stale ? <Banner tone="warn" text={t('equipment.stale', 'Could not load just now — this is what the app last knew.')} action={{ label: t('common.retry', 'Try again'), onPress: () => void load(true) }} /> : null}
 
-        {data === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>{t('common.loading', 'Loading…')}</AText>
-        ) : null}
+            {data === null ? (
+              <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>{t('common.loading', 'Loading…')}</AText>
+            ) : null}
 
-        {due.length > 0 ? (
-          <>
-            <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{`${t('logbook.dueSoon', 'Due soon')} · ${due.length}`}</SectionLabel>
-            <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-              {due.map((d, i) => {
-                const late = d.stage === 'overdue';
-                return (
-                  <Pressable key={`${d.assetId}:${d.key}`} onPress={() => logFor(d.assetId, d.key)} accessibilityRole="button"
-                    style={({ pressed }) => ({ paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, gap: 6, opacity: pressed ? 0.75 : 1 })}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{`${d.assetName} · ${d.label}`}</AText>
-                        <AText variant="caption" numberOfLines={1} style={{ color: late ? c.critical : c.warn }}>{dueLine(d)}</AText>
-                      </View>
-                      <AText variant="body" tone="muted">›</AText>
-                    </View>
-                    <View style={{ height: 5, borderRadius: 3, backgroundColor: c.tile, overflow: 'hidden' }}>
-                      <View style={{ width: `${Math.min(100, Math.max(4, Math.round(d.progress * 100)))}%`, height: '100%', borderRadius: 3, backgroundColor: late ? c.critical : c.warn }} />
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </Well>
-          </>
-        ) : null}
+            {due.length > 0 ? (
+              <>
+                <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{`${t('logbook.dueSoon', 'Due soon')} · ${due.length}`}</SectionLabel>
+                <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
+                  {due.map((d, i) => {
+                    const late = d.stage === 'overdue';
+                    return (
+                      <Pressable key={`${d.assetId}:${d.key}`} onPress={() => logFor(d.assetId, d.key)} accessibilityRole="button"
+                        style={({ pressed }) => ({ paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, gap: 6, opacity: pressed ? 0.75 : 1 })}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{`${d.assetName} · ${d.label}`}</AText>
+                            <AText variant="caption" numberOfLines={1} style={{ color: late ? c.critical : c.warn }}>{dueLine(d)}</AText>
+                          </View>
+                          <AText variant="body" tone="muted">›</AText>
+                        </View>
+                        <View style={{ height: 5, borderRadius: 3, backgroundColor: c.tile, overflow: 'hidden' }}>
+                          <View style={{ width: `${Math.min(100, Math.max(4, Math.round(d.progress * 100)))}%`, height: '100%', borderRadius: 3, backgroundColor: late ? c.critical : c.warn }} />
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </Well>
+              </>
+            ) : null}
 
-        {data && held.length === 0 && !stale ? (
-          <View style={{ alignItems: 'center', paddingVertical: amazen.space(8), gap: amazen.space(2) }}>
-            <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />
-            <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{t('myAssets.empty', 'No equipment has been handed to you yet.')}</AText>
+            {data && held.length === 0 && !stale ? (
+              <View style={{ alignItems: 'center', paddingVertical: amazen.space(8), gap: amazen.space(2) }}>
+                <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />
+                <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{t('myAssets.empty', 'No equipment has been handed to you yet.')}</AText>
+              </View>
+            ) : null}
+            {held.length > 0 ? <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('equipment.youHold', 'You hold')} · ${held.length}`}</SectionLabel> : null}
+            {held.map(card)}
+
+            {offerContract ? (
+              <SheetOption label={t('documents.supply.contract', 'Contract for a vehicle or equipment')} hint={t('documents.supply.contractHint')} onPress={() => router.push('/(app)/send-document' as never)} />
+            ) : null}
+            {items.length > 0 ? (
+              <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2), paddingBottom: 0 }}>{`${t('equipment.sentIn', 'Sent in')} · ${items.length}`}</SectionLabel>
+            ) : null}
           </View>
-        ) : null}
-        {held.length > 0 ? <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('equipment.youHold', 'You hold')} · ${held.length}`}</SectionLabel> : null}
-        {held.map(card)}
-
-        {offerContract ? (
-          <SheetOption label={t('documents.supply.contract', 'Contract for a vehicle or equipment')} hint={t('documents.supply.contractHint')} onPress={() => router.push('/(app)/send-document' as never)} />
-        ) : null}
-
-        {items.length > 0 ? (
-          <>
-            <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{`${t('equipment.sentIn', 'Sent in')} · ${items.length}`}</SectionLabel>
-            <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-              {items.map((i, n) => {
-                const tone = i.state === 'toSend' || i.state === 'office' ? c.warn : i.state === 'refused' ? c.critical : i.state === 'accepted' ? c.accent : c.inkMuted;
-                const lead = [day(i.at), i.reading].filter(Boolean).join(' · ');
-                return (
-                  <View key={i.key} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), borderTopWidth: n === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
-                    <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name={i.kind === 'contract' ? 'document-text-outline' : i.state === 'toSend' ? 'cloud-upload-outline' : 'receipt-outline'} size={16} color={c.ink} />
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{[whatOf(i), i.about].filter(Boolean).join(' · ')}</AText>
-                      <AText variant="caption" numberOfLines={2} style={{ color: c.inkMuted }}>
-                        {`${lead} · `}
-                        <AText variant="caption" style={{ color: tone }}>{stateWords(i)}</AText>
-                        {i.reason ? <AText variant="caption" tone="muted">{` — “${i.reason}”`}</AText> : null}
-                      </AText>
-                      {canTakeBack(i) ? (
-                        <Pressable onPress={() => setTakingBack(i)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-                          <AText variant="caption" style={{ color: c.critical }}>{t('logbook.withdraw', 'Take back')}</AText>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                    {i.amountCents ? (
-                      <AText numeric style={{ fontSize: 14, color: i.state === 'refused' || i.state === 'takenBack' ? c.inkMuted : i.direction === 'IN' ? c.accent : c.inkStrong }}>
-                        {`${i.direction === 'IN' ? '+' : ''}${money(i.amountCents)}`}
-                      </AText>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </Well>
-          </>
-        ) : null}
-      </ScrollView>
+        }
+        renderItem={({ item, index }) => (
+          <SentRow
+            item={item}
+            first={index === 0}
+            last={index === items.length - 1}
+            what={whatOf(item)}
+            stateText={stateWords(item)}
+            dayText={day(item.at)}
+            amountText={item.amountCents ? money(item.amountCents) : null}
+            onTakeBack={setTakingBack}
+            takeBackLabel={t('logbook.withdraw', 'Take back')}
+          />
+        )}
+      />
 
       {/* ---------- one piece of equipment ---------- */}
       <JobSheet visible={!!opened} onClose={() => setOpened(null)} title={opened?.asset?.name} eyebrow={opened?.asset?.category?.name ? <SectionLabel>{opened.asset.category.name}</SectionLabel> : undefined}>
@@ -395,3 +388,59 @@ function Fact({ label, value, first, tone, onPress }: { label: string; value: st
   );
   return onPress ? <Pressable onPress={onPress} accessibilityRole="button">{body}</Pressable> : body;
 }
+
+/**
+ * One thing sent in — its slice of the "Sent in" well. Memoised on what it
+ * shows: the strings are worked out by the screen, so a row redraws only when
+ * its own words change.
+ */
+const SentRow = memo(function SentRow({ item: i, first, last, what, stateText, dayText, amountText, onTakeBack, takeBackLabel }: {
+  item: SentItem;
+  first: boolean;
+  last: boolean;
+  what: string;
+  stateText: string;
+  dayText: string;
+  amountText: string | null;
+  onTakeBack: (i: SentItem) => void;
+  takeBackLabel: string;
+}) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  const radius = amazen.radius.panel;
+  const tone = i.state === 'toSend' || i.state === 'office' ? c.warn : i.state === 'refused' ? c.critical : i.state === 'accepted' ? c.accent : c.inkMuted;
+  const lead = [dayText, i.reading].filter(Boolean).join(' · ');
+  return (
+    <View
+      style={{
+        backgroundColor: c.well, paddingHorizontal: amazen.space(3.5),
+        ...(first ? { borderTopLeftRadius: radius, borderTopRightRadius: radius, marginTop: amazen.space(3) } : null),
+        ...(last ? { borderBottomLeftRadius: radius, borderBottomRightRadius: radius } : null),
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell }}>
+        <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name={i.kind === 'contract' ? 'document-text-outline' : i.state === 'toSend' ? 'cloud-upload-outline' : 'receipt-outline'} size={16} color={c.ink} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>{[what, i.about].filter(Boolean).join(' · ')}</AText>
+          <AText variant="caption" numberOfLines={2} style={{ color: c.inkMuted }}>
+            {`${lead} · `}
+            <AText variant="caption" style={{ color: tone }}>{stateText}</AText>
+            {i.reason ? <AText variant="caption" tone="muted">{` — “${i.reason}”`}</AText> : null}
+          </AText>
+          {canTakeBack(i) ? (
+            <Pressable onPress={() => onTakeBack(i)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+              <AText variant="caption" style={{ color: c.critical }}>{takeBackLabel}</AText>
+            </Pressable>
+          ) : null}
+        </View>
+        {amountText ? (
+          <AText numeric style={{ fontSize: 14, color: i.state === 'refused' || i.state === 'takenBack' ? c.inkMuted : i.direction === 'IN' ? c.accent : c.inkStrong }}>
+            {`${i.direction === 'IN' ? '+' : ''}${amountText}`}
+          </AText>
+        ) : null}
+      </View>
+    </View>
+  );
+});

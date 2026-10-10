@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useBiometricUnlock } from '../../src/hooks/use-biometric-unlock';
 import { resolveCapability, getKeyOwner } from '../../src/lib/biometrics';
-import { BiometricIcon } from '../../src/components';
+import { BiometricIcon } from '../../src/components/biometric-icon';
 import { useTheme } from '../../src/contexts/theme-context';
 import { ROUTES } from '../../src/lib/constants';
 import { AText, PrimaryButton } from '../../src/components/amazen';

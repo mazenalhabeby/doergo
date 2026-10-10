@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useNow } from '../../hooks/use-now';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
@@ -79,11 +80,8 @@ function LeaveBy({ dueDate, taskLat, taskLng, here, atSite }: {
 }) {
   const { t } = useTranslation();
   const { formatTime } = useTimeFormat();
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000);
-    return () => clearInterval(id);
-  }, []);
+  const nowMs = useNow(60_000);
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
   const estimate: TravelEstimate = useMemo(() => {
     if (here && taskLat != null && taskLng != null) return straightLineTravel(haversineDistance(here.lat, here.lng, taskLat, taskLng));
     return { seconds: 0, source: 'unknown' };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, View } from 'react-native';
+import { View } from 'react-native';
+import { CachedImage } from '../cached-image';
 import { useTheme } from '../../contexts/theme-context';
 import { resolveMediaUrl } from '../../lib/api';
 import { AText } from '../amazen';
@@ -39,7 +40,7 @@ export function PersonAvatar({
   return (
     <View style={{ width: size, height: size }}>
       {img ? (
-        <Image source={{ uri: img }} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.tile }} />
+        <CachedImage uri={img} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.tile }} />
       ) : (
         <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
           <AText style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: Math.round(size * 0.32) }}>{initials}</AText>

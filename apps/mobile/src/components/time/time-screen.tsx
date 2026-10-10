@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNow } from '../../hooks/use-now';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import * as Location from 'expo-location';
 import { useFocusEffect } from '@react-navigation/native';
@@ -63,11 +64,8 @@ export function TimeScreen() {
   const r = useResponsive();
 
   // The minute moves; nothing is counted up. Every figure derives from the clock.
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(id);
-  }, []);
+  const nowMs = useNow(30_000);
+  const now = useMemo(() => new Date(nowMs), [nowMs]);
 
   /* ---------------- the shift ---------------- */
   const shift = useShift();

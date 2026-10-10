@@ -214,3 +214,32 @@ export function suggestedExtra(pastMinutes: number): number {
 export function stepExtra(minutes: number, dir: 1 | -1): number {
   return Math.min(EXTRA_MAX, Math.max(EXTRA_STEP, minutes + dir * EXTRA_STEP));
 }
+
+/* ---------------- while on the clock (use-shift-watch.ts) ---------------- */
+
+/** The foreground heartbeat's cadence — every five minutes while the app is IN FRONT. */
+export const FOREGROUND_HEARTBEAT_MS = 5 * 60 * 1000;
+
+/**
+ * Is a foreground heartbeat due?
+ *
+ * ⚠️ ONLY WHILE THE APP IS IN FRONT. The five-minute `setInterval` kept firing
+ * behind another app on Android (the shift's own foreground service keeps JS
+ * alive), and each tick took a FRESH GPS fix — on top of the background
+ * heartbeat that exists for exactly that time (15 min / 150 m, plus native
+ * geofencing). In the background it now waits; on the way back it beats at
+ * once if five minutes have gone, never more often.
+ */
+export function heartbeatDue(lastBeatMs: number, nowMs: number, appActive: boolean, everyMs = FOREGROUND_HEARTBEAT_MS): boolean {
+  return appActive && nowMs - lastBeatMs >= everyMs;
+}
+
+/** "4:05" / "1:02:09" left of an approved excursion's grace. */
+export function graceCountdown(targetMs: number, nowMs: number): string {
+  const total = Math.floor(Math.max(0, targetMs - nowMs) / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
