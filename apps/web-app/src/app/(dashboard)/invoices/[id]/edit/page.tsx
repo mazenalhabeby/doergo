@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 import { InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection } from "../../_components/invoice-shell"
 import { InvoiceDocument, fmtDate, type DocumentRow, type DocumentView } from "../../_components/invoice-document"
+import { useInvoiceHeader, invoiceHeaderBody } from "../../_components/use-invoice-header"
 import {
   ClientFields, TermsFields, LineEditor, IssuedByField, num,
   type EditableLine,
@@ -87,15 +88,12 @@ function EditInvoiceInner({ id }: { id: string }) {
   const { data: org } = useOrgLetterhead()
 
   const [view, setView] = useState<DocumentView>("build")
-  const [clientName, setClientName] = useState("")
-  const [clientEmail, setClientEmail] = useState("")
-  const [clientAddress, setClientAddress] = useState("")
-  const [issueDate, setIssueDate] = useState("")
-  const [dueDate, setDueDate] = useState("")
-  const [currency, setCurrency] = useState("EUR")
-  const [taxPct, setTaxPct] = useState("")
-  const [discount, setDiscount] = useState("")
-  const [notes, setNotes] = useState("")
+  const header = useInvoiceHeader()
+  const {
+    clientName, setClientName, clientEmail, setClientEmail, clientAddress, setClientAddress,
+    currency, setCurrency, issueDate, setIssueDate, dueDate, setDueDate,
+    taxPct, setTaxPct, discount, setDiscount, notes, setNotes, loadHeader,
+  } = header
   const [lines, setLines] = useState<EditableLine[]>([])
   const [seeded, setSeeded] = useState(false)
   const [showLineTags, setShowLineTags] = useState(true)
@@ -112,15 +110,17 @@ function EditInvoiceInner({ id }: { id: string }) {
   // whatever the person had typed.
   useEffect(() => {
     if (!inv || seeded) return
-    setClientName(inv.clientName ?? "")
-    setClientEmail(inv.clientEmail ?? "")
-    setClientAddress(inv.clientAddress ?? "")
-    setIssueDate(inv.issueDate ? inv.issueDate.slice(0, 10) : "")
-    setDueDate(inv.dueDate ? inv.dueDate.slice(0, 10) : "")
-    setCurrency(inv.currency || "EUR")
-    setTaxPct(inv.taxRate != null ? String(inv.taxRate * 100) : "")
-    setDiscount(String(inv.discount ?? 0))
-    setNotes(inv.notes ?? "")
+    loadHeader({
+      clientName: inv.clientName ?? "",
+      clientEmail: inv.clientEmail ?? "",
+      clientAddress: inv.clientAddress ?? "",
+      issueDate: inv.issueDate ? inv.issueDate.slice(0, 10) : "",
+      dueDate: inv.dueDate ? inv.dueDate.slice(0, 10) : "",
+      currency: inv.currency || "EUR",
+      taxPct: inv.taxRate != null ? String(inv.taxRate * 100) : "",
+      discount: String(inv.discount ?? 0),
+      notes: inv.notes ?? "",
+    })
     setLines((inv.items ?? []).map(toLine))
     setShowLineTags(inv.showLineTags !== false)
     setLegalEntityId(inv.legalEntityId ?? null)
@@ -224,19 +224,12 @@ function EditInvoiceInner({ id }: { id: string }) {
       }
 
       await invoicesApi.update(inv.id, {
-        clientName: clientName.trim(),
-        clientEmail: clientEmail.trim() || undefined,
-        clientAddress: clientAddress.trim() || undefined,
-        currency,
+        ...invoiceHeaderBody(header.header),
         ...exchange.payload,
         showLineTags,
         issueDate: issueDate || undefined,
-        // Cleared on purpose stays cleared: the PDF then reads "On receipt"
-        // rather than inventing a term nobody agreed.
-        dueDate: dueDate || undefined,
+        // An empty tax on a draft keeps what it had.
         taxRate: taxPct.trim() === "" ? undefined : num(taxPct) / 100,
-        discount: num(discount),
-        notes: notes.trim() || undefined,
         // Only when it changed: the server then renumbers it in the new company's series.
         ...(legalEntityId !== (inv.legalEntityId ?? null) ? { legalEntityId } : {}),
       })
@@ -362,8 +355,8 @@ function EditInvoiceInner({ id }: { id: string }) {
           showTags={showLineTags}
           view={view}
           onView={setView}
-          /* The header as the form holds it — the same names on both sides. */
-          {...{ clientName, clientEmail, clientAddress, issueDate, dueDate, periodLabel, currency, taxPct, discount, notes }}
+          {...header.header}
+          periodLabel={periodLabel}
           items={documentItems}
           subtotal={subtotal}
           taxAmount={taxAmount}

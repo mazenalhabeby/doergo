@@ -7,12 +7,13 @@ import { keys } from "@/lib/query-keys"
 import { invoicesApi, customersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import type { useExchangeRate } from "../../_lib/use-exchange-rate"
+import { invoiceHeaderBody, type InvoiceHeader } from "../../_components/use-invoice-header"
+import { num } from "../../_components/invoice-fields"
 
 /** Save the draft — the very rows the document rendered — and, if asked, keep the client. */
 export function useCreateInvoice({
   t, router, queryClient, documentItems, spaceId, legalEntityId, source, customerId,
-  clientName, clientEmail, clientAddress, currency, exchange, showLineTags, taxPct, discount,
-  issueDate, dueDate, periodFrom, periodTo, notes, addToCrm,
+  header, exchange, showLineTags, periodFrom, periodTo, addToCrm,
 }: {
   t: TFunction
   router: { push: (href: string) => void }
@@ -22,19 +23,12 @@ export function useCreateInvoice({
   legalEntityId: string | null
   source: "space" | "client" | "none"
   customerId: string
-  clientName: string
-  clientEmail: string
-  clientAddress: string
-  currency: string
+  /** The header as the form holds it (useInvoiceHeader). */
+  header: InvoiceHeader
   exchange: ReturnType<typeof useExchangeRate>
   showLineTags: boolean
-  taxPct: string
-  discount: string
-  issueDate: string
-  dueDate: string
   periodFrom: string
   periodTo: string
-  notes: string
   addToCrm: boolean
 }) {
   return useMutation({
@@ -61,21 +55,16 @@ export function useCreateInvoice({
         // Sent only when chosen — otherwise the server resolves it the same way the screen showed.
         ...(legalEntityId ? { legalEntityId } : {}),
         ...(source === "client" && customerId ? { customerId } : {}),
-        clientName: clientName.trim(),
-        clientEmail: clientEmail.trim() || undefined,
-        clientAddress: clientAddress.trim() || undefined,
-        currency,
+        ...invoiceHeaderBody(header),
         ...exchange.payload,
         showLineTags,
-        taxRate: (Number(taxPct) || 0) / 100,
-        discount: Number(discount) || 0,
-        issueDate,
-        dueDate: dueDate || undefined,
+        // A new invoice: an empty tax is 0 %, and it always carries its date.
+        taxRate: num(header.taxPct) / 100,
+        issueDate: header.issueDate,
         // Kept on the invoice so it can still say which days it covers long
         // after the gather that built it would return something different.
         servicePeriodFrom: periodFrom || undefined,
         servicePeriodTo: periodTo || undefined,
-        notes: notes.trim() || undefined,
         items,
       })
     },
@@ -94,13 +83,10 @@ export function useCreateInvoice({
         promise would let a duplicate-name refusal throw away a finished
         invoice. So it is awaited, reported quietly, and moved past either way.
       */
-      if (addToCrm && clientName.trim()) {
+      if (addToCrm && header.clientName.trim()) {
         try {
-          await customersApi.create({
-            name: clientName.trim(),
-            email: clientEmail.trim() || undefined,
-            address: clientAddress.trim() || undefined,
-          })
+          const { clientName, clientEmail, clientAddress } = invoiceHeaderBody(header)
+          await customersApi.create({ name: clientName, email: clientEmail, address: clientAddress })
           queryClient.invalidateQueries({ queryKey: keys.customers.lists() })
           notify.success(t("invoices.create.clientAdded"))
         } catch {

@@ -16,6 +16,7 @@ import {
   InvoiceTopBar, InvoiceNotice, InvoiceWorkbench, RailSection,
 } from "../_components/invoice-shell"
 import { InvoiceDocument, fmtDate } from "../_components/invoice-document"
+import { useInvoiceHeader } from "../_components/use-invoice-header"
 import { LabourCostPanel } from "../_components/labour-cost-panel"
 import { labourCostRows } from "../_lib/labour-cost-rows"
 import {
@@ -121,19 +122,16 @@ function NewInvoiceInner() {
     ? (user.spaceModules === undefined ? (user.orgModules ?? []) : user.spaceModules).includes("crm")
     : false
 
-  const [clientName, setClientName] = useState("")
-  const [clientEmail, setClientEmail] = useState("")
-  const [clientAddress, setClientAddress] = useState("")
-  const [currency, setCurrency] = useState(user?.orgCurrency ?? "EUR")
+  const header = useInvoiceHeader({ currency: user?.orgCurrency ?? "EUR", issueDate: todayIso(), taxPct: "20", discount: "0" })
+  const {
+    clientName, setClientName, clientEmail, setClientEmail, clientAddress, setClientAddress,
+    currency, setCurrency, issueDate, setIssueDate, dueDate, setDueDate,
+    taxPct, setTaxPct, discount, setDiscount, notes, setNotes,
+  } = header
   // Where the currency came from (workspace → client → organization); cleared once somebody picks one.
   const [currencySource, setCurrencySource] = useState<"workspace" | "client" | "company" | "organization" | null>(null)
   // The company that issues it. null = automatic: the workspace's → the client's → the main one.
   const [legalEntityId, setLegalEntityId] = useState<string | null>(null)
-  const [issueDate, setIssueDate] = useState(todayIso())
-  const [dueDate, setDueDate] = useState("")
-  const [taxPct, setTaxPct] = useState("20")
-  const [discount, setDiscount] = useState("0")
-  const [notes, setNotes] = useState("")
   const [rate, setRate] = useState("") // euros/hour applied to labor lines
   const [entries, setEntries] = useState<WorkEntry[]>([])
   const [dayRuns, setDayRuns] = useState<DayRun[]>([])
@@ -345,8 +343,7 @@ function NewInvoiceInner() {
 
   const createMutation = useCreateInvoice({
     t, router, queryClient, documentItems, spaceId, legalEntityId, source, customerId,
-    clientName, clientEmail, clientAddress, currency, exchange, showLineTags: lineStyle.tags, taxPct, discount,
-    issueDate, dueDate, periodFrom, periodTo, notes, addToCrm,
+    header: header.header, exchange, showLineTags: lineStyle.tags, periodFrom, periodTo, addToCrm,
   })
 
   const includedCount = entries.filter((e) => e.include).length
@@ -507,8 +504,8 @@ function NewInvoiceInner() {
               }}
               view={view}
               onView={setView}
-              /* The header as the form holds it — the same names on both sides. */
-              {...{ clientName, clientEmail, clientAddress, issueDate, dueDate, periodLabel, currency, taxPct, discount, notes }}
+              {...header.header}
+              periodLabel={periodLabel}
               items={documentItems}
               subtotal={subtotal}
               taxAmount={taxAmount}
