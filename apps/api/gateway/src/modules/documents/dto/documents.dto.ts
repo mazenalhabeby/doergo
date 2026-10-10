@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -169,117 +169,13 @@ export class CreateDocumentTypeDto {
  * `cadence` and `direction` are absent by design — changing either would
  * re-interpret every document already filed under the type. Make a new type.
  */
-export class UpdateDocumentTypeDto {
-  /*
-    The signing route: an ordered list of {role}, or null for one signature.
-
-    Passed through as an opaque array and validated in the service, where
-    routeProblem() owns the rule — restating it here as decorators would give
-    two definitions of a legal route and one place for them to disagree.
-  */
-  @ApiPropertyOptional({
-    description: 'Ordered signer roles, e.g. [{"role":"MEMBER"},{"role":"RESPONSIBLE"}]. Null for a single signature.',
-  })
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(6)
-  signerRoute?: unknown[] | null;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @Length(1, 120)
-  label?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @Length(0, 500)
-  description?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(600)
-  retentionMonths?: number;
-
-  @ApiPropertyOptional({ enum: SIGNATURE_MODES })
-  @IsOptional()
-  @IsIn(SIGNATURE_MODES as unknown as string[])
-  signatureMode?: (typeof SIGNATURE_MODES)[number];
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  isCredential?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  hasExpiry?: boolean;
-
-  @ApiPropertyOptional({ type: [String] })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  requiredForWorkflowIds?: string[];
-
-  @ApiPropertyOptional({ description: 'Every member must provide one' })
-  @IsOptional()
-  @IsBoolean()
-  requiredFromAll?: boolean;
-
-  @ApiPropertyOptional({ type: [String], description: 'Only members with these roles must provide one' })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  requiredFromRoleIds?: string[];
-
-  @ApiPropertyOptional({
-    type: [String],
-    description: 'Roles that may SEE documents of this type. Empty = no restriction.',
-  })
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  visibleToRoleIds?: string[];
-
-  @ApiPropertyOptional({ description: 'The scanner asks for the back as well' })
-  @IsOptional()
-  @IsBoolean()
-  twoSided?: boolean;
-
-  /**
-   * Sheets of paper rather than a card — the member adds pages and the lot is
-   * filed as one PDF.
-   *
-   * ⚠️ Missing here is how this shipped broken: the field existed on the model,
-   * the service and both clients, but the gateway runs `forbidNonWhitelisted`,
-   * so the web's save was refused outright with "property multiPage should not
-   * exist". A field is not wired until the DTO that guards the route declares
-   * it.
-   */
-  @ApiPropertyOptional({ description: 'Sheets of paper rather than a card — filed as one PDF' })
-  @IsOptional()
-  @IsBoolean()
-  multiPage?: boolean;
-
-  @ApiPropertyOptional({ enum: SCAN_SHAPES, description: 'The frame the scanner draws' })
-  @IsOptional()
-  @IsIn(SCAN_SHAPES as unknown as string[])
-  scanShape?: (typeof SCAN_SHAPES)[number];
-
+export class UpdateDocumentTypeDto extends PartialType(
+  OmitType(CreateDocumentTypeDto, ['key', 'cadence', 'direction'] as const),
+) {
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  position?: number;
 }
 
 export class PresignUploadDto {

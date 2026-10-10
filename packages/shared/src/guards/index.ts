@@ -1,16 +1,13 @@
 /**
- * Shared Guard Utilities
+ * Authorization helpers shared by every app.
  *
- * Helper functions for role-based and permission-based authorization.
- * Note: RolesGuard and OnboardingCompleteGuard classes must be defined in each app
- * due to NestJS DI requirements. The shared package provides the implementation.
+ * ⚠️ The guard CLASSES live in the gateway (`apps/api/gateway/src/common/guards`)
+ * and nowhere else: Nest injects `Reflector` by class identity, so a guard must be
+ * compiled in the app that registers it. Copies of four of them used to sit here
+ * too, exported and imported by nothing — and one (PermissionsGuard) had already
+ * drifted: no space-scoped check, no admin rule. Two copies of an access check
+ * are how a fix lands in the one that never runs. Only pure helpers belong here.
  */
-
-export { OnboardingCompleteGuard } from './onboarding.guard';
-export { PermissionsGuard } from './permissions.guard';
-export { CustomerScopeGuard } from './customer-scope.guard';
-export { CustomerConfinementGuard } from './customer-confinement.guard';
-
 
 // Pure role/permission helpers. Defined in their own module so the browser
 // can import them without pulling NestJS; re-exported here so every existing

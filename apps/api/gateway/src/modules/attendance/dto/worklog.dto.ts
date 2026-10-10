@@ -3,19 +3,15 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
-  IsNumber,
   IsISO8601,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
   Matches,
   MaxLength,
-  Min,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { CLIENT_ID } from '../../../common/dto/upload.dto';
+import { CLIENT_ID, MediaAttachmentDto, PresignMediaDto } from '../../../common/dto/upload.dto';
 
 /*
   The work-log routes took `@Body() body: {…}` — a plain type carries no
@@ -23,8 +19,6 @@ import { CLIENT_ID } from '../../../common/dto/upload.dto';
   now, and shaped to accept exactly what every shipped app already sends.
 */
 
-const MIME = /^[a-z]+\/[a-z0-9.+-]+$/i;
-const KEY = /^[A-Za-z0-9_\-./]+$/;
 
 export class AddWorklogNoteDto {
   @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same note' })
@@ -67,45 +61,12 @@ export class AddWorklogNotesBatchDto {
   notes: WorklogBatchNoteDto[];
 }
 
-export class PresignWorklogAttachmentDto {
-  @ApiProperty({ example: 'meter.jpg' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  fileName: string;
+export class PresignWorklogAttachmentDto extends PresignMediaDto {}
 
-  @ApiProperty({ example: 'image/jpeg' })
-  @IsString()
-  @Matches(MIME)
-  @MaxLength(120)
-  mimeType: string;
-}
-
-export class ConfirmWorklogAttachmentDto {
+export class ConfirmWorklogAttachmentDto extends MediaAttachmentDto {
   @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same attachment' })
   @IsOptional()
   @IsString()
   @Matches(CLIENT_ID)
   id?: string;
-
-  @ApiPropertyOptional()
-  @ValidateIf((o) => !o.fileUrl)
-  @IsString()
-  @MaxLength(512)
-  @Matches(KEY)
-  fileKey?: string;
-
-  @ApiPropertyOptional({ deprecated: true })
-  @ValidateIf((o) => !o.fileKey)
-  @IsUrl({ require_protocol: true, protocols: ['https', 'http'], require_tld: false })
-  @MaxLength(1024)
-  fileUrl?: string;
-
-  @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(255) fileName: string;
-  @ApiProperty() @IsString() @Matches(MIME) @MaxLength(120) mimeType: string;
-  // Numbers, not integers: some pickers report fractional pixel sizes, and
-  // refusing an upload over it would lose a photo that app 1.0.5 already took.
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) fileSize?: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) width?: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) height?: number;
 }

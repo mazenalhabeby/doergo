@@ -1,5 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { CreateDocumentTypeDto, UpdateDocumentTypeDto } from '../dto/documents.dto';
 
 /*
   ⚠️ A document-type field is not wired until the DTO declares it.
@@ -20,25 +21,35 @@ import * as path from 'path';
   people test.
 */
 
-const DTO = fs.readFileSync(
-  path.resolve(__dirname, '../dto/documents.dto.ts'),
-  'utf8',
-);
+/*
+  Asked of the classes' real validation (the gateway's own pipe options), not of
+  their source text: UpdateDocumentTypeDto is DERIVED from the create DTO now
+  (PartialType ∘ OmitType), so "a field on only one of the pair" can no longer
+  be written — but "a field on neither" still can, and the create-only rule must
+  still hold.
+*/
+const PIPE = { whitelist: true, forbidNonWhitelisted: true };
+const REQUIRED_ON_CREATE = { key: 'licence', label: 'Driving licence' };
 
-/** Comments quote field names constantly — this file included. */
-const code = DTO.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+/** A value of the right shape for each field, so only "is it declared?" is asked. */
+const SAMPLE: Record<string, unknown> = {
+  signatureMode: 'NONE',
+  isCredential: true,
+  hasExpiry: true,
+  retentionMonths: 12,
+  requiredForWorkflowIds: ['w1'],
+  requiredFromAll: false,
+  requiredFromRoleIds: ['r1'],
+  visibleToRoleIds: ['r1'],
+  twoSided: true,
+  multiPage: true,
+  scanShape: 'CARD',
+};
 
-function classBody(name: string): string {
-  const start = code.indexOf(`export class ${name} {`);
-  if (start < 0) throw new Error(`${name} not found — was it renamed?`);
-  const end = code.indexOf('\nexport class ', start + 1);
-  return code.slice(start, end < 0 ? undefined : end);
-}
-
-/** Declared property names of a DTO class. */
-function fields(name: string): string[] {
-  const body = classBody(name);
-  return [...body.matchAll(/^\s{2}([a-zA-Z][a-zA-Z0-9]*)[?!]?:/gm)].map((m) => m[1]);
+/** The properties a payload was refused for. */
+async function refused(dto: new () => object, payload: Record<string, unknown>): Promise<string[]> {
+  const errors = await validate(plainToInstance(dto, payload), PIPE);
+  return errors.map((e) => e.property);
 }
 
 /**
@@ -74,24 +85,19 @@ const TYPE_FIELDS = [
 const CREATE_ONLY = ['key', 'cadence', 'direction'];
 
 describe('the document-type DTOs', () => {
-  const create = fields('CreateDocumentTypeDto');
-  const update = fields('UpdateDocumentTypeDto');
-
-  it.each(TYPE_FIELDS)('declares %s on create, or the request is refused whole', (field) => {
-    expect(create).toContain(field);
+  it.each(TYPE_FIELDS)('declares %s on create, or the request is refused whole', async (field) => {
+    expect(await refused(CreateDocumentTypeDto, { ...REQUIRED_ON_CREATE, [field]: SAMPLE[field] })).toEqual([]);
   });
 
-  it.each(TYPE_FIELDS)('declares %s on update too', (field) => {
-    expect(update).toContain(field);
+  it.each(TYPE_FIELDS)('declares %s on update too', async (field) => {
+    expect(await refused(UpdateDocumentTypeDto, { [field]: SAMPLE[field] })).toEqual([]);
   });
 
-  it('keeps create and update in step, so a field cannot land on only one', () => {
-    // Anything create-only is named above with its reason; `isActive` and
-    // `position` are lifecycle, which only an existing type has.
-    const drifted = create.filter((f) => !update.includes(f) && !CREATE_ONLY.includes(f));
-    const onlyOnUpdate = update.filter(
-      (f) => !create.includes(f) && f !== 'isActive' && f !== 'position',
-    );
-    expect({ drifted, onlyOnUpdate }).toEqual({ drifted: [], onlyOnUpdate: [] });
+  it.each(CREATE_ONLY)('refuses %s on update — it is create-only', async (field) => {
+    expect(await refused(UpdateDocumentTypeDto, { [field]: 'x' })).toContain(field);
+  });
+
+  it('lets an existing type be switched off and reordered (lifecycle, update only)', async () => {
+    expect(await refused(UpdateDocumentTypeDto, { isActive: false, position: 3 })).toEqual([]);
   });
 });

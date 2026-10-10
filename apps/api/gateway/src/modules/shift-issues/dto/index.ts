@@ -5,17 +5,13 @@ import {
   IsArray,
   IsIn,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
   Matches,
   MaxLength,
-  Min,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import { CLIENT_ID } from '../../../common/dto/upload.dto';
+import { CLIENT_ID, MediaAttachmentDto, PresignMediaDto } from '../../../common/dto/upload.dto';
 
 /*
   ⚠️ These routes took `@Body() body: any` and spread it AFTER the verified
@@ -25,21 +21,10 @@ import { CLIENT_ID } from '../../../common/dto/upload.dto';
   field by field with the caller's context last.
 */
 
-const MIME = /^[a-z]+\/[a-z0-9.+-]+$/i;
-const KEY = /^[A-Za-z0-9_\-./]+$/;
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-class ShiftIssueAttachmentDto {
-  @ApiPropertyOptional() @ValidateIf((o) => !o.fileUrl) @IsString() @MaxLength(512) @Matches(KEY) fileKey?: string;
-  @ApiPropertyOptional({ deprecated: true })
-  @ValidateIf((o) => !o.fileKey) @IsUrl({ require_protocol: true, protocols: ['https', 'http'], require_tld: false }) @MaxLength(1024)
-  fileUrl?: string;
-  @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(255) fileName: string;
-  @ApiProperty() @IsString() @Matches(MIME) @MaxLength(120) mimeType: string;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) fileSize?: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) width?: number;
-  @ApiPropertyOptional() @IsOptional() @IsNumber() @Min(0) height?: number;
-}
+/** An uploaded photo on an issue — the shared shape. */
+class ShiftIssueAttachmentDto extends MediaAttachmentDto {}
 
 export class CreateShiftIssueDto {
   @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same issue' })
@@ -77,7 +62,4 @@ export class ShiftIssueStatusDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(5000) note?: string;
 }
 
-export class PresignShiftIssueAttachmentDto {
-  @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(255) fileName: string;
-  @ApiProperty() @IsString() @Matches(MIME) @MaxLength(120) mimeType: string;
-}
+export class PresignShiftIssueAttachmentDto extends PresignMediaDto {}
