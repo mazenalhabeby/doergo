@@ -3,14 +3,14 @@
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-import { CircleDot, Clock, Package } from "lucide-react"
+import { Package } from "lucide-react"
 
 import { assetsApi, type CustodyPeriodDto } from "@/lib/api"
 import { custodyDays, formatCents } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
+import { CustodySpan, HasItNowBadge } from "@/components/assets/custody-parts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
-import { dateLocale } from "@/lib/format-date"
 
 /**
  * What this member has, and what they have had.
@@ -127,20 +127,9 @@ function HoldingRow({ period }: { period: CustodyPeriodDto }) {
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
           {period.asset?.name ?? t("custody.anAsset", "An asset")}
-          {open && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-              <CircleDot className="h-2.5 w-2.5" /> {t("custody.now", "Has it now")}
-            </span>
-          )}
+          {open && <HasItNowBadge />}
         </p>
-        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="h-3 w-3" />
-          {new Date(period.startedAt).toLocaleDateString(dateLocale())}
-          {" – "}
-          {period.endedAt ? new Date(period.endedAt).toLocaleDateString(dateLocale()) : t("custody.present", "now")}
-          {" · "}
-          {t("custody.days", "{{count}} days", { count: days })}
-        </p>
+        <CustodySpan startedAt={period.startedAt} endedAt={period.endedAt} days={days} />
       </div>
       <div className="shrink-0 text-right">
         <p className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">

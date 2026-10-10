@@ -4,7 +4,11 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
 import {
-  ArrowRight, Check, FileText, Loader2, PackagePlus, UserMinus, UserPlus, Wand2,
+  ArrowRight,
+  Check,
+  FileText,
+  Loader2,
+  Wand2,
 } from "lucide-react"
 
 import {
@@ -17,8 +21,8 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
+import { ContractFieldInput, StepIcon } from "./contract-parts"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -378,20 +382,7 @@ function ReadField({
           </span>
         )}
       </div>
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="—"
-        className="mt-1 h-8 border-0 px-0 text-sm shadow-none focus-visible:ring-0"
-      />
+      <ContractFieldInput value={value} onChange={onChange} />
     </div>
   )
-}
-
-function StepIcon({ kind }: { kind: string }) {
-  const cls = "mt-0.5 h-3.5 w-3.5 shrink-0"
-  if (kind === "create") return <PackagePlus className={cn(cls, "text-primary")} />
-  if (kind === "hand-over") return <UserPlus className={cn(cls, "text-emerald-600 dark:text-emerald-400")} />
-  if (kind === "retire") return <PackagePlus className={cn(cls, "rotate-180 text-muted-foreground")} />
-  return <UserMinus className={cn(cls, "text-amber-600 dark:text-amber-400")} />
 }
