@@ -7,6 +7,7 @@ import { useTimeFormat } from '../hooks/useTimeFormat';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { AText, Eyebrow } from './amazen';
+import { SheetConfirmFooter } from './sheet-confirm-footer';
 
 /**
  * WHICH BREAK IS THIS?
@@ -181,30 +182,12 @@ export function BreakSheet({ visible, onClose, onStart, isLoading = false, plann
           Break disc did before the sheet existed: the server satisfies the
           planned rest that is next. The sheet is an offer, not a gate.
         */}
-        <Pressable
-          onPress={start}
-          disabled={isLoading}
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            marginTop: amazen.space(5),
-            paddingVertical: amazen.space(3.5),
-            alignItems: 'center',
-            borderRadius: amazen.radius.full,
-            backgroundColor: c.accentSolid,
-            opacity: isLoading ? 0.5 : pressed ? 0.85 : 1,
-          })}
-        >
-          <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-            {t('shiftClock.startBreak', { defaultValue: 'Start the break' })}
-          </AText>
-        </Pressable>
-
-        {/* Cancel is a text line — the same weight rule as the clock-out sheet. */}
-        <Pressable onPress={close} accessibilityRole="button" hitSlop={10} style={{ alignSelf: 'center', marginTop: amazen.space(3) }}>
-          <AText variant="caption" tone="muted">
-            {t('shiftEnd.notYet', { defaultValue: 'Not yet' })}
-          </AText>
-        </Pressable>
+        <SheetConfirmFooter
+          label={t('shiftClock.startBreak', { defaultValue: 'Start the break' })}
+          onConfirm={start}
+          onCancel={close}
+          isLoading={isLoading}
+        />
       </SheetPanel>
     </BlurSheet>
   );

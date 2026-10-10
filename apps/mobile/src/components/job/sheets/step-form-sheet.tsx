@@ -10,6 +10,7 @@ import { CameraGlyph, GalleryGlyph } from '../job-glyphs';
 import { Banner, JobField, JobSheet, QuietButton } from '../job-ui';
 import { SignPad, type SignPadHandle } from '../sign-pad';
 import { monthGrid } from '../../new-job/new-job-logic';
+import { DayPickerTop, WeekdayHeads } from '../../new-job/day-picker-parts';
 import {
   dayOf, draftErrors, emptyDraft, errorKey, fieldLabel, formCounts, groupOf, isoDay, pageComplete, paginateForm, stillNeeded,
   type DraftPhoto, type FormDraft,
@@ -365,8 +366,6 @@ function InlineDay({ value, onChange }: { value: string; onChange: (v: string) =
   const [open, setOpen] = useState(false);
   const [view, setView] = useState(() => { const d = chosen ?? new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const weeks = useMemo(() => monthGrid(view.y, view.m), [view]);
-  const months = t('monthNames', { returnObjects: true }) as unknown as string[];
-  const heads = t('dayNames.headers', { returnObjects: true }) as unknown as string[];
   const now = new Date();
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   const shift = (by: number) => setView((v) => { const d = new Date(v.y, v.m + by, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
@@ -392,27 +391,9 @@ function InlineDay({ value, onChange }: { value: string; onChange: (v: string) =
       </Pressable>
       {open ? (
         <View style={{ gap: amazen.space(2) }}>
-          <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
-            <View style={{ flex: 1 }}><QuietButton label={t('common.today')} onPress={() => pick(now)} /></View>
-            <View style={{ flex: 1 }}><QuietButton label={t('common.tomorrow')} onPress={() => pick(tomorrow)} /></View>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-            <Pressable onPress={() => shift(-1)} accessibilityRole="button" accessibilityLabel={t('common.back')} hitSlop={8} style={{ padding: amazen.space(2) }}>
-              <AText variant="body" tone="strong">‹</AText>
-            </Pressable>
-            <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontFamily: amazen.font.sansMedium }}>
-              {`${months?.[view.m] ?? ''} ${view.y}`}
-            </AText>
-            <Pressable onPress={() => shift(1)} accessibilityRole="button" accessibilityLabel={t('common.next')} hitSlop={8} style={{ padding: amazen.space(2) }}>
-              <AText variant="body" tone="strong">›</AText>
-            </Pressable>
-          </View>
+          <DayPickerTop year={view.y} month={view.m} onToday={() => pick(now)} onTomorrow={() => pick(tomorrow)} onShift={shift} />
           <View style={{ gap: 4 }}>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              {(Array.isArray(heads) ? heads : []).map((h, i) => (
-                <AText key={i} variant="caption" tone="muted" numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>{h}</AText>
-              ))}
-            </View>
+            <WeekdayHeads />
             {weeks.map((week, wi) => (
               <View key={wi} style={{ flexDirection: 'row', gap: 4 }}>
                 {week.map((d, di) => {

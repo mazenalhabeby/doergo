@@ -8,6 +8,7 @@ import { attendanceApi } from '../../lib/api/attendance';
 import { AText, Well, WellDivider } from '../amazen';
 import { JobSheet, SectionLabel } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
+import { DateTileRow } from './date-tile-row';
 import { addDays, dayKey, statusOf } from './time-logic';
 import { formatDuration } from '@hbcfield/shared/client';
 
@@ -79,31 +80,25 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
   const status = statusOf(entry);
   const statusColor = status === 'approved' ? c.accent : status === 'rejected' || status === 'closedForYou' ? c.critical : c.warn;
   return (
-    <Pressable
+    <DateTileRow
       onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.5), opacity: pressed ? 0.8 : 1 })}
+      tileTop={day.toLocaleDateString(i18n.language, { day: 'numeric', timeZone: tz })}
+      tileBottom={day.toLocaleDateString(i18n.language, { weekday: 'short', timeZone: tz })}
+      trailing={
+        <View style={{ alignItems: 'flex-end' }}>
+          <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>{formatDuration(countedOf(entry))}</AText>
+          <AText variant="caption" numberOfLines={1} style={{ color: statusColor }}>{t(`time.history.status.${status}`)}</AText>
+        </View>
+      }
     >
-      <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-        <AText variant="body" tone="strong" style={{ fontSize: 17, lineHeight: 20 }}>{day.toLocaleDateString(i18n.language, { day: 'numeric', timeZone: tz })}</AText>
-        <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9, lineHeight: 12, letterSpacing: 1, color: c.inkMuted, textTransform: 'uppercase' }}>
-          {day.toLocaleDateString(i18n.language, { weekday: 'short', timeZone: tz })}
-        </AText>
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>{entry.location?.name ?? t('attendance.unknownLocation')}</AText>
-        <AText variant="caption" tone="muted" numeric numberOfLines={1}>
-          {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
-        </AText>
-        <AText variant="caption" numberOfLines={1} style={{ color: notes ? c.accent : c.inkMuted, marginTop: 2 }}>
-          {notes ? t('worklog.count', { count: notes, defaultValue: '{{count}} notes' }) : t('worklog.nothing', 'Nothing noted')}
-        </AText>
-      </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <AText variant="body" tone="strong" numeric style={{ fontSize: 14, lineHeight: 20 }}>{formatDuration(countedOf(entry))}</AText>
-        <AText variant="caption" numberOfLines={1} style={{ color: statusColor }}>{t(`time.history.status.${status}`)}</AText>
-      </View>
-    </Pressable>
+      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>{entry.location?.name ?? t('attendance.unknownLocation')}</AText>
+      <AText variant="caption" tone="muted" numeric numberOfLines={1}>
+        {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
+      </AText>
+      <AText variant="caption" numberOfLines={1} style={{ color: notes ? c.accent : c.inkMuted, marginTop: 2 }}>
+        {notes ? t('worklog.count', { count: notes, defaultValue: '{{count}} notes' }) : t('worklog.nothing', 'Nothing noted')}
+      </AText>
+    </DateTileRow>
   );
 }
 

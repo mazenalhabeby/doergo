@@ -6,6 +6,7 @@ import { AText, PrimaryButton } from '../amazen';
 import { JobSheet, QuietButton } from '../job/job-ui';
 import { HOURS, MINUTES, isPastDay, monthGrid, two } from './new-job-logic';
 import { isSameDay } from '../../lib/utils';
+import { DayPickerTop, WeekdayHeads } from './day-picker-parts';
 
 /**
  * "When" — the day and the hour, each in the ONE sheet (`JobSheet`).
@@ -49,8 +50,6 @@ export function DaySheet({ visible, value, onPick, onClear, onClose }: {
 }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
-  const months = t('monthNames', { returnObjects: true }) as unknown as string[];
-  const heads = t('dayNames.headers', { returnObjects: true }) as unknown as string[];
   const [view, setView] = useState(() => { const d = value ?? new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   // Open on the CHOSEN month each time — the sheet stays mounted while hidden.
   useEffect(() => {
@@ -68,27 +67,9 @@ export function DaySheet({ visible, value, onPick, onClear, onClose }: {
 
   return (
     <JobSheet visible={visible} onClose={onClose} title={t('newJob.whichDay')}>
-      <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
-        <View style={{ flex: 1 }}><QuietButton label={t('common.today')} onPress={() => pick(now)} /></View>
-        <View style={{ flex: 1 }}><QuietButton label={t('common.tomorrow')} onPress={() => pick(tomorrow)} /></View>
-      </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-        <Pressable onPress={atStart ? undefined : () => shift(-1)} disabled={atStart} accessibilityRole="button" accessibilityLabel={t('common.back')} hitSlop={8} style={{ opacity: atStart ? 0.3 : 1, padding: amazen.space(2) }}>
-          <AText variant="body" tone="strong">‹</AText>
-        </Pressable>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontFamily: amazen.font.sansMedium }}>
-          {`${months?.[view.m] ?? ''} ${view.y}`}
-        </AText>
-        <Pressable onPress={() => shift(1)} accessibilityRole="button" accessibilityLabel={t('common.next')} hitSlop={8} style={{ padding: amazen.space(2) }}>
-          <AText variant="body" tone="strong">›</AText>
-        </Pressable>
-      </View>
+      <DayPickerTop year={view.y} month={view.m} onToday={() => pick(now)} onTomorrow={() => pick(tomorrow)} onShift={shift} prevDisabled={atStart} />
       <View style={{ gap: 4 }}>
-        <View style={{ flexDirection: 'row', gap: 4 }}>
-          {(Array.isArray(heads) ? heads : []).map((h, i) => (
-            <AText key={i} variant="caption" tone="muted" numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>{h}</AText>
-          ))}
-        </View>
+        <WeekdayHeads />
         {weeks.map((week, wi) => (
           <View key={wi} style={{ flexDirection: 'row', gap: 4 }}>
             {week.map((d, di) => d ? (

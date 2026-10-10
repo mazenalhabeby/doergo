@@ -22,10 +22,34 @@ import path from 'path';
 
 const APP = path.join(process.cwd(), 'app/(app)');
 
+/**
+ * Routes a layout registers through an `OWN_HEADER…` list — rendered by
+ * `ownHeaderScreens`, each with `headerShown: false`.
+ */
+function ownHeaderListed(src: string): string[] {
+  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const out: string[] = [];
+  for (const list of noComments.matchAll(/const OWN_HEADER\w*\s*=\s*\[([\s\S]*?)\]\s*as const/g)) {
+    // Only a list the stack actually renders counts.
+    const name = list[0].match(/const (\w+)/)![1];
+    if (!new RegExp(`ownHeaderScreens\\(${name}\\)`).test(noComments)) continue;
+    out.push(...[...list[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  }
+  return out;
+}
+
+/** The one renderer of those lists hides the native header — or none of them is hidden. */
+function ownHeaderHidesHeader(src: string): boolean {
+  return /function ownHeaderScreens[\s\S]*?<Stack\.Screen[^>]*headerShown:\s*false/.test(src);
+}
+
 /** Route names a `_layout.tsx` registers, in expo-router's own notation. */
 function registered(layout: string): string[] {
   const src = fs.readFileSync(layout, 'utf8');
-  return [...src.matchAll(/<Stack\.Screen\s[^>]*name="([^"]+)"/g)].map((m) => m[1]);
+  return [
+    ...[...src.matchAll(/<Stack\.Screen\s[^>]*name="([^"]+)"/g)].map((m) => m[1]),
+    ...ownHeaderListed(src),
+  ];
 }
 
 /**
@@ -84,6 +108,19 @@ describe('every screen is registered with its stack', () => {
   });
 });
 
+describe('the own-header lists in the root layout', () => {
+  const layout = fs.readFileSync(path.join(APP, '_layout.tsx'), 'utf8');
+
+  it('are read (a rename that matched nothing would pass everything)', () => {
+    expect(ownHeaderListed(layout)).toEqual(expect.arrayContaining(['scan-card', 'manage', 'profile/time-format']));
+  });
+
+  it('are rendered with the native header off', () => {
+    expect(ownHeaderHidesHeader(layout)).toBe(true);
+    expect(ownHeaderHidesHeader('function ownHeaderScreens() { return <Stack.Screen name={n} /> }')).toBe(false);
+  });
+});
+
 describe('a screen drawing its own header hides the native one', () => {
   /**
    * The two-header bug, and its full-bleed twin.
@@ -108,6 +145,9 @@ describe('a screen drawing its own header hides the native one', () => {
       if (!fs.existsSync(file)) continue; // a nested stack, checked above
       const src = fs.readFileSync(file, 'utf8');
       if (!OWNS_TOP_EDGE.some((re) => re.test(src))) continue;
+
+      // Registered through an own-header list: hidden by `ownHeaderScreens`.
+      if (ownHeaderListed(layout).includes(route) && ownHeaderHidesHeader(layout)) continue;
 
       // The options block for this route, up to the closing `/>`.
       const block = layout.match(

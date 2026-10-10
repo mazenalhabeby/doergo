@@ -1,25 +1,11 @@
-import { useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-  Pressable,
-  Modal,
-  ScrollView,
-  Platform,
-  Linking,
-} from 'react-native';
-import { BlurView } from 'expo-blur';
+import { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
+import { SlideSheet, useSlideSheet } from './slide-sheet';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const BRAND = '#2563EB';
 const GREEN = '#059669';
 
@@ -33,29 +19,8 @@ const GREEN = '#059669';
 export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
-  const insets = useSafeAreaInsets();
-
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(overlayAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.spring(slideAnim, { toValue: 0, damping: 25, stiffness: 200, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const animateClose = useCallback(
-    (cb?: () => void) => {
-      Animated.parallel([
-        Animated.timing(overlayAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: SCREEN_HEIGHT, duration: 250, useNativeDriver: true }),
-      ]).start(() => cb?.());
-    },
-    [overlayAnim, slideAnim],
-  );
+  const sheet = useSlideSheet(visible);
+  const { animateClose } = sheet;
 
   const handleClose = useCallback(() => animateClose(onClose), [animateClose, onClose]);
   const handleOpenSettings = useCallback(() => {
@@ -81,85 +46,63 @@ export function AlwaysLocationSheet({ visible, onClose }: { visible: boolean; on
   ];
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose} statusBarTranslucent>
-      <View style={styles.container}>
-        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: overlayAnim }]}>
-          {Platform.OS === 'ios' ? (
-            <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
-            </BlurView>
-          ) : (
-            <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.65)' }]} onPress={handleClose} />
-          )}
-        </Animated.View>
-
-        <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
-          <View style={[styles.handle, { backgroundColor: isDark ? '#4b5563' : '#d1d5db' }]} />
-          <View style={[styles.content, { backgroundColor: colors.card }]}>
-            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
-              {/* Hero */}
-              <View style={styles.hero}>
-                <View style={[styles.heroIcon, { backgroundColor: BRAND + '18' }]}>
-                  <Ionicons name="navigate" size={30} color={BRAND} />
-                </View>
-                <Text style={[styles.title, { color: colors.textPrimary }]}>{t('attendance.alwaysLocation.sheetTitle')}</Text>
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                  {t('attendance.alwaysLocation.sheetBody')}
-                </Text>
-              </View>
-
-              {/* Visual: the OS location chooser with the right option highlighted */}
-              <View style={[styles.chooser, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
-                <Text style={[styles.chooserLabel, { color: colors.textMuted }]}>{t('attendance.alwaysLocation.chooserLabel')}</Text>
-
-                <View style={[styles.optionRow, styles.optionChosen]}>
-                  <Ionicons name="radio-button-on" size={20} color={GREEN} />
-                  <Text style={[styles.optionText, { color: GREEN, fontWeight: FONT_WEIGHT.bold }]}>{chosenLabel}</Text>
-                  <Text style={styles.pointer}>👈</Text>
-                </View>
-
-                {otherOptions.map((label) => (
-                  <View key={label} style={styles.optionRow}>
-                    <Ionicons name="radio-button-off" size={20} color={colors.textMuted} />
-                    <Text style={[styles.optionText, { color: colors.textSecondary }]}>{label}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Numbered steps */}
-              <View style={styles.steps}>
-                {steps.map((s, i) => (
-                  <View key={i} style={styles.stepRow}>
-                    <View style={[styles.stepNum, { backgroundColor: BRAND }]}>
-                      <Text style={styles.stepNumText}>{i + 1}</Text>
-                    </View>
-                    <Text style={[styles.stepText, { color: colors.textPrimary }]}>{s}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* Actions */}
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleOpenSettings} activeOpacity={0.85}>
-                <Ionicons name="settings-outline" size={20} color={COLORS.white} />
-                <Text style={styles.primaryText}>{t('attendance.alwaysLocation.openSettings')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryBtn} onPress={handleClose}>
-                <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>{t('attendance.alwaysLocation.notNow')}</Text>
-              </TouchableOpacity>
-            </ScrollView>
-            <View style={{ height: insets.bottom }} />
+    <SlideSheet visible={visible} sheet={sheet} onClose={handleClose} maxHeightFraction={0.9}>
+      <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={[styles.heroIcon, { backgroundColor: BRAND + '18' }]}>
+            <Ionicons name="navigate" size={30} color={BRAND} />
           </View>
-        </Animated.View>
-      </View>
-    </Modal>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('attendance.alwaysLocation.sheetTitle')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {t('attendance.alwaysLocation.sheetBody')}
+          </Text>
+        </View>
+
+        {/* Visual: the OS location chooser with the right option highlighted */}
+        <View style={[styles.chooser, { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: colors.border }]}>
+          <Text style={[styles.chooserLabel, { color: colors.textMuted }]}>{t('attendance.alwaysLocation.chooserLabel')}</Text>
+
+          <View style={[styles.optionRow, styles.optionChosen]}>
+            <Ionicons name="radio-button-on" size={20} color={GREEN} />
+            <Text style={[styles.optionText, { color: GREEN, fontWeight: FONT_WEIGHT.bold }]}>{chosenLabel}</Text>
+            <Text style={styles.pointer}>👈</Text>
+          </View>
+
+          {otherOptions.map((label) => (
+            <View key={label} style={styles.optionRow}>
+              <Ionicons name="radio-button-off" size={20} color={colors.textMuted} />
+              <Text style={[styles.optionText, { color: colors.textSecondary }]}>{label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Numbered steps */}
+        <View style={styles.steps}>
+          {steps.map((s, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={[styles.stepNum, { backgroundColor: BRAND }]}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
+              </View>
+              <Text style={[styles.stepText, { color: colors.textPrimary }]}>{s}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Actions */}
+        <TouchableOpacity style={styles.primaryBtn} onPress={handleOpenSettings} activeOpacity={0.85}>
+          <Ionicons name="settings-outline" size={20} color={COLORS.white} />
+          <Text style={styles.primaryText}>{t('attendance.alwaysLocation.openSettings')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={handleClose}>
+          <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>{t('attendance.alwaysLocation.notNow')}</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SlideSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 20 },
-  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: SPACING.sm },
-  content: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, paddingBottom: SPACING.lg, maxHeight: SCREEN_HEIGHT * 0.9 },
   hero: { alignItems: 'center', marginBottom: SPACING.lg },
   heroIcon: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
   title: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, textAlign: 'center' },

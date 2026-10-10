@@ -87,49 +87,31 @@ export function RecordAbout({
   return (
     <View style={{ gap: amazen.space(3) }}>
       {showContacts ? (
-        <>
-          <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('customers.record.contacts')}${contacts.length ? ` · ${contacts.length}` : ''}`}</SectionLabel>
-          <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-            {contacts.length === 0 ? <AText variant="body" tone="muted" style={{ paddingVertical: amazen.space(3), fontSize: 13.5 }}>{t('customers.record.noContacts')}</AText> : null}
-            {contacts.map((link, i) => (
-              <ContactRow
-                key={link.id}
-                first={i === 0}
-                link={link}
-                side="person"
-                onOpen={model.openRecord}
-                onMore={model.canEditInfo ? onMore : undefined}
-                labels={rowLabels}
-                waiting={isWaiting(link) ? waitingLabel : undefined}
-                busy={model.busyLink === link.id}
-              />
-            ))}
-            {model.canEditInfo ? <AddRow label={t('customers.record.addContact')} onPress={() => model.setAdding('person')} /> : null}
-          </Well>
-        </>
+        <LinkSection
+          title={t('customers.record.contacts')}
+          links={contacts}
+          side="person"
+          empty={t('customers.record.noContacts')}
+          addLabel={t('customers.record.addContact')}
+          model={model}
+          onMore={onMore}
+          labels={rowLabels}
+          waitingLabel={waitingLabel}
+        />
       ) : null}
 
       {showWorksAt ? (
-        <>
-          <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('customers.record.worksAt')}${companies.length ? ` · ${companies.length}` : ''}`}</SectionLabel>
-          <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-            {companies.length === 0 ? <AText variant="body" tone="muted" style={{ paddingVertical: amazen.space(3), fontSize: 13.5 }}>{t('customers.record.noCompanies')}</AText> : null}
-            {companies.map((link, i) => (
-              <ContactRow
-                key={link.id}
-                first={i === 0}
-                link={link}
-                side="company"
-                onOpen={model.openRecord}
-                onMore={model.canEditInfo ? onMore : undefined}
-                labels={rowLabels}
-                waiting={isWaiting(link) ? waitingLabel : undefined}
-                busy={model.busyLink === link.id}
-              />
-            ))}
-            {model.canEditInfo ? <AddRow label={t('customers.record.addCompany')} onPress={() => model.setAdding('company')} /> : null}
-          </Well>
-        </>
+        <LinkSection
+          title={t('customers.record.worksAt')}
+          links={companies}
+          side="company"
+          empty={t('customers.record.noCompanies')}
+          addLabel={t('customers.record.addCompany')}
+          model={model}
+          onMore={onMore}
+          labels={rowLabels}
+          waitingLabel={waitingLabel}
+        />
       ) : null}
 
       <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{t(company ? 'customers.record.details' : 'customers.record.detailsPerson')}</SectionLabel>
@@ -181,6 +163,48 @@ function Fact({ label, value, action, first, muted, chevron }: {
         </Pressable>
       ) : chevron ? <AText variant="body" tone="muted">›</AText> : null}
     </View>
+  );
+}
+
+/**
+ * One side of the contact links — the people at a company, or the companies a
+ * person works at: a counted title, the rows, and Add for who may edit.
+ */
+function LinkSection({
+  title, links, side, empty, addLabel, model, onMore, labels, waitingLabel,
+}: {
+  title: string;
+  links: MobileCustomerContact[];
+  side: 'person' | 'company';
+  empty: string;
+  addLabel: string;
+  model: ClientRecordModel;
+  onMore: (link: MobileCustomerContact) => void;
+  labels: React.ComponentProps<typeof ContactRow>['labels'];
+  waitingLabel: string;
+}) {
+  const { amazen } = useTheme();
+  return (
+    <>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${title}${links.length ? ` · ${links.length}` : ''}`}</SectionLabel>
+      <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
+        {links.length === 0 ? <AText variant="body" tone="muted" style={{ paddingVertical: amazen.space(3), fontSize: 13.5 }}>{empty}</AText> : null}
+        {links.map((link, i) => (
+          <ContactRow
+            key={link.id}
+            first={i === 0}
+            link={link}
+            side={side}
+            onOpen={model.openRecord}
+            onMore={model.canEditInfo ? onMore : undefined}
+            labels={labels}
+            waiting={isWaiting(link) ? waitingLabel : undefined}
+            busy={model.busyLink === link.id}
+          />
+        ))}
+        {model.canEditInfo ? <AddRow label={addLabel} onPress={() => model.setAdding(side)} /> : null}
+      </Well>
+    </>
   );
 }
 

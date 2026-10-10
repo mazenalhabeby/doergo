@@ -6,6 +6,7 @@ import { useTheme } from '../contexts/theme-context';
 import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { AText, Eyebrow, LiveDot } from './amazen';
+import { SheetConfirmFooter } from './sheet-confirm-footer';
 import { heroParts } from './home/shift-state';
 import { readClockOut, type ClockOutShift } from './home/clock-out-state';
 import { formatDistance } from '../lib/distance';
@@ -294,42 +295,17 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
 
         </ScrollView>
 
-        {/*
-          ⚠️ ONE JADE BUTTON, AND NOTHING DISABLES IT — rule 1. `disabled` here
-          is only "a request is already in flight", never "you have not filled
-          something in".
-        */}
-        <Pressable
-          onPress={confirm}
-          disabled={isLoading}
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            marginTop: amazen.space(5),
-            paddingVertical: amazen.space(3.5),
-            alignItems: 'center',
-            borderRadius: amazen.radius.full,
-            backgroundColor: c.accentSolid,
-            opacity: isLoading ? 0.5 : pressed ? 0.85 : 1,
-          })}
-        >
-          <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-            {late
-              ? t('shiftEnd.clockOutAndAsk', { defaultValue: 'Clock out & ask' })
-              : pausing
-                ? t('shiftEnd.pauseAndClockOut', { count: pausing })
-                : t('home.fullTime.clockOut')}
-          </AText>
-        </Pressable>
-
-        {/*
-          ⚠️ CANCEL IS A TEXT LINE, NOT A SECOND BUTTON. You almost never cancel
-          this — it must not weigh the same as confirming.
-        */}
-        <Pressable onPress={close} accessibilityRole="button" hitSlop={10} style={{ alignSelf: 'center', marginTop: amazen.space(3) }}>
-          <AText variant="caption" tone="muted">
-            {t('shiftEnd.notYet', { defaultValue: 'Not yet' })}
-          </AText>
-        </Pressable>
+        {/* ⚠️ One jade button that nothing disables, and Cancel as a text line — rule 1 (see the footer). */}
+        <SheetConfirmFooter
+          label={late
+            ? t('shiftEnd.clockOutAndAsk', { defaultValue: 'Clock out & ask' })
+            : pausing
+              ? t('shiftEnd.pauseAndClockOut', { count: pausing })
+              : t('home.fullTime.clockOut')}
+          onConfirm={confirm}
+          onCancel={close}
+          isLoading={isLoading}
+        />
       </SheetPanel>
     </BlurSheet>
   );

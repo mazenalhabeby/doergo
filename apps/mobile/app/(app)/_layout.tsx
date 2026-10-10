@@ -31,6 +31,57 @@ import { COLORS } from '../../src/lib/constants';
 import { Role } from '@hbcfield/shared/client';
 import { MediaAccessHost } from '../../src/permissions/media-access-host';
 
+/*
+  ⚠️ EVERY route under app/(app) must be registered with the stack below.
+
+  A screen that is not registered inherits the stack's default header, and
+  expo-router titles that bar with the ROUTE NAME. So a screen drawing its own
+  header shows two — the native "documents" bar above "My documents" — and a
+  full-bleed screen like the card scanner gets a black "scan-card" bar over the
+  camera, which also shortens the viewfinder the frame geometry is measured
+  against.
+
+  It fails silently and only on the screen you did not open, which is why
+  `screen-registration.spec.ts` fails the build instead. It reads these two
+  lists as registrations with `headerShown: false`.
+
+  The lists are in the stack's order — the order the screens are registered in.
+*/
+/** Screens that draw their own header, so the native one is off. */
+const OWN_HEADER_SCREENS = [
+  'route-planner',
+  'customers',
+  'customer/[id]',
+  'support',
+  'extra-time',
+  'sync',
+  'calendar-new',
+  'documents',
+  'sign-document',
+  'scan-card',
+  'my-assets',
+  // Full-bleed camera, like the card scanner — an inherited header both
+  // covers the viewfinder and titles it "asset-expense".
+  'asset-expense',
+  'asset-log',
+  // Clients from the phone's address book — draws its own header.
+  'import-contacts',
+  'send-document',
+  'overtime/[id]',
+  'overtime/sign/[id]',
+  // A nested stack. It draws the header for every page inside it, so the
+  // outer one must be off or every Manage page carries two bars — the inner
+  // one titled "Members", the outer one titled "manage".
+  'manage',
+] as const;
+
+/** The profile pages after About — likewise their own header. */
+const OWN_HEADER_PROFILE_SCREENS = ['profile/language', 'profile/appearance', 'profile/time-format'] as const;
+
+function ownHeaderScreens(names: readonly string[]) {
+  return names.map((name) => <Stack.Screen key={name} name={name} options={{ headerShown: false }} />);
+}
+
 // Send a lightweight presence ping using CACHED location (no fresh GPS).
 // Runs once on app start and every 10 minutes — getFix({ purpose: 'cached' })
 // which returns the most recent GPS fix without activating the GPS radio.
@@ -256,41 +307,7 @@ export default function AppLayout() {
             animation: 'slide_from_bottom',
           }}
         />
-        <Stack.Screen name="route-planner" options={{ headerShown: false }} />
-        <Stack.Screen name="customers" options={{ headerShown: false }} />
-        <Stack.Screen name="customer/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="support" options={{ headerShown: false }} />
-        <Stack.Screen name="extra-time" options={{ headerShown: false }} />
-        <Stack.Screen name="sync" options={{ headerShown: false }} />
-        <Stack.Screen name="calendar-new" options={{ headerShown: false }} />
-        {/* ⚠️ EVERY route under app/(app) must appear in this list.
-
-            A screen that is not registered inherits the stack's default header,
-            and expo-router titles that bar with the ROUTE NAME. So a screen
-            drawing its own header shows two — the native "documents" bar above
-            "My documents" — and a full-bleed screen like the card scanner gets
-            a black "scan-card" bar over the camera, which also shortens the
-            viewfinder the frame geometry is measured against.
-
-            It fails silently and only on the screen you did not open, which is
-            why `screen-registration.spec.ts` fails the build instead. */}
-        <Stack.Screen name="documents" options={{ headerShown: false }} />
-        <Stack.Screen name="sign-document" options={{ headerShown: false }} />
-        <Stack.Screen name="scan-card" options={{ headerShown: false }} />
-        <Stack.Screen name="my-assets" options={{ headerShown: false }} />
-        {/* Full-bleed camera, like the card scanner — an inherited header both
-            covers the viewfinder and titles it "asset-expense". */}
-        <Stack.Screen name="asset-expense" options={{ headerShown: false }} />
-        <Stack.Screen name="asset-log" options={{ headerShown: false }} />
-        {/* Clients from the phone's address book — draws its own header. */}
-        <Stack.Screen name="import-contacts" options={{ headerShown: false }} />
-        <Stack.Screen name="send-document" options={{ headerShown: false }} />
-        <Stack.Screen name="overtime/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="overtime/sign/[id]" options={{ headerShown: false }} />
-        {/* A nested stack. It draws the header for every page inside it, so the
-            outer one must be off or every Manage page carries two bars — the
-            inner one titled "Members", the outer one titled "manage". */}
-        <Stack.Screen name="manage" options={{ headerShown: false }} />
+        {ownHeaderScreens(OWN_HEADER_SCREENS)}
         <Stack.Screen
           name="profile/notifications"
           options={{
@@ -313,24 +330,7 @@ export default function AppLayout() {
             headerShown: false,
           }}
         />
-        <Stack.Screen
-          name="profile/language"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="profile/appearance"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="profile/time-format"
-          options={{
-            headerShown: false,
-          }}
-        />
+        {ownHeaderScreens(OWN_HEADER_PROFILE_SCREENS)}
       </Stack>
       {/* One permission sheet for every image picker in the app. Mounted here
           so seven call sites share it without seven copies. */}
