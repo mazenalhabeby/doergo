@@ -10,7 +10,7 @@ import { Reflector } from '@nestjs/core';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { IS_PUBLIC_KEY } from '@hbcfield/shared';
-import { AuthTokenCache } from '../cache/auth-token-cache.service';
+import { AuthTokenCache, secondsUntilExp } from '../cache/auth-token-cache.service';
 
 /**
  * Authenticates every non-public request by validating the access token.
@@ -50,8 +50,12 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
+    // ── One Redis round trip: was this token signed out, and is it cached? ──
+    const { user: cachedUser, revoked } = await this.cache.lookup(token);
+    if (revoked) {
+      throw new UnauthorizedException('Invalid token');
+    }
     // ── Cache hit: skip the validate_token RPC + DB read entirely ──
-    const cachedUser = await this.cache.get(token);
     if (cachedUser) {
       request.user = cachedUser;
       return true;
@@ -70,8 +74,7 @@ export class JwtAuthGuard implements CanActivate {
       // Attach user to request and cache the validated user (TTL capped to the
       // token's remaining lifetime so an entry can never outlive its token).
       request.user = result.user;
-      const exp = this.getTokenExpSeconds(token);
-      const remaining = exp ? exp - Math.floor(Date.now() / 1000) : this.cache.ttl;
+      const remaining = secondsUntilExp(token) ?? this.cache.ttl;
       await this.cache.set(token, result.user, Math.min(this.cache.ttl, remaining));
       return true;
     } catch (error) {
@@ -79,17 +82,6 @@ export class JwtAuthGuard implements CanActivate {
         throw error;
       }
       throw new UnauthorizedException('Token validation failed');
-    }
-  }
-
-  /** Decode (without verifying) the JWT `exp` claim. */
-  private getTokenExpSeconds(token: string): number | null {
-    try {
-      const part = token.split('.')[1];
-      const payload = JSON.parse(Buffer.from(part, 'base64').toString());
-      return typeof payload.exp === 'number' ? payload.exp : null;
-    } catch {
-      return null;
     }
   }
 

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
-import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { AuthTokenCache, secondsUntilExp } from '../../common/cache/auth-token-cache.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
@@ -193,6 +193,12 @@ export class AuthController {
     // Kill the cached session immediately so a still-valid access token can't be
     // replayed after logout (access tokens aren't otherwise revocable). (Sec audit H6.)
     if (result?.userId) await this.authCache.invalidateUser(result.userId);
+
+    // ⚠️ Clearing the cache alone did NOT end the access token: the next request
+    // simply re-validated it (it is a JWT, valid until `exp`) and got 200 — found
+    // by testing, 2026-10-10. Mark THIS token signed out for the rest of its life.
+    const bearer = req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null;
+    if (bearer) await this.authCache.revoke(bearer, secondsUntilExp(bearer) ?? 0);
 
     // Signing out clears the user's lastActiveAt (done in auth-service), so they
     // read as offline immediately. Broadcast a presence event so teammates'

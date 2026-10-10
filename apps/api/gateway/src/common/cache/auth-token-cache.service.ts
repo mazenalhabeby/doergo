@@ -4,6 +4,19 @@ import { createHash } from 'crypto';
 import Redis from 'ioredis';
 
 /**
+ * Seconds until a JWT's `exp` (decoded, NOT verified — callers have already
+ * verified it or only need the number to size a TTL). `null` when unreadable.
+ */
+export function secondsUntilExp(token: string): number | null {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return typeof payload.exp === 'number' ? payload.exp - Math.floor(Date.now() / 1000) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Redis-backed cache of validated users, keyed by a hash of the access token.
  *
  * It also keeps a per-user index of token-cache-keys so that when a user's
@@ -61,12 +74,59 @@ export class AuthTokenCache {
     return `auth:org:${organizationId}`;
   }
 
+  /*
+    A signed-out access token.
+
+    An access token is a JWT: it stays valid until `exp` whatever happens to the
+    session behind it, so "Sign out" ended the refresh token and left the access
+    token working for up to JWT_ACCESS_EXPIRATION (15m) — anyone holding a copy
+    (a shared machine, a logged request) kept the account for that long.
+
+    So sign-out writes THIS token's hash here, for exactly its remaining
+    lifetime. Nothing to clean up: the mark expires the moment the token would
+    have anyway, so the set of marks is only ever the tokens signed out in the
+    last 15 minutes.
+  */
+  private revokedKey(token: string): string {
+    return `auth:rvk:${createHash('sha256').update(token).digest('hex')}`;
+  }
+
   async get(token: string): Promise<any | null> {
+    return (await this.lookup(token)).user;
+  }
+
+  /**
+   * The cached user AND whether the token was signed out — ONE round trip
+   * (`MGET`), so the revocation check costs every request nothing extra.
+   *
+   * `revoked` wins over a cached user: a request that was mid-validation when
+   * the member signed out may still write a cache entry afterwards, and the
+   * mark must beat it.
+   *
+   * Redis down → `{ user: null, revoked: false }`: auth falls back to the RPC as
+   * it always has. A revocation therefore relies on Redis being up, which is the
+   * same dependency the 60-second cache already has.
+   */
+  async lookup(token: string): Promise<{ user: any | null; revoked: boolean }> {
     try {
-      const cached = await this.redis.get(this.key(token));
-      return cached ? JSON.parse(cached) : null;
+      const [cached, revoked] = await this.redis.mget(this.key(token), this.revokedKey(token));
+      return { user: !revoked && cached ? JSON.parse(cached) : null, revoked: !!revoked };
     } catch {
-      return null;
+      return { user: null, revoked: false };
+    }
+  }
+
+  /**
+   * Sign this one access token out, for `ttlSeconds` (its remaining lifetime).
+   * Also drops its cache entry so nothing serves it from there.
+   */
+  async revoke(token: string, ttlSeconds: number): Promise<void> {
+    if (ttlSeconds <= 0) return;
+    try {
+      await this.redis.set(this.revokedKey(token), '1', 'EX', Math.ceil(ttlSeconds));
+      await this.redis.del(this.key(token));
+    } catch {
+      this.logger.warn('Could not record a signed-out access token (Redis unavailable)');
     }
   }
 

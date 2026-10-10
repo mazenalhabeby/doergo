@@ -20,6 +20,7 @@ function fakeRedis() {
     values,
     on: () => undefined,
     get: async (k: string) => values.get(k) ?? null,
+    mget: async (...ks: string[]) => ks.map((k) => values.get(k) ?? null),
     set: async (k: string, v: string) => { values.set(k, v); return 'OK'; },
     sadd: async (k: string, m: string) => { (sets.get(k) ?? sets.set(k, new Set()).get(k)!).add(m); return 1; },
     expire: async () => 1,
@@ -80,5 +81,46 @@ describe('clearing a whole organization', () => {
     const broken = { ...fakeRedis(), smembers: async () => { throw new Error('down'); } };
     const cache = cacheWith(broken as unknown as ReturnType<typeof fakeRedis>);
     await expect(cache.invalidateOrganization('org-1')).resolves.toBeUndefined();
+  });
+});
+
+/*
+  Signing out must end the ACCESS token, not just the refresh token: a JWT is
+  valid until `exp`, and clearing the cache alone let the next request simply
+  re-validate it (found by testing against the running stack, 2026-10-10).
+*/
+describe('a signed-out access token', () => {
+  it('is refused from the moment of sign-out', async () => {
+    const cache = cacheWith(fakeRedis());
+    await cache.set('tok-a', { id: 'u1', organizationId: 'org-1' }, 60);
+    await cache.revoke('tok-a', 900);
+    expect(await cache.lookup('tok-a')).toEqual({ user: null, revoked: true });
+    expect(await cache.get('tok-a')).toBeNull();
+  });
+
+  it('beats a cache entry written AFTER the sign-out (a request that was mid-validation)', async () => {
+    const cache = cacheWith(fakeRedis());
+    await cache.revoke('tok-a', 900);
+    await cache.set('tok-a', { id: 'u1' }, 60);
+    expect((await cache.lookup('tok-a')).revoked).toBe(true);
+    expect((await cache.lookup('tok-a')).user).toBeNull();
+  });
+
+  it('touches only that token — the member’s other devices stay signed in', async () => {
+    const cache = cacheWith(fakeRedis());
+    await cache.set('tok-phone', { id: 'u1' }, 60);
+    await cache.revoke('tok-web', 900);
+    expect(await cache.lookup('tok-phone')).toEqual({ user: { id: 'u1' }, revoked: false });
+  });
+
+  it('records nothing for an already-expired token', async () => {
+    const redis = fakeRedis();
+    await cacheWith(redis).revoke('tok-old', 0);
+    expect(redis.values.size).toBe(0);
+  });
+
+  it('Redis down: auth falls back to the RPC instead of failing', async () => {
+    const cache = cacheWith({ ...fakeRedis(), mget: async () => { throw new Error('down'); } } as never);
+    expect(await cache.lookup('tok-a')).toEqual({ user: null, revoked: false });
   });
 });

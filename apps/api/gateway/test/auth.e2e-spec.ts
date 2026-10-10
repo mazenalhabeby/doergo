@@ -108,7 +108,7 @@ describe('AuthController (e2e)', () => {
           // cannot build the module at all, and every test in the file failed
           // during setup — a red suite that said nothing about the product.
           provide: AuthTokenCache,
-          useValue: { invalidateUser: jest.fn(), get: jest.fn(), set: jest.fn(), ttl: 60 },
+          useValue: { invalidateUser: jest.fn(), get: jest.fn(), set: jest.fn(), lookup: jest.fn().mockResolvedValue({ user: null, revoked: false }), revoke: jest.fn(), ttl: 60 },
         },
         {
           provide: APP_GUARD,
