@@ -3,6 +3,7 @@
  * Mirrors the web `locationsApi` surface used by the admin dashboard.
  */
 import { call, E } from './client';
+import type { LocationAssignment } from '@hbcfield/shared/client';
 import type { CompanyLocation } from './types';
 
 /** A location plus its active member assignments (from the list endpoint). */
@@ -10,25 +11,8 @@ export type LocationWithMembers = CompanyLocation & {
   assignments?: { userId: string; isPrimary?: boolean }[];
 };
 
-export interface LocationAssignment {
-  id: string;
-  userId: string;
-  locationId: string;
-  isPrimary: boolean;
-  schedule?: string[];
-  effectiveFrom?: string;
-  effectiveTo?: string | null;
-  createdAt?: string;
-  updatedAt?: string;
-  user?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatarUrl?: string | null;
-    workMode?: string;
-  };
-}
+/** One member's assignment to a location — the shared API type. */
+export type { LocationAssignment } from '@hbcfield/shared/client';
 
 export interface AssignMemberInput {
   userId: string;

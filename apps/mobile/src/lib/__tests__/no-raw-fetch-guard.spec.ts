@@ -9,9 +9,9 @@
  * else is a request that skips the token, the refresh, the timeout, the
  * offline cache and the connectivity monitor, and nothing else would notice.
  *
- * Allowed, by name and with the reason:
- *   - the PUT of a file to a presigned storage URL the API minted — the one
- *     request whose address is not the API (and which must carry no token).
+ * The one request whose address is not the API — the PUT of a file to a
+ * presigned storage URL — is the shared `putToPresignedUrl`, so nothing in the
+ * app itself is allowed. An exemption added below must name its reason.
  *
  * And the API's address is written in one place: base-url.ts.
  */
@@ -22,9 +22,7 @@ const ROOT = path.resolve(__dirname, '../../..');
 const DIRS = ['src', 'app'].map((d) => path.join(ROOT, d));
 
 /** Files allowed to talk to the network themselves, and why. */
-const RAW_NETWORK_ALLOWED: Record<string, string> = {
-  'src/lib/api/attachments.ts': 'uploadToPresignedUrl — XHR PUT to the storage URL the API minted (progress events; no token)',
-};
+const RAW_NETWORK_ALLOWED: Record<string, string> = {};
 
 const API_PREFIX_ALLOWED = new Set(['src/lib/api/base-url.ts']);
 

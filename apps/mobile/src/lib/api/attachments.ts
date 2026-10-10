@@ -1,4 +1,4 @@
-import type { PresignedUpload } from '@hbcfield/shared/client';
+import { putToPresignedUrl, type PresignedUpload } from '@hbcfield/shared/client';
 import { call, E } from './client';
 
 // Task Attachments API
@@ -20,35 +20,13 @@ export const taskAttachmentsApi = {
   },
 };
 
-// Upload file to presigned URL with progress tracking
+// Upload file to presigned URL with progress tracking. The PUT itself is the
+// shared one (web and phone); only React Native's file descriptor is ours.
 export function uploadToPresignedUrl(
   url: string,
   fileUri: string,
   contentType: string,
   onProgress?: (progress: number) => void,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    xhr.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable && onProgress) {
-        onProgress(event.loaded / event.total);
-      }
-    });
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
-      } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
-
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', contentType);
-    xhr.send({ uri: fileUri, type: contentType, name: 'upload' } as any);
-  });
+  return putToPresignedUrl(url, { uri: fileUri, type: contentType, name: 'upload' }, contentType, onProgress);
 }

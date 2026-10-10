@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LANGUAGE_CHOICES } from '@hbcfield/shared/client';
 import en from './locales/en.json';
 
 const LANGUAGE_KEY = 'hbcfield_language';
@@ -103,12 +104,7 @@ export async function getPreferredLanguage(): Promise<string> {
   return storedLang ?? getCurrentLanguage();
 }
 
-export const supportedLanguages = [
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-] as const;
+/** The language picker's choices — one list with the web and the server (shared). */
+export const supportedLanguages = LANGUAGE_CHOICES;
 
 export default i18n;
