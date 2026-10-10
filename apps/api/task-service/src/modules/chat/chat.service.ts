@@ -21,6 +21,16 @@ import { resolveMemberRouting } from '@hbcfield/shared';
 
 type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
 
+/**
+ * The conversation list's order: the most recent message first, and threads with NO message yet
+ * (`lastMessageAt` NULL) at the bottom, newest opened first. Postgres sorts NULLs FIRST on a
+ * DESC order, so a plain `lastMessageAt: 'desc'` put every empty thread above every real one.
+ */
+export const CONVERSATION_LIST_ORDER: Prisma.ConversationOrderByWithRelationInput[] = [
+  { lastMessageAt: { sort: 'desc', nulls: 'last' } },
+  { createdAt: 'desc' },
+];
+
 const userSelect = { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, presence: true } };
 
 @Injectable()
@@ -530,7 +540,7 @@ export class ChatService {
         // ends: the thread freezes, it does not vanish.
         OR: [{ organizationId: data.organizationId }, { originSpaceId: { not: null } }],
       },
-      orderBy: { lastMessageAt: 'desc' },
+      orderBy: CONVERSATION_LIST_ORDER,
       take: 100,
       include: {
         members: { include: { user: userSelect } },
@@ -701,13 +711,71 @@ export class ChatService {
     if (!other || !other.isActive || other.organizationId !== conversation.organizationId) {
       throw new ForbiddenException('You can no longer message this member');
     }
-    await this.assertMayContact(
-      senderId,
-      otherId,
-      conversation.organizationId,
-      'You can no longer message this member',
-      other,
-    );
+    try {
+      await this.assertMayContact(
+        senderId,
+        otherId,
+        conversation.organizationId,
+        'You can no longer message this member',
+        other,
+      );
+    } catch (err) {
+      // Only a contact-rule refusal can be answered by the reply right; a missing member stays missing.
+      if (!(err instanceof ForbiddenException)) throw err;
+      if (!(await this.mayReply(conversation.id, conversation.organizationId, senderId, otherId))) throw err;
+    }
+  }
+
+  /**
+   * The reply right: somebody who was WRITTEN TO in a direct thread may answer in it.
+   *
+   * `canReach` is directional on purpose — a manager reaches anyone, a member at
+   * `contactScope: SELECTED` reaches only their list and the leads of their spaces —
+   * and that is right for STARTING a conversation. It was also being asked of every
+   * reply, so a member restricted to their own leads received a manager's message
+   * and was refused ("You can no longer message this member") answering it. Being
+   * contacted is the reason to talk; refusing the answer protects nobody, since the
+   * person who wrote chose to be reached.
+   *
+   * Narrow, and re-asked live on every send, not granted by history:
+   *  - the counterpart must have SENT a message into this very thread;
+   *  - the counterpart must STILL be allowed to reach the sender (`canReach` run
+   *    their way round: their Messaging switch, the sender being contactable,
+   *    their manager access or reach) — demote them, take them out of chat, and
+   *    the reply right goes with it;
+   *  - the sender must still be in chat themselves (their own Messaging switch),
+   *    and the counterpart contactable — "off means off" holds both ways.
+   * Same-org only: cross-org threads are decided by the share, above, and an
+   * inactive / moved counterpart was already refused before this is asked.
+   */
+  private async mayReply(conversationId: string, organizationId: string, senderId: string, otherId: string): Promise<boolean> {
+    const wroteHere = await this.prisma.message.findFirst({
+      where: { conversationId, senderId: otherId },
+      select: { id: true },
+    });
+    if (!wroteHere) return false;
+
+    const select = {
+      ...ORG_ACCESS_SELECT,
+      id: true,
+      organizationId: true,
+      isActive: true,
+      contactable: true,
+      enabledModules: true,
+      contactScope: true,
+      contactAllowedIds: true,
+    } as const;
+    const [sender, other] = await Promise.all([
+      this.prisma.user.findFirst({ where: { id: senderId, organizationId }, select }),
+      this.prisma.user.findFirst({ where: { id: otherId, organizationId }, select }),
+    ]);
+    if (!sender || !other || sender.id !== senderId || other.id !== otherId) return false;
+    if (!sender.isActive || !other.isActive) return false;
+    // The sender's own side of "off means off".
+    if (!canContactColleagues({ enabledModules: sender.enabledModules })) return false;
+    if (!other.contactable) return false;
+    // And the counterpart's, asked their way round: may THEY still reach the sender?
+    return this.canReach(other as any, sender as any, this.contactTargetsResolver(otherId, organizationId));
   }
 
   private async assertMember(conversationId: string, userId: string) {

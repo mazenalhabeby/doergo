@@ -1,4 +1,4 @@
-import { assertMemberInScope, countLeave as countLeaveDays, paginated } from '@hbcfield/shared';
+import { assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
@@ -1210,40 +1210,28 @@ export class TechniciansService {
    * Get availability for all technicians on a specific date or date range
    */
   async getAvailability(dto: GetAvailabilityDto) {
-    const { organizationId, date, startDate, endDate } = dto;
+    const { organizationId, date, startDate, endDate, scopeSpaceIds } = dto;
     const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-    // Build list of dates to query
-    const dates: Date[] = [];
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      // Cap the span so a far-future endDate can't expand into a huge day loop and
-      // an N-days × M-technicians fan-out (L8). 92 days ≈ one quarter.
-      const MAX_SPAN_DAYS = 92;
-      const spanDays = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-      if (spanDays > MAX_SPAN_DAYS) {
-        throw new BadRequestException(`Date range too large (max ${MAX_SPAN_DAYS} days)`);
-      }
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        dates.push(new Date(d));
-      }
-    } else {
-      dates.push(date ? new Date(date) : new Date());
-    }
+    // The days to answer, as calendar dates (YYYY-MM-DD) — see `availabilityDays`.
+    const days = availabilityDays({ date, startDate, endDate });
+    if (days.length === 0) return success([]);
 
     // Collect unique dayOfWeek values needed
-    const daysOfWeek = [...new Set(dates.map(d => d.getDay()))];
+    const daysOfWeek = [...new Set(days.map((d) => dowOf(d)))];
 
-    // Get all technicians with schedules for all needed days + time-off covering the range
-    const rangeStart = dates[0]!;
-    const rangeEnd = dates[dates.length - 1]!;
+    // Time off is a @db.Date column (UTC midnight), so the range bounds are the same instants.
+    const rangeStart = new Date(`${days[0]}T00:00:00.000Z`);
+    const rangeEnd = new Date(`${days[days.length - 1]}T00:00:00.000Z`);
 
     const technicians = await this.prisma.user.findMany({
       where: {
         organizationId,
         role: 'EMPLOYEE',
         isActive: true,
+        // ⚠️ A reader allowed in SOME workspaces sees only the people in them —
+        // availability shows who is off and why it is not anybody else's business.
+        ...memberScopeFilter(scopeSpaceIds),
       },
       select: {
         id: true,
@@ -1272,14 +1260,13 @@ export class TechniciansService {
     });
 
     // Build availability for each date
-    const dayResults = dates.map((queryDate) => {
-      const dayOfWeek = queryDate.getDay();
-      const dateStr = queryDate.toISOString().split('T')[0];
+    const dayResults = days.map((dateStr) => {
+      const dayOfWeek = dowOf(dateStr);
 
       const availability = technicians.map((tech: any) => {
         const schedule = tech.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek) || null;
         const timeOffRecord = tech.timeOffRequests?.find(
-          (t: any) => new Date(t.startDate) <= queryDate && new Date(t.endDate) >= queryDate
+          (t: any) => dateKeyOf(t.startDate) <= dateStr && dateKeyOf(t.endDate) >= dateStr,
         );
         const onTimeOff = !!timeOffRecord;
         const hasSchedule = schedule !== null;
@@ -1336,4 +1323,35 @@ export class TechniciansService {
     // Range request: return array
     return success(dayResults);
   }
+}
+
+/** Availability ranges are capped so a far-future endDate cannot fan out N days × M people (L8). */
+export const AVAILABILITY_MAX_SPAN_DAYS = 92;
+
+/** A @db.Date value (UTC midnight) or an ISO string, as its calendar date. */
+function dateKeyOf(v: Date | string): DateKey {
+  return (v instanceof Date ? v.toISOString() : String(v)).slice(0, 10);
+}
+
+/**
+ * Which calendar days an availability request answers, each exactly once.
+ *
+ * Stepped as DATE KEYS (`eachDay`, the calendar module's walker), never as a local Date with
+ * `setDate(+1)`: `new Date('2026-10-13')` is UTC midnight, and stepping it in the server's zone
+ * moves it by 23 or 25 hours across a DST change — on 25 Oct in Vienna it lands at 01:00 UTC on
+ * the 26th, past `end`, and the last day was silently dropped. West of UTC the same Date is the
+ * evening BEFORE, so `getDay()` also named the wrong weekday. A date key has no zone.
+ */
+export function availabilityDays(q: { date?: string; startDate?: string; endDate?: string }, now = new Date()): DateKey[] {
+  if (q.startDate && q.endDate) {
+    const from = dateKeyOf(q.startDate);
+    const to = dateKeyOf(q.endDate);
+    const days = eachDay(from, to, AVAILABILITY_MAX_SPAN_DAYS + 2);
+    if (days.length > AVAILABILITY_MAX_SPAN_DAYS + 1) {
+      throw new BadRequestException(`Date range too large (max ${AVAILABILITY_MAX_SPAN_DAYS} days)`);
+    }
+    return days;
+  }
+  // Single day: the one asked for, else today — the same UTC date this endpoint always used.
+  return [q.date ? dateKeyOf(q.date) : now.toISOString().slice(0, 10)];
 }

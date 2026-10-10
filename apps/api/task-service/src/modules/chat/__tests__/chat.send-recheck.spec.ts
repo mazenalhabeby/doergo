@@ -23,7 +23,8 @@ describe('ChatService.sendMessage — permission is re-checked on every send', (
     user: { findUnique: jest.fn(), findFirst: jest.fn() },
     conversationMember: { findUnique: jest.fn(), update: jest.fn() },
     conversation: { update: jest.fn() },
-    message: { create: jest.fn() },
+    // The reply right asks whether the counterpart wrote here; by default they did not.
+    message: { create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
     spaceAssignment: { findMany: jest.fn() },
     $transaction: jest.fn(),
   };
