@@ -2,8 +2,12 @@
 
 ## ▶ Status after the fixes (later on 2026-10-10)
 
-Code fixes are **committed locally on `main`, NOT deployed** (deploys are batched
-until the owner says so). Two server changes were applied directly on production.
+**DEPLOYED to production 2026-10-10 ~21:52** — `84e169ba → c728bb59` (fast-forward), images
+auth / task / gateway / web rebuilt from the lockfile, no migration, static synced, all
+containers healthy, injected secrets intact. Rollback: git tag `prod-pre-secfix` → `84e169ba`,
+images `hbcfield/hbcfield-{auth-service,task-service,api-gateway,web-app}:rollback-pre-secfix`,
+DB backup `/opt/doergo/backups/pre-secfix_20261010_213905.sql.gz` (119 tables). No mobile change, so no OTA.
+Two further changes were applied directly on the server (#4, #10).
 
 | # | Finding | Status |
 |---|---|---|
