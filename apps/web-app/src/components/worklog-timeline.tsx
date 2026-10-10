@@ -3,13 +3,13 @@
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Loader2, Plus, ImagePlus, Trash2, FileText, X, LogOut } from "lucide-react"
+import { Loader2, Plus, ImagePlus, Trash2, FileText, LogOut } from "lucide-react"
 
 import { worklogApi, uploadToS3, type WorkLogNote } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { AttachmentPicker, ImageLightbox, PendingFileChips } from "@/components/pending-attachments"
 import { Textarea } from "@/components/ui/textarea"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
@@ -149,18 +149,8 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
               ? t("worklog.placeholderFor", { name: memberName, defaultValue: "What did {{name}} do? e.g. finished with the machine" })
               : t("worklog.placeholder", "What did you just do? e.g. finished with the machine")}
             className="resize-none bg-background" />
-          {files.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {files.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px] text-foreground">
-                  <span className="max-w-[120px] truncate">{f.name}</span>
-                  <button onClick={() => setFiles((p) => p.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
-                </span>
-              ))}
-            </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden"
-            onChange={(e) => { setFiles((p) => [...p, ...Array.from(e.target.files ?? [])].slice(0, MAX_FILES)); e.currentTarget.value = "" }} />
+          <PendingFileChips files={files} setFiles={setFiles} chipClassName="text-foreground" />
+          <AttachmentPicker inputRef={fileRef} setFiles={setFiles} max={MAX_FILES} />
           <div className="flex items-center justify-between">
             <Button type="button" variant="ghost" size="sm" disabled={files.length >= MAX_FILES} onClick={() => fileRef.current?.click()}>
               <ImagePlus className="mr-1.5 h-4 w-4" /> {t("worklog.photo", "Photo")}
@@ -173,15 +163,7 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
       )}
 
       {/* Full-screen image lightbox */}
-      {viewer && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setViewer(null)}>
-          <button type="button" onClick={() => setViewer(null)} className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70">
-            <X className="h-5 w-5" />
-          </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={viewer} alt="" decoding="async" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
+      <ImageLightbox src={viewer} onClose={() => setViewer(null)} />
     </div>
   )
 }

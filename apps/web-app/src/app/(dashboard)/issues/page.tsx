@@ -3,7 +3,7 @@
 import { personName } from "@hbcfield/shared/client"
 import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus, X } from "lucide-react"
+import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus } from "lucide-react"
 
 import { shiftIssuesApi, employeesApi, uploadToS3, type ShiftIssue, type ShiftIssueEvent, type EmployeeListItem, type WorkLogAttachmentInput } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -11,6 +11,7 @@ import { useSocketContext } from "@/contexts/socket-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { AttachmentPicker, ImageLightbox, PendingFileChips } from "@/components/pending-attachments"
 import { Textarea } from "@/components/ui/textarea"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
@@ -219,29 +220,13 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
       </div>
 
       {/* Full-screen image lightbox */}
-      {viewer && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onClick={() => setViewer(null)}>
-          <button type="button" onClick={() => setViewer(null)} className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"><X className="h-5 w-5" /></button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={viewer} alt="" decoding="async" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
+      <ImageLightbox src={viewer} onClose={() => setViewer(null)} />
 
       {!closed ? (
         <div className="border-t border-border/60 bg-card p-3">
-          {files.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {files.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px]">
-                  <span className="max-w-[120px] truncate">{f.name}</span>
-                  <button onClick={() => setFiles((p) => p.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
-                </span>
-              ))}
-            </div>
-          )}
+          <PendingFileChips files={files} setFiles={setFiles} className="mb-2" />
           <div className="flex items-end gap-2">
-            <input ref={fileRef} type="file" accept="image/*,application/pdf" multiple className="hidden"
-              onChange={(e) => { setFiles((p) => [...p, ...Array.from(e.target.files ?? [])].slice(0, 5)); e.currentTarget.value = "" }} />
+            <AttachmentPicker inputRef={fileRef} setFiles={setFiles} max={5} />
             <Button size="icon" variant="ghost" className="h-[42px] w-[42px] shrink-0" disabled={files.length >= 5} onClick={() => fileRef.current?.click()}>
               <ImagePlus className="h-4 w-4" />
             </Button>
