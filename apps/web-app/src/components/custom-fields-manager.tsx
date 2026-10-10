@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -184,7 +185,7 @@ function FieldDialog({
       }),
     onSuccess: () => {
       notify.success(t("customFields.fieldCreated"))
-      queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
+      queryClient.invalidateQueries({ queryKey: keys.customFields.definitions() })
       onOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -199,7 +200,7 @@ function FieldDialog({
       } as Partial<CustomFieldDefinition>),
     onSuccess: () => {
       notify.success(t("customFields.fieldUpdated"))
-      queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
+      queryClient.invalidateQueries({ queryKey: keys.customFields.definitions() })
       onOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -339,7 +340,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
   const [deleteTarget, setDeleteTarget] = useState<CustomFieldDefinition | null>(null)
 
   const { data: allFields, isLoading } = useQuery({
-    queryKey: ["customFieldDefinitions"],
+    queryKey: keys.customFields.definitions(),
     queryFn: () => customFieldsApi.listDefinitions(),
   })
 
@@ -350,7 +351,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       customFieldsApi.updateDefinition(id, { isActive } as Partial<CustomFieldDefinition>),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.customFields.definitions() }),
     onError: (e: Error) => notify.error(e.message),
   })
 
@@ -358,7 +359,7 @@ export function CustomFieldsManager({ workflowId }: { workflowId: string | null 
     mutationFn: (id: string) => customFieldsApi.deleteDefinition(id),
     onSuccess: () => {
       notify.success(t("customFields.fieldDeleted"))
-      queryClient.invalidateQueries({ queryKey: ["customFieldDefinitions"] })
+      queryClient.invalidateQueries({ queryKey: keys.customFields.definitions() })
       setDeleteTarget(null)
     },
     onError: (e: Error) => notify.error(e.message),

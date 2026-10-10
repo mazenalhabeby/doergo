@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -40,7 +41,7 @@ export function AssetInviteClient({
   const [copied, setCopied] = useState(false)
 
   const clientsQ = useQuery({
-    queryKey: ["space-clients", spaceId],
+    queryKey: keys.customers.list({ spaceId: spaceId ?? undefined, limit: 100 }),
     queryFn: () => customersApi.list({ spaceId: spaceId ?? undefined, limit: 100 }),
     enabled: open,
   })

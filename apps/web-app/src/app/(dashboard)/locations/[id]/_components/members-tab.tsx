@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -101,7 +102,7 @@ const emptyPermissions = (): PermissionSet =>
  */
 export function MembersTab({ spaceId, hasApartments }: { spaceId: string; hasApartments?: boolean }) {
   const { t } = useTranslation()
-  const { data: members } = useQuery({ queryKey: ["space-members", spaceId], queryFn: () => spaceMembersApi.list(spaceId) })
+  const { data: members } = useQuery({ queryKey: keys.spaceMembers.list(spaceId), queryFn: () => spaceMembersApi.list(spaceId) })
   const { data: roles } = useQuery({ queryKey: roleQueryKey(spaceId), queryFn: () => spaceRolesApi.listInSpace(spaceId) })
   const count = (n?: number) => (n != null ? <span className="ml-1.5 text-[11px] text-muted-foreground">{n}</span> : null)
   return (
@@ -180,7 +181,7 @@ function SubRolesSection({ spaceId }: { spaceId: string }) {
     },
     onSuccess: () => {
       refreshRoles()
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(t("scheduling.workRoles.merged"))
     },
     onError: (err: Error) => notify.error(err.message),
@@ -452,7 +453,7 @@ function RoleDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       queryClient.invalidateQueries({ queryKey: ["space-roles"] })
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(t("scheduling.workRoles.merged"))
       onOpenChange(false)
     },
@@ -483,7 +484,7 @@ function RoleDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       queryClient.invalidateQueries({ queryKey: ["space-roles"] })
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(isEdit ? t("scheduling.roles.toast.updated") : t("scheduling.roles.toast.created"))
       onOpenChange(false)
     },

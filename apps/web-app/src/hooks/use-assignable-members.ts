@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
@@ -29,14 +30,15 @@ export function useAssignableMembers(opts: { spaceId?: string | null; enabled?: 
   const source: MemberSource = memberSourceFor({ mayListOrg, spaceId, rosterOnly: opts.rosterOnly })
 
   const directory = useQuery({
-    queryKey: ["orgMembers", "assignable"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    // The whole directory, every page — one key for every picker.
+    queryKey: keys.members.directory(),
+    queryFn: () => organizationsApi.getAllMembers(),
     enabled: enabled && source === "directory",
     staleTime: 30_000,
   })
 
   const roster = useQuery({
-    queryKey: ["space-roster", spaceId],
+    queryKey: keys.locations.roster(spaceId),
     queryFn: () => locationsApi.getAssignedMembers(spaceId!),
     enabled: enabled && !!spaceId,
     staleTime: 30_000,
@@ -54,7 +56,7 @@ export function useAssignableMembers(opts: { spaceId?: string | null; enabled?: 
   })
 
   const members = useMemo<AssignablePerson[]>(() => {
-    if (source === "directory") return (directory.data?.data ?? []).map(personFromMember)
+    if (source === "directory") return (directory.data ?? []).map(personFromMember)
     if (source === "space") return peopleFromRosters(roster.data)
     return visible.data ? peopleFromRosters(visible.data) : NONE
   }, [source, directory.data, roster.data, visible.data])

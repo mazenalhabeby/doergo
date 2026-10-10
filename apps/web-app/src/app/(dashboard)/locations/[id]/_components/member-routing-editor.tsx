@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -87,7 +88,7 @@ export function MemberRoutingEditor({
         approveRoleIds: [],
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(t("scheduling.routing.saved", "Routing updated"))
     },
     onError: (e: Error) => notify.error(e.message),

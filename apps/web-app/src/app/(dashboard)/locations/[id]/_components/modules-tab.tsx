@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -41,8 +42,8 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
   const mutation = useMutation({
     mutationFn: (modules: string[]) => locationsApi.update(space.id, { enabledModules: modules }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location", space.id] })
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
       notify.success(t("locations.toast.modulesUpdated"))
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.modulesUpdateFailed")),

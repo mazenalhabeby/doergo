@@ -19,9 +19,10 @@ const read = (rel: string) => code(fs.readFileSync(path.join(SRC, rel), "utf8"))
 
 describe("the proposal queue asks for the right proposals", () => {
   it("the API sends the workspace as a query, and nothing without one", () => {
-    const api = read("lib/api.ts")
+    const api = read("lib/api/assets.ts")
     expect(api).toMatch(/getPendingProposals: async \(spaceId\?: string\)/)
-    expect(api).toContain("/assets/proposals/pending?spaceId=${encodeURIComponent(spaceId)}")
+    // The query is encoded by the shared client; an empty workspace sends none.
+    expect(api).toContain("call(assetsEndpoints.pendingProposals, undefined, { query: { spaceId: spaceId || undefined } })")
   })
 
   it("the queue passes its workspace through, and caches each queue apart", () => {

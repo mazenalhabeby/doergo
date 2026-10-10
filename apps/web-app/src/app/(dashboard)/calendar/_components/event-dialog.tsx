@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useMemo, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -123,7 +124,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
   }, [open, event, start]) // eslint-disable-line react-hooks/exhaustive-deps -- offices/spaceId seed a NEW form only
 
   const { data: clientPage } = useQuery({
-    queryKey: ["customers", "calendar-pick", clientQ],
+    queryKey: keys.customers.list({ search: clientQ || undefined, includeUnfiled: true, limit: 20 }),
     queryFn: () => customersApi.list({ search: clientQ || undefined, includeUnfiled: true, limit: 20 }),
     enabled: open && crm && clientOpen,
     staleTime: 60_000,

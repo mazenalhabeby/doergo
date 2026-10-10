@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState, memo } from "react"
 import { useTranslation } from "react-i18next"
@@ -99,14 +100,14 @@ export default function SpacesPage() {
   const { data, isLoading } = useQuery({
     // The Spaces directory shows EVERY kind (incl. customer companies); work
     // pickers elsewhere default to hiding CUSTOMER.
-    queryKey: ["locations", "all"],
+    queryKey: keys.locations.list({ limit: 100, includeInactive: true, kind: "all" }),
     queryFn: () => locationsApi.list({ limit: 100, includeInactive: true, kind: "all" }),
   })
 
   // GET /workflows is @RequirePermission('canViewAllTasks') — asked only of whoever holds it.
   const { holds } = useRouteAccess()
   const { data: workflows } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
     enabled: holds("org:canViewAllTasks"),
   })
@@ -121,8 +122,8 @@ export default function SpacesPage() {
   const resyncAllMutation = useMutation({
     mutationFn: () => locationsApi.resyncAllTasks(),
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
       setResyncAllOpen(false)
       notify.success(
         t("locations.toast.resyncAllDone", { updated: res?.updated ?? 0, spaces: res?.spacesProcessed ?? 0 }),
@@ -239,7 +240,7 @@ export default function SpacesPage() {
           open={createOpen}
           onOpenChange={setCreateOpen}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["locations"] })
+            queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
             setCreateOpen(false)
           }}
         />
@@ -345,7 +346,7 @@ const SpaceCard = memo(function SpaceCard({
 }) {
   const { t } = useTranslation()
   const { data: assignments } = useQuery({
-    queryKey: ["location-assignments", space.id],
+    queryKey: keys.locations.roster(space.id),
     queryFn: () => locationsApi.getAssignedMembers(space.id),
     enabled: space.isActive,
   })

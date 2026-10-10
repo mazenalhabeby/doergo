@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { PlanGate } from "@/components/plan-gate"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -147,7 +148,7 @@ function HoursBasisChip({
     mutationFn: (b: "COUNTED" | "CLOCKED" | "SHIFT") => spaceMembersApi.updateRoles(spaceId!, assignmentId!, { hoursBasis: b }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       notify.success(t("invoices.create.basisSaved"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -297,7 +298,7 @@ function NewInvoiceInner() {
 
   // Space (for the client header + fallback prefill).
   const { data: space } = useQuery({
-    queryKey: ["location", spaceId],
+    queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId!),
     enabled: !!spaceId,
   })
@@ -313,7 +314,7 @@ function NewInvoiceInner() {
 
   /** The workspaces to choose from, only once somebody is choosing one. */
   const { data: spacePage } = useQuery({
-    queryKey: ["locations", "for-invoice"],
+    queryKey: keys.locations.list(),
     // ⚠️ Paginated: the payload is `{ data, meta }`, not an array. Reading it as
     // one silently yields nothing and an empty picker that looks like "no
     // workspaces exist".
@@ -346,7 +347,7 @@ function NewInvoiceInner() {
     offer cannot appear for somebody the server would refuse.
   */
   const { data: clientPage } = useQuery({
-    queryKey: ["customers", "for-invoice"],
+    queryKey: keys.customers.list({ limit: 200, contacts: "exclude", status: "active" }),
     queryFn: () => customersApi.list({ limit: 200, contacts: "exclude", status: "active" }),
     enabled: hasCrm,
     staleTime: 60_000,
@@ -817,7 +818,7 @@ function NewInvoiceInner() {
             email: clientEmail.trim() || undefined,
             address: clientAddress.trim() || undefined,
           })
-          queryClient.invalidateQueries({ queryKey: ["customers"] })
+          queryClient.invalidateQueries({ queryKey: keys.customers.lists() })
           notify.success(t("invoices.create.clientAdded"))
         } catch {
           notify.error(t("invoices.create.clientAddFailed"))

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -40,7 +41,7 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
     queryFn: () => workflowsApi.listForSpace(spaceId),
   })
   const { data: all = [] } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
   })
   /*
@@ -57,9 +58,9 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["space-workflows", spaceId] })
     // A copy from the library is a new org task type, so the org list is stale too.
-    queryClient.invalidateQueries({ queryKey: ["workflows"] })
+    queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
     // The space's own record still carries the legacy default; keep it honest.
-    queryClient.invalidateQueries({ queryKey: ["location", spaceId] })
+    queryClient.invalidateQueries({ queryKey: keys.locations.detail(spaceId) })
   }
 
   const attach = useMutation({

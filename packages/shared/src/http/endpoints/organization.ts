@@ -122,3 +122,22 @@ export const onboardingEndpoints = defineEndpoints('onboarding', {
   acceptInvitation: endpoint<void, { user: User }, { code: string }>({ method: 'POST', path: () => '/onboarding/accept-invitation' }),
   cancelJoinRequest: endpoint<Id, unknown>({ method: 'DELETE', path: (a) => path`/onboarding/join-requests/${a.id}` }),
 });
+
+/** What `GET /app/version` answers (gateway app-version.controller). */
+export interface AppVersionInfo {
+  minimum?: string | null;
+  latest?: string | null;
+  downloads?: { android?: string | null; ios?: string | null };
+  /** A release note in the asked language; its shape is the phone's to read. */
+  whatsNew?: unknown;
+}
+
+/** The app itself — which version is current and which is required (the phone's update gate). Public: asked before sign-in. */
+export const appEndpoints = defineEndpoints('app', {
+  version: endpoint<{ lang?: string } | void, AppVersionInfo | null>({
+    method: 'GET',
+    path: (q) => withQuery('/app/version', q || undefined),
+    public: true,
+    keep: false,
+  }),
+});

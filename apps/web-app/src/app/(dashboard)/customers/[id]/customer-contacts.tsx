@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -56,7 +57,7 @@ export function ContactsPanel({ customer, canEdit }: { customer: Customer; canEd
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["customer-contacts", companyId] })
     qc.invalidateQueries({ queryKey: ["customer-companies"] })
-    qc.invalidateQueries({ queryKey: ["space-customers"] })
+    qc.invalidateQueries({ queryKey: keys.customers.lists() })
   }
 
   const setPrimary = useMutation({
@@ -224,7 +225,10 @@ function AddContactDialog({ companyId, onSaved, trigger, startName, mine }: {
       company is exactly who you are looking for, and hiding them is how a
       duplicate gets created.
     */
-    queryKey: ["contact-search", debouncedSearch, mine ? "COMPANY" : "PERSON"],
+    queryKey: keys.customers.list({
+      search: debouncedSearch, limit: 8, contacts: "all", portalResident: false,
+      type: mine ? "COMPANY" : "PERSON",
+    }),
     queryFn: () =>
       customersApi.list({
         search: debouncedSearch, limit: 8, contacts: "all", portalResident: false,
@@ -392,8 +396,8 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     mutationFn: () => customersApi.promoteContact(customer.id),
     onSuccess: () => {
       notify.success(t("customers.promoted", "Now a client in their own right"))
-      qc.invalidateQueries({ queryKey: ["customer", customer.id] })
-      qc.invalidateQueries({ queryKey: ["space-customers"] })
+      qc.invalidateQueries({ queryKey: keys.customers.detail(customer.id) })
+      qc.invalidateQueries({ queryKey: keys.customers.lists() })
     },
     onError: (e: Error) => notify.error(e.message || "Could not update"),
   })
@@ -409,7 +413,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     five minutes — a CRM does not gain its first company twice.
   */
   const anyCompanies = useQuery({
-    queryKey: ["crm-has-companies"],
+    queryKey: keys.customers.list({ type: "COMPANY", limit: 1 }),
     queryFn: () => customersApi.list({ type: "COMPANY", limit: 1 }),
     staleTime: 5 * 60_000,
     select: (r) => (r.data?.length ?? 0) > 0,
@@ -419,7 +423,7 @@ export function WorksAtPanel({ customer, canEdit }: { customer: Customer; canEdi
     qc.invalidateQueries({ queryKey: ["customer-companies", customer.id] })
     // …and the company's own panel, which is the other end of this link.
     qc.invalidateQueries({ queryKey: ["customer-contacts"] })
-    qc.invalidateQueries({ queryKey: ["space-customers"] })
+    qc.invalidateQueries({ queryKey: keys.customers.lists() })
   }
   const detach = useMutation({
     mutationFn: (linkId: string) => customersApi.removeContact(linkId),

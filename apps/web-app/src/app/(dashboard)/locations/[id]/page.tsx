@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useEffect } from "react"
 import { SPACE_TAB_OPTION } from "@hbcfield/shared/client"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
@@ -129,7 +130,7 @@ export default function SpaceSettingsPage() {
   }
 
   const { data: space, isLoading } = useQuery({
-    queryKey: ["location", spaceId],
+    queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId),
     enabled: !!spaceId && canManage,
   })

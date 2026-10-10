@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -21,7 +22,7 @@ interface ActivitySectionProps {
 export function ActivitySection({ taskId, onCountChange }: ActivitySectionProps) {
   const { t } = useTranslation()
   const { data: events, isLoading, isError } = useQuery({
-    queryKey: ["taskTimeline", taskId],
+    queryKey: keys.tasks.timeline(taskId),
     queryFn: () => tasksApi.getTimeline(taskId),
   })
 

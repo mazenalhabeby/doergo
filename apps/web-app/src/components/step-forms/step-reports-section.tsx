@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { ClipboardCheck } from "lucide-react"
@@ -25,7 +26,7 @@ interface StatusLike {
 export function StepReportsSection({ taskId, workflowStatuses }: { taskId: string; workflowStatuses?: ReadonlyArray<StatusLike> | null }) {
   const { t } = useTranslation()
   const { data: submissions = [] } = useQuery({
-    queryKey: ["task-submissions", taskId],
+    queryKey: keys.tasks.submissions(taskId),
     queryFn: () => tasksApi.getSubmissions(taskId),
     // Photo and signature links are signed and short-lived.
     staleTime: 5 * 60_000,

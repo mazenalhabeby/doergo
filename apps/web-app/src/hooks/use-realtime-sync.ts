@@ -1,8 +1,10 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useCallback, useRef } from "react"
 import type { TaskEventPayload } from "@/types/socket-events"
 import { useQueryClient } from "@tanstack/react-query"
+import type { QueryKey } from "@tanstack/react-query"
 import { useSocketContext } from "@/contexts/socket-context"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -93,7 +95,7 @@ const Events = {
 // / days-off / availability). Distinct from the DASHBOARD keys below — both must
 // refresh on a clock or an admin edit, so keep this list as the single source and
 // spread it into every attendance-affecting event (DRY).
-const ATTENDANCE_PAGE_KEYS: string[][] = [
+const ATTENDANCE_PAGE_KEYS: QueryKey[] = [
   ["attendance"], // main tracking list — ["attendance", loc, status, ...] (prefix match)
   ["attendance-approvals"],
   ["attendance-breaks-active"],
@@ -106,16 +108,16 @@ const ATTENDANCE_PAGE_KEYS: string[][] = [
 ]
 
 // The DASHBOARD attendance keys (presence tiles + per-location batch + approvals).
-const DASHBOARD_ATTENDANCE_KEYS: string[][] = [
+const DASHBOARD_ATTENDANCE_KEYS: QueryKey[] = [
   ["attendance-active"],
   ["locationAttendanceBatch"],
   ["pending-approvals"],
   ["active-breaks"],
-  ["orgMembers", "dashboard"],
+  keys.members.directoryLite(),
 ]
 
 // Everything that must refresh when attendance changes (clock or admin edit).
-const ALL_ATTENDANCE_KEYS: string[][] = [
+const ALL_ATTENDANCE_KEYS: QueryKey[] = [
   // The "on the floor right now" panel on /employees/availability. It reports
   // the clock, so every clock event moves it.
   ["floor-now"],...DASHBOARD_ATTENDANCE_KEYS, ...ATTENDANCE_PAGE_KEYS]
@@ -123,38 +125,37 @@ const ALL_ATTENDANCE_KEYS: string[][] = [
 // Everywhere a member, an invitation or a join request is rendered. One list, so
 // the four server call sites that emit `member.changed` cannot drift from what the
 // screens actually read (DRY).
-const MEMBER_KEYS: string[][] = [
-  ["orgMembers"],              // /members list — ["orgMembers", search, role, page]
-  ["orgMember"],               // /members/[id] detail
+const MEMBER_KEYS: QueryKey[] = [
+  keys.members.lists(),        // every member list — the /members page, the directory, the pickers
+  keys.members.details(),      // /members/[id] detail
   ["orgContacts"],             // chat / contact directory
   ["pendingInvitations"],      // pending invites shown on /members
   ["invitations"],             // /invitations page
   ["join-requests"],           // /join-requests page
-  ["all-location-assignments"],// member → spaces map on /members
-  ["locationRosters"],         // space rosters
-  ["orgMembers", "dashboard"], // dashboard roster tiles
+  keys.locations.rosterBatches(), // space rosters, several at once (/members, the dashboard)
+  keys.locations.rosters(),    // one space's roster
 ]
 
 // Query keys that each event should invalidate
-const EVENT_INVALIDATIONS: Record<string, string[][]> = {
+const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // Task events → invalidate task lists, counts, and related
   // `portalAllRequests` is the office's inbox for customer-portal requests. A
   // request submitted from the portal creates a Task and announces task.created —
   // but only the task lists were invalidated, so the portal inbox stayed stale and
   // an external customer's request sat unseen until someone reloaded (audit P-D1).
-  [Events.TASK_CREATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"]],
+  [Events.TASK_CREATED]: [keys.tasks.lists(), keys.tasks.counts(), ["portalAllRequests"]],
   // `task` and `task-time`: the OPEN job too — its checklist, its crew, its time.
   // Only queries in use refetch, so this is the one job on screen, not every job.
-  [Events.TASK_UPDATED]: [["tasks"], ["taskStatusCounts"], ["portalAllRequests"], ["task"], ["task-time"]],
-  [Events.TASK_ASSIGNED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_STATUS_CHANGED]: [["tasks"], ["taskStatusCounts"], ["attendance-active"], ["locationAttendanceBatch"], ["portalAllRequests"]],
-  [Events.TASK_COMMENT_ADDED]: [["tasks"]],
-  [Events.TASK_ATTACHMENT_ADDED]: [["tasks"]],
-  [Events.TASK_DECLINED]: [["tasks"], ["taskStatusCounts"]],
-  [Events.TASK_DELETED]: [["tasks"], ["taskStatusCounts"]],
+  [Events.TASK_UPDATED]: [keys.tasks.lists(), keys.tasks.counts(), ["portalAllRequests"], keys.tasks.details(), keys.tasks.times()],
+  [Events.TASK_ASSIGNED]: [keys.tasks.lists(), keys.tasks.counts()],
+  [Events.TASK_STATUS_CHANGED]: [keys.tasks.lists(), keys.tasks.counts(), ["attendance-active"], ["locationAttendanceBatch"], ["portalAllRequests"]],
+  [Events.TASK_COMMENT_ADDED]: [keys.tasks.lists()],
+  [Events.TASK_ATTACHMENT_ADDED]: [keys.tasks.lists()],
+  [Events.TASK_DECLINED]: [keys.tasks.lists(), keys.tasks.counts()],
+  [Events.TASK_DELETED]: [keys.tasks.lists(), keys.tasks.counts()],
   // The board's "Paused" chips and the job's handover card.
-  [Events.TASKS_PAUSED]: [["tasks"], ["task"]],
-  [Events.TASK_HANDOVER_ADDED]: [["tasks"], ["task"], ["taskTimeline"]],
+  [Events.TASKS_PAUSED]: [keys.tasks.lists(), keys.tasks.details()],
+  [Events.TASK_HANDOVER_ADDED]: [keys.tasks.lists(), keys.tasks.details(), keys.tasks.timelines()],
 
   // Attendance events → invalidate the REAL dashboard attendance queries so a
   // clock-in/out live-updates the presence labels without a manual refresh.
@@ -171,7 +172,7 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   [Events.ATTENDANCE_CHANGED]: ALL_ATTENDANCE_KEYS,
 
   // Availability change → refresh the dashboard roster + contacts (their dot updates)
-  [Events.PRESENCE_CHANGED]: [["orgMembers", "dashboard"], ["orgContacts"]],
+  [Events.PRESENCE_CHANGED]: [keys.members.directoryLite(), ["orgContacts"]],
 
   // Geofence excursion → refresh the approver panel (["geofence-excursions"]).
   // out/reported/returned change the pending list; approved/rejected/expired also
@@ -211,17 +212,17 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // invisible to a co-manager on the same client, and a new client never appeared
   // on another admin's list. Ids only — a rep who cannot reach the client refetches
   // and gets back what they are allowed to see.
-  // NOTE: these are the keys the screens ACTUALLY use — `["customers"]` looks like
-  // the obvious one and matches no query at all. A key that matches nothing is
-  // silent, which is the whole failure mode here.
+  // NOTE: these must be the keys the screens ACTUALLY read. A key that matches
+  // nothing is silent, which is the whole failure mode here — so client lists
+  // are named by the endpoint they read (`keys.customers.lists()` = every
+  // `GET /customers`, whichever workspace, filter or picker asked), never by a
+  // hand-picked string like the `["customers"]` that once matched no query.
   //
   // `["my-clients"]` was here until /clients stopped having a list of its own:
-  // it now mounts the workspace's Customers tab, so both the page and the tab
-  // live under `["space-customers", spaceId ?? "all"]` — one key for one list.
+  // it now mounts the workspace's Customers tab.
   [Events.CUSTOMER_CHANGED]: [
-    ["space-customers"],       // the clients list, per workspace and org-wide
-    ["customersAll"],          // the reports picker
-    ["customer"],              // /customers/[id]
+    keys.customers.lists(),       // every client list: the CRM, workspace tabs, pickers
+    keys.customers.details(),     // /customers/[id]
     ["customer-activities"],
     ["customer-addresses"],
   ],
@@ -296,14 +297,14 @@ const EVENT_INVALIDATIONS: Record<string, string[][]> = {
   // another admin — stayed invisible until the viewer reloaded the page. The
   // payload carries ids only; each client re-reads through its own scoped
   // endpoint, so nothing here widens what a viewer can see.
-  [Events.SPACE_CHANGED]: [["locations"], ["locationRosters"]],
-  [Events.SPACE_ROSTER_CHANGED]: [["locationRosters"], ["space-assignments"], ["all-location-assignments"]],
+  [Events.SPACE_CHANGED]: [keys.locations.lists(), keys.locations.details(), keys.locations.rosterBatches()],
+  [Events.SPACE_ROSTER_CHANGED]: [keys.locations.rosterBatches(), keys.locations.rosters(), keys.spaceMembers.all()],
 
   // Location events → the task's route map. `["workerLocations"]` matched NO query
   // in the app — a phantom key, so a GPS update refreshed nothing and a dispatcher
-  // watching a route saw it frozen. The real key is ["task-route", taskId]; this
+  // watching a route saw it frozen. The real key is keys.tasks.route(taskId); this
   // was found by the guard test in hooks/__tests__/realtime-keys.spec.ts.
-  [Events.WORKER_LOCATION]: [["task-route"]],
+  [Events.WORKER_LOCATION]: [keys.tasks.routes()],
 
 }
 
@@ -318,16 +319,16 @@ export function useRealtimeSync() {
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const flushInvalidations = useCallback(() => {
-    const keys = Array.from(pendingInvalidations.current)
+    const pending = Array.from(pendingInvalidations.current)
     pendingInvalidations.current.clear()
 
-    for (const keyStr of keys) {
+    for (const keyStr of pending) {
       const key = JSON.parse(keyStr)
       queryClient.invalidateQueries({ queryKey: key, refetchType: "all" })
     }
   }, [queryClient])
 
-  const scheduleInvalidation = useCallback((queryKeys: string[][]) => {
+  const scheduleInvalidation = useCallback((queryKeys: QueryKey[]) => {
     for (const key of queryKeys) {
       pendingInvalidations.current.add(JSON.stringify(key))
     }
@@ -344,8 +345,8 @@ export function useRealtimeSync() {
     const taskId = data?.task?.id || data?.taskId || data?.id
     if (taskId) {
       // Invalidate the specific task detail query
-      pendingInvalidations.current.add(JSON.stringify(["task", taskId]))
-      pendingInvalidations.current.add(JSON.stringify(["taskTimeline", taskId]))
+      pendingInvalidations.current.add(JSON.stringify(keys.tasks.detail(taskId)))
+      pendingInvalidations.current.add(JSON.stringify(keys.tasks.timeline(taskId)))
     }
 
     // Also invalidate the employee detail if an assignee is involved
@@ -356,8 +357,8 @@ export function useRealtimeSync() {
     }
 
     // Standard invalidations for this event type
-    const keys = EVENT_INVALIDATIONS[event]
-    if (keys) scheduleInvalidation(keys)
+    const eventKeys = EVENT_INVALIDATIONS[event]
+    if (eventKeys) scheduleInvalidation(eventKeys)
   }, [scheduleInvalidation])
 
   // Subscribe to ALL events — one time

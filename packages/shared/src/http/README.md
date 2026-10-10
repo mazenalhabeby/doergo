@@ -15,6 +15,9 @@ core/result.ts        toResult(promise) → { status, data, error, errorCode, er
 types.ts              answer shapes both apps declared (CrewView, JobTimeView, OrgMember, CalendarEventDetail…)
 endpoints/*.ts        the table, by domain; `apiEndpoints` is the registry
 endpoints/platform-admin.ts  the operator console's `/platform/*` routes — its OWN registry, `platformEndpoints`
+endpoints/web/*.ts    web-only routes (workflows, sprints, invoices, portal admin, space roles, analytics, blog…);
+                      merged into `apiEndpoints` — a new domain gets its own key, extra routes of a shared
+                      domain are spread into it (`billing: { ...billingEndpoints, ...billingWebEndpoints }`)
 ```
 
 ## How an app plugs in
@@ -39,9 +42,12 @@ session); 429 retried for any method honouring `Retry-After`; 502/503/504 and
 one network blip retried for GET/HEAD only; per-attempt timeout that follows
 the caller's `signal`; transport failures as `ApiError` with status 0.
 
-- **Web**: `credentials: 'include'`, `refresh` wraps `auth-session.refreshAccessToken()`
-  (`ok`→`refreshed`, `ended`→`invalid`, `unavailable`→`unreachable`), `retry: { maxRetries: 4 }`.
-  `toResult(api.get(p, { unwrap: 'raw' }))` is exactly today's `api.get` — migrate a domain at a time.
+- **Web** (`apps/web-app/src/lib/http-client.ts`): `credentials: 'include'`, `refresh` wraps
+  `auth-session.refreshAccessToken()` (`ok`→`refreshed`, `ended`→`invalid`, `unavailable`→`unreachable`),
+  `retry: { maxRetries: 4 }`. `lib/api/<domain>.ts` calls `call(apiEndpoints.x.y, args, { body, query })`,
+  which is `toResult` around `client.call(…, { unwrap: 'raw' })` keeping the ApiError as `cause`, so a
+  method's `throw apiError(res)` rethrows it with code and params. Query keys: `lib/query-keys.ts` (`keys.*`,
+  built on `queryKey(def, args)`).
 - **Phone**: SecureStore `getToken`, `refreshSession()` mapped, `timeoutMs: 15000`, `dedupeGets: true` +
   `sessionKey: () => knownOwner`, `cache` → response-cache.ts (`req.keep ?? isKeptResponse(req.path)`),
   `observe` → connectivity + server clock, `messages` → `networkErrorText`. `ApiError.statusCode` still works.

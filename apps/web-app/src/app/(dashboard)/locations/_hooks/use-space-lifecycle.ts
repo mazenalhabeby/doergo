@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
@@ -25,9 +26,9 @@ export function useSpaceLifecycle(handlers?: {
   const queryClient = useQueryClient()
   const invalidate = () => {
     // Both cache families: the spaces list (["locations", …]) and the
-    // per-space detail used by the settings page (["location", id]).
-    queryClient.invalidateQueries({ queryKey: ["locations"] })
-    queryClient.invalidateQueries({ queryKey: ["location"] })
+    // per-space detail used by the settings page (keys.locations.detail(id)).
+    queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
+    queryClient.invalidateQueries({ queryKey: keys.locations.details() })
   }
 
   const archive = useMutation({

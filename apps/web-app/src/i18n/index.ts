@@ -9,6 +9,7 @@ import en from './locales/en.json';
   cannot load.
 */
 import { LANGUAGE_KEY, SUPPORTED, isSupported, supportedLanguages, type Supported } from './languages';
+import { refusalSentence, setRefusalTranslator } from '../lib/refusal-text';
 
 export { supportedLanguages };
 export type { Supported };
@@ -105,6 +106,10 @@ i18n.use(initReactI18next).init({
     escapeValue: false,
   },
 });
+
+// A coded server refusal (an ApiError with `code`) reads its message through
+// this, in whatever language is current when it is shown — see lib/server-error.
+setRefusalTranslator((code, params) => refusalSentence(code, params, (key, options) => i18n.t(key, options), i18n.language));
 
 // Start the visitor's language on its way immediately — at module evaluation,
 // before React renders — so the fetch overlaps hydration instead of following

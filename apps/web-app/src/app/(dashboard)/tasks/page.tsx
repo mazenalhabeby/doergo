@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
 import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
@@ -56,7 +57,6 @@ import { RoleJobsSummary } from "./_components/role-jobs-summary"
 import { TaskTableRow } from "./_components/task-table-row"
 import { KanbanBoard } from "./_components/kanban-board"
 import type { GroupByOption } from "./_components/grouped-list"
-import { RecurringPanel } from "./recurring/recurring-view"
 import { BulkActionBar } from "./_components/bulk-action-bar"
 import { BacklogToolbar, sortBacklogTasks, type BacklogSortField, type BacklogSortDir } from "./_components/backlog-toolbar"
 import { SprintCapacityBar } from "./_components/sprint-capacity"
@@ -67,6 +67,8 @@ import type { TaskContextMenuActions } from "./_components/task-context-menu"
 // product — the create dialog alone is 1,402 lines, the timeline 702. The default
 // board (KanbanBoard / TaskTableRow) stays static so the primary path has no
 // loading flash. ssr:false: none of these renders on the server.
+// Shown only on the Recurring tab — loaded when opened, like the other alternate views.
+const RecurringPanel = dynamic(() => import("./recurring/recurring-view").then((m) => m.RecurringPanel), { ssr: false })
 const TimelineView = dynamic(() => import("./_components/timeline-view").then((m) => m.TimelineView), { ssr: false })
 const CalendarView = dynamic(() => import("./_components/calendar-view").then((m) => m.CalendarView), { ssr: false })
 const EpicRoadmap = dynamic(() => import("./_components/epic-roadmap").then((m) => m.EpicRoadmap), { ssr: false })
@@ -91,7 +93,7 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 /** Snapshot all "tasks" query cache entries and return a restore function */
 function snapshotTasksCache(queryClient: ReturnType<typeof useQueryClient>) {
-  const queries = queryClient.getQueriesData<TasksListResponse>({ queryKey: ["tasks"] })
+  const queries = queryClient.getQueriesData<TasksListResponse>({ queryKey: keys.tasks.lists() })
   return queries // array of [queryKey, data] tuples
 }
 
@@ -102,7 +104,7 @@ function optimisticUpdateTask(
   updater: (task: Task) => Task,
 ) {
   queryClient.setQueriesData<TasksListResponse>(
-    { queryKey: ["tasks"] },
+    { queryKey: keys.tasks.lists() },
     (old) => {
       if (!old?.data) return old
       return {
@@ -353,7 +355,7 @@ export default function TasksPage() {
   )
 
   const { data: tasksData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["tasks", taskQueryParams],
+    queryKey: keys.tasks.list(taskQueryParams),
     queryFn: () => tasksApi.list(taskQueryParams),
     placeholderData: (prev) => prev, // keep rows on screen while a filter re-fetches
   })
@@ -366,7 +368,7 @@ export default function TasksPage() {
     switch; for everybody else the list is already the whole answer.
   */
   const { data: myCounts } = useQuery({
-    queryKey: ["taskStatusCounts", "status"],
+    queryKey: keys.tasks.counts(),
     queryFn: () => tasksApi.getStatusCounts(),
     staleTime: 30000,
     enabled: canSeeOthers,
@@ -376,7 +378,7 @@ export default function TasksPage() {
   // Computed from the loaded page before, which is why the same tab showed 7 on
   // page 1 and 4 on page 2.
   const { data: spaceCounts } = useQuery({
-    queryKey: ["taskStatusCounts", "space"],
+    queryKey: keys.tasks.counts({ groupBy: "space" }),
     queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }),
     staleTime: 30000,
   })
@@ -389,7 +391,7 @@ export default function TasksPage() {
   const { holds } = useRouteAccess()
   const readsPlanning = holds("org:canViewAllTasks")
   const { data: phases } = useQuery({
-    queryKey: ["phases"],
+    queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
     staleTime: 60000,
     enabled: readsPlanning,
@@ -397,7 +399,7 @@ export default function TasksPage() {
 
   // Fetch sprints
   const { data: sprints } = useQuery({
-    queryKey: ["sprints"],
+    queryKey: keys.sprints.lists(),
     queryFn: () => sprintsApi.list(),
     staleTime: 60000,
     enabled: readsPlanning,
@@ -405,7 +407,7 @@ export default function TasksPage() {
 
   // Fetch epics
   const { data: epics } = useQuery({
-    queryKey: ["epics"],
+    queryKey: keys.epics.lists(),
     queryFn: () => epicsApi.list(),
     staleTime: 60000,
     enabled: readsPlanning,
@@ -413,7 +415,7 @@ export default function TasksPage() {
 
   // Fetch spaces (company locations)
   const { data: spacesData } = useQuery({
-    queryKey: ["locations"],
+    queryKey: keys.locations.list(),
     queryFn: () => locationsApi.list(),
     staleTime: 60000,
   })
@@ -454,7 +456,7 @@ export default function TasksPage() {
     mutationFn: (id: string) => sprintsApi.start(id),
     onSuccess: () => {
       notify.sprint("started", t("tasks.notify.sprintStarted"))
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -465,8 +467,8 @@ export default function TasksPage() {
       notify.sprint("completed", t("tasks.notify.sprintCompleted"))
       setCompletingSprint(null)
       setScope("all")
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -477,8 +479,8 @@ export default function TasksPage() {
       notify.sprint("deleted", t("tasks.notify.sprintRemoved"))
       setDeletingSprintId(null)
       setScope("all")
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -536,7 +538,7 @@ export default function TasksPage() {
     dialog is open, under the key the task page caches it by.
   */
   const { data: assignDetail } = useQuery({
-    queryKey: ["task", selectedTaskId],
+    queryKey: keys.tasks.detail(selectedTaskId),
     queryFn: () => tasksApi.getById(selectedTaskId!),
     enabled: assignDialogOpen && !!selectedTaskId,
     staleTime: 30_000,
@@ -555,7 +557,7 @@ export default function TasksPage() {
     },
     onMutate: async (workerId) => {
       if (!selectedTaskId) return
-      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, selectedTaskId, (t) => ({
         ...t,
@@ -574,8 +576,8 @@ export default function TasksPage() {
     },
     onSettled: () => {
       // Always refetch to sync with server
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
     },
   })
 
@@ -586,7 +588,7 @@ export default function TasksPage() {
 
   const handleRefresh = () => {
     refetch()
-    queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
   }
 
   const tasks = tasksData?.data || []
@@ -648,7 +650,7 @@ export default function TasksPage() {
     mutationFn: ({ taskId, status, answers, onBehalf }: { taskId: string; status: string; answers?: StepFormAnswers; onBehalf?: OnBehalf }) =>
       tasksApi.updateStatus(taskId, status, undefined, answers, onBehalf),
     onMutate: async ({ taskId, status }) => {
-      await queryClient.cancelQueries({ queryKey: ["tasks"] })
+      await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
       const snapshot = snapshotTasksCache(queryClient)
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, status }))
       return { snapshot }
@@ -663,8 +665,8 @@ export default function TasksPage() {
       if (!isStepFormRefusal(e)) notify.error(serverErrorMessage(e, t))
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
     },
   })
 
@@ -726,7 +728,7 @@ export default function TasksPage() {
     const snapshot = snapshotTasksCache(queryClient)
     optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, position: newPosition }))
     tasksApi.update(taskId, { position: newPosition }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
     }).catch((e: Error) => {
       restoreTasksCache(queryClient, snapshot)
       notify.error(e.message)
@@ -741,8 +743,8 @@ export default function TasksPage() {
     const field = Object.keys(updates)[0] || "field"
     tasksApi.update(taskId, updates).then(() => {
       notify.success(t("tasks.notify.taskFieldUpdated", { field: field.replace("Id", "") }))
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
     }).catch((e: Error) => {
       restoreTasksCache(queryClient, snapshot)
       notify.error(e.message)
@@ -759,7 +761,7 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, priority }))
       tasksApi.update(taskId, { priority }).then(() => {
         notify.success(t("tasks.notify.priorityUpdated"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -770,8 +772,8 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, sprintId }))
       tasksApi.update(taskId, { sprintId }).then(() => {
         notify.success(sprintId ? t("tasks.notify.movedToSprint") : t("tasks.notify.movedToBacklog"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: ["sprints"] })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -782,7 +784,7 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, phaseId }))
       tasksApi.update(taskId, { phaseId }).then(() => {
         notify.success(phaseId ? t("tasks.notify.phaseSet") : t("tasks.notify.phaseRemoved"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -793,7 +795,7 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, epicId }))
       tasksApi.update(taskId, { epicId }).then(() => {
         notify.success(epicId ? t("tasks.notify.epicSet") : t("tasks.notify.epicRemoved"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -804,7 +806,7 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, storyPoints: points }))
       tasksApi.update(taskId, { storyPoints: points }).then(() => {
         notify.success(points ? t("tasks.notify.pointsSet", { points }) : t("tasks.notify.pointsCleared"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -815,7 +817,7 @@ export default function TasksPage() {
       optimisticUpdateTask(queryClient, taskId, (t) => ({ ...t, spaceId }))
       tasksApi.update(taskId, { spaceId }).then(() => {
         notify.success(spaceId ? t("tasks.notify.movedToSpace") : t("tasks.notify.spaceRemoved"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -825,7 +827,7 @@ export default function TasksPage() {
       const snapshot = snapshotTasksCache(queryClient)
       // Optimistically remove task from cache
       queryClient.setQueriesData<TasksListResponse>(
-        { queryKey: ["tasks"] },
+        { queryKey: keys.tasks.lists() },
         (old) => {
           if (!old?.data) return old
           return {
@@ -837,8 +839,8 @@ export default function TasksPage() {
       )
       tasksApi.delete(taskId).then(() => {
         notify.success(t("tasks.notify.taskDeleted"))
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
       }).catch((e: Error) => {
         restoreTasksCache(queryClient, snapshot)
         notify.error(e.message)
@@ -899,8 +901,8 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: movable.length }))
         else notify.bulk(movable.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
       })
   }, [handleClearSelection, queryClient, tasks, workflowForTask, user?.id, t])
 
@@ -910,7 +912,7 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       })
   }, [handleClearSelection, queryClient])
 
@@ -920,8 +922,8 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: ["sprints"] })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
       })
   }, [handleClearSelection, queryClient])
 
@@ -931,8 +933,8 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.deletesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionDeleted"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-        queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.counts(), refetchType: "all" })
       })
   }, [handleClearSelection, queryClient])
 
@@ -942,7 +944,7 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionEstimated"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       })
   }, [handleClearSelection, queryClient])
 
@@ -952,7 +954,7 @@ export default function TasksPage() {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()
-        queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       })
   }, [handleClearSelection, queryClient])
 
@@ -1751,7 +1753,7 @@ export default function TasksPage() {
         onSave={async (added, removed) => {
           if (!selectedTaskId) return
           // Optimistic update, then batch: remove first, then add
-          await queryClient.cancelQueries({ queryKey: ["tasks"] })
+          await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })
           const snapshot = snapshotTasksCache(queryClient)
           optimisticUpdateTask(queryClient, selectedTaskId, (t) => {
             let assignees = [...(t.assignees || [])]
@@ -1787,7 +1789,7 @@ export default function TasksPage() {
           } else {
             notify.success(t("tasks.detail.assigneesUpdated"))
           }
-          queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+          queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
         }}
       />
     </div>

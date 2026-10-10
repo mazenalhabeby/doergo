@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { PlanGate } from "@/components/plan-gate"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -101,7 +102,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
   const [pdfLocaleOverride, setPdfLocaleOverride] = useState<SupportedLocale | null>(null)
 
   const { data: inv, isLoading } = useQuery({
-    queryKey: ["invoice", id],
+    queryKey: keys.invoices.detail(id),
     queryFn: () => invoicesApi.getById(id),
   })
   // The profile is ADMIN-only; whoever else invoices reads the main company (hooks/use-org-letterhead).
@@ -111,7 +112,7 @@ function InvoiceDetailInner({ id }: { id: string }) {
     mutationFn: (status: string) => invoicesApi.updateStatus(id, status),
     onSuccess: () => {
       notify.success(t("invoices.toast.statusUpdated"))
-      queryClient.invalidateQueries({ queryKey: ["invoice", id] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.detail(id) })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
       queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
     },

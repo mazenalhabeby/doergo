@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef } from "react"
 import { errorMessage } from "@/lib/errors"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -286,7 +287,7 @@ function AttachmentUpload({ reportId, taskId }: { reportId: string; taskId: stri
       })
 
       toast.success(t("tasks.serviceReport.upload.success"))
-      queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.report(taskId) })
     } catch (e) {
       toast.error(errorMessage(e, t("tasks.serviceReport.upload.failed")))
     } finally {
@@ -413,7 +414,7 @@ function AttachmentDeleteButton({
     mutationFn: () => reportAttachmentsApi.delete(reportId, attachmentId),
     onSuccess: () => {
       toast.success(t("tasks.serviceReport.photoRemoved"))
-      queryClient.invalidateQueries({ queryKey: ["taskReport", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.report(taskId) })
     },
     onError: (e: Error) => toast.error(e.message || t("tasks.serviceReport.photoRemoveFailed")),
   })
@@ -445,7 +446,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
   const shouldFetch = taskStatus === "COMPLETED" || taskStatus === "CLOSED"
 
   const { data: report, isLoading, error } = useQuery({
-    queryKey: ["taskReport", taskId],
+    queryKey: keys.tasks.report(taskId),
     queryFn: () => reportsApi.getTaskReport(taskId),
     enabled: shouldFetch,
   })

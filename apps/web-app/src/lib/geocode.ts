@@ -1,5 +1,5 @@
 import { API_BASE_URL } from './endpoints';
-import { authorizedFetch, type RequestOptions } from './http-client';
+import { getResponse, type PlainResponse, type RequestOptions } from './http-client';
 // Helpers to turn raw geocoder payloads into a clean, human address like
 // "Kapellenstraße 30, 4664 Laakirchen" instead of the long hierarchy string
 // (…Oberweis, Bergham, …) that Nominatim's `display_name` returns.
@@ -76,10 +76,10 @@ export const geoBase = () => API_BASE_URL;
  * token from the web is the first half of closing it; `/geo/timezone` is
  * authenticated already and was refused without it.
  *
- * Resolves with the Response; rejects (like fetch) when there was no answer.
+ * Resolves like `fetch` (`ok`, `status`, `json()`); rejects when there was no answer.
  */
-export function geoFetch(pathAndQuery: string, init: RequestOptions = {}): Promise<Response> {
-  return authorizedFetch(`${geoBase()}${pathAndQuery}`, { timeoutMs: 10_000, ...init });
+export function geoFetch(pathAndQuery: string, init: RequestOptions = {}): Promise<PlainResponse> {
+  return getResponse(pathAndQuery, { timeoutMs: 10_000, ...init });
 }
 
 /**

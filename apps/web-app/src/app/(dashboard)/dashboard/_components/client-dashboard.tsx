@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useCallback, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -155,8 +156,8 @@ export function ClientDashboard() {
     onError: (error: Error) => notify.error(error.message),
     onSettled: () => {
       // The rosters drive the space cards, and the dialog reads its own copy.
-      queryClient.invalidateQueries({ queryKey: ["locationRosters"] })
-      queryClient.invalidateQueries({ queryKey: ["space-assignments"] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
+      queryClient.invalidateQueries({ queryKey: keys.locations.rosters() })
     },
   })
 

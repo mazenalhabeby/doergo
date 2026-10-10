@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
 import { OfficeStartDialog } from "@/components/office-start-dialog"
@@ -99,7 +100,7 @@ export default function TaskDetailPage({
 
   // ─── Queries ────────────────────────────────────────────────────────────
   const { data: task, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["task", id],
+    queryKey: keys.tasks.detail(id),
     queryFn: () => tasksApi.getById(id),
   })
 
@@ -119,7 +120,7 @@ export default function TaskDetailPage({
   */
   const mayReadRoute = isAdmin || user?.canViewTracking === true
   const { data: routeData, isLoading: loadingRoute } = useQuery({
-    queryKey: ["task-route", id],
+    queryKey: keys.tasks.route(id),
     queryFn: () => trackingApi.getTaskRoute(id),
     enabled: mayReadRoute && !!task && spaceModulesResolved && hasModule("tracking"),
   })
@@ -131,17 +132,17 @@ export default function TaskDetailPage({
     was three requests per page view whose results were thrown away.
   */
   const { data: sprints } = useQuery({
-    queryKey: ["sprints"],
+    queryKey: keys.sprints.lists(),
     queryFn: () => sprintsApi.list(),
     enabled: hasModule("sprints") && readsPlanning,
   })
   const { data: phases } = useQuery({
-    queryKey: ["phases"],
+    queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
     enabled: hasModule("phases") && readsPlanning,
   })
   const { data: epicsData } = useQuery({
-    queryKey: ["epics"],
+    queryKey: keys.epics.lists(),
     queryFn: () => epicsApi.list(),
     enabled: hasModule("epics") && readsPlanning,
   })
@@ -211,11 +212,11 @@ export default function TaskDetailPage({
       setReassignNote("")
       notify.success(t("tasks.detail.technicianAssigned"))
       setShowAssignModal(false)
-      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       // The list's space tabs are server-counted; a status change or a move
       // between spaces makes those numbers stale.
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -230,13 +231,13 @@ export default function TaskDetailPage({
       }),
     onSuccess: (result) => {
       if (result === "cancelled") return
-      queryClient.invalidateQueries({ queryKey: ["task-submissions", id] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.submissions(id) })
       notify.success(t("tasks.detail.requestCancelled"))
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       // The list's space tabs are server-counted; a status change or a move
       // between spaces makes those numbers stale.
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
-      queryClient.invalidateQueries({ queryKey: ["task", id] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id) })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -252,14 +253,14 @@ export default function TaskDetailPage({
     onSuccess: (result) => {
       // The step's dialog was closed without answering — nothing moved.
       if (result === "cancelled") return
-      queryClient.invalidateQueries({ queryKey: ["task-submissions", id] })
-      queryClient.invalidateQueries({ queryKey: ["task-time", id] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.submissions(id) })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.time(id) })
       notify.success(t("tasks.detail.statusUpdated"))
-      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
       // The list's space tabs are server-counted; a status change or a move
       // between spaces makes those numbers stale.
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
     },
     // Off the clock: offer to clock in, then the same move again by itself.
     onError: (e: Error, vars) => {
@@ -277,10 +278,10 @@ export default function TaskDetailPage({
     off the clock, the same "clock in first" dialog answers and repeats it.
   */
   const refreshTask = () => {
-    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-    queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-    queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
-    queryClient.invalidateQueries({ queryKey: ["task-time", id] })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(id), refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.time(id) })
   }
   const resumeMutation = useMutation({
     mutationFn: () => tasksApi.resumeWork(id),
@@ -321,10 +322,10 @@ export default function TaskDetailPage({
       notify.error(e instanceof Error && e.message ? e.message : t("tasks.detail.updateFailed"))
       throw e // let the field restore what was there before
     }
-    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-    queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-    queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
-    queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(id), refetchType: "all" })
   }, [id, queryClient, t])
 
   // Comments
@@ -334,8 +335,8 @@ export default function TaskDetailPage({
     onSuccess: () => {
       notify.success(t("tasks.detail.commentAdded"))
       setNewComment("")
-      queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskTimeline", id], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(id), refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -412,7 +413,7 @@ export default function TaskDetailPage({
             setReassignNote("")
           }
           notify.success(t("tasks.detail.assigneesUpdated"))
-          queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+          queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
         }}
       />
       <EditTaskDialog task={task} open={showEditDialog} onOpenChange={setShowEditDialog} />
@@ -612,7 +613,7 @@ export default function TaskDetailPage({
                 if (assignee) {
                   tasksApi.removeAssignee(id, assignee.userId).then(() => {
                     notify.success(t("tasks.detail.assigneeRemoved"))
-                    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+                    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
                   }).catch((e: Error) => notify.error(e.message))
                 }
               }}
@@ -623,7 +624,7 @@ export default function TaskDetailPage({
                     tasksApi.addAssignee(id, assignee.userId, "LEAD")
                   ).then(() => {
                     notify.success(t("tasks.detail.leadUpdated"))
-                    queryClient.invalidateQueries({ queryKey: ["task", id], refetchType: "all" })
+                    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(id), refetchType: "all" })
                   }).catch((e: Error) => notify.error(e.message))
                 }
               }}

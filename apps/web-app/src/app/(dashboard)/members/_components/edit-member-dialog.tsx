@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { CompanyField, companyName, useCompanies } from "@/components/companies/company-select"
 import { useState, useEffect, useMemo, memo } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -283,20 +284,20 @@ export function EditMemberDialog({
     enabled: !!member?.id && canViewLabourCost,
   })
   const { data: membersData } = useQuery({
-    queryKey: ["orgMembers", "positions"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    queryKey: keys.members.directory(),
+    queryFn: () => organizationsApi.getAllMembers(),
     enabled: !!member,
     staleTime: 60000,
   })
   const usedPositions = useMemo(() => {
     const set = new Set<string>()
-    for (const m of membersData?.data || []) if (m.position) set.add(m.position)
+    for (const m of membersData ?? []) if (m.position) set.add(m.position)
     return Array.from(set).sort()
   }, [membersData])
 
 
   const { data: locationsData } = useQuery({
-    queryKey: ["locations-all"],
+    queryKey: keys.locations.list({ limit: 100 }),
     queryFn: () => locationsApi.list({ limit: 100 }),
     staleTime: 60000,
     enabled: !!member,
@@ -306,22 +307,20 @@ export function EditMemberDialog({
   /** A location assignment with the space's name folded in for display. */
   type NamedAssignment = LocationAssignment & { locationName: string }
 
-  const { data: allAssignments } = useQuery({
-    queryKey: ["all-location-assignments", locations.length],
-    queryFn: async () => {
-      const results = await Promise.allSettled(
-        locations.map(async (loc) => {
-          const assignments = await locationsApi.getAssignedMembers(loc.id)
-          return assignments.map((a) => ({ ...a, locationName: loc.name }))
-        }),
-      )
-      return results
-        .filter((r): r is PromiseFulfilledResult<NamedAssignment[]> => r.status === "fulfilled")
-        .flatMap((r) => r.value)
-    },
-    enabled: !!member && locations.length > 0,
+  // ONE batched read of every space's roster, under the same key the members
+  // page reads it with (it was a request per space, keyed by how many there were).
+  const locationIds = useMemo(() => locations.map((l) => l.id).sort(), [locations])
+  const { data: rosterRows } = useQuery({
+    queryKey: keys.locations.rosterBatch(locationIds),
+    queryFn: () => locationsApi.getRosters(locationIds),
+    enabled: !!member && locationIds.length > 0,
     staleTime: 60000,
   })
+  const allAssignments = useMemo<NamedAssignment[] | undefined>(() => {
+    if (!rosterRows) return undefined
+    const names = new Map(locations.map((l) => [l.id, l.name]))
+    return rosterRows.map((a) => ({ ...a, locationName: names.get(a.locationId) ?? a.location?.name ?? "" }))
+  }, [rosterRows, locations])
 
   const { data: scheduleData } = useQuery({
     queryKey: ["employeeSchedule", member?.id],
@@ -349,14 +348,14 @@ export function EditMemberDialog({
   // the member/role update; fired alongside it on save.
   const workerMutation = useMutation({
     mutationFn: (data: UpdateEmployeeInput) => employeesApi.update(member!.id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.members.detail(member?.id) }),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ memberId, data }: { memberId: string; data: UpdateMemberInput }) =>
       organizationsApi.updateMember(memberId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
       // The vacation allowance is edited here and rendered on the member's own
       // Vacation Requests page from a separately cached query — without this it
       // would keep showing the old entitlement.
@@ -461,7 +460,7 @@ export function EditMemberDialog({
     setTimeout(() => setCopied(false), 3000)
   }
 
-  const invalidateAssignments = () => queryClient.invalidateQueries({ queryKey: ["all-location-assignments"] })
+  const invalidateAssignments = () => queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
   /*
     A cost lives on the PERSON and is read in several places: their profile,
     its dated history, and "Costs you" beside them in EVERY workspace they work
@@ -469,9 +468,9 @@ export function EditMemberDialog({
     workspace list otherwise kept the old figure for up to a minute.
   */
   const refreshMemberRates = () => {
-    queryClient.invalidateQueries({ queryKey: ["orgMember", member?.id] })
+    queryClient.invalidateQueries({ queryKey: keys.members.detail(member?.id) })
     queryClient.invalidateQueries({ queryKey: ["rate-history", "MEMBER", member?.id] })
-    queryClient.invalidateQueries({ queryKey: ["space-members"] })
+    queryClient.invalidateQueries({ queryKey: keys.spaceMembers.all() })
     queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
   }
 

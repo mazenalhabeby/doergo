@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -32,7 +33,7 @@ export function MemberWatchers({ memberId, memberName }: { memberId: string; mem
     about a member was, in practice, everyone.
   */
   const { data: membersResp } = useQuery({
-    queryKey: ["orgMembers", "managers", memberId],
+    queryKey: keys.members.list({ limit: 200, managersOnly: true, excludeId: memberId }),
     queryFn: () => organizationsApi.getMembers({ limit: 200, managersOnly: true, excludeId: memberId }),
     staleTime: 60_000,
   })

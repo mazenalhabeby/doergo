@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import React, { useState, useCallback } from "react"
 import type { Task } from "@/lib/api"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -181,7 +182,7 @@ export const ChecklistSection = React.memo(function ChecklistSection({
   // ── Mutations ──
 
   const invalidateTask = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["task", taskId], refetchType: "all" })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId), refetchType: "all" })
   }, [queryClient, taskId])
 
   const toggleMutation = useMutation({
@@ -189,8 +190,8 @@ export const ChecklistSection = React.memo(function ChecklistSection({
       tasksApi.updateChecklistItem(taskId, itemId, { isCompleted }),
     onMutate: async ({ itemId, isCompleted }) => {
       // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ["task", taskId] })
-      queryClient.setQueryData<Task | undefined>(["task", taskId], (old) => {
+      await queryClient.cancelQueries({ queryKey: keys.tasks.detail(taskId) })
+      queryClient.setQueryData<Task | undefined>(keys.tasks.detail(taskId), (old) => {
         if (!old?.checklistItems) return old
         return {
           ...old,

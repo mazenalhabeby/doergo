@@ -17,20 +17,23 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client'
-import { SocketEvents, type SupportTicket, type SupportMessage } from '@hbcfield/shared/client';
+import { SocketEvents, path, type SupportTicket, type SupportMessage } from '@hbcfield/shared/client';
 
-import { apiRequest } from '@/lib/http-client';
+import { http } from '@/lib/http-client';
 import { SOCKET_URL } from '@/lib/endpoints';
 
 async function agentFetch<T>(key: string, path: string, init?: { method?: string; body?: string }): Promise<T> {
-  const res = await apiRequest<T>(path, {
-    ...init,
-    // The platform key, not the member's session.
-    auth: false,
-    headers: { 'x-platform-admin-key': key },
-  });
-  if (res.error) throw new Error(`${res.status}`);
-  return res.data as T;
+  try {
+    return await http.request<T>((init?.method ?? 'GET') as 'GET' | 'POST' | 'PATCH', path, {
+      ...(init?.body !== undefined ? { body: init.body } : {}),
+      // The platform key, not the member's session.
+      auth: false,
+      headers: { 'x-platform-admin-key': key },
+      unwrap: 'raw',
+    });
+  } catch (e) {
+    throw new Error(`${(e as { status?: number }).status ?? 0}`);
+  }
 }
 
 export default function OperatorSupportPage() {
@@ -71,10 +74,10 @@ export default function OperatorSupportPage() {
   const loadTicket = useCallback(
     async (id: string) => {
       try {
-        const res = await agentFetch<{ data: SupportTicket & { messages: SupportMessage[] } }>(key, `/support/agent/tickets/${id}`);
+        const res = await agentFetch<{ data: SupportTicket & { messages: SupportMessage[] } }>(key, path`/support/agent/tickets/${id}`);
         setActive(res.data);
         setError(null);
-        await agentFetch(key, `/support/agent/tickets/${id}/read`, { method: 'POST', body: '{}' });
+        await agentFetch(key, path`/support/agent/tickets/${id}/read`, { method: 'POST', body: '{}' });
       } catch (e) {
         setError((e as Error).message === '403' ? 'Invalid key' : 'Failed to load ticket');
       }
@@ -128,7 +131,7 @@ export default function OperatorSupportPage() {
   const doReply = async () => {
     if (!activeId || !reply.trim()) return;
     try {
-      await agentFetch(key, `/support/agent/tickets/${activeId}/messages`, {
+      await agentFetch(key, path`/support/agent/tickets/${activeId}/messages`, {
         method: 'POST',
         body: JSON.stringify({ body: reply.trim(), isInternalNote: note }),
       });
@@ -144,7 +147,7 @@ export default function OperatorSupportPage() {
   const setStatus = async (status: string) => {
     if (!activeId) return;
     try {
-      await agentFetch(key, `/support/agent/tickets/${activeId}/status`, { method: 'POST', body: JSON.stringify({ status }) });
+      await agentFetch(key, path`/support/agent/tickets/${activeId}/status`, { method: 'POST', body: JSON.stringify({ status }) });
       setError(null);
       loadTicket(activeId);
       loadInbox();

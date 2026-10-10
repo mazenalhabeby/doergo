@@ -1,5 +1,6 @@
 import { toast } from "sonner"
 import i18n from "@/i18n"
+import { errorMessage } from "./errors"
 
 /**
  * Premium toast notifications with rich content.
@@ -79,8 +80,10 @@ export const notify = {
    * sees WHAT went wrong — not a bare "Something went wrong". Falls back to the
    * generic only when no message is provided.
    */
-  error: (message?: string, description?: string) => {
-    const reason = message?.trim()
+  error: (message?: unknown, description?: string) => {
+    // A thrown ApiError may be passed as it is: its message is already the
+    // reader's language when the refusal is coded (lib/server-error).
+    const reason = (typeof message === "string" ? message : errorMessage(message)).trim()
     if (reason) {
       toast.error(reason, description ? { description } : undefined)
     } else {

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
@@ -66,7 +67,7 @@ export default function PhoneSyncPage() {
 
   // Names for the ids in the report. `includeIds` keeps them even past the page size.
   const people = useQuery({
-    queryKey: ["phoneSyncPeople", ids],
+    queryKey: keys.members.list({ lite: true, limit: 200, includeIds: ids }),
     queryFn: () => organizationsApi.getMembers({ lite: true, limit: 200, includeIds: ids }),
     enabled: canView && ids.length > 0,
     staleTime: 5 * 60 * 1000,

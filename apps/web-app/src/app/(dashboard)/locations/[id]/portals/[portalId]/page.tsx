@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import dynamic from "next/dynamic"
 
 import { useState, useRef } from "react"
@@ -69,8 +70,8 @@ export default function PortalDetailPage() {
   const residentsQ = useQuery({ queryKey: ["portalResidents", portalId], queryFn: () => portalAdminApi.residents(portalId) })
   const requestsQ = useQuery({ queryKey: ["portalAllRequests", portalId], queryFn: () => portalAdminApi.portalRequests(portalId) })
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
-  const spacesQ = useQuery({ queryKey: ["triageSpaces"], queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
-  const flowsQ = useQuery({ queryKey: ["triageFlows"], queryFn: () => workflowsApi.list(), staleTime: 60000 })
+  const spacesQ = useQuery({ queryKey: keys.locations.list({ limit: 100 }), queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
+  const flowsQ = useQuery({ queryKey: keys.workflows.lists(), queryFn: () => workflowsApi.list(), staleTime: 60000 })
   const spaces = spacesQ.data?.data ?? []
   const flows = flowsQ.data ?? []
   // This portal belongs to the space in the URL (the list that led here is
@@ -128,7 +129,7 @@ export default function PortalDetailPage() {
   }
   // Assignable workers = ONLY the roster of the space being routed to.
   const spaceMembersQ = useQuery({
-    queryKey: ["triageSpaceMembers", triageForm.spaceId],
+    queryKey: keys.spaceMembers.list(triageForm.spaceId),
     queryFn: () => spaceMembersApi.list(triageForm.spaceId),
     enabled: !!triageReq && !!triageForm.spaceId,
     staleTime: 30000,

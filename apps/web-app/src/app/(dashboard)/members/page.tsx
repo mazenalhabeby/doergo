@@ -1,5 +1,6 @@
 "use client"
 
+import { keys, membersPageParams } from "@/lib/query-keys"
 import { useState, useCallback, useMemo, memo, useEffect } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import Link from "next/link"
@@ -583,7 +584,7 @@ export default function MembersPage() {
     costs nothing.
   */
   const { data: orgRoles = [] } = useQuery<AccessRole[]>({
-    queryKey: ["orgAccessRoles"],
+    queryKey: keys.organization.roles(),
     queryFn: () => organizationsApi.getRoles("org"),
     staleTime: 5 * 60 * 1000,
   })
@@ -611,18 +612,12 @@ export default function MembersPage() {
   // ── Queries ──────────────────────────────────────────────────────────
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["orgMembers", debouncedSearch, roleFilter, page],
-    queryFn: () =>
-      organizationsApi.getMembers({
-        search: debouncedSearch || undefined,
-        role: roleFilter,
-        page,
-        limit: 20,
-      }),
+    queryKey: keys.members.list(membersPageParams(debouncedSearch, roleFilter, page)),
+    queryFn: () => organizationsApi.getMembers(membersPageParams(debouncedSearch, roleFilter, page)),
   })
 
   const { data: locationsData } = useQuery({
-    queryKey: ["locations-all"],
+    queryKey: keys.locations.list({ limit: 100 }),
     queryFn: () => locationsApi.list({ limit: 100 }),
     staleTime: 60000,
   })
@@ -640,7 +635,7 @@ export default function MembersPage() {
 
   const { data: allAssignments } = useQuery({
     // ONE batched request for every space's roster (was an N+1 fan-out) (P2).
-    queryKey: ["all-location-assignments", locationIds.join(",")],
+    queryKey: keys.locations.rosterBatch(locationIds),
     queryFn: () => locationsApi.getRosters(locationIds),
     enabled: locationIds.length > 0,
     staleTime: 60000,
@@ -715,7 +710,7 @@ export default function MembersPage() {
       setTransferTarget(null)
       notify.success(t("members.owner.transferred", "Ownership transferred"))
       await refreshUser()
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
     },
     onError: (error: Error) => notify.error(error.message),
   })
@@ -734,7 +729,7 @@ export default function MembersPage() {
       notify.error(error.message || t("members.toast.removeFailed"))
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
       queryClient.invalidateQueries({ queryKey: ["orgContacts"] })
     },
   })
@@ -783,7 +778,7 @@ export default function MembersPage() {
       )
       const ok = results.filter((r) => r.status === "fulfilled").length
       const failed = results.length - ok
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
       setSelectedIds(new Set())
       if (failed === 0) notify.bulk(ok, t("members.toast.roleUpdated"))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
@@ -799,7 +794,7 @@ export default function MembersPage() {
       )
       const ok = results.filter((r) => r.status === "fulfilled").length
       const failed = results.length - ok
-      queryClient.invalidateQueries({ queryKey: ["all-location-assignments"] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
       setSelectedIds(new Set())
       if (failed === 0) notify.success(t("members.toast.assignedToSpace", { count: ok }))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
@@ -813,7 +808,7 @@ export default function MembersPage() {
       // Bounded (lib/concurrency) so a large removal is not refused by the rate limiter.
       const { failed, total } = await runBulk(memberIds, (id) => organizationsApi.removeMember(id))
       const ok = total - failed
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
       setSelectedIds(new Set())
       if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))
       else notify.error(t("members.toast.bulkPartial", { ok, failed }))
@@ -1155,7 +1150,7 @@ export default function MembersPage() {
         member={editTarget}
         isSelf={!!editTarget && editTarget.id === user?.id}
         onClose={() => setEditTarget(null)}
-        onSaved={() => queryClient.invalidateQueries({ queryKey: ["orgMembers"] })}
+        onSaved={() => queryClient.invalidateQueries({ queryKey: keys.members.lists() })}
       />
 
       {/* ── Invite Dialog (shared component) ─────────────────────────── */}
@@ -1248,7 +1243,7 @@ export default function MembersPage() {
                 applyToIds={bulkAccessIds}
                 bulkCount={bulkAccessIds.length}
                 onSaved={() => {
-                  queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+                  queryClient.invalidateQueries({ queryKey: keys.members.lists() })
                   setBulkAccessIds(null)
                   setSelectedIds(new Set())
                 }}

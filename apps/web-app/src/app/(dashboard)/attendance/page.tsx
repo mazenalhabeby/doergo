@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import dynamic from "next/dynamic"
 
 import { useState, useMemo, useEffect } from "react"
@@ -96,7 +97,7 @@ export default function AttendancePage() {
 
   // Fetch locations
   const { data: locationsRaw, isLoading: loadingLocations } = useQuery({
-    queryKey: ["locations"],
+    queryKey: keys.locations.list(),
     queryFn: () => locationsApi.list(),
     enabled: canAccess,
     staleTime: 60_000,

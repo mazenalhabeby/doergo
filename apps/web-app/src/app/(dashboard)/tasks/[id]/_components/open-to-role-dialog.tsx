@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -37,8 +38,8 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
     onSuccess: () => {
       notify.success(t("tasks.role.openedNow"))
       setOpen(false)
-      queryClient.invalidateQueries({ queryKey: ["task", task.id] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id) })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
       queryClient.invalidateQueries({ queryKey: ["role-stats"] })
     },
     onError: (e) => notify.error(serverErrorMessage(e, t, i18n.language)),

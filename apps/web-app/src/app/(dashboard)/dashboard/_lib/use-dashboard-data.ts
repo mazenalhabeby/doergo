@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useCallback, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 
@@ -31,7 +32,6 @@ import { useAuth } from "@/contexts/auth-context"
  */
 
 /** Server hard cap for /organizations/members and /locations (one page each). */
-const MEMBERS_PAGE_SIZE = 200
 const SPACES_PAGE_SIZE = 500
 
 /**
@@ -85,9 +85,9 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // ── Data Fetching ──────────────────────────────────────────────────────────
 
   // Tasks. Kept current by the socket layer — useRealtimeSync invalidates
-  // ["tasks"] on every task event — so there is no polling interval here.
+  // keys.tasks.lists() on every task event — so there is no polling interval here.
   const { data: tasksData, isLoading: loadingTasks } = useQuery({
-    queryKey: ["tasks"],
+    queryKey: keys.tasks.list({ limit: DASHBOARD_TASK_LIMIT }),
     queryFn: () => tasksApi.list({ limit: DASHBOARD_TASK_LIMIT }),
   })
 
@@ -95,7 +95,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // page, so requesting a single page silently dropped every space past the
   // 20th from the grid, its alerts and its roster.
   const { data: locationsData, isLoading: loadingLocations } = useQuery({
-    queryKey: ["locations", "dashboard"],
+    queryKey: keys.locations.list({ all: true, limit: SPACES_PAGE_SIZE }),
     queryFn: () => fetchAllPages((page) => locationsApi.list({ page, limit: SPACES_PAGE_SIZE })),
     // A 'tasks'-scope member sees no spaces by definition; the server ran the
     // full query and then discarded every row for them. Don't ask.
@@ -111,16 +111,13 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // (scoped) space rosters — see memberMap below.
   const canReadMembers = !!user?.canManageUsers
   const { data: members = NO_MEMBERS } = useQuery({
-    // Keep under the "orgMembers" namespace so member add/remove/role mutations
-    // (which invalidate ["orgMembers"]) also refresh this dashboard list.
-    queryKey: ["orgMembers", "dashboard"],
-    queryFn: () =>
-      fetchAllPages<OrgMember>((page) =>
-        // `lite`: this list is drawn as faces and names and refreshed every
-        // minute for presence. It has no use for Access Profiles, contact
-        // allow-lists or the role join, which are the expensive columns.
-        organizationsApi.getMembers({ page, limit: MEMBERS_PAGE_SIZE, lite: true }),
-      ),
+    // The directory, lite: member add/remove/role mutations invalidate
+    // keys.members.lists(), which this is one of.
+    queryKey: keys.members.directoryLite(),
+    // `lite`: this list is drawn as faces and names and refreshed every
+    // minute for presence. It has no use for Access Profiles, contact
+    // allow-lists or the role join, which are the expensive columns.
+    queryFn: () => organizationsApi.getAllMembers({ lite: true }),
     enabled: canReadMembers,
     staleTime: 30000,
     refetchOnMount: true,
@@ -194,7 +191,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // Batched rosters (with each member's current task) for ALL visible spaces in
   // ONE request — replaces the previous one-request-per-location fan-out.
   const { data: rostersData } = useQuery({
-    queryKey: ["locationRosters", locKey],
+    queryKey: keys.locations.rosterBatch(locationIds),
     queryFn: () => locationsApi.getRosters(locationIds),
     enabled: locationIds.length > 0,
     staleTime: 60000,

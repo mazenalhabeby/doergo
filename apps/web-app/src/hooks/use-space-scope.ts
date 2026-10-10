@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useCallback, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
@@ -85,7 +86,7 @@ export function useSpaceScope(options: {
     of asking again.
   */
   const { data, isLoading } = useQuery({
-    queryKey: ["locations", "list"],
+    queryKey: keys.locations.list({ limit: 200 }),
     queryFn: () => locationsApi.list({ limit: 200 }),
     staleTime: 60000,
   })

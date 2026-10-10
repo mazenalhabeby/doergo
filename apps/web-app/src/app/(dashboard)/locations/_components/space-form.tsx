@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import dynamic from "next/dynamic"
@@ -51,7 +52,7 @@ export function SpaceForm({
   // Workflows are fetched here (cached key shared with /locations, so no extra
   // request) — keeps both call sites a one-liner.
   const { data: workflows = [] } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
     staleTime: 60000,
   })

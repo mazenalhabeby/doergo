@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next"
-import { distanceRefusalParams } from "@hbcfield/shared/client"
-import { isTransportMessage } from "./http-client"
+import { ApiError, isApiError } from "@hbcfield/shared/client"
+import { isTransportMessage } from "./transport-messages"
+import { refusalSentence, translateRefusal } from "./refusal-text"
 
 /**
  * Saying a server refusal in the reader's language.
@@ -25,25 +26,66 @@ interface ServerError extends Error {
 }
 
 /**
- * Attach a refusal's code and params to the Error being thrown.
+ * Make an ApiError's `message` the reader's language WHEN IT IS READ.
  *
- * Kept separate from constructing the Error so the ~400 existing
- * `throw new Error(response.error)` call sites keep working untouched; a call
- * site opts in by using this instead.
+ * Most screens toast `e.message` (`onError: (e) => notify.error(e.message)`), so
+ * a code that only `serverErrorMessage` knew about reached a German reader in
+ * English. The message is resolved lazily — the language can change between the
+ * refusal and the toast — and falls back to the server's own sentence, kept as
+ * `serverMessage`, when the catalogue has no entry for the code.
  */
-export function apiError(response: { error?: string; errorCode?: string; errorParams?: Record<string, unknown>; status?: number }): ServerError {
-  const err = new Error(response.error || "Request failed") as ServerError
-  if (response.errorCode) err.code = response.errorCode
-  if (response.errorParams) err.params = response.errorParams
-  if (typeof response.status === "number") err.status = response.status
-  return err
+export function localizeApiError<E extends ApiError>(e: E): E {
+  if (!e.code || Object.prototype.hasOwnProperty.call(e, "serverMessage")) return e
+  const raw = e.message
+  Object.defineProperty(e, "serverMessage", { value: raw, enumerable: false })
+  Object.defineProperty(e, "message", {
+    configurable: true,
+    enumerable: false,
+    get: () => translateRefusal(e.code, e.params) ?? raw,
+  })
+  return e
+}
+
+/**
+ * The failure a `lib/api` method throws: the ApiError the request rejected
+ * with (code, params and status intact), or one rebuilt from a result shape.
+ *
+ * ⚠️ `throw new Error(response.error)` — once written ~420 times in lib/api —
+ * dropped the refusal's code and params, so no screen could translate it.
+ */
+export function apiError(response: {
+  error?: string
+  errorCode?: string
+  errorParams?: Record<string, unknown>
+  status?: number
+  cause?: unknown
+}): ApiError {
+  if (isApiError(response.cause)) {
+    // A caller may have replaced the sentence (`{ ...res, error: 'Upload failed' }`) — honour it.
+    const cause = response.cause
+    if (response.error && response.error !== cause.message && !cause.code) {
+      return new ApiError(response.error, { status: cause.status, kind: cause.kind })
+    }
+    return localizeApiError(cause)
+  }
+  const status = typeof response.status === "number" ? response.status : 0
+  const kind =
+    status > 0 ? "http" : response.errorCode === "TIMEOUT" ? "timeout" : response.errorCode === "ABORTED" ? "aborted" : "network"
+  return localizeApiError(
+    new ApiError(response.error || "Request failed", {
+      status,
+      kind,
+      ...(response.errorCode ? { code: response.errorCode } : {}),
+      ...(response.errorParams ? { params: response.errorParams } : {}),
+    }),
+  )
 }
 
 /**
  * Is this failure worth asking again? Only when nothing was decided: no answer
  * at all (network / timeout), the rate limiter, or the server failing. A 4xx is
  * an answer — asking again gets the same one. An error without a known status
- * (most call sites still throw a bare Error) is NOT retried.
+ * (a bare Error) is NOT retried.
  */
 export function isTransientError(error: unknown): boolean {
   const e = error as { status?: unknown; code?: unknown } | null
@@ -62,18 +104,8 @@ export function isTransientError(error: unknown): boolean {
  * sentence that describes the problem beats a translated one that does not.
  */
 export function serverErrorMessage(error: unknown, t: TFunction, locale?: string): string {
-  const e = error as ServerError | undefined
-  const fallback = e?.message || t("common.error", "Something went wrong")
+  const e = error as (ServerError & { serverMessage?: string }) | undefined
+  const fallback = e?.serverMessage || e?.message || t("common.error", "Something went wrong")
   if (!e?.code) return fallback
-
-  const key = `serverErrors.${e.code}`
-  /*
-    A distance refusal sends metres (`distanceMetres`, `radiusMetres`); the
-    sentence reads them as a person says them — "9,631 km", "100 m" — through
-    the ONE shared formatter, in the reader's language.
-  */
-  const params = e.params ?? {}
-  const distances = "distanceMetres" in params || "radiusMetres" in params ? distanceRefusalParams(params, locale) : {}
-  const translated = t(key, { ...params, ...distances, defaultValue: "" })
-  return typeof translated === "string" && translated.length > 0 ? translated : fallback
+  return refusalSentence(e.code, e.params, t as unknown as (k: string, o: Record<string, unknown>) => unknown, locale) ?? fallback
 }

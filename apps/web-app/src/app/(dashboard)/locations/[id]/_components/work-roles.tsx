@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useTranslation } from "react-i18next"
 import { CalendarClock, Lock, Pencil, Shield, Trash2, Wrench } from "lucide-react"
 
@@ -49,7 +50,7 @@ export function useCents(currency = "EUR") {
 export function useSpaceCurrency(spaceId: string): { bill: string; cost: string } {
   const { user } = useAuth()
   const { data } = useQuery({
-    queryKey: ["location", spaceId],
+    queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId),
     enabled: !!spaceId,
     staleTime: 60_000,

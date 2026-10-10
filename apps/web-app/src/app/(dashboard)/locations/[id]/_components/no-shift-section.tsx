@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -45,8 +46,8 @@ export function NoShiftSection({
   const save = useMutation({
     mutationFn: (next: { noShiftPolicy?: NoShiftPolicy; noShiftDailyMinutes?: number }) => locationsApi.update(space.id, next),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["location", space.id] })
-      qc.invalidateQueries({ queryKey: ["locations"] })
+      qc.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      qc.invalidateQueries({ queryKey: keys.locations.lists() })
       qc.invalidateQueries({ queryKey: ["my-clock-in-locations"] })
       notify.success(t("attendance.noShift.saved", "Saved"))
     },

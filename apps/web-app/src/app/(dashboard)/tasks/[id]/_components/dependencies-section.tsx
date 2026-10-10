@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, memo, useMemo } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
@@ -163,7 +164,7 @@ function AddDependencyDialog({
       tasksApi.addDependency(taskId, predecessorId, depType),
     onSuccess: () => {
       notify.success(t("tasks.dependencies.added"))
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
       onOpenChange(false)
       setSearch("")
     },
@@ -269,7 +270,7 @@ export const DependenciesSection = memo(function DependenciesSection({
     mutationFn: (depId: string) => tasksApi.removeDependency(taskId, depId),
     onSuccess: () => {
       notify.success(t("tasks.dependencies.removed"))
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
     },
     onError: (e: Error) => notify.error(e.message),
   })

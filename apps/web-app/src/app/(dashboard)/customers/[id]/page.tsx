@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -145,7 +146,7 @@ export default function CustomerRecordPage() {
   const qc = useQueryClient()
   const [tab, setTab] = useState<"activity" | "notes" | "reminders">("activity")
 
-  const customerQ = useQuery({ queryKey: ["customer", id], queryFn: () => customersApi.get(id) })
+  const customerQ = useQuery({ queryKey: keys.customers.detail(id), queryFn: () => customersApi.get(id) })
   const activityQ = useQuery({ queryKey: ["customer-activities", id], queryFn: () => customersApi.activities(id) })
   const customer = customerQ.data
   const tasksQ = useQuery({
@@ -154,14 +155,14 @@ export default function CustomerRecordPage() {
     enabled: !!customer,
   })
   const spaceQ = useQuery({
-    queryKey: ["location", customer?.spaceId],
+    queryKey: keys.locations.detail(customer?.spaceId),
     queryFn: () => locationsApi.getById(customer!.spaceId!),
     enabled: !!customer?.spaceId,
   })
   const hasB2C = !!spaceQ.data?.enabledModules?.includes("b2c_portal")
 
   const refresh = () => {
-    qc.invalidateQueries({ queryKey: ["customer", id] })
+    qc.invalidateQueries({ queryKey: keys.customers.detail(id) })
     qc.invalidateQueries({ queryKey: ["customer-activities", id] })
     qc.invalidateQueries({ queryKey: ["customer-tasks", id] })
   }

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -231,12 +232,12 @@ function TemplateDialog({
   const [workflowId, setWorkflowId] = useState(existingTemplate?.workflowId || "none")
 
   const { data: spacesResp } = useQuery({
-    queryKey: ["locations"],
+    queryKey: keys.locations.list({ limit: 100 }),
     queryFn: () => locationsApi.list({ limit: 100 }),
   })
   const spaces = spacesResp?.data ?? []
   const { data: taskTypes = [] } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
   })
   const [frequency, setFrequency] = useState<RecurringFrequency>(
@@ -283,7 +284,7 @@ function TemplateDialog({
     mutationFn: () => recurringTasksApi.create(buildPayload()),
     onSuccess: () => {
       notify.success(t("tasks.recurring.templateCreated"))
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
       onOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -293,7 +294,7 @@ function TemplateDialog({
     mutationFn: () => recurringTasksApi.update(existingTemplate!.id, buildPayload()),
     onSuccess: () => {
       notify.success(t("tasks.recurring.templateUpdated"))
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
       onOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -607,7 +608,7 @@ export function RecurringPanel({
   }, [isAdmin, embedded, router])
 
   const { data: templates, isLoading } = useQuery({
-    queryKey: ["recurringTasks"],
+    queryKey: keys.recurringTasks.lists(),
     queryFn: () => recurringTasksApi.list(),
     // Nothing to fetch for somebody who is about to be sent away.
     enabled: isAdmin,
@@ -622,7 +623,7 @@ export function RecurringPanel({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
       recurringTasksApi.update(id, { isActive } as Partial<RecurringTaskTemplate>),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -631,8 +632,8 @@ export function RecurringPanel({
     mutationFn: (id: string) => recurringTasksApi.generate(id),
     onSuccess: () => {
       notify.success(t("tasks.recurring.taskGenerated"))
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
     },
     onError: (e: Error) => notify.error(e.message),
   })
@@ -641,7 +642,7 @@ export function RecurringPanel({
     mutationFn: (id: string) => recurringTasksApi.delete(id),
     onSuccess: () => {
       notify.success(t("tasks.recurring.templateDeleted"))
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
       setDeleteTarget(null)
     },
     onError: (e: Error) => notify.error(e.message),

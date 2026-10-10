@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -137,7 +138,7 @@ export function RotaTab({ spaceId }: { spaceId: string }) {
   })
   // Space members — to surface who works "open hours" (no shift assigned).
   const { data: spaceMembers } = useQuery({
-    queryKey: ["space-members", spaceId],
+    queryKey: keys.spaceMembers.list(spaceId),
     queryFn: () => spaceMembersApi.list(spaceId),
     staleTime: 30_000,
   })

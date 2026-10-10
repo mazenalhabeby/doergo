@@ -11,7 +11,7 @@ import { setAccessToken, __resetAuthSessionForTests } from "../auth-session"
 describe("geoFetch", () => {
   const realFetch = global.fetch
   beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue({ ok: true }) as any
+    global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers(), text: async () => "{}" }) as any
   })
   afterEach(() => {
     global.fetch = realFetch

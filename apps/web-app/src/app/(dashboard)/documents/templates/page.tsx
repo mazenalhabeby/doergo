@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -69,7 +70,7 @@ export default function TemplatesPage() {
   // GET /organizations/roles is canManageUsers — asked only of whoever holds it.
   const { holds } = useRouteAccess()
   const { data: roles = [] } = useQuery({
-    queryKey: ["org-roles"],
+    queryKey: keys.organization.roles(),
     queryFn: () => organizationsApi.getRoles("org"),
     enabled: holds("org:canManageUsers"),
   })

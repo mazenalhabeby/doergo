@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslation } from "react-i18next"
@@ -142,7 +143,7 @@ export function AssetRecordDialog({
     costs nothing.
   */
   const spacesQ = useQuery({
-    queryKey: ["locations", "list"],
+    queryKey: keys.locations.list({ limit: 200 }),
     queryFn: () => locationsApi.list({ limit: 200 }),
     staleTime: 60_000,
     enabled: open && !!spaceId,

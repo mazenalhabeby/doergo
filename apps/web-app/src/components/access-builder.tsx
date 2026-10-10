@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -90,7 +91,7 @@ export function AccessBuilder({
     in bulk everyone is kept (the backend drops self per subject).
   */
   const { data: membersData } = useQuery({
-    queryKey: ["orgMembers", "managers", isBulk ? "" : member.id],
+    queryKey: keys.members.list({ limit: 200, managersOnly: true, excludeId: isBulk ? undefined : member.id }),
     queryFn: () =>
       organizationsApi.getMembers({
         limit: 200,

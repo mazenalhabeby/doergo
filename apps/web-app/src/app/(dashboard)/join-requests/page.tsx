@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -144,7 +145,7 @@ export default function JoinRequestsPage() {
       // Approving ADDS a member — the roster and the contact directory are now
       // stale too. Without this the new person was missing from /members for up to
       // the global 60s staleTime (audit M-D3).
-      queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
+      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
       queryClient.invalidateQueries({ queryKey: ["orgContacts"] })
       closeApproveDialog()
     },

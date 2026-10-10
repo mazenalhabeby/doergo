@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { PlanGate } from "@/components/plan-gate"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -110,11 +111,11 @@ function AuditLogPageInner() {
   const [endDate, setEndDate] = useState<string>("")
 
   const { data: membersResp } = useQuery({
-    queryKey: ["members-for-audit"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+    queryKey: keys.members.directory(),
+    queryFn: () => organizationsApi.getAllMembers(),
     enabled: isAdmin,
   })
-  const members = membersResp?.data ?? []
+  const members = membersResp ?? []
 
   const eventOptions = [
     { value: "__all__", label: t("auditLog.allEvents") },

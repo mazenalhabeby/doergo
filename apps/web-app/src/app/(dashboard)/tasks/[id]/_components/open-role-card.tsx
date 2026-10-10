@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -45,9 +46,9 @@ export function OpenRoleCard({ task }: { task: Task }) {
   const mayTake = open && !onIt && openForMe.some((o) => o.id === task.id)
 
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["task", task.id] })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id) })
     queryClient.invalidateQueries({ queryKey: ["open-for-me"] })
-    queryClient.invalidateQueries({ queryKey: ["tasks"] })
+    queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
     queryClient.invalidateQueries({ queryKey: ["job-time", task.id] })
   }
   const fail = (e: unknown) => {

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -131,7 +132,7 @@ export default function ReportsPage() {
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
   // Letterhead from what this reader may read (the profile is ADMIN-only) — hooks/use-org-letterhead.
   const { data: orgProfile } = useOrgLetterhead()
-  const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
+  const { data: customersData } = useQuery({ queryKey: keys.customers.list({ limit: 200 }), queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
   // People to report on: the directory for whoever may read it, else the rosters they can see.
   const { members } = useAssignableMembers({})

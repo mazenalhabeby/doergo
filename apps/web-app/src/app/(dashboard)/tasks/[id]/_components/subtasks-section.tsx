@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, memo } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
@@ -151,7 +152,7 @@ export const SubtasksSection = memo(function SubtasksSection({
       setNewTitle("")
       setShowInput(false)
       queryClient.invalidateQueries({ queryKey: ["subtasks", taskId] })
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
     },
     onError: (e: Error) => notify.error(e.message),
   })

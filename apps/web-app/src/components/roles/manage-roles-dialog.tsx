@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -41,7 +42,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
   const [editing, setEditing] = useState<AccessRole | "new" | null>(null)
 
   const { data: roles, isLoading } = useQuery({
-    queryKey: ["orgAccessRoles"],
+    queryKey: keys.organization.roles(),
     queryFn: () => organizationsApi.getRoles(),
     enabled: open,
   })
@@ -49,7 +50,7 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
   const deleteMutation = useMutation({
     mutationFn: (id: string) => organizationsApi.deleteRole(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgAccessRoles"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roles() })
       notify.success(t("roles.deleted", "Role deleted"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -186,7 +187,7 @@ function RoleEditor({ role, onBack, onSaved }: { role: AccessRole | null; onBack
       return isEdit ? organizationsApi.updateRole(role!.id, payload) : organizationsApi.createRole(payload)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orgAccessRoles"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.roles() })
       notify.success(isEdit ? t("roles.updated", "Role updated") : t("roles.created", "Role created"))
       onSaved()
     },

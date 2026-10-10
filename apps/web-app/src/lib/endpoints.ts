@@ -49,9 +49,12 @@ export function isLoopbackUrl(url: string | undefined | null): boolean {
   return /^(https?|wss?):\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i.test(url.trim())
 }
 
+/** The gateway's path prefix — the ONE place it is written (a spec forbids it anywhere else in src). */
+export const API_PATH_PREFIX = "/api/v1"
+
 /** REST API — same-origin `/api/v1` unless configured (Next rewrites it in dev). */
 export const API_BASE_URL: string =
-  resolveEndpoint(process.env.NEXT_PUBLIC_API_URL, { development: "/api/v1", production: "/api/v1" }) ?? "/api/v1"
+  resolveEndpoint(process.env.NEXT_PUBLIC_API_URL, { development: API_PATH_PREFIX, production: API_PATH_PREFIX }) ?? API_PATH_PREFIX
 
 /**
  * Sign-in, refresh and sign-out. The refresh cookie must go to the server that
@@ -79,6 +82,6 @@ export function serverApiBaseUrl(): string {
   const configured = clean(process.env.NEXT_PUBLIC_API_URL)
   if (configured && /^https?:\/\//i.test(configured)) return configured
   const proxy = clean(process.env.API_PROXY_ORIGIN)
-  if (proxy) return `${proxy}/api/v1`
-  return IS_PRODUCTION ? "https://hbcfield.com/api/v1" : "http://localhost:4000/api/v1"
+  if (proxy) return `${proxy}${API_PATH_PREFIX}`
+  return IS_PRODUCTION ? `https://hbcfield.com${API_PATH_PREFIX}` : `http://localhost:4000${API_PATH_PREFIX}`
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { format, addWeeks, addDays } from "date-fns"
@@ -107,7 +108,7 @@ export function SprintFormDialog({
       sprintsApi.create(data),
     onSuccess: () => {
       notify.sprint("created", t("tasks.sprint.createdDescription"))
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
       handleOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -118,7 +119,7 @@ export function SprintFormDialog({
       sprintsApi.update(sprint!.id, data),
     onSuccess: () => {
       notify.sprint("updated", t("tasks.sprint.updatedDescription"))
-      queryClient.invalidateQueries({ queryKey: ["sprints"] })
+      queryClient.invalidateQueries({ queryKey: keys.sprints.lists() })
       handleOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -375,7 +376,7 @@ export function EpicFormDialog({
       epicsApi.create(data),
     onSuccess: () => {
       notify.success(t("tasks.epic.created"))
-      queryClient.invalidateQueries({ queryKey: ["epics"] })
+      queryClient.invalidateQueries({ queryKey: keys.epics.lists() })
       handleOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),
@@ -386,7 +387,7 @@ export function EpicFormDialog({
       epicsApi.update(epic!.id, data),
     onSuccess: () => {
       notify.success(t("tasks.epic.updated"))
-      queryClient.invalidateQueries({ queryKey: ["epics"] })
+      queryClient.invalidateQueries({ queryKey: keys.epics.lists() })
       handleOpenChange(false)
     },
     onError: (e: Error) => notify.error(e.message),

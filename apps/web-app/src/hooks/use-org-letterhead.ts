@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
 import { legalEntitiesApi, organizationsApi, type OrganizationProfile } from "@/lib/api"
@@ -15,7 +16,7 @@ export function useOrgLetterhead(): { data: OrganizationProfile | undefined; isL
   const source = letterheadSourceFor(user, hasPermission)
 
   const profile = useQuery({
-    queryKey: ["organization-profile"],
+    queryKey: keys.organization.profile(),
     queryFn: () => organizationsApi.getProfile(),
     enabled: source === "profile",
     staleTime: 5 * 60_000,

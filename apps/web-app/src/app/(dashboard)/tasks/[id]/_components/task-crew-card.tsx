@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQueryClient } from "@tanstack/react-query"
@@ -129,8 +130,8 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
     try {
       await tasksApi.changeLead(taskId, { toUserId: to, scope, ...(reason.trim() ? { reason: reason.trim() } : {}) })
       await Promise.all([
-        client.invalidateQueries({ queryKey: ["task-time", taskId] }),
-        client.invalidateQueries({ queryKey: ["task", taskId] }),
+        client.invalidateQueries({ queryKey: keys.tasks.time(taskId) }),
+        client.invalidateQueries({ queryKey: keys.tasks.detail(taskId) }),
       ])
       toast.success(t("tasks.crew.changed"))
       onClose()
@@ -219,8 +220,8 @@ function MemberOnJobDialog({ request, onClose, taskId }: { request: { member: Me
     try {
       await tasksApi.crewForMember(taskId, request.action, { forUserId: request.member.user.id, reason: reason.trim() })
       await Promise.all([
-        client.invalidateQueries({ queryKey: ["task-time", taskId] }),
-        client.invalidateQueries({ queryKey: ["taskTimeline", taskId] }),
+        client.invalidateQueries({ queryKey: keys.tasks.time(taskId) }),
+        client.invalidateQueries({ queryKey: keys.tasks.timeline(taskId) }),
       ])
       toast.success(joining ? t("tasks.crew.putOnDone", { name }) : t("tasks.crew.takeOffDone", { name }))
       onClose()

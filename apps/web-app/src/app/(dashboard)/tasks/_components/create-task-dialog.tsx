@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
@@ -315,7 +316,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Fetch custom fields ──
   const { data: customFields } = useQuery({
-    queryKey: ["customFieldDefinitions"],
+    queryKey: keys.customFields.definitions(),
     queryFn: () => customFieldsApi.listDefinitions(),
     staleTime: 120000,
     retry: 1,
@@ -328,14 +329,14 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Fetch phases and sprints ──
   const { data: phases } = useQuery({
-    queryKey: ["phases"],
+    queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
     staleTime: 60000,
     enabled: open,
   })
 
   const { data: sprints } = useQuery({
-    queryKey: ["sprints"],
+    queryKey: keys.sprints.lists(),
     queryFn: () => sprintsApi.list(),
     staleTime: 60000,
     enabled: open,
@@ -343,7 +344,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Fetch epics ──
   const { data: fetchedEpics } = useQuery({
-    queryKey: ["epics"],
+    queryKey: keys.epics.lists(),
     queryFn: () => epicsApi.list(),
     staleTime: 60000,
     enabled: open,
@@ -423,7 +424,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
 
   // ── Fetch spaces ──
   const { data: spacesData } = useQuery({
-    queryKey: ["locations"],
+    queryKey: keys.locations.list(),
     queryFn: () => locationsApi.list(),
     staleTime: 60000,
     enabled: open,
@@ -478,7 +479,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     step, and the browser's copy is the one that cannot be trusted anyway.
   */
   const { data: clientPage } = useQuery({
-    queryKey: ["customers", "task-visit", spaceId],
+    queryKey: keys.customers.list({ spaceId, includeUnfiled: true, limit: 200 }),
     queryFn: () => customersApi.list({ spaceId, includeUnfiled: true, limit: 200 }),
     staleTime: 60000,
     enabled: open && spaceId !== "none" && hasModule("crm") && !defaultCustomerId,
@@ -600,8 +601,8 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
         )
       }
       onOpenChange(false)
-      await queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      await queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
     },
     onError: (error: Error) => {
       notify.error(error.message || t("tasks.create.errorMessage"))
@@ -615,7 +616,7 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
     onSuccess: () => {
       notify.success(t("tasks.recurring.created"), t("tasks.recurring.createdDescription"))
       onOpenChange(false)
-      queryClient.invalidateQueries({ queryKey: ["recurringTasks"] })
+      queryClient.invalidateQueries({ queryKey: keys.recurringTasks.lists() })
     },
     onError: (error: Error) => {
       notify.error(error.message || t("tasks.recurring.createFailed"))

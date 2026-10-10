@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -42,8 +43,8 @@ export function MinCoverSection({ space }: { space: { id: string; minCover?: num
   const save = useMutation({
     mutationFn: (next: number) => locationsApi.update(space.id, { minCover: next }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["location", space.id] })
-      qc.invalidateQueries({ queryKey: ["locations"] })
+      qc.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      qc.invalidateQueries({ queryKey: keys.locations.lists() })
       // The leave chart judges against this number, so it is stale the moment
       // the number moves.
       qc.invalidateQueries({ queryKey: ["cover-range"] })

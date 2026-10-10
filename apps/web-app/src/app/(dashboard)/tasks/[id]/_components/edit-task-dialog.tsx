@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -92,20 +93,20 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
 
   // Fetch phases, sprints, and the org's flows (task types)
   const { data: flows } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
     enabled: open,
     staleTime: 60000,
   })
   const { data: phases } = useQuery({
-    queryKey: ["phases"],
+    queryKey: keys.phases.lists(),
     queryFn: () => phasesApi.list(),
     enabled: open,
     staleTime: 60000,
   })
 
   const { data: sprints } = useQuery({
-    queryKey: ["sprints"],
+    queryKey: keys.sprints.lists(),
     queryFn: () => sprintsApi.list(),
     enabled: open,
     staleTime: 60000,
@@ -135,9 +136,9 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
     onSuccess: () => {
       notify.success(t("tasks.edit.success"))
       onOpenChange(false)
-      queryClient.invalidateQueries({ queryKey: ["task", task.id], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["taskTimeline", task.id], refetchType: "all" })
-      queryClient.invalidateQueries({ queryKey: ["tasks"], refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(task.id), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(task.id), refetchType: "all" })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists(), refetchType: "all" })
     },
     onError: (e: Error) => notify.error(e.message || t("tasks.edit.failed")),
   })

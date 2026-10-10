@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -32,7 +33,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const queryClient = useQueryClient()
 
   const { data: workflows = [] } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
   })
 
@@ -44,8 +45,8 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
   const hasChanges = selectedId !== (currentWorkflow?.id || "")
 
   const onSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ["location", space.id] })
-    queryClient.invalidateQueries({ queryKey: ["locations"] })
+    queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+    queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
   }
 
   const mutation = useMutation({
@@ -62,8 +63,8 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
     mutationFn: () => locationsApi.resyncTasks(space.id),
     onSuccess: (res) => {
       notify.success(t("locations.toast.resyncDone", { count: res?.updated ?? 0 }))
-      queryClient.invalidateQueries({ queryKey: ["tasks"] })
-      queryClient.invalidateQueries({ queryKey: ["taskStatusCounts"] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.lists() })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.counts() })
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.resyncFailed")),
   })
@@ -167,7 +168,7 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
           initialStatuses={previewWorkflow.statuses}
           onSaved={() => {
             setEditMode(false)
-            queryClient.invalidateQueries({ queryKey: ["workflows"] })
+            queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
             onSuccess()
           }}
           onCancel={() => setEditMode(false)}

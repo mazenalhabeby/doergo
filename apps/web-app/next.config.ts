@@ -74,6 +74,20 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', '@radix-ui/react-icons'],
   },
+  /*
+    lib/api is one module per domain behind a barrel (`@/lib/api`). App code is
+    assumed to have side effects, so webpack kept EVERY domain (and through them
+    the whole endpoint table) in every page that imported one. These modules only
+    declare objects — marking them side-effect free lets a page carry just the
+    domains it calls. (`@hbcfield/shared` already declares `sideEffects: false`.)
+  */
+  webpack(config) {
+    config.module.rules.push({ test: /[\\/]src[\\/]lib[\\/](api[\\/].+|query-keys)\.ts$/, sideEffects: false })
+    // The hooks barrel (`@/hooks`) likewise: a page importing one hook should not carry all of them
+    // (and every API domain they call).
+    config.module.rules.push({ test: /[\\/]src[\\/]hooks[\\/]index\.ts$/, sideEffects: false })
+    return config
+  },
   // Security headers (also a minor ranking/trust signal). HSTS + hardening.
   async headers() {
     return [

@@ -71,6 +71,8 @@ describe('the endpoint table', () => {
     const publicNames = all.filter((e) => e.def.public).map((e) => e.def.name).sort()
     expect(publicNames).toEqual(
       [
+        // The phone's update gate, asked before sign-in.
+        'app.version',
         'auth.biometricChallenge',
         'auth.biometricVerify',
         'auth.forgotPassword',
@@ -78,6 +80,9 @@ describe('the endpoint table', () => {
         'auth.refresh',
         'auth.register',
         'auth.resetPassword',
+        // The public blog, read by the web's server render.
+        'blog.post',
+        'blog.posts',
         'invitations.accept',
         'invitations.validate',
         'signLink.file',

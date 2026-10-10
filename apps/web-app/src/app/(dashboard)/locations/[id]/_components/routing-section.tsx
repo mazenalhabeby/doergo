@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -23,11 +24,11 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
   const queryClient = useQueryClient()
 
   const { data: space, isLoading: spaceLoading } = useQuery({
-    queryKey: ["location", spaceId],
+    queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId),
   })
   const { data: roles, isLoading: rolesLoading } = useQuery({
-    queryKey: ["orgAccessRoles", "space"],
+    queryKey: keys.organization.roles("space"),
     queryFn: () => organizationsApi.getRoles("space"),
     staleTime: 60000,
   })
@@ -44,7 +45,7 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
   const saveMutation = useMutation({
     mutationFn: () => locationsApi.update(spaceId, { notifyRoleIds: notifyIds, contactRoleIds: contactIds }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.detail(spaceId) })
       notify.success(t("scheduling.routing.saved", "Routing updated"))
     },
     onError: (e: Error) => notify.error(e.message),

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
@@ -74,7 +75,7 @@ export function HolderPicker({
   const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
 
   const clientsQ = useQuery({
-    queryKey: ["space-clients", spaceId],
+    queryKey: keys.customers.list({ spaceId: spaceId ?? undefined, limit: 100 }),
     queryFn: () => customersApi.list({ spaceId: spaceId ?? undefined, limit: 100 }),
     enabled: enabled && shape.holder.enabled && shape.holder.clients,
   })

@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { use, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -76,7 +77,7 @@ function EditInvoiceInner({ id }: { id: string }) {
   const { user } = useAuth()
 
   const { data: inv, isLoading } = useQuery({
-    queryKey: ["invoice", id],
+    queryKey: keys.invoices.detail(id),
     queryFn: () => invoicesApi.getById(id),
   })
 
@@ -100,7 +101,7 @@ function EditInvoiceInner({ id }: { id: string }) {
   // The company that issues this draft. Changing it renumbers the draft in that company's series.
   const [legalEntityId, setLegalEntityId] = useState<string | null>(null)
   const { data: space } = useQuery({
-    queryKey: ["location", inv?.spaceId],
+    queryKey: keys.locations.detail(inv?.spaceId),
     queryFn: () => locationsApi.getById(inv!.spaceId!),
     enabled: !!inv?.spaceId,
   })
@@ -241,7 +242,7 @@ function EditInvoiceInner({ id }: { id: string }) {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["invoice", id] })
+      queryClient.invalidateQueries({ queryKey: keys.invoices.detail(id) })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
       queryClient.invalidateQueries({ queryKey: ["invoice-gather"] })
       notify.success(t("invoices.toast.updated", "Invoice updated"))

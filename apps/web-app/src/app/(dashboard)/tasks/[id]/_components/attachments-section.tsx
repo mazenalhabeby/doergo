@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -74,7 +75,7 @@ export function AttachmentsSection({
   const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null)
 
   const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ["taskAttachments", taskId],
+    queryKey: keys.tasks.attachments(taskId),
     queryFn: () => taskAttachmentsApi.getAttachments(taskId),
     // Seeded from the detail payload, so opening a task costs no extra request;
     // uploads and deletes still invalidate and refetch. Mirrors how the subtasks
@@ -88,10 +89,10 @@ export function AttachmentsSection({
       taskAttachmentsApi.delete(taskId, attachmentId),
     onSuccess: () => {
       toast.success(t("tasks.attachments.deleted"))
-      queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
-      queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.attachments(taskId) })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(taskId) })
       // The section header counts task.attachments, so the task has to know too.
-      queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
       setDeleteTarget(null)
     },
     onError: (e: Error) => toast.error(e.message),
@@ -141,10 +142,10 @@ export function AttachmentsSection({
         })
 
         toast.success(t("tasks.attachments.uploaded", { name: file.name }))
-        queryClient.invalidateQueries({ queryKey: ["taskAttachments", taskId] })
-        queryClient.invalidateQueries({ queryKey: ["taskTimeline", taskId] })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.attachments(taskId) })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.timeline(taskId) })
         // The section header counts task.attachments, so the task has to know too.
-        queryClient.invalidateQueries({ queryKey: ["task", taskId] })
+        queryClient.invalidateQueries({ queryKey: keys.tasks.detail(taskId) })
       } catch (err) {
         toast.error(
           t("tasks.attachments.uploadFailed", { name: file.name, error: err instanceof Error ? err.message : t("common.error") }),

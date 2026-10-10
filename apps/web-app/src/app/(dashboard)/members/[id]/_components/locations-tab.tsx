@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { MapPin, CalendarDays, Building2 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -48,7 +49,7 @@ export function LocationsTab({ assignments, memberAllowRemote, canManage }: Loca
       locationsApi.updateAssignment(a.locationId, a.id, { allowRemote: value }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["member-assignments"] })
-      qc.invalidateQueries({ queryKey: ["all-location-assignments"] })
+      qc.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
       notify.success(t("attendance.away.grantSaved", "Saved"))
     },
     onError: (e: Error) => notify.error(e.message),

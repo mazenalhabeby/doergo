@@ -13,66 +13,57 @@
  * working whichever one a route returns.
  */
 
-/** The helper as api.ts implements it, kept in step by the source check below. */
-function unwrapDocuments<T>(response: { data?: unknown; error?: string }): T | undefined {
-  if (response.error) throw new Error(response.error);
-  const body = response.data as any;
-  if (body === null || body === undefined) return undefined;
-  if (!Array.isArray(body) && typeof body === 'object' && 'data' in body) {
-    return body.data as T;
-  }
-  return body as T;
-}
+import { unwrapDocuments } from '@/lib/api/documents';
 
 describe('unwrapDocuments', () => {
   it('reads a BARE array — the shape that broke every screen', () => {
     const rows = [{ id: 'd1', title: 'Payslip August 2026' }];
-    expect(unwrapDocuments<any[]>({ data: rows })).toEqual(rows);
+    expect(unwrapDocuments<any[]>({ status: 200, data: rows })).toEqual(rows);
   });
 
   it('still reads a wrapped array', () => {
     const rows = [{ id: 'd1' }];
-    expect(unwrapDocuments<any[]>({ data: { success: true, data: rows } })).toEqual(rows);
+    expect(unwrapDocuments<any[]>({ status: 200, data: { success: true, data: rows } })).toEqual(rows);
   });
 
   it('reads a bare object', () => {
     const doc = { id: 'd1', sha256: 'abc' };
-    expect(unwrapDocuments<any>({ data: doc })).toEqual(doc);
+    expect(unwrapDocuments<any>({ status: 200, data: doc })).toEqual(doc);
   });
 
   it('reads a wrapped object', () => {
     const doc = { id: 'd1' };
-    expect(unwrapDocuments<any>({ data: { success: true, data: doc } })).toEqual(doc);
+    expect(unwrapDocuments<any>({ status: 200, data: { success: true, data: doc } })).toEqual(doc);
   });
 
   it('does not mistake a document that legitimately has a `data` field', () => {
     // An array is never a wrapper, whatever it contains.
     const rows = [{ id: 'd1', data: 'something' }];
-    expect(unwrapDocuments<any[]>({ data: rows })).toEqual(rows);
+    expect(unwrapDocuments<any[]>({ status: 200, data: rows })).toEqual(rows);
   });
 
   it('throws on an error rather than returning empty', () => {
     // The old code returned `[]` for a 403 too, so a permission failure and an
     // empty file looked identical on screen.
-    expect(() => unwrapDocuments({ error: 'You cannot see other members’ documents' }))
+    expect(() => unwrapDocuments({ status: 403, error: 'You cannot see other members’ documents' }))
       .toThrow(/cannot see/i);
   });
 
   it('returns undefined for an empty body, not a phantom object', () => {
-    expect(unwrapDocuments({ data: undefined })).toBeUndefined();
-    expect(unwrapDocuments({ data: null })).toBeUndefined();
+    expect(unwrapDocuments({ status: 200, data: undefined })).toBeUndefined();
+    expect(unwrapDocuments({ status: 200, data: null })).toBeUndefined();
   });
 
   it('passes an empty array through as an empty array', () => {
     // A genuinely empty file must still render its empty state.
-    expect(unwrapDocuments<any[]>({ data: [] })).toEqual([]);
+    expect(unwrapDocuments<any[]>({ status: 200, data: [] })).toEqual([]);
   });
 });
 
 describe('every documents call uses it', () => {
   const fs = require('fs') as typeof import('fs');
   const path = require('path') as typeof import('path');
-  const src = fs.readFileSync(path.join(process.cwd(), 'src/lib/api.ts'), 'utf8');
+  const src = fs.readFileSync(path.join(process.cwd(), 'src/lib/api/documents.ts'), 'utf8');
 
   const block = src.slice(
     src.indexOf('export const documentsApi = {'),
@@ -100,9 +91,7 @@ describe('every documents call uses it', () => {
     expect(unwraps.length).toBeGreaterThanOrEqual(methods.length);
   });
 
-  it('the shipped helper matches the one asserted above', () => {
-    // This file reimplements it to test it in isolation. If the real one
-    // changes shape, the copy here would keep passing and prove nothing.
-    expect(src).toContain("if (!Array.isArray(body) && typeof body === 'object' && 'data' in body)");
+  it('a refusal keeps its code (it is the ApiError the request rejected with)', () => {
+    expect(block).not.toContain('throw new Error(response.error)');
   });
 });

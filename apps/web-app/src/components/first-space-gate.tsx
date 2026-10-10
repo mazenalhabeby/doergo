@@ -1,5 +1,6 @@
 'use client';
 
+import { keys } from "@/lib/query-keys"
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +18,7 @@ export function FirstSpaceGate() {
   const canManage = !!user?.canManageWorkspaces || !!user?.canManageUsers;
 
   const { data, isFetching } = useQuery({
-    queryKey: ['locations'],
+    queryKey: keys.locations.list({ includeInactive: true }),
     queryFn: () => locationsApi.list({ includeInactive: true }),
     enabled: canManage,
     staleTime: 60000,

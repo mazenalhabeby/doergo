@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { LucideIcon } from "lucide-react"
@@ -75,13 +76,11 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
   const debouncedSearch = useDebouncedValue(search, 300)
   const [filter, setFilter] = useState<Filter>("all")
 
-  const listQ = useQuery({
-    // The filter is IN the key: a different segment is a different question, and
-    // the server answers each one — filtering a fetched page in the browser
-    // would show twelve rows of a hundred and a total that disagreed with them.
-    queryKey: ["space-customers", spaceId ?? "all", debouncedSearch, filter],
-    queryFn: () =>
-      customersApi.list({
+  // The filter is IN the request, and so in the key: a different segment is a
+  // different question, and the server answers each one — filtering a fetched
+  // page in the browser would show twelve rows of a hundred and a total that
+  // disagreed with them.
+  const listParams: Parameters<typeof customersApi.list>[0] = {
         spaceId,
         // Contacts are withheld by default, so this asks for them rather than
         // filtering a result set they were never in.
@@ -99,7 +98,10 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
         portalResident: spaceId ? undefined : false,
         search: debouncedSearch || undefined,
         limit: 100,
-      }),
+  }
+  const listQ = useQuery({
+    queryKey: keys.customers.list(listParams),
+    queryFn: () => customersApi.list(listParams),
   })
   const customers = listQ.data?.data ?? []
   // Only the App-users split is still done here: it is a property of the row
@@ -108,7 +110,7 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
     () => customers.filter((c) => filter !== "app" || c.isPortalResident),
     [customers, filter],
   )
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["space-customers", spaceId ?? "all"] })
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.customers.lists() })
 
   return (
     <div className="space-y-4">
@@ -289,7 +291,7 @@ export function CustomerForm({ spaceId, existing, onSaved, trigger, personOnly }
   const canMoveSpace = !!existing && !existing.isPortalResident
   const showSpace = needsSpace || canMoveSpace
   const spacesQ = useQuery({
-    queryKey: ["locations", "list"],
+    queryKey: keys.locations.list({ limit: 200 }),
     queryFn: () => locationsApi.list({ limit: 200 }),
     staleTime: 60_000,
     enabled: open && showSpace,

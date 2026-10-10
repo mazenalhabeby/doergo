@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
@@ -42,8 +43,8 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
   const mutation = useMutation({
     mutationFn: (workModel: WorkModel) => locationsApi.update(space.id, { workModel }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location", space.id] })
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
       notify.success(t("scheduling.workModel.saved"))
     },
     onError: (err: Error) => {

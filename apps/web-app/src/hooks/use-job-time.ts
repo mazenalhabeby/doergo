@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { jobTimeAt } from "@hbcfield/shared/client"
@@ -13,7 +14,7 @@ import { tasksApi } from "@/lib/api"
  */
 export function useJobTime(taskId: string | null | undefined, paused = false) {
   const { data } = useQuery({
-    queryKey: ["task-time", taskId],
+    queryKey: keys.tasks.time(taskId),
     queryFn: () => tasksApi.jobTime(taskId!),
     enabled: !!taskId,
     staleTime: 60_000,

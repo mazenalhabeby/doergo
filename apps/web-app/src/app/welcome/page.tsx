@@ -1,5 +1,6 @@
 'use client';
 
+import { keys } from "@/lib/query-keys"
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,7 +26,7 @@ export default function WelcomePage() {
   // different route groups, and a client-side transition can fail to fetch the
   // dashboard layout chunk. A full load is robust and this is a one-time step.
   const handleFinish = async () => {
-    await queryClient.refetchQueries({ queryKey: ['locations'], type: 'all' });
+    await queryClient.refetchQueries({ queryKey: keys.locations.lists(), type: 'all' });
     window.location.assign('/dashboard');
   };
 

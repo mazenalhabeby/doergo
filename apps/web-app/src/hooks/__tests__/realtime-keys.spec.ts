@@ -51,6 +51,19 @@ describe('use-realtime-sync invalidation keys are real', () => {
     expect(used.size).toBeGreaterThan(20)
   })
 
+  /**
+   * Keys built by the factories in lib/query-keys.ts (`keys.tasks.lists()`): the
+   * factory exists (the compiler says so) — this asks that some screen actually
+   * READS that family, or the invalidation is just as inert as a typo.
+   */
+  const factoryUsed = new Set([...allSource.matchAll(/queryKey:\s*keys\.(\w+)\./g)].map((m) => m[1]!))
+  const factoryDeclared = [...new Set([...sync.matchAll(/\bkeys\.(\w+)\.\w+\(/g)].map((m) => m[1]!))]
+
+  it('every factory family it invalidates is read by a query', () => {
+    expect(factoryDeclared.length).toBeGreaterThan(3)
+    expect(factoryDeclared.filter((d) => !factoryUsed.has(d))).toEqual([])
+  })
+
   it('every invalidated key matches at least one real query', () => {
     const phantom = declared.filter((k) => !used.has(k))
     expect(phantom).toEqual([])

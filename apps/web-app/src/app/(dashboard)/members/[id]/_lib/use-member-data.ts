@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useCallback, useMemo, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/auth-context"
@@ -57,7 +58,7 @@ export function useMemberData(memberId: string) {
     isError: memberError,
     refetch: refetchMember,
   } = useQuery({
-    queryKey: ["orgMember", memberId],
+    queryKey: keys.members.detail(memberId),
     queryFn: () => organizationsApi.getMember(memberId),
     enabled: !!memberId,
   })

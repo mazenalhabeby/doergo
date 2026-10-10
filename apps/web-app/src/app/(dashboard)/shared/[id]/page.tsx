@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -98,7 +99,7 @@ export default function SharedSpaceViewPage() {
   const [addWorkerOpen, setAddWorkerOpen] = useState(false)
 
   const { data: taskData, isLoading } = useQuery({
-    queryKey: ["tasks", "shared", spaceId],
+    queryKey: keys.tasks.list({ spaceId, limit: 100 }),
     queryFn: () => tasksApi.list({ spaceId, limit: 100 }),
     enabled: !!share,
   })
@@ -137,7 +138,7 @@ export default function SharedSpaceViewPage() {
   const assignMutation = useMutation({
     mutationFn: ({ taskId, workerId }: { taskId: string; workerId: string }) => tasksApi.assign(taskId, workerId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", "shared", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.list({ spaceId, limit: 100 }) })
       notify.success(t("spaceSharing.guest.assigned", "Task assigned"))
     },
     onError: (e: Error) => notify.error(e.message),
@@ -528,7 +529,7 @@ function CreateTaskDialog({
     mutationFn: () =>
       tasksApi.create({ spaceId, title: title.trim(), description: description.trim() || undefined, priority }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks", "shared", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.tasks.list({ spaceId, limit: 100 }) })
       notify.success(t("spaceSharing.guest.taskCreated", "Task created"))
       setTitle(""); setDescription(""); setPriority("MEDIUM")
       onOpenChange(false)

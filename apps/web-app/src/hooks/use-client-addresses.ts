@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { customersApi } from "@/lib/api"
@@ -30,7 +31,7 @@ export interface ClientAddressOption {
 export function useClientAddresses(customerId: string | null, opts: { enabled: boolean; known?: { id: string; name: string; address?: string | null } | null }) {
   const id = customerId && customerId !== "none" ? customerId : null
   const { data: pinned } = useQuery({
-    queryKey: ["customer", id],
+    queryKey: keys.customers.detail(id),
     queryFn: () => customersApi.get(id!),
     staleTime: 60000,
     enabled: opts.enabled && !!id && !opts.known,

@@ -129,7 +129,7 @@ export interface RotaWeek {
 
 export const rotaEndpoints = defineEndpoints('rota', {
   /** A workspace's week as the clock-in resolves it. */
-  week: endpoint<{ spaceId?: string; from?: string } | void, RotaWeek>({ method: 'GET', path: (q) => withQuery('/rota/week', q || undefined), keep: true }),
+  week: endpoint<{ spaceId?: string; from?: string } | void, RotaWeek>({ method: 'GET', path: (q) => withQuery('/rota/week', q || undefined), keep: false /* other people's staffing: a stale week is a wrong one */ }),
   setDay: endpoint<void, { ok: true }, { spaceId: string; userId: string; date: string; shiftId: string | null; repeat: 'once' | 'weekly' }>({
     method: 'POST',
     path: () => '/rota/day',

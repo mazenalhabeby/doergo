@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -152,7 +153,12 @@ export function AccessFields({
     // Admins and managers are chosen by the DATABASE. This used to ask for 200
     // full member rows — Access Profiles, contact allow-lists, role joins — and
     // filter them in the browser to render a handful.
-    queryKey: ["orgMembers", "managers", excludeContactId ?? "", keepIds.join(",")],
+    queryKey: keys.members.list({
+      limit: 200,
+      managersOnly: true,
+      includeIds: keepIds.length ? keepIds : undefined,
+      excludeId: excludeContactId || undefined,
+    }),
     queryFn: () =>
       organizationsApi.getMembers({
         limit: 200,
@@ -168,7 +174,7 @@ export function AccessFields({
 
   // Org-wide roles (Admin / Manager / custom) for the role selector.
   const { data: orgRoles } = useQuery({
-    queryKey: ["orgAccessRoles"],
+    queryKey: keys.organization.roles(),
     queryFn: () => organizationsApi.getRoles(),
     staleTime: 60000,
   })

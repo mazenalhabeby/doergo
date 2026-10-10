@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -82,7 +83,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
 
   // Fetch spaces
   const { data: spacesData } = useQuery({
-    queryKey: ["locations"],
+    queryKey: keys.locations.list(),
     queryFn: () => locationsApi.list(),
     staleTime: 60000,
     enabled: open,
@@ -99,7 +100,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
   // Space-scoped roles only — an org role reaches every space, which is exactly
   // what an outsider must never have. The server refuses one regardless.
   const { data: spaceRoles = [] } = useQuery({
-    queryKey: ["access-roles", "space"],
+    queryKey: keys.organization.roles("space"),
     queryFn: () => organizationsApi.getRoles("space"),
     staleTime: 300000,
     enabled: open && isExternal,

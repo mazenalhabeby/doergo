@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react"
 import { ORG_EMAIL_SWITCH, MEMBER_EMAIL_PREF, type MemberEmail } from "@hbcfield/shared/client"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -288,7 +289,7 @@ function GeneralSection() {
   const { refreshUser } = useAuth()
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ["organization-profile"],
+    queryKey: keys.organization.profile(),
     queryFn: () => organizationsApi.getProfile(),
   })
 
@@ -326,7 +327,7 @@ function GeneralSection() {
   const updateMutation = useMutation({
     mutationFn: (updates: Record<string, unknown>) => organizationsApi.updateProfile(updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
       notify.success(t("settings.general.saved"))
     },
     onError: (error: Error) => notify.error(error.message || t("settings.general.failed")),
@@ -342,7 +343,7 @@ function GeneralSection() {
   })
   const saveOrgRate = async (patch: Record<string, unknown>) => {
     await organizationsApi.updateProfile(patch)
-    queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+    queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
     queryClient.invalidateQueries({ queryKey: ["rate-history", "ORGANIZATION"] })
   }
 
@@ -351,7 +352,7 @@ function GeneralSection() {
     setLogoBusy(true)
     try {
       await organizationsApi.updateProfile({ logoUrl })
-      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
       notify.success(logoUrl ? t("settings.general.logoSaved", "Logo updated") : t("settings.general.logoRemoved", "Logo removed"))
     } catch (e) {
       notify.error(e instanceof Error ? e.message : t("settings.general.failed"))
@@ -687,7 +688,7 @@ function MembersSection() {
   // reads the join code here but not the profile, so the leave allowance is ADMIN's.
   const isOrgAdmin = useRouteAccess().holds("admin")
   const { data: orgProfile } = useQuery({
-    queryKey: ["organization-profile"],
+    queryKey: keys.organization.profile(),
     queryFn: () => organizationsApi.getProfile(),
     enabled: isOrgAdmin,
   })
@@ -699,7 +700,7 @@ function MembersSection() {
   const updateLeaveMutation = useMutation({
     mutationFn: (days: number) => organizationsApi.updateLeavePolicy(days),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
       // The balance is measured against this number and is cached separately,
       // so without this the vacation ring keeps showing the old allowance
       // until something else happens to refetch it.
@@ -902,7 +903,7 @@ function NotificationsSection() {
   const [initialized, setInitialized] = useState(false)
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ["organization-profile"],
+    queryKey: keys.organization.profile(),
     queryFn: () => organizationsApi.getProfile(),
   })
 
@@ -917,7 +918,7 @@ function NotificationsSection() {
   const mutation = useMutation({
     mutationFn: (d: typeof prefs) => organizationsApi.updateNotificationPrefs(d),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organization-profile"] })
+      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
       notify.success(t("settings.notifications.saved"))
     },
     onError: (e: Error) => notify.error(e.message || t("settings.notifications.failed")),

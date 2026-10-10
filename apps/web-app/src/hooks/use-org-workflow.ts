@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useQuery } from "@tanstack/react-query"
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 
@@ -9,7 +10,7 @@ import { workflowsApi, type WorkflowStatus } from "@/lib/api"
  */
 export function useOrgWorkflow() {
   const { data: workflows, isLoading, isError } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
     staleTime: 120000, // 2 minutes
     retry: 1,

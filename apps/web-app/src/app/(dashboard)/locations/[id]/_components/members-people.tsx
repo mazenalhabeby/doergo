@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
@@ -88,7 +89,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
   const [adding, setAdding] = useState(false)
 
   const { data: members, isLoading } = useQuery({
-    queryKey: ["space-members", spaceId],
+    queryKey: keys.spaceMembers.list(spaceId),
     queryFn: () => spaceMembersApi.list(spaceId),
   })
   const { data: roles } = useQuery({
@@ -96,7 +97,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
     queryFn: () => spaceRolesApi.listInSpace(spaceId),
   })
   const { data: space } = useQuery({
-    queryKey: ["location", spaceId],
+    queryKey: keys.locations.detail(spaceId),
     queryFn: () => locationsApi.getById(spaceId),
     staleTime: 60_000,
   })
@@ -371,7 +372,7 @@ function MemberPanel({
   const workOpen = !external && (!hasMgmt || allow || hasWork)
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+    queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
     queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
   }
   const update = useMutation({
@@ -634,8 +635,8 @@ function AddMemberDialog({
   const { user } = useAuth()
   const mayListOrg = mayListOrgMembers(user)
   const { data: orgPeople } = useQuery({
-    queryKey: ["org-people-for-routing"],
-    queryFn: () => fetchAllPages((page) => organizationsApi.getMembers({ limit: 200, page, lite: true })),
+    queryKey: keys.members.directoryLite(),
+    queryFn: () => organizationsApi.getAllMembers({ lite: true }),
     enabled: mayListOrg,
   })
   const { members: visiblePeople } = useAssignableMembers({ enabled: !mayListOrg })
@@ -658,7 +659,7 @@ function AddMemberDialog({
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["space-members", spaceId] })
+      queryClient.invalidateQueries({ queryKey: keys.spaceMembers.list(spaceId) })
       queryClient.invalidateQueries({ queryKey: roleQueryKey(spaceId) })
       notify.success(t("scheduling.members.toast.added"))
       onClose()

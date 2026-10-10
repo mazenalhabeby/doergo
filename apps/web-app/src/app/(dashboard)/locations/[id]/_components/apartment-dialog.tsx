@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -62,7 +63,7 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   // Clients = this SPACE's app-access customers, scoped to the Apartment-entity
   // portals (a rental+logistics space won't offer logistics clients as residents).
   const clientsQ = useQuery({
-    queryKey: ["space-app-residents", spaceId],
+    queryKey: keys.customers.list({ spaceId, portalResident: true, limit: 100 }),
     queryFn: () => customersApi.list({ spaceId, portalResident: true, limit: 100 }),
     enabled: open && hasApartmentPortal,
   })

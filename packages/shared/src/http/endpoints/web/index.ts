@@ -1,0 +1,20 @@
+/** Web-only endpoints, merged into `apiEndpoints` by ../index.ts. */
+export { analyticsWebEndpoints } from './analytics';
+export { billingWebEndpoints } from './billing';
+export { customFieldsWebEndpoints } from './custom-fields';
+export { epicsWebEndpoints } from './epics';
+export { invoicesWebEndpoints } from './invoices';
+export { legalEntitiesWebEndpoints } from './legal-entities';
+export { phasesWebEndpoints } from './phases';
+export { portalAdminWebEndpoints } from './portal-admin';
+export { rateHistoryWebEndpoints } from './rate-history';
+export { recurringTasksWebEndpoints } from './recurring-tasks';
+export { searchWebEndpoints } from './search';
+export { spaceMembersWebEndpoints } from './space-members';
+export { spacePortalWebEndpoints } from './space-portal';
+export { spaceRolesWebEndpoints } from './space-roles';
+export { spaceSharingWebEndpoints } from './space-sharing';
+export { spaceUnitsWebEndpoints } from './space-units';
+export { sprintsWebEndpoints } from './sprints';
+export { workflowsWebEndpoints } from './workflows';
+export { blogWebEndpoints } from './blog';

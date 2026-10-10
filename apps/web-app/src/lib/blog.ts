@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { serverApiBaseUrl } from "./endpoints";
+import { blogWebEndpoints } from '@hbcfield/shared/client';
+import { API_PATH_PREFIX, serverApiBaseUrl } from "./endpoints";
+import { createServerApiClient } from "./http-client";
 
 /**
  * File-based blog: posts live in `content/blog/<slug>.md` with a minimal
@@ -83,10 +85,13 @@ export function getFilePosts(): BlogPost[] {
 // Rendered on the Next server, so it needs an absolute URL — from the one endpoints module.
 const API_URL = serverApiBaseUrl();
 
+/** The posts are fetched through the one client, with Next's 5-minute cache window. */
+const blogApi = createServerApiClient(300);
+
 /** API-relative asset URLs (e.g. /api/v1/blog/images/x) → absolute against the API host. */
 export function resolveBlogAssetUrl(u: string | undefined | null): string | undefined {
   if (!u) return undefined;
-  if (u.startsWith("/api/v1/")) return `${API_URL}${u.slice("/api/v1".length)}`;
+  if (u.startsWith(`${API_PATH_PREFIX}/`)) return `${API_URL}${u.slice(API_PATH_PREFIX.length)}`;
   return u;
 }
 
@@ -118,10 +123,7 @@ function fromApi(p: ApiPost): BlogPost {
 
 async function fetchApiPosts(): Promise<BlogPost[]> {
   try {
-    const res = await fetch(`${API_URL}/blog/posts`, { next: { revalidate: 300 } });
-    if (!res.ok) return [];
-    const body = await res.json();
-    const list: ApiPost[] = body?.data ?? [];
+    const list = ((await blogApi.call(blogWebEndpoints.posts)) as ApiPost[] | null) ?? [];
     return list.map(fromApi);
   } catch {
     return [];
@@ -139,11 +141,8 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   // Slug comes from the URL — refuse anything that could traverse paths.
   if (!/^[a-z0-9-]+$/.test(slug)) return null;
   try {
-    const res = await fetch(`${API_URL}/blog/posts/${slug}`, { next: { revalidate: 300 } });
-    if (res.ok) {
-      const body = await res.json();
-      if (body?.data) return fromApi(body.data);
-    }
+    const post = (await blogApi.call(blogWebEndpoints.post, { slug })) as ApiPost | null;
+    if (post) return fromApi(post);
   } catch {
     /* fall through to file */
   }

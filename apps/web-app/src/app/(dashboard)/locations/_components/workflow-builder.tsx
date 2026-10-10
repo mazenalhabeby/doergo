@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useRef, useEffect, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -610,7 +611,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           }).catch((err) => { throw Object.assign(err, { stepIndex: statuses.indexOf(s) }) })
         }
 
-        queryClient.invalidateQueries({ queryKey: ["workflows"] })
+        queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
         notify.success(t("workflows.builder.toast.created"))
         onCreated?.(workflow.id)
       } else if (mode === "edit" && workflowId) {
@@ -682,7 +683,7 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
           }
         }
 
-        queryClient.invalidateQueries({ queryKey: ["workflows"] })
+        queryClient.invalidateQueries({ queryKey: keys.workflows.lists() })
         notify.success(t("workflows.builder.toast.updated"))
         onSaved?.()
       }

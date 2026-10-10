@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState, useRef } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
@@ -52,7 +53,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   })
   const saveSpaceRate = async (patch: UpdateLocationInput) => {
     await locationsApi.update(space.id, patch)
-    queryClient.invalidateQueries({ queryKey: ["location", space.id] })
+    queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
     queryClient.invalidateQueries({ queryKey: ["rate-history", "SPACE", space.id] })
   }
 
@@ -98,8 +99,8 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const mutation = useMutation({
     mutationFn: (data: UpdateLocationInput) => locationsApi.update(space.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["location", space.id] })
-      queryClient.invalidateQueries({ queryKey: ["locations"] })
+      queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
       notify.success(t("locations.toast.updated"))
     },
     onError: (err: Error) => notify.error(err.message || t("locations.toast.updateFailed")),
@@ -230,8 +231,8 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
                   notify.success(t("locations.default.done", "{{name}} is now the default workspace.", { name: space.name }));
                   // The badge moves on ANOTHER space too, so the list is
                   // invalidated as well as this space.
-                  queryClient.invalidateQueries({ queryKey: ["location", space.id] });
-                  queryClient.invalidateQueries({ queryKey: ["locations"] });
+                  queryClient.invalidateQueries({ queryKey: keys.locations.detail(space.id) });
+                  queryClient.invalidateQueries({ queryKey: keys.locations.lists() });
                 } catch (e) {
                   notify.error(e instanceof Error ? e.message : String(e));
                 } finally {

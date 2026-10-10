@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -85,7 +86,7 @@ export default function DocumentTypesPage() {
   // canManageUsers) — asked only of whoever holds them, so the editor never fires a 403.
   const { holds } = useRouteAccess()
   const { data: workflows = [] } = useQuery({
-    queryKey: ["workflows"],
+    queryKey: keys.workflows.lists(),
     queryFn: () => workflowsApi.list(),
     enabled: holds("org:canViewAllTasks"),
   })
@@ -93,7 +94,7 @@ export default function DocumentTypesPage() {
   // Member roles, for "who do we require this from" — the same list the
   // contract templates bind against.
   const { data: roles = [] } = useQuery({
-    queryKey: ["org-roles"],
+    queryKey: keys.organization.roles(),
     queryFn: () => organizationsApi.getRoles("org"),
     enabled: holds("org:canManageUsers"),
   })

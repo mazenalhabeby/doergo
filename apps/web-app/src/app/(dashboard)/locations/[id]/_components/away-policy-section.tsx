@@ -1,5 +1,6 @@
 "use client"
 
+import { keys } from "@/lib/query-keys"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useFormatDistance } from "@/hooks/use-format-distance"
@@ -37,8 +38,8 @@ export function AwayPolicySection({
   const save = useMutation({
     mutationFn: (next: GeofencePolicy) => locationsApi.update(space.id, { geofencePolicy: next }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["location", space.id] })
-      qc.invalidateQueries({ queryKey: ["locations"] })
+      qc.invalidateQueries({ queryKey: keys.locations.detail(space.id) })
+      qc.invalidateQueries({ queryKey: keys.locations.lists() })
       notify.success(t("attendance.away.saved", "Saved"))
     },
     onError: (e: Error, next) => {
