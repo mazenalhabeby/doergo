@@ -145,10 +145,16 @@ export function getRelativeDayLabel(dateInput: Date | string): string {
 }
 
 /**
- * Get ISO date string (YYYY-MM-DD) for a date
+ * The UTC calendar day of a Date, as "YYYY-MM-DD".
+ *
+ * Right for a Postgres `DATE` (Prisma reads it back as UTC midnight, so the UTC
+ * day IS the stored day) and for a day you deliberately mean in UTC. ⚠️ WRONG
+ * for a timestamp you mean as a local day — at 00:30 in Vienna it answers
+ * yesterday; use `localDateKey(instant, zone)` for that. The one place this
+ * one-liner is written; everything else calls it.
  */
 export function toISODateString(date: Date): string {
-  return date.toISOString().split('T')[0] ?? '';
+  return date.toISOString().slice(0, 10);
 }
 
 /**

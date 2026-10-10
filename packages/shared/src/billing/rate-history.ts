@@ -17,7 +17,7 @@
  * Everything here is pure: the services load the rows, these functions decide.
  */
 
-import { localPartsIn } from '../attendance/zoned-time';
+import { localDateKey, toISODateString } from '../utils/date';
 import { cleanRateCents } from './rate-ladder';
 
 export type RateTargetKind = 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT' | 'ROLE';
@@ -53,12 +53,12 @@ export function parseDayKey(raw: unknown): string | null {
 /** A Postgres DATE (read back as UTC midnight) or a key, as a key. */
 export function dayKeyOfDate(value: Date | string): string {
   if (typeof value === 'string') return parseDayKey(value) ?? value.slice(0, 10);
-  return value.toISOString().slice(0, 10);
+  return toISODateString(value);
 }
 
 /** The calendar day an instant falls on in a time zone — where the work happened. */
 export function dayKeyIn(instant: Date, timeZone: string | null | undefined): string {
-  return localPartsIn(instant, timeZone || 'UTC').dateStr;
+  return localDateKey(instant, timeZone || 'UTC');
 }
 
 /** A row's identity for grouping: the same record, rate kind and workspace. */
