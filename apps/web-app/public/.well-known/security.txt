@@ -1,0 +1,11 @@
+Contact: mailto:support@hbcfield.com
+Expires: 2027-10-10T00:00:00.000Z
+Preferred-Languages: en, de
+Canonical: https://hbcfield.com/.well-known/security.txt
+Policy: https://hbcfield.com/.well-known/security.txt
+
+# Found a security issue in HBCField (hbcfield.com, admin.hbcfield.com, or the
+# iOS / Android apps)? Email the address above with "SECURITY" in the subject,
+# what you found, and how to reproduce it. Please do not access data that is not
+# yours, degrade the service, or disclose publicly before we have fixed it.
+# We aim to reply within 3 working days.
