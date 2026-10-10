@@ -668,7 +668,10 @@
     "undo": "Undo",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "selectDate": "Pick a date"
+    "selectDate": "Pick a date",
+    "noPageAccessTitle": "You don't have access to this page",
+    "noPageAccessBody": "Your role doesn't include this page. If you need it, ask an administrator in your organization.",
+    "noPageAccessOption": "Your organization hasn't switched this on. An administrator can turn it on under Subscription & billing."
   },
   "auth": {
     "sessionEnded": {
@@ -847,7 +850,8 @@
       "issues": "Shift Issues",
       "myDocuments": "My documents",
       "timeOff": "Vacation Requests",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "colleagues": "Colleagues"
     },
     "userMenu": {
       "profile": "Profile",

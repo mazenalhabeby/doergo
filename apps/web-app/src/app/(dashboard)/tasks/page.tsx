@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
 import { HandoverPendingNotice, useHandoverPendingText } from "@/components/handover-pending-notice"
 import { OfficeStartDialog } from "@/components/office-start-dialog"
@@ -383,10 +384,15 @@ export default function TasksPage() {
   // Fetch status counts
 
   // Fetch phases
+  // GET /phases, /sprints, /epics are @RequirePermission('canViewAllTasks'): a member
+  // without it got three 403s on every visit to their own task list.
+  const { holds } = useRouteAccess()
+  const readsPlanning = holds("org:canViewAllTasks")
   const { data: phases } = useQuery({
     queryKey: ["phases"],
     queryFn: () => phasesApi.list(),
     staleTime: 60000,
+    enabled: readsPlanning,
   })
 
   // Fetch sprints
@@ -394,6 +400,7 @@ export default function TasksPage() {
     queryKey: ["sprints"],
     queryFn: () => sprintsApi.list(),
     staleTime: 60000,
+    enabled: readsPlanning,
   })
 
   // Fetch epics
@@ -401,6 +408,7 @@ export default function TasksPage() {
     queryKey: ["epics"],
     queryFn: () => epicsApi.list(),
     staleTime: 60000,
+    enabled: readsPlanning,
   })
 
   // Fetch spaces (company locations)

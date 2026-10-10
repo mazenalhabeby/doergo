@@ -668,7 +668,10 @@
     "undo": "Annulla",
     "moveUp": "Sposta su",
     "moveDown": "Sposta giù",
-    "selectDate": "Scegli una data"
+    "selectDate": "Scegli una data",
+    "noPageAccessTitle": "Non hai accesso a questa pagina",
+    "noPageAccessBody": "Il tuo ruolo non include questa pagina. Se ti serve, chiedi a un amministratore della tua organizzazione.",
+    "noPageAccessOption": "La tua organizzazione non ha attivato questa funzione. Un amministratore può attivarla in Abbonamento e fatturazione."
   },
   "auth": {
     "sessionEnded": {
@@ -847,7 +850,8 @@
       "issues": "Problemi del turno",
       "myDocuments": "I miei documenti",
       "timeOff": "Richieste di ferie",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "colleagues": "Colleghi"
     },
     "userMenu": {
       "profile": "Profilo",

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -101,6 +102,8 @@ export function CommandPalette() {
     [router, setOpen],
   )
 
+  const { offers } = useRouteAccess()
+
   // --- Build base navigation actions ---
   const baseActions = useMemo<CommandAction[]>(() => {
     if (!user) return []
@@ -124,7 +127,8 @@ export function CommandPalette() {
       },
     ]
 
-    if (user.canManageUsers) {
+    // Asked of the route table, like the navbar — a command never leads to a refusal.
+    if (offers("/locations")) {
       nav.push({
         id: "nav-spaces",
         label: t("commandPalette.goToSpaces"),
@@ -135,7 +139,7 @@ export function CommandPalette() {
       })
     }
 
-    if (user.canViewAllTasks) {
+    if (offers("/schedule")) {
       nav.push({
         id: "nav-schedule",
         label: t("commandPalette.goToSchedule"),
@@ -143,6 +147,8 @@ export function CommandPalette() {
         group: "navigation",
         onSelect: () => router.push("/employees/availability"),
       })
+    }
+    if (offers("/attendance")) {
       nav.push({
         id: "nav-attendance",
         label: t("commandPalette.goToAttendance"),
@@ -152,7 +158,7 @@ export function CommandPalette() {
       })
     }
 
-    if (user.canManageUsers) {
+    if (offers("/members")) {
       nav.push({
         id: "nav-members",
         label: t("commandPalette.goToMembers"),
@@ -160,6 +166,8 @@ export function CommandPalette() {
         group: "navigation",
         onSelect: () => router.push("/members"),
       })
+    }
+    {
       nav.push({
         id: "nav-settings",
         label: t("commandPalette.goToSettings"),
@@ -192,7 +200,7 @@ export function CommandPalette() {
     }
 
     return [...nav, ...quick]
-  }, [user, router, pathname, theme, setTheme, toggleActivity, t])
+  }, [user, offers, router, pathname, theme, setTheme, toggleActivity, t])
 
   // Merge base actions with page-registered actions
   const allActions = useMemo(() => {

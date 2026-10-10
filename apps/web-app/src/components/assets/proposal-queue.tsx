@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -54,10 +55,13 @@ export function ProposalQueue({ kinds, spaceId }: { kinds: AssetCategory[]; spac
   const [open, setOpen] = useState(true)
   const [reviewing, setReviewing] = useState<AssetProposal | null>(null)
 
+  const mayReview = useRouteAccess().holds("any:canManageAssets")
   const q = useQuery({
     // Prefixed by the shared key, so a decision invalidates every queue at once.
     queryKey: ["asset-proposals-pending", spaceId ?? "all"],
     queryFn: () => assetsApi.getPendingProposals(spaceId),
+    // @RequirePermissionInSpace('canManageAssets') — anyone else is only refused.
+    enabled: mayReview,
     // Somebody sends one from a rental desk; the office has this page open.
     refetchInterval: 120_000,
   })

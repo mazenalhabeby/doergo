@@ -668,7 +668,10 @@
     "undo": "Rückgängig",
     "moveUp": "Nach oben",
     "moveDown": "Nach unten",
-    "selectDate": "Datum wählen"
+    "selectDate": "Datum wählen",
+    "noPageAccessTitle": "Sie haben keinen Zugriff auf diese Seite",
+    "noPageAccessBody": "Ihre Rolle umfasst diese Seite nicht. Wenn Sie sie benötigen, wenden Sie sich bitte an eine Administratorin oder einen Administrator Ihrer Organisation.",
+    "noPageAccessOption": "Ihre Organisation hat diese Funktion nicht aktiviert. Eine Administratorin oder ein Administrator kann sie unter Abonnement & Abrechnung einschalten."
   },
   "auth": {
     "sessionEnded": {
@@ -847,7 +850,8 @@
       "issues": "Schichtprobleme",
       "myDocuments": "Meine Dokumente",
       "timeOff": "Urlaubsanträge",
-      "calendar": "Kalender"
+      "calendar": "Kalender",
+      "colleagues": "Kolleginnen und Kollegen"
     },
     "userMenu": {
       "profile": "Profil",

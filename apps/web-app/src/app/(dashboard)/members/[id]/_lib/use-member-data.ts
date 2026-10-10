@@ -31,6 +31,7 @@ export function useMemberData(memberId: string) {
   // manage schedules/attendance — same gate the retired /employees page used.
   const canViewOps = isAdmin || hasPermission('canViewAllTasks')
   const canManage = canViewOps
+  const readsWork = canViewOps
   // Editing a member's role / access. Mirrors the server exactly:
   // PATCH /organizations/members/:id is @RequirePermission('canManageUsers').
   const canManageMembers = isAdmin || !!user?.canManageUsers
@@ -64,7 +65,8 @@ export function useMemberData(memberId: string) {
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ["memberTasks", memberId],
     queryFn: () => employeesApi.getTasks(memberId, { limit: 5 }),
-    enabled: !!memberId,
+    // GET /employees/:id/tasks — @RequirePermissionInSpace('canViewAllTasks').
+    enabled: !!memberId && readsWork,
   })
 
   const { data: scheduleData, isLoading: scheduleLoading } = useQuery({
@@ -78,7 +80,7 @@ export function useMemberData(memberId: string) {
   const { data: memberAssignments = [] } = useQuery({
     queryKey: ["memberLocationAssignments", memberId],
     queryFn: () => employeesApi.getAssignments(memberId),
-    enabled: !!memberId,
+    enabled: !!memberId && readsWork,
     staleTime: 30_000,
   })
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -80,9 +81,13 @@ export default function DocumentTypesPage() {
     queryFn: () => documentsApi.listTypes(true),
   })
 
+  // Both lists are other permissions' (GET /workflows: canViewAllTasks, GET /organizations/roles:
+  // canManageUsers) — asked only of whoever holds them, so the editor never fires a 403.
+  const { holds } = useRouteAccess()
   const { data: workflows = [] } = useQuery({
     queryKey: ["workflows"],
     queryFn: () => workflowsApi.list(),
+    enabled: holds("org:canViewAllTasks"),
   })
 
   // Member roles, for "who do we require this from" — the same list the
@@ -90,6 +95,7 @@ export default function DocumentTypesPage() {
   const { data: roles = [] } = useQuery({
     queryKey: ["org-roles"],
     queryFn: () => organizationsApi.getRoles("org"),
+    enabled: holds("org:canManageUsers"),
   })
 
   const active = useMemo(() => types.filter((ty) => ty.isActive), [types])

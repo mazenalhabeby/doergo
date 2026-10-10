@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react"
-import { SETTINGS_OPTION, ORG_EMAIL_SWITCH, MEMBER_EMAIL_PREF, type MemberEmail } from "@hbcfield/shared/client"
+import { ORG_EMAIL_SWITCH, MEMBER_EMAIL_PREF, type MemberEmail } from "@hbcfield/shared/client"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
@@ -37,6 +37,8 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { SettingCard } from "./_components/setting-card"
 import { HolidaysSection } from "./_components/holidays-section"
+import { useRouteAccess } from "@/hooks/use-route-access"
+import { resolveSettingsSection } from "@/lib/route-access"
 import { CompaniesSection } from "./_components/companies-section"
 
 // Lazy-load sub-pages so they render inline in the settings content area
@@ -127,7 +129,7 @@ function allTimezones(): string[] {
 
 type SettingsSection =
   // Organization
-  | "general" | "members" | "modules" | "audit-log" | "holidays" | "companies"
+  | "general" | "members" | "audit-log" | "holidays" | "companies"
   // Personal
   | "profile" | "security" | "notifications" | "my-emails"
 
@@ -163,7 +165,6 @@ const PERSONAL_NAV_ITEMS: NavItem[] = [
   { key: "my-emails", icon: Mail, labelKey: "settings.nav.myEmails" },
 ]
 
-const NAV_ITEMS = [...ORG_NAV_ITEMS, ...PERSONAL_NAV_ITEMS]
 
 // ============================================================================
 // Reusable Components (DRY)
@@ -682,9 +683,13 @@ function MembersSection() {
     schema default of 25 and no way to change it, so the balance was an
     accurate calculation over a figure nobody had chosen.
   */
+  // GET /organizations/profile is @Roles(ADMIN): a member manager with canManageUsers
+  // reads the join code here but not the profile, so the leave allowance is ADMIN's.
+  const isOrgAdmin = useRouteAccess().holds("admin")
   const { data: orgProfile } = useQuery({
     queryKey: ["organization-profile"],
     queryFn: () => organizationsApi.getProfile(),
+    enabled: isOrgAdmin,
   })
   const [leaveDays, setLeaveDays] = useState<string | null>(null)
   const storedLeave = (orgProfile as { defaultLeaveAllowance?: number } | undefined)?.defaultLeaveAllowance
@@ -762,7 +767,7 @@ function MembersSection() {
           <Button
             variant="outline"
             onClick={() => regenerateMutation.mutate()}
-            disabled={regenerateMutation.isPending}
+            disabled={regenerateMutation.isPending || !isOrgAdmin}
             className="gap-2 rounded-xl"
           >
             {regenerateMutation.isPending ? (
@@ -775,7 +780,8 @@ function MembersSection() {
         </div>
       </SettingCard>
 
-      {/* Annual vacation days */}
+      {/* Annual vacation days — PATCH /organizations/leave-policy is @Roles(ADMIN). */}
+      {isOrgAdmin && (<>
       <SettingCard
         icon={CalendarDays}
         iconColor="text-emerald-600"
@@ -811,6 +817,7 @@ function MembersSection() {
             otherwise expect it to apply to everybody. */}
         <p className="mt-3 text-xs text-muted-foreground">{t("settings.leave.hint")}</p>
       </SettingCard>
+      </>)}
 
       {/* Join Policy */}
       <SettingCard
@@ -826,8 +833,12 @@ function MembersSection() {
             return (
               <button
                 key={option.value}
-                onClick={() => setSelectedPolicy(option.value)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 ${
+                // Changing who may join is ADMIN-only on the server; a member who manages
+                // users sees the policy but cannot pick another.
+                onClick={() => isOrgAdmin && setSelectedPolicy(option.value)}
+                disabled={!isOrgAdmin}
+                aria-disabled={!isOrgAdmin}
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
                   isActive
                     ? "border-blue-400 bg-blue-50/60 shadow-sm"
                     : "border-border bg-card hover:border-border hover:bg-accent/50"
@@ -850,7 +861,7 @@ function MembersSection() {
             )
           })}
 
-          {hasUnsavedChange && (
+          {hasUnsavedChange && isOrgAdmin && (
             <div className="flex items-center gap-3 pt-3 border-t border-border">
               <Button
                 onClick={() => updatePolicyMutation.mutate({ joinPolicy: selectedPolicy! })}
@@ -1411,11 +1422,11 @@ function SecuritySection() {
 
 export default function SettingsPage() {
   const { t } = useTranslation()
-  const { user, hasPlanFeature, hasPermission } = useAuth()
+  const { user } = useAuth()
   const searchParams = useSearchParams()
+  const routeAccess = useRouteAccess()
 
   const isAdmin = user?.role === "ADMIN"
-  const canManage = user?.canManageUsers
 
   /*
     Settings sections owned by an Option, from the table in shared that also
@@ -1425,16 +1436,27 @@ export default function SettingsPage() {
     to be found and edited together whenever an Option gained a surface. Content
     is still PlanGate-guarded and the API still enforces it.
   */
-  const orgNavItems = ORG_NAV_ITEMS.filter((i) => {
-    if (i.key === "holidays") return isAdmin || hasPermission("canManageWorkspaces")
-    if (i.key === "companies") return isAdmin
-    const feat = SETTINGS_OPTION[i.key]
-    return !feat || hasPlanFeature(feat)
-  })
+  /*
+    Which sections, asked of the route table (lib/route-access) — the same one
+    the dashboard layout and the navbar read. Each section mirrors the endpoint
+    it loads (General and Notifications read the ADMIN-only organization
+    profile; Members the join code, canManageUsers; Holidays the org-wide
+    canManageWorkspaces). The table's Option column is SETTINGS_OPTION[i.key],
+    so an unbought Option still takes its section away. Content stays
+    PlanGate-guarded and the API still enforces it.
 
-  // Non-admins default to personal profile, admins to general
-  const defaultSection: SettingsSection = canManage ? "general" : "profile"
-  const initialSection = (searchParams.get("section") as SettingsSection) || defaultSection
+    The small-screen tab bar listed EVERY section to everybody, and a manager
+    landed on General, whose first request is refused for anyone but an admin.
+  */
+  const allowed = routeAccess.settingsSections
+  const orgNavItems = ORG_NAV_ITEMS.filter((i) => allowed.includes(i.key))
+  const personalNavItems = PERSONAL_NAV_ITEMS.filter((i) => allowed.includes(i.key))
+  const showOrgGroup = orgNavItems.length > 0
+
+  // The first section this member may open; a ?section they may not open falls back to it.
+  const initialSection = (routeAccess.ctx
+    ? resolveSettingsSection(searchParams.get("section"), routeAccess.ctx)
+    : "profile") as SettingsSection
   const [activeSection, setActiveSection] = useState<SettingsSection>(initialSection)
   const router = useRouter()
 
@@ -1469,7 +1491,7 @@ export default function SettingsPage() {
           <nav className="w-56 shrink-0 hidden lg:block">
             <div className="sticky top-24 space-y-0.5">
               {/* Organization section — only for admins */}
-              {canManage && (
+              {showOrgGroup && (
                 <>
                   <p data-tour="settings-org-group" className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t("settings.nav.organizationGroup")}
@@ -1496,12 +1518,12 @@ export default function SettingsPage() {
               )}
 
               {/* Personal section */}
-              <div data-tour="settings-personal-group" className={canManage ? "pt-5 pb-1.5" : "pb-1.5"}>
+              <div data-tour="settings-personal-group" className={showOrgGroup ? "pt-5 pb-1.5" : "pb-1.5"}>
                 <p className="px-3.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t("settings.nav.personalGroup")}
                 </p>
               </div>
-              {PERSONAL_NAV_ITEMS.map(item => {
+              {personalNavItems.map(item => {
                 const isActive = activeSection === item.key
                 return (
                   <button
@@ -1524,7 +1546,7 @@ export default function SettingsPage() {
 
           {/* Mobile Tab Bar */}
           <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border px-4 py-2 flex gap-1 overflow-x-auto">
-            {NAV_ITEMS.map(item => {
+            {[...orgNavItems, ...personalNavItems].map(item => {
               const isActive = activeSection === item.key
               return (
                 <button
@@ -1544,6 +1566,7 @@ export default function SettingsPage() {
           {/* Content Area */}
           <div className="flex-1 min-w-0">
             {/* Organization sections — inline */}
+            {!allowed.includes(activeSection) ? null : <>
             {activeSection === "general" && <div data-tour="settings-general"><GeneralSection /></div>}
             {activeSection === "members" && <div data-tour="settings-members"><MembersSection /></div>}
             {activeSection === "notifications" && <div data-tour="settings-notifications"><NotificationsSection /></div>}
@@ -1555,6 +1578,7 @@ export default function SettingsPage() {
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}
             {activeSection === "security" && <div data-tour="settings-security"><SecuritySection /></div>}
             {activeSection === "my-emails" && <div data-tour="settings-my-emails"><MyEmailNotificationsSection /></div>}
+            </>}
           </div>
         </div>
       </div>

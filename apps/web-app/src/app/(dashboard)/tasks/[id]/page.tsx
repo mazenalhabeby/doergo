@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useClockGate, useOfficeStart } from "@/hooks"
 import { OfficeStartDialog } from "@/components/office-start-dialog"
 import { ClockGateDialog } from "@/components/clock-gate-dialog"
@@ -105,6 +106,8 @@ export default function TaskDetailPage({
   // Space-aware module resolution
   const { hasModule: spaceHasModule, isResolved: spaceModulesResolved } = useSpaceModules(task?.spaceId || null)
   const hasModule = task?.spaceId ? spaceHasModule : orgHasModule
+  // GET /sprints, /phases, /epics are @RequirePermission('canViewAllTasks') — the ORG-wide flag.
+  const readsPlanning = useRouteAccess().holds("org:canViewAllTasks")
 
   /*
     The route is asked only where it can exist and be read: the task's
@@ -130,17 +133,17 @@ export default function TaskDetailPage({
   const { data: sprints } = useQuery({
     queryKey: ["sprints"],
     queryFn: () => sprintsApi.list(),
-    enabled: hasModule("sprints"),
+    enabled: hasModule("sprints") && readsPlanning,
   })
   const { data: phases } = useQuery({
     queryKey: ["phases"],
     queryFn: () => phasesApi.list(),
-    enabled: hasModule("phases"),
+    enabled: hasModule("phases") && readsPlanning,
   })
   const { data: epicsData } = useQuery({
     queryKey: ["epics"],
     queryFn: () => epicsApi.list(),
-    enabled: hasModule("epics"),
+    enabled: hasModule("epics") && readsPlanning,
   })
 
   useEffect(() => {

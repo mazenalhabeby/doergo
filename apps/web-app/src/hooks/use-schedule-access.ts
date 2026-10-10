@@ -1,19 +1,16 @@
 "use client"
 
-import { NAV_OPTION } from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 /**
  * May this person open Schedule & Time Off?
  *
  * One answer for every way in — the navbar entry, the calendar's Team button and
  * the "Open in Schedule" link on a leave — so a link is never offered to a page
- * that would refuse it. Two halves: the permission the page reads with, and the
- * Shift Scheduling Option the organization bought.
+ * that would refuse it. Asked of the route table (lib/route-access), whose
+ * `/employees/availability` entry carries both halves: the permission the page
+ * reads with, and the Shift Scheduling Option (`NAV_OPTION["/schedule"]`).
  */
 export function useScheduleAccess(): boolean {
-  const { user, hasPlanFeature } = useAuth()
-  if (!user) return false
-  const option = NAV_OPTION["/schedule"]
-  return (user.canViewAllTasks === true || user.canManageRota === true) && (!option || hasPlanFeature(option))
+  return useRouteAccess().offers("/schedule")
 }

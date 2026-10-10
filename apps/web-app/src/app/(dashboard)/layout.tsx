@@ -24,6 +24,8 @@ import { TourProvider } from '@/components/tour';
 import { MobileAppInterstitial } from '@/components/mobile-app-interstitial';
 import { StoreBadges } from '@/app/_home/StoreBadges';
 import { useTranslation } from 'react-i18next';
+import { NoPageAccess } from '@/components/no-page-access';
+import { useRouteAccess } from '@/hooks/use-route-access';
 
 // ---------------------------------------------------------------------------
 // Route-change progress bar — shows a slim animated bar at the top of the
@@ -103,6 +105,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const pathname = usePathname();
+  const routeAccess = useRouteAccess();
 
   useEffect(() => {
     if (isLoading) return;
@@ -181,6 +185,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  /*
+    The page itself, or a plain "no access" in its place.
+
+    Asked of ONE table (lib/route-access) that mirrors the gateway guard behind
+    each page. Rendering the refusal INSTEAD of the page means the page never
+    mounts, so none of its queries go out to come back 403 — the shell used to
+    draw in full around a column of refusals for any URL somebody typed.
+  */
+  const verdict = routeAccess.check(pathname);
+  const page = verdict.ok ? children : <NoPageAccess reason={verdict.reason} />;
+
   return (
     <SocketProvider>
     <RealtimeSyncLayer />
@@ -197,7 +212,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex-1 overflow-auto bg-background">
           <ErrorBoundary>
             <Suspense fallback={<PageContentSkeleton />}>
-              {children}
+              {page}
             </Suspense>
           </ErrorBoundary>
         </div>

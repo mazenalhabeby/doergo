@@ -19,7 +19,13 @@ const fullName = (m: AssignablePerson) => `${m.firstName} ${m.lastName}`.trim()
 
 /** Assigned sales managers for a CRM customer. Hidden once the customer has app
  *  access (handled by the caller) — an app customer is self-serve. */
-export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Customer; ownerId?: string; onChanged: () => void }) {
+export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: {
+  customer: Customer
+  ownerId?: string
+  onChanged: () => void
+  /** Who manages a client is `manage`-level on the server (CustomersService.update). */
+  canEdit?: boolean
+}) {
   const { t } = useTranslation()
   // The directory for whoever may read it, else the client's workspace roster
   // (or the rosters this person can see) — lib/assignable-members.ts.
@@ -45,7 +51,7 @@ export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Cust
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           <Users className="h-3.5 w-3.5" /> {t("customers.managers", "Managers")}
         </p>
-        <DropdownMenu>
+        {canEdit && <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
               <UserPlus className="h-3.5 w-3.5" /> {t("customers.assign", "Assign")}
@@ -69,7 +75,7 @@ export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Cust
               )
             })}
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu>}
       </div>
 
       {assigned.length === 0 ? (
@@ -82,10 +88,10 @@ export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Cust
               <Avatar m={m} />
               <span className="max-w-[9rem] truncate">{fullName(m)}</span>
               {m.id === ownerId && <span title={t("customers.primaryOwner", "Primary owner")}><Star className="h-3 w-3 fill-primary text-primary" /></span>}
-              <button onClick={() => toggle(m.id)} title={t("common.remove", "Remove")}
+              {canEdit && <button onClick={() => toggle(m.id)} title={t("common.remove", "Remove")}
                 className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive">
                 <X className="h-3 w-3" />
-              </button>
+              </button>}
             </span>
           ))}
         </div>

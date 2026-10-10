@@ -668,7 +668,10 @@
     "undo": "Annuler",
     "moveUp": "Monter",
     "moveDown": "Descendre",
-    "selectDate": "Choisir une date"
+    "selectDate": "Choisir une date",
+    "noPageAccessTitle": "Vous n’avez pas accès à cette page",
+    "noPageAccessBody": "Votre rôle n’inclut pas cette page. Si vous en avez besoin, demandez à un administrateur de votre organisation.",
+    "noPageAccessOption": "Votre organisation n’a pas activé cette fonction. Un administrateur peut l’activer dans Abonnement et facturation."
   },
   "auth": {
     "sessionEnded": {
@@ -847,7 +850,8 @@
       "issues": "Problèmes de créneau",
       "myDocuments": "Mes documents",
       "timeOff": "Demandes de congés",
-      "calendar": "Calendrier"
+      "calendar": "Calendrier",
+      "colleagues": "Collègues"
     },
     "userMenu": {
       "profile": "Profil",

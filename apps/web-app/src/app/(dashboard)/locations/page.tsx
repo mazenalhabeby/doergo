@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState, memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouter } from "next/navigation"
@@ -102,9 +103,12 @@ export default function SpacesPage() {
     queryFn: () => locationsApi.list({ limit: 100, includeInactive: true, kind: "all" }),
   })
 
+  // GET /workflows is @RequirePermission('canViewAllTasks') — asked only of whoever holds it.
+  const { holds } = useRouteAccess()
   const { data: workflows } = useQuery({
     queryKey: ["workflows"],
     queryFn: () => workflowsApi.list(),
+    enabled: holds("org:canViewAllTasks"),
   })
 
   const locations = data?.data || []

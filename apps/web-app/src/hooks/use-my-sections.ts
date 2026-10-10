@@ -2,8 +2,7 @@
 
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { hasAccessModule } from "@hbcfield/shared/client"
-import { useAuth } from "@/contexts/auth-context"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 /**
  * What belongs to the person, and which of it they actually have.
@@ -37,7 +36,8 @@ interface MySection {
 }
 
 export function useMySections(): MySection[] {
-  const { user, hasPlanFeature } = useAuth()
+  // Asked of the route table, so the menu offers exactly what the layout lets through.
+  const { may } = useRouteAccess()
   const { t } = useTranslation()
 
   return useMemo(() => {
@@ -62,7 +62,7 @@ export function useMySections(): MySection[] {
           clocks in had no way to reach their OWN shifts. The two now live in
           different menus, so the workaround can go.
         */
-        show: hasAccessModule(user ?? {}, "clock"),
+        show: may("/my/attendance"),
       },
       {
         href: "/my/time-off",
@@ -70,7 +70,7 @@ export function useMySections(): MySection[] {
         // The registry spells it without the second hyphen; the anchor has to
         // match it exactly or the welcome tour's step points at nothing.
         tour: "nav-my-timeoff",
-        show: hasAccessModule(user ?? {}, "time_off"),
+        show: may("/my/time-off"),
       },
       {
         href: "/my/documents",
@@ -78,9 +78,9 @@ export function useMySections(): MySection[] {
         tour: "nav-my-documents",
         // A plan capability rather than a module: documents are bought for the
         // organization, not switched on per workspace.
-        show: hasPlanFeature("documents"),
+        show: may("/my/documents"),
       },
     ]
     return sections.filter((s) => s.show).map(({ show: _show, ...s }) => s)
-  }, [user, hasPlanFeature, t])
+  }, [may, t])
 }

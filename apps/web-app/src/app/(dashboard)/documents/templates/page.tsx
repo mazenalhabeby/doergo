@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -65,9 +66,12 @@ export default function TemplatesPage() {
     queryKey: ["document-types"],
     queryFn: () => documentsApi.listTypes(),
   })
+  // GET /organizations/roles is canManageUsers — asked only of whoever holds it.
+  const { holds } = useRouteAccess()
   const { data: roles = [] } = useQuery({
     queryKey: ["org-roles"],
     queryFn: () => organizationsApi.getRoles("org"),
+    enabled: holds("org:canManageUsers"),
   })
   const { data: members = [] } = useQuery<MatchCandidateRow[]>({
     queryKey: ["document-match-candidates"],

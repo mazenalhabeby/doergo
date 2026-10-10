@@ -1,4 +1,5 @@
 import { readFileSync } from 'fs';
+import { ROUTE_RULES, SETTINGS_SECTION_RULES } from '@/lib/route-access';
 import { join } from 'path';
 import { NAV_OPTION, SPACE_TAB_OPTION, SETTINGS_OPTION, ADD_ON_KEYS } from '@hbcfield/shared/client';
 
@@ -22,18 +23,16 @@ const read = (p: string) => readFileSync(join(SRC, p), 'utf8');
 
 describe('every surface an Option owns is gated', () => {
   it('the navigation asks about every href in the table', () => {
+    // The bar reads the route table (lib/route-access), which carries each
+    // Option on the page it owns; /schedule is asked where it lands.
     const navbar = read('components/top-navbar.tsx');
-    // A surface reached from more than one place (Schedule: the navbar AND the calendar) asks
-    // through one shared hook instead — which must itself read the table, and the navbar must use it.
-    const DELEGATED: Record<string, { hook: string; file: string }> = {
-      '/schedule': { hook: 'useScheduleAccess', file: 'hooks/use-schedule-access.ts' },
-    };
-    const ungated = Object.keys(NAV_OPTION).filter((href) => {
-      if (navbar.includes(`optionAllows("${href}")`)) return false;
-      const d = DELEGATED[href];
-      return !(d && navbar.includes(`${d.hook}()`) && read(d.file).includes(`NAV_OPTION["${href}"]`));
-    });
+    expect(navbar).toContain('useRouteAccess()');
+    const LANDS: Record<string, string> = { '/schedule': '/employees/availability' };
+    const ungated = Object.entries(NAV_OPTION).filter(
+      ([href, opt]) => ROUTE_RULES[LANDS[href] ?? href]?.option !== opt,
+    );
     expect(ungated).toEqual([]);
+    expect(read('hooks/use-schedule-access.ts')).toContain('offers("/schedule")');
   });
 
   it('every way into the Schedule asks the same hook', () => {
@@ -51,8 +50,11 @@ describe('every surface an Option owns is gated', () => {
     // It kept its own map — correct, and one of three places that had to be
     // found and edited together whenever an Option gained a surface.
     const settings = read('app/(dashboard)/settings/page.tsx');
-    expect(settings).toContain('SETTINGS_OPTION[i.key]');
+    expect(settings).toContain('routeAccess.settingsSections');
     expect(settings).not.toContain('SECTION_PLAN_FEATURE');
+    for (const [key, opt] of Object.entries(SETTINGS_OPTION)) {
+      expect([key, SETTINGS_SECTION_RULES[key as keyof typeof SETTINGS_SECTION_RULES]?.option]).toEqual([key, opt]);
+    }
   });
 
   it('names only Options that exist', () => {

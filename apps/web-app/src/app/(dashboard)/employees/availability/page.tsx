@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -125,6 +126,8 @@ export default function ScheduleAndTimeOffPage() {
 
   // The leave on screen, plus every request still waiting (decided wherever it falls).
   // The wallchart draws them; pending rows carry their cover verdict, computed server-side.
+  // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
+  const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
   const leaveQuery = useQuery({
     queryKey: ["orgTimeOff", "window", window.start, window.end],
     queryFn: () => employeesApi.getOrgTimeOff(undefined, { from: window.start, to: window.end }),
@@ -140,7 +143,8 @@ export default function ScheduleAndTimeOffPage() {
     queryKey: ["floor-now"],
     queryFn: () => employeesApi.getFloorNow(),
     staleTime: 30_000,
-    enabled: canManage,
+    // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
+    enabled: canManage && readsFloor,
   })
 
   const coverQuery = useQuery({
@@ -148,7 +152,7 @@ export default function ScheduleAndTimeOffPage() {
     queryFn: () => employeesApi.getCoverRange(window.start, window.end),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
-    enabled: canManage,
+    enabled: canManage && readsFloor,
   })
 
   const requests = leaveQuery.data ?? []

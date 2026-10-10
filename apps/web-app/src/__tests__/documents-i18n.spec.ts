@@ -12,6 +12,7 @@
  *    English on a German phone.
  */
 import fs from 'fs';
+import { ROUTE_RULES } from '@/lib/route-access';
 import path from 'path';
 import { unknownTokens, STARTER_TEMPLATES } from '@hbcfield/shared/client';
 
@@ -127,25 +128,26 @@ describe('the documents navigation', () => {
   it('is gated on the add-on, not on a permission', () => {
     // Reading your own file is never a permission. The entry appears or not
     // purely on whether the organization bought the capability.
-    expect(navbar).toContain('hasPlanFeature("documents")');
+    expect(ROUTE_RULES['/my/documents']).toMatchObject({ option: 'documents' });
+    expect(ROUTE_RULES['/my/documents'].need).toBeUndefined();
   });
 
   it('gates each admin surface on its own permission', () => {
-    expect(navbar).toContain('hasPermission("canIssueDocuments")');
-    expect(navbar).toContain('hasPermission("canManageDocumentTemplates")');
+    // The bar reads the route table, whose entries mirror the guards.
+    expect(navbar).toContain('useRouteAccess()');
+    expect(ROUTE_RULES['/documents'].need).toEqual(['org:canIssueDocuments']);
+    expect(ROUTE_RULES['/documents/review'].need).toEqual(['org:canIssueDocuments']);
+    expect(ROUTE_RULES['/documents/all'].need).toEqual(['org:canViewMemberDocuments']);
+    expect(ROUTE_RULES['/documents/templates'].need).toEqual(['org:canManageDocumentTemplates']);
+    expect(ROUTE_RULES['/documents/types'].need).toEqual(['org:canManageDocumentTemplates']);
     /*
       Credentials ride on canAssignTasks: a dispatcher needs to know WHY
       somebody dropped out of the schedule without being able to open a file.
-
-      Read from the FLAT column, not hasPermission. `GET /documents/compliance`
-      is `@RequirePermission('canAssignTasks')` — the org-wide answer — and it
-      lists every employee's document status across the organization. Since
-      hasPermission became space-aware, asking it here offered the item to
-      somebody holding canAssignTasks in a single space, for whom the endpoint
-      returns 403. The nav and its endpoint must ask the same question.
+      `GET /documents/compliance` is `@RequirePermissionInSpace('canAssignTasks')`
+      now (the service narrows to the people the caller staffs), so the nav asks
+      it held anywhere — the same question as its endpoint.
     */
-    expect(navbar).toContain('user.canAssignTasks === true');
-    expect(navbar).not.toContain('hasPermission("canAssignTasks")');
+    expect(ROUTE_RULES['/documents/compliance'].need).toEqual(['any:canAssignTasks']);
   });
 
   it('marks the dropdown active from exactly the routes it contains', () => {

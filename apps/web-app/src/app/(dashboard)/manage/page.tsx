@@ -3,33 +3,24 @@
 import Link from "next/link"
 import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Smartphone } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { useAuth } from "@/contexts/auth-context"
-import { hasAccessModule } from "@hbcfield/shared/client"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 type Item = { href: string; label: string; desc: string; icon: typeof Users; show: boolean }
 
 export default function ManagePage() {
-  const { user, hasPermission } = useAuth()
+  const { offers } = useRouteAccess()
   const { t } = useTranslation()
-  const canSee = !user || hasAccessModule(user, "manage")
 
-  if (!canSee) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
-        {t('manage.noAccess')}
-      </div>
-    )
-  }
-
-  // Each management area is also permission-gated server-side; only surface what
-  // this user can actually use so there are no dead links.
+  // The dashboard layout refuses this page to anyone without the `manage` screen
+  // (lib/route-access). Each area below is asked of the same table, so the hub
+  // offers exactly the pages this member can use — no dead links.
   const items: Item[] = [
-    { href: "/members", label: t('manage.items.members.label'), desc: t('manage.items.members.desc'), icon: Users, show: !!user?.canManageUsers },
-    { href: "/members/phone-sync", label: t('manage.items.phoneSync.label'), desc: t('manage.items.phoneSync.desc'), icon: Smartphone, show: !!user?.canManageUsers && !!user?.offlineMode },
-    { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: !!user?.canManageUsers },
-    { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: !!user?.canManageUsers || hasPermission('canViewAllTasks') },
-    { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: hasPermission('canViewAllTasks') },
-    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: !!user?.canManageWorkspaces || !!user?.canManageUsers || hasPermission('canViewAllTasks') },
+    { href: "/members", label: t('manage.items.members.label'), desc: t('manage.items.members.desc'), icon: Users, show: offers("/members") },
+    { href: "/members/phone-sync", label: t('manage.items.phoneSync.label'), desc: t('manage.items.phoneSync.desc'), icon: Smartphone, show: offers("/members/phone-sync") },
+    { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: offers("/invitations") },
+    { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: offers("/join-requests") },
+    { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: offers("/schedule") },
+    { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: offers("/locations") },
     // No "Task types" entry: they belong to the space that runs them, so this
     // linked to the same place as Spaces above it — two rows, one destination.
   ]

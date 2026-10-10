@@ -27,12 +27,12 @@ import { useMyDocumentRequirements } from "@/hooks/use-document-requirements"
 import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
-import { hasAccessModule, resolveCrmCaps, moduleAnywhere as moduleAnywhereShared } from "@hbcfield/shared/client"
-import { NAV_OPTION, isAdmin as isAdminRole } from "@hbcfield/shared/client"
+import { NAV_OPTION } from "@hbcfield/shared/client"
 import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
 import { mayListOrgMembers } from "@/lib/assignable-members"
 import { useScheduleAccess } from "@/hooks/use-schedule-access"
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
 import { SupportButton } from "@/components/support/support-widget"
@@ -77,7 +77,7 @@ import { PAGE_WIDTH } from "@/components/ui/page-width";
 const NAV_HREFS = [
   "/dashboard", "/tasks", "/calendar", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/assets", "/portals", "/invoices", "/reports", "/manage",
-  "/invitations", "/join-requests", "/settings", "/settings/billing",
+  "/invitations", "/join-requests", "/team", "/settings", "/settings/billing",
   "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
 
@@ -153,7 +153,7 @@ function usePrefetchRoutes(mayListOrg: boolean) {
 // TopNavbar
 // ---------------------------------------------------------------------------
 export function TopNavbar() {
-  const { user, logout, hasPlanFeature, hasPermission } = useAuth()
+  const { user, logout, hasPlanFeature } = useAuth()
   // Notifications are written on the server in the reader's language.
   useSyncLocale()
   /*
@@ -172,204 +172,59 @@ export function TopNavbar() {
     [hasPlanFeature],
   )
   const scheduleAccess = useScheduleAccess()
+  const routeAccess = useRouteAccess()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
   const prefetch = usePrefetchRoutes(mayListOrgMembers(user))
   const { t, i18n } = useTranslation()
 
-  if (!user) return null
+  // Measured overflow for the navigation row (see hooks/use-overflow-nav).
+  // Re-measures whenever the language changes, because that changes every width.
+  const { containerRef: navRef, overflow: navOverflow } = useOverflowNav(i18n.language)
+
+  if (!user || !routeAccess.nav) return null
 
   const initials = `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
   const fullName = `${user.firstName} ${user.lastName}`
 
-  // Build visible nav items based on permissions
   /*
-    Read through hasPermission, not the flat columns.
+    Every item is asked of ONE table — lib/route-access — which mirrors the
+    gateway guard behind each page, the Option that owns it and the module it
+    needs. The bar, the dashboard layout (which refuses a typed URL the same
+    way), the settings list and the Manage hub all read it, so an entry here
+    can no longer lead to a page whose every request 403s.
 
-    Those columns are the ORG-wide resolution, so a member whose authority comes
-    from a SPACE role held none of them and this navbar rendered almost nothing
-    for them — the exact person we just gave a role to could not reach the
-    screen it applies to. hasPermission now answers "org-wide OR in any space",
-    and each screen narrows to the spaces they actually hold.
+    The Team menu was the worst case: it opened for `canManageUsers ||
+    canViewAllTasks`, and every page in it needs canManageUsers — so a
+    dispatcher got three links to three refusals. It now lists exactly the
+    pages each person can use.
   */
-  const showTeam = user.canManageUsers || user.canViewAllTasks // Admin + Dispatcher
-  // Employees collaborate INSIDE their space (members appear in the space view),
-  // so there is no separate employee "Team" nav item on web.
-  // The workspaces list carries no permission guard and is scoped per member,
-  // so anyone holding a task or rota grant IN a space can safely be shown the
-  // way to reach it — which for an external member is the only way in.
-  const showSpaces =
-    user.canManageWorkspaces ||
-    user.canManageUsers ||
-    hasPermission('canViewAllTasks') ||
-    hasPermission('canViewSpaceAttendance')
-  /*
-    Org-wide only, matching the endpoint.
-
-    `GET /employees/availability` is `@RequirePermission('canViewAllTasks')` —
-    the org-wide flag — so a member holding that permission in a single space is
-    refused there. Offering the link would be a nav item whose only outcome is a
-    403, which is the thing this navbar was just fixed to stop doing in the
-    other direction.
-  */
+  const nav = routeAccess.nav!
+  const teamItems = nav.team
+  const showTeam = teamItems.length > 0
+  const showSpaces = nav.spaces
   const showSchedule = scheduleAccess
-  const showAttendance = hasPermission('canViewSpaceAttendance') || hasPermission('canViewAllTasks')
-  // Every overtime route asks this one, reads included — so the link does too.
-  const showOvertime = hasPermission('canApproveOvertime') && optionAllows("/overtime")
-  /*
-    Shift issues: the responsible party's view. `canViewAllTasks` — org-wide or
-    in one space — is exactly what the API treats as "oversees this work", so
-    the nav and the answer agree.
-  */
-  const showIssues = hasPermission('canViewAllTasks') || user.canManageUsers === true
-  const showReports = user.canViewAllTasks || !!user.canViewReports // admins + managers + Show-in-Management members granted report access
-  const uAccess = (user as { role?: string; access?: { org?: Record<string, boolean> } })
+  const showAttendance = nav.time.includes("/attendance")
+  const showOvertime = nav.time.includes("/overtime") && optionAllows("/overtime")
+  const showIssues = nav.time.includes("/issues")
+  const showReports = nav.reports
+  const showCalendar = nav.calendar
+  const showCrm = nav.clients
+  const showAssets = nav.assets
+  const showPortals = nav.portals
+  const showInvoices = nav.invoices && optionAllows("/invoices")
+  const docs = nav.documents
+  const showIssueDocuments = docs.includes("/documents")
+  const showAllDocuments = docs.includes("/documents/all")
+  const showReviewDocuments = docs.includes("/documents/review")
+  const showDocumentTypes = docs.includes("/documents/types")
+  const showDocumentTemplates = docs.includes("/documents/templates")
+  const showDocumentCompliance = docs.includes("/documents/compliance")
+  const showMyDocuments = docs.length > 0
 
-  /*
-    Is a module actually RUNNING in a workspace this member can see?
-
-    Not "has the organization got it" — that was the first version and it was
-    wrong in the direction that matters: an organization can carry `crm` on its
-    own record while every workspace has an explicit list without it, and the
-    entry then led to a page that could only say "no workspace has this switched
-    on yet". A nav item promising a screen with nothing behind it is worse than
-    no nav item.
-
-    `spaceModules` is the union across the workspaces this member can see, with
-    a never-configured workspace counted as inheriting the organization's list —
-    resolved server-side with the session, so this costs no request and the nav
-    and the pages cannot answer differently.
-  */
-  /*
-    One rule, in shared, because the phone's Manage list asks it too — and two
-    clients answering differently is how a member sees CRM on the web and not on
-    the phone. Every caveat (absent is not empty, most of all) lives with it.
-  */
-  const moduleAnywhere = (m: string) => moduleAnywhereShared(user, m)
-
-  /*
-    Clients, at their own address.
-
-    This used to be hidden from admins and managers on the reasoning that they
-    "reach the CRM via Spaces → a space → Customers tab" — which is the four-
-    click journey the top-level page exists to remove. Whoever may see clients
-    now has one place to see them.
-  */
-  /*
-    None of these three for an EXTERNAL member.
-
-    The organization's clients, its equipment and its portals are its own
-    property — not a client's supervisor's to see. Assets asked
-    `hasPermission("canViewAllTasks")`, which an external supervisor
-    legitimately holds IN their space: it is how they follow the work they are
-    there for. One permission was doing duty for two different things, so the
-    bar offered an outsider the asset register.
-
-    The server now refuses these routes outright (`@DenyExternal`), and the data
-    was reachable by URL, not just by this menu. This stops offering a door that
-    would only 403.
-  */
-  const isExternalMember = user.isExternal === true
-  // The calendar is everybody's own — except an external member, who holds no clock, leave or days of ours.
-  const showCalendar = !isExternalMember
-  const showCrm = !isExternalMember && moduleAnywhere("crm") && resolveCrmCaps(uAccess.role, uAccess.access?.org).canAccess
-
-  /*
-    Assets and portals follow the same shape: the module on somewhere visible,
-    plus the permission the screens behind them need. Nothing appears for an
-    organization that does not run them.
-  */
-  const showAssets = !isExternalMember && moduleAnywhere("assets") && hasPermission("canViewAllTasks")
-  const showPortals = !isExternalMember && moduleAnywhere("b2c_portal") && (user.canManagePortals === true || hasPermission("canManagePortals"))
-  // Invoices: admins bill their customers. Shown for admins regardless of tier —
-  // the /invoices page enforces the Professional+ 'invoicing' capability (and
-  // shows an upgrade panel under-tier), so this stays discoverable.
-  // Matches what the API actually enforces: every read on /invoices is
-  // @RequirePermission('canViewAllTasks'); writes are ADMIN-only (audit).
-  //
-  // It was canManageUsers, and the four permission flags are independent — so a
-  // member with canManageUsers but not canViewAllTasks (an office administrator,
-  // the obvious case) SAW the nav item and then hit a page whose every request
-  // 403s. The reverse also held: a manager with canViewAllTasks had no nav item
-  // for something they could already open by URL, so hiding it protected nothing.
-  /*
-    ⚠️ Every item here was decided by PERMISSIONS ALONE — not one asked what the
-    organization had bought. Switching an Option off left its entry point exactly
-    where it was, for every role, and the refusal arrived a click or two later
-    from a page or a save. `optionAllows` closes that, from the one table in
-    shared that also drives the workspace tabs and the settings list.
-  */
-  //
-  // ⚠️ The reads are `@RequirePermission('canManageInvoices')` now — its own
-  // capability, held as the flat org flag (admins pass) — not canViewAllTasks.
-  // Asking canViewAllTasks hid the item from a bookkeeper who holds only
-  // canManageInvoices, and showed it to a dispatcher whose every request 403s.
-  const showInvoices =
-    (isAdminRole(user) || user.canManageInvoices === true) && optionAllows("/invoices")
-
-  // Personal, module-driven items (Access Profile). These are ADDITIVE — a
-  // member who ALSO manages people keeps their own Time Off / clock. Driven by
-  // the per-user modules, not suppressed just because management nav is shown.
-  // (My Attendance hides only when the management Attendance view is present, to
-  // avoid two "Attendance" links.)
-  /*
-    Personal documents.
-
-    Gated on the ADD-ON alone, not on a permission: reading your own file is
-    never a permission. An organization that has not bought Member Documents
-    sees no link at all, which is why nothing about this feature is visible to
-    an existing customer until they choose it.
-  */
-  /*
-    The Documents menu is now the ADMIN side of documents.
-
-    With "My documents" moved to Me, a plain member would have been left with a
-    dropdown containing nothing — it was gated on merely having the documents
-    capability, which everyone in a paying organization does. It appears when
-    there is something inside it to reach.
-  */
-  const showMyDocuments =
-    hasPlanFeature("documents") &&
-    (hasPermission("canIssueDocuments") ||
-      hasPermission("canViewMemberDocuments") ||
-      hasPermission("canManageDocumentTemplates"))
-  /*
-    The admin surface. Needs the add-on AND the permission to issue — unlike
-    /my/documents, which is nobody's permission because it is their own file.
-  */
-  const showIssueDocuments = hasPlanFeature("documents") && hasPermission("canIssueDocuments")
-  /*
-    Seeing what the organization has sent needs the permission to see member
-    documents — deliberately NOT the permission to issue them. A manager who
-    chases signatures should not have to be given the ability to send payslips.
-  */
-  const showAllDocuments = hasPlanFeature("documents") && hasPermission("canViewMemberDocuments")
-  const showDocumentTemplates = hasPlanFeature("documents") && hasPermission("canManageDocumentTemplates")
-  /*
-    Credential validity rides on canAssignTasks, not on a document permission:
-    a dispatcher needs to know WHY somebody dropped out of the schedule without
-    being able to open their file.
-  */
-  /*
-    Org-wide only, matching the endpoint.
-
-    `GET /documents/compliance` is `@RequirePermission('canAssignTasks')` — the
-    ORG-wide flag — and it lists every employee's document status across the
-    organization. A member holding canAssignTasks in a single space is refused
-    there, so offering the item is a menu entry whose only outcome is a 403.
-
-    (Worth revisiting separately: "can assign tasks" is a strange key for a
-    board of personnel-document compliance. Narrowing it would remove access
-    from people who have it today, so it is a decision rather than a fix.)
-  */
-  const showDocumentCompliance = hasPlanFeature("documents") && user.canAssignTasks === true
-
-  // Measured overflow for the navigation row (see hooks/use-overflow-nav).
-  // Re-measures whenever the language changes, because that changes every width.
-  const { containerRef: navRef, overflow: navOverflow } = useOverflowNav(i18n.language)
-  // "Manage" is the management hub — redundant with "Team", so only show it when
-  // the user doesn't already have Team (i.e. not managers/admins).
-  const showManage = hasAccessModule(user, "manage") && !showTeam
+  // "Manage" is the management hub — redundant with "Team", so the table shows
+  // it only to whoever has no Team menu.
+  const showManage = nav.manage
   // Overflow items go into "More" menu
   return (
     /*
@@ -433,6 +288,7 @@ export function TopNavbar() {
         showReports={showReports}
         showInvoices={showInvoices}
         showManage={showManage}
+        teamItems={teamItems}
         showCrm={showCrm}
         showCalendar={showCalendar}
         showAssets={showAssets}
@@ -573,7 +429,7 @@ export function TopNavbar() {
         )}
 
         {/* Team dropdown (admins) */}
-        {showTeam && <TeamDropdown pathname={pathname} onOpen={prefetch.prefetchTeam} />}
+        {showTeam && <TeamDropdown pathname={pathname} items={teamItems} onOpen={prefetch.prefetchTeam} />}
 
         {/* Spaces */}
         {showSpaces && (
@@ -653,6 +509,8 @@ export function TopNavbar() {
             pathname={pathname}
             showIssue={showIssueDocuments}
             showAllDocuments={showAllDocuments}
+            showReview={showReviewDocuments}
+            showTypes={showDocumentTypes}
             showTemplates={showDocumentTemplates}
             showCompliance={showDocumentCompliance}
           />
@@ -704,9 +562,20 @@ function CommandPaletteButton() {
   )
 }
 
-function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => void }) {
+/** The labels for the Team menu's entries — which ones show is the route table's call. */
+function useTeamLabels(): Record<string, string> {
   const { t } = useTranslation()
-  const items = ["/members", "/invitations", "/join-requests"]
+  return {
+    "/members": t("nav.sidebar.members"),
+    "/invitations": t("nav.sidebar.invitations"),
+    "/join-requests": t("nav.sidebar.joinRequests"),
+    "/team": t("nav.sidebar.colleagues"),
+  }
+}
+
+function TeamDropdown({ pathname, items, onOpen }: { pathname: string; items: string[]; onOpen?: () => void }) {
+  const { t } = useTranslation()
+  const labels = useTeamLabels()
   const active = isDropdownActive(pathname, items)
 
   return (
@@ -723,21 +592,13 @@ function TeamDropdown({ pathname, onOpen }: { pathname: string; onOpen?: () => v
         <ChevronDown className="h-3.5 w-3.5 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[180px] rounded-lg p-1">
-        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-          <Link href="/members" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            {t("nav.sidebar.members")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-          <Link href="/invitations" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            {t("nav.sidebar.invitations")}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="rounded-md cursor-pointer">
-          <Link href="/join-requests" className="flex items-center gap-2 px-2 py-1.5 text-sm">
-            {t("nav.sidebar.joinRequests")}
-          </Link>
-        </DropdownMenuItem>
+        {items.map((href) => (
+          <DropdownMenuItem key={href} asChild className="rounded-md cursor-pointer">
+            <Link href={href} className="flex items-center gap-2 px-2 py-1.5 text-sm">
+              {labels[href]}
+            </Link>
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -762,12 +623,16 @@ function DocumentsDropdown({
   pathname,
   showIssue,
   showAllDocuments,
+  showReview,
+  showTypes,
   showTemplates,
   showCompliance,
 }: {
   pathname: string
   showIssue: boolean
   showAllDocuments: boolean
+  showReview: boolean
+  showTypes: boolean
   showTemplates: boolean
   showCompliance: boolean
 }) {
@@ -804,8 +669,8 @@ function DocumentsDropdown({
       signature is a different job from sending one.
     */
     { href: "/documents/all", label: t("nav.allDocuments"), show: showAllDocuments },
-    { href: "/documents/review", label: t("documents.review.title"), show: showIssue },
-    { href: "/documents/types", label: t("documents.types.title"), show: showTemplates },
+    { href: "/documents/review", label: t("documents.review.title"), show: showReview },
+    { href: "/documents/types", label: t("documents.types.title"), show: showTypes },
     { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },
     { href: "/documents/compliance", label: t("documents.compliance.title"), show: showCompliance },
   ].filter((i) => i.show)
@@ -1065,8 +930,10 @@ function MobileMenu({
   showIssues,
   showAssets,
   showPortals,
+  teamItems,
 }: {
   pathname: string
+  teamItems: string[]
   showTeam: boolean
   showSpaces: boolean
   showSchedule: boolean
@@ -1090,8 +957,7 @@ function MobileMenu({
   // The same definition the desktop menu and the section's tabs read.
   const mySections = useMySections()
 
-  const teamItems = ["/members", "/invitations", "/join-requests"]
-  const teamActive = isDropdownActive(pathname, teamItems)
+  const teamLabels = useTeamLabels()
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -1178,33 +1044,17 @@ function MobileMenu({
             <DropdownMenuLabel className="px-3 py-1 text-xs font-medium text-muted-foreground">
               {t("nav.team")}
             </DropdownMenuLabel>
-            <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-              <Link
-                href="/members"
-                onClick={() => setOpen(false)}
-                className={cn(mobileItemBase, "pl-5", isActive(pathname, "/members") ? mobileItemActiveStyle : mobileItemInactive)}
-              >
-                {t("nav.sidebar.members")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-              <Link
-                href="/invitations"
-                onClick={() => setOpen(false)}
-                className={cn(mobileItemBase, "pl-5", isActive(pathname, "/invitations") ? mobileItemActiveStyle : mobileItemInactive)}
-              >
-                {t("nav.sidebar.invitations")}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="rounded-md cursor-pointer p-0">
-              <Link
-                href="/join-requests"
-                onClick={() => setOpen(false)}
-                className={cn(mobileItemBase, "pl-5", isActive(pathname, "/join-requests") ? mobileItemActiveStyle : mobileItemInactive)}
-              >
-                {t("nav.sidebar.joinRequests")}
-              </Link>
-            </DropdownMenuItem>
+            {teamItems.map((href) => (
+              <DropdownMenuItem key={href} asChild className="rounded-md cursor-pointer p-0">
+                <Link
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={cn(mobileItemBase, "pl-5", isActive(pathname, href) ? mobileItemActiveStyle : mobileItemInactive)}
+                >
+                  {teamLabels[href]}
+                </Link>
+              </DropdownMenuItem>
+            ))}
           </>
         )}
 

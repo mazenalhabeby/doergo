@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -54,10 +55,13 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
     storeFloorView(v)
   }, [])
 
+  const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
   const { data: spaces = [], isLoading } = useQuery({
     queryKey: ["floor-now"],
     queryFn: () => employeesApi.getFloorNow(),
     staleTime: 30_000,
+    // @RequirePermissionInSpace('canViewSpaceAttendance') — asked only of whoever holds it.
+    enabled: readsFloor,
     // A safety refetch, not the delivery mechanism: clock events already
     // invalidate this key over the socket. This is what heals a missed one.
     refetchInterval: 60_000,

@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -28,9 +29,12 @@ export function ExpenseQueue() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(true)
 
+  // GET /assets/expenses/pending is @RequirePermission('canViewAllTasks') — the ORG-wide flag.
+  const mayRead = useRouteAccess().holds("org:canViewAllTasks")
   const q = useQuery({
     queryKey: ["asset-expenses-pending"],
     queryFn: () => assetsApi.getPendingExpenses(),
+    enabled: mayRead,
     // The office leaves this page open; a receipt filed at a pump should not
     // need a reload to appear.
     refetchInterval: 120_000,

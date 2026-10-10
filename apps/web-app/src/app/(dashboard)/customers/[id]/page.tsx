@@ -38,6 +38,7 @@ import { ContactsPanel, WorksAtPanel } from "./customer-contacts"
 import { Truncated } from "@/components/truncated"
 import { ActivityFeedSkeleton, ClientRecordSkeleton } from "@/components/skeletons/crm"
 import { ManagersPanel } from "./customer-managers"
+import { clientRecordActions } from "@/lib/crm-record-actions"
 import { clientLocaleName } from "@/lib/client-locale"
 import { copyText } from "@/lib/clipboard"
 
@@ -182,6 +183,13 @@ export default function CustomerRecordPage() {
   const openReminders = activities.filter((a) => a.type === "REMINDER" && !a.doneAt)
   const overdue = openReminders.filter((a) => a.dueAt && new Date(a.dueAt).getTime() < Date.now())
   const status = customer.status || "LEAD"
+  /*
+    What this member may do HERE — the caps the server sent with the record, read
+    by the same rules it enforces (lib/crm-record-actions). Edit, the stage, the
+    composer, managers and the app invite were offered to anybody who could open
+    the record, and a read-only member pressed them into a refusal.
+  */
+  const can = clientRecordActions(customer.crmCaps, customer.isPortalResident)
   const grad = gradientFor(customer.name)
   const isCompany = customer.type === "COMPANY"
   const website = customer.website
@@ -252,11 +260,13 @@ export default function CustomerRecordPage() {
                 <CheckCircle2 className="h-4 w-4" /> {t("customers.activeCustomer", "Active customer")}
               </span>
             ) : (
-              <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} />
+              <StatusPill current={status} onSet={(s) => setStatus.mutate(s)} pending={setStatus.isPending} readOnly={!can.setStage} />
             )}
-            <CustomerForm existing={customer} onSaved={refresh} trigger={
-              <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
-            } />
+            {can.editInfo && (
+              <CustomerForm existing={customer} onSaved={refresh} trigger={
+                <Button variant="outline" size="sm"><Settings2 className="mr-1.5 h-3.5 w-3.5" /> {t("common.edit", "Edit")}</Button>
+              } />
+            )}
           </div>
         </div>
       </div>
@@ -303,11 +313,11 @@ export default function CustomerRecordPage() {
             client the contact of itself in two clicks.
           */}
           {isCompany
-            ? <ContactsPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />
-            : <WorksAtPanel customer={customer} canEdit={!!customer.crmCaps?.editInfo} />}
+            ? <ContactsPanel customer={customer} canEdit={can.editInfo} />
+            : <WorksAtPanel customer={customer} canEdit={can.editInfo} />}
 
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
-          {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} />}
+          {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} canEdit={can.assignManagers} />}
 
           <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} portalId={customer.portalId ?? undefined} isPortalResident={customer.isPortalResident} />
 
@@ -319,19 +329,19 @@ export default function CustomerRecordPage() {
             one is offering an action that cannot complete, and the card sat on
             every company record asking a question with no answer.
           */}
-          {!isCompany && <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />}
+          {!isCompany && can.invite && <InviteCard customer={customer} hasB2C={hasB2C} onChanged={refresh} />}
         </aside>
 
         {/* ── MAIN: composer + tabs + timeline ── */}
         <main className="min-w-0 space-y-4">
-          <Composer customer={customer} onAdded={refresh} />
+          {can.work && <Composer customer={customer} onAdded={refresh} />}
 
           {/* Smart nudges — keep the relationship moving. */}
           {showNoNextStep && (
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
               <Bell className="h-4 w-4 shrink-0" />
               <span className="flex-1">{t("customers.nudgeNoNext", "No follow-up scheduled.")}{staleDays != null && staleDays > 0 ? ` ${t("customers.lastActivityDays", "Last activity {{d}}d ago.", { d: staleDays })}` : ""}</span>
-              <QuickRemind customerId={id} onAdded={refresh} />
+              {can.work && <QuickRemind customerId={id} onAdded={refresh} />}
             </div>
           )}
           {showStale && !showNoNextStep && (
@@ -363,7 +373,7 @@ export default function CustomerRecordPage() {
             </div>
           )}
 
-          <Timeline customerId={id} loading={activityQ.isLoading} activities={filtered} empty={tab} onChanged={refresh} />
+          <Timeline customerId={id} loading={activityQ.isLoading} activities={filtered} empty={tab} onChanged={refresh} canWork={can.work} />
         </main>
       </div>
     </div>
@@ -371,8 +381,17 @@ export default function CustomerRecordPage() {
 }
 
 // ── Status pill (clean, Attio-style) ──────────────────────────────────────────
-function StatusPill({ current, onSet, pending }: { current: string; onSet: (s: string) => void; pending: boolean }) {
+function StatusPill({ current, onSet, pending, readOnly }: { current: string; onSet: (s: string) => void; pending: boolean; readOnly?: boolean }) {
   const { t } = useTranslation()
+  // Somebody who may read the stage but not move it sees the stage, not a menu.
+  if (readOnly) {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground">
+        <span className={cn("h-2 w-2 rounded-full", stageDot(current))} />
+        {customerStageLabel(current)}
+      </span>
+    )
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={pending}>
@@ -589,8 +608,8 @@ const ACT_META: Record<string, { icon: LucideIcon; tone: string }> = {
   STATUS: { icon: RefreshCw, tone: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300" },
   SYSTEM: { icon: Settings2, tone: "bg-muted text-muted-foreground" },
 }
-function Timeline({ customerId, loading, activities, empty, onChanged }: {
-  customerId: string; loading: boolean; activities: FeedItem[]; empty: string; onChanged: () => void
+function Timeline({ customerId, loading, activities, empty, onChanged, canWork }: {
+  customerId: string; loading: boolean; activities: FeedItem[]; empty: string; onChanged: () => void; canWork: boolean
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -686,7 +705,7 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
                       </span>
                       <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
                       <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
-                      <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
+                      <button hidden={!canWork} onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3 w-3" /></button>
                     </p>
                   </li>
                 )
@@ -709,13 +728,13 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
                       </span>
                       <span className="text-muted-foreground/40">·</span><span className="truncate">{author}</span>
                       <span className="text-muted-foreground/40">·</span><span className="shrink-0">{relTime(a.createdAt)}</span>
-                      <button onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>
+                      <button hidden={!canWork} onClick={() => del.mutate(a.id)} className="ml-auto shrink-0 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                     {a.body && <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">{a.body}</p>}
                     {a.type === "REMINDER" && (
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg bg-muted/50 px-2.5 py-1.5">
-                          <Checkbox checked={!!a.doneAt} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
+                          <Checkbox checked={!!a.doneAt} disabled={!canWork} onCheckedChange={(v) => toggleDone.mutate({ actId: a.id, done: !!v })} />
                           <span className={cn("text-xs font-medium", a.doneAt ? "text-emerald-600 line-through" : overdue ? "text-red-600" : "text-amber-600")}>
                             {a.doneAt ? t("customers.done", "Done") : t("customers.dueAt", "Due {{date}}", { date: fmtDateTime(a.dueAt) })}
                           </span>
@@ -726,7 +745,7 @@ function Timeline({ customerId, loading, activities, empty, onChanged }: {
                             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Repeat className="h-3 w-3" /> {t(`customers.repeat.${String(a.repeat).toLowerCase()}`, String(a.repeat))}</span>
                           )}
                         </label>
-                        {!a.doneAt && (
+                        {!a.doneAt && canWork && (
                           <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                             <span>{t("customers.snooze", "Snooze")}:</span>
                             <button onClick={() => doSnooze(a, 60)} className="rounded-md border border-border px-1.5 py-0.5 hover:bg-muted">1h</button>

@@ -668,7 +668,10 @@
     "undo": "Deshacer",
     "moveUp": "Subir",
     "moveDown": "Bajar",
-    "selectDate": "Elegir fecha"
+    "selectDate": "Elegir fecha",
+    "noPageAccessTitle": "No tienes acceso a esta página",
+    "noPageAccessBody": "Tu rol no incluye esta página. Si la necesitas, pídeselo a un administrador de tu organización.",
+    "noPageAccessOption": "Tu organización no ha activado esta función. Un administrador puede activarla en Suscripción y facturación."
   },
   "auth": {
     "sessionEnded": {
@@ -847,7 +850,8 @@
       "issues": "Incidencias de turno",
       "myDocuments": "Mis documentos",
       "timeOff": "Solicitudes de vacaciones",
-      "calendar": "Calendario"
+      "calendar": "Calendario",
+      "colleagues": "Compañeros"
     },
     "userMenu": {
       "profile": "Perfil",
