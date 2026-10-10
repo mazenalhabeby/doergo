@@ -11,6 +11,7 @@ import {
 } from '../lib/api';
 import { endSession, type SessionEndReason } from '../lib/session/end-session';
 import { loadStoredUser, saveStoredUser } from '../lib/session/stored-user';
+import { sealLeftovers } from '../lib/sealed-stores';
 
 /** How a sign-out was asked for — see `endSession`. */
 export interface LogoutOptions {
@@ -186,6 +187,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     going away forgets it.
   */
   const userId = user?.id;
+  /*
+    The member is known: whatever an older version left for them in plaintext
+    (route points, check-ins, notes, home cards, the day's plan) is sealed with
+    their key now, not whenever its store is next used (lib/sealed-stores.ts).
+  */
+  useEffect(() => {
+    if (userId) void sealLeftovers(userId);
+  }, [userId]);
   const logout = useCallback(async (opts?: LogoutOptions) => {
     try {
       await endSession({ reason: opts?.reason ?? 'signed-out', keepUnsent: opts?.keepUnsent ?? true, userId });

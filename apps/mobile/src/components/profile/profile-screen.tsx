@@ -27,6 +27,7 @@ import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { TourTarget, GuideSheet, useTourScroll } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';
+import { hasUnsentLocalWork } from '../../lib/session/end-session';
 
 const THEME_MODE_I18N: Record<ThemeMode, string> = {
   system: 'profile.theme.system',
@@ -208,8 +209,14 @@ export function ProfileScreen() {
       photos with one tap, so unsent work gets its own question.
     */
     // `running`, not `engine`: with offline mode off a phone may still hold queued work.
-    if (offline.running?.hasUnsent()) setShowUnsentConfirm(true);
-    else setShowSignOutConfirm(true);
+    // The old work-log queue counts too — the same rule the session end uses.
+    if (offline.running?.hasUnsent()) {
+      setShowUnsentConfirm(true);
+      return;
+    }
+    void (user?.id ? hasUnsentLocalWork(user.id) : Promise.resolve(false)).then((unsent) =>
+      unsent ? setShowUnsentConfirm(true) : setShowSignOutConfirm(true),
+    );
   };
 
   const confirmSignOut = async () => {

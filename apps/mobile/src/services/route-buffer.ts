@@ -18,7 +18,9 @@
  * Why not the offline engine's SQLite: it is encrypted and opened per member
  * by the React tree; the route tracker runs as a headless task that may start
  * with no tree at all, and a second connection to that database is exactly the
- * failure the offline engine once died of. AsyncStorage needs no key.
+ * failure the offline engine once died of. AsyncStorage needs no database
+ * connection — and on the phone every value is SEALED (lib/secure-buffer.ts:
+ * AES-256-GCM, a per-member key in SecureStore readable after first unlock).
  *
  * Every key starts `route_pending_bursts:` so sign-out's sweep removes them all.
  * The old single-value list (`route_pending_bursts:{owner}`) is read once and
@@ -56,7 +58,13 @@ interface IndexEntry {
 }
 
 export const PENDING_PREFIX = 'route_pending_bursts';
-export const CHUNK_POINTS = 200;
+/*
+  ⚠️ 50, NOT 200, SINCE THE CHUNKS ARE SEALED. A top-up opens and re-seals the
+  whole chunk, and AES-GCM in JavaScript on Hermes costs ~0.1 ms per point
+  (measured on the Hermes VM: 200 points ≈ 17–22 ms each way, 50 ≈ 5–6 ms).
+  Chunks of up to 200 written by an older version are still read as they are.
+*/
+export const CHUNK_POINTS = 50;
 
 const legacyKey = (owner: string) => `${PENDING_PREFIX}:${owner}`;
 const indexKey = (owner: string) => `${PENDING_PREFIX}:${owner}:index`;
@@ -78,19 +86,25 @@ function span(points: FlushPoint[]): { oldest: number | null; newest: number | n
   return { oldest, newest };
 }
 
-export function createRouteBuffer(kv: KV, opts: {
+/**
+ * `kv` is one store for everybody, or — on the phone — a SEALED store per
+ * member (`secureStorage`, lib/secure-buffer.ts), so the points are encrypted
+ * at rest and only the owner's key opens them.
+ */
+export function createRouteBuffer(store: KV | ((owner: string) => KV), opts: {
   maxPoints: number;
   maxAgeMs: number;
   now?: () => number;
   newId?: () => string;
 }) {
   const now = opts.now ?? (() => Date.now());
+  const kvOf = (owner: string): KV => (typeof store === 'function' ? store(owner) : store);
   let seq = 0;
   const newId = opts.newId ?? (() => `${now().toString(36)}${(seq++).toString(36)}${Math.random().toString(36).slice(2, 6)}`);
 
   async function readIndex(owner: string): Promise<IndexEntry[]> {
     try {
-      const raw = await kv.getItem(indexKey(owner));
+      const raw = await kvOf(owner).getItem(indexKey(owner));
       const parsed = raw ? (JSON.parse(raw) as IndexEntry[]) : [];
       return Array.isArray(parsed) ? parsed.filter((e) => e && typeof e.id === 'string' && e.n > 0) : [];
     } catch {
@@ -99,13 +113,13 @@ export function createRouteBuffer(kv: KV, opts: {
   }
 
   async function writeIndex(owner: string, index: IndexEntry[]): Promise<void> {
-    if (index.length) await kv.setItem(indexKey(owner), JSON.stringify(index));
-    else await kv.removeItem(indexKey(owner));
+    if (index.length) await kvOf(owner).setItem(indexKey(owner), JSON.stringify(index));
+    else await kvOf(owner).removeItem(indexKey(owner));
   }
 
   async function readChunk(owner: string, id: string): Promise<PendingBurst | null> {
     try {
-      const raw = await kv.getItem(chunkKey(owner, id));
+      const raw = await kvOf(owner).getItem(chunkKey(owner, id));
       const parsed = raw ? (JSON.parse(raw) as PendingBurst) : null;
       return parsed && Array.isArray(parsed.points) ? parsed : null;
     } catch {
@@ -113,8 +127,9 @@ export function createRouteBuffer(kv: KV, opts: {
     }
   }
 
-  async function removeKeys(keys: string[]): Promise<void> {
+  async function removeKeys(owner: string, keys: string[]): Promise<void> {
     if (!keys.length) return;
+    const kv = kvOf(owner);
     if (kv.multiRemove) await kv.multiRemove(keys);
     else for (const k of keys) await kv.removeItem(k);
   }
@@ -139,19 +154,19 @@ export function createRouteBuffer(kv: KV, opts: {
       } else {
         const chunk = await readChunk(owner, first.id);
         const points = (chunk?.points ?? []).slice(excess);
-        await kv.setItem(chunkKey(owner, first.id), JSON.stringify({ taskId: first.taskId, points }));
+        await kvOf(owner).setItem(chunkKey(owner, first.id), JSON.stringify({ taskId: first.taskId, points }));
         kept = [{ ...first, n: points.length, ...span(points) }, ...kept.slice(1)];
         total -= excess;
       }
     }
-    await removeKeys(dead.map((id) => chunkKey(owner, id)));
+    await removeKeys(owner, dead.map((id) => chunkKey(owner, id)));
     return kept;
   }
 
   /** The old single-value list, folded into chunks once. */
   async function migrateLegacy(owner: string, index: IndexEntry[]): Promise<IndexEntry[]> {
     let raw: string | null = null;
-    try { raw = await kv.getItem(legacyKey(owner)); } catch { return index; }
+    try { raw = await kvOf(owner).getItem(legacyKey(owner)); } catch { return index; }
     if (raw === null) return index;
     let bursts: PendingBurst[] = [];
     try {
@@ -160,7 +175,7 @@ export function createRouteBuffer(kv: KV, opts: {
     } catch { /* unreadable — dropped */ }
     // Held before the update = older than anything chunked since: they go first.
     const before = await appendTo(owner, [], bursts);
-    await kv.removeItem(legacyKey(owner));
+    await kvOf(owner).removeItem(legacyKey(owner));
     return [...before, ...index];
   }
 
@@ -176,13 +191,13 @@ export function createRouteBuffer(kv: KV, opts: {
           const add = points.slice(0, room);
           const chunk = await readChunk(owner, last.id);
           const merged = [...(chunk?.points ?? []), ...add];
-          await kv.setItem(chunkKey(owner, last.id), JSON.stringify({ taskId: burst.taskId, points: merged }));
+          await kvOf(owner).setItem(chunkKey(owner, last.id), JSON.stringify({ taskId: burst.taskId, points: merged }));
           next[next.length - 1] = { ...last, n: merged.length, ...span(merged) };
           points = points.slice(room);
         } else {
           const add = points.slice(0, CHUNK_POINTS);
           const id = newId();
-          await kv.setItem(chunkKey(owner, id), JSON.stringify({ taskId: burst.taskId, points: add }));
+          await kvOf(owner).setItem(chunkKey(owner, id), JSON.stringify({ taskId: burst.taskId, points: add }));
           next.push({ id, n: add.length, taskId: burst.taskId, ...span(add) });
           points = points.slice(CHUNK_POINTS);
         }
@@ -235,7 +250,7 @@ export function createRouteBuffer(kv: KV, opts: {
           for (const p of chunk?.points ?? []) { const t = stampOf(p); if (t === null || t >= cutoff) points.push(p); }
         }
         const left = points.length ? await send({ taskId, points }) : [];
-        await removeKeys(group.map((e) => chunkKey(owner, e.id)));
+        await removeKeys(owner, group.map((e) => chunkKey(owner, e.id)));
         index = index.slice(group.length);
         if (left.length) {
           // The undelivered tail goes back in front, in chunks, and the walk stops: the connection is down.
@@ -254,7 +269,7 @@ export function createRouteBuffer(kv: KV, opts: {
       const index = await readIndex(owner);
       let legacy = 0;
       try {
-        const raw = await kv.getItem(legacyKey(owner));
+        const raw = await kvOf(owner).getItem(legacyKey(owner));
         if (raw) legacy = (JSON.parse(raw) as PendingBurst[]).reduce((n, b) => n + (b?.points?.length ?? 0), 0);
       } catch { /* none */ }
       return index.reduce((n, e) => n + e.n, 0) + legacy;

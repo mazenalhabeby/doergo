@@ -36,6 +36,16 @@ interface CheckInBufferDeps {
     getAllKeys?(): Promise<readonly string[]>;
     multiRemove?(keys: readonly string[]): Promise<void>;
   };
+  /**
+   * The member's own SEALED store for their list (lib/secure-buffer.ts) — on
+   * the phone, so check-ins are encrypted at rest. Absent: `storage` itself.
+   * `storage` is still what `forgetAll` sweeps.
+   */
+  storageFor?(owner: string): {
+    getItem(key: string): Promise<string | null>;
+    setItem(key: string, value: string): Promise<void>;
+    removeItem(key: string): Promise<void>;
+  };
   /** Whose session this is (the token's `sub`); null = nobody, and nothing is kept or sent. */
   owner(): Promise<string | null>;
   send(points: KeptCheckIn[]): Promise<void>;
@@ -56,10 +66,11 @@ export const MAX_KEPT_AGE_MS = 24 * 60 * 60 * 1000;
 export function createCheckInBuffer(deps: CheckInBufferDeps) {
   const now = deps.now ?? Date.now;
   let flushing: Promise<boolean> | null = null;
+  const storeOf = (owner: string) => deps.storageFor?.(owner) ?? deps.storage;
 
   async function load(owner: string): Promise<KeptCheckIn[]> {
     try {
-      const raw = await deps.storage.getItem(checkInBufferKey(owner));
+      const raw = await storeOf(owner).getItem(checkInBufferKey(owner));
       const parsed = raw ? (JSON.parse(raw) as KeptCheckIn[]) : [];
       const cutoff = now() - MAX_KEPT_AGE_MS;
       return Array.isArray(parsed)
@@ -72,8 +83,8 @@ export function createCheckInBuffer(deps: CheckInBufferDeps) {
 
   async function save(owner: string, points: KeptCheckIn[]): Promise<void> {
     try {
-      if (points.length === 0) await deps.storage.removeItem(checkInBufferKey(owner));
-      else await deps.storage.setItem(checkInBufferKey(owner), JSON.stringify(points.slice(-MAX_KEPT)));
+      if (points.length === 0) await storeOf(owner).removeItem(checkInBufferKey(owner));
+      else await storeOf(owner).setItem(checkInBufferKey(owner), JSON.stringify(points.slice(-MAX_KEPT)));
     } catch {
       /* the next check-in tries again */
     }

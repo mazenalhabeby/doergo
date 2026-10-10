@@ -1,8 +1,11 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { straightLineRoute, type LatLng, type OptimizedRoute, type RouteStop } from '@hbcfield/shared/client';
 import { routesApi } from '../../lib/api';
 import { isUnreachable } from '../actions/unreachable';
+import { sealedStore } from '../../lib/sealed-stores';
 import { restoreRoute, saveRoute } from './saved-route';
+
+/** ⚠️ Sealed per member: the day's stops are clients' addresses and coordinates. A plaintext plan from before is re-sealed on first touch. */
+const planStore = (memberId: string) => sealedStore('route-plan', memberId);
 
 /**
  * Plan the day — ONE implementation, for the route planner and the home's
@@ -34,9 +37,9 @@ export async function planDay(memberId: string, start: LatLng | null, stops: rea
     if (!isUnreachable(e)) throw e;
     route = straightLineRoute({ start: from, stops: list });
   }
-  await saveRoute(AsyncStorage, memberId, route);
+  await saveRoute(planStore(memberId), memberId, route);
   return route;
 }
 
 /** Today's plan for these stops, from the phone — the same store `planDay` writes. */
-export const todaysPlan = (memberId: string, stopIds: readonly string[]) => restoreRoute(AsyncStorage, memberId, stopIds);
+export const todaysPlan = (memberId: string, stopIds: readonly string[]) => restoreRoute(planStore(memberId), memberId, stopIds);

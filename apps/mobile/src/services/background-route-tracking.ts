@@ -9,6 +9,7 @@ import { requestBackgroundLocationConsent } from './location-consent';
 import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
 import { cleanRoutePoints, type RoutePoint } from '@hbcfield/shared/client';
 import { createRouteBuffer, PENDING_PREFIX, type FlushPoint, type PendingBurst } from './route-buffer';
+import { lastPointKey, LAST_POINT_KEY, sealedStore } from '../lib/sealed-stores';
 
 /**
  * Background route tracking.
@@ -43,8 +44,10 @@ const TIME_INTERVAL_MS = 15_000;
 const DEFERRED_INTERVAL_MS = 30_000;
 // Largest request the server accepts (BatchTrackingLocationDto).
 const BATCH_MAX_POINTS = 500;
-// The last point kept, so a jump is judged across bursts and app restarts.
-const LAST_POINT_KEY = 'route_last_point';
+// The last point kept, so a jump is judged across bursts and app restarts —
+// per member and sealed (`lastPointKey`, lib/sealed-stores.ts): it is where
+// somebody was. The old device-wide plaintext key is only ever removed (it
+// costs one jump check, nothing more).
 
 // Bursts that couldn't be delivered wait here until the next one succeeds.
 /*
@@ -77,7 +80,14 @@ interface RawLocation {
 // Module-scoped: persists while the tracking session's process is alive.
 let batchUnsupported = false;
 
-const held = createRouteBuffer(AsyncStorage, { maxPoints: MAX_PENDING_POINTS, maxAgeMs: MAX_PENDING_AGE_MS });
+/*
+  ⚠️ SEALED PER MEMBER (lib/secure-buffer.ts). The points used to sit in
+  AsyncStorage as plain JSON — readable from a backup. The first touch per
+  process re-seals whatever an older version left in plaintext, in place, so
+  points held across the update still go up.
+*/
+const routeStore = (owner: string) => sealedStore('route', owner);
+const held = createRouteBuffer(routeStore, { maxPoints: MAX_PENDING_POINTS, maxAgeMs: MAX_PENDING_AGE_MS });
 
 /**
  * Send one burst. Returns the points still undelivered — empty means the server
@@ -221,9 +231,10 @@ TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
   // The same rule the server applies (shared): no fix worse than ±50 m, no
   // impossible jump from the last point kept — so the line follows the road
   // instead of leaping across a field after a tunnel.
-  const previous = await loadLastPoint();
+  const owner = await sessionOwnerId().catch(() => null);
+  const previous = await loadLastPoint(owner);
   const points = cleanRoutePoints(raw, { previous });
-  if (points.length) await saveLastPoint(points[points.length - 1]);
+  if (points.length) await saveLastPoint(owner, points[points.length - 1]);
 
   // flushPoints handles batch→per-point fallback and buffers what it can't
   // deliver, and never throws, so the background task can't crash here.
@@ -259,7 +270,7 @@ export async function startRouteTracking(
     const alreadyRunning = await Location.hasStartedLocationUpdatesAsync(ROUTE_TASK).catch(() => false);
     if (alreadyRunning) return true;
     // A fresh trip judges its first point on its own, not against the last trip's end.
-    await AsyncStorage.removeItem(LAST_POINT_KEY).catch(() => undefined);
+    await forgetLastPoint();
 
     // Foreground permission is required to even start; background permission
     // makes it keep going when the screen is off. We start with whatever we
@@ -326,7 +337,7 @@ export async function stopRouteTracking(): Promise<void> {
     console.error('[Route] Failed to stop:', err);
   } finally {
     await SecureStore.deleteItemAsync(ROUTE_TASK_KEY).catch(() => undefined);
-    await AsyncStorage.removeItem(LAST_POINT_KEY).catch(() => undefined);
+    await forgetLastPoint();
     await clearRouteDestination();
   }
 }
@@ -339,22 +350,30 @@ export async function forgetRouteData(): Promise<void> {
   await stopRouteTracking().catch(() => undefined);
   // Every member's held points, and the old device-wide list from before they were keyed.
   const all = await Promise.resolve(AsyncStorage.getAllKeys?.()).catch(() => null);
-  const keyed = (all ?? []).filter((k) => k.startsWith(`${PENDING_KEY}:`));
+  const keyed = (all ?? []).filter((k) => k.startsWith(`${PENDING_KEY}:`) || k.startsWith(`${LAST_POINT_KEY}:`));
   await AsyncStorage.multiRemove([PENDING_KEY, LAST_POINT_KEY, ...keyed]).catch(() => undefined);
 }
 
-async function loadLastPoint(): Promise<RoutePoint | null> {
+async function forgetLastPoint(): Promise<void> {
+  const owner = await sessionOwnerId().catch(() => null);
+  const keys = owner ? [LAST_POINT_KEY, lastPointKey(owner)] : [LAST_POINT_KEY];
+  await AsyncStorage.multiRemove(keys).catch(() => undefined);
+}
+
+async function loadLastPoint(owner: string | null): Promise<RoutePoint | null> {
+  if (!owner) return null;
   try {
-    const raw = await AsyncStorage.getItem(LAST_POINT_KEY);
+    const raw = await routeStore(owner).getItem(lastPointKey(owner));
     return raw ? (JSON.parse(raw) as RoutePoint) : null;
   } catch {
     return null;
   }
 }
 
-async function saveLastPoint(p: RoutePoint): Promise<void> {
+async function saveLastPoint(owner: string | null, p: RoutePoint): Promise<void> {
+  if (!owner) return;
   try {
-    await AsyncStorage.setItem(LAST_POINT_KEY, JSON.stringify({ lat: p.lat, lng: p.lng, timestamp: p.timestamp }));
+    await routeStore(owner).setItem(lastPointKey(owner), JSON.stringify({ lat: p.lat, lng: p.lng, timestamp: p.timestamp }));
   } catch {
     /* only costs the jump check across one restart */
   }

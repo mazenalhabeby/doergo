@@ -86,7 +86,9 @@ describe('sending what is held', () => {
     await buf.append('mike', [{ taskId: 't', points: pts(600) }]);
     const sent: PendingBurst[] = [];
     expect(await buf.drain('mike', async (b) => { sent.push(b); return []; }, 500)).toBe(true);
-    expect(sent.map((b) => b.points.length)).toEqual([400, 200]);
+    // Whole chunks up to the batch of 500, then the rest.
+    const first = Math.floor(500 / CHUNK_POINTS) * CHUNK_POINTS;
+    expect(sent.map((b) => b.points.length)).toEqual([first, 600 - first]);
     expect(sent.flatMap((b) => b.points).map((p) => p.timestamp)).toEqual(pts(600).map((p) => p.timestamp));
     expect([...store.keys()].filter((k) => k.startsWith('route_pending_bursts'))).toEqual([]);
   });

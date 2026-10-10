@@ -4,6 +4,7 @@ import type { PickedImage } from '../../hooks/useImagePicker';
 import { worklogApi } from '../../lib/api/worklog';
 import { uploadToPresignedUrl } from '../../lib/api/attachments';
 import { sessionOwnerId } from '../../lib/api/client';
+import { sealedStore, WORKLOG_PREFIX } from '../../lib/sealed-stores';
 import type { OfflineFiles } from '../files/offline-files';
 import type { SyncEngine } from '../sync-engine';
 import { addWorklogEntry } from './worklog';
@@ -28,11 +29,19 @@ import { addWorklogEntry } from './worklog';
   the old unkeyed list is still read once, so an update loses nothing, and is
   removed the first time it is written back.
 */
-const PREFIX = 'worklog_pending_';
+const PREFIX = WORKLOG_PREFIX;
 const oldKeyFor = (entryId: string) => `${PREFIX}${entryId}`;
 const keyFor = (owner: string, entryId: string) => `${PREFIX}${owner}:${entryId}`;
 const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 const DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}worklog/` : null;
+
+/*
+  ⚠️ SEALED PER MEMBER (lib/secure-buffer.ts): notes from somebody's shift and
+  the paths of their photos. A plaintext list from before is re-sealed in place
+  on first touch; the old UNKEYED lists are still read and folded in under the
+  owner the first time they are written back, as before.
+*/
+const sealed = (owner: string) => sealedStore('worklog', owner);
 
 type LegacyItem = { id: string; body: string; at: string; photos?: PickedImage[] };
 
@@ -49,7 +58,7 @@ export async function readLegacy(entryId: string): Promise<LegacyItem[]> {
   const owner = await sessionOwnerId();
   if (!owner) return [];
   try {
-    const [mine, old] = await Promise.all([AsyncStorage.getItem(keyFor(owner, entryId)), AsyncStorage.getItem(oldKeyFor(entryId))]);
+    const [mine, old] = await Promise.all([sealed(owner).getItem(keyFor(owner, entryId)), AsyncStorage.getItem(oldKeyFor(entryId))]);
     return [...(await parse(old)), ...(await parse(mine))];
   } catch {
     return [];
@@ -61,9 +70,10 @@ async function writeLegacy(entryId: string, items: LegacyItem[]): Promise<void> 
   if (!owner) return;
   try {
     // What was read from the old shared key is now in `items`; it lives under the owner from here on.
-    await AsyncStorage.removeItem(oldKeyFor(entryId));
-    if (items.length) await AsyncStorage.setItem(keyFor(owner, entryId), JSON.stringify(items));
+    // ⚠️ Written (sealed) BEFORE the old key goes: a write that cannot be sealed must not cost the old list.
+    if (items.length) await sealed(owner).setItem(keyFor(owner, entryId), JSON.stringify(items));
     else await AsyncStorage.removeItem(keyFor(owner, entryId));
+    await AsyncStorage.removeItem(oldKeyFor(entryId));
   } catch {
     /* best effort */
   }

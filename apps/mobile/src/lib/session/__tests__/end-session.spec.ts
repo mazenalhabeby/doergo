@@ -31,6 +31,7 @@ const mocks = {
   destroyMedia: jest.fn((_id: string) => { calls.push('media:destroy'); }),
   forgetLegacy: rec('legacy:forget'),
   legacyWaiting: jest.fn(async (_id: string) => false),
+  forgetSecure: jest.fn(async (id: string) => { calls.push(`secure:forget:${id}`); return true; }),
   loadStoredUser: jest.fn(async () => ({ id: 'mike' })),
   clearStoredUser: rec('stored-user'),
 };
@@ -63,6 +64,7 @@ jest.mock('../../../offline/attendance/legacy-worklog-queue', () => ({
   legacyWorklogWaiting: (id: string) => mocks.legacyWaiting(id),
 }));
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: { removeItem: jest.fn(async (k: string) => { calls.push(`async-storage:remove:${k}`); }) } }));
+jest.mock('../../secure-buffer', () => ({ forgetSecure: (id: string) => mocks.forgetSecure(id) }));
 jest.mock('../stored-user', () => ({
   loadStoredUser: () => mocks.loadStoredUser(),
   clearStoredUser: () => mocks.clearStoredUser(),
@@ -79,7 +81,10 @@ beforeEach(() => {
 });
 
 const LOCAL_SESSION = ['inflight', 'tokens', 'responseCache:null', 'kept-widgets', 'route:forget', 'check-ins', 'background-sync', 'stored-user'];
-const LOCAL_DATA = ['legacy:forget', 'db:destroy', 'files:destroy', 'media:destroy', 'async-storage:remove:pending_avatar_v1_mike'];
+const LOCAL_DATA = [
+  'legacy:forget', 'db:destroy', 'files:destroy', 'media:destroy', 'async-storage:remove:pending_avatar_v1_mike',
+  'async-storage:remove:route_plan_v1_mike', 'secure:forget:mike',
+];
 
 describe('a sign-out clears everything the session filled', () => {
   it('stops every tracker, tells the server, and clears tokens, buffers, caches and the stored user', async () => {
@@ -139,6 +144,38 @@ describe('unsent work', () => {
     expect(shouldDestroyLocalData({ reason: 'signed-out', keepUnsent: true, unsent: null })).toBe(false);
     expect(shouldDestroyLocalData({ reason: 'expired', keepUnsent: true, unsent: false })).toBe(true);
     expect(shouldDestroyLocalData({ reason: 'signed-out', keepUnsent: false, unsent: true })).toBe(true);
+  });
+});
+
+describe('the buffer key (lib/secure-buffer.ts) — a crypto-shred, only with the data', () => {
+  it('is forgotten when the local copy is destroyed — after everything else of the member\'s is gone', async () => {
+    await endSession({ reason: 'signed-out', keepUnsent: false });
+    expect(mocks.forgetSecure).toHaveBeenCalledWith('mike');
+    expect(calls.indexOf('secure:forget:mike')).toBeGreaterThan(calls.indexOf('legacy:forget'));
+    expect(calls.indexOf('secure:forget:mike')).toBeGreaterThan(calls.indexOf('route:forget'));
+  });
+
+  it('⚠️ is KEPT when unsent work is kept — or the kept notes could never be read back', async () => {
+    mocks.legacyWaiting.mockResolvedValue(true);
+    const off = registerUnsentProbe('mike', () => true);
+    const result = await endSession({ reason: 'signed-out', keepUnsent: true });
+    off();
+    expect(result.keptUnsent).toBe(true);
+    expect(mocks.forgetSecure).not.toHaveBeenCalled();
+  });
+
+  it('is forgotten on account deletion even with unsent work', async () => {
+    const off = registerUnsentProbe('mike', () => true);
+    await endSession({ reason: 'account-deleted', keepUnsent: true });
+    off();
+    expect(mocks.forgetSecure).toHaveBeenCalledWith('mike');
+  });
+
+  it('a key store that fails to delete does not stop the sign-out', async () => {
+    mocks.forgetSecure.mockRejectedValueOnce(new Error('keychain'));
+    const result = await endSession({ reason: 'signed-out', keepUnsent: false });
+    expect(result.localDataDestroyed).toBe(true);
+    expect(calls).toContain('stored-user');
   });
 });
 

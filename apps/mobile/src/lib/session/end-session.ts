@@ -15,6 +15,8 @@ import { MediaCache } from '../../offline/files/media-cache';
 import { forgetLegacyWorklog, legacyWorklogWaiting } from '../../offline/attendance/legacy-worklog-queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PENDING_AVATAR_KEY } from '../../offline/profile/pending-avatar';
+import { SAVED_ROUTE_KEY } from '../../offline/routes/saved-route';
+import { forgetSecure } from '../secure-buffer';
 import { clearStoredUser, loadStoredUser } from './stored-user';
 import { hasUnsentWork, runSessionEndCleaners } from './session-registry';
 
@@ -37,7 +39,7 @@ import { hasUnsentWork, runSessionEndCleaners } from './session-registry';
  *     over, and asking again would only loop back into the auth failure.
  *  3. Whether unsent work exists is asked BEFORE anything is torn down.
  *  4. Tokens go, then everything the member's session filled on the device.
- *  5. Their offline database, files and media cache go — unless the member
+ *  5. Their offline database, files, media cache and buffer key go — unless the member
  *     still has unsent work and the caller asked to keep it (`keepUnsent`).
  *     ⚠️ ALWAYS on account deletion: there is no account left to send it to,
  *     and the data is theirs to have erased (GDPR art. 17).
@@ -144,6 +146,14 @@ async function run({ reason, keepUnsent = true, userId: given }: EndSessionOptio
       await quietly(destroyOfflineDatabase(userId));
       // A photo change waiting for signal points at a file that is about to go.
       await quietly(AsyncStorage.removeItem(PENDING_AVATAR_KEY(userId)));
+      await quietly(AsyncStorage.removeItem(SAVED_ROUTE_KEY(userId)));
+      /*
+        ⚠️ THE MEMBER'S BUFFER KEY GOES LAST (lib/secure-buffer.ts): whatever
+        sealed copy survived the sweeps above — or was copied off the phone in a
+        backup — is noise from here on. Only here: when unsent work is KEPT, the
+        key is kept with it, or the work could never be read back.
+      */
+      await quietly(forgetSecure(userId));
       try {
         DeviceFileDisk.forMember(userId).destroyAll();
         MediaCache.destroyForMember(userId);
@@ -158,6 +168,15 @@ async function run({ reason, keepUnsent = true, userId: given }: EndSessionOptio
 }
 
 /** The engine's answer, or the old work-log queue's — either means work exists only here. */
+/**
+ * Does this member have work that exists only on this phone — the engine's
+ * outbox OR the old work-log queue? The sign-out screen asks the SAME question
+ * the session end decides by, so nothing is discarded without being asked.
+ */
+export async function hasUnsentLocalWork(userId: string): Promise<boolean> {
+  return (await unsentFor(userId)) !== false;
+}
+
 async function unsentFor(userId: string): Promise<boolean | null> {
   const engine = hasUnsentWork(userId);
   if (engine === true) return true;

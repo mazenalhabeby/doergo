@@ -26,7 +26,7 @@ interface KeyValueStorage {
   setItem(key: string, value: string): Promise<void>;
 }
 
-const SAVED_ROUTE_KEY = (memberId: string) => `route_plan_v1_${memberId}`;
+export const SAVED_ROUTE_KEY = (memberId: string) => `route_plan_v1_${memberId}`;
 
 export function localDay(at: number): string {
   return localDateKey(at);

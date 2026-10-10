@@ -55,18 +55,27 @@ jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string) => 
 
 import { cleanRoutePoints, ROUTE_MAX_ACCURACY_M } from '@hbcfield/shared/client';
 import { startRouteTracking, flushPendingRoute, forgetRouteData } from '../background-route-tracking';
+import { readSecure } from '../../lib/secure-buffer';
 
 const at = (s: number) => new Date(Date.UTC(2026, 8, 30, 6, 0, s)).toISOString();
 const loc = (lat: number, lng: number, s: number, accuracy = 5) => ({
   coords: { latitude: lat, longitude: lng, accuracy }, timestamp: Date.parse(at(s)),
 });
 // Held points live in chunks under an index (route-buffer.ts); the old single value is folded in on first touch.
-const pending = () => {
-  const index = JSON.parse(store.get('route_pending_bursts:mike:index') ?? '[]') as { id: string }[];
-  const legacy = JSON.parse(store.get('route_pending_bursts:mike') ?? '[]') as { points: unknown[] }[];
-  return [...legacy, ...index.map((e) => JSON.parse(store.get(`route_pending_bursts:mike:${e.id}`) ?? '{"points":[]}') as { points: unknown[] })];
+// ⚠️ Sealed on disk (lib/secure-buffer.ts): read back through the member's key, never as plain JSON.
+const opened = async (k: string) => {
+  const raw = store.get(k);
+  if (raw === undefined) return null;
+  expect(raw.startsWith('enc1:')).toBe(true);
+  return readSecure(k, 'mike');
 };
-const heldCount = () => pending().reduce((n, b) => n + b.points.length, 0);
+const pending = async () => {
+  const index = JSON.parse((await opened('route_pending_bursts:mike:index')) ?? '[]') as { id: string }[];
+  const legacy = JSON.parse((await opened('route_pending_bursts:mike')) ?? '[]') as { points: unknown[] }[];
+  const chunks = await Promise.all(index.map(async (e) => JSON.parse((await opened(`route_pending_bursts:mike:${e.id}`)) ?? '{"points":[]}') as { points: unknown[] }));
+  return [...legacy, ...chunks];
+};
+const heldCount = async () => (await pending()).reduce((n, b) => n + b.points.length, 0);
 
 beforeEach(() => {
   // The points are timed on 2026-09-30; pin "now" beside them so the age and
@@ -133,28 +142,28 @@ describe('delivering points', () => {
     await burst(5);
     expect(trackingApi.updateLocationBatch).toHaveBeenCalledTimes(1);
     expect(trackingApi.updateLocation).not.toHaveBeenCalled();
-    expect(heldCount()).toBe(0);
+    expect(await heldCount()).toBe(0);
   });
 
   it('KEEPS the points when the server says too many requests (429), and sends them later', async () => {
     trackingApi.updateLocationBatch.mockRejectedValueOnce(new ApiError('slow down', 429));
     await burst(7);
-    expect(heldCount()).toBe(7);
+    expect(await heldCount()).toBe(7);
     trackingApi.updateLocationBatch.mockResolvedValue({});
     await flushPendingRoute();
-    expect(heldCount()).toBe(0);
+    expect(await heldCount()).toBe(0);
   });
 
   it('keeps them offline too', async () => {
     trackingApi.updateLocationBatch.mockRejectedValueOnce(new ApiError('offline', 0));
     await burst(3);
-    expect(heldCount()).toBe(3);
+    expect(await heldCount()).toBe(3);
   });
 
   it('drops a burst the server refuses for good (400) instead of carrying it forever', async () => {
     trackingApi.updateLocationBatch.mockRejectedValueOnce(new ApiError('bad', 400));
     await burst(3);
-    expect(heldCount()).toBe(0);
+    expect(await heldCount()).toBe(0);
   });
 
   it('splits a long dead zone into batches of at most 500', async () => {
@@ -167,7 +176,7 @@ describe('delivering points', () => {
     expect(sizes).toHaveLength(3);
     expect(Math.max(...sizes)).toBeLessThanOrEqual(500);
     expect(sizes.reduce((a: number, b: number) => a + b, 0)).toBe(1200);
-    expect(heldCount()).toBe(0);
+    expect(await heldCount()).toBe(0);
     expect(store.has('route_pending_bursts:mike')).toBe(false);
   });
 

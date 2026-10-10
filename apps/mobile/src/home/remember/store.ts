@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { localDateKey } from '@hbcfield/shared/client';
+import { KEPT_PREFIX, sealedStore } from '../../lib/sealed-stores';
 
 /**
  * WHAT THIS PHONE WAS LAST TOLD — one store for every widget.
@@ -52,8 +53,14 @@ export function localDay(now: Date = new Date()): string {
 }
 
 const keyFor = (name: string, userId: string) => `@hbcfield/kept/${name}/${userId}`;
-/** Every kept key starts with this — what sign-out sweeps. */
-const KEPT_PREFIX = '@hbcfield/kept/';
+/* Every kept key starts with KEPT_PREFIX (lib/sealed-stores.ts) — what sign-out sweeps. */
+
+/*
+  ⚠️ SEALED ON DISK (lib/secure-buffer.ts). These copies are somebody's shift,
+  jobs and crew — plain JSON in AsyncStorage was readable from a backup. A
+  plaintext copy from before is re-sealed in place on the first touch.
+*/
+const diskFor = (userId: string) => sealedStore('kept', userId);
 
 /** The synchronous half. Keyed by storage key, so two users cannot collide. */
 const memory = new Map<string, Kept<unknown>>();
@@ -88,7 +95,7 @@ export async function keptOnDisk<T>(
   if (!userId) return null;
   const key = keyFor(name, userId);
   try {
-    const raw = await AsyncStorage.getItem(key);
+    const raw = await diskFor(userId).getItem(key);
     if (!raw) return null;
     const kept = JSON.parse(raw) as Kept<T>;
     /*
@@ -116,7 +123,7 @@ export function keep<T>(name: string, userId: string | null | undefined, value: 
     Fire and forget. A failed write costs the next cold start its head start,
     which is a disappointment and not something to tell anybody about.
   */
-  void AsyncStorage.setItem(key, JSON.stringify(kept)).catch(() => undefined);
+  void diskFor(userId).setItem(key, JSON.stringify(kept)).catch(() => undefined);
 }
 
 /**
