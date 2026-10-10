@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { getRedisConfig } from '@hbcfield/shared';
 
 /** A remembered request: running, or finished with the answer it gave. */
 export type IdempotencyEntry =
@@ -28,9 +29,7 @@ export class IdempotencyStore implements OnModuleDestroy {
 
   constructor(config: ConfigService) {
     this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
+      ...getRedisConfig(config),
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
     });

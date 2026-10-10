@@ -1,7 +1,7 @@
 import { Controller, Logger, OnModuleDestroy } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import Redis from 'ioredis';
-import { PrismaService, compareAppVersions } from '@hbcfield/shared';
+import { PrismaService, compareAppVersions, getRedisConfig } from '@hbcfield/shared';
 import { PushService } from '../modules/push/push.service';
 import { msg } from '../i18n/translate';
 
@@ -17,9 +17,7 @@ import { msg } from '../i18n/translate';
 export class AppUpdateNotificationHandler implements OnModuleDestroy {
   private readonly logger = new Logger(AppUpdateNotificationHandler.name);
   private readonly redis = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: Number(process.env.REDIS_PORT) || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
+    ...getRedisConfig(),
     lazyConnect: true,
   });
 

@@ -20,36 +20,15 @@
  */
 import { BullRootModuleOptions, RegisterQueueOptions } from '@nestjs/bullmq';
 import { ConfigService, ConfigModule } from '@nestjs/config';
-import { DEFAULT_REDIS_CONFIG } from '../microservices/constants';
+import { getRedisConfig } from '../microservices/redis.config';
 import { QueueName, DEFAULT_JOB_OPTIONS } from './constants';
 
 /**
- * Get BullMQ Redis connection configuration
+ * BullMQ's Redis connection — the same Redis, the same rule (host, port, and a
+ * password only when REDIS_PASSWORD is set) as the microservice transport. It
+ * was a second copy of `getRedisConfig`; the name stays for its callers.
  */
-export function getBullMQRedisConfig(configService?: ConfigService): {
-  host: string;
-  port: number;
-  password?: string;
-} {
-  // Password (H14): omitted unless REDIS_PASSWORD is set (empty string = unset).
-  const password = configService
-    ? configService.get<string>('REDIS_PASSWORD') || undefined
-    : process.env.REDIS_PASSWORD || undefined;
-
-  if (configService) {
-    return {
-      host: configService.get('REDIS_HOST', DEFAULT_REDIS_CONFIG.host),
-      port: configService.get('REDIS_PORT', DEFAULT_REDIS_CONFIG.port),
-      ...(password ? { password } : {}),
-    };
-  }
-
-  return {
-    host: process.env.REDIS_HOST || DEFAULT_REDIS_CONFIG.host,
-    port: parseInt(process.env.REDIS_PORT || String(DEFAULT_REDIS_CONFIG.port), 10),
-    ...(password ? { password } : {}),
-  };
-}
+export const getBullMQRedisConfig = getRedisConfig;
 
 /**
  * Create BullMQ root module configuration for BullModule.forRootAsync()

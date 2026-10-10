@@ -33,6 +33,7 @@ const REQUIRED_ON_CREATE = { key: 'licence', label: 'Driving licence' };
 
 /** A value of the right shape for each field, so only "is it declared?" is asked. */
 const SAMPLE: Record<string, unknown> = {
+  signerRoute: [{ role: 'MEMBER' }, { role: 'RESPONSIBLE' }],
   signatureMode: 'NONE',
   isCredential: true,
   hasExpiry: true,
@@ -60,6 +61,9 @@ async function refused(dto: new () => object, payload: Record<string, unknown>):
  * a test that derives the list would approve of whatever was done.
  */
 const TYPE_FIELDS = [
+  // The signing route was once silently DROPPED on create: the whitelist deleted it
+  // before the service ran (auth-service create-type-route.spec covers the service).
+  'signerRoute',
   'signatureMode',
   'isCredential',
   'hasExpiry',

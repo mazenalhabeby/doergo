@@ -5,7 +5,7 @@ import { buildTaskVisibilityWhere } from './task-visibility';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
-import { TaskEventType, success } from '@hbcfield/shared';
+import { TaskEventType, success, getRedisConfig } from '@hbcfield/shared';
 
 const STATUS_COUNTS_TTL = 30; // seconds
 
@@ -33,11 +33,7 @@ export class TaskSupportService {
      */
     readonly taskAccess: TaskAccessService,
   ) {
-    const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
-    const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
-    // Password (H14): omitted unless set, so open dev Redis still connects.
-    const redisPassword = configService.get<string>('REDIS_PASSWORD') || undefined;
-    this.redis = new Redis({ host: redisHost, port: redisPort, password: redisPassword, maxRetriesPerRequest: 1 });
+    this.redis = new Redis({ ...getRedisConfig(configService), maxRetriesPerRequest: 1 });
   }
 
   /**

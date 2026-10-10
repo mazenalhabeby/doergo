@@ -29,29 +29,26 @@ import { DEFAULT_REDIS_CONFIG, ServiceName } from './constants';
 /**
  * Get Redis configuration from environment or defaults
  */
-export function getRedisConfig(configService?: ConfigService): {
+/** Anything that reads a setting by name — Nest's ConfigService, structurally. Each
+ * service resolves its own copy of @nestjs/config, so the class itself does not match. */
+export interface ConfigReader {
+  get<T = string>(key: string): T | undefined;
+}
+
+export function getRedisConfig(configService?: ConfigReader): {
   host: string;
   port: number;
   password?: string;
 } {
+  // An empty value is unset. Env values are strings; a port is a number.
+  const read = (key: string): string | undefined =>
+    (configService ? configService.get<string>(key) : process.env[key]) || undefined;
   // Password (H14): only present when REDIS_PASSWORD is set, so dev/test — where
-  // Redis runs open — keep connecting with no auth. An empty string is treated
-  // as unset (omit the key rather than send AUTH "").
-  const password = configService
-    ? configService.get<string>('REDIS_PASSWORD') || undefined
-    : process.env.REDIS_PASSWORD || undefined;
-
-  if (configService) {
-    return {
-      host: configService.get('REDIS_HOST', DEFAULT_REDIS_CONFIG.host),
-      port: configService.get('REDIS_PORT', DEFAULT_REDIS_CONFIG.port),
-      ...(password ? { password } : {}),
-    };
-  }
-
+  // Redis runs open — keep connecting with no auth (omit the key rather than send AUTH "").
+  const password = read('REDIS_PASSWORD');
   return {
-    host: process.env.REDIS_HOST || DEFAULT_REDIS_CONFIG.host,
-    port: parseInt(process.env.REDIS_PORT || String(DEFAULT_REDIS_CONFIG.port), 10),
+    host: read('REDIS_HOST') ?? DEFAULT_REDIS_CONFIG.host,
+    port: Number(read('REDIS_PORT')) || DEFAULT_REDIS_CONFIG.port,
     ...(password ? { password } : {}),
   };
 }

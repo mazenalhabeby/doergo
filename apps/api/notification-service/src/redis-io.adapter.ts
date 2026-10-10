@@ -3,6 +3,7 @@ import { INestApplicationContext, Logger } from '@nestjs/common';
 import type { ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
+import { getRedisConfig } from '@hbcfield/shared';
 
 /**
  * Socket.IO adapter backed by Redis pub/sub.
@@ -22,16 +23,13 @@ export class RedisIoAdapter extends IoAdapter {
   }
 
   connectToRedis(): void {
-    const host = process.env.REDIS_HOST || 'localhost';
-    const port = Number(process.env.REDIS_PORT) || 6379;
-    // Password (H14): omitted unless set, so open dev Redis still connects.
-    const password = process.env.REDIS_PASSWORD || undefined;
-    const pubClient = new Redis({ host, port, password });
+    const redis = getRedisConfig();
+    const pubClient = new Redis(redis);
     const subClient = pubClient.duplicate();
     pubClient.on('error', (e) => this.redisLogger.warn(`pub client error: ${e.message}`));
     subClient.on('error', (e) => this.redisLogger.warn(`sub client error: ${e.message}`));
     this.adapterConstructor = createAdapter(pubClient, subClient);
-    this.redisLogger.log(`Socket.IO Redis adapter wired (${host}:${port})`);
+    this.redisLogger.log(`Socket.IO Redis adapter wired (${redis.host}:${redis.port})`);
   }
 
   createIOServer(port: number, options?: ServerOptions): any {

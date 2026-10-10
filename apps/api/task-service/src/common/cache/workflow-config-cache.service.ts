@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { getRedisConfig } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 /**
@@ -21,10 +22,7 @@ export class WorkflowConfigCache {
   constructor(private readonly prisma: PrismaService, config: ConfigService) {
     this.ttl = Number(config.get('WORKFLOW_CACHE_TTL_SECONDS')) || 600;
     this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      // Password (H14): omitted unless set, so open dev Redis still connects.
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
+      ...getRedisConfig(config),
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: false,

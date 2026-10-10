@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { REFRESH_TOKEN_GRACE_PERIOD_SECONDS } from '@hbcfield/shared';
+import { REFRESH_TOKEN_GRACE_PERIOD_SECONDS, getRedisConfig } from '@hbcfield/shared';
 
 export interface GraceTokenPair {
   accessToken: string;
@@ -31,9 +31,7 @@ export class GraceTokenCache implements OnModuleDestroy {
   constructor(config: ConfigService) {
     this.ttl = REFRESH_TOKEN_GRACE_PERIOD_SECONDS;
     this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
+      ...getRedisConfig(config),
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: false,

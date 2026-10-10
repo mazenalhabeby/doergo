@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { getRedisConfig } from '@hbcfield/shared';
 
 /**
  * The nonce a phone is asked to sign — issued once, spendable once.
@@ -25,9 +26,7 @@ export class BiometricChallengeStore implements OnModuleDestroy {
 
   constructor(config: ConfigService) {
     this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
+      ...getRedisConfig(config),
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: false,

@@ -1,21 +1,8 @@
-import type { Config } from 'jest';
+import { apiJestConfig } from '../jest.base';
 
-const config: Config = {
-  moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: '.',
+// The gateway also runs its HTTP e2e specs (test/), with their setup file.
+export default apiJestConfig({
   testRegex: '.*\\.(spec|e2e-spec)\\.ts$',
-  transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
-  },
-  collectCoverageFrom: ['src/**/*.(t|j)s', '!src/**/*.module.ts', '!src/main.ts'],
-  coverageDirectory: './coverage',
-  testEnvironment: 'node',
   roots: ['<rootDir>/src/', '<rootDir>/test/'],
-  moduleNameMapper: {
-    '^@hbcfield/shared$': '<rootDir>/../../../packages/shared/src',
-    '^@hbcfield/shared/(.*)$': '<rootDir>/../../../packages/shared/src/$1',
-  },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-};
-
-export default config;
+});

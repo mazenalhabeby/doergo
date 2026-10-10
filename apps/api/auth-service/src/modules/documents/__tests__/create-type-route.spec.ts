@@ -1,5 +1,3 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { Test } from '@nestjs/testing';
 import { DocumentsService } from '../documents.service';
 import { DOCUMENT_SERVICES } from '../document-services';
@@ -93,30 +91,9 @@ describe('a document type is created with the route it was given', () => {
   });
 });
 
-/**
- * The layer above, which is where the value was actually lost.
- *
- * `ValidationPipe({ whitelist: true })` deletes any property the DTO does not
- * declare — so a perfectly correct request body had the route removed from it
- * before a service ever ran. A service-level test alone would have passed while
- * the product stayed broken, which is why this one reads the DTO.
- */
-describe('the gateway lets a route through on create', () => {
-  const dto = readFileSync(
-    join(__dirname, '..', '..', '..', '..', '..', 'gateway', 'src', 'modules', 'documents', 'dto', 'documents.dto.ts'),
-    'utf8',
-  );
-
-  const classBody = (name: string) => {
-    const start = dto.indexOf(`export class ${name}`);
-    expect(start).toBeGreaterThan(-1);
-    const rest = dto.slice(start + 1);
-    const next = rest.indexOf('\nexport class ');
-    return rest.slice(0, next === -1 ? rest.length : next);
-  };
-
-  it('declares signerRoute on create, as it always did on update', () => {
-    expect(classBody('CreateDocumentTypeDto')).toContain('signerRoute');
-    expect(classBody('UpdateDocumentTypeDto')).toContain('signerRoute');
-  });
-});
+/*
+  The layer above — where the value was actually lost: the gateway's whitelist
+  deleted `signerRoute` from the body before this service ever ran. That is
+  pinned where it lives, against the DTO's real validation:
+  gateway/src/modules/documents/__tests__/type-dto-fields.spec.ts.
+*/

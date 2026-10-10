@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncMemberHealth, type SyncOperationResult, type SyncTelemetry } from '@hbcfield/shared';
+import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncMemberHealth, type SyncOperationResult, type SyncTelemetry, getRedisConfig } from '@hbcfield/shared';
 
 /** A phone that has not reported for this long is no longer counted. */
 const REPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -34,9 +34,7 @@ export class SyncHealthStore implements OnModuleDestroy {
 
   constructor(config: ConfigService) {
     this.redis = new Redis({
-      host: config.get<string>('REDIS_HOST') || 'localhost',
-      port: Number(config.get('REDIS_PORT')) || 6379,
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
+      ...getRedisConfig(config),
       enableOfflineQueue: false,
       maxRetriesPerRequest: 1,
       lazyConnect: true,
