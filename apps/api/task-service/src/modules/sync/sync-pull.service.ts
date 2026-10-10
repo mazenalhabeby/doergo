@@ -211,21 +211,9 @@ export class SyncPullService {
       scopeIds = ids.map((r) => r.id);
     }
 
-    const last = page.at(-1);
     return {
-      scope: 'tasks',
-      rows: page,
-      deleted: tombstones.map((t) => t.entityId),
+      ...this.pageResponse('tasks', page, tombstones.map((t) => t.entityId), { from, highestTombstone, hasMore, reset }),
       scopeIds,
-      cursor: encodeCursor({
-        t: last ? last.updatedAt.toISOString() : from?.t ?? new Date(0).toISOString(),
-        i: last ? last.id : from?.i ?? '',
-        d: String(highestTombstone),
-        s: new Date().toISOString(),
-      }),
-      hasMore,
-      reset,
-      serverTime: new Date().toISOString(),
     };
   }
 
@@ -309,19 +297,33 @@ export class SyncPullService {
       highestTombstone = tombstones.at(-1)?.id ?? tombstoneFrom;
     }
 
+    return this.pageResponse(scope, page, deleted, { from, highestTombstone, hasMore, reset });
+  }
+
+  /**
+   * One page of a scope, with the cursor that resumes after it: the last row's
+   * (updatedAt, id), the highest tombstone seen, and when this was served. An
+   * empty page keeps the caller's position rather than rewinding to the epoch.
+   */
+  private pageResponse(
+    scope: SyncPullResponse['scope'],
+    page: Array<{ id: string; updatedAt: Date }>,
+    deleted: string[],
+    at: { from?: { t: string; i: string } | null; highestTombstone: number | bigint | string; hasMore: boolean; reset: boolean },
+  ) {
     const last = page.at(-1);
     return {
       scope,
       rows: page,
       deleted,
       cursor: encodeCursor({
-        t: last ? last.updatedAt.toISOString() : from?.t ?? new Date(0).toISOString(),
-        i: last ? last.id : from?.i ?? '',
-        d: String(highestTombstone),
+        t: last ? last.updatedAt.toISOString() : at.from?.t ?? new Date(0).toISOString(),
+        i: last ? last.id : at.from?.i ?? '',
+        d: String(at.highestTombstone),
         s: new Date().toISOString(),
       }),
-      hasMore,
-      reset,
+      hasMore: at.hasMore,
+      reset: at.reset,
       serverTime: new Date().toISOString(),
     };
   }

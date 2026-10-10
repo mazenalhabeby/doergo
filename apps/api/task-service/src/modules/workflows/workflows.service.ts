@@ -408,19 +408,7 @@ export class WorkflowsService {
     /** The step's form; null clears it (back to "not set"). */
     form?: unknown;
   }) {
-    const workflow = await this.prisma.statusWorkflow.findUnique({
-      where: { id: data.workflowId },
-    });
-
-    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
-
-    const existing = await this.prisma.workflowStatus.findUnique({
-      where: { id: data.statusId },
-    });
-
-    if (!existing || existing.workflowId !== data.workflowId) {
-      throw new NotFoundException('Status not found in this workflow');
-    }
+    const existing = await this.stepOf(data);
 
     // Versioned against what the step holds: an identical save keeps the version.
     const form = stepFormForSave(data.form, existing.form);
@@ -593,6 +581,17 @@ export class WorkflowsService {
     return success(null, 'Definition of Done deleted successfully');
   }
 
+  /** A step of one of this organization's workflows — or 404, whichever part is missing. */
+  private async stepOf(data: { workflowId: string; statusId: string; organizationId: string }) {
+    const workflow = await this.prisma.statusWorkflow.findUnique({ where: { id: data.workflowId } });
+    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
+    const step = await this.prisma.workflowStatus.findUnique({ where: { id: data.statusId } });
+    if (!step || step.workflowId !== data.workflowId) {
+      throw new NotFoundException('Status not found in this workflow');
+    }
+    return step;
+  }
+
   /**
    * Delete a status from a workflow
    */
@@ -601,19 +600,7 @@ export class WorkflowsService {
     statusId: string;
     organizationId: string;
   }) {
-    const workflow = await this.prisma.statusWorkflow.findUnique({
-      where: { id: data.workflowId },
-    });
-
-    assertFoundInOrg(workflow, data.organizationId, 'Workflow');
-
-    const existing = await this.prisma.workflowStatus.findUnique({
-      where: { id: data.statusId },
-    });
-
-    if (!existing || existing.workflowId !== data.workflowId) {
-      throw new NotFoundException('Status not found in this workflow');
-    }
+    const existing = await this.stepOf(data);
 
     // Check if any tasks are using this status key in this workflow
     const tasksUsingStatus = await this.prisma.task.count({

@@ -31,6 +31,18 @@ import { WorkflowsService } from './workflows.service';
  * comment in schema.prisma: a live reference would let a curator's edit rewrite
  * the state machine under tasks that are already moving through it.
  */
+/** What a task type contributes to the library: its name and its steps, in order. */
+const TEMPLATE_SOURCE_SELECT = {
+  name: true,
+  statuses: {
+    orderBy: { position: 'asc' as const },
+    select: {
+      name: true, key: true, color: true, icon: true, position: true,
+      isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class WorkflowLibraryService implements OnModuleInit {
   private readonly logger = new Logger(WorkflowLibraryService.name);
@@ -233,16 +245,7 @@ export class WorkflowLibraryService implements OnModuleInit {
   async submitToLibrary(data: { workflowId: string; organizationId: string; note?: string }) {
     const wf = await this.prisma.statusWorkflow.findFirst({
       where: { id: data.workflowId, organizationId: data.organizationId },
-      select: {
-        name: true,
-        statuses: {
-          orderBy: { position: 'asc' },
-          select: {
-            name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
-          },
-        },
-      },
+      select: TEMPLATE_SOURCE_SELECT,
     });
     if (!wf) throw new NotFoundException('Task type not found');
 
@@ -502,16 +505,7 @@ export class WorkflowLibraryService implements OnModuleInit {
   async curateImportFromOrg(data: { workflowId: string; slug?: string; industry?: string | null }) {
     const wf = await this.prisma.statusWorkflow.findUnique({
       where: { id: data.workflowId },
-      select: {
-        name: true,
-        statuses: {
-          orderBy: { position: 'asc' },
-          select: {
-            name: true, key: true, color: true, icon: true, position: true,
-            isFinal: true, isCanceled: true, transitions: true, capabilities: true, form: true,
-          },
-        },
-      },
+      select: TEMPLATE_SOURCE_SELECT,
     });
     if (!wf) throw new NotFoundException('Task type not found');
 
