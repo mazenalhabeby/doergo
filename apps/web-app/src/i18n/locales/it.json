@@ -370,7 +370,7 @@
         },
         "invoicing": {
           "label": "Fatturazione",
-          "desc": "Trasformi il lavoro completato in una fattura con un paio di clic e tenga traccia di ciò che è stato pagato."
+          "desc": "Trasformi il lavoro completato in una fattura con un paio di clic e tenga traccia di ciò che è stato saldato."
         },
         "workflows": {
           "label": "Flussi di lavoro personalizzati",
@@ -3856,7 +3856,7 @@
         "sick": "Congedo per malattia",
         "personal": "Personale",
         "holiday": "Festività pubblica",
-        "unpaid": "Congedo non retribuito"
+        "unpaid": "Congedo (non conteggiato)"
       },
       "save": "Aggiungi giorno di riposo",
       "success": "Giorno di riposo aggiunto.",
@@ -5124,7 +5124,7 @@
       "periodOutside_other": "{{count}} giorni di lavoro da fatturare prima di queste date, dal {{from}}.",
       "periodIncludeAll": "Includili"
     },
-    "oldestDebt": "Più vecchia non pagata",
+    "oldestDebt": "Più vecchia in sospeso",
     "nothingOutstanding": "Tutto saldato — nulla in sospeso.",
     "daysCount_one": "{{count}} giorno",
     "daysCount_other": "{{count}} giorni",
@@ -5917,7 +5917,7 @@
       },
       "invoices": {
         "title": "Fatture",
-        "body": "Fatturi ai suoi clienti il lavoro completato — crei, invii e tenga traccia delle fatture pagate e non pagate."
+        "body": "Fatturi ai suoi clienti il lavoro completato — crei, invii e tenga traccia delle fatture saldate e in sospeso."
       },
       "assets": {
         "title": "Asset",
@@ -7287,7 +7287,7 @@
       "showUnused_other": "+ {{count}} ruoli predefiniti che qui nessuno ha ({{names}})",
       "hideUnused": "Nascondi i ruoli che qui nessuno ha",
       "hoursBasis": "Ore in fattura",
-      "hoursBasisHint": "Solo ciò che viene addebitato al cliente. La sua retribuzione e il costo del margine restano sul tempo conteggiato.",
+      "hoursBasisHint": "Solo ciò che viene addebitato al cliente. La sua tariffa di costo e il costo del margine restano sul tempo conteggiato.",
       "basis": {
         "COUNTED": "Tempo conteggiato",
         "COUNTEDHint": "Timbratura dentro il turno, meno le pause. Come nel foglio ore",
@@ -8362,7 +8362,7 @@
     },
     "invoicing": {
       "label": "Fatturazione",
-      "description": "Trasforma il lavoro concluso in fatture e tieni traccia degli insoluti"
+      "description": "Trasforma il lavoro concluso in fatture e tieni traccia degli importi in sospeso"
     },
     "reports_builder": {
       "label": "Creatore di report",

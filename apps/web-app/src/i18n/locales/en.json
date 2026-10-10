@@ -370,7 +370,7 @@
         },
         "invoicing": {
           "label": "Invoicing",
-          "desc": "Turn completed work into an invoice in a couple of clicks and keep track of what’s been paid."
+          "desc": "Turn completed work into an invoice in a couple of clicks and keep track of what’s settled."
         },
         "workflows": {
           "label": "Custom workflows",
@@ -3867,7 +3867,7 @@
         "sick": "Sick leave",
         "personal": "Personal",
         "holiday": "Public holiday",
-        "unpaid": "Unpaid leave"
+        "unpaid": "Leave (not counted)"
       },
       "save": "Add day off",
       "success": "Day off added.",
@@ -5115,7 +5115,7 @@
       "periodOutside_other": "{{count}} days of unbilled work before these dates, from {{from}}.",
       "periodIncludeAll": "Include them"
     },
-    "oldestDebt": "Oldest unpaid",
+    "oldestDebt": "Oldest outstanding",
     "nothingOutstanding": "Everything is settled — nothing outstanding.",
     "daysCount_one": "{{count}} day",
     "daysCount_other": "{{count}} days",
@@ -5908,7 +5908,7 @@
       },
       "invoices": {
         "title": "Invoices",
-        "body": "Bill your customers for completed work — create, send, and track paid vs unpaid invoices."
+        "body": "Bill your customers for completed work — create, send, and track open and settled invoices."
       },
       "assets": {
         "title": "Assets",
@@ -7278,7 +7278,7 @@
       "showUnused_other": "+ {{count}} built-in roles nobody holds here ({{names}})",
       "hideUnused": "Hide roles nobody holds here",
       "hoursBasis": "Hours on the invoice",
-      "hoursBasisHint": "Only what the client is charged. Their own pay and the margin's cost stay on counted time.",
+      "hoursBasisHint": "Only what the client is charged. The person's own cost rate and the margin's cost stay on counted time.",
       "basis": {
         "COUNTED": "Counted time",
         "COUNTEDHint": "Clock-in inside the shift, less rests. Same as the timesheet",

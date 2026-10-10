@@ -22,7 +22,7 @@ export function WorkspaceTypeFields({ form }: { form: CreateTaskForm }) {
     workflowId,
     setWorkflowId,
     workflows,
-    spaceWorkflowId,
+    spaceWorkflowName,
     availableSpaces,
     hasSpaces,
     setCustomerId,
@@ -74,9 +74,8 @@ export function WorkspaceTypeFields({ form }: { form: CreateTaskForm }) {
             <SelectContent>
               <SelectItem value="inherit">
                 {t("tasks.create.taskTypeInherit", "Workspace default")}
-                {spaceWorkflowId
-                  ? ` (${workflows.find((w) => w.id === spaceWorkflowId)?.name ?? ""})`
-                  : ""}
+                {/* The flow's real name, resolved by the form hook; nothing — never "()" — until it is known. */}
+                {spaceWorkflowName ? ` (${spaceWorkflowName})` : ""}
               </SelectItem>
               {workflows.map((w) => (
                 <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>

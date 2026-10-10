@@ -183,11 +183,32 @@ export function formatDocumentMoney(amount: number, currency: string | null | un
   return pdfText(formatAmount(amount, currency, INTL_LOCALE[documentLocaleOf(locale)].money))
 }
 
-export function formatDocumentDate(d: string | Date | null | undefined, locale: unknown): string {
-  if (!d) return "—"
+/**
+ * An invoice's issue / due / service-period day as an instant to format IN UTC.
+ *
+ * ⚠️ These are calendar DATES, not moments. The server stores a day as the
+ * start of it in UTC (the period END at 23:59:59.999Z), and a `YYYY-MM-DD`
+ * from a form parses as UTC midnight. Formatting either in the reader's own
+ * zone moved the day: "30 Sept" read "01 Oct" in Vienna, "01 Sept" read
+ * "31 Aug" in Chicago. Every invoice date is formatted with `timeZone: "UTC"`,
+ * which reads its stored UTC date part — right for old rows and new alike.
+ */
+export function invoiceDayInstant(d: string | Date | null | undefined): Date | null {
+  if (!d) return null
   const dt = typeof d === "string" ? new Date(d) : d
-  if (isNaN(dt.getTime())) return "—"
-  return pdfText(dt.toLocaleDateString(INTL_LOCALE[documentLocaleOf(locale)].date, { day: "2-digit", month: "short", year: "numeric" }))
+  return isNaN(dt.getTime()) ? null : dt
+}
+
+/** The calendar day an invoice date stands for, `YYYY-MM-DD`. */
+export function invoiceDayKey(d: string | Date | null | undefined): string | null {
+  const dt = invoiceDayInstant(d)
+  return dt ? dt.toISOString().slice(0, 10) : null
+}
+
+export function formatDocumentDate(d: string | Date | null | undefined, locale: unknown): string {
+  const dt = invoiceDayInstant(d)
+  if (!dt) return "—"
+  return pdfText(dt.toLocaleDateString(INTL_LOCALE[documentLocaleOf(locale)].date, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }))
 }
 
 /** A line's quantity: "1.5" in English, "1,5" in German — at most two decimals. */

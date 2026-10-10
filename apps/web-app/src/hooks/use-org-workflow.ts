@@ -118,7 +118,11 @@ export interface KanbanColumnDef {
   wipLimit?: number
 }
 
-export function buildKanbanColumns(statuses: WorkflowStatus[]): KanbanColumnDef[] {
+export function buildKanbanColumns(
+  statuses: WorkflowStatus[],
+  /** The step's name in the reader's language (`useStepLabel().label`); its stored name otherwise. */
+  labelOf: (s: WorkflowStatus) => string = (s) => s.name,
+): KanbanColumnDef[] {
   if (!statuses.length) return []
 
   // Faithful: one column per status in the workflow's own order, using each
@@ -130,7 +134,7 @@ export function buildKanbanColumns(statuses: WorkflowStatus[]): KanbanColumnDef[
     .sort((a, b) => a.position - b.position)
     .map((s) => ({
       key: s.key,
-      label: s.name,
+      label: labelOf(s),
       dotColor: s.color,
       statuses: [s.key],
       dropStatus: s.key,

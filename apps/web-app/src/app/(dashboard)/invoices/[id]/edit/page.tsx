@@ -27,6 +27,7 @@ import {
 } from "../../_components/invoice-fields"
 import { useIssuerPreview } from "@/components/companies/company-select"
 import { useExchangeRate } from "../../_lib/use-exchange-rate"
+import { invoiceTotals } from "@hbcfield/shared/client"
 
 /*
   Correcting a draft invoice.
@@ -152,12 +153,11 @@ function EditInvoiceInner({ id }: { id: string }) {
     [lines, inv?.items],
   )
 
-  const subtotal = useMemo(
-    () => documentItems.reduce((s, l) => s + l.quantity * l.unitPrice, 0),
-    [documentItems],
+  // The server's own rule (shared): each line rounded, subtotal = their sum, VAT on it.
+  const { subtotal, taxAmount, total } = useMemo(
+    () => invoiceTotals(documentItems, num(taxPct) / 100, num(discount)),
+    [documentItems, taxPct, discount],
   )
-  const taxAmount = subtotal * (num(taxPct) / 100)
-  const total = subtotal + taxAmount - num(discount)
 
   /** The period this invoice was raised for, as the client reads it. */
   const periodLabel = inv?.servicePeriodFrom && inv?.servicePeriodTo

@@ -21,7 +21,8 @@ export function daysOverdue(dueDate?: string | null, now = new Date()): number |
   if (!dueDate) return null
   const due = new Date(dueDate)
   if (Number.isNaN(due.getTime())) return null
-  const a = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate())
+  // The due DATE is its UTC day (stored as start of day UTC); "today" is the reader's own.
+  const a = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate())
   const b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
   return Math.round((b - a) / 86400000)
 }

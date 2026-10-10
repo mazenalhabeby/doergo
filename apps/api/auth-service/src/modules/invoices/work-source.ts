@@ -24,6 +24,21 @@ export function dayEnd(iso?: string | null): Date | null {
 }
 
 /**
+ * An invoice's issue / due day as sent → the instant stored for it.
+ *
+ * These are calendar DATES, not moments: a `YYYY-MM-DD` is stored as the start
+ * of that day in UTC and read back by its UTC date part (the service-period END
+ * is stored at 23:59:59.999Z by `dayEnd`, and is read the same way). Anything
+ * else that parses is taken as given; empty or unparseable is null.
+ */
+export function invoiceDay(value?: string | Date | null): Date | null {
+  if (!value) return null;
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return dayStart(value);
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
  * Jobs in a service period, by when the WORK was done.
  *
  * ⚠️ That is the report's `completedAt` where there is a report, and

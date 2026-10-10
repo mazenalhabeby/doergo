@@ -378,6 +378,23 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
   })
 
   const spaceWorkflowId = spaceId !== "none" ? spaceModules?.workflowId ?? null : null
+  /*
+    The workspace's own flow by NAME, for the "Workspace default (…)" choice.
+    ⚠️ It is not always among the types offered (a workspace may offer others
+    and keep a legacy default) — the label read "Workspace default ()". Looked
+    up in what is loaded first, fetched only when it is missing.
+  */
+  const knownSpaceWorkflowName = spaceWorkflowId
+    ? (workflows.find((w) => w.id === spaceWorkflowId) ?? orgWorkflows?.find((w) => w.id === spaceWorkflowId))?.name ?? null
+    : null
+  const { data: fetchedSpaceWorkflow } = useQuery({
+    queryKey: keys.spaces.workflow(spaceWorkflowId),
+    queryFn: () => workflowsApi.getById(spaceWorkflowId!),
+    enabled: open && !!spaceWorkflowId && !knownSpaceWorkflowName,
+    staleTime: 120000,
+    retry: 1,
+  })
+  const spaceWorkflowName = knownSpaceWorkflowName ?? fetchedSpaceWorkflow?.name ?? null
   // The task's effective type: an explicit pick, else inherited from the space.
   const effectiveWorkflowId = workflowId !== "inherit" ? workflowId : spaceWorkflowId
 
@@ -485,7 +502,7 @@ export function useCreateTaskForm({ open, onOpenChange, defaultSprintId, default
 
   return {
     // Workspace & type
-    defaultCustomerId, spaceId, setSpaceId, workflowId, setWorkflowId, workflows, spaceWorkflowId,
+    defaultCustomerId, spaceId, setSpaceId, workflowId, setWorkflowId, workflows, spaceWorkflowId, spaceWorkflowName,
     availableSpaces, hasSpaces, hasModule,
     // Core
     title, setTitle, description, setDescription, priority, setPriority,

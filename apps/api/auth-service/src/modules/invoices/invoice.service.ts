@@ -11,6 +11,11 @@ import {
   shiftLengthMinutes,
   labourCost,
   nextInvoiceNumber, invoiceNumberPrefix, type IssuerSnapshot,
+  invoiceTotals,
+  invoiceTotalsFromSubtotal,
+  invoiceTotalsFromSubtotalCents,
+  lineAmount,
+  roundCents,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 import { LegalEntitiesService } from './legal-entities.service';
@@ -18,7 +23,7 @@ import { LegalEntitiesService } from './legal-entities.service';
 /** The invoice line kinds a caller may file. */
 const LINE_KINDS = new Set(['HOURS', 'DAYS', 'HEADING']);
 
-import { dayStart, dayEnd, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay, minutesByDay } from './work-source';
+import { dayStart, dayEnd, invoiceDay, jobsInPeriod, jobHours, FINISHED, countedMinutesByDay, minutesByDay } from './work-source';
 
 @Injectable()
 export class InvoiceService {
@@ -178,7 +183,8 @@ export class InvoiceService {
         description: item.description,
         quantity,
         unitPrice,
-        amount: quantity * unitPrice,
+        // Rounded to the cent on its own — the subtotal is the sum of these (invoice-totals.ts).
+        amount: lineAmount(quantity, unitPrice),
         taskId: item.taskId,
         reportId: item.reportId,
         /*
@@ -228,11 +234,10 @@ export class InvoiceService {
     const money = await this.currencyFields(data.organizationId, data, currencyOrNull(spaceCurrencyValue) ?? currencyOrNull(issuer.entity.currency));
     if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
 
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+    // ONE rule with the draft screen: rounded lines summed, VAT on the subtotal.
     const taxRate = data.taxRate ?? 0;
     const discount = data.discount ?? 0;
-    const taxAmount = subtotal * taxRate;
-    const total = subtotal + taxAmount - discount;
+    const { subtotal, taxAmount, total } = invoiceTotals(items, taxRate, discount);
 
     // Invoice-number generation is read-then-write, so two concurrent creates can
     // pick the same sequence. @@unique([organizationId, invoiceNumber]) makes the
@@ -257,8 +262,9 @@ export class InvoiceService {
             subtotal,
             taxAmount,
             total,
-            issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
-            dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+            // Calendar DATES, stored as the start of that day in UTC (read back by their UTC date).
+            issueDate: invoiceDay(data.issueDate) ?? dayStart(new Date().toISOString().slice(0, 10))!,
+            dueDate: invoiceDay(data.dueDate) ?? undefined,
             /*
               The days billed, as the client is told them — kept rather than
               re-derived from the lines, because a quiet fortnight gathers
@@ -445,8 +451,8 @@ export class InvoiceService {
     }
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (typeof data.showLineTags === 'boolean') updateData.showLineTags = data.showLineTags;
-    if (data.issueDate !== undefined) updateData.issueDate = new Date(data.issueDate);
-    if (data.dueDate !== undefined) updateData.dueDate = new Date(data.dueDate);
+    if (data.issueDate !== undefined) updateData.issueDate = invoiceDay(data.issueDate) ?? invoice.issueDate;
+    if (data.dueDate !== undefined) updateData.dueDate = invoiceDay(data.dueDate);
     // Null clears the period back to "everything outstanding" — a real answer,
     // so it has to be distinguishable from "not mentioned in this request".
     if (data.servicePeriodFrom !== undefined) updateData.servicePeriodFrom = dayStart(data.servicePeriodFrom);
@@ -456,8 +462,7 @@ export class InvoiceService {
     if (data.taxRate !== undefined || data.discount !== undefined) {
       const taxRate = data.taxRate ?? invoice.taxRate ?? 0;
       const discount = data.discount ?? invoice.discount;
-      const taxAmount = invoice.subtotal * taxRate;
-      const total = invoice.subtotal + taxAmount - discount;
+      const { taxAmount, total } = invoiceTotalsFromSubtotal(invoice.subtotal, taxRate, discount);
 
       updateData.taxRate = taxRate;
       updateData.discount = discount;
@@ -664,7 +669,7 @@ export class InvoiceService {
 
     const quantity = item.quantity ?? 1;
     const unitPrice = item.unitPrice ?? 0;
-    const amount = quantity * unitPrice;
+    const amount = lineAmount(quantity, unitPrice);
     // A re-added line keeps which job and which days it covers (cleaned, as on create).
     const dayFields = this.dayLineFields(item);
     const badWorker = await this.unknownWorker(organizationId, [dayFields]);
@@ -735,16 +740,18 @@ export class InvoiceService {
       where: { invoiceId },
     });
 
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-
     const invoice = await this.prisma.invoice.findUnique({
       where: { id: invoiceId },
     });
 
     const taxRate = invoice!.taxRate ?? 0;
     const discount = invoice!.discount;
-    const taxAmount = subtotal * taxRate;
-    const total = subtotal + taxAmount - discount;
+    // Each stored line re-rounded (old rows may hold an unrounded amount), then the one rule.
+    const { subtotal, taxAmount, total } = invoiceTotalsFromSubtotalCents(
+      items.reduce((sum, item) => sum + roundCents(item.amount * 100), 0),
+      taxRate,
+      discount,
+    );
 
     const updated = await this.prisma.invoice.update({
       where: { id: invoiceId },
@@ -1060,7 +1067,7 @@ export class InvoiceService {
         partNumber: p.partNumber ?? null,
         quantity: p.quantity ?? 1,
         unitCost: p.unitCost ?? 0,
-        amount: (p.quantity ?? 1) * (p.unitCost ?? 0),
+        amount: lineAmount(p.quantity ?? 1, p.unitCost ?? 0),
       }));
 
       /*

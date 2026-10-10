@@ -3,7 +3,7 @@
 import { personName, isOpenToRole } from "@hbcfield/shared/client"
 import { OpenRoleChip } from "./open-role-chip"
 
-import { flowIdOf, stepConfig } from "@/hooks/use-step-config"
+import { flowIdOf, stepConfig, useStepLabel } from "@/hooks/use-step-config"
 import { PausedChip } from "@/components/paused-chip"
 import React from "react"
 import { isTaskOverdue, isFinishedStatus, mayChangeStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
@@ -88,9 +88,10 @@ function TaskTableRowInner({
   */
   // The task's own flow, else its workspace's — a task with no type of its own inherits it.
   const { statuses: flowStatuses, hasWorkflow: taskHasWorkflow } = useWorkflow(flowIdOf(task))
-  const statusConfig = stepConfig(task.status, flowStatuses)
+  const { translate: stepTranslate, label: stepLabel } = useStepLabel()
+  const statusConfig = stepConfig(task.status, flowStatuses, stepTranslate)
   const statusOptions = taskHasWorkflow && flowStatuses.length
-    ? flowStatuses.map((st) => ({ key: st.key, label: st.name, hex: st.color }))
+    ? flowStatuses.map((st) => ({ key: st.key, label: stepLabel(st), hex: st.color }))
     : TASK_STATUSES.filter((st) => st !== "DRAFT").map((st) => {
         const cfg = getStatusConfig(st)
         return { key: st, label: cfg.label, hex: cfg.hex }

@@ -5,6 +5,7 @@ import type { TFunction } from "i18next"
 import {
   buildLabourLines,
   buildWorkspaceLines,
+  invoiceTotals,
   labourTotalCents,
   type LabourGrouping,
   type LabourEntry,
@@ -196,13 +197,16 @@ export function useDraftLines({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const partsSubtotal = useMemo(() => entries.reduce((s, e) => s + entryParts(e), 0), [entries])
   const workSubtotal = labourSubtotal + partsSubtotal
-  const manualSubtotal = useMemo(
-    () => manualLines.reduce((s, m) => s + num(m.quantity) * num(m.unitPrice), 0),
-    [manualLines],
+  /*
+    ⚠️ The totals come from the LINES BEING SENT, through the server's own rule
+    (shared `invoiceTotals`: each line rounded, subtotal = their sum, VAT on the
+    subtotal). Adding up the per-section figures above gave €980.84 here and
+    €980.83 once saved — the sections are for the summary, not the total.
+  */
+  const { subtotal, taxAmount, total } = useMemo(
+    () => invoiceTotals(documentItems, (Number(taxPct) || 0) / 100, Number(discount) || 0),
+    [documentItems, taxPct, discount],
   )
-  const subtotal = workSubtotal + manualSubtotal
-  const taxAmount = subtotal * ((Number(taxPct) || 0) / 100)
-  const total = subtotal + taxAmount - (Number(discount) || 0)
 
   // Live per-worker hours summary from the included entries.
   const workerSummary = useMemo(() => {

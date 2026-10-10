@@ -70,12 +70,27 @@ export function CommandPaletteProvider({
   const actionsRef = useRef<Map<string, CommandAction>>(new Map())
   const [actions, setActions] = useState<CommandAction[]>([])
 
+  /*
+    ⚠️ COALESCED to one state update per tick. A page re-registering its actions
+    runs unregister (cleanup) then register (effect) in the same commit; synced
+    one by one, the first update removed the ids and the second put them back —
+    a NEW array with the same ids, so every consumer re-rendered, and a page
+    whose deps were a fresh `[]` each render (a list still loading) re-ran its
+    effect forever: "Maximum update depth exceeded" on /tasks. Comparing once,
+    after both, keeps the same-ids case a no-op.
+  */
+  const syncPending = useRef(false)
   const syncActions = useCallback(() => {
-    const next = Array.from(actionsRef.current.values())
-    setActions(prev => {
-      // Only update if the action IDs actually changed to avoid render loops
-      if (prev.length === next.length && prev.every((a, i) => a.id === next[i]?.id)) return prev
-      return next
+    if (syncPending.current) return
+    syncPending.current = true
+    queueMicrotask(() => {
+      syncPending.current = false
+      const next = Array.from(actionsRef.current.values())
+      setActions(prev => {
+        // Only update if the action IDs actually changed to avoid render loops
+        if (prev.length === next.length && prev.every((a, i) => a.id === next[i]?.id)) return prev
+        return next
+      })
     })
   }, [])
 

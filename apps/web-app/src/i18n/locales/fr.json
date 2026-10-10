@@ -370,7 +370,7 @@
         },
         "invoicing": {
           "label": "Facturation",
-          "desc": "Transformez le travail terminé en facture en quelques clics et gardez le suivi de ce qui a été payé."
+          "desc": "Transformez le travail terminé en facture en quelques clics et gardez le suivi de ce qui a été réglé."
         },
         "workflows": {
           "label": "Flux de travail personnalisés",
@@ -3856,7 +3856,7 @@
         "sick": "Congé maladie",
         "personal": "Personnel",
         "holiday": "Jour férié",
-        "unpaid": "Congé sans solde"
+        "unpaid": "Congé (non compté)"
       },
       "save": "Ajouter le jour de repos",
       "success": "Jour de repos ajouté.",
@@ -5124,7 +5124,7 @@
       "periodOutside_other": "{{count}} jours de travail à facturer avant ces dates, depuis le {{from}}.",
       "periodIncludeAll": "Les inclure"
     },
-    "oldestDebt": "Plus ancienne impayée",
+    "oldestDebt": "Plus ancienne en attente",
     "nothingOutstanding": "Tout est réglé — rien en attente.",
     "daysCount_one": "{{count}} jour",
     "daysCount_other": "{{count}} jours",
@@ -5917,7 +5917,7 @@
       },
       "invoices": {
         "title": "Factures",
-        "body": "Facturez vos clients pour les travaux réalisés — créez, envoyez et suivez les factures payées et impayées."
+        "body": "Facturez vos clients pour les travaux réalisés — créez, envoyez et suivez les factures réglées et en attente."
       },
       "assets": {
         "title": "Équipements",
@@ -7287,7 +7287,7 @@
       "showUnused_other": "+ {{count}} rôles intégrés que personne n’a ici ({{names}})",
       "hideUnused": "Masquer les rôles que personne n’a ici",
       "hoursBasis": "Heures sur la facture",
-      "hoursBasisHint": "Uniquement ce qui est facturé au client. Sa propre rémunération et le coût de la marge restent sur le temps compté.",
+      "hoursBasisHint": "Uniquement ce qui est facturé au client. Son propre taux de coût et le coût de la marge restent sur le temps compté.",
       "basis": {
         "COUNTED": "Temps compté",
         "COUNTEDHint": "Pointage dans le créneau, moins les pauses. Comme la feuille de temps",
@@ -8362,7 +8362,7 @@
     },
     "invoicing": {
       "label": "Facturation",
-      "description": "Transformez le travail terminé en factures et suivez les impayés"
+      "description": "Transformez le travail terminé en factures et suivez ce qui reste dû"
     },
     "reports_builder": {
       "label": "Générateur de rapports",

@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo } from "react"
 import { useQueries } from "@tanstack/react-query"
+import { useTranslation } from "react-i18next"
+import { workflowStatusKey, workflowStatusLabel } from "@hbcfield/shared/client"
 import { workflowsApi, type WorkflowStatus } from "@/lib/api"
 import { getStatusConfig, type StatusConfig } from "@/lib/constants"
 import { useOrgWorkflow } from "./use-org-workflow"
@@ -18,10 +20,30 @@ export function flowIdOf(task: { workflowId?: string | null; space?: { workflowI
  * DELIVERED or DONE and fell back to its first entry — every finished delivery
  * read "Draft". ONE rule for the list, the calendar and the timeline.
  */
-export function stepConfig(status: string, statuses?: readonly WorkflowStatus[] | null): StatusConfig {
+export function stepConfig(status: string, statuses?: readonly WorkflowStatus[] | null, translate?: StepTranslate): StatusConfig {
   const own = statuses?.find((s) => s.key === status)
   const base = getStatusConfig(status)
-  return own ? { ...base, label: own.name, hex: own.color || base.hex } : base
+  if (own) return { ...base, label: translate ? workflowStatusLabel(own, translate) : own.name, hex: own.color || base.hex }
+  // A built-in step with no flow row: the shipped name, in the reader's language.
+  return translate ? { ...base, label: translate(workflowStatusKey(status), { defaultValue: base.label }) } : base
+}
+
+/** The caller's `t`, as `workflowStatusLabel` takes it. */
+export type StepTranslate = (key: string, opts: { defaultValue: string }) => string
+
+/**
+ * A step's name in the reader's language: a step from a shipped template is
+ * translated through its `nameKey`; a name somebody typed is shown as written.
+ * ONE rule for the board's columns, the list's badges and their menus.
+ */
+export function useStepLabel(): { translate: StepTranslate; label: (s: { name: string; nameKey?: string | null }) => string } {
+  const { t, i18n } = useTranslation()
+  return useMemo(() => {
+    const translate: StepTranslate = (k, o) => t(k, o)
+    return { translate, label: (s) => workflowStatusLabel(s, translate) }
+    // `t` changes identity with the language; the language is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, i18n.language])
 }
 
 /**
@@ -56,6 +78,7 @@ export function useStepConfigs(tasks: ReadonlyArray<{ workflowId?: string | null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [known, missing, fetched.map((q) => q.dataUpdatedAt).join(",")])
 
+  const { translate } = useStepLabel()
   return useMemo(() => {
     // One object per flow+step, so a memoised row gets the SAME config each render.
     const seen = new Map<string, StatusConfig>()
@@ -63,10 +86,10 @@ export function useStepConfigs(tasks: ReadonlyArray<{ workflowId?: string | null
       const id = flowIdOf(task)
       const key = `${id ?? ""}|${task.status}`
       let cfg = seen.get(key)
-      if (!cfg) { cfg = stepConfig(task.status, id ? byFlow.get(id) : null); seen.set(key, cfg) }
+      if (!cfg) { cfg = stepConfig(task.status, id ? byFlow.get(id) : null, translate); seen.set(key, cfg) }
       return cfg
     }
-  }, [byFlow])
+  }, [byFlow, translate])
 }
 
 /**
@@ -81,9 +104,10 @@ export function useRelatedStepConfigs(
   fallback?: readonly WorkflowStatus[] | null,
 ) {
   const own = useStepConfigs(rows)
+  const { translate } = useStepLabel()
   return useCallback(
     (row: { status: string; workflowId?: string | null; space?: { workflowId?: string | null } | null }) =>
-      flowIdOf(row) ? own(row) : stepConfig(row.status, fallback),
-    [own, fallback],
+      flowIdOf(row) ? own(row) : stepConfig(row.status, fallback, translate),
+    [own, fallback, translate],
   )
 }

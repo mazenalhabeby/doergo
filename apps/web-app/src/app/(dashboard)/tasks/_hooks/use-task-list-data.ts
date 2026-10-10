@@ -9,6 +9,8 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi } from "@/lib/api"
 import { BOARD_FETCH_LIMIT, type TaskScope, type ViewMode } from "../_lib/task-list"
 
+const NO_SPACES: never[] = []
+
 /**
  * Everything the task page reads from the server: the task list (filtered by
  * the SERVER), the counts, the planning lists and the workspaces.
@@ -145,7 +147,9 @@ export function useTaskListData({
     queryFn: () => locationsApi.list(),
     staleTime: 60000,
   })
-  const allSpaces = spacesData?.data || []
+  // ⚠️ A STABLE empty list while loading — a fresh `[]` each render changes `spaces`, which the command
+  // palette registration depends on (see command-palette-context: that was a render loop).
+  const allSpaces = spacesData?.data ?? NO_SPACES
 
   // Role-based space filtering:
   // Admin/Dispatcher → all spaces

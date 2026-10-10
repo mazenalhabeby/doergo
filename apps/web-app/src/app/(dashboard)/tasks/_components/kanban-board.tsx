@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Task, Sprint, Phase, Epic } from "@/lib/api"
 import { useOrgWorkflow, buildKanbanColumns, type KanbanColumnDef } from "@/hooks/use-org-workflow"
+import { useStepLabel } from "@/hooks/use-step-config"
 import type { TaskContextMenuActions } from "./task-context-menu"
 import { isFinishedStatus, hasAnyTransition, STATUS_TRANSITIONS } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
@@ -315,13 +316,14 @@ export function KanbanBoard({
   }), [targetsFor, finishedFor, isManager])
 
   // Build columns: prefer prop (space-aware), then org workflow, then fallback
+  const { label: stepLabel } = useStepLabel()
   const columnDefs = useMemo(() => {
     if (columnsProp && columnsProp.length > 0) return columnsProp
     if (hasWorkflow && workflowStatuses.length > 0) {
-      return buildKanbanColumns(workflowStatuses)
+      return buildKanbanColumns(workflowStatuses, stepLabel)
     }
     return FALLBACK_COLUMNS
-  }, [columnsProp, hasWorkflow, workflowStatuses])
+  }, [columnsProp, hasWorkflow, workflowStatuses, stepLabel])
 
   const handleDragStart = useCallback((taskId: string) => {
     setDraggingId(taskId)

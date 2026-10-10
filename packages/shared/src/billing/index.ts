@@ -19,3 +19,4 @@ export * from './currency';
 export * from './hours-basis';
 export * from './labour-cost';
 export * from './legal-entity';
+export * from './invoice-totals';

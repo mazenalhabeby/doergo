@@ -4,6 +4,7 @@ import { useMemo } from "react"
 
 import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
+import { useStepLabel } from "@/hooks/use-step-config"
 import type { Task } from "@/lib/api"
 import { FALLBACK_STATUS_TABS } from "../_lib/task-list"
 
@@ -92,9 +93,11 @@ export function useBoardWorkflow({
     return boardWorkflows[0]?.id ?? contextDefaultWorkflowId ?? activeWorkflowId
   }, [selectedWorkflowId, presentWorkflowIds, contextDefaultWorkflowId, boardWorkflows, activeWorkflowId])
   const { statuses: boardStatuses, hasWorkflow: boardHasWorkflow } = useWorkflow(boardWorkflowId)
+  // Built-in steps in the reader's language (German board, German columns); typed names as written.
+  const { label: stepLabel } = useStepLabel()
   const boardKanbanColumns = useMemo(
-    () => (boardHasWorkflow && boardStatuses.length > 0 ? buildKanbanColumns(boardStatuses) : undefined),
-    [boardHasWorkflow, boardStatuses],
+    () => (boardHasWorkflow && boardStatuses.length > 0 ? buildKanbanColumns(boardStatuses, stepLabel) : undefined),
+    [boardHasWorkflow, boardStatuses, stepLabel],
   )
 
   // Board-only view: when the org has multiple task types, the kanban shows one

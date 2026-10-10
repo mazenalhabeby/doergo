@@ -1,4 +1,5 @@
 import type { HoursBasis } from './hours-basis';
+import { roundCents } from './invoice-totals';
 /**
  * The same work, written up three ways.
  *
@@ -166,7 +167,8 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 function amountCentsOf(hours: number, billRateCents: number | null): number {
   if (billRateCents === null) return 0;
   const h = Number.isFinite(hours) && hours > 0 ? round2(hours) : 0;
-  return Math.round(billRateCents * h);
+  // The same rounding as every other invoice line (invoice-totals.ts).
+  return roundCents(billRateCents * h);
 }
 
 /** Hours held to the nearest whole minute. */

@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import type { OrganizationProfile } from "@/lib/api"
 import { formatAmount, formatMoney, MONEY_LOCALE } from "@/lib/money"
-import { hoursAndDaysTotals , formatHoursMinutes, type IssuerSnapshot } from "@hbcfield/shared/client"
-import { documentIssuer, invoiceDocumentLabels } from "@/lib/invoice-document-locale"
+import { hoursAndDaysTotals, formatHoursMinutes, lineAmount as roundedLineAmount, type IssuerSnapshot } from "@hbcfield/shared/client"
+import { documentIssuer, invoiceDayInstant, invoiceDocumentLabels } from "@/lib/invoice-document-locale"
 
 /**
  * The invoice, as a document.
@@ -91,7 +91,7 @@ function useUnits(showTags = true) {
 /** "Hours · 200 h · €5,000 | Days · 20 days · €3,000" — the two figures a reader looks for first. */
 function HoursDaysSummary({ items, currency }: { items: DocumentRow[]; currency: string }) {
   const { t } = useTranslation()
-  const tot = hoursAndDaysTotals(Array.from(items, (r) => ({ lineKind: r.lineKind, quantity: r.quantity, amount: r.quantity * r.unitPrice })))
+  const tot = hoursAndDaysTotals(Array.from(items, (r) => ({ lineKind: r.lineKind, quantity: r.quantity, amount: roundedLineAmount(r.quantity, r.unitPrice) })))
   if (tot.hours === 0 && tot.days === 0) return null
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -122,12 +122,10 @@ export function money(n: number, currency: string) {
   return formatAmount(n, currency)
 }
 
+/** An invoice DATE (issue / due / period) — read by its UTC day, see `invoiceDayInstant`. */
 export function fmtDate(d?: string | null) {
-  if (!d) return "—"
-  const dt = new Date(d)
-  return Number.isNaN(dt.getTime())
-    ? "—"
-    : dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+  const dt = invoiceDayInstant(d)
+  return dt ? dt.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—"
 }
 
 interface InvoiceDocumentProps {
@@ -219,7 +217,8 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
   const logoUrl = from.logoUrl ?? orgLogo
   const showing: DocumentView = frames === "client" ? "client" : view
 
-  const lineAmount = (row: DocumentRow) => (row.quantity || 0) * (row.unitPrice || 0)
+  // Rounded to the cent like the server stores it — the total is the sum of these.
+  const lineAmount = (row: DocumentRow) => roundedLineAmount(row.quantity || 0, row.unitPrice || 0)
   const hasDiscount = Number(discount) > 0
 
   return (

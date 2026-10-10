@@ -92,13 +92,13 @@ export function InvoiceRow({
       <div className="hidden w-[8.5rem] shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:block">
         <p className="tabular-nums">
           {t("invoices.issuedOn", {
-            date: new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+            date: new Date(inv.issueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" }),
           })}
         </p>
         <p className="tabular-nums">
           {inv.dueDate
             ? t("invoices.dueOn", {
-                date: new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }),
+                date: new Date(inv.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", timeZone: "UTC" }),
               })
             : t("invoices.create.onReceipt")}
         </p>

@@ -370,7 +370,7 @@
         },
         "invoicing": {
           "label": "Facturación",
-          "desc": "Convierte el trabajo terminado en una factura con un par de clics y lleva el control de lo que ya se ha pagado."
+          "desc": "Convierte el trabajo terminado en una factura con un par de clics y lleva el control de lo que ya se ha liquidado."
         },
         "workflows": {
           "label": "Flujos de trabajo personalizados",
@@ -3856,7 +3856,7 @@
         "sick": "Baja por enfermedad",
         "personal": "Personal",
         "holiday": "Festivo",
-        "unpaid": "Permiso sin sueldo"
+        "unpaid": "Permiso (no computado)"
       },
       "save": "Añadir día libre",
       "success": "Día libre añadido.",
@@ -5115,7 +5115,7 @@
       "periodOutside_other": "{{count}} días de trabajo por facturar antes de estas fechas, desde el {{from}}.",
       "periodIncludeAll": "Incluirlos"
     },
-    "oldestDebt": "Más antigua sin pagar",
+    "oldestDebt": "Más antigua pendiente",
     "nothingOutstanding": "Todo saldado: nada pendiente.",
     "daysCount_one": "{{count}} día",
     "daysCount_other": "{{count}} días",
@@ -5908,7 +5908,7 @@
       },
       "invoices": {
         "title": "Facturas",
-        "body": "Factura el trabajo completado — crea, envía y controla facturas pagadas y pendientes."
+        "body": "Factura el trabajo completado — crea, envía y controla facturas liquidadas y pendientes."
       },
       "assets": {
         "title": "Activos",
@@ -7278,7 +7278,7 @@
       "showUnused_other": "+ {{count}} roles integrados que nadie tiene aquí ({{names}})",
       "hideUnused": "Ocultar roles que nadie tiene aquí",
       "hoursBasis": "Horas en la factura",
-      "hoursBasisHint": "Solo lo que se cobra al cliente. Su propia retribución y el coste del margen siguen con el tiempo contado.",
+      "hoursBasisHint": "Solo lo que se cobra al cliente. Su propia tarifa de coste y el coste del margen siguen con el tiempo contado.",
       "basis": {
         "COUNTED": "Tiempo contado",
         "COUNTEDHint": "Fichaje dentro del turno, menos pausas. Igual que la hoja de horas",

@@ -370,7 +370,7 @@
         },
         "invoicing": {
           "label": "Rechnungsstellung",
-          "desc": "Verwandeln Sie erledigte Arbeit mit wenigen Klicks in eine Rechnung und behalten Sie den Überblick, was bezahlt wurde."
+          "desc": "Verwandeln Sie erledigte Arbeit mit wenigen Klicks in eine Rechnung und behalten Sie den Überblick, was beglichen wurde."
         },
         "workflows": {
           "label": "Individuelle Workflows",
@@ -3867,7 +3867,7 @@
         "sick": "Krankheit",
         "personal": "Persönlich",
         "holiday": "Feiertag",
-        "unpaid": "Unbezahlter Urlaub"
+        "unpaid": "Urlaub (nicht angerechnet)"
       },
       "save": "Freien Tag hinzufügen",
       "success": "Freier Tag hinzugefügt.",
@@ -5908,7 +5908,7 @@
       },
       "invoices": {
         "title": "Rechnungen",
-        "body": "Stellen Sie erledigte Arbeit in Rechnung — erstellen, senden und offene/bezahlte Rechnungen verfolgen."
+        "body": "Stellen Sie erledigte Arbeit in Rechnung — erstellen, senden und offene und beglichene Rechnungen verfolgen."
       },
       "assets": {
         "title": "Anlagen",
@@ -7278,7 +7278,7 @@
       "showUnused_other": "+ {{count}} integrierte Rollen, die hier niemand hat ({{names}})",
       "hideUnused": "Rollen ausblenden, die hier niemand hat",
       "hoursBasis": "Stunden auf der Rechnung",
-      "hoursBasisHint": "Nur, was dem Kunden berechnet wird. Die eigene Vergütung und die Kosten in der Marge bleiben bei der gezählten Zeit.",
+      "hoursBasisHint": "Nur, was dem Kunden berechnet wird. Der eigene Kostensatz der Person und die Kosten in der Marge bleiben bei der gezählten Zeit.",
       "basis": {
         "COUNTED": "Gezählte Zeit",
         "COUNTEDHint": "Einstempeln innerhalb der Schicht, abzüglich Pausen. Wie im Stundenzettel",
