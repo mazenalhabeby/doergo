@@ -160,9 +160,16 @@ describe('both screens that file against an asset use this rule', () => {
     expect(src).toContain('<DateField');
     expect(src).toMatch(/minDate=\{bounds\.minDate\}/);
     expect(src).toContain('assetEntryDateText(');
-    expect(src).toContain('assetEntryDateExempt(');
+    // The window comes from the one hook, which asks the org-wide grant.
+    expect(src).toContain('useEntryDayBounds(');
     // A bare ISO day is UTC midnight — the evening before, west of Greenwich.
     expect(src).not.toMatch(/new Date\(when\)/);
     expect(src).not.toMatch(/toISOString\(\)\.slice\(0, 10\)/);
+  });
+
+  it('the bounds hook asks the org-wide grant', () => {
+    const hook = fs.readFileSync(path.join(__dirname, '../../hooks/use-entry-day-bounds.ts'), 'utf8') as string;
+    expect(hook).toContain('assetEntryDateExempt(');
+    expect(hook).toContain('logEntryDayBounds(');
   });
 });

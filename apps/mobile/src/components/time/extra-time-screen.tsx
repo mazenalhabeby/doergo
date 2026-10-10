@@ -12,7 +12,7 @@ import { attendanceApi } from '../../lib/api/attendance';
 import { useResponsive } from '../../lib/responsive';
 import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Initials, JobSheet, SectionLabel, StateEyebrow } from '../job/job-ui';
+import { Initials, JobSheet, ReceiptRow, SectionLabel, StateEyebrow } from '../job/job-ui';
 import { minutesPastEnd, stepExtra, suggestedExtra } from './time-logic';
 import { personName, formatDuration } from '@hbcfield/shared/client';
 
@@ -308,10 +308,10 @@ function ApproveSheet({
 
       {entry.expectedClockOutAt && newEnd ? (
         <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
-          <Row label={t('extraTime.shiftEnd', 'Shift end')} value={clock(entry.expectedClockOutAt, tz)} />
-          <Row label={t('extraTime.extra', 'Extra')} value={`+ ${formatDuration(minutes)}`} />
+          <ReceiptRow label={t('extraTime.shiftEnd', 'Shift end')} value={clock(entry.expectedClockOutAt, tz)} />
+          <ReceiptRow label={t('extraTime.extra', 'Extra')} value={`+ ${formatDuration(minutes)}`} />
           <View style={{ borderTopWidth: 1, borderTopColor: c.lineWell, paddingTop: amazen.space(2) }}>
-            <Row strong label={t('extraTime.countsUntil', 'Counts until')} value={clock(newEnd, tz)} />
+            <ReceiptRow strong label={t('extraTime.countsUntil', 'Counts until')} value={clock(newEnd, tz)} />
           </View>
         </Sunken>
       ) : null}
@@ -321,14 +321,5 @@ function ApproveSheet({
         <AText variant="body" tone="muted" style={{ fontSize: 14 }}>{t('extraTime.notNow', 'Not now')}</AText>
       </Pressable>
     </JobSheet>
-  );
-}
-
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-      <AText variant="caption" tone={strong ? 'strong' : 'muted'} style={{ fontSize: strong ? 14.5 : 13.5, lineHeight: 20 }}>{label}</AText>
-      <AText variant="caption" tone={strong ? 'strong' : 'ink'} numeric style={{ fontSize: strong ? 16 : 13.5, lineHeight: 20 }}>{value}</AText>
-    </View>
   );
 }

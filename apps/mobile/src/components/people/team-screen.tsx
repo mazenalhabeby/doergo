@@ -10,7 +10,7 @@ import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { chatApi, teamApi, type Colleague } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
 import { tabAccessFor } from '../../lib/tab-layout';
-import { AText, Ground, ScreenHeader, Well, WellDivider, useTabSafe } from '../amazen';
+import { AText, ChoicePill, GlassInput, Ground, ScreenHeader, Well, WellDivider, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { RoundButton, SectionLabel } from '../job/job-ui';
 import { MessagesGlyph } from '../glyphs/glyphs';
@@ -109,12 +109,10 @@ export function TeamScreen() {
   const listHeader = (
     <View style={{ gap: amazen.space(3) }}>
       <TourTarget name="team-search">
-      <TextInput
+      <GlassInput
         value={query}
         onChangeText={setQuery}
         placeholder={t('team.search', 'Search the team')}
-        placeholderTextColor={c.inkOnGlass}
-        style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 16, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(3), color: c.inkStrong, fontFamily: amazen.font.sans, fontSize: 14 }}
       />
       </TourTarget>
       <TourTarget name="team-filters">
@@ -123,13 +121,13 @@ export function TeamScreen() {
           const on = k === filter;
           const n = k === 'all' ? all.length : count(k);
           return (
-            <Pressable key={k} onPress={() => setFilter(k)} accessibilityRole="button" accessibilityState={{ selected: on }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
-              {k !== 'all' ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: PRESENCE_DOT[k] }} /> : null}
-              <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>
-                {k === 'all' ? t('team.filter.all', { count: n, defaultValue: 'All {{count}}' }) : t(`team.filter.${k}`, { count: n })}
-              </AText>
-            </Pressable>
+            <ChoicePill
+              key={k}
+              on={on}
+              onPress={() => setFilter(k)}
+              dot={k !== 'all' ? PRESENCE_DOT[k] : null}
+              label={k === 'all' ? t('team.filter.all', { count: n, defaultValue: 'All {{count}}' }) : t(`team.filter.${k}`, { count: n })}
+            />
           );
         })}
       </ScrollView>

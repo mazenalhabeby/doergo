@@ -8,7 +8,7 @@ import { useToast } from '../../island/island-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { membersApi, type OrgMember } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider } from '../amazen';
+import { AText, ChoicePill, GlassInput, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { Banner, JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
@@ -95,11 +95,7 @@ export function MembersScreen() {
   };
 
   const chip = (key: string, label: string, on: boolean, onPress: () => void, dot?: string | null) => (
-    <Pressable key={key} onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
-      {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} /> : null}
-      <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
-    </Pressable>
+    <ChoicePill key={key} label={label} on={on} onPress={onPress} dot={dot} />
   );
 
   return (
@@ -116,13 +112,11 @@ export function MembersScreen() {
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
       >
-        <TextInput
+        <GlassInput
           value={query}
           onChangeText={setQuery}
           placeholder={t('members.search', 'Search by name or email')}
-          placeholderTextColor={c.inkOnGlass}
           autoCapitalize="none"
-          style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 16, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(3), color: c.inkStrong, fontFamily: amazen.font.sans, fontSize: 14 }}
         />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }}>
           {chip('all', t('members.all', { count: list.length, defaultValue: 'All {{count}}' }), filter.kind === 'all', () => setFilter({ kind: 'all' }))}

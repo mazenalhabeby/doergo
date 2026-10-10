@@ -157,78 +157,61 @@ export function SyncPage() {
             {online ? <PrimaryButton label={t('offline.sync.syncNow', 'Sync now')} loading={refreshing} onPress={() => void refresh()} /> : null}
 
             {need ? (
-              <>
-                <SectionLabel tone="critical" style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{`${t('offline.sync.attention')} · ${need}`}</SectionLabel>
-                <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-                  {groups.attention.map((o, i) => {
-                    const shiftWords = shiftCopy(o);
-                    return (
-                      <View key={o.id} style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{label(o)}</AText>
-                          <AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>
-                        </View>
-                        <AText variant="caption" style={{ color: c.critical, lineHeight: 18 }}>{shiftWords?.reason ?? reason(o)}</AText>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2), marginTop: 6 }}>
-                          {shiftWords ? (
-                            <>
-                              {shiftWords.canClockInNow ? (
-                                <SmallButton accent label={t('shiftClock.refused.clockInNow', 'Clock in now')} onPress={() => router.navigate('/(app)/(tabs)' as Href)} />
-                              ) : null}
-                              <SmallButton
-                                label={t('shiftClock.refused.tellOffice', 'Tell my office')}
-                                onPress={() => setReport({ opId: o.id, title: shiftWords.issueTitle, body: shiftWords.issueBody, spaceId: refusedSpaceId(o) })}
-                              />
-                            </>
-                          ) : o.state === 'failed' ? <SmallButton label={t('offline.sync.retry')} onPress={() => void engine?.retry(o.id)} /> : null}
-                          <SmallButton
-                            label={o.state === 'conflict' ? t('offline.sync.gotIt') : shiftWords ? t('settings.sync.remove', 'Remove') : t('offline.sync.discard')}
-                            critical={o.state !== 'conflict'}
-                            onPress={() => void engine?.discard(o.id)}
-                          />
-                        </View>
+              <OpSection tone="critical" title={`${t('offline.sync.attention')} · ${need}`}>
+                {groups.attention.map((o, i) => {
+                  const shiftWords = shiftCopy(o);
+                  return (
+                    <OpRow key={o.id} first={i === 0} title={label(o)} aside={<AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>}>
+                      <AText variant="caption" style={{ color: c.critical, lineHeight: 18 }}>{shiftWords?.reason ?? reason(o)}</AText>
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2), marginTop: 6 }}>
+                        {shiftWords ? (
+                          <>
+                            {shiftWords.canClockInNow ? (
+                              <SmallButton accent label={t('shiftClock.refused.clockInNow', 'Clock in now')} onPress={() => router.navigate('/(app)/(tabs)' as Href)} />
+                            ) : null}
+                            <SmallButton
+                              label={t('shiftClock.refused.tellOffice', 'Tell my office')}
+                              onPress={() => setReport({ opId: o.id, title: shiftWords.issueTitle, body: shiftWords.issueBody, spaceId: refusedSpaceId(o) })}
+                            />
+                          </>
+                        ) : o.state === 'failed' ? <SmallButton label={t('offline.sync.retry')} onPress={() => void engine?.retry(o.id)} /> : null}
+                        <SmallButton
+                          label={o.state === 'conflict' ? t('offline.sync.gotIt') : shiftWords ? t('settings.sync.remove', 'Remove') : t('offline.sync.discard')}
+                          critical={o.state !== 'conflict'}
+                          onPress={() => void engine?.discard(o.id)}
+                        />
                       </View>
-                    );
-                  })}
-                </Well>
-              </>
+                    </OpRow>
+                  );
+                })}
+              </OpSection>
             ) : null}
 
             {waiting ? (
-              <>
-                <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{`${t('offline.sync.waiting')} · ${waiting}`}</SectionLabel>
-                <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-                  {groups.waiting.map((o, i) => {
-                    const wifi = o.lastError?.code === 'WAITING_FOR_WIFI';
-                    const why = waitingWhy(o);
-                    const removable = o.state === 'pending' || o.state === 'retry';
-                    return (
-                      <View key={o.id} style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{label(o)}</AText>
-                          <Pill label={wifi ? 'Wi-Fi' : t('offline.chip.waiting')} tone="warn" />
+              <OpSection tone="warn" title={`${t('offline.sync.waiting')} · ${waiting}`}>
+                {groups.waiting.map((o, i) => {
+                  const wifi = o.lastError?.code === 'WAITING_FOR_WIFI';
+                  const why = waitingWhy(o);
+                  const removable = o.state === 'pending' || o.state === 'retry';
+                  return (
+                    <OpRow key={o.id} first={i === 0} centered title={label(o)} aside={<Pill label={wifi ? 'Wi-Fi' : t('offline.chip.waiting')} tone="warn" />}>
+                      <AText variant="caption" tone="muted">{t('offline.sync.waitingSince', { time: time(o.createdAt) })}{why ? ` · ${why}` : ''}</AText>
+                      {o.state === 'retry' || removable ? (
+                        <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: 6 }}>
+                          {o.state === 'retry' && online ? <SmallButton label={t('settings.sync.tryNow', 'Try now')} onPress={() => void refresh()} /> : null}
+                          {removable ? <SmallButton critical label={t('settings.sync.remove', 'Remove')} onPress={() => void removeWaiting(o)} /> : null}
                         </View>
-                        <AText variant="caption" tone="muted">{t('offline.sync.waitingSince', { time: time(o.createdAt) })}{why ? ` · ${why}` : ''}</AText>
-                        {o.state === 'retry' || removable ? (
-                          <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: 6 }}>
-                            {o.state === 'retry' && online ? <SmallButton label={t('settings.sync.tryNow', 'Try now')} onPress={() => void refresh()} /> : null}
-                            {removable ? <SmallButton critical label={t('settings.sync.remove', 'Remove')} onPress={() => void removeWaiting(o)} /> : null}
-                          </View>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                </Well>
-              </>
+                      ) : null}
+                    </OpRow>
+                  );
+                })}
+              </OpSection>
             ) : null}
 
             {groups.sent.length ? (
-              <>
-                <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{`${t('settings.sync.sentToday', 'Sent today')} · ${groups.sent.length}`}</SectionLabel>
-                <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-                  {groups.sent.slice(0, 20).map((o, i) => row(o, i, <AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>))}
-                </Well>
-              </>
+              <OpSection title={`${t('settings.sync.sentToday', 'Sent today')} · ${groups.sent.length}`}>
+                {groups.sent.slice(0, 20).map((o, i) => row(o, i, <AText variant="caption" tone="muted" numeric>{time(o.createdAt)}</AText>))}
+              </OpSection>
             ) : null}
 
             <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('offline.sync.thisPhone')}</SectionLabel>
@@ -265,6 +248,39 @@ export function SyncPage() {
         }}
       />
     </Ground>
+  );
+}
+
+/** A group of operations: its counted title over a well. */
+function OpSection({ title, tone, children }: { title: string; tone?: 'critical' | 'warn'; children: React.ReactNode }) {
+  const { amazen } = useTheme();
+  return (
+    <>
+      <SectionLabel tone={tone} style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{title}</SectionLabel>
+      <Well style={{ paddingHorizontal: amazen.space(3.5) }}>{children}</Well>
+    </>
+  );
+}
+
+/** One operation in a group: what it is, something at the right of that line, and what follows under it. */
+function OpRow({ first, title, aside, centered, children }: {
+  first: boolean;
+  title: string;
+  aside: React.ReactNode;
+  /** Centre the aside on the title line (a pill), rather than top-align it (a time). */
+  centered?: boolean;
+  children: React.ReactNode;
+}) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  return (
+    <View style={{ paddingVertical: amazen.space(3), gap: 4, borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell }}>
+      <View style={{ flexDirection: 'row', ...(centered ? { alignItems: 'center' as const } : null), justifyContent: 'space-between', gap: 8 }}>
+        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, flexShrink: 1 }}>{title}</AText>
+        {aside}
+      </View>
+      {children}
+    </View>
   );
 }
 

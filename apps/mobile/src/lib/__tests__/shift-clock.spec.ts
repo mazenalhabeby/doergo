@@ -786,6 +786,8 @@ describe('the shift clock is a row', () => {
 // ── §11 · the clock-out sheet ────────────────────────────────────────────
 describe('§11 — the clock-out sheet', () => {
   const sheet = code('components/clock-out-sheet.tsx');
+  // The button and the Cancel line are the shared shift-sheet footer.
+  const footer = code('components/sheet-confirm-footer.tsx');
   const card = shiftCard(code);
 
   const shift = (over: Partial<Parameters<typeof readClockOut>[0]> = {}) => ({
@@ -809,7 +811,9 @@ describe('§11 — the clock-out sheet', () => {
     */
     expect(sheet).not.toMatch(/canConfirm/);
     // The only thing that disables it is a request already in flight.
-    expect(sheet).toMatch(/disabled=\{isLoading\}/);
+    expect(sheet).toMatch(/<SheetConfirmFooter[\s\S]*?isLoading=\{isLoading\}/);
+    expect(footer).toMatch(/disabled=\{isLoading\}/);
+    expect(footer.match(/disabled=/g)).toHaveLength(1);
     expect(sheet).toMatch(/if \(isLoading\) return;/);
     // And a missing GPS fix is not a failure either.
     expect(card).toMatch(/getCurrentLocation\(\)\.catch\(\(\) => null\)/);
@@ -817,10 +821,11 @@ describe('§11 — the clock-out sheet', () => {
   });
 
   it('2 · one primary, and Cancel is a text line', () => {
-    const notYet = sheet.indexOf('shiftEnd.notYet');
+    expect(sheet).toMatch(/<SheetConfirmFooter[\s\S]*?onCancel=\{close\}/);
+    const notYet = footer.indexOf('shiftEnd.notYet');
     expect(notYet).toBeGreaterThan(-1);
     // No second button: the cancel has no background of its own.
-    expect(sheet.slice(notYet - 400, notYet)).not.toMatch(/backgroundColor/);
+    expect(footer.slice(notYet - 400, notYet)).not.toMatch(/backgroundColor/);
   });
 
   it('3 · jade is the primary; amber only marks a variance', () => {
@@ -830,8 +835,10 @@ describe('§11 — the clock-out sheet', () => {
       pressed every day by everybody.
     */
     expect(sheet).not.toMatch(/#d97706/);
-    const primary = sheet.slice(sheet.indexOf('shiftEnd.clockOutAndAsk') - 600);
-    expect(primary).toMatch(/backgroundColor: c\.accentSolid/);
+    // The clock-out label is the footer's one button, and that button is jade.
+    expect(sheet).toMatch(/<SheetConfirmFooter\s+label=\{late\s+\? t\('shiftEnd\.clockOutAndAsk'/);
+    expect(footer).not.toMatch(/#d97706/);
+    expect(footer).toMatch(/backgroundColor: c\.accentSolid/);
   });
 
   it('4 · the clock-out time is frozen at open', () => {
@@ -998,7 +1005,8 @@ describe('the Break disc asks which kind, and never insists', () => {
     */
     expect(sheet).toMatch(/BreakType\.LUNCH, BreakType\.SHORT, BreakType\.OTHER/);
     expect(sheet).toMatch(/type: kind \?\? undefined/);
-    expect(sheet).toMatch(/disabled=\{isLoading\}/);
+    // The footer's button is disabled only while a request is in flight.
+    expect(sheet).toMatch(/<SheetConfirmFooter[\s\S]*?isLoading=\{isLoading\}/);
     expect(sheet).not.toMatch(/disabled=\{!kind/);
   });
 

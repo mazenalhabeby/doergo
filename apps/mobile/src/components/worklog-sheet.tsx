@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { useTimeFormat } from '../hooks/useTimeFormat';
 import { AText, Sunken } from './amazen';
-import { JobField, JobSheet, Pill, RoundButton, StateEyebrow } from './job/job-ui';
+import { JobField, JobSheet, Pill, ReceiptRow, RoundButton, StateEyebrow } from './job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from './job/job-glyphs';
 import { DayBar } from './time/day-bar';
 import { useWorklog } from './worklog/use-worklog';
@@ -221,15 +221,6 @@ export function WorkLogSheet({
         </>
       )}
     </JobSheet>
-  );
-}
-
-function ReceiptRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-      <AText variant="caption" tone={strong ? 'strong' : 'muted'} style={{ fontSize: strong ? 14.5 : 13.5, lineHeight: 20 }}>{label}</AText>
-      <AText variant="caption" tone={strong ? 'strong' : 'ink'} numeric style={{ fontSize: strong ? 16 : 13.5, lineHeight: 20 }}>{value}</AText>
-    </View>
   );
 }
 

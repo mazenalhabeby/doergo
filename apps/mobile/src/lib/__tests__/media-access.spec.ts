@@ -140,9 +140,11 @@ describe('permission state is read continuously, and never guessed', () => {
     // gated parent (the business-card scanner's `CardCamera`) passes on its
     // parent's gate — and every file rendering it is then held to the gate
     // itself, so moving the camera into a component cannot drop the check.
+    // Likewise `CaptureCamera`, the receipt and agreement screens' viewfinder.
     const GATE = /if \(!\w+\.granted\)|if \(stage === 'camera' && !\w+\.granted\)/;
     const VIEWFINDER_PARTS: Record<string, RegExp> = {
       'src/components/scan-card/card-camera.tsx': /<CardCamera[\s/]/,
+      'src/components/equipment/capture-camera.tsx': /<CaptureCamera[\s/]/,
     };
     const src = (f: string) => stripComments(fs.readFileSync(f, 'utf8'));
     const offenders = ALL

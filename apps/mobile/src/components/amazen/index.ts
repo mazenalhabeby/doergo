@@ -15,7 +15,7 @@ export { LiveDot } from './live-dot';
 export { WidgetBoundary } from './widget-frame';
 export { TabPill, useTabSafe, tabSafeFor, type TabPillItem } from './tab-pill';
 export { ScreenHeader, HeaderBack, type HeaderAction } from './screen-header';
-export { FilterPill, FilterRow, SearchField } from './filter';
+export { ChoicePill, FilterPill, FilterRow, GlassInput, SearchField } from './filter';
 
 /*
   ⚠️ THIS BARREL HOLDS PRIMITIVES ONLY, AND NOTHING THAT OWNS A GESTURE.

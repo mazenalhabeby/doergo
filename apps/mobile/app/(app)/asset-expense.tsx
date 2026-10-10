@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
 } from 'react-native';
 import { CameraView } from 'expo-camera';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -13,15 +13,17 @@ import { DateField } from '../../src/components';
 import { EquipmentFrame, useFormPalette } from '../../src/components/equipment/equipment-frame';
 import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
 import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
-import { useAuth } from '../../src/contexts/auth-context';
-import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
+import { CaptureReviewFoot } from '../../src/components/equipment/capture-review';
+import { CaptureCamera, CaptureSkip } from '../../src/components/equipment/capture-camera';
+import { useEntryDayBounds } from '../../src/hooks/use-entry-day-bounds';
+import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../src/lib/log-dates';
 import { documentPicker } from '../../src/lib/optional-native';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
-import { normalizeKindShape, categoryForReceipt, moneyToCents, assetEntryDateExempt, type KindMoneyCategory, type ParsedReceipt, fromCents } from '@hbcfield/shared/client';
+import { normalizeKindShape, categoryForReceipt, moneyToCents, type KindMoneyCategory, type ParsedReceipt, fromCents } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../src/lib/constants';
 import { useOffline } from '../../src/offline/offline-context';
 import { submitExpenseFromPhone } from '../../src/offline/assets/expense-actions';
@@ -60,7 +62,6 @@ function AssetExpenseScreen() {
   const { t } = useTranslation();
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
-  const { user } = useAuth();
   const offline = useOffline();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ assetId?: string }>();
@@ -95,13 +96,8 @@ function AssetExpenseScreen() {
     the logbook's rule (shared `assets/entry-date.ts`).
   */
   const [when, setWhen] = useState<string>(() => dayKeyOf(new Date()));
-  /*
-    The same window the logbook offers and the server refuses by. ORG-WIDE, as
-    the expense routes read `req.user.canManageAssets`: a Space Manager's depot
-    grant does not reach it, so offering them last year would be a refusal.
-  */
-  const canManageAssets = assetEntryDateExempt(user as never);
-  const bounds = useMemo(() => logEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets]);
+  /* The same window the logbook offers and the server refuses by. */
+  const { canManageAssets, bounds } = useEntryDayBounds();
   /** What the server is sent for the chosen day — now for today, local midday before. */
   const occurredAtIso = useCallback(
     () => (occurredAtForDay(when, new Date()) ?? new Date()).toISOString(),
@@ -481,29 +477,23 @@ function AssetExpenseScreen() {
             style={[s.input, s.boxed, { color: colors.textPrimary, borderColor: colors.border }]}
           />
 
-          <View style={[s.receiptRow, { borderColor: colors.border }]}>
-            <Ionicons name={shot ? 'image' : 'image-outline'} size={18} color={shot ? '#22c55e' : colors.textMuted} />
-            <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: colors.textMuted }}>
-              {shot ? t('expenses.photoAttached', 'Photo attached') : t('expenses.noPhoto', 'No photo')}
-            </Text>
-            <TouchableOpacity onPress={() => { discardShot(); setStage('camera'); }}>
-              <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>
-                {shot ? t('expenses.retake', 'Retake') : t('expenses.takePhoto', 'Take one')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={send}
-            disabled={sending || !cents || !category}
-            style={[s.primary, { backgroundColor: cents && category ? COLORS.primary : colors.border }]}
-          >
-            {sending ? <ActivityIndicator size="small" color="#fff" />
-                     : <Text style={[s.primaryText, { color: COLORS.onPrimary }]}>{t('expenses.send', 'Send it in')}</Text>}
-          </TouchableOpacity>
-          <Text style={[s.footnote, { color: colors.textMuted }]}>
-            {t('expenses.pendingHint', 'It counts once the office accepts it.')}
-          </Text>
+          <CaptureReviewFoot
+            shot={!!shot}
+            icon="image"
+            attachedLabel={t('expenses.photoAttached', 'Photo attached')}
+            missingLabel={t('expenses.noPhoto', 'No photo')}
+            onRetake={() => { discardShot(); setStage('camera'); }}
+            onSend={send}
+            sendDisabled={sending || !cents || !category}
+            ready={!!(cents && category)}
+            sending={sending}
+            sendLabel={t('expenses.send', 'Send it in')}
+            sendLabelColor={COLORS.onPrimary}
+            footnote={t('expenses.pendingHint', 'It counts once the office accepts it.')}
+            primary={COLORS.primary}
+            border={colors.border}
+            muted={colors.textMuted}
+          />
         </ScrollView>
       </EquipmentFrame>
     );
@@ -511,41 +501,21 @@ function AssetExpenseScreen() {
 
   // ── Camera ────────────────────────────────────────────────────────────────
   return (
-    <View style={s.black}>
-      <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" />
-      <SafeAreaView style={StyleSheet.absoluteFill} edges={['top', 'bottom']} pointerEvents="box-none">
-        <View style={s.camHead}>
-          <TouchableOpacity onPress={() => router.back()} style={s.camBtn}>
-            <Ionicons name="close" size={26} color="#fff" />
-          </TouchableOpacity>
-          <Text style={s.camTitle} numberOfLines={1}>{held.asset?.name ?? ''}</Text>
-          <View style={s.camBtn} />
-        </View>
-
-        {/* No frame, deliberately: a receipt is a strip of any proportion, and a
-            rectangle nobody can fill teaches people the scan is broken. */}
-        <View style={s.camMid} pointerEvents="none">
-          <Text style={s.camHint}>{t('expenses.aim', 'Get the whole slip in shot')}</Text>
-        </View>
-
-        <View style={s.camFoot}>
-          {/*
-            Two ways in, and the camera is still the primary one — it is what a
-            driver at a pump has. "Choose a file" is for the invoice that
-            arrived by email, which is the only way a PDF ever gets here.
-          */}
-          <TouchableOpacity onPress={pickFile} disabled={busy} style={s.skip}>
-            <Text style={s.skipText}>{t('expenses.chooseFile', 'Choose a file')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setStage('review')} style={s.skip}>
-            <Text style={s.skipText}>{t('expenses.typeInstead', 'Type it instead')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={capture} disabled={busy} style={s.shutter}>
-            {busy ? <ActivityIndicator color="#fff" /> : <View style={s.shutterInner} />}
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </View>
+    <CaptureCamera
+      cameraRef={camera}
+      title={held.asset?.name ?? ''}
+      hint={t('expenses.aim', 'Get the whole slip in shot')}
+      onCapture={capture}
+      busy={busy}
+    >
+      {/*
+        Two ways in, and the camera is still the primary one — it is what a
+        driver at a pump has. "Choose a file" is for the invoice that
+        arrived by email, which is the only way a PDF ever gets here.
+      */}
+      <CaptureSkip label={t('expenses.chooseFile', 'Choose a file')} onPress={pickFile} disabled={busy} />
+      <CaptureSkip label={t('expenses.typeInstead', 'Type it instead')} onPress={() => setStage('review')} />
+    </CaptureCamera>
   );
 }
 
@@ -573,25 +543,11 @@ function Field({
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  black: { flex: 1, backgroundColor: '#000' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md, padding: SPACING.xl },
   hint: { fontSize: FONT_SIZE.sm, textAlign: 'center' },
   asset: { fontSize: FONT_SIZE.sm, marginBottom: SPACING.md },
 
-  camHead: { flexDirection: 'row', alignItems: 'center', padding: SPACING.md },
-  camBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
-  camTitle: { flex: 1, textAlign: 'center', color: '#fff', fontSize: FONT_SIZE.base, fontWeight: '600' },
-  camMid: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: SPACING.xl },
-  camHint: { color: '#e6ecf5', fontSize: FONT_SIZE.sm },
-  /* ⚠️ `marginTop: 'auto'` is what keeps the shutter at the bottom — the same
-     trap the card scanner documents: without it the foot rides up under the
-     close button on a real phone. */
-  camFoot: { marginTop: 'auto', alignItems: 'center', gap: SPACING.md, paddingBottom: SPACING.xl },
-  skip: { paddingVertical: 6, paddingHorizontal: SPACING.lg, borderRadius: 99, backgroundColor: 'rgba(0,0,0,.45)' },
-  skipText: { color: '#e6ecf5', fontSize: FONT_SIZE.sm },
-  shutter: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  shutterInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
 
   field: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginBottom: SPACING.md },
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -608,9 +564,4 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   chip: { borderWidth: 1, borderRadius: 99, paddingHorizontal: SPACING.md, paddingVertical: 8 },
 
-  receiptRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.lg },
-
-  primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
-  primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
-  footnote: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md },
 });

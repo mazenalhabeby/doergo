@@ -29,17 +29,41 @@ export function FilterPill({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ selected: on, disabled: !!disabled }}
-      style={{
-        opacity: disabled && !on ? 0.5 : 1,
-        flexDirection: 'row', alignItems: 'center', gap: 6, maxWidth: 220,
-        borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75),
-        backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent',
-      }}
+      style={{ opacity: disabled && !on ? 0.5 : 1, ...pillBox(amazen, on), maxWidth: 220 }}
     >
-      {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dot }} /> : null}
+      {dot ? <PillDot color={dot} /> : null}
       <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
     </Pressable>
   );
+}
+
+/**
+ * The same pill with its label shown whole — no width cap, no truncation, no
+ * disabled state. The Members and Team filters were drawn this way before
+ * `FilterPill` existed, and a role name they show in full must stay in full.
+ */
+export function ChoicePill({ label, on, onPress, dot }: { label: string; on: boolean; onPress: () => void; dot?: string | null }) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} style={pillBox(amazen, on)}>
+      {dot ? <PillDot color={dot} /> : null}
+      <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{label}</AText>
+    </Pressable>
+  );
+}
+
+type Amazen = ReturnType<typeof useTheme>['amazen'];
+
+/** Tile when off, jade outline when on. */
+const pillBox = (amazen: Amazen, on: boolean) => ({
+  flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6,
+  borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75),
+  backgroundColor: on ? amazen.color.accentTint : amazen.color.tile, borderWidth: 1.5, borderColor: on ? amazen.color.accent : 'transparent',
+});
+
+function PillDot({ color }: { color: string }) {
+  return <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} />;
 }
 
 /** A row of pills that scrolls sideways when it outgrows the screen. */
@@ -54,14 +78,26 @@ export function FilterRow({ children }: { children: React.ReactNode }) {
 
 /** The search field that sits on the ground, above a list. */
 export function SearchField(props: Omit<TextInputProps, 'style' | 'placeholderTextColor'>) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
   return (
-    <TextInput
+    <GlassInput
       autoCapitalize="none"
       autoCorrect={false}
       clearButtonMode="while-editing"
       returnKeyType="search"
+      {...props}
+    />
+  );
+}
+
+/**
+ * The glass text field itself, with the input's own defaults — `SearchField`
+ * is this plus search behaviour. The Members and Team searches use it bare.
+ */
+export function GlassInput(props: Omit<TextInputProps, 'style' | 'placeholderTextColor'>) {
+  const { amazen } = useTheme();
+  const c = amazen.color;
+  return (
+    <TextInput
       {...props}
       placeholderTextColor={c.inkOnGlass}
       style={{

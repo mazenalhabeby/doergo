@@ -12,13 +12,13 @@ import { DateField } from '../../src/components';
 import { EquipmentFrame, useFormPalette } from '../../src/components/equipment/equipment-frame';
 import { forgetHeldAssets } from '../../src/hooks/use-held-assets';
 import { EquipmentPicker } from '../../src/components/equipment/equipment-picker';
-import { useAuth } from '../../src/contexts/auth-context';
-import { assetEntryDateText, dayKeyOf, logEntryDayBounds, occurredAtForDay } from '../../src/lib/log-dates';
+import { useEntryDayBounds } from '../../src/hooks/use-entry-day-bounds';
+import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../src/lib/log-dates';
 import { useToast } from '../../src/island/island-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
-import { normalizeKindShape, findLogType, validateLogValues, moneyToCents, assetEntryDateExempt, COST_LOG_KEY, type KindLogField, type LogValueProblem, fromCents } from '@hbcfield/shared/client';
+import { normalizeKindShape, findLogType, validateLogValues, moneyToCents, COST_LOG_KEY, type KindLogField, type LogValueProblem, fromCents } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { useOffline } from '../../src/offline/offline-context';
@@ -61,7 +61,6 @@ function AssetLogScreen() {
   const { t } = useTranslation();
   const tt = t as unknown as (k: string, d: string, o?: Record<string, unknown>) => string;
   const toast = useToast();
-  const { user } = useAuth();
   const offline = useOffline();
   const insets = useSafeAreaInsets();
   const { takePhoto, pickFromGallery } = useImagePicker();
@@ -82,14 +81,8 @@ function AssetLogScreen() {
   const shape = useMemo(() => normalizeKindShape(held?.asset?.category?.config), [held]);
   const type = useMemo(() => (held ? findLogType(shape, logKey) : null), [held, shape, logKey]);
   const moneyField = type?.fields.find((f) => f.type === 'money') ?? null;
-  /*
-    The days the calendar offers, by the rule the server refuses by. The
-    ORG-WIDE grant, not "in any space": every route that files an entry reads
-    `req.user.canManageAssets`, and offering a year-old day to somebody the
-    server holds to 120 would be a day chosen and then refused.
-  */
-  const canManageAssets = assetEntryDateExempt(user as never);
-  const bounds = useMemo(() => logEntryDayBounds(new Date(), { canManageAssets }), [canManageAssets]);
+  /* The days the calendar offers, by the rule the server refuses by. */
+  const { canManageAssets, bounds } = useEntryDayBounds();
   const photoField = type?.fields.find((f) => f.type === 'photo') ?? null;
 
   useEffect(() => {

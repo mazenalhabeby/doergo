@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/auth-context';
 import { calendarApi, type LeaveCount } from '../../lib/api';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken, Well, WellDivider } from '../amazen';
-import { JobField, JobSheet, QuietButton, SectionLabel, StateEyebrow } from '../job/job-ui';
+import { JobField, JobSheet, QuietButton, ReceiptRow, SectionLabel, StateEyebrow } from '../job/job-ui';
 import { PlusGlyph } from '../job/job-glyphs';
 import { DateTileRow } from './date-tile-row';
 import {
@@ -449,13 +449,16 @@ function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOff
   );
 }
 
+/** A receipt line; the strong one (the total) is ruled off above. */
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   const { amazen } = useTheme();
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, borderTopWidth: strong ? 1 : 0, borderTopColor: amazen.color.lineWell, paddingTop: strong ? amazen.space(2) : 0 }}>
-      <AText variant="caption" tone={strong ? 'strong' : 'muted'} style={{ fontSize: strong ? 14.5 : 13.5, lineHeight: 20 }}>{label}</AText>
-      <AText variant="caption" tone={strong ? 'strong' : 'ink'} numeric style={{ fontSize: strong ? 16 : 13.5, lineHeight: 20 }}>{value}</AText>
-    </View>
+    <ReceiptRow
+      label={label}
+      value={value}
+      strong={strong}
+      style={{ borderTopWidth: strong ? 1 : 0, borderTopColor: amazen.color.lineWell, paddingTop: strong ? amazen.space(2) : 0 }}
+    />
   );
 }
 

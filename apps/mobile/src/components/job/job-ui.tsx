@@ -13,6 +13,21 @@ import { personInitials } from '@hbcfield/shared/client';
  * no colour is written down, so light and dark follow the member's setting.
  */
 
+/* ---------------- a receipt line ---------------- */
+
+/**
+ * One line of a receipt — label left, figure right; `strong` is the total.
+ * The shift receipt, the extra-time sum and the leave cost all read this way.
+ */
+export function ReceiptRow({ label, value, strong, style }: { label: string; value: string; strong?: boolean; style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }, style]}>
+      <AText variant="caption" tone={strong ? 'strong' : 'muted'} style={{ fontSize: strong ? 14.5 : 13.5, lineHeight: 20 }}>{label}</AText>
+      <AText variant="caption" tone={strong ? 'strong' : 'ink'} numeric style={{ fontSize: strong ? 16 : 13.5, lineHeight: 20 }}>{value}</AText>
+    </View>
+  );
+}
+
 /* ---------------- the one sheet ---------------- */
 
 /**

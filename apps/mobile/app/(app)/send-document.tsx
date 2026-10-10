@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, TextInput,
+  View, Text, StyleSheet, ScrollView, TextInput,
 } from 'react-native';
 import { CameraView } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,8 @@ import { File as FsFile } from 'expo-file-system';
 
 import { ScreenHeader, DateField } from '../../src/components';
 import { useTheme } from '../../src/contexts/theme-context';
+import { CaptureReviewFoot } from '../../src/components/equipment/capture-review';
+import { CaptureCamera, CaptureSkip } from '../../src/components/equipment/capture-camera';
 import { useToast } from '../../src/island/island-context';
 import { MediaAccessScreen } from '../../src/permissions/media-access-screen';
 import { useCameraAccess } from '../../src/permissions/use-media-access';
@@ -261,31 +263,22 @@ export default function SendDocumentScreen() {
             </Text>
           )}
 
-          <View style={[s.docRow, { borderColor: colors.border }]}>
-            <Ionicons name={shot ? 'document' : 'document-outline'} size={18} color={shot ? '#22c55e' : colors.textMuted} />
-            <Text style={{ flex: 1, fontSize: FONT_SIZE.sm, color: colors.textMuted }}>
-              {shot ? t('sendDoc.pageAttached', 'The page will be sent too') : t('sendDoc.noPage', 'No page')}
-            </Text>
-            <TouchableOpacity onPress={() => { discardShot(); setStage('camera'); }}>
-              <Text style={{ color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '700' }}>
-                {shot ? t('expenses.retake', 'Retake') : t('expenses.takePhoto', 'Take one')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={send}
-            disabled={!named || sending}
-            style={[s.primary, { backgroundColor: named ? COLORS.primary : colors.border }]}
-          >
-            {sending ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={s.primaryText}>
-                  {recognised ? t('sendDoc.send', 'Send it in') : t('sendDoc.sendAnyway', 'Send it anyway')}
-                </Text>}
-          </TouchableOpacity>
-          <Text style={[s.footnote, { color: colors.textMuted }]}>
-            {t('sendDoc.hint', 'Nothing is created. Somebody responsible for you decides.')}
-          </Text>
+          <CaptureReviewFoot
+            shot={!!shot}
+            icon="document"
+            attachedLabel={t('sendDoc.pageAttached', 'The page will be sent too')}
+            missingLabel={t('sendDoc.noPage', 'No page')}
+            onRetake={() => { discardShot(); setStage('camera'); }}
+            onSend={send}
+            sendDisabled={!named || sending}
+            ready={!!named}
+            sending={sending}
+            sendLabel={recognised ? t('sendDoc.send', 'Send it in') : t('sendDoc.sendAnyway', 'Send it anyway')}
+            footnote={t('sendDoc.hint', 'Nothing is created. Somebody responsible for you decides.')}
+            primary={COLORS.primary}
+            border={colors.border}
+            muted={colors.textMuted}
+          />
         </ScrollView>
       </SafeAreaView>
     );
@@ -293,27 +286,15 @@ export default function SendDocumentScreen() {
 
   // ── The page ──────────────────────────────────────────────────────────────
   return (
-    <View style={s.black}>
-      <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back" />
-      <SafeAreaView style={StyleSheet.absoluteFill} edges={['top', 'bottom']} pointerEvents="box-none">
-        <View style={s.camHead}>
-          <TouchableOpacity onPress={() => router.back()} style={s.camBtn}>
-            <Ionicons name="close" size={26} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View style={s.camMid} pointerEvents="none">
-          <Text style={s.camHint}>{t('sendDoc.aim', 'Get the page in shot — it is read on this phone')}</Text>
-        </View>
-        <View style={s.camFoot}>
-          <TouchableOpacity onPress={() => setStage('review')} style={s.skip}>
-            <Text style={s.skipText}>{t('contract.typeInstead', 'Type it instead')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={capture} disabled={busy} style={s.shutter}>
-            {busy ? <ActivityIndicator color="#fff" /> : <View style={s.shutterInner} />}
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </View>
+    <CaptureCamera
+      cameraRef={camera}
+      hint={t('sendDoc.aim', 'Get the page in shot — it is read on this phone')}
+      wideHint
+      onCapture={capture}
+      busy={busy}
+    >
+      <CaptureSkip label={t('contract.typeInstead', 'Type it instead')} onPress={() => setStage('review')} />
+    </CaptureCamera>
   );
 }
 
@@ -337,20 +318,9 @@ function Field({
 
 const s = StyleSheet.create({
   safe: { flex: 1 },
-  black: { flex: 1, backgroundColor: '#000' },
   grow: { flex: 1, minWidth: 0 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
 
-  camHead: { flexDirection: 'row', padding: SPACING.md },
-  camBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(0,0,0,.45)', alignItems: 'center', justifyContent: 'center' },
-  camMid: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: SPACING.xl, paddingHorizontal: SPACING.xl },
-  camHint: { color: '#e6ecf5', fontSize: FONT_SIZE.sm, textAlign: 'center' },
-  // ⚠️ `marginTop: 'auto'` is what keeps the shutter at the bottom.
-  camFoot: { marginTop: 'auto', alignItems: 'center', gap: SPACING.md, paddingBottom: SPACING.xl },
-  skip: { paddingVertical: 6, paddingHorizontal: SPACING.lg, borderRadius: 99, backgroundColor: 'rgba(0,0,0,.45)' },
-  skipText: { color: '#e6ecf5', fontSize: FONT_SIZE.sm },
-  shutter: { width: 68, height: 68, borderRadius: 34, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  shutterInner: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
 
   verdict: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md },
   verdictTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any },
@@ -362,9 +332,4 @@ const s = StyleSheet.create({
   input: { fontSize: FONT_SIZE.base, paddingVertical: 6 },
   warn: { color: '#f59e0b', fontSize: FONT_SIZE.xs, marginTop: SPACING.sm },
 
-  docRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.lg },
-
-  primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
-  primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
-  footnote: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md },
 });
