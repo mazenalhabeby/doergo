@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
@@ -165,63 +165,13 @@ export class CreateWorkflowStatusDto {
   form?: Record<string, unknown> | null;
 }
 
-export class UpdateWorkflowStatusDto {
-  @ApiPropertyOptional({ example: 'In Transit' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
-  name?: string;
-
-  @ApiPropertyOptional({ example: '#3b82f6' })
-  @IsString()
-  @IsOptional()
-  color?: string;
-
-  @ApiPropertyOptional({ example: 'truck' })
-  @IsString()
-  @IsOptional()
-  icon?: string;
-
-  @ApiPropertyOptional()
-  @IsInt()
-  @IsOptional()
-  @Min(0)
-  position?: number;
-
-  @ApiPropertyOptional()
-  @IsBoolean()
-  @IsOptional()
-  isFinal?: boolean;
-
-  @ApiPropertyOptional()
-  @IsBoolean()
-  @IsOptional()
-  isCanceled?: boolean;
-
-  @ApiPropertyOptional({ type: [String] })
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  transitions?: string[];
-
-  @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
-  @IsArray()
-  @IsIn(TASK_CAPABILITIES, { each: true })
-  @IsOptional()
-  capabilities?: string[];
-
-  /**
-   * "Ask when a job moves here": `{ fields: [{ id?, type, label, required, options?, crm? }] }`.
-   * Judged in full by `validateStepFormDefinition` in the service (refused with
-   * 400 STEP_FORM_DEFINITION_INVALID), versioned by the server — a `version`
-   * sent here is ignored. `null` clears it (back to "not set"); `{ fields: [] }`
-   * means "ask nothing", including on a legacy report step.
-   */
-  @ApiPropertyOptional({ description: 'The step form (fields asked when a job moves into this step); null clears it', type: Object, nullable: true })
-  @IsOptional()
-  @IsObject()
-  form?: Record<string, unknown> | null;
-}
+/**
+ * Everything a step's create accepts except its `key` (the machine id tasks and
+ * transitions point at — renaming it would orphan them), all optional. Derived,
+ * so a field added to a step exists once. (The copy it replaced allowed
+ * `name: ""`, blanking a step's name; the derived version keeps create's rule.)
+ */
+export class UpdateWorkflowStatusDto extends PartialType(OmitType(CreateWorkflowStatusDto, ['key'] as const)) {}
 
 // ==================== Definition of Done DTOs ====================
 

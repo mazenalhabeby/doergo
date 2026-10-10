@@ -1,4 +1,4 @@
-import { Injectable, Logger, ForbiddenException, Optional } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { buildTaskVisibilityWhere } from './task-visibility';
@@ -26,9 +26,12 @@ export class TaskSupportService {
     private readonly prisma: PrismaService,
     private readonly notificationRouting: NotificationRoutingService,
     configService: ConfigService,
-    // The ONE task gate, shared with attachments, reports and custom fields.
-    // Optional only so a test that builds this service by hand still gets it.
-    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
+    /**
+     * May this caller touch this task? — the shared gate (common/task-access),
+     * which this file, attachments, reports and custom fields all ask. It used to
+     * be three private copies that had drifted; see TaskAccessService.
+     */
+    readonly taskAccess: TaskAccessService,
   ) {
     const redisHost = configService.get<string>('REDIS_HOST', 'localhost') || 'localhost';
     const redisPort = configService.get<number>('REDIS_PORT', 6379) || 6379;
@@ -72,16 +75,6 @@ export class TaskSupportService {
         metadata,
       },
     });
-  }
-
-  /**
-   * May this caller touch this task? — the shared gate (common/task-access),
-   * which this file, attachments, reports and custom fields all ask. It used to
-   * be three private copies that had drifted; see TaskAccessService.
-   */
-  private _taskAccess?: TaskAccessService;
-  get taskAccess(): TaskAccessService {
-    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
   }
 
   /**

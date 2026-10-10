@@ -5,6 +5,7 @@
  * the owner change is judged on authority the SERVER resolved, never on a body.
  */
 import { Test } from '@nestjs/testing';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
@@ -122,7 +123,7 @@ describe('TasksService checklist — the boundary', () => {
     prisma.checklistItem.create.mockImplementation(async ({ data }: any) => ({ id: 'i2', ...data }));
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewService }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewService }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } },
         { provide: PresenceService, useValue: { onJobMoved: jest.fn() } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },

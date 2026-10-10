@@ -13,7 +13,8 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class UpdateTrackingLocationDto {
+/** One GPS fix, bounded the same way wherever a position is accepted. */
+class GpsFixDto {
   @ApiProperty({ example: 40.7128 })
   @IsNumber()
   @Min(-90)
@@ -32,33 +33,16 @@ export class UpdateTrackingLocationDto {
   @Max(100000)
   @IsOptional()
   accuracy?: number;
+}
 
+export class UpdateTrackingLocationDto extends GpsFixDto {
   @ApiPropertyOptional({ description: 'Task ID if tracking for a specific task' })
   @IsString()
   @IsOptional()
   taskId?: string;
 }
 
-class TrackingLocationPointDto {
-  @ApiProperty({ example: 40.7128 })
-  @IsNumber()
-  @Min(-90)
-  @Max(90)
-  lat: number;
-
-  @ApiProperty({ example: -74.006 })
-  @IsNumber()
-  @Min(-180)
-  @Max(180)
-  lng: number;
-
-  @ApiPropertyOptional({ example: 10.5, description: 'Metres of uncertainty.' })
-  @IsNumber()
-  @Min(0)
-  @Max(100000)
-  @IsOptional()
-  accuracy?: number;
-
+class TrackingLocationPointDto extends GpsFixDto {
   @ApiPropertyOptional({ description: 'ISO timestamp of when the point was captured on-device' })
   @IsISO8601()
   @IsOptional()

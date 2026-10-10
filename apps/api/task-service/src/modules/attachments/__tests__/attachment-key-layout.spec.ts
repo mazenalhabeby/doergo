@@ -10,6 +10,7 @@
  *  - rows written before keys existed (full URL only) still read and delete.
  */
 import { AttachmentsService, attachmentKeyPrefixes } from '../attachments.service';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { MediaSigner } from '../../../common/storage/media-signer.service';
 
 const ORG = 'org_1';
@@ -42,7 +43,7 @@ function makeService(store: ReturnType<typeof makeStore>, task: any = { id: TASK
   };
   const notify: any = { emit: jest.fn() };
   const media = new MediaSigner(store as any);
-  const service = new AttachmentsService(prisma, store as any, media, notify);
+  const service = new AttachmentsService(prisma, store as any, media, notify, new TaskAccessService(prisma));
   return { service, prisma, notify };
 }
 

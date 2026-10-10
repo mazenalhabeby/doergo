@@ -6,6 +6,7 @@
  * timesheet then told two different stories.
  */
 import { Test } from '@nestjs/testing';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException } from '@nestjs/common';
 import { OBJECT_STORE } from '@hbcfield/shared/storage';
@@ -94,7 +95,7 @@ describe('TasksService.updateStatus — clocked in to start work', () => {
     prisma.spaceAssignment.findMany.mockResolvedValue([]);
     const module = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: prisma },
         { provide: 'NOTIFICATION_SERVICE', useValue: { emit: jest.fn() } },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },

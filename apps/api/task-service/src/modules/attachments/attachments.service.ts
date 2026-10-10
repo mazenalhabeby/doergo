@@ -5,7 +5,6 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
-  Optional,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -71,21 +70,8 @@ export class AttachmentsService {
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
     private readonly media: MediaSigner,
     @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
-    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
+    private readonly taskAccess: TaskAccessService,
   ) {}
-
-  /*
-    The ONE task gate (common/task-access) — the same decision tasks.service
-    makes, co-assignee lookup and role-holder rule included. This file used to
-    carry its own copy that skipped the co-assignee lookup (a crew member could
-    comment on a job and was refused its photos) and asked the role-holder
-    question before the organization boundary. Optional only so a test that
-    builds this service by hand still gets it.
-  */
-  private _taskAccess?: TaskAccessService;
-  private get taskAccess(): TaskAccessService {
-    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
-  }
 
   async create(data: {
     /** Id made on the phone — see createOnce. */

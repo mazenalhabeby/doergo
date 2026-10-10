@@ -1,7 +1,7 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Processor } from '@nestjs/bullmq';
+import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, REPORT_JOB_TYPES, buildJobError } from '@hbcfield/shared';
+import { QUEUE_NAMES, REPORT_JOB_TYPES } from '@hbcfield/shared';
 import { ReportsService } from './reports.service';
 
 /**
@@ -15,35 +15,15 @@ import { ReportsService } from './reports.service';
  * Only WRITE operations go through BullMQ for exactly-once guarantees.
  */
 @Processor(QUEUE_NAMES.REPORTS)
-export class ReportsProcessor extends WorkerHost {
-  private readonly logger = new Logger(ReportsProcessor.name);
-
+export class ReportsProcessor extends JobProcessor {
   constructor(private readonly reportsService: ReportsService) {
     super();
   }
 
   /**
-   * Process incoming jobs from the queue
-   * Routes each job to the appropriate handler based on job name
-   */
-  async process(job: Job<any, any, string>): Promise<any> {
-    this.logger.debug(`Processing job ${job.id}: ${job.name}`);
-
-    try {
-      const result = await this.handleJob(job);
-      this.logger.debug(`Job ${job.id} completed successfully`);
-      return result;
-    } catch (error) {
-      this.logger.error(`Job ${job.id} failed: ${error.message}`);
-      // Structured error for the gateway; 4xx → no retry (H3).
-      throw buildJobError(error);
-    }
-  }
-
-  /**
    * Route job to appropriate handler based on job name
    */
-  private async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<any> {
     const { name, data } = job;
 
     switch (name) {

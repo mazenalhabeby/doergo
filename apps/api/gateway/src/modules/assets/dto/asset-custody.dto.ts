@@ -1,9 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString,
-  Max, MaxLength, Min, ValidateNested,
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
   Matches,
 } from 'class-validator';
+import { AssetEntryBaseDto } from './asset-entry.dto';
 import { Type } from 'class-transformer';
 import { KIND_SHAPE_LIMITS } from '@hbcfield/shared';
 import { AssetHolderDto } from './asset.dto';
@@ -83,17 +94,7 @@ export class ReadReceiptDto {
  * rounding bug waiting for a large total, and an uncapped integer is a way to
  * put an absurd figure into an organization's books from a phone.
  */
-export class SubmitExpenseDto {
-  /**
-   * Made on the phone: an expense filed twice is one expense. Not `id` — the
-   * route already calls the ASSET that, and the two would overwrite each other.
-   */
-  @ApiPropertyOptional({ description: 'Id made on the phone for this expense' })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[A-Za-z0-9_-]{16,64}$/)
-  entryId?: string;
-
+export class SubmitExpenseDto extends AssetEntryBaseDto {
   @ApiProperty({ description: 'A heading the KIND declares — never free text.' })
   @IsString()
   @MaxLength(KIND_SHAPE_LIMITS.maxLabel)
@@ -105,34 +106,10 @@ export class SubmitExpenseDto {
   @Max(100_000_000)
   amountCents!: number;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  note?: string;
-
   @ApiPropertyOptional({ description: 'When the money moved. Today, if omitted.' })
   @IsOptional()
   @IsDateString()
   occurredAt?: string;
-
-  @ApiPropertyOptional({ description: 'The key returned by presign. Checked against this asset.' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(400)
-  receiptKey?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  receiptName?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  receiptMime?: string;
 }
 
 /**

@@ -2,6 +2,7 @@
  * Completing a job with its report from a phone that was offline.
  */
 import { TaskStatus } from '@hbcfield/shared';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { ReportsService } from '../reports.service';
 
 const TAP = new Date('2026-09-14T09:40:00.000Z');
@@ -28,7 +29,7 @@ function build(task: Record<string, unknown>) {
     },
   };
   prisma.$transaction = jest.fn((fn: any) => fn(prisma));
-  const service = new ReportsService(prisma, null, {} as any, { emit: jest.fn() } as any);
+  const service = new ReportsService(prisma, null, {} as any, { emit: jest.fn() } as any, new TaskAccessService(prisma));
   return { service, prisma, created };
 }
 

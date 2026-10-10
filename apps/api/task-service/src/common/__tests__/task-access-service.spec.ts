@@ -53,13 +53,13 @@ describe('TaskAccessService — the one task gate', () => {
   it('a co-assignee (crew row only) may list the job’s photos', async () => {
     prisma.task.findUnique.mockResolvedValue(task());
     prisma.taskAssignee.findFirst.mockResolvedValue({ id: 'row' });
-    const attachments = new AttachmentsService(prisma, null, new MediaSigner(null), { emit: jest.fn() } as never);
+    const attachments = new AttachmentsService(prisma, null, new MediaSigner(null), { emit: jest.fn() } as never, new TaskAccessService(prisma));
     await expect(attachments.findByTask({ taskId: 't-1', ...crewMember } as never)).resolves.toBeDefined();
   });
 
   it('somebody NOT on the job is still refused its photos', async () => {
     prisma.task.findUnique.mockResolvedValue(task());
-    const attachments = new AttachmentsService(prisma, null, new MediaSigner(null), { emit: jest.fn() } as never);
+    const attachments = new AttachmentsService(prisma, null, new MediaSigner(null), { emit: jest.fn() } as never, new TaskAccessService(prisma));
     await expect(attachments.findByTask({ taskId: 't-1', ...crewMember } as never)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
@@ -105,7 +105,7 @@ describe('TaskAccessService — the one task gate', () => {
   });
 
   describe('custom-field values go through the same gate', () => {
-    const fields = () => new CustomFieldsService(prisma);
+    const fields = () => new CustomFieldsService(prisma, new TaskAccessService(prisma));
 
     it('refuses reading the values of a task the caller cannot open', async () => {
       prisma.task.findUnique.mockResolvedValue(task());

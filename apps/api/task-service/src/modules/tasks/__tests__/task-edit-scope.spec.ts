@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { TaskAccessService } from '../../../common/task-access/task-access.service';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Role } from '@hbcfield/shared';
@@ -77,7 +78,7 @@ describe('TasksService — edit / move / assign scope', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS,
+        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService,
         { provide: JobTimeService, useValue: {} },
         ClockGateService,
         { provide: CrewService, useValue: {} },

@@ -1,14 +1,12 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Processor } from '@nestjs/bullmq';
+import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, ASSET_JOB_TYPES, buildJobError } from '@hbcfield/shared';
+import { QUEUE_NAMES, ASSET_JOB_TYPES } from '@hbcfield/shared';
 import { AssetsService } from './assets.service';
 import { AssetCatalogService } from './asset-catalog.service';
 
 @Processor(QUEUE_NAMES.ASSETS)
-export class AssetsProcessor extends WorkerHost {
-  private readonly logger = new Logger(AssetsProcessor.name);
-
+export class AssetsProcessor extends JobProcessor {
   constructor(
     private readonly assetsService: AssetsService,
     private readonly catalog: AssetCatalogService,
@@ -16,19 +14,7 @@ export class AssetsProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
-    this.logger.log(`Processing job ${job.id} of type ${job.name}`);
-
-    try {
-      return await this.handleJob(job);
-    } catch (error) {
-      this.logger.error(`Job ${job.id} failed: ${error.message}`);
-      // Structured error for the gateway; 4xx → no retry (H3).
-      throw buildJobError(error);
-    }
-  }
-
-  private async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<any> {
     switch (job.name) {
       // Categories
       case ASSET_JOB_TYPES.CREATE_CATEGORY:

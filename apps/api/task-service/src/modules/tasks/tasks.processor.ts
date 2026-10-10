@@ -1,7 +1,7 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Processor } from '@nestjs/bullmq';
+import { JobProcessor } from '../../common/queue/job-processor';
 import { Job } from 'bullmq';
-import { QUEUE_NAMES, TASK_JOB_TYPES, buildJobError } from '@hbcfield/shared';
+import { QUEUE_NAMES, TASK_JOB_TYPES } from '@hbcfield/shared';
 import { TasksService } from './tasks.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { JobPauseService } from './handover/job-pause.service';
@@ -18,9 +18,7 @@ import { CrewService } from './handover/crew.service';
  * Only WRITE operations go through BullMQ for exactly-once guarantees.
  */
 @Processor(QUEUE_NAMES.TASKS, { concurrency: 10 })
-export class TasksProcessor extends WorkerHost {
-  private readonly logger = new Logger(TasksProcessor.name);
-
+export class TasksProcessor extends JobProcessor {
   constructor(
     private readonly tasksService: TasksService,
     private readonly attachmentsService: AttachmentsService,
@@ -31,28 +29,9 @@ export class TasksProcessor extends WorkerHost {
   }
 
   /**
-   * Process incoming jobs from the queue
-   * Routes each job to the appropriate handler based on job name
-   */
-  async process(job: Job<any, any, string>): Promise<any> {
-    this.logger.debug(`Processing job ${job.id}: ${job.name}`);
-
-    try {
-      const result = await this.handleJob(job);
-      this.logger.debug(`Job ${job.id} completed successfully`);
-      return result;
-    } catch (error) {
-      this.logger.error(`Job ${job.id} failed: ${error.message}`);
-      // Structured error for the gateway to parse. 4xx → UnrecoverableError so a
-      // deterministic business failure isn't retried 3× (H3).
-      throw buildJobError(error);
-    }
-  }
-
-  /**
    * Route job to appropriate handler based on job name
    */
-  private async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<any> {
     const { name, data } = job;
 
     switch (name) {

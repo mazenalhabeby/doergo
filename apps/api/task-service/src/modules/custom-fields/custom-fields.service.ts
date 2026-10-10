@@ -3,7 +3,7 @@ import {
   Logger,
   BadRequestException,
   ConflictException,
-  Optional } from '@nestjs/common';
+} from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
@@ -14,14 +14,9 @@ export class CustomFieldsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    // Optional only so a test that builds this service by hand still gets it.
-    @Optional() private readonly injectedTaskAccess?: TaskAccessService,
+    private readonly taskAccess: TaskAccessService,
   ) {}
 
-  private _taskAccess?: TaskAccessService;
-  private get taskAccess(): TaskAccessService {
-    return (this._taskAccess ??= this.injectedTaskAccess ?? new TaskAccessService(this.prisma));
-  }
 
   /**
    * List all custom field definitions for an organization
