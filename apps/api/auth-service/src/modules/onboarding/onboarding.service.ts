@@ -1,4 +1,4 @@
-import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
+import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseCurrency, CURRENCY_INVALID_MESSAGE, clampListLimit } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -560,7 +560,7 @@ export class OnboardingService {
     limit?: number;
   }) {
     const page = data.page || 1;
-    const limit = Math.min(data.limit || 10, 50);
+    const limit = clampListLimit(data.limit, 10, 50);
     const skip = (page - 1) * limit;
 
     const where: any = { organizationId: data.organizationId };

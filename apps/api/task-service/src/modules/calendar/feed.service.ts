@@ -10,6 +10,7 @@ import {
   success,
   type IcsEvent,
   type Repeat,
+  toISODateString,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
@@ -122,7 +123,7 @@ export class FeedService {
     for (const l of leave) {
       out.push({
         uid: `leave-${l.id}@hbcfield.com`, title: `Time off (${String(l.type).toLowerCase()})`, allDay: true,
-        start: l.startDate.toISOString().slice(0, 10), end: addDaysStr(l.endDate.toISOString().slice(0, 10), 1), updatedAt: l.updatedAt,
+        start: toISODateString(l.startDate), end: addDaysStr(toISODateString(l.endDate), 1), updatedAt: l.updatedAt,
       });
     }
     for (const t of jobs) {

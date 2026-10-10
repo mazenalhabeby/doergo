@@ -1,3 +1,4 @@
+import { toISODateString } from '../utils/date';
 /**
  * Cover: will there be enough people, and are they the right people?
  *
@@ -239,7 +240,7 @@ export function eachDay(from: DateKey, to: DateKey, max = 366): DateKey[] {
   const [y, m, d] = from.split('-').map(Number);
   const cur = new Date(Date.UTC(y!, m! - 1, d!));
   for (let i = 0; i < max; i++) {
-    const k = cur.toISOString().slice(0, 10);
+    const k = toISODateString(cur);
     if (k > to) break;
     out.push(k);
     cur.setUTCDate(cur.getUTCDate() + 1);

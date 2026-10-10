@@ -1,3 +1,4 @@
+import { toISODateString } from '../utils/date';
 /**
  * The rota — who works which shift on which day — as ONE set of rules.
  *
@@ -27,7 +28,7 @@ export interface RotaAssignmentLike {
   shift?: { isActive?: boolean } | null;
 }
 
-const dayOf = (d: Date | string) => (typeof d === 'string' ? d.slice(0, 10) : d.toISOString().slice(0, 10));
+const dayOf = (d: Date | string) => (typeof d === 'string' ? d.slice(0, 10) : toISODateString(d));
 
 /** 0 = Sunday … 6 = Saturday, of a calendar day. */
 export function dowOfDay(dateStr: string): number {
@@ -101,7 +102,7 @@ export class RotaDayRefused extends Error {
 
 const addDaysStr = (dateStr: string, n: number) => {
   const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(Date.UTC(y!, m! - 1, d! + n)).toISOString().slice(0, 10);
+  return toISODateString(new Date(Date.UTC(y!, m! - 1, d! + n)));
 };
 
 /**

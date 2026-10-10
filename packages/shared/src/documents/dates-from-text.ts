@@ -1,3 +1,4 @@
+import { toISODateString } from '../utils/date';
 /**
  * Dates read off a document that has no machine-readable zone.
  *
@@ -82,7 +83,7 @@ export function findDates(text: string, now: Date = new Date()): FoundDate[] {
     const date = new Date(Date.UTC(y, m - 1, d));
     // Rejects 31 February, which the range check above lets through.
     if (date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return;
-    const iso = date.toISOString().slice(0, 10);
+    const iso = toISODateString(date);
     if (seen.has(iso)) return;
     seen.add(iso);
     out.push({ iso, raw });

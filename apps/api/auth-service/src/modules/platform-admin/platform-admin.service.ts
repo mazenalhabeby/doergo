@@ -4,7 +4,7 @@ import { StripeService } from '../billing/stripe.service';
 import { BillingService } from '../billing/billing.service';
 import { OrgBillService } from '../billing/org-bill.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, validateAgreedPrice, modeRequiresBillingEmail, clampListLimit, platformCan } from '@hbcfield/shared';
+import { success, validateAgreedPrice, modeRequiresBillingEmail, clampListLimit, platformCan, formatCents, toISODateString } from '@hbcfield/shared';
 
 // Lean shapes — select only what billing/seat classification needs (perf).
 const ORG_SELECT = {
@@ -592,8 +592,8 @@ export class PlatformAdminService {
 
     this.logger.warn(
       `[PLATFORM] Org "${org.name}" (${org.id}) agreed price ` +
-        `${org.agreedMonthlyCents == null ? 'set' : 'changed'} to EUR${(parsed.monthlyCents / 100).toFixed(2)} ` +
-        `(list EUR${(listCents / 100).toFixed(2)})${parsed.until ? ` until ${parsed.until.toISOString().slice(0, 10)}` : ''} ` +
+        `${org.agreedMonthlyCents == null ? 'set' : 'changed'} to ${formatCents(parsed.monthlyCents, 'EUR')} ` +
+        `(list ${formatCents(listCents, 'EUR')})${parsed.until ? ` until ${toISODateString(parsed.until)}` : ''} ` +
         `by ${data.byUserId ?? 'operator'}`,
     );
     return success({
@@ -641,7 +641,7 @@ export class PlatformAdminService {
 
     this.logger.warn(
       `[PLATFORM] Org "${org.name}" (${org.id}) agreed price REMOVED ` +
-        `(was EUR${(org.agreedMonthlyCents / 100).toFixed(2)}) by ${data.byUserId ?? 'operator'}`,
+        `(was ${formatCents(org.agreedMonthlyCents, 'EUR')}) by ${data.byUserId ?? 'operator'}`,
     );
     return success({ id: org.id, agreedMonthlyCents: null });
   }

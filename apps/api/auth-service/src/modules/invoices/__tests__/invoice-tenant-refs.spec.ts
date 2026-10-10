@@ -12,6 +12,7 @@ describe('invoice — only this organization’s workspace, jobs and reports', (
   const make = () => {
     const prisma: any = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue(null) },
+      organization: { findUnique: jest.fn().mockResolvedValue({ timezone: null }) },
       task: { count: jest.fn() },
       serviceReport: { count: jest.fn() },
       user: { count: jest.fn().mockResolvedValue(0) },

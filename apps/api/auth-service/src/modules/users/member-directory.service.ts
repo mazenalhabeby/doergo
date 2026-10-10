@@ -1,4 +1,4 @@
-import { Role, personSearchOr } from '@hbcfield/shared';
+import { Role, personSearchOr, clampListLimit } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ListOrgMembersDto } from './dto';
@@ -184,7 +184,7 @@ export class MemberDirectoryService {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
     const page = Math.max(1, Number(dto.page) || 1);
-    const limit = Math.min(200, Math.max(1, Number(dto.limit) || 10));
+    const limit = clampListLimit(dto.limit, 10, 200);
 
     // Members = staff only. Portal customers (they carry a customerId) live in
     // Clients Portals, not here — excluding them keeps admins from accidentally

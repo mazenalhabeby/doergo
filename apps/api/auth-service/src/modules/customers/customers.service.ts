@@ -3,7 +3,7 @@ import { sanitizeLabelValueRows, CUSTOMER_DETAIL_LIMITS } from '../../common/rec
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps } from '@hbcfield/shared';
+import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps, toISODateString } from '@hbcfield/shared';
 import { findPrior, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
 import { contactMatchKeys } from '@hbcfield/shared';
 
@@ -1077,7 +1077,7 @@ export class CustomersService {
       const t = v ? Date.parse(v) : NaN;
       return Number.isFinite(t) && Math.abs(t - now) <= 2 * DAY ? t : fallback;
     };
-    const utcStart = new Date(new Date(now).toISOString().slice(0, 10)).getTime();
+    const utcStart = new Date(toISODateString(new Date(now))).getTime();
     /*
       ⚠️ The two ends are checked TOGETHER. Each alone within two days of now
       still let a reversed window through (overdue counted against the later

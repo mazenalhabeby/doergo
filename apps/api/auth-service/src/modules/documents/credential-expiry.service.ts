@@ -10,6 +10,7 @@ import {
   credentialStanding,
   visibleDocumentWhere,
   PERSON_BRIEF_SELECT,
+  toISODateString,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -154,7 +155,7 @@ export class CredentialExpiryService {
           credential: doc.type.label,
           title: doc.title,
           daysLeft: left,
-          expiresOn: doc.expiresOn.toISOString().slice(0, 10),
+          expiresOn: toISODateString(doc.expiresOn),
           standing: credentialStanding(doc.expiresOn, now),
           // The member is told by the handler regardless; these are the people
           // who plan the work and would otherwise find out on the day.

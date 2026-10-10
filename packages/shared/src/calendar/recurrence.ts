@@ -8,6 +8,7 @@
  * after the clocks change.
  */
 import { addDaysStr, localPartsIn, zonedWallTimeToUtc } from '../attendance/zoned-time';
+import { toISODateString } from '../utils/date';
 
 export type RepeatFreq = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
@@ -66,7 +67,7 @@ function addMonthsStr(dateStr: string, months: number): string | null {
   // The 31st does not exist every month — skip that month rather than drifting to the 1st.
   if (d! > last) return null;
   t.setUTCDate(d!);
-  return t.toISOString().slice(0, 10);
+  return toISODateString(t);
 }
 
 /**

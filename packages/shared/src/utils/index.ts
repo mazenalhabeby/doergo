@@ -31,3 +31,7 @@ export * from './zoned-time';
 
 // CSV — formula-injection-safe cells and files (web exports + task-service)
 export * from './csv';
+
+// Which zone a workspace's "today" is in — workspace, else organization, else UTC
+export * from './workspace-zone';
+export * from './zone-parts';

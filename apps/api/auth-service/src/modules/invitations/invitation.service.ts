@@ -4,7 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { SERVICE_NAMES } from '@hbcfield/shared';
+import { SERVICE_NAMES, clampListLimit } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { DocumentsService } from '../documents/documents.service';
 import { BillingService } from '../billing/billing.service';
@@ -734,7 +734,7 @@ export class InvitationService {
     limit?: number;
   }) {
     const page = data.page || 1;
-    const limit = Math.min(data.limit || 10, 50);
+    const limit = clampListLimit(data.limit, 10, 50);
     const skip = (page - 1) * limit;
 
     const where: any = { organizationId: data.organizationId };

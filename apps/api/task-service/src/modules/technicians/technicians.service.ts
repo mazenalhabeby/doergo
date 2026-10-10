@@ -1,4 +1,4 @@
-import { assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey } from '@hbcfield/shared';
+import { assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
@@ -21,17 +21,11 @@ import {
   CancelTimeOffDto,
   GetAvailabilityDto,
 } from './dto';
+import { workspaceZone } from '../../common/zone.util';
 
-/**
- * A leave date as the member wrote it: YYYY-MM-DD, no clock.
- *
- * UTC rather than local because leave is stored at midnight UTC — reading it
- * back through the server's local zone moves a day off by one for anybody west
- * of Greenwich, which in a notification is simply the wrong date.
- */
-function toDateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
+// Leave dates are Postgres DATEs (stored at midnight UTC), so they are read back
+// with toISODateString — the UTC day IS the stored day. Through the server's
+// local zone they would move a day for anybody west of Greenwich.
 
 @Injectable()
 export class TechniciansService {
@@ -156,6 +150,7 @@ export class TechniciansService {
         routeStartedAt: true,
         routeEndedAt: true,
         routeDistance: true,
+        space: { select: { timezone: true } },
       },
     });
 
@@ -173,6 +168,7 @@ export class TechniciansService {
       select: {
         totalMinutes: true,
         clockInAt: true,
+        location: { select: { timezone: true } },
       },
     });
 
@@ -218,7 +214,8 @@ export class TechniciansService {
     );
 
     // Build daily trends
-    const trends = this.buildDailyTrends(tasks, timeEntries, start, end);
+    const orgZone = await workspaceZone(this.prisma, { organizationId });
+    const trends = this.buildDailyTrends(tasks, timeEntries, start, end, orgZone);
 
     return success({
       period: {
@@ -303,13 +300,17 @@ export class TechniciansService {
       status: string;
       createdAt: Date;
       updatedAt: Date;
+      space?: { timezone: string | null } | null;
     }>,
     timeEntries: Array<{
       totalMinutes: number | null;
       clockInAt: Date;
+      location?: { timezone: string | null } | null;
     }>,
     start: Date,
     end: Date,
+    /** Where a record's own workspace names no zone. */
+    orgZone: string,
   ) {
     const trends: Array<{
       date: string;
@@ -326,7 +327,7 @@ export class TechniciansService {
     // Initialize all days in range
     const current = new Date(start);
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = toISODateString(current);
       dayMap.set(dateStr, { tasksCompleted: 0, hoursWorked: 0 });
       current.setDate(current.getDate() + 1);
     }
@@ -337,7 +338,9 @@ export class TechniciansService {
         task.status === TaskStatus.COMPLETED ||
         task.status === TaskStatus.CLOSED
       ) {
-        const dateStr = task.updatedAt.toISOString().split('T')[0];
+        // The day it was finished WHERE it was finished — the UTC day put a
+        // 00:30 Vienna completion on the day before.
+        const dateStr = dayKeyIn(task.updatedAt, task.space?.timezone || orgZone);
         const day = dayMap.get(dateStr);
         if (day) {
           day.tasksCompleted++;
@@ -347,7 +350,7 @@ export class TechniciansService {
 
     // Sum hours worked per day
     for (const entry of timeEntries) {
-      const dateStr = entry.clockInAt.toISOString().split('T')[0];
+      const dateStr = dayKeyIn(entry.clockInAt, entry.location?.timezone || orgZone);
       const day = dayMap.get(dateStr);
       if (day && entry.totalMinutes) {
         day.hoursWorked += entry.totalMinutes / 60;
@@ -593,8 +596,8 @@ export class TechniciansService {
         memberId: technicianId,
         memberName: `${timeOff.technician.firstName} ${timeOff.technician.lastName}`,
         type,
-        startDate: toDateKey(start),
-        endDate: toDateKey(end),
+        startDate: toISODateString(start),
+        endDate: toISODateString(end),
         reason: reason ?? null,
         // The approver is told what it costs at the same moment they are told
         // it exists, so the notification is worth acting on rather than a
@@ -659,7 +662,6 @@ export class TechniciansService {
       orderBy: { startDate: 'asc' },
     });
     if (overlap) {
-      const day = (d: Date) => d.toISOString().slice(0, 10);
       /*
         Thrown with an object payload, not a string.
 
@@ -672,13 +674,13 @@ export class TechniciansService {
       throw new BadRequestException({
         code: 'TIMEOFF_OVERLAP',
         params: {
-          from: day(overlap.startDate),
-          to: day(overlap.endDate),
+          from: toISODateString(overlap.startDate),
+          to: toISODateString(overlap.endDate),
           status: overlap.status,
         },
         message:
           `This overlaps time off already recorded for this employee ` +
-          `(${day(overlap.startDate)} to ${day(overlap.endDate)}, ${overlap.status.toLowerCase()}).`,
+          `(${toISODateString(overlap.startDate)} to ${toISODateString(overlap.endDate)}, ${overlap.status.toLowerCase()}).`,
       });
     }
 
@@ -742,7 +744,7 @@ export class TechniciansService {
    */
   private async workingDaysOf(organizationId: string, userId: string, start: Date, end: Date, lenient = false): Promise<number> {
     const count = await this.calendarRules.countLeaveFor(
-      organizationId, userId, start.toISOString().slice(0, 10), end.toISOString().slice(0, 10),
+      organizationId, userId, toISODateString(start), toISODateString(end),
     );
     if (!lenient && count.counted === 0) {
       throw new BadRequestException({
@@ -853,13 +855,13 @@ export class TechniciansService {
     const yearStart = `${year}-01-01`, yearEnd = `${year}-12-31`;
     const relevant = timeOffs.filter((r) =>
       (r.type ?? 'VACATION') === 'VACATION' && (r.status === 'APPROVED' || r.status === 'PENDING')
-      && r.startDate.toISOString().slice(0, 10) <= yearEnd && r.endDate.toISOString().slice(0, 10) >= yearStart);
+      && toISODateString(r.startDate) <= yearEnd && toISODateString(r.endDate) >= yearStart);
     let taken = 0;
     let pending = 0;
     if (relevant.length && technician.organizationId) {
       const { rules, roster } = await this.calendarRules.personRules(technician.organizationId, technician.id, yearStart, yearEnd);
       for (const r of relevant) {
-        const from = r.startDate.toISOString().slice(0, 10), to = r.endDate.toISOString().slice(0, 10);
+        const from = toISODateString(r.startDate), to = toISODateString(r.endDate);
         const cost = countLeaveDays(from < yearStart ? yearStart : from, to > yearEnd ? yearEnd : to, rules, roster).counted;
         if (r.status === 'APPROVED') taken += cost;
         else pending += cost;
@@ -876,7 +878,7 @@ export class TechniciansService {
       // one everybody else has.
       prorated,
       fullAllowance,
-      startedOn: prorated && start ? new Date(start).toISOString().slice(0, 10) : null,
+      startedOn: prorated && start ? toISODateString(new Date(start)) : null,
     };
   }
 
@@ -1087,8 +1089,8 @@ export class TechniciansService {
       memberId: updated.technicianId,
       approved,
       rejectionReason: approved ? null : (rejectionReason ?? null),
-      startDate: toDateKey(updated.startDate),
-      endDate: toDateKey(updated.endDate),
+      startDate: toISODateString(updated.startDate),
+      endDate: toISODateString(updated.endDate),
     });
 
     return success(updated);
@@ -1353,5 +1355,5 @@ export function availabilityDays(q: { date?: string; startDate?: string; endDate
     return days;
   }
   // Single day: the one asked for, else today — the same UTC date this endpoint always used.
-  return [q.date ? dateKeyOf(q.date) : now.toISOString().slice(0, 10)];
+  return [q.date ? dateKeyOf(q.date) : toISODateString(now)];
 }

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { crossRate, isSupportedCurrency } from '@hbcfield/shared';
+import { crossRate, isSupportedCurrency, toISODateString } from '@hbcfield/shared';
 
 /**
  * The European Central Bank's daily euro reference rates — what an invoice in
@@ -54,13 +54,13 @@ export class ExchangeRateService {
   /** `1 {from} = rate {to}` on `day` (YYYY-MM-DD), or null. */
   async rate(from: string, to: string, day: string): Promise<ExchangeRateAnswer | null> {
     if (!isSupportedCurrency(from) || !isSupportedCurrency(to) || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toISODateString(new Date());
     const asked = day > today ? today : day;
     if (from === to) return { rate: 1, date: asked, source: 'ECB' };
 
     const cutoff = new Date();
     cutoff.setUTCDate(cutoff.getUTCDate() - RECENT_COVERS_DAYS);
-    const recent = asked >= cutoff.toISOString().slice(0, 10);
+    const recent = asked >= toISODateString(cutoff);
     const days = recent
       ? await this.file(RECENT_URL, RECENT_TTL_MS, RECENT_TIMEOUT_MS)
       : await this.file(HISTORY_URL, HISTORY_TTL_MS, HISTORY_TIMEOUT_MS);

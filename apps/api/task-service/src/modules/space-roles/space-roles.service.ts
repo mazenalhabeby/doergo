@@ -28,7 +28,8 @@ import {
   effectiveHoursBasis,
   isHoursBasis,
   type HoursBasis,
-  COST_ON_PROFILE_MESSAGE
+  COST_ON_PROFILE_MESSAGE,
+  toISODateString,
 } from '@hbcfield/shared';
 
 // Permission keys that make sense on a SPACE role.
@@ -908,7 +909,7 @@ export class SpaceRolesService {
     const today = utcTodayKey();
     return success(
       rows.map((r) => {
-        const day = r.effectiveFrom.toISOString().slice(0, 10);
+        const day = toISODateString(r.effectiveFrom);
         return { kind: r.kind, cents: r.cents, effectiveFrom: day, state: day > today ? 'scheduled' : 'past' };
       }),
     );

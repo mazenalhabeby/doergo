@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, NotFoundException, Logger, Optional } 
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay } from '@hbcfield/shared';
+import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay, toISODateString } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -430,7 +430,7 @@ export class ShiftsService {
       const p = people.get(id)!;
       const mine = byUser.get(id) ?? [];
       const cells = days.map((date) => {
-        if (leave.some((l) => l.technicianId === id && l.startDate.toISOString().slice(0, 10) <= date && l.endDate.toISOString().slice(0, 10) >= date)) {
+        if (leave.some((l) => l.technicianId === id && toISODateString(l.startDate) <= date && toISODateString(l.endDate) >= date)) {
           return { date, kind: 'leave' as const };
         }
         const a = rotaFor(mine as never[], date) as (typeof mine)[number] | null;
@@ -634,9 +634,9 @@ export class ShiftsService {
 
 /** The Monday-to-Sunday week holding `from` (default: today, UTC day), as YYYY-MM-DD. */
 export function weekOf(from?: string): string[] {
-  const base = from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00.000Z`) : new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z');
+  const base = from && /^\d{4}-\d{2}-\d{2}$/.test(from) ? new Date(`${from}T00:00:00.000Z`) : new Date(toISODateString(new Date()) + 'T00:00:00.000Z');
   const monday = new Date(base.getTime() - ((base.getUTCDay() + 6) % 7) * 86_400_000);
-  return Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86_400_000).toISOString().slice(0, 10));
+  return Array.from({ length: 7 }, (_, i) => toISODateString(new Date(monday.getTime() + i * 86_400_000)));
 }
 
 /** The earliest of some dates — where a rota change can start to matter. */

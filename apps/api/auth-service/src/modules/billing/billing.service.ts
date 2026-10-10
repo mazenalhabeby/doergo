@@ -22,6 +22,8 @@ import {
   trialDaysLeft,
   TRIAL_DAYS,
   runWithCronLock,
+  formatCents,
+  toISODateString,
 } from '@hbcfield/shared';
 import type { PlanTier, SeatCounts, SubStatus, SubscriptionView } from '@hbcfield/shared';
 
@@ -380,8 +382,8 @@ export class BillingService {
             fromCents: agreement.listCentsAtAgreement,
             toCents: agreement.monthlyCents,
             detail:
-              `Agreed €${(agreement.monthlyCents / 100).toFixed(2)} ends ` +
-              `${agreement.until ? new Date(agreement.until).toISOString().slice(0, 10) : 'unknown'}` +
+              `Agreed ${formatCents(agreement.monthlyCents)} ends ` +
+              `${agreement.until ? toISODateString(new Date(agreement.until)) : 'unknown'}` +
               `${agreement.note ? ` — ${agreement.note}` : ''}`,
           });
         }
@@ -392,9 +394,9 @@ export class BillingService {
             fromCents: agreement.listCentsAtAgreement,
             toCents: bill.listMonthlyCents,
             detail:
-              `Agreed €${(agreement.monthlyCents / 100).toFixed(2)}; list was ` +
-              `€${((agreement.listCentsAtAgreement ?? 0) / 100).toFixed(2)} at the agreement and is now ` +
-              `€${(bill.listMonthlyCents / 100).toFixed(2)}`,
+              `Agreed ${formatCents(agreement.monthlyCents)}; list was ` +
+              `${formatCents(agreement.listCentsAtAgreement ?? 0)} at the agreement and is now ` +
+              formatCents(bill.listMonthlyCents),
           });
         }
       } catch (e) {

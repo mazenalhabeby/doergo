@@ -1,3 +1,4 @@
+import { toISODateString } from '../utils/date';
 /**
  * The barcode on a North American driving licence.
  *
@@ -85,7 +86,7 @@ export function aamvaDate(value: string, country: string | null): string | null 
   const date = new Date(Date.UTC(year, month - 1, day));
   // Rejects 31 February, which the range check above lets through.
   if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
-  return date.toISOString().slice(0, 10);
+  return toISODateString(date);
 }
 
 /** Parse a scanned barcode, or return null if it is not one of these. */

@@ -219,7 +219,7 @@ export function rateStartProblem(day: string | null, today: string): 'INVALID' |
 
 /** Today as a calendar day in UTC — the server's notion of "today" for a rate with no zone. */
 export function utcTodayKey(now: Date = new Date()): string {
-  return now.toISOString().slice(0, 10);
+  return toISODateString(now);
 }
 
 /**

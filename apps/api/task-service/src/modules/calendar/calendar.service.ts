@@ -16,6 +16,7 @@ import {
   type CalendarPlace,
   type DayKind,
   TaskStatus,
+  toISODateString,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover.service';
 import { CalendarRulesService, type PlaceCalendar } from './calendar-rules.service';
@@ -176,7 +177,7 @@ export class CalendarService {
     return rows.map((r) => ({
       id: `leave:${r.id}`, kind: 'leave' as const, layer: 'leave' as const,
       title: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
-      start: r.startDate.toISOString().slice(0, 10), end: r.endDate.toISOString().slice(0, 10), allDay: true,
+      start: toISODateString(r.startDate), end: toISODateString(r.endDate), allDay: true,
       personId: r.technicianId, personName: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
       status: r.status, note: r.type, ref: { type: 'timeOff' as const, id: r.id },
     }));
@@ -245,7 +246,7 @@ export class CalendarService {
     });
     return rows.map((d) => ({
       id: `document:${d.id}`, kind: 'document' as const, layer: 'documents' as const, title: d.title,
-      start: d.expiresOn!.toISOString().slice(0, 10), end: d.expiresOn!.toISOString().slice(0, 10), allDay: true,
+      start: toISODateString(d.expiresOn!), end: toISODateString(d.expiresOn!), allDay: true,
       ref: { type: 'document' as const, id: d.id },
     }));
   }

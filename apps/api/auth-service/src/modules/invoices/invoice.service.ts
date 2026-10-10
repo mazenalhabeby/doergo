@@ -17,6 +17,9 @@ import {
   lineAmount,
   roundCents,
   PERSON_BRIEF_SELECT,
+  toISODateString,
+  todayKey,
+  workspaceZone,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 import { LegalEntitiesService } from './legal-entities.service';
@@ -42,12 +45,21 @@ export class InvoiceService {
     return currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
   }
 
+  /**
+   * "Today" for an invoice that names no date — the workspace's day, else the
+   * organization's. The UTC day dated an invoice issued at 00:30 in Vienna the
+   * day before.
+   */
+  private async todayFor(organizationId: string, spaceId?: string | null): Promise<string> {
+    return todayKey(await workspaceZone(this.prisma, { organizationId, spaceId }));
+  }
+
   /** `1 {currency} = rate {the organization's}` on a day, for the invoice screen. */
   async exchangeRate(data: { organizationId: string; currency: string; date?: string }) {
     const parsed = parseCurrency(data.currency);
     if (!parsed.ok || !parsed.currency) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
     const base = await this.organizationCurrency(data.organizationId);
-    const day = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : new Date().toISOString().slice(0, 10);
+    const day = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : await this.todayFor(data.organizationId);
     const answer = await this.rates.rate(parsed.currency, base, day);
     return { success: true, data: { from: parsed.currency, to: base, ...(answer ?? { rate: null, date: null, source: null }) } };
   }
@@ -78,8 +90,8 @@ export class InvoiceService {
     }
     const typed = parseExchangeRate(input.exchangeRate);
     if (!typed.ok) return { error: EXCHANGE_RATE_INVALID_MESSAGE };
-    const issued = input.issueDate ? new Date(input.issueDate) : new Date();
-    const issueDay = Number.isNaN(issued.getTime()) ? new Date().toISOString().slice(0, 10) : issued.toISOString().slice(0, 10);
+    const issued = input.issueDate ? new Date(input.issueDate) : null;
+    const issueDay = issued && !Number.isNaN(issued.getTime()) ? toISODateString(issued) : await this.todayFor(organizationId);
     if (typed.rate != null) {
       const source = input.exchangeRateSource === 'ECB' ? 'ECB' : 'MANUAL';
       const day = input.exchangeRateDate && /^\d{4}-\d{2}-\d{2}$/.test(input.exchangeRateDate) ? input.exchangeRateDate : issueDay;
@@ -244,6 +256,7 @@ export class InvoiceService {
     // pick the same sequence. @@unique([organizationId, invoiceNumber]) makes the
     // collision loud (P2002) instead of silently duplicating; retry a few times,
     // re-reading the latest number each pass, before surfacing the error.
+    const defaultIssueDay = await this.todayFor(data.organizationId, foundSpaceId);
     let invoice;
     for (let attempt = 0; ; attempt++) {
       const invoiceNumber = await this.generateInvoiceNumber(data.organizationId, issuer.entity.invoicePrefix);
@@ -264,7 +277,7 @@ export class InvoiceService {
             taxAmount,
             total,
             // Calendar DATES, stored as the start of that day in UTC (read back by their UTC date).
-            issueDate: invoiceDay(data.issueDate) ?? dayStart(new Date().toISOString().slice(0, 10))!,
+            issueDate: invoiceDay(data.issueDate) ?? dayStart(defaultIssueDay)!,
             dueDate: invoiceDay(data.dueDate) ?? undefined,
             /*
               The days billed, as the client is told them — kept rather than
@@ -1392,7 +1405,7 @@ export class InvoiceService {
       CLOCKED: minutesByDay(entries, jobMarks, dayOf, () => 'CLOCKED').minutes,
       SHIFT: minutesByDay(entries, jobMarks, dayOf, () => 'SHIFT').minutes,
     } as const;
-    const key = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+    const key = (d: Date | null) => (d ? toISODateString(d) : null);
     const alreadyBilled = (userId: string, kind: 'HOURS' | 'DAYS', d: string) =>
       billedRuns.some((r) => r.workerId === userId && r.lineKind === kind && key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!);
     const inPeriod = (d: string) => (!fromDay || d >= fromDay) && (!toDay || d <= toDay);

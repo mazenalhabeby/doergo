@@ -16,6 +16,7 @@ import {
   type LeaveCount,
   type ResolvedHoliday,
   type RosterFn,
+  toISODateString,
 } from '@hbcfield/shared';
 import { shiftRuleOf } from '../technicians/cover.service';
 import { libraryHolidaysForYears } from './holiday-library';
@@ -109,7 +110,7 @@ export class CalendarRulesService {
       },
       select: { id: true, spaceId: true, libraryKey: true, date: true, days: true, name: true, halfDay: true, removed: true, confirmed: true },
     });
-    return rows.map((r) => ({ ...r, date: r.date.toISOString().slice(0, 10) }));
+    return rows.map((r) => ({ ...r, date: toISODateString(r.date) }));
   }
 
   /** The organization, or one workspace of it. Null when the workspace is not this org's. */

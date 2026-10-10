@@ -22,6 +22,7 @@ import {
   type CoverRangeDay,
   type CoverVerdict,
   type DateKey,
+  toISODateString,
 } from '@hbcfield/shared';
 
 /**
@@ -43,14 +44,13 @@ import {
 export function shiftRuleOf(r: {
   recurrence: string; daysOfWeek: number[]; daysOfMonth: number[]; dates: Date[]; effectiveFrom: Date; effectiveTo: Date | null;
 }) {
-  const key = (d: Date) => d.toISOString().slice(0, 10);
   return {
     recurrence: r.recurrence as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'ONE_OFF',
     daysOfWeek: r.daysOfWeek,
     daysOfMonth: r.daysOfMonth,
-    dates: r.dates.map(key),
-    effectiveFrom: key(r.effectiveFrom),
-    effectiveTo: r.effectiveTo ? key(r.effectiveTo) : null,
+    dates: r.dates.map(toISODateString),
+    effectiveFrom: toISODateString(r.effectiveFrom),
+    effectiveTo: r.effectiveTo ? toISODateString(r.effectiveTo) : null,
   };
 }
 
@@ -82,7 +82,7 @@ export class CoverService {
 
   /** A Date → the local calendar day the rota means. */
   private static key(d: Date | string): DateKey {
-    return (typeof d === 'string' ? new Date(d) : d).toISOString().slice(0, 10);
+    return toISODateString((typeof d === 'string' ? new Date(d) : d));
   }
 
   /**

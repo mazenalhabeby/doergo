@@ -4,6 +4,7 @@ import {
   isCurrentSigner,
   chainProgress,
   type SignerStep,
+  clampListLimit,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -299,7 +300,7 @@ export class DocumentRegistersService {
     }
 
     const page = Math.max(1, data.page ?? 1);
-    const limit = Math.min(100, Math.max(1, data.limit ?? 25));
+    const limit = clampListLimit(data.limit, 25, 100);
 
     // The organization scope is on every branch below, never added later: it is
     // what stops a guessed type or user id reaching across tenants.

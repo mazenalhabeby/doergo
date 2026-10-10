@@ -9,7 +9,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JobPauseService } from '../tasks/handover/job-pause.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES } from '@hbcfield/shared';
+import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES, toISODateString } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
@@ -686,7 +686,7 @@ export class ApprovalService {
     const dates: string[] = [];
     while (cur <= endD) {
       if (single || (weekdays && weekdays.includes(cur.getUTCDay()))) {
-        dates.push(cur.toISOString().slice(0, 10));
+        dates.push(toISODateString(cur));
       }
       cur.setUTCDate(cur.getUTCDate() + 1);
     }

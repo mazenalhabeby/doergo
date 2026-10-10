@@ -8,6 +8,7 @@ import {
   type SignatureMode,
   scoreTemplateBinding,
   MERGE_FIELDS,
+  toISODateString,
 } from '@hbcfield/shared';
 import { documentKey, sha256 } from '@hbcfield/shared/storage';
 import { renderContractPdf } from './contract-pdf';
@@ -21,7 +22,6 @@ import {
   EMPLOYER_COMPANY_SELECT,
   contractValues,
   type ContractTerms,
-  isoDate,
   eventContext,
 } from './document-common';
 import { DocumentStorageService } from './document-storage.service';
@@ -427,7 +427,7 @@ export class DocumentTemplatesService {
     const issuedAt = new Date();
     const resolved = member
       ? contractValues(member, undefined, issuedAt)
-      : { 'contract.issuedOn': isoDate(issuedAt) };
+      : { 'contract.issuedOn': toISODateString(issuedAt) };
 
     /*
       An em dash for anything the record has not got, and the values go back to

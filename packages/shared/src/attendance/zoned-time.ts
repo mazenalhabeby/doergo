@@ -1,3 +1,5 @@
+import { toISODateString } from '../utils/date';
+import { partsDateKey, zonedParts } from '../utils/zone-parts';
 /**
  * Wall-clock time in a place, as an absolute instant.
  *
@@ -12,49 +14,15 @@
  * a year.
  */
 
-const formatters = new Map<string, Intl.DateTimeFormat>();
-
-function formatterFor(tz: string): Intl.DateTimeFormat {
-  let f = formatters.get(tz);
-  if (!f) {
-    f = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    // Cached because building one costs far more than using it, and the sweep
-    // asks the same handful of zones over and over.
-    formatters.set(tz, f);
-  }
-  return f;
-}
-
-/** Milliseconds to add to a UTC instant to reach the given zone's wall clock. */
 export function tzOffsetMs(instant: Date, tz: string): number {
   try {
-    const parts = formatterFor(tz).formatToParts(instant);
-    const g = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? '0');
-    // `% 24`: some engines print midnight as "24" under hour12:false.
-    const asUTC = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute'), g('second'));
-    return asUTC - instant.getTime();
+    const p = zonedParts(instant, tz);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - instant.getTime();
   } catch {
     return 0; // An invalid zone is treated as UTC rather than throwing mid-shift.
   }
 }
 
-/**
- * "2026-09-06", 12, 30, "Europe/Vienna" → the instant that is 12:30 there.
- *
- * Two passes on purpose. The offset is read at a naive guess, and then again at
- * the result: across a daylight-saving boundary those differ, and a single pass
- * puts the answer an hour out on exactly the two days a year when somebody is
- * most likely to be working a night shift.
- */
 export function zonedWallTimeToUtc(dateStr: string, hh: number, mm: number, tz: string): Date {
   const [y, mo, d] = dateStr.split('-').map(Number);
   const utcGuess = Date.UTC(y!, mo! - 1, d!, hh, mm, 0);
@@ -81,12 +49,11 @@ export function localPartsIn(instant: Date, tz: string): LocalParts {
   let dateStr: string;
   let minutesOfDay = 0;
   try {
-    const parts = formatterFor(tz).formatToParts(instant);
-    const g = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
-    dateStr = `${g('year')}-${g('month')}-${g('day')}`;
-    minutesOfDay = Number(g('hour')) * 60 + Number(g('minute'));
+    const p = zonedParts(instant, tz);
+    dateStr = partsDateKey(p);
+    minutesOfDay = p.hour * 60 + p.minute;
   } catch {
-    dateStr = instant.toISOString().slice(0, 10);
+    dateStr = toISODateString(instant);
     minutesOfDay = instant.getUTCHours() * 60 + instant.getUTCMinutes();
   }
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -104,5 +71,5 @@ export function parseHm(hm: string): [number, number] {
 export function addDaysStr(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   const t = new Date(Date.UTC(y!, m! - 1, d! + days));
-  return t.toISOString().slice(0, 10);
+  return toISODateString(t);
 }

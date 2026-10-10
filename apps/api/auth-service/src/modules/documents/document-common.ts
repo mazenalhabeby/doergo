@@ -12,6 +12,7 @@ import {
   documentVisibleTo,
   documentTypeKey,
   type DocumentSignerRole,
+  toISODateString,
 } from '@hbcfield/shared';
 
 /** What a caller is allowed to do, resolved by the gateway from their access. */
@@ -386,7 +387,7 @@ export function contractValues(
     : [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
   const startDate =
-    contract?.startDate ?? (member.employmentStartDate ? isoDate(member.employmentStartDate) : null);
+    contract?.startDate ?? (member.employmentStartDate ? toISODateString(member.employmentStartDate) : null);
 
   return {
     'member.fullName': `${member.firstName} ${member.lastName}`.trim(),
@@ -411,7 +412,7 @@ export function contractValues(
     'member.nationality': extra?.identity?.issuingState ?? null,
     'contract.startDate': startDate,
     'contract.weeklyHours': contract?.weeklyHours ?? null,
-    'contract.issuedOn': isoDate(issuedAt),
+    'contract.issuedOn': toISODateString(issuedAt),
     'contract.endDate': contract?.endDate ?? null,
     'contract.siteName': contract?.siteName ?? null,
     'contract.siteAddress': contract?.siteAddress ?? null,
@@ -433,9 +434,6 @@ export interface ContractTerms {
   rotation?: string;
 }
 
-export function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
 
 /**
  * Turn the signature pad's output into PNG bytes.

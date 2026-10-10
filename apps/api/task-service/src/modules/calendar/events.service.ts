@@ -36,6 +36,7 @@ import {
   CRM_CAPS_SELECT,
   crmCapsOfRow,
   crmReachesClient, personSearchOr,
+  toISODateString,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
@@ -720,7 +721,7 @@ export class EventsService {
       const sees = u.id === dto.userId || team.has(u.id);
       const days: { day: string; kind: string; leave: 'APPROVED' | 'PENDING' | null }[] = [];
       for (let d = fromKey; d <= toKey; d = addDaysStr(d, 1)) {
-        const l = leave.find((x) => x.technicianId === u.id && x.startDate.toISOString().slice(0, 10) <= d && x.endDate.toISOString().slice(0, 10) >= d);
+        const l = leave.find((x) => x.technicianId === u.id && toISODateString(x.startDate) <= d && toISODateString(x.endDate) >= d);
         const kind = r ? dayKind(d, r.rules, r.roster) : 'work';
         if (sees) days.push({ day: d, kind, leave: (l?.status as 'APPROVED' | 'PENDING') ?? null });
         else days.push({ day: d, kind: kind === 'work' && !(l && l.status === 'APPROVED') ? 'work' : 'off', leave: null });
@@ -774,7 +775,7 @@ export class EventsService {
         busy,
         works: (day: string) =>
           (!r || dayKind(day, r.rules, r.roster) === 'work')
-          && !myLeave.some((l) => l.startDate.toISOString().slice(0, 10) <= day && l.endDate.toISOString().slice(0, 10) >= day),
+          && !myLeave.some((l) => toISODateString(l.startDate) <= day && toISODateString(l.endDate) >= day),
       };
     });
     const slots = findFreeSlots({ people: persons, timezone: tz, durationMin: dur, from: start, days, limit: 3 });

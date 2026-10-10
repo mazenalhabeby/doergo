@@ -21,6 +21,7 @@
 
 import { parseMrz, type MrzResult } from './mrz';
 import { parseAamva } from './aamva';
+import { toISODateString } from '../utils/date';
 
 export type ScanCheckId =
   | 'mrzReadable'
@@ -244,8 +245,8 @@ function dobCheck(
   }
   if (!onRecord) return { id: 'dateOfBirthPlausible', outcome: 'PASS' };
 
-  const recorded = new Date(onRecord).toISOString().slice(0, 10);
-  return recorded === fromDocument.toISOString().slice(0, 10)
+  const recorded = toISODateString(new Date(onRecord));
+  return recorded === toISODateString(fromDocument)
     ? { id: 'dateOfBirthPlausible', outcome: 'PASS' }
     : { id: 'dateOfBirthPlausible', outcome: 'FAIL', detail: recorded };
 }

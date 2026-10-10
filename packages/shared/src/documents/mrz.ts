@@ -1,3 +1,4 @@
+import { toISODateString } from '../utils/date';
 /**
  * The machine-readable zone, parsed and CHECKED — offline, no third party.
  *
@@ -146,7 +147,7 @@ export function mrzDate(yymmdd: string, kind: 'birth' | 'expiry', now: Date = ne
   const date = new Date(Date.UTC(year, mm - 1, dd));
   // Rejects 31 February, which passes the range check above.
   if (date.getUTCMonth() !== mm - 1 || date.getUTCDate() !== dd) return null;
-  return date.toISOString().slice(0, 10);
+  return toISODateString(date);
 }
 
 /** `SURNAME<<GIVEN<NAMES` → the two halves, filler removed. */

@@ -16,6 +16,7 @@ describe('invoice — totals the draft screen showed, dates as days', () => {
   const make = () => {
     const prisma: any = {
       companyLocation: { findFirst: jest.fn().mockResolvedValue(null) },
+      organization: { findUnique: jest.fn().mockResolvedValue({ timezone: null }) },
       task: { count: jest.fn() },
       serviceReport: { count: jest.fn() },
       user: { count: jest.fn().mockResolvedValue(0) },
@@ -84,6 +85,19 @@ describe('invoice — totals the draft screen showed, dates as days', () => {
     const { svc, prisma } = make();
     await svc.create({ organizationId: 'o', createdById: 'u', clientName: 'ACME' } as never);
     expect(prisma.invoice.create.mock.calls[0][0].data.issueDate.toISOString()).toMatch(/T00:00:00\.000Z$/);
+  });
+
+  it('with no issue day sent, "today" is the organization’s day — not UTC’s', async () => {
+    // 22:30 UTC on 9 October is already 10 October in Vienna.
+    jest.useFakeTimers().setSystemTime(new Date('2026-10-09T22:30:00Z'));
+    try {
+      const { svc, prisma } = make();
+      prisma.organization.findUnique.mockResolvedValue({ timezone: 'Europe/Vienna' });
+      await svc.create({ organizationId: 'o', createdById: 'u', clientName: 'ACME' } as never);
+      expect(prisma.invoice.create.mock.calls[0][0].data.issueDate.toISOString()).toBe('2026-10-10T00:00:00.000Z');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('invoiceDay: a day string → start of the UTC day; empty → null', () => {

@@ -1,3 +1,4 @@
+import { pad2, partsDateKey, zonedParts } from './zone-parts';
 /**
  * Shared Date Utilities
  * Centralized date manipulation functions to avoid duplication.
@@ -220,7 +221,6 @@ export function formatCalendarDate(iso: string | null | undefined): string {
   return new Date(y, m - 1, d).toLocaleDateString();
 }
 
-const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /**
  * The calendar day an instant falls on, as "YYYY-MM-DD" — in `timeZone` when
@@ -235,14 +235,7 @@ export function localDateKey(date: Date | string | number = new Date(), timeZone
   if (Number.isNaN(d.getTime())) return '';
   if (timeZone) {
     try {
-      const parts = new Intl.DateTimeFormat('en-CA', {
-        timeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }).formatToParts(d);
-      const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-      return `${get('year')}-${get('month')}-${get('day')}`;
+      return partsDateKey(zonedParts(d, timeZone));
     } catch {
       /* unknown zone — the runtime's own day below */
     }

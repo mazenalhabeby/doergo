@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { runWithCronLock, TaskStatus, localPartsIn } from '@hbcfield/shared';
+import { runWithCronLock, TaskStatus, localPartsIn, toISODateString } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
@@ -56,8 +56,8 @@ export class LeaderAbsentService {
     const offBy = new Map<string, Array<{ from: string; to: string }>>();
     for (const l of leave) {
       (offBy.get(l.technicianId) ?? offBy.set(l.technicianId, []).get(l.technicianId)!).push({
-        from: l.startDate.toISOString().slice(0, 10),
-        to: l.endDate.toISOString().slice(0, 10),
+        from: toISODateString(l.startDate),
+        to: toISODateString(l.endDate),
       });
     }
 

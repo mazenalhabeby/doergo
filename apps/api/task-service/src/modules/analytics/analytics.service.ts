@@ -1,5 +1,5 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { reportLabelEn, assertMemberInScope, type ReportLabelKey, type SpaceScopeIds } from '@hbcfield/shared';
+import { reportLabelEn, assertMemberInScope, type ReportLabelKey, type SpaceScopeIds, toISODateString } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { compile, ReportDefinition } from './query-engine';
 import { datasetCatalog } from './registry';
@@ -66,8 +66,8 @@ export class AnalyticsService {
     if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) throw new BadRequestException('Invalid date range');
     const maxSpan = 400 * 864e5;
     if (toDate.getTime() - fromDate.getTime() > maxSpan) fromDate = new Date(toDate.getTime() - maxSpan);
-    const fromStr = fromDate.toISOString().slice(0, 10);
-    const toStr = toDate.toISOString().slice(0, 10);
+    const fromStr = toISODateString(fromDate);
+    const toStr = toISODateString(toDate);
 
     const sql = `
       WITH days AS (
