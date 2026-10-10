@@ -39,6 +39,7 @@ import {
   type StatusWorkflow,
 } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { CenteredNotice } from "@/components/space-page"
 import { Badge } from "@/components/ui/badge"
 import { useBillingLock } from "@/hooks/use-billing-lock"
 import { SpaceForm } from "./_components/space-form"
@@ -282,21 +283,19 @@ function EmptyState({
 }) {
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="rounded-2xl bg-muted/50 p-5 mb-5">
-        <Building2 className="h-10 w-10 text-muted-foreground" />
-      </div>
-      <h3 className="text-lg font-semibold text-foreground">{t("locations.empty.title")}</h3>
-      <p className="text-sm text-muted-foreground mt-2 max-w-md">
-        {t("locations.empty.description")}
-      </p>
+    <CenteredNotice
+      icon={Building2}
+      className="py-20"
+      title={t("locations.empty.title")}
+      description={t("locations.empty.description")}
+    >
       {isAdmin && (
         <Button onClick={onCreateClick} disabled={locked} title={locked ? lockReason : undefined} className="mt-6 gap-2">
           <Plus className="h-4 w-4" />
           {t("locations.createSpace")}
         </Button>
       )}
-    </div>
+    </CenteredNotice>
   )
 }
 

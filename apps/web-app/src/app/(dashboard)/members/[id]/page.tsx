@@ -1,7 +1,7 @@
 "use client"
 
 import { personName } from "@hbcfield/shared/client"
-import { use, useEffect, useState } from "react"
+import { use, useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
@@ -170,49 +170,23 @@ export default function MemberProfilePage({
   // not-found — an error must not silently render as "member doesn't exist" (D6).
   if (memberError) {
     return (
-      <div className="min-h-full bg-background">
-        <div className={PAGE_SHELL}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/members")}
-            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            {t("members.detail.backToTeam")}
-          </Button>
-          <div className="text-center py-20">
-            <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("common.somethingWentWrong")}</h3>
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchMember()}>
-              {t("common.retry")}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <MemberNotice onBack={() => router.push("/members")}>
+        <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("common.somethingWentWrong")}</h3>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchMember()}>
+          {t("common.retry")}
+        </Button>
+      </MemberNotice>
     )
   }
 
   if (!member) {
     return (
-      <div className="min-h-full bg-background">
-        <div className={PAGE_SHELL}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/members")}
-            className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            {t("members.detail.backToTeam")}
-          </Button>
-          <div className="text-center py-20">
-            <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.detail.notFound")}</h3>
-            <p className="text-sm text-muted-foreground">
-              {t("members.detail.notFoundDescription")}
-            </p>
-          </div>
-        </div>
-      </div>
+      <MemberNotice onBack={() => router.push("/members")}>
+        <h3 className="text-lg font-semibold text-foreground mb-1.5">{t("members.detail.notFound")}</h3>
+        <p className="text-sm text-muted-foreground">
+          {t("members.detail.notFoundDescription")}
+        </p>
+      </MemberNotice>
     )
   }
 
@@ -724,6 +698,30 @@ export default function MemberProfilePage({
             </Tabs>
           )
         })()}
+      </div>
+    </div>
+  )
+}
+
+// The page with nothing to show but a message (load failure, not found): the
+// way back to the team, and the message centred under it.
+function MemberNotice({ onBack, children }: { onBack: () => void; children: ReactNode }) {
+  const { t } = useTranslation()
+  return (
+    <div className="min-h-full bg-background">
+      <div className={PAGE_SHELL}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          {t("members.detail.backToTeam")}
+        </Button>
+        <div className="text-center py-20">
+          {children}
+        </div>
       </div>
     </div>
   )

@@ -7,7 +7,6 @@ import { useParams, useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import {
-  ArrowLeft,
   Building2,
   Loader2,
   Share2,
@@ -38,6 +37,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { PriorityBadge } from "@/components/tasks/priority-badge"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { BackToSpaces, CenteredNotice } from "@/components/space-page"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -154,21 +154,12 @@ export default function SharedSpaceViewPage() {
     return (
       <div className="min-h-full bg-background">
         <div className="max-w-[1100px] mx-auto px-6 py-6">
-          <button
-            type="button"
-            onClick={() => router.push("/locations")}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("scheduling.backToSpaces")}
-          </button>
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="rounded-2xl bg-muted/50 p-5 mb-5">
-              <ShieldAlert className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">{t("spaceSharing.guest.notFound.title")}</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-md">{t("spaceSharing.guest.notFound.description")}</p>
-          </div>
+          <BackToSpaces />
+          <CenteredNotice
+            icon={ShieldAlert}
+            title={t("spaceSharing.guest.notFound.title")}
+            description={t("spaceSharing.guest.notFound.description")}
+          />
         </div>
       </div>
     )
@@ -179,14 +170,7 @@ export default function SharedSpaceViewPage() {
       <div className="max-w-[1100px] mx-auto px-6 py-6">
         {/* Header */}
         <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => router.push("/locations")}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("scheduling.backToSpaces")}
-          </button>
+          <BackToSpaces />
           <div className="mt-3 flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <div className="rounded-xl bg-primary/10 p-2.5">

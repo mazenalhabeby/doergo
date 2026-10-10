@@ -35,6 +35,48 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 
+// ─── Date field ──────────────────────────────────────────────────────────────
+
+// A labelled date button opening a calendar — the sprint and epic dialogs ask
+// for their dates the same way.
+function DateField({
+  label,
+  value,
+  onSelect,
+  placeholder,
+  disabled,
+}: {
+  label: string
+  value: Date | undefined
+  onSelect: (date: Date | undefined) => void
+  placeholder: string
+  disabled: boolean
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm">{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
+              !value && "text-muted-foreground",
+            )}
+            disabled={disabled}
+          >
+            <Calendar className="mr-2 size-3.5 text-muted-foreground" />
+            {value ? format(value, "MMM d, yyyy") : placeholder}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <CalendarPicker mode="single" selected={value} onSelect={onSelect} initialFocus />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
 // ─── Sprint Form Dialog ──────────────────────────────────────────────────────
 
 export function SprintFormDialog({
@@ -157,49 +199,21 @@ export function SprintFormDialog({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-sm">{t("tasks.sidebar.startDate")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
-                      !startDate && "text-muted-foreground",
-                    )}
-                    disabled={isPending}
-                  >
-                    <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : t("tasks.fields.pickDate")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarPicker mode="single" selected={startDate} onSelect={handleStartDateChange} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DateField
+              label={t("tasks.sidebar.startDate")}
+              value={startDate}
+              onSelect={handleStartDateChange}
+              placeholder={t("tasks.fields.pickDate")}
+              disabled={isPending}
+            />
 
-            <div className="space-y-1.5">
-              <Label className="text-sm">{t("tasks.fields.endDate")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
-                      !endDate && "text-muted-foreground",
-                    )}
-                    disabled={isPending}
-                  >
-                    <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {endDate ? format(endDate, "MMM d, yyyy") : t("tasks.fields.pickDate")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarPicker mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DateField
+              label={t("tasks.fields.endDate")}
+              value={endDate}
+              onSelect={setEndDate}
+              placeholder={t("tasks.fields.pickDate")}
+              disabled={isPending}
+            />
           </div>
 
           {!showGoal ? (
@@ -452,49 +466,21 @@ export function EpicFormDialog({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-sm">{t("tasks.sidebar.startDate")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
-                      !startDate && "text-muted-foreground",
-                    )}
-                    disabled={isPending}
-                  >
-                    <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {startDate ? format(startDate, "MMM d, yyyy") : t("common.optional")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarPicker mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DateField
+              label={t("tasks.sidebar.startDate")}
+              value={startDate}
+              onSelect={setStartDate}
+              placeholder={t("common.optional")}
+              disabled={isPending}
+            />
 
-            <div className="space-y-1.5">
-              <Label className="text-sm">{t("tasks.epic.targetDate")}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left font-normal rounded-lg text-sm",
-                      !targetDate && "text-muted-foreground",
-                    )}
-                    disabled={isPending}
-                  >
-                    <Calendar className="mr-2 size-3.5 text-muted-foreground" />
-                    {targetDate ? format(targetDate, "MMM d, yyyy") : t("common.optional")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarPicker mode="single" selected={targetDate} onSelect={setTargetDate} initialFocus />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <DateField
+              label={t("tasks.epic.targetDate")}
+              value={targetDate}
+              onSelect={setTargetDate}
+              placeholder={t("common.optional")}
+              disabled={isPending}
+            />
           </div>
 
           <DialogFooter className="pt-1">

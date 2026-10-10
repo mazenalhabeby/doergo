@@ -7,7 +7,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import {
-  ArrowLeft,
   Blocks,
   Building2,
   CalendarClock,
@@ -23,6 +22,7 @@ import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { locationsApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { BackToSpaces, CenteredNotice } from "@/components/space-page"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlanGate } from "@/components/plan-gate"
 import { cn } from "@/lib/utils"
@@ -173,18 +173,15 @@ export default function SpaceSettingsPage() {
     return (
       <div className="min-h-full bg-background">
         <div className="max-w-[1100px] mx-auto px-6 py-6">
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="rounded-2xl bg-muted/50 p-5 mb-5">
-              <ShieldAlert className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground">{t("scheduling.unauthorized.title")}</h3>
-            <p className="text-sm text-muted-foreground mt-2 max-w-md">
-              {t("scheduling.unauthorized.description")}
-            </p>
+          <CenteredNotice
+            icon={ShieldAlert}
+            title={t("scheduling.unauthorized.title")}
+            description={t("scheduling.unauthorized.description")}
+          >
             <Button variant="outline" className="mt-6" onClick={() => router.push("/locations")}>
               {t("scheduling.backToSpaces")}
             </Button>
-          </div>
+          </CenteredNotice>
         </div>
       </div>
     )
@@ -195,14 +192,7 @@ export default function SpaceSettingsPage() {
       <div className="max-w-[1100px] mx-auto px-6 py-6">
         {/* Header */}
         <div className="mb-6">
-          <button
-            type="button"
-            onClick={() => router.push("/locations")}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("scheduling.backToSpaces")}
-          </button>
+          <BackToSpaces />
           <div className="mt-3 flex items-center gap-3">
             <div className="rounded-xl bg-primary/10 p-2.5">
               <Building2 className="h-5 w-5 text-primary" />
