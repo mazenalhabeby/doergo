@@ -16,6 +16,7 @@ import {
   invoiceTotalsFromSubtotalCents,
   lineAmount,
   roundCents,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { ExchangeRateService } from './exchange-rate.service';
 import { LegalEntitiesService } from './legal-entities.service';
@@ -283,7 +284,7 @@ export class InvoiceService {
           include: {
             items: true,
             createdBy: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+              select: PERSON_BRIEF_SELECT,
             },
           },
         });
@@ -330,7 +331,7 @@ export class InvoiceService {
         include: {
           items: true,
           createdBy: {
-            select: { id: true, firstName: true, lastName: true, email: true },
+            select: PERSON_BRIEF_SELECT,
           },
           legalEntity: { select: { id: true, legalName: true, label: true } },
         },
@@ -347,7 +348,7 @@ export class InvoiceService {
       include: {
         items: true,
         createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         },
       },
     });
@@ -496,7 +497,7 @@ export class InvoiceService {
           include: {
             items: true,
             createdBy: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+              select: PERSON_BRIEF_SELECT,
             },
           },
         });
@@ -596,7 +597,7 @@ export class InvoiceService {
       include: {
         items: true,
         createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         },
       },
     });
@@ -759,7 +760,7 @@ export class InvoiceService {
       include: {
         items: true,
         createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         },
       },
     });

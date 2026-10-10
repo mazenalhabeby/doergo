@@ -6,12 +6,12 @@ import {
   TimeEntryStatus,
   activeAssignmentWhere,
   buildSingleDayFilter,
-  buildDateRangeFilter,
+  buildDateRangeFilter, personSearchOr,
 } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { PresenceService } from './presence/presence.service';
-import { ATTENDANCE_LOCATION_SELECT, EDITOR_SELECT } from './attendance-selects';
+import { ATTENDANCE_LOCATION_SELECT, EDITOR_SELECT, MEMBER_SELECT } from './attendance-selects';
 import { ClockInService } from './clock-in.service';
 import { HeartbeatService } from './heartbeat.service';
 
@@ -269,16 +269,8 @@ export class AttendanceReadService {
     };
 
     // Name / email search
-    if (data.search?.trim()) {
-      const q = data.search.trim();
-      where.user = {
-        OR: [
-          { firstName: { contains: q, mode: 'insensitive' } },
-          { lastName: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
-        ],
-      };
-    }
+    const nameMatch = personSearchOr(data.search);
+    if (nameMatch) where.user = { OR: nameMatch };
 
     const [entries, total] = await Promise.all([
       this.prisma.timeEntry.findMany({
@@ -286,14 +278,7 @@ export class AttendanceReadService {
         skip,
         take: limit,
         include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
+          user: { select: MEMBER_SELECT },
           editedBy: { select: EDITOR_SELECT },
         },
         orderBy: this.buildEntriesOrderBy(data.sortBy, data.sortOrder),
@@ -412,7 +397,7 @@ export class AttendanceReadService {
         ],
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: MEMBER_SELECT },
         editedBy: { select: EDITOR_SELECT },
       },
       orderBy: { clockInAt: 'desc' },
@@ -498,16 +483,8 @@ export class AttendanceReadService {
     }
 
     // Name / email search
-    if (data.search?.trim()) {
-      const q = data.search.trim();
-      where.user = {
-        OR: [
-          { firstName: { contains: q, mode: 'insensitive' } },
-          { lastName: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
-        ],
-      };
-    }
+    const nameMatch = personSearchOr(data.search);
+    if (nameMatch) where.user = { OR: nameMatch };
 
     const [entries, total] = await Promise.all([
       this.prisma.timeEntry.findMany({
@@ -515,14 +492,7 @@ export class AttendanceReadService {
         skip,
         take: limit,
         include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
+          user: { select: MEMBER_SELECT },
           location: {
             select: {
               id: true,

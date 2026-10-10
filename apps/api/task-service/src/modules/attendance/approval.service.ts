@@ -16,6 +16,7 @@ import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm }
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
 import { ShiftRematchService } from './shift-rematch.service';
+import { MEMBER_SELECT } from './attendance-selects';
 
 // Flags that depend on the clock TIMES vs the shift expectation — these must be
 // re-evaluated when an admin edits an entry's clock-in/out. Everything else
@@ -98,7 +99,7 @@ export class ApprovalService {
         take: limit,
         include: {
           user: {
-            select: { id: true, firstName: true, lastName: true, email: true },
+            select: MEMBER_SELECT,
           },
           location: {
             select: { id: true, name: true, timezone: true },

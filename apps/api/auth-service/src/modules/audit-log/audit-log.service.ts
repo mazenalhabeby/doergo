@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { paginated, documentVisibleTo } from '@hbcfield/shared';
+import { paginated, documentVisibleTo, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 
 @Injectable()
 export class AuditLogService {
@@ -128,8 +128,8 @@ export class AuditLogService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { id: true, firstName: true, lastName: true, email: true } },
-          targetUser: { select: { id: true, firstName: true, lastName: true, email: true } },
+          user: { select: PERSON_BRIEF_SELECT },
+          targetUser: { select: PERSON_BRIEF_SELECT },
         },
       }),
       this.prisma.activityLog.count({ where }),

@@ -9,6 +9,7 @@ import {
   reminderDueAt,
   credentialStanding,
   visibleDocumentWhere,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -105,7 +106,7 @@ export class CredentialExpiryService {
         title: true,
         expiresOn: true,
         organizationId: true,
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: PERSON_BRIEF_SELECT },
         type: { select: { label: true } },
       },
     });

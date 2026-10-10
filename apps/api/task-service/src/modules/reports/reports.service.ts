@@ -20,6 +20,7 @@ import {
   paginated,
   type OccurrenceEvidence,
   clampListLimit, assertFoundInOrg,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
@@ -274,7 +275,7 @@ export class ReportsService {
       where: { taskId: data.taskId },
       include: {
         completedBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         },
         partsUsed: {
           orderBy: { createdAt: 'asc' },

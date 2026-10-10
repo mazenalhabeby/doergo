@@ -7,7 +7,7 @@ import {
   Role,
   TaskStatus,
   getDefaultModules,
-  normalizeEmail,
+  normalizeEmail, personSearchOr,
 } from '@hbcfield/shared';
 import {
   Injectable,
@@ -88,13 +88,8 @@ export class EmployeesService {
     }
 
     // Search filter (name or email)
-    if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+    const nameMatch = personSearchOr(search);
+    if (nameMatch) where.OR = nameMatch;
 
     // Build orderBy
     let orderBy: any;

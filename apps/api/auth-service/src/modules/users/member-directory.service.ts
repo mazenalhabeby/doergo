@@ -1,4 +1,4 @@
-import { Role } from '@hbcfield/shared';
+import { Role, personSearchOr } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ListOrgMembersDto } from './dto';
@@ -267,13 +267,8 @@ export class MemberDirectoryService {
       }
     }
 
-    if (search) {
-      where.OR = [
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+    const nameMatch = personSearchOr(search);
+    if (nameMatch) where.OR = nameMatch;
 
     const total = await this.prisma.user.count({ where });
 

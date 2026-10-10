@@ -18,6 +18,7 @@ import {
   supportScopeWhere,
   ticketInSupportScope,
   type SupportAgentScope,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -77,7 +78,7 @@ export class SupportService {
     if (!unique.length) return new Map();
     const ops = await this.prisma.platformUser.findMany({
       where: { id: { in: unique } },
-      select: { id: true, firstName: true, lastName: true, email: true },
+      select: PERSON_BRIEF_SELECT,
     });
     return new Map(ops.map((o) => [o.id, `${o.firstName ?? ''} ${o.lastName ?? ''}`.trim() || o.email]));
   }

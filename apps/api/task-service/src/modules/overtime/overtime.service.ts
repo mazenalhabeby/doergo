@@ -21,6 +21,7 @@ import {
   OVERTIME_NOTICE_EVENT,
   type OvertimeNotice,
   paginated,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { clampListLimit, clampListPage, personName } from '@hbcfield/shared';
 
@@ -420,7 +421,7 @@ export class OvertimeService {
         ...scopeWhere(data.scopeSpaceIds),
       },
       include: {
-        technician: { select: { id: true, firstName: true, lastName: true, email: true } },
+        technician: { select: PERSON_BRIEF_SELECT },
         location: { select: { id: true, name: true } },
         // The shift itself. An approver deciding on overtime needs to know how
         // long this person has ALREADY been working — a request after eight

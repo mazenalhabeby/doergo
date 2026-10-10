@@ -1,4 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { MEMBER_SELECT } from './attendance-selects';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success,
@@ -67,7 +68,7 @@ export class AttendanceReportService {
       where,
       include: {
         user: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: MEMBER_SELECT,
         },
         location: {
           select: { id: true, name: true, timezone: true },

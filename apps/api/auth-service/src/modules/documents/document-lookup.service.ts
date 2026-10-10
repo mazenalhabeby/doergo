@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { type SignerStep } from '@hbcfield/shared';
+import { type SignerStep, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
 /**
@@ -41,7 +41,7 @@ export class DocumentLookupService {
   async assertMemberOfOrg(userId: string, organizationId: string) {
     const member = await this.prisma.user.findFirst({
       where: { id: userId, organizationId },
-      select: { id: true, firstName: true, lastName: true, email: true },
+      select: PERSON_BRIEF_SELECT,
     });
     if (!member) throw new NotFoundException('Member not found');
     return member;

@@ -12,6 +12,7 @@ import {
   Role,
   parseRoute,
   runWithCronLock,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -334,7 +335,7 @@ export class DocumentIssuingService {
         sizeBytes: true,
         mimeType: true,
         createdAt: true,
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: PERSON_BRIEF_SELECT },
         type: { select: { id: true, label: true, signatureMode: true, signerRoute: true } },
       },
       orderBy: { createdAt: 'asc' },
@@ -429,7 +430,7 @@ export class DocumentIssuingService {
         status: 'DRAFT',
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: PERSON_BRIEF_SELECT },
         type: { select: { label: true, signatureMode: true, signerRoute: true } },
       },
     });

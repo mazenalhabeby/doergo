@@ -15,6 +15,7 @@ import {
   type DocumentSignerRole,
   type SignerStep,
   normalizeEmail,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -531,7 +532,7 @@ export class DocumentRoutingService {
     if (role === 'MEMBER') {
       const u = await this.prisma.user.findUnique({
         where: { id: memberId },
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: PERSON_BRIEF_SELECT,
       });
       return u ? [{ kind: 'USER', id: u.id, name: `${u.firstName} ${u.lastName}`.trim(), email: u.email }] : [];
     }
@@ -544,7 +545,7 @@ export class DocumentRoutingService {
       if (ids.size === 0) return [];
       const users = await this.prisma.user.findMany({
         where: { id: { in: [...ids] }, organizationId, isActive: true },
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: PERSON_BRIEF_SELECT,
       });
       return users
         .map((u) => ({
@@ -561,7 +562,7 @@ export class DocumentRoutingService {
           customerId: null,
           OR: [{ role: 'ADMIN' }, { canManageUsers: true }],
         },
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: PERSON_BRIEF_SELECT,
         take: 50,
       });
       return users
@@ -608,7 +609,7 @@ export class DocumentRoutingService {
             },
           },
         },
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: PERSON_BRIEF_SELECT,
         // Same ceiling the other roles use: a candidate list is a picker, not a
         // report, and an unbounded one is a denial-of-service on the issue screen.
         take: 50,

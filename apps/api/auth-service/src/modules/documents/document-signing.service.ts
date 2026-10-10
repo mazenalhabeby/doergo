@@ -12,6 +12,7 @@ import {
   signatureStrength,
   chainProgress,
   type SignerStep,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { documentKey, signatureKey, sha256 } from '@hbcfield/shared/storage';
 import { sealSignedPdf } from './contract-pdf';
@@ -640,7 +641,7 @@ export class DocumentSigningService {
       },
       include: {
         type: { select: { label: true, signatureMode: true } },
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: PERSON_BRIEF_SELECT },
         organization: { select: { name: true } },
       },
     });

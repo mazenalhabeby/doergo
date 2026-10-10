@@ -1,4 +1,5 @@
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { MEMBER_SELECT } from './attendance-selects';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService } from './shift-resolver.service';
@@ -54,7 +55,7 @@ export class ShiftSweepService {
         nextRemindAt: { not: null, lte: now },
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: MEMBER_SELECT },
         location: { select: { id: true, name: true, timezone: true } },
         shift: { select: { reminderIntervalMin: true, maxReminders: true } },
       },

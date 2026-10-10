@@ -1,7 +1,11 @@
+import { PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 /*
   Projections shared by the attendance collaborators (the heartbeat, the
   status/history reads and the entry lists).
 */
+
+// The member an entry belongs to, as every attendance list shows them.
+export const MEMBER_SELECT = PERSON_BRIEF_SELECT;
 
 // Who edited an entry — surfaced on the "Edited" badge in the attendance table.
 export const EDITOR_SELECT = { firstName: true, lastName: true } as const;

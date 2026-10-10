@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { isBlocking, credentialStanding } from '@hbcfield/shared';
+import { isBlocking, credentialStanding, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 import { readingOf } from './document-read-queue.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -257,7 +257,7 @@ export class DocumentVerificationService {
         status: 'PENDING_VERIFICATION',
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: { select: PERSON_BRIEF_SELECT },
         // `hasExpiry` so verification can insist on a date the reader missed.
         type: { select: { label: true, signatureMode: true, hasExpiry: true } },
       },

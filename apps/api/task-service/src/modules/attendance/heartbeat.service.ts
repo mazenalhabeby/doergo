@@ -15,7 +15,7 @@ import {
 import { scopeWhereOn, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { PresenceService } from './presence/presence.service';
-import { ATTENDANCE_LOCATION_SELECT } from './attendance-selects';
+import { ATTENDANCE_LOCATION_SELECT, MEMBER_SELECT } from './attendance-selects';
 import { ClockOutService } from './clock-out.service';
 
 /**
@@ -520,7 +520,7 @@ export class HeartbeatService {
     const [users, spaces] = await Promise.all([
       this.prisma.user.findMany({
         where: { id: { in: userIds } },
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: MEMBER_SELECT,
       }),
       this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
     ]);

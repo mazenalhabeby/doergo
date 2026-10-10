@@ -35,7 +35,7 @@ import {
   personNameById,
   CRM_CAPS_SELECT,
   crmCapsOfRow,
-  crmReachesClient,
+  crmReachesClient, personSearchOr,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
 
@@ -279,7 +279,7 @@ export class EventsService {
       where: {
         organizationId: dto.organizationId, isActive: true, isExternal: false, role: { not: 'CUSTOMER' }, id: { not: dto.userId },
         ...(circle ? { id: { in: [...circle].filter((id) => id !== dto.userId) } } : {}),
-        ...(q ? { OR: [{ firstName: { contains: q, mode: 'insensitive' } }, { lastName: { contains: q, mode: 'insensitive' } }, { position: { contains: q, mode: 'insensitive' } }] } : {}),
+        ...(q ? { OR: personSearchOr(q, ['firstName', 'lastName', 'position']) } : {}),
       },
       select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],

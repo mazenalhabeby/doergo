@@ -9,6 +9,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   success, paginated, TaskStatus, normalizeDetailRows, keepFieldsForKind,
   isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem, type HandoverPlan, assertFoundInOrg,
+  PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
 import { AssetAccessService } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
@@ -65,7 +66,7 @@ export class AssetsService {
     const members = userIds.length
       ? await this.prisma.user.findMany({
           where: { id: { in: userIds }, organizationId },
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         })
       : [];
     const byId = new Map(members.map((m) => [m.id, m]));
@@ -93,7 +94,7 @@ export class AssetsService {
     const members = userIds.length
       ? await this.prisma.user.findMany({
           where: { id: { in: userIds }, organizationId: asset.organizationId },
-          select: { id: true, firstName: true, lastName: true, email: true },
+          select: PERSON_BRIEF_SELECT,
         })
       : [];
     const byId = new Map(members.map((m) => [m.id, m]));
