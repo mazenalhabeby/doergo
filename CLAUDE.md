@@ -1910,7 +1910,7 @@ The pricing model changed shape. `bill = seats × €9.99 + Σ spaces(modules + 
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 5 | ✅ All Fixed (2026-01-16) |
-| HIGH | 6 | 2 remaining (HttpOnly cookies, JTI blacklist) |
+| HIGH | 6 | HttpOnly refresh cookie done; access-token revocation on sign-out built 2026-10-10 (`24632815`, not deployed) — see SECURITY_PERF_REPORT_2026-10-10.md |
 | MEDIUM | 4 | Fix within 30 days |
 | LOW | 2 | Fix as resources allow |
 
