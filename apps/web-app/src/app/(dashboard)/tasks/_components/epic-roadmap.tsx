@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState, useCallback, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { startOfDay, addDays, diffDays } from "@/lib/local-days"
 import type { Task, Epic } from "@/lib/api"
 import { formatDayMonth, formatMonthYear } from "@/lib/format-date"
 
@@ -17,23 +18,6 @@ const DAY_WIDTH = 16
 const DONE_STATUSES = ["COMPLETED", "CLOSED"]
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-
-function startOfDay(d: Date): Date {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  return r
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
-}
-
-function diffDays(a: Date, b: Date): number {
-  return Math.round((a.getTime() - b.getTime()) / 86400000)
-}
-
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

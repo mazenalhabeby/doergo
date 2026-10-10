@@ -1,4 +1,5 @@
 import { localDateKey, type CalendarItem } from "@hbcfield/shared/client"
+import { addDays } from "@/lib/local-days"
 
 /**
  * Where things go on the grid — pure, so the week, the day and the month draw from one answer.
@@ -17,11 +18,7 @@ export function fromKey(key: string): Date {
   return new Date(y!, m! - 1, d!)
 }
 
-export function addDays(d: Date, n: number): Date {
-  const x = new Date(d)
-  x.setDate(x.getDate() + n)
-  return x
-}
+export { addDays }
 
 /** Monday of the week containing `d` (weeks start on Monday). */
 export function startOfWeek(d: Date): Date {

@@ -6,7 +6,8 @@ import ReactDOM from "react-dom"
 import { useTranslation } from "react-i18next"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { UserAvatar } from "@/components/user-avatar"
+import { startOfDay, addDays, diffDays, isSameDay, isWeekend } from "@/lib/local-days"
+import { TaskPersonAvatar } from "./task-avatars"
 import type { StatusConfig } from "@/lib/constants"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task, Phase } from "@/lib/api"
@@ -17,31 +18,6 @@ const APPLE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)"
 type TimeScale = "day" | "week" | "month"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function startOfDay(d: Date): Date {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  return r
-}
-
-function addDays(d: Date, n: number): Date {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
-}
-
-function diffDays(a: Date, b: Date): number {
-  return Math.round((a.getTime() - b.getTime()) / 86400000)
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
-
-function isWeekend(d: Date): boolean {
-  const day = d.getDay()
-  return day === 0 || day === 6
-}
 
 function formatHeaderDate(d: Date, scale: TimeScale): string {
   if (scale === "day") {
@@ -168,13 +144,7 @@ const TaskRow = React.memo(function TaskRow({
         {task.title}
       </span>
       {task.assignedTo && (
-        <UserAvatar
-          firstName={task.assignedTo.firstName}
-          lastName={task.assignedTo.lastName}
-          avatarUrl={task.assignedTo.avatarUrl}
-          seed={task.assignedTo.id}
-          size="xs"
-        />
+        <TaskPersonAvatar person={task.assignedTo} />
       )}
     </Link>
   )

@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
+import { TaskAssigneesStack, TaskPersonAvatar } from "./task-avatars"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getStatusConfig, getPriorityConfig, TASK_STATUSES } from "@/lib/constants"
@@ -214,11 +214,7 @@ function TaskTableRowInner({
           */
           <div className="flex items-center min-w-0">
             <span className="flex-shrink-0">
-              <StackedAvatars
-                users={task.assignees.map((a) => ({ id: a.user.id, firstName: a.user.firstName, lastName: a.user.lastName, avatarUrl: a.user.avatarUrl }))}
-                max={3}
-                size="xs"
-              />
+              <TaskAssigneesStack assignees={task.assignees} />
             </span>
             {task.assignees.length <= 2 && (
               <span className="text-xs text-muted-foreground truncate ml-2">
@@ -228,13 +224,7 @@ function TaskTableRowInner({
           </div>
         ) : task.assignedTo ? (
           <div className="flex items-center gap-1.5 min-w-0">
-            <UserAvatar
-              firstName={task.assignedTo.firstName}
-              lastName={task.assignedTo.lastName}
-              avatarUrl={task.assignedTo.avatarUrl}
-              seed={task.assignedTo.id}
-              size="xs"
-            />
+            <TaskPersonAvatar person={task.assignedTo} />
             <span className="text-xs text-muted-foreground truncate">
               {personName(task.assignedTo)}
             </span>

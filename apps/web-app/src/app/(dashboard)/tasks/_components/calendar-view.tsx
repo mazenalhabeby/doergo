@@ -7,6 +7,7 @@ import ReactDOM from "react-dom"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { startOfDay, diffDays, isSameDay, isWeekend } from "@/lib/local-days"
 import type { StatusConfig } from "@/lib/constants"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task } from "@/lib/api"
@@ -19,23 +20,8 @@ const MAX_VISIBLE_PILLS = 3
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function startOfDay(d: Date): Date {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  return r
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
-
 function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
-}
-
-function isWeekend(d: Date): boolean {
-  const day = d.getDay()
-  return day === 0 || day === 6
 }
 
 function getCalendarDays(year: number, month: number): Date[] {
@@ -51,10 +37,6 @@ function getCalendarDays(year: number, month: number): Date[] {
     current.setDate(current.getDate() + 1)
   }
   return days
-}
-
-function diffDays(a: Date, b: Date): number {
-  return Math.round((a.getTime() - b.getTime()) / 86400000)
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────

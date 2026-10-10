@@ -10,7 +10,7 @@ import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { Calendar, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { UserAvatar, StackedAvatars } from "@/components/user-avatar"
+import { TaskAssigneesStack, TaskPersonAvatar } from "./task-avatars"
 import { useAuth } from "@/contexts/auth-context"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { getPriorityConfig } from "@/lib/constants"
@@ -126,20 +126,10 @@ export const TaskCard = React.memo(function TaskCard({
           title={t("tasks.card.manageAssignees")}
         >
           {task.assignees && task.assignees.length > 0 ? (
-            <StackedAvatars
-              users={task.assignees.map((a) => ({ id: a.user.id, firstName: a.user.firstName, lastName: a.user.lastName, avatarUrl: a.user.avatarUrl }))}
-              max={3}
-              size="xs"
-            />
+            <TaskAssigneesStack assignees={task.assignees} />
           ) : task.assignedTo ? (
             <div className="flex items-center gap-1.5">
-              <UserAvatar
-                firstName={task.assignedTo.firstName}
-                lastName={task.assignedTo.lastName}
-                avatarUrl={task.assignedTo.avatarUrl}
-                seed={task.assignedTo.id}
-                size="xs"
-              />
+              <TaskPersonAvatar person={task.assignedTo} />
               <span className="text-[11px] text-muted-foreground truncate max-w-[80px]">
                 {task.assignedTo.firstName}
               </span>
