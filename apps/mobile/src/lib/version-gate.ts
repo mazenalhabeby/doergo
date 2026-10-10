@@ -2,7 +2,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import i18next from 'i18next';
 import type { ReleaseNote } from '@hbcfield/shared/client';
-import { api } from './api/client';
+import { call, E } from './api/client';
+import type { AppVersionInfo } from '@hbcfield/shared/client';
 import { IN_APP_UPDATES_SUPPORTED, checkStore } from './in-app-updates';
 
 /**
@@ -68,14 +69,11 @@ export async function checkVersion(): Promise<VersionStatus> {
     /*
       Public (asked before anybody is signed in), one try, 6 s. Any failure —
       a 404 on an older API, a 5xx, no signal — is caught below and lets the
-      app run. ⚠️ `/app/version` is not in the shared endpoint table yet.
+      app run.
     */
-    const data = await api.get<{
-      minimum?: string | null;
-      latest?: string | null;
-      downloads?: { android?: string | null; ios?: string | null };
-      whatsNew?: ReleaseNote | null;
-    } | null>('/app/version', { auth: false, query: { lang }, timeoutMs: TIMEOUT_MS, retry: false, cache: false, dedupe: false });
+    const data = (await call(E.app.version, { lang }, { timeoutMs: TIMEOUT_MS, retry: false, cache: false, dedupe: false })) as
+      | (Omit<AppVersionInfo, 'whatsNew'> & { whatsNew?: ReleaseNote | null })
+      | null;
 
     const minimum = data?.minimum ?? null;
     const downloadUrl =

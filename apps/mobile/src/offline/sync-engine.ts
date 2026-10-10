@@ -102,6 +102,8 @@ export class SyncEngine {
   private cache: OutboxOp[] = [];
   private readonly listeners = new Set<Listener>();
   private wakeTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Stopped for good (sign-out): no new push or pull may touch the database. */
+  private stopped = false;
 
   constructor(
     private readonly deps: {
@@ -130,10 +132,21 @@ export class SyncEngine {
     await this.refreshCache();
   }
 
-  stop(): void {
+  /**
+   * Stop, and wait for what is already running.
+
+   * ⚠️ The session's end closes and deletes the database straight after this.
+   * A push or pull still on its way would then run its next statement on a
+   * closed connection ("Access to closed resource") — so nothing new starts once
+   * stopped, and the caller can await the work in flight before closing.
+   */
+  stop(): Promise<void> {
+    this.stopped = true;
     if (this.wakeTimer) clearTimeout(this.wakeTimer);
     this.wakeTimer = null;
     this.listeners.clear();
+    const running = [this.flushing, ...this.pulls.values()].filter((p): p is Promise<void> => !!p);
+    return Promise.all(running.map((p) => p.catch(() => undefined))).then(() => undefined);
   }
 
   /**
@@ -197,6 +210,7 @@ export class SyncEngine {
 
   /** Send what can be sent. Safe to call as often as anything likes. */
   flush(): Promise<void> {
+    if (this.stopped) return Promise.resolve();
     if (this.flushing) {
       this.flushAgain = true;
       return this.flushing;
@@ -205,10 +219,10 @@ export class SyncEngine {
       try {
         do {
           this.flushAgain = false;
-          while (await this.pushOnce()) {
+          while (!this.stopped && (await this.pushOnce())) {
             /* keep draining while batches go through */
           }
-        } while (this.flushAgain);
+        } while (this.flushAgain && !this.stopped);
       } finally {
         this.flushing = null;
         this.emit();
@@ -357,6 +371,7 @@ export class SyncEngine {
     */
     const running = this.pulls.get(scope);
     if (running) return running;
+    if (this.stopped) return Promise.resolve();
     const started = this.pullScope(scope).finally(() => this.pulls.delete(scope));
     this.pulls.set(scope, started);
     return started;
@@ -370,7 +385,9 @@ export class SyncEngine {
     this.emit();
     try {
       for (let page = 0; page < 100; page++) {
+        if (this.stopped) break;
         const res = await this.deps.transport.pull(scope, cursor);
+        if (this.stopped) break;
         await this.deps.records.applyPull(scope, res, { keep, firstPage });
         firstPage = false;
         cursor = res.cursor;

@@ -58,9 +58,9 @@ describe('kept responses', () => {
     }
   });
 
-  it('the phone keeps LESS than the table where it decided so: the rota week', () => {
+  it('the rota week is never kept (the table says so; the phone also refuses it)', () => {
     const [p, kept] = verdict(E.rota.week, { spaceId: 's1' });
-    expect(E.rota.week.keep).toBe(true);
+    expect(E.rota.week.keep).toBe(false);
     expect([p, kept]).toEqual([p, false]);
   });
 

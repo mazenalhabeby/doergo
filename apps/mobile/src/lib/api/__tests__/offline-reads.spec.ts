@@ -43,6 +43,7 @@ const OWN_READER: Record<string, string> = {
 
 /** Reads that cannot mean anything without a server, with the reason. */
 const ONLINE_ONLY: Record<string, string> = {
+  '/app/version': 'the update gate — any failure lets the app run, and an old answer would hide a required update',
   '/calendar/people': 'the invite picker — inviting somebody is itself online, so a kept colleague list would only offer a send that cannot happen',
   '/auth/me': 'reconciliation only — the signed-in member is restored from SecureStore, and the failure is swallowed',
   '/onboarding/status': 'joining an organization is not something that happens in a basement',
