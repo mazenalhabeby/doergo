@@ -31,7 +31,7 @@ describe('my-work widget — the card source', () => {
   it('reads jobs only through useHomeTasks — no direct list call, no new endpoint', () => {
     expect(code).toContain('useHomeTasks()');
     expect(code).not.toMatch(/tasksApi\.list\(/);
-    expect(code).not.toMatch(/fetchWithAuth|fetch\(/);
+    expect(code).not.toMatch(/\bcall\(E\.|\bapi\.(get|call)\(|fetch\(/);
   });
 
   it('the neither-module exit sits below every hook', () => {

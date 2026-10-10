@@ -1,4 +1,4 @@
-import { fetchWithAuth } from './client';
+import { call, E } from './client';
 import type { SubscriptionView } from '@hbcfield/shared/client';
 
 /**
@@ -7,5 +7,5 @@ import type { SubscriptionView } from '@hbcfield/shared/client';
  * inside the app would violate Apple/Google in-app-purchase rules.
  */
 export const billingApi = {
-  getStatus: async (): Promise<SubscriptionView> => fetchWithAuth<SubscriptionView>('/billing/subscription'),
+  getStatus: async (): Promise<SubscriptionView> => call(E.billing.subscription),
 };

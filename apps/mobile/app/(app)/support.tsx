@@ -65,7 +65,7 @@ export default function SupportScreen() {
     // Settle independently — a hiccup on one call shouldn't blank the whole screen.
     const [cfgR, listR] = await Promise.allSettled([supportApi.getConfig(), supportApi.list()]);
     if (cfgR.status === 'fulfilled') setConfig(cfgR.value);
-    // `list` resolves to the array itself — fetchWithAuth already unwrapped
+    // `list` resolves to the array itself — the client already unwrapped
     // the envelope. Guarded anyway: a screen must not crash on a bad payload.
     if (listR.status === 'fulfilled') setTickets(listR.value ?? []);
     // Only surface an error if BOTH failed (a real connectivity problem).

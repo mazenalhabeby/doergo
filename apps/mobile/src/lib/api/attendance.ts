@@ -1,43 +1,22 @@
-import { buildUrlWithQuery } from '@hbcfield/shared/client';
-import { path } from './path';
-import { fetchWithAuth } from './client';
+import { call, E } from './client';
 import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse, GeofenceExcursion } from './types';
 import type { BreakType } from './types';
 
-/** A scheduled shift with no clock-in — the shape `/attendance/no-shows` returns. */
-export interface NoShow {
-  id: string;
-  userId: string;
-  userName: string;
-  avatarUrl?: string | null;
-  spaceId: string;
-  spaceName: string;
-  expectedClockInAt: string;
-  expectedClockOutAt: string;
-  state: string;
-  reminderCount: number;
-  localDate: string;
-  excuseReason?: string | null;
-}
+export type { NoShow } from '@hbcfield/shared/client';
+import type { NoShow } from '@hbcfield/shared/client';
 
 // Attendance API - clock-in/clock-out
 export const attendanceApi = {
   getStatus: async (): Promise<AttendanceStatus> => {
-    return fetchWithAuth<AttendanceStatus>('/attendance/status', { method: 'GET' });
+    return call(E.attendance.status);
   },
 
   clockIn: async (input: ClockInInput): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>('/attendance/clock-in', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.attendance.clockIn, undefined, { body: input });
   },
 
   clockOut: async (input: ClockOutInput): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>('/attendance/clock-out', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.attendance.clockOut, undefined, { body: input });
   },
 
   heartbeat: async (input: { lat: number; lng: number; accuracy?: number }): Promise<{
@@ -47,10 +26,7 @@ export const attendanceApi = {
     autoClockedOut: boolean; // always false now — kept for backward compat
     activeExcursion: GeofenceExcursion | null;
   }> => {
-    return fetchWithAuth('/attendance/heartbeat', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.attendance.heartbeat, undefined, { body: input });
   },
 
   /** Check-ins kept while the phone had no signal, each with the moment it was taken. */
@@ -59,23 +35,17 @@ export const attendanceApi = {
     opened: boolean;
     returned: boolean;
   }> => {
-    return fetchWithAuth('/attendance/heartbeat/batch', {
-      method: 'POST',
-      body: JSON.stringify({ points }),
-    });
+    return call(E.attendance.heartbeatBatch, undefined, { body: { points } });
   },
 
   /** Report a reason + how long you'll be outside the ring (OUT_UNREPORTED → PENDING). */
   reportExcursion: async (reason: string, requestedMinutes: number): Promise<GeofenceExcursion> => {
-    return fetchWithAuth<GeofenceExcursion>('/attendance/excursions/report', {
-      method: 'POST',
-      body: JSON.stringify({ reason, requestedMinutes }),
-    });
+    return call(E.attendance.reportExcursion, undefined, { body: { reason, requestedMinutes } });
   },
 
   /**
    * ⚠️ THE RETURN TYPE IS A LIE THAT COST A DAY. The server answers
-   * `{ success, data: [ … ] }` — a BARE ARRAY once `fetchWithAuth` unwraps the
+   * `{ success, data: [ … ] }` — a BARE ARRAY once the client unwraps the
    * envelope — not `{ data, meta }`. Anything reading `res.data` gets
    * `undefined` with a 200 and no error anywhere to say so.
    *
@@ -84,8 +54,7 @@ export const attendanceApi = {
    * `components/home/use-schedule-totals.ts` for the one that was bitten.
    */
   getHistory: async (params?: AttendanceHistoryParams): Promise<PaginatedResponse<TimeEntry>> => {
-    const endpoint = buildUrlWithQuery('/attendance/history', params ?? {});
-    return fetchWithAuth<PaginatedResponse<TimeEntry>>(endpoint, { method: 'GET' });
+    return call(E.attendance.history, params ?? {});
   },
 
   /**
@@ -93,11 +62,7 @@ export const attendanceApi = {
    * server picks whichever is next, which is what "take my rest now" means.
    */
   startBreak: async (type?: BreakType, notes?: string, ruleId?: string): Promise<Break> => {
-    const endpoint = buildUrlWithQuery('/attendance/breaks/start', { type });
-    return fetchWithAuth<Break>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify({ notes, ruleId }),
-    });
+    return call(E.attendance.startBreak, { type }, { body: { notes, ruleId } });
   },
 
   /**
@@ -108,21 +73,15 @@ export const attendanceApi = {
    * alarm by not existing.
    */
   snoozeBreak: async (ruleId?: string): Promise<{ state: string; dueAt?: string; snoozeCount: number }> => {
-    return fetchWithAuth('/attendance/breaks/snooze', {
-      method: 'POST',
-      body: JSON.stringify({ ruleId }),
-    });
+    return call(E.attendance.snoozeBreak, undefined, { body: { ruleId } });
   },
 
   endBreak: async (notes?: string): Promise<Break> => {
-    return fetchWithAuth<Break>('/attendance/breaks/end', {
-      method: 'POST',
-      body: JSON.stringify({ notes }),
-    });
+    return call(E.attendance.endBreak, undefined, { body: { notes } });
   },
 
   getBreakStatus: async (): Promise<BreakStatus> => {
-    return fetchWithAuth<BreakStatus>('/attendance/breaks/status', { method: 'GET' });
+    return call(E.attendance.breakStatus);
   },
 
   /**
@@ -142,7 +101,7 @@ export const attendanceApi = {
     page?: number;
     limit?: number;
   }): Promise<TimeEntry[]> => {
-    const endpoint = buildUrlWithQuery('/attendance/all-entries', {
+    const result = await call(E.attendance.allEntries, {
       date: params?.date,
       startDate: params?.startDate,
       endDate: params?.endDate,
@@ -151,7 +110,6 @@ export const attendanceApi = {
       page: params?.page,
       limit: params?.limit ?? 500,
     });
-    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
@@ -169,9 +127,7 @@ export const attendanceApi = {
     const PAGE = 500;
     const rows: TimeEntry[] = [];
     for (let n = 1; n <= 10; n++) {
-      const r = await fetchWithAuth<any>(
-        buildUrlWithQuery('/attendance/all-entries', { status: 'CLOCKED_IN', page: n, limit: PAGE }), { method: 'GET' },
-      );
+      const r = await call(E.attendance.allEntries, { status: 'CLOCKED_IN', page: n, limit: PAGE });
       const got: TimeEntry[] = Array.isArray(r) ? r : r?.data ?? [];
       rows.push(...got);
       if (got.length < PAGE) break;
@@ -182,14 +138,14 @@ export const attendanceApi = {
   /** Who is clocked in RIGHT NOW, org-wide — date-independent (catches overnight
    *  shifts). Backs the admin dashboard presence. */
   getActiveEntries: async (): Promise<TimeEntry[]> => {
-    const result = await fetchWithAuth<any>('/attendance/active-entries', { method: 'GET' });
+    const result = await call(E.attendance.activeEntries);
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
 
   /** Admin view: breaks currently in progress across the org. */
   getActiveBreaks: async (): Promise<Array<{ userId: string; [k: string]: any }>> => {
-    const result = await fetchWithAuth<any>('/attendance/breaks/active', { method: 'GET' });
+    const result = await call(E.attendance.activeBreaks);
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
@@ -203,29 +159,19 @@ export const attendanceApi = {
 
   /** Completed entries waiting for a decision (`canViewSpaceAttendance`). */
   getPendingApprovals: async (params?: { page?: number; limit?: number }): Promise<TimeEntry[]> => {
-    const endpoint = buildUrlWithQuery('/attendance/approvals/pending', {
-      page: params?.page,
-      limit: params?.limit ?? 30,
-    });
-    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
+    const result = await call(E.attendance.pendingApprovals, { page: params?.page, limit: params?.limit ?? 30 });
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
 
   /** Approve one entry (`canReconcileAttendance`). */
   approveEntry: async (entryId: string, notes?: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(path`/attendance/approvals/${entryId}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({ notes }),
-    });
+    return call(E.attendance.approve, { id: entryId }, { body: { notes } });
   },
 
   /** Reject one entry — the reason is required and is shown to the member. */
   rejectEntry: async (entryId: string, reason: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(path`/attendance/approvals/${entryId}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
+    return call(E.attendance.reject, { id: entryId }, { body: { reason } });
   },
 
   /**
@@ -241,7 +187,7 @@ export const attendanceApi = {
    * used to download a whole page of shifts every minute to count them.
    */
   pendingApprovalsSummary: async (): Promise<{ total: number; bySpace: Record<string, number> }> => {
-    const r = await fetchWithAuth<any>('/attendance/approvals/pending?summary=true');
+    const r = await call(E.attendance.pendingApprovals, { summary: true });
     return { total: typeof r?.total === 'number' ? r.total : 0, bySpace: r?.bySpace ?? {} };
   },
 
@@ -256,59 +202,47 @@ export const attendanceApi = {
     entryId: string,
     body: { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string },
   ): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(path`/attendance/entries/${entryId}/edit`, {
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
+    return call(E.attendance.editEntry, { id: entryId }, { body });
   },
 
   /** Scheduled shifts nobody clocked in for (`canViewSpaceAttendance`). */
   listNoShows: async (days = 7): Promise<NoShow[]> => {
-    const result = await fetchWithAuth<any>(buildUrlWithQuery('/attendance/no-shows', { days }), { method: 'GET' });
+    const result = await call(E.attendance.noShows, { days });
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
 
   /** Excuse a no-show, or put it back on the list (`canReconcileAttendance`). */
   resolveNoShow: async (id: string, action: 'excuse' | 'reopen', reason?: string): Promise<NoShow> => {
-    return fetchWithAuth<NoShow>(path`/attendance/no-shows/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ action, reason }),
-    });
+    return call(E.attendance.resolveNoShow, { id }, { body: { action, reason } });
   },
 
   // ── Shift reminder responses ──────────────────────────────────────────────
 
   /** "I forgot to clock out" — self-report the real leave time (ISO string). */
   resolveForgotClockOut: async (entryId: string, clockOutAt: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(path`/attendance/entries/${entryId}/forgot-clock-out`, {
-      method: 'POST',
-      body: JSON.stringify({ clockOutAt }),
-    });
+    return call(E.attendance.forgotClockOut, { id: entryId }, { body: { clockOutAt } });
   },
 
   /** "I'm working extra time" — routes to a space leader for approval. */
   requestExtraTime: async (entryId: string): Promise<{ entryId: string; status: string }> => {
-    return fetchWithAuth(path`/attendance/entries/${entryId}/request-extra-time`, { method: 'POST' });
+    return call(E.attendance.requestExtraTime, { id: entryId });
   },
 
   /** Leader: open extra-time requests the caller can approve. */
   getPendingExtraTime: async (): Promise<TimeEntry[]> => {
-    const result = await fetchWithAuth<any>('/attendance/extra-time/pending', { method: 'GET' });
+    const result = await call(E.attendance.extraTimePending);
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
   },
 
   /** Leader: approve N more minutes of overtime for an open shift. */
   approveExtraTime: async (entryId: string, minutes: number): Promise<any> => {
-    return fetchWithAuth(path`/attendance/extra-time/${entryId}/approve`, {
-      method: 'POST',
-      body: JSON.stringify({ minutes }),
-    });
+    return call(E.attendance.approveExtraTime, { id: entryId }, { body: { minutes } });
   },
 
   /** Leader: reject an extra-time request. */
   rejectExtraTime: async (entryId: string): Promise<any> => {
-    return fetchWithAuth(path`/attendance/extra-time/${entryId}/reject`, { method: 'POST' });
+    return call(E.attendance.rejectExtraTime, { id: entryId });
   },
 };

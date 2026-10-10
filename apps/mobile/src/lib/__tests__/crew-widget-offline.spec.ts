@@ -1,69 +1,71 @@
 /**
  * ⚠️ PRESENCE IS NEVER KEPT. The Crew card must never draw who is on from a
  * response the phone saved earlier — "6h 53 late" about somebody who arrived an
- * hour ago, under a fresh clock. Pinned against the EXACT URLs the card's API
- * helpers build, not against hand-typed ones: a reordered query string or a
- * new parameter would otherwise slip past the NEVER list silently.
+ * hour ago, under a fresh clock. Pinned against the EXACT calls the card's API
+ * helpers make — the endpoint, its arguments and its own `keep` verdict — not
+ * against hand-typed URLs.
  */
-jest.mock('../api/client', () => ({ fetchWithAuth: jest.fn() }));
-import { fetchWithAuth } from '../api/client';
+jest.mock('../api/client', () => ({ call: jest.fn(), E: jest.requireActual('@hbcfield/shared/client').apiEndpoints }));
+import { call } from '../api/client';
 import { attendanceApi } from '../api/attendance';
-import { isKeptResponse } from '../api/response-cache';
+import { shouldKeep } from '../api/response-cache';
 
-const fetchMock = fetchWithAuth as unknown as jest.Mock;
+const fetchMock = call as unknown as jest.Mock;
 
-async function urlOf(call: () => Promise<unknown>): Promise<string> {
+type Def = { path: (a: unknown) => string; keep?: boolean | ((a: unknown) => boolean) };
+
+/** What the client asks for one call: the path, and whether the cache may hold the answer. */
+function asked(n = 0): { url: string; kept: boolean } {
+  const [def, args] = fetchMock.mock.calls[n] as [Def, unknown];
+  const url = def.path(args);
+  const keep = typeof def.keep === 'function' ? def.keep(args) : def.keep;
+  return { url, kept: shouldKeep(url, keep) };
+}
+
+async function urlOf(run: () => Promise<unknown>): Promise<{ url: string; kept: boolean }> {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue({ data: [] });
-  await call();
+  await run();
   expect(fetchMock).toHaveBeenCalledTimes(1);
-  return fetchMock.mock.calls[0][0] as string;
+  return asked();
 }
 
 describe('the Crew card reads nothing from the phone\'s store', () => {
-  it('the approvals COUNT is never kept either (it sits beside presence)', () => {
-    expect(isKeptResponse('/attendance/approvals/pending?summary=true')).toBe(false);
-    expect(isKeptResponse('/attendance/approvals/pending?page=1&summary=true')).toBe(false);
+  it('the approvals COUNT is never kept either (it sits beside presence)', async () => {
+    const r = await urlOf(() => attendanceApi.pendingApprovalsSummary());
+    expect(r).toEqual({ url: '/attendance/approvals/pending?summary=true', kept: false });
   });
 
   it('who is on — every page of all-entries?status=CLOCKED_IN, as the card asks it', async () => {
-    const url = await urlOf(() => attendanceApi.getClockedInAll());
-    expect(url).toContain('status=CLOCKED_IN');
-    expect(isKeptResponse(url)).toBe(false);
+    const r = await urlOf(() => attendanceApi.getClockedInAll());
+    expect(r.url).toContain('status=CLOCKED_IN');
+    expect(r.kept).toBe(false);
   });
 
   it('who is on a rest', async () => {
-    const url = await urlOf(() => attendanceApi.getActiveBreaks());
-    expect(isKeptResponse(url)).toBe(false);
+    expect((await urlOf(() => attendanceApi.getActiveBreaks())).kept).toBe(false);
+  });
+
+  it('who is on the clock now, org-wide', async () => {
+    expect((await urlOf(() => attendanceApi.getActiveEntries())).kept).toBe(false);
   });
 
   it('who has not come — today\'s no-shows', async () => {
-    const url = await urlOf(() => attendanceApi.listNoShows(1));
-    expect(url).toContain('days=1');
-    expect(isKeptResponse(url)).toBe(false);
+    const r = await urlOf(() => attendanceApi.listNoShows(1));
+    expect(r.url).toContain('days=1');
+    expect(r.kept).toBe(false);
   });
 
-  it('presence stays unkept whatever order the query takes', () => {
-    for (const u of [
-      '/attendance/all-entries?status=CLOCKED_IN',
-      '/attendance/all-entries?limit=300&status=CLOCKED_IN',
-      '/attendance/all-entries?page=1&limit=300&status=CLOCKED_IN',
-      '/attendance/breaks/active',
-      '/attendance/no-shows?days=1',
-      '/attendance/no-shows',
-      '/attendance/active-entries',
-    ]) expect([u, isKeptResponse(u)]).toEqual([u, false]);
-  });
-
-  it('a history of CLOCKED_OUT shifts is still kept — the exclusion is presence only', () => {
-    expect(isKeptResponse('/attendance/all-entries?startDate=2026-09-01&endDate=2026-09-07&status=CLOCKED_OUT')).toBe(true);
+  it('a history of CLOCKED_OUT shifts is still kept — the exclusion is presence only', async () => {
+    const r = await urlOf(() => attendanceApi.getAllEntries({ startDate: '2026-09-01', endDate: '2026-09-07', status: 'CLOCKED_OUT' }));
+    expect(r.kept).toBe(true);
   });
 
   it('the approvals count reads the summary route, never a page of shifts', async () => {
     fetchMock.mockReset();
     fetchMock.mockResolvedValue({ total: 95, bySpace: { a: 30 } });
     const r = await attendanceApi.pendingApprovalsSummary();
-    expect(fetchMock.mock.calls[0][0]).toBe('/attendance/approvals/pending?summary=true');
+    expect(asked().url).toBe('/attendance/approvals/pending?summary=true');
     expect(r).toEqual({ total: 95, bySpace: { a: 30 } });
   });
 
@@ -77,8 +79,8 @@ describe('the Crew card reads nothing from the phone\'s store', () => {
 describe('getClockedInAll — past one page, the rest are fetched', () => {
   it('BUG FIXED: 1,200 on the clock → three pages, 1,200 people, not a silent 300', async () => {
     fetchMock.mockReset();
-    fetchMock.mockImplementation(async (url: string) => {
-      const page = Number(/page=(\d+)/.exec(url)?.[1] ?? 1);
+    fetchMock.mockImplementation(async (_def: unknown, args: { page?: number }) => {
+      const page = args?.page ?? 1;
       return Array.from({ length: page < 3 ? 500 : 200 }, (_, k) => ({ id: `e${page}-${k}` }));
     });
     const rows = await attendanceApi.getClockedInAll();

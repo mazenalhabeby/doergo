@@ -1,49 +1,19 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
-import { buildUrlWithQuery } from '@hbcfield/shared/client';
+import type { OvertimeRequest } from '@hbcfield/shared/client';
+import { call, E } from './client';
 
-export interface OvertimeRequest {
-  id: string;
-  technicianId: string;
-  timeEntryId: string;
-  locationId: string;
-  status: string;
-  technicianRespondedAt?: string;
-  technicianReason?: string;
-  approvalMethod?: 'REMOTE' | 'SIGNATURE';
-  approvedById?: string;
-  approvedAt?: string;
-  rejectedAt?: string;
-  rejectionReason?: string;
-  leaderName?: string;
-  maxDurationMinutes?: number;
-  overtimeStartAt?: string;
-  overtimeEndAt?: string;
-  actualEndAt?: string;
-  overtimeMinutes?: number;
-  organizationId: string;
-  createdAt: string;
-  location?: { id: string; name: string };
-  approvedBy?: { id: string; firstName: string; lastName: string };
-}
+export type { OvertimeRequest };
 
 export const overtimeApi = {
   getActive: async (): Promise<OvertimeRequest | null> => {
-    return fetchWithAuth<OvertimeRequest | null>('/overtime/active', { method: 'GET' });
+    return call(E.overtime.active);
   },
 
   respond: async (data: { response: 'YES' | 'NO'; reason?: string }): Promise<any> => {
-    return fetchWithAuth('/overtime/respond', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.overtime.respond, undefined, { body: data });
   },
 
   approveRemote: async (id: string, data: { maxDurationMinutes: number; notes?: string }): Promise<any> => {
-    return fetchWithAuth(path`/overtime/${id}/approve`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.overtime.approve, { id }, { body: data });
   },
 
   approveSignature: async (
@@ -56,25 +26,18 @@ export const overtimeApi = {
       notes?: string;
     },
   ): Promise<any> => {
-    return fetchWithAuth(path`/overtime/${id}/approve-signature`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.overtime.approveSignature, { id }, { body: data });
   },
 
   reject: async (id: string, data: { reason: string }): Promise<any> => {
-    return fetchWithAuth(path`/overtime/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.overtime.reject, { id }, { body: data });
   },
 
   getPendingApprovals: async (): Promise<OvertimeRequest[]> => {
-    return fetchWithAuth<OvertimeRequest[]>('/overtime/pending-approvals', { method: 'GET' });
+    return call(E.overtime.pendingApprovals);
   },
 
   getHistory: async (params?: { technicianId?: string; status?: string; page?: number; limit?: number }): Promise<any> => {
-    const endpoint = buildUrlWithQuery('/overtime/history', params ?? {});
-    return fetchWithAuth(endpoint, { method: 'GET' });
+    return call(E.overtime.history, { ...params });
   },
 };

@@ -3,9 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { expoCrypto } from '../optional-native';
 import * as Device from 'expo-device';
 import i18n from '../../i18n';
-import { API_URL, getAccessToken, saveTokens } from '../api/client';
-import { unwrapEnvelope } from '../api/envelope';
-import { path } from '../api/path';
+import { ApiError, call, E, getAccessToken, saveTokens } from '../api/client';
 import { BiometricError, type BiometricCredential, type KeyOwner } from './types';
 import { deviceKeyModule } from './native';
 
@@ -126,29 +124,21 @@ export const BIOMETRIC_REQUEST_TIMEOUT_MS = 15_000;
   ⚠️ THESE HAD NO TIMEOUT. A request into a dead zone waited for the OS to give
   up — minutes, with the fingerprint screen spinning — and every failure,
   including "no network", ended the same way as a refusal.
-*/
-async function send(path: string, init: { method: 'POST' | 'DELETE'; body?: unknown; bearer?: string }): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), BIOMETRIC_REQUEST_TIMEOUT_MS);
-  try {
-    return await fetch(`${API_URL}${path}`, {
-      method: init.method,
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(init.bearer ? { Authorization: `Bearer ${init.bearer}` } : {}),
-      },
-      ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
-    });
-  } catch {
-    // No network, a timeout, DNS: nothing was decided about this phone's key.
-    throw new BiometricError('unreachable');
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
-const post = (path: string, body: unknown, bearer?: string) => send(path, { method: 'POST', body, bearer });
+  Every one goes through the API client now, with the same rules each time:
+  one try (a retried challenge is a second nonce), the 15 s budget, and no
+  refresh on a 401 — a 401 HERE is a verdict about this phone's key, not about
+  the session.
+*/
+const ONE_TRY = { retry: false, timeoutMs: BIOMETRIC_REQUEST_TIMEOUT_MS, refreshOn401: false } as const;
+
+/**
+ * The server's verdict, or `'unreachable'` for anything that never reached a
+ * decision (no network, a timeout, DNS, an answer that could not be read).
+ */
+function verdictOf(err: unknown): { status: number } | 'unreachable' {
+  return err instanceof ApiError && err.kind === 'http' ? { status: err.status } : 'unreachable';
+}
 
 /**
  * Did the SERVER say this phone's key is no longer good?
@@ -216,19 +206,20 @@ export class DeviceKeyCredential implements BiometricCredential {
     );
 
     const id = await deviceId();
-    const res = await post(
-      '/auth/biometric/enroll',
-      { deviceId: id, publicKey, label: deviceLabel(), platform: Platform.OS },
-      access,
-    ).catch(async (err) => {
-      // Not even sent: the key just made must not outlive the attempt either.
+    try {
+      // Rides on the live session: the client sends its token.
+      await call(E.auth.biometricEnroll, undefined, {
+        ...ONE_TRY,
+        body: { deviceId: id, publicKey, label: deviceLabel(), platform: Platform.OS },
+      });
+    } catch (err) {
+      /*
+        Never leave a key on the device the server does not know about — it
+        would prompt, sign, and be rejected forever with nothing to explain it.
+        Not even sent counts too: the key just made must not outlive the attempt.
+      */
       await deleteKeys(KEY_ALIAS).catch(() => {});
-      throw err;
-    });
-    if (!res.ok) {
-      // Never leave a key on the device the server does not know about — it
-      // would prompt, sign, and be rejected forever with nothing to explain it.
-      await deleteKeys(KEY_ALIAS).catch(() => {});
+      if (verdictOf(err) === 'unreachable') throw new BiometricError('unreachable');
       throw new BiometricError('rejected', 'Enrolment refused');
     }
 
@@ -246,10 +237,14 @@ export class DeviceKeyCredential implements BiometricCredential {
 
     // 1 — a nonce we did not choose. Single-use, short-lived, server-issued:
     // a client-supplied challenge turns one captured signature into a key.
-    const chRes = await post('/auth/biometric/challenge', { deviceId: id });
-    if (!chRes.ok) throw new BiometricError(serverRevokedKey(chRes.status) ? 'rejected' : 'unreachable');
-    const chBody = await chRes.json().catch(() => null);
-    const challenge: string | undefined = unwrapEnvelope<{ challenge?: string } | null>(chBody)?.challenge;
+    let challenge: string | undefined;
+    try {
+      const ch: { challenge?: string } | null = await call(E.auth.biometricChallenge, undefined, { ...ONE_TRY, body: { deviceId: id } });
+      challenge = ch?.challenge;
+    } catch (err) {
+      const v = verdictOf(err);
+      throw new BiometricError(v !== 'unreachable' && serverRevokedKey(v.status) ? 'rejected' : 'unreachable');
+    }
     if (!challenge) throw new BiometricError('unreachable');
 
     // 2 — the only prompt in the whole flow.
@@ -294,9 +289,12 @@ export class DeviceKeyCredential implements BiometricCredential {
     }
 
     // 3 — the server checks the signature against the key it holds for this device.
-    const vRes = await post('/auth/biometric/verify', { deviceId: id, signature });
-    if (!vRes.ok) {
-      if (serverRevokedKey(vRes.status)) {
+    let tokens: { accessToken?: string; refreshToken?: string } | null;
+    try {
+      tokens = await call(E.auth.biometricVerify, undefined, { ...ONE_TRY, body: { deviceId: id, signature } });
+    } catch (err) {
+      const v = verdictOf(err);
+      if (v !== 'unreachable' && serverRevokedKey(v.status)) {
         // Revoked from another device, or the key is unknown. Either way this
         // phone is no longer bound, so stop pretending it is.
         await this.forget();
@@ -305,8 +303,6 @@ export class DeviceKeyCredential implements BiometricCredential {
       // The server could not answer properly — say "try again" and keep the key.
       throw new BiometricError('unreachable');
     }
-    const body = await vRes.json().catch(() => null);
-    const tokens = unwrapEnvelope<{ accessToken?: string; refreshToken?: string } | null>(body);
     if (!tokens?.accessToken || !tokens.refreshToken) throw new BiometricError('unreachable');
     await saveTokens(tokens.accessToken, tokens.refreshToken);
   }
@@ -322,7 +318,7 @@ export class DeviceKeyCredential implements BiometricCredential {
       // outlives it is revoked from the Devices screen or by a password change.
       (async () => {
         const access = await getAccessToken();
-        if (id && access) await send(path`/auth/devices/${id}`, { method: 'DELETE', bearer: access });
+        if (id && access) await call(E.auth.removeDevice, { deviceId: id }, ONE_TRY);
       })(),
     ]);
   }

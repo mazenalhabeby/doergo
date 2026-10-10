@@ -438,8 +438,10 @@ describe('§9 — the twelve rules', () => {
   });
 
   it('7 · never reads /attendance/status from the response cache', () => {
-    const cache = code('lib/api/response-cache.ts');
-    expect(cache).toMatch(/\^\\\/attendance\\\/\(status\|breaks\\\/status\)/);
+    // The endpoints say so themselves (`keep: false` in the shared table); the client passes it to the cache.
+    const { apiEndpoints } = require('@hbcfield/shared/client');
+    expect(apiEndpoints.attendance.status.keep).toBe(false);
+    expect(apiEndpoints.attendance.breakStatus.keep).toBe(false);
     // And the card goes through `useShift`, which owns the offline path.
     expect(card).toMatch(/useShift\(\)/);
     expect(card).not.toMatch(/attendanceApi\.getStatus/);
@@ -918,7 +920,7 @@ describe('the totals, and two silent ways they were always zero', () => {
   it('reads the BARE ARRAY the endpoint actually returns', () => {
     /*
       ⚠️ `/attendance/history` answers `{ success, data: [ … ] }` — a bare
-      array once `fetchWithAuth` unwraps the envelope — whatever
+      array once the client unwraps the envelope — whatever
       `getHistory`'s `PaginatedResponse` return type says. Reading `res.data`
       gave `undefined` on every call, so every figure was 0 and ⑥ could never
       appear: a 200, no error, and a card quietly saying nothing happened

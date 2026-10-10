@@ -25,13 +25,13 @@ jest.mock('expo-constants', () => ({
   default: { expoConfig: { version: '1.0.6', hostUri: undefined } },
 }));
 
-import { fetchWithAuth, observeResponses, type ResponseObservation } from '../client';
+import { api, observeResponses, type ResponseObservation } from '../client';
 
 const ok = (body: unknown) => ({
   ok: true,
   status: 200,
   headers: { get: () => null },
-  json: async () => ({ data: body }),
+  text: async () => JSON.stringify({ data: body }),
 });
 
 /** What React Native throws when nothing answered. */
@@ -54,7 +54,7 @@ describe('a request that never reached the server', () => {
       .mockImplementationOnce(async () => ok([{ id: 'task-1' }]));
     (global as { fetch?: unknown }).fetch = fetchMock;
 
-    await expect(fetchWithAuth('/tasks?retry-succeeds')).resolves.toEqual([{ id: 'task-1' }]);
+    await expect(api.get('/tasks?retry-succeeds')).resolves.toEqual([{ id: 'task-1' }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     // Two failures in a row is what the connectivity monitor calls a weak
     // connection. A blip the retry survived must not count as one.
@@ -65,7 +65,7 @@ describe('a request that never reached the server', () => {
     const fetchMock = jest.fn().mockImplementation(dead);
     (global as { fetch?: unknown }).fetch = fetchMock;
 
-    await expect(fetchWithAuth('/tasks?retry-fails')).rejects.toMatchObject({ statusCode: 0 });
+    await expect(api.get('/tasks?retry-fails')).rejects.toMatchObject({ statusCode: 0, code: 'NETWORK' });
     expect(fetchMock).toHaveBeenCalledTimes(2);
     // Reported once, not twice: one outage, one observation.
     expect(seen.filter((o) => o.kind === 'network-error')).toHaveLength(1);
@@ -75,18 +75,19 @@ describe('a request that never reached the server', () => {
     const fetchMock = jest.fn().mockImplementation(dead);
     (global as { fetch?: unknown }).fetch = fetchMock;
 
-    await expect(
-      fetchWithAuth('/attendance/clock-in', { method: 'POST', body: '{}' }),
-    ).rejects.toMatchObject({ statusCode: 0 });
+    await expect(api.post('/attendance/clock-in', {})).rejects.toMatchObject({ statusCode: 0, code: 'NETWORK' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not retry a request that timed out — the 15s was the answer', async () => {
-    const abort = () => Promise.reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
-    const fetchMock = jest.fn().mockImplementation(abort);
+    // Nothing ever answers; the per-attempt timer (15 s in the app, 20 ms here) is what ends it.
+    const fetchMock = jest.fn().mockImplementation(() => new Promise(() => undefined));
     (global as { fetch?: unknown }).fetch = fetchMock;
 
-    await expect(fetchWithAuth('/tasks?slow')).rejects.toMatchObject({ statusCode: 408 });
+    // ⚠️ Was 408 / SLOW_CONNECTION; the shared core says status 0 / TIMEOUT.
+    await expect(api.get('/tasks?slow', { timeoutMs: 20 })).rejects.toMatchObject({ statusCode: 0, code: 'TIMEOUT', kind: 'timeout' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    // A slow line is not "offline": the connectivity monitor is not told.
+    expect(seen.filter((o) => o.kind === 'network-error')).toHaveLength(0);
   });
 });

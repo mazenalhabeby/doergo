@@ -1,15 +1,12 @@
 import { forgetPushToken, storedPushToken } from '../push-token-store';
-import { fetchApi, fetchWithAuth, saveTokens, clearTokens, getAccessToken, getRefreshToken, getApiUrl } from './client';
+import { call, E, saveTokens, clearTokens, getAccessToken, getRefreshToken } from './client';
 import type { User, LoginResponse } from './types';
 
-// Auth API (login/register use fetchApi - no auth required)
+// Auth API (login/register/forgot-password are public endpoints - no token, no refresh)
 export const authApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    const result = await fetchApi<LoginResponse>('/auth/login', {
-      method: 'POST',
-      // client:'mobile' → 90-day rotating session (app users stay signed in).
-      body: JSON.stringify({ email, password, client: 'mobile' }),
-    });
+    // client:'mobile' → 90-day rotating session (app users stay signed in).
+    const result: LoginResponse = await call(E.auth.login, undefined, { body: { email, password, client: 'mobile' } });
 
     // Save tokens after successful login
     await saveTokens(result.accessToken, result.refreshToken);
@@ -28,10 +25,7 @@ export const authApi = {
     lastName: string;
     companyName?: string;
   }): Promise<void> => {
-    await fetchApi('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    await call(E.auth.register, undefined, { body: data });
   },
 
   logout: async (): Promise<void> => {
@@ -59,10 +53,8 @@ export const authApi = {
           scopes the delete to this member AND this token — signing out of one
           phone never silences another.
         */
-        await fetchWithAuth('/auth/logout', {
-          method: 'POST',
-          body: JSON.stringify({ refreshToken, pushToken }),
-        }, false); // Don't retry on 401 during logout
+        // No refresh on a 401 during logout — the session is ending either way.
+        await call(E.auth.logout, undefined, { body: { refreshToken, pushToken }, refreshOn401: false });
         // Told, and confirmed: only now is it safe to forget.
         await forgetPushToken();
       }
@@ -74,118 +66,76 @@ export const authApi = {
   },
 
   getMe: async (): Promise<User> => {
-    return fetchWithAuth<User>('/auth/me', { method: 'GET' });
+    return call(E.auth.me);
   },
 };
 
 // User API - for refreshing current user profile
 export const userApi = {
   me: async (): Promise<User> => {
-    return fetchWithAuth<User>('/auth/me');
+    return call(E.auth.me);
   },
   // Set the manual availability override (AVAILABLE | BUSY | AWAY, or null = auto).
   setPresence: async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY' | null): Promise<void> => {
-    return fetchWithAuth<void>('/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify({ presence }),
-    });
+    return call(E.users.updateMe, undefined, { body: { presence } });
   },
   // Set the per-user clock display preference ("12h" | "24h"); display-only.
   setTimeFormat: async (timeFormat: '12h' | '24h'): Promise<void> => {
-    return fetchWithAuth<void>('/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify({ timeFormat }),
-    });
+    return call(E.users.updateMe, undefined, { body: { timeFormat } });
   },
   // The language the server writes this member's notifications in. Pushes are
   // composed on the server while the app is closed, so the choice has to live
   // there as well as on the phone.
   setLocale: async (locale: string): Promise<void> => {
-    return fetchWithAuth<void>('/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify({ locale }),
-    });
+    return call(E.users.updateMe, undefined, { body: { locale } });
   },
   // Your own notification switches on the server, and which member emails the
   // organization allows at all (the ceiling — notifications/email-prefs in shared).
   getNotificationPrefs: async (): Promise<{ prefs: Record<string, boolean>; organizationAllows: Record<string, boolean> }> => {
-    return fetchWithAuth('/users/me/notification-prefs');
+    return call(E.notifications.prefs);
   },
   // Merge-update your own switches: only the keys given change.
   updateNotificationPrefs: async (prefs: Record<string, boolean>): Promise<Record<string, boolean>> => {
-    return fetchWithAuth('/users/me/notification-prefs', {
-      method: 'PATCH',
-      body: JSON.stringify({ prefs }),
-    });
+    return call(E.notifications.updatePrefs, undefined, { body: { prefs } });
   },
   // Update your own name (any authenticated user, incl. portal clients).
   updateProfile: async (data: { firstName: string; lastName: string }): Promise<void> => {
-    return fetchWithAuth<void>('/users/me', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return call(E.users.updateMe, undefined, { body: data });
   },
 };
 
 // Password API
 export const passwordApi = {
   changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<void> => {
-    return fetchWithAuth<void>('/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.auth.changePassword, undefined, { body: data });
   },
 
   forgotPassword: async (email: string): Promise<void> => {
-    return fetchApi<void>('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
+    return call(E.auth.forgotPassword, undefined, { body: { email } });
   },
 };
 
 // Account API
 export const accountApi = {
   deleteAccount: async (password: string): Promise<void> => {
-    return fetchWithAuth<void>('/auth/account', {
-      method: 'DELETE',
-      body: JSON.stringify({ password }),
-    });
+    return call(E.auth.deleteAccount, undefined, { body: { password } });
   },
 };
 
 // Avatar API - profile picture upload (local file storage)
 export const avatarApi = {
   upload: async (uri: string, fileName: string, fileType: string): Promise<{ avatarUrl: string }> => {
-    const token = await getAccessToken();
     const formData = new FormData();
     formData.append('file', {
       uri,
       name: fileName,
       type: fileType,
     } as any);
-
-    const apiUrl = getApiUrl();
-    const response = await fetch(`${apiUrl}/users/avatar/upload`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || 'Upload failed');
-    }
-
-    const data = await response.json();
-    return data.data;
+    // Multipart through the client: the token, a 401 → refresh, the long upload timeout, never retried.
+    return call(E.users.uploadAvatar, undefined, { body: formData });
   },
 
   remove: async (): Promise<any> => {
-    return fetchWithAuth('/users/avatar', {
-      method: 'DELETE',
-    });
+    return call(E.users.removeAvatar);
   },
 };

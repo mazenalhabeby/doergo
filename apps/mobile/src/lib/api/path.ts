@@ -1,21 +1,11 @@
 /**
- * An API path with its parameters ENCODED — the one way to build one.
+ * An API path with its parameters ENCODED — now the shared core's `path`
+ * (packages/shared/src/http/core/path.ts), the same function the endpoint
+ * table builds every route with. Kept as a module so `path` imports outside the
+ * API layer (a device's own route, a test) keep working.
  *
- *   path`/tasks/${taskId}/crew/${action}`
- *
- * ⚠️ Every value is a SEGMENT. An id with a `/`, `?` or `#` in it (a deep link,
- * a push payload, a server answer — none of which this app controls) used to
- * become a different endpoint: `/tasks/../users/me` or `/documents/x?y`. Each
- * interpolated value now goes through `encodeURIComponent`, so it can only ever
- * be the segment it was put in.
- *
- * Query strings are not built here — `buildUrlWithQuery` encodes those.
- * `api-path-guard.spec.ts` fails if a request path is interpolated by hand.
+ * ⚠️ Every value is a SEGMENT: an id with a `/`, `?` or `#` in it can only ever
+ * be the segment it was put in. A request path is never written by hand in this
+ * app — it comes from `apiEndpoints` (api-path-guard.spec.ts).
  */
-export function path(strings: TemplateStringsArray, ...values: Array<string | number>): string {
-  let out = strings[0] ?? '';
-  for (let i = 0; i < values.length; i++) {
-    out += encodeURIComponent(String(values[i])) + (strings[i + 1] ?? '');
-  }
-  return out;
-}
+export { path, withQuery } from '@hbcfield/shared/client';

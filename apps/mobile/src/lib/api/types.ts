@@ -25,6 +25,11 @@ import type {
   TechniciansListResponse,
   GeofenceExcursion,
   GeofenceExcursionStatus,
+  TaskHandover,
+  JobTimeSplit,
+  CrewView,
+  JobTimeView,
+  OpenRoleTask,
 } from '@hbcfield/shared/client';
 
 // Re-export shared enums
@@ -47,6 +52,12 @@ export type {
   TechniciansListResponse,
   GeofenceExcursion,
   GeofenceExcursionStatus,
+  // Answer shapes both apps declared — one definition now (shared http/types.ts).
+  TaskHandover,
+  JobTimeSplit,
+  CrewView,
+  JobTimeView,
+  OpenRoleTask,
 };
 
 // ============================================================================
@@ -212,54 +223,6 @@ export interface UpdateTaskInput {
   locationAddress?: string;
 }
 
-/** "What I did, and what is left" — written by a worker who stopped. */
-export interface TaskHandover {
-  id: string;
-  note: string;
-  attachmentIds: string[];
-  workedMinutes: number | null;
-  createdAt: string;
-  author: { id: string; firstName: string; lastName: string; avatarUrl?: string | null };
-}
-
-/** Minutes of a job's time, split (packages/shared/src/tasks/job-time.ts). */
-export interface JobTimeSplit { travel: number; working: number; blocked: number }
-
-type Person = { id: string; firstName: string; lastName: string };
-
-/** GET /tasks/:id/time — read, never stored; only time inside shifts counts. */
-/** Who is on a crew job now, and who leads (shared tasks/crew.ts) — rides on GET /tasks/:id/time. */
-export interface CrewView {
-  /** The organization's crew rules: only the leader moves the job's step. */
-  crewMode: boolean;
-  leader: { userId: string | null; acting: boolean; source: 'TODAY' | 'LEAD' | 'ACTING' | 'NONE' };
-  /** A lead handed over for today, while it lasts. */
-  today: { userId: string; until: string } | null;
-  members: Array<{
-    user: Person;
-    role: 'LEAD' | 'MEMBER';
-    joined: boolean;
-    since: string | null;
-    /** When they last left the job — null if they never joined it. */
-    lastLeftAt?: string | null;
-    selfBlockedSince: string | null;
-    selfBlockReason: string | null;
-    onClock: boolean;
-  }>;
-}
-
-export interface JobTimeView {
-  asOf: string;
-  total: JobTimeSplit;
-  /** `live`: what that person's time is running as now — their own stop makes it blocked. */
-  byWorker: Array<JobTimeSplit & { user: Person; live?: keyof JobTimeSplit | null }>;
-  crew?: CrewView | null;
-  /** Running now (somebody credited is on the clock): a screen may tick it forward from `asOf`. */
-  live: { kind: keyof JobTimeSplit; workers: number } | null;
-  /** The first move into counted time — and, when the office made it for somebody, who and why. */
-  startedBy: { user: Person | null; forUser: Person | null; office: boolean; reason: string | null; at: string } | null;
-}
-
 /** One job in the member's own handover picture (GET /tasks/handover/mine). */
 export interface HandoverJob {
   id: string;
@@ -404,12 +367,12 @@ export interface LocationUpdate {
   taskId?: string;
 }
 
-export interface LocationPoint {
+export type LocationPoint = {
   lat: number;
   lng: number;
   accuracy?: number;
   timestamp?: string;
-}
+};
 
 export interface LocationBatchUpdate {
   taskId?: string;
@@ -530,22 +493,4 @@ export interface ScheduleEntry {
   endTime: string;
   isActive: boolean;
   notes?: string;
-}
-
-/** A task open to a role the member holds (GET /tasks/open-for-me). */
-export interface OpenRoleTask {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  dueDate: string | null;
-  openedAt: string | null;
-  openSpots: number | null;
-  openSpotsLeft: number | null;
-  roleId: string | null;
-  roleName: string | null;
-  spaceId: string | null;
-  spaceName: string | null;
-  locationAddress: string | null;
-  distanceKm: number | null;
 }

@@ -36,12 +36,31 @@ jest.mock('expo-local-authentication', () => ({ authenticateAsync: jest.fn() }))
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid' }));
 jest.mock('expo-device', () => ({ modelName: 'Pixel' }));
 const saveTokens = jest.fn();
-jest.mock('../../api/client', () => ({
-  API_URL: 'http://test',
-  getAccessToken: jest.fn().mockResolvedValue('access'),
-  getRefreshToken: jest.fn(),
-  saveTokens: (...a: unknown[]) => saveTokens(...a),
-}));
+/*
+  The REAL request pipeline (the shared core the phone's client plugs into),
+  over a mocked `fetch` — so these count actual round trips and read the core's
+  real error kinds, not a stand-in's.
+*/
+jest.mock('../../api/client', () => {
+  const shared = jest.requireActual('@hbcfield/shared/client');
+  const api = shared.createApiClient({ baseUrl: () => 'http://test', getToken: async () => 'access' });
+  return {
+    ApiError: shared.ApiError,
+    E: shared.apiEndpoints,
+    api,
+    call: api.call,
+    getAccessToken: jest.fn().mockResolvedValue('access'),
+    getRefreshToken: jest.fn(),
+    saveTokens: (...a: unknown[]) => saveTokens(...a),
+  };
+});
+/** A `fetch` answer as the core reads it. */
+const reply = (status: number, body?: unknown) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  headers: { get: () => null },
+  text: async () => (body === undefined ? '' : JSON.stringify(body)),
+});
 jest.mock('../../../i18n', () => ({ t: (k: string) => k }));
 
 describe('unlock costs exactly one prompt', () => {
@@ -49,9 +68,9 @@ describe('unlock costs exactly one prompt', () => {
     jest.clearAllMocks();
     global.fetch = jest.fn(async (url: any) => {
       if (String(url).includes('challenge')) {
-        return { ok: true, json: async () => ({ data: { challenge: 'Y2hhbGxlbmdl' } }) } as any;
+        return reply(200, { data: { challenge: 'Y2hhbGxlbmdl' } }) as any;
       }
-      return { ok: true, json: async () => ({ data: { accessToken: 'a', refreshToken: 'r' } }) } as any;
+      return reply(200, { data: { accessToken: 'a', refreshToken: 'r' } }) as any;
     }) as any;
   });
 
@@ -145,7 +164,7 @@ describe('a failed verify only forgets the key on the server\'s word', () => {
     deleteKeys.mockClear();
     signWithOptions.mockResolvedValue({ success: true, signature: 'sig' });
     global.fetch = jest.fn(async (url: any) => {
-      if (String(url).includes('challenge')) return { ok: true, status: 200, json: async () => ({ success: true, data: { challenge: 'Y2g=' } }) } as any;
+      if (String(url).includes('challenge')) return reply(200, { success: true, data: { challenge: 'Y2g=' } }) as any;
       return verify();
     }) as any;
     const { DeviceKeyCredential } = require('../device-key-credential');
@@ -154,11 +173,16 @@ describe('a failed verify only forgets the key on the server\'s word', () => {
   };
 
   it.each([401, 403, 404])('%i → rejected, key forgotten', async (status) => {
-    expect(await verifyWith(async () => ({ ok: false, status, json: async () => ({}) }))).toEqual({ failure: 'rejected', deleted: true });
+    expect(await verifyWith(async () => reply(status, {}))).toEqual({ failure: 'rejected', deleted: true });
   });
 
   it.each([429, 500, 502, 503])('%i → unreachable, key kept', async (status) => {
-    expect(await verifyWith(async () => ({ ok: false, status, json: async () => ({}) }))).toEqual({ failure: 'unreachable', deleted: false });
+    expect(await verifyWith(async () => reply(status, {}))).toEqual({ failure: 'unreachable', deleted: false });
+  });
+
+  it('a refused verify is asked ONCE — the client\'s 429 retry is off here (a nonce is single-use)', async () => {
+    await verifyWith(async () => reply(429, {}));
+    expect((global.fetch as jest.Mock)).toHaveBeenCalledTimes(2);
   });
 
   it('no network → unreachable, key kept', async () => {
@@ -166,7 +190,7 @@ describe('a failed verify only forgets the key on the server\'s word', () => {
   });
 
   it('every request carries an abort signal (a timeout), not an open-ended wait', async () => {
-    await verifyWith(async () => ({ ok: true, status: 200, json: async () => ({ data: { accessToken: 'a', refreshToken: 'r' } }) }));
+    await verifyWith(async () => reply(200, { data: { accessToken: 'a', refreshToken: 'r' } }));
     for (const [, init] of (global.fetch as jest.Mock).mock.calls) expect(init.signal).toBeDefined();
   });
 

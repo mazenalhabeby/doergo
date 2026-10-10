@@ -1,5 +1,4 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
+import { call, E } from './client';
 import type { ServiceReport } from './types';
 
 /*
@@ -20,7 +19,7 @@ export const reportsApi = {
    * way "none" is told apart from the envelope.
    */
   getByTask: async (taskId: string): Promise<ServiceReport | null> => {
-    const r = await fetchWithAuth<Partial<ServiceReport> | null>(path`/tasks/${taskId}/report`, { method: 'GET' });
+    const r: Partial<ServiceReport> | null = await call(E.tasks.report, { id: taskId });
     return r && typeof r === 'object' && typeof r.summary === 'string' ? (r as ServiceReport) : null;
   },
 };

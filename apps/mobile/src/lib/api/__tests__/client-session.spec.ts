@@ -15,9 +15,8 @@ jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { 
 
 import {
   ApiError,
+  api,
   clearTokens,
-  fetchPageWithAuth,
-  fetchWithAuth,
   refreshRefusedSession,
   refreshSession,
   saveTokens,
@@ -118,7 +117,7 @@ describe('a 401 on a request', () => {
   it('with the refresh unreachable: a retryable error, nobody signed out', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(401, { message: 'expired' })).mockResolvedValueOnce(res(503));
-    const err = (await fetchWithAuth('/tasks', { method: 'POST' }).catch((e: unknown) => e)) as ApiError;
+    const err = (await api.post('/tasks').catch((e: unknown) => e)) as ApiError;
     expect(err).toBeInstanceOf(ApiError);
     expect(err.statusCode).toBe(0);
     expect(err.code).toBe('SESSION_UNREACHABLE');
@@ -129,8 +128,10 @@ describe('a 401 on a request', () => {
   it('with the refresh refused: the session ends', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(401)).mockResolvedValueOnce(res(401));
-    const err = (await fetchWithAuth('/tasks', { method: 'POST' }).catch((e: unknown) => e)) as ApiError;
+    const err = (await api.post('/tasks').catch((e: unknown) => e)) as ApiError;
     expect(err.statusCode).toBe(401);
+    // The sentence the root error handler stays quiet about.
+    expect(err.message).toBe('Session expired');
     expect(failures).toBe(1);
   });
 });
@@ -139,7 +140,7 @@ describe('the envelope is taken off by shape', () => {
   it('{ success, data: null } is null — not the envelope', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(200, { success: true, data: null }));
-    expect(await fetchWithAuth('/tasks/t1/report?a')).toBeNull();
+    expect(await api.get('/tasks/t1/report?a')).toBeNull();
   });
 
   it('a bare { data } is unwrapped, so is the older pass-through { data, hasMore }', () => {
@@ -153,20 +154,20 @@ describe('the envelope is taken off by shape', () => {
     expect(isEnvelope({ success: false, data: null })).toBe(true);
   });
 
-  it('meta comes back with fetchPageWithAuth', async () => {
+  it('meta comes back with api.page', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(200, { success: true, data: [{ id: 1 }], meta: { total: 41, page: 1 } }));
-    expect(await fetchPageWithAuth('/employees?page=1')).toEqual({ data: [{ id: 1 }], meta: { total: 41, page: 1 } });
+    expect(await api.page('/employees?page=1')).toEqual({ data: [{ id: 1 }], meta: { total: 41, page: 1 } });
     expect(envelopeMeta({ success: true, data: [] })).toBeNull();
   });
 
   it('204 and an empty body are null — never "no connection"', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(204));
-    await expect(fetchWithAuth('/sync/telemetry', { method: 'POST' })).resolves.toBeNull();
+    await expect(api.post('/sync/telemetry')).resolves.toBeNull();
     fetchMock.mockResolvedValueOnce(res(200, undefined, ''));
-    await expect(fetchWithAuth('/x', { method: 'POST' })).resolves.toBeNull();
-    expect(await readBody({ status: 204, json: async () => { throw new Error('no body'); } })).toBeNull();
+    await expect(api.post('/x')).resolves.toBeNull();
+    expect(await readBody({ status: 204, text: async () => { throw new Error('no body'); } })).toBeNull();
   });
 });
 
@@ -174,7 +175,7 @@ describe('a refusal carries the server\'s code and params', () => {
   it('ApiError.params is what the translated sentence is filled from', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValueOnce(res(400, { statusCode: 400, message: 'Too far', code: 'TOO_FAR_TO_START', params: { distanceMetres: 9631000, radiusMetres: 100 } }));
-    const err = (await fetchWithAuth('/tasks/t/status', { method: 'PATCH' }).catch((e: unknown) => e)) as ApiError;
+    const err = (await api.patch('/tasks/t/status').catch((e: unknown) => e)) as ApiError;
     expect(err).toMatchObject({ statusCode: 400, code: 'TOO_FAR_TO_START', params: { distanceMetres: 9631000, radiusMetres: 100 }, message: 'Too far' });
   });
 
@@ -189,13 +190,13 @@ describe('merged GETs belong to one person', () => {
     await saveTokens(jwt('mike'), 'r1');
     let release!: (r: Res) => void;
     fetchMock.mockImplementationOnce(() => new Promise<Res>((r) => { release = r; }));
-    const mikes = fetchWithAuth('/attendance/status?merge');
+    const mikes = api.get('/attendance/status?merge');
     await new Promise((r) => setTimeout(r, 0));
 
     await clearTokens();
     await saveTokens(jwt('karim'), 'r2');
     fetchMock.mockResolvedValueOnce(res(200, { success: true, data: { who: 'karim' } }));
-    const karims = fetchWithAuth('/attendance/status?merge');
+    const karims = api.get('/attendance/status?merge');
     release(res(200, { success: true, data: { who: 'mike' } }));
 
     expect(await karims).toEqual({ who: 'karim' });
@@ -206,7 +207,7 @@ describe('merged GETs belong to one person', () => {
   it('two asks by the same member still share one request', async () => {
     await saveTokens(jwt('mike'), 'r1');
     fetchMock.mockResolvedValue(res(200, { success: true, data: [1] }));
-    await Promise.all([fetchWithAuth('/same?x'), fetchWithAuth('/same?x')]);
+    await Promise.all([api.get('/same?x'), api.get('/same?x')]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
@@ -214,7 +215,7 @@ describe('merged GETs belong to one person', () => {
 describe('after the session has ended', () => {
   it('a request that carried no token is refused without ending the session again', async () => {
     fetchMock.mockResolvedValueOnce(res(401));
-    const err = (await fetchWithAuth('/home?late', { method: 'POST' }).catch((e: unknown) => e)) as ApiError;
+    const err = (await api.post('/home?late').catch((e: unknown) => e)) as ApiError;
     expect(err.statusCode).toBe(401);
     expect(failures).toBe(0);
   });

@@ -1,7 +1,7 @@
-import type { ParsedReceipt } from '@hbcfield/shared/client';
-import { path } from './path';
-import { buildUrlWithQuery } from '@hbcfield/shared/client';
-import { fetchWithAuth } from './client';
+import type { ContractFields, ParsedReceipt, PresignedUpload } from '@hbcfield/shared/client';
+import { call, E } from './client';
+
+export type { ContractFields };
 
 /**
  * The things this member holds, and what they spend on them.
@@ -108,7 +108,7 @@ export interface CreateLogInput {
   receiptMime?: string;
 }
 
-// NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope, so nothing
+// NOTE: the client already unwraps the `{ data: T }` envelope, so nothing
 // here may unwrap `.data` a second time.
 export const assetsApi = {
   /**
@@ -121,13 +121,13 @@ export const assetsApi = {
    * to every organization that never bought Assets.
    */
   mine: async (): Promise<{ periods: HeldAsset[]; canPropose: boolean }> => {
-    const res = await fetchWithAuth<{ periods: HeldAsset[]; canPropose?: boolean }>('/assets/mine');
+    const res: { periods: HeldAsset[]; canPropose?: boolean } | null = await call(E.assets.mine);
     return { periods: res?.periods ?? [], canPropose: !!res?.canPropose };
   },
 
   /** What I have sent in, and what happened to it. */
   myExpenses: async (): Promise<MyExpense[]> => {
-    const res = await fetchWithAuth<MyExpense[]>('/assets/expenses/mine');
+    const res: MyExpense[] | null = await call(E.assets.myExpenses);
     return res ?? [];
   },
 
@@ -138,11 +138,8 @@ export const assetsApi = {
    * check is against who held the asset ON THAT DATE, not today, so yesterday's
    * fuel can still be filed the morning after the van goes back.
    */
-  presignReceipt: (assetId: string, input: { fileName: string; mimeType: string; occurredAt?: string }) =>
-    fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
-      path`/assets/${assetId}/expenses/presign`,
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+  presignReceipt: (assetId: string, input: { fileName: string; mimeType: string; occurredAt?: string }): Promise<PresignedUpload> =>
+    call(E.assets.expensePresign, { id: assetId }, { body: input }),
 
   /**
    * Read a PDF receipt the phone itself cannot open.
@@ -156,29 +153,26 @@ export const assetsApi = {
    * layer and there is nothing to find. The amount gets typed, as it would have
    * been anyway.
    */
-  readReceipt: (assetId: string, input: { fileKey: string; occurredAt?: string }) =>
-    fetchWithAuth<
-      | { read: true; receipt: ParsedReceipt }
-      | { read: false; reason: 'NOT_A_PDF' | 'NO_TEXT_LAYER' }
-    >(path`/assets/${assetId}/expenses/read`, { method: 'POST', body: JSON.stringify(input) }),
+  readReceipt: (
+    assetId: string,
+    input: { fileKey: string; occurredAt?: string },
+  ): Promise<{ read: true; receipt: ParsedReceipt } | { read: false; reason: 'NOT_A_PDF' | 'NO_TEXT_LAYER' }> =>
+    call(E.assets.expenseRead, { id: assetId }, { body: input }),
 
-  submitExpense: (assetId: string, input: SubmitExpenseInput) =>
-    fetchWithAuth<MyExpense>(path`/assets/${assetId}/expenses`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    }),
+  submitExpense: (assetId: string, input: SubmitExpenseInput): Promise<MyExpense> =>
+    call(E.assets.submitExpense, { id: assetId }, { body: { ...input } }),
 
   // ── The logbook ───────────────────────────────────────────────────────────
 
   /** Everything I logged, costs included, with what happened to each. */
   myLog: async (input: { assetId?: string; limit?: number } = {}): Promise<MyLogEntry[]> => {
-    const res = await fetchWithAuth<MyLogEntry[]>(buildUrlWithQuery('/assets/log/mine', { assetId: input.assetId, limit: input.limit || undefined }));
+    const res: MyLogEntry[] | null = await call(E.assets.myLog, { assetId: input.assetId, limit: input.limit || undefined });
     return res ?? [];
   },
 
   /** What is due soon or overdue on what I hold. Overdue first. */
   dueMine: async (): Promise<DueItem[]> => {
-    const res = await fetchWithAuth<{ items: DueItem[] }>('/assets/log/due-mine');
+    const res: { items: DueItem[] } | null = await call(E.assets.dueMine);
     return res?.items ?? [];
   },
 
@@ -187,34 +181,16 @@ export const assetsApi = {
    * together they decide who may file it: fuel is the driver's that day, a dent
    * is anybody's who can see the van.
    */
-  presignLog: (assetId: string, input: { logType: string; fileName: string; mimeType: string; occurredAt?: string }) =>
-    fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
-      path`/assets/${assetId}/log/presign`,
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+  presignLog: (assetId: string, input: { logType: string; fileName: string; mimeType: string; occurredAt?: string }): Promise<PresignedUpload> =>
+    call(E.assets.logPresign, { id: assetId }, { body: input }),
 
-  createLog: (assetId: string, input: CreateLogInput) =>
-    fetchWithAuth<MyLogEntry>(path`/assets/${assetId}/log`, {
-      method: 'POST',
-      body: JSON.stringify(input),
-    }),
+  createLog: (assetId: string, input: CreateLogInput): Promise<MyLogEntry> =>
+    call(E.assets.addLog, { id: assetId }, { body: { ...input } }),
 
   /** Take back my own entry while it is still waiting. */
-  withdrawLog: (assetId: string, entryId: string) =>
-    fetchWithAuth<{ id: string }>(path`/assets/${assetId}/log/${entryId}`, { method: 'DELETE' }),
+  withdrawLog: (assetId: string, entryId: string): Promise<{ id: string }> =>
+    call(E.assets.withdrawLog, { id: assetId, entryId }),
 };
-
-/** The reading off a contract, after a person has corrected it. */
-export interface ContractFields {
-  name?: string;
-  registration?: string;
-  vin?: string;
-  serial?: string;
-  manufacturer?: string;
-  model?: string;
-  startsOn?: string;
-  endsOn?: string;
-}
 
 /** One page I sent in, and what happened to it. */
 export interface MyProposal {
@@ -251,20 +227,17 @@ export interface RaiseProposalInput {
  * and the PAGE itself only because a reviewer has to be able to check it.
  */
 export const assetProposalsApi = {
-  presign: (input: { fileName: string; mimeType: string }) =>
-    fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
-      '/assets/proposals/upload-url',
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+  presign: (input: { fileName: string; mimeType: string }): Promise<PresignedUpload> =>
+    call(E.assets.proposalUploadUrl, undefined, { body: input }),
 
-  raise: (input: RaiseProposalInput) =>
-    fetchWithAuth<MyProposal>('/assets/proposals', { method: 'POST', body: JSON.stringify(input) }),
+  raise: (input: RaiseProposalInput): Promise<MyProposal> =>
+    call(E.assets.raiseProposal, undefined, { body: { ...input } }),
 
   mine: async (): Promise<MyProposal[]> => {
-    const res = await fetchWithAuth<MyProposal[]>('/assets/proposals/mine');
+    const res: MyProposal[] | null = await call(E.assets.myProposals);
     return res ?? [];
   },
 
-  withdraw: (id: string) =>
-    fetchWithAuth<{ id: string }>(path`/assets/proposals/${id}/withdraw`, { method: 'POST' }),
+  withdraw: (id: string): Promise<{ id: string }> =>
+    call(E.assets.withdrawProposal, { id }),
 };

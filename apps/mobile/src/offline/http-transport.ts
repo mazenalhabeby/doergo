@@ -1,5 +1,5 @@
 import type { SyncMediaLink, SyncPullResponse, SyncPullScope, SyncPushResponse } from '@hbcfield/shared/client';
-import { ApiError, fetchWithAuth } from '../lib/api/client';
+import { ApiError, api, call, E } from '../lib/api/client';
 import { uploadToPresignedUrl } from '../lib/api/attachments';
 import { UploadFailure, type ObjectUploader } from './files/types';
 import { isPhoneOnlyKey } from './files/uploads';
@@ -13,13 +13,29 @@ function forServer(payload: OutboxOp['payload']): OutboxOp['payload'] {
 import type { SyncTransport } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
 
+/**
+ * What the outbox has always recorded for a failure that is not the server's
+ * answer. The client's codes moved onto the shared core (NETWORK, TIMEOUT —
+ * status 0); the outbox keeps the ones it has always stored, so an operation's
+ * history, `cancelPending` and the sync page read exactly as before:
+ *   NETWORK → no status, NO_CONNECTION   ·   TIMEOUT → 408, SLOW_CONNECTION.
+ * A refusal keeps its own status and code.
+ */
+export function outboxFailure(err: ApiError): { status: number | null; code: string | undefined } {
+  if (err.kind === 'timeout') return { status: 408, code: 'SLOW_CONNECTION' };
+  if (err.kind === 'network' || err.kind === 'aborted') {
+    // SESSION_UNREACHABLE stays itself: the refresh, not the request, found no server.
+    return { status: null, code: err.code === 'SESSION_UNREACHABLE' ? err.code : 'NO_CONNECTION' };
+  }
+  return { status: err.status || null, code: err.code };
+}
+
 /** The engine's way to the server: the same authenticated client every screen uses. */
 export const httpSyncTransport: SyncTransport = {
   async push(ops: OutboxOp[]) {
     try {
-      const res = await fetchWithAuth<SyncPushResponse>('/sync/push', {
-        method: 'POST',
-        body: JSON.stringify({
+      const res: SyncPushResponse = await call(E.sync.push, undefined, {
+        body: {
           operations: ops.map((o) => ({
             id: o.id,
             op: o.op,
@@ -28,21 +44,22 @@ export const httpSyncTransport: SyncTransport = {
             payload: forServer(o.payload),
             evidence: o.evidence,
           })),
-        }),
+        },
+        // The outbox owns its retries and their backoff: one attempt per flush, as before.
+        retry: false,
       });
       return { ok: true as const, results: res.results };
     } catch (err) {
       if (err instanceof ApiError) {
-        // 0 is the client's "no connection" — the engine reads null as network.
-        return { ok: false as const, status: err.statusCode || null, code: err.code };
+        // The engine reads a null status as "never answered".
+        return { ok: false as const, ...outboxFailure(err) };
       }
       return { ok: false as const, status: null };
     }
   },
 
   pull(scope: SyncPullScope, cursor: string | null) {
-    const qs = new URLSearchParams({ scope, ...(cursor ? { cursor } : {}) });
-    return fetchWithAuth<SyncPullResponse>(`/sync/pull?${qs.toString()}`);
+    return call(E.sync.pull, { scope, cursor: cursor || undefined }) as Promise<SyncPullResponse>;
   },
 };
 
@@ -50,9 +67,13 @@ export const httpSyncTransport: SyncTransport = {
 export const httpObjectUploader: ObjectUploader = {
   async presign(path, body) {
     try {
-      return await fetchWithAuth<Record<string, unknown>>(path, { method: 'POST', body: JSON.stringify(body) });
+      // The presign route comes from the queued operation itself (its op table row), not from a screen.
+      return await api.post<Record<string, unknown>>(path, body, { retry: false });
     } catch (err) {
-      if (err instanceof ApiError) throw new UploadFailure(err.statusCode || null, err.code ?? `HTTP_${err.statusCode}`);
+      if (err instanceof ApiError) {
+        const f = outboxFailure(err);
+        throw new UploadFailure(f.status, f.code ?? `HTTP_${err.status}`);
+      }
       throw new UploadFailure(null, 'NETWORK');
     }
   },
@@ -70,5 +91,5 @@ export const httpObjectUploader: ObjectUploader = {
 
 /** Signed links for task photos this member may see, for the offline image cache. */
 export function httpMediaLinks(ids: string[]): Promise<SyncMediaLink[]> {
-  return fetchWithAuth<SyncMediaLink[]>('/sync/media-links', { method: 'POST', body: JSON.stringify({ ids }) });
+  return call(E.sync.mediaLinks, undefined, { body: { ids } });
 }

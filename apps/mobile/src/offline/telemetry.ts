@@ -1,5 +1,5 @@
 import type { SyncTelemetry } from '@hbcfield/shared/client';
-import { APP_VERSION, fetchWithAuth } from '../lib/api/client';
+import { APP_VERSION, call, E } from '../lib/api/client';
 import { ATTENTION_STATES, OPEN_STATES, type OutboxOp } from './outbox/types';
 
 /** At most one report in this long; the latest replaces the last on the server anyway. */
@@ -45,7 +45,7 @@ export async function reportTelemetry(
   lastSentAt = now;
   try {
     const body = buildTelemetry(source.operations(), await files.totals(), source.snapshot().lastSuccessAt, APP_VERSION);
-    await fetchWithAuth('/sync/telemetry', { method: 'POST', body: JSON.stringify(body) });
+    await call(E.sync.telemetry, undefined, { body: { ...body } });
   } catch {
     /* next time */
   }

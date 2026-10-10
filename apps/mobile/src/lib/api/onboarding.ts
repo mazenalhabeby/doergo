@@ -1,71 +1,51 @@
-import { fetchApi, fetchWithAuth } from './client';
-import { path } from './path';
+import { call, E } from './client';
 import type { User, LoginResponse, InvitationValidation, AcceptInvitationInput } from './types';
 
 // Onboarding API - post-registration onboarding flow
 export const onboardingApi = {
   getStatus: async (): Promise<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }> => {
-    return fetchWithAuth<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }>('/onboarding/status');
+    return call(E.onboarding.status);
   },
 
   createOrganization: async (data: { name: string; address?: string; industry?: string; firstSpaceName?: string }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
-    return fetchWithAuth<any>('/onboarding/create-org', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.onboarding.createOrg, undefined, { body: data });
   },
 
   validateOrgCode: async (code: string): Promise<{ valid: boolean; organizationName?: string; joinPolicy?: string; message?: string }> => {
-    return fetchWithAuth<any>(path`/onboarding/validate-org-code/${code}`);
+    return call(E.onboarding.validateOrgCode, { code });
   },
 
   submitJoinRequest: async (data: { orgCode: string; message?: string }): Promise<any> => {
-    return fetchWithAuth<any>('/onboarding/join-by-code', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.onboarding.joinByCode, undefined, { body: data });
   },
 
   acceptInvitation: async (code: string): Promise<{ user: User }> => {
-    return fetchWithAuth<{ user: User }>('/onboarding/accept-invitation', {
-      method: 'POST',
-      body: JSON.stringify({ code }),
-    });
+    return call(E.onboarding.acceptInvitation, undefined, { body: { code } });
   },
 
   cancelJoinRequest: async (id: string): Promise<any> => {
-    return fetchWithAuth<any>(path`/onboarding/join-requests/${id}`, {
-      method: 'DELETE',
-    });
+    return call(E.onboarding.cancelJoinRequest, { id });
   },
 };
 
 // Invitations API - invite code registration flow (public endpoints)
 export const invitationsApi = {
   validate: async (code: string): Promise<InvitationValidation> => {
-    return fetchApi<InvitationValidation>(path`/invitations/validate/${code}`);
+    return call(E.invitations.validate, { code });
   },
 
   accept: async (input: AcceptInvitationInput): Promise<LoginResponse> => {
-    return fetchApi<LoginResponse>('/invitations/accept', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.invitations.accept, undefined, { body: input });
   },
 };
 
 // Push Token API
 export const pushApi = {
   registerToken: async (input: { token: string; platform: 'ios' | 'android' | 'web'; deviceId?: string; locale?: string }): Promise<{ success: boolean }> => {
-    return fetchWithAuth<{ success: boolean }>('/users/push-token', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.users.registerPushToken, undefined, { body: input });
   },
 
   removeToken: async (token: string): Promise<{ success: boolean }> => {
-    return fetchWithAuth<{ success: boolean }>(path`/users/push-token/${token}`, {
-      method: 'DELETE',
-    });
+    return call(E.users.removePushToken, { token });
   },
 };

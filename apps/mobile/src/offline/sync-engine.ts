@@ -12,7 +12,7 @@ import { compact } from './outbox/compaction';
 import { applyPushFailure, applyPushResults, failDependency, markInflight, recoverInflight, resumeAuth } from './outbox/transitions';
 import { OPEN_STATES, ATTENTION_STATES, type OutboxOp, type OutboxStore } from './outbox/types';
 
-/** How the engine reaches the server. The real one wraps fetchWithAuth; tests pass a fake. */
+/** How the engine reaches the server. The real one is the API client (http-transport.ts); tests pass a fake. */
 export interface SyncTransport {
   push(operations: OutboxOp[]): Promise<
     { ok: true; results: SyncOperationResult[] } | { ok: false; status: number | null; code?: string }

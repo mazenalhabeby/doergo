@@ -1,6 +1,5 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
-import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
+import { call, E } from './client';
+import type { StepFormAnswers } from '@hbcfield/shared/client';
 import type { CrewView, JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, OpenRoleTask, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
 export interface TasksListParams {
@@ -24,8 +23,7 @@ export interface TasksListParams {
 // Tasks API
 export const tasksApi = {
   list: async (params?: TasksListParams): Promise<Task[]> => {
-    const url = buildUrlWithQuery('/tasks', params ?? {});
-    return fetchWithAuth<Task[]>(url, { method: 'GET' });
+    return call(E.tasks.list, { ...params });
   },
 
   /**
@@ -36,11 +34,11 @@ export const tasksApi = {
    * counted client-side is a count of the page, not of the work.
    */
   counts: async (): Promise<Record<string, number>> => {
-    return fetchWithAuth<Record<string, number>>('/tasks/counts', { method: 'GET' });
+    return call(E.tasks.counts);
   },
 
   getById: async (id: string): Promise<Task> => {
-    return fetchWithAuth<Task>(path`/tasks/${id}`, { method: 'GET' });
+    return call(E.tasks.get, { id });
   },
 
   // `accuracy` travels with the fix: the arrival check widens its zone by it
@@ -60,64 +58,53 @@ export const tasksApi = {
       with "property fixAt should not exist".
     */
     const where = location ? { lat: location.lat, lng: location.lng, accuracy: location.accuracy } : {};
-    return fetchWithAuth<Task>(path`/tasks/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, reason, ...where, ...(answers ? { answers } : {}) }),
-    });
+    return call(E.tasks.setStatus, { id }, { body: { status, reason, ...where, ...(answers ? { answers } : {}) } });
   },
 
   getComments: async (taskId: string): Promise<Comment[]> => {
-    return fetchWithAuth<Comment[]>(path`/tasks/${taskId}/comments`, { method: 'GET' });
+    return call(E.tasks.comments, { id: taskId });
   },
 
   addComment: async (taskId: string, content: string): Promise<Comment> => {
-    return fetchWithAuth<Comment>(path`/tasks/${taskId}/comments`, {
-      method: 'POST',
-      body: JSON.stringify({ content }),
-    });
+    return call(E.tasks.addComment, { id: taskId }, { body: { content } });
   },
 
   /** A job's time — travel, working, blocked, per worker. */
-  jobTime: async (taskId: string): Promise<JobTimeView> => fetchWithAuth<JobTimeView>(path`/tasks/${taskId}/time`, { method: 'GET' }),
+  jobTime: async (taskId: string): Promise<JobTimeView> => call(E.tasks.time, { id: taskId }),
 
   /** My jobs in work, notes I owe, jobs paused on me — one read. */
-  myHandovers: async (): Promise<MyHandovers> => fetchWithAuth<MyHandovers>('/tasks/handover/mine', { method: 'GET' }),
+  myHandovers: async (): Promise<MyHandovers> => call(E.tasks.myHandovers),
 
   /** A crew on one job — direct path for a build without the offline engine (offline/tasks/crew-actions.ts). */
   crew: async (taskId: string, action: 'join' | 'leave' | 'issue' | 'resume', body: Record<string, unknown> = {}): Promise<CrewView> =>
-    fetchWithAuth<CrewView>(path`/tasks/${taskId}/crew/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+    call(E.tasks.crew, { id: taskId, action }, { body }),
 
   /** Hand THIS job's lead to somebody on its crew — for today, or for good. */
   changeLead: async (taskId: string, body: { toUserId: string; scope: 'TODAY' | 'PERMANENT'; reason?: string }): Promise<CrewView> =>
-    fetchWithAuth<CrewView>(path`/tasks/${taskId}/lead`, { method: 'PUT', body: JSON.stringify(body) }),
+    call(E.tasks.changeLead, { id: taskId }, { body }),
 
   /** Direct path for a build without the offline engine — see offline/tasks/task-actions.ts. */
-  resumeWork: async (taskId: string): Promise<Task> => fetchWithAuth<Task>(path`/tasks/${taskId}/resume`, { method: 'POST', body: '{}' }),
+  resumeWork: async (taskId: string): Promise<Task> => call(E.tasks.resume, { id: taskId }),
 
   writeHandover: async (taskId: string, body: { id?: string; note: string; attachmentIds?: string[] }): Promise<TaskHandover> =>
-    fetchWithAuth<TaskHandover>(path`/tasks/${taskId}/handover`, { method: 'POST', body: JSON.stringify(body) }),
+    call(E.tasks.writeHandover, { id: taskId }, { body }),
 
   // ── A task open to a WORK role (shared tasks/role-pool.ts) ──
   /** Tasks open to a role I hold, in the workspace I hold it in — urgent first, then the longest waiting. */
-  openForMe: async (): Promise<OpenRoleTask[]> => fetchWithAuth<OpenRoleTask[]>('/tasks/open-for-me', { method: 'GET' }),
+  openForMe: async (): Promise<OpenRoleTask[]> => call(E.tasks.openForMe),
   /** Take a place. Refused with ROLE_TASK_TAKEN (params.takers) when somebody was faster. */
   take: async (taskId: string): Promise<{ id: string; spotsLeft: number; waitedMinutes: number | null }> =>
-    fetchWithAuth(path`/tasks/${taskId}/take`, { method: 'POST', body: '{}' }),
+    call(E.tasks.take, { id: taskId }),
   /** Hand it back to its role before the work starts; it is offered again. */
   returnToRole: async (taskId: string, reason?: string): Promise<void> =>
-    fetchWithAuth<void>(path`/tasks/${taskId}/return-to-role`, { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) }),
+    call(E.tasks.returnToRole, { id: taskId }, { body: reason ? { reason } : {} }),
 
   declineTask: async (taskId: string): Promise<void> => {
-    return fetchWithAuth<void>(path`/tasks/${taskId}/decline`, {
-      method: 'POST',
-    });
+    return call(E.tasks.decline, { id: taskId });
   },
 
   create: async (input: CreateTaskInput): Promise<Task> => {
-    return fetchWithAuth<Task>('/tasks', {
-      method: 'POST',
-      body: JSON.stringify(input),
-    });
+    return call(E.tasks.create, undefined, { body: { ...input } });
   },
 
   /*
@@ -126,23 +113,15 @@ export const tasksApi = {
     "Failed to update", with no change on the server.
   */
   update: async (id: string, input: UpdateTaskInput): Promise<Task> => {
-    return fetchWithAuth<Task>(path`/tasks/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(input),
-    });
+    return call(E.tasks.update, { id }, { body: { ...input } });
   },
 
   assign: async (taskId: string, workerId: string): Promise<Task> => {
-    return fetchWithAuth<Task>(path`/tasks/${taskId}/assign`, {
-      method: 'PATCH',
-      body: JSON.stringify({ workerId }),
-    });
+    return call(E.tasks.assign, { id: taskId }, { body: { workerId } });
   },
 
   delete: async (id: string): Promise<void> => {
-    return fetchWithAuth<void>(path`/tasks/${id}`, {
-      method: 'DELETE',
-    });
+    return call(E.tasks.remove, { id });
   },
 
   /**
@@ -153,10 +132,7 @@ export const tasksApi = {
    * than pretending a tick was kept.
    */
   toggleChecklistItem: async (taskId: string, itemId: string, isCompleted: boolean): Promise<ChecklistItem> => {
-    return fetchWithAuth<ChecklistItem>(path`/tasks/${taskId}/checklist/${itemId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isCompleted }),
-    });
+    return call(E.tasks.updateChecklistItem, { id: taskId, itemId }, { body: { isCompleted } });
   },
 
   /**
@@ -165,14 +141,11 @@ export const tasksApi = {
    * ⚠️ NOT QUEUED, like the tick.
    */
   setChecklistOwner: async (taskId: string, itemId: string, assigneeId: string | null): Promise<ChecklistItem> => {
-    return fetchWithAuth<ChecklistItem>(path`/tasks/${taskId}/checklist/${itemId}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ assigneeId }),
-    });
+    return call(E.tasks.updateChecklistItem, { id: taskId, itemId }, { body: { assigneeId } });
   },
 
   getTimeline: async (taskId: string): Promise<TaskEvent[]> => {
-    return fetchWithAuth<TaskEvent[]>(path`/tasks/${taskId}/timeline`, { method: 'GET' });
+    return call(E.tasks.timeline, { id: taskId });
   },
 
   /**
@@ -181,7 +154,7 @@ export const tasksApi = {
    * Kept by the response cache, like the service report.
    */
   getSubmissions: async (taskId: string): Promise<StepSubmission[]> => {
-    const rows = await fetchWithAuth<unknown>(path`/tasks/${taskId}/submissions`, { method: 'GET' });
+    const rows: unknown = await call(E.tasks.submissions, { id: taskId });
     return Array.isArray(rows) ? (rows as StepSubmission[]) : [];
   },
 };
@@ -189,16 +162,10 @@ export const tasksApi = {
 // Tracking API - technician location updates
 export const trackingApi = {
   updateLocation: async (data: LocationUpdate): Promise<LocationResponse> => {
-    return fetchWithAuth<LocationResponse>('/tracking/location', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.tracking.location, undefined, { body: { ...data } });
   },
   // Flush a buffered burst of route points in one request (background tracker).
   updateLocationBatch: async (data: LocationBatchUpdate): Promise<LocationResponse> => {
-    return fetchWithAuth<LocationResponse>('/tracking/location/batch', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.tracking.locationBatch, undefined, { body: { ...data } });
   },
 };

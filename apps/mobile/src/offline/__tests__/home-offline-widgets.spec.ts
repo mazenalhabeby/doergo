@@ -45,7 +45,14 @@ import { useCrew } from '../../components/home/use-crew';
 import { useRemembered } from '../../home/remember/use-remembered';
 import { forgetEverythingKept } from '../../home/remember/store';
 import { queuedDoneIds, withoutDone } from '../../components/home/clients-state';
-import { isKeptResponse } from '../../lib/api/response-cache';
+import { shouldKeep } from '../../lib/api/response-cache';
+import { apiEndpoints as EP, type Endpoint } from '@hbcfield/shared/client';
+
+/** Would the client let the cache hold this call's answer? (the endpoint's verdict, as the client passes it) */
+const kept = <A,>(def: Endpoint<A, any, any>, args: A) => {
+  const p = def.path(args);
+  return shouldKeep(p, typeof def.keep === 'function' ? def.keep(args) : def.keep);
+};
 
 const api = attendanceApi as unknown as Record<string, jest.Mock>;
 
@@ -128,21 +135,21 @@ describe('crew — presence is never kept', () => {
     expect((await settle(m))).toMatchObject({ failed: true, people: [] });
   });
 
-  it('the endpoints behind it are on the NEVER list', () => {
-    for (const e of [
-      '/attendance/all-entries?status=CLOCKED_IN&limit=200',
-      '/attendance/breaks/active',
-      '/attendance/no-shows?days=1',
-      '/attendance/approvals/pending?summary=true',
-      '/attendance/status',
-      '/attendance/breaks/status',
-    ]) expect(isKeptResponse(e)).toBe(false);
+  it('the endpoints behind it are never kept', () => {
+    expect(kept(EP.attendance.allEntries, { status: 'CLOCKED_IN', limit: 200 })).toBe(false);
+    expect(kept(EP.attendance.activeBreaks, undefined)).toBe(false);
+    expect(kept(EP.attendance.noShows, { days: 1 })).toBe(false);
+    expect(kept(EP.attendance.pendingApprovals, { summary: true })).toBe(false);
+    expect(kept(EP.attendance.status, undefined)).toBe(false);
+    expect(kept(EP.attendance.breakStatus, undefined)).toBe(false);
   });
 });
 
 describe('clients — a kept copy, but never one that undoes the member', () => {
   it('the due list is kept, keyed by the day it asks about', () => {
-    expect(isKeptResponse('/customers/due?dayStart=2026-09-26T00%3A00%3A00.000Z&dayEnd=2026-09-26T23%3A59%3A59.999Z&limit=3')).toBe(true);
+    const day = { dayStart: '2026-09-26T00:00:00.000Z', dayEnd: '2026-09-26T23:59:59.999Z', limit: 3 };
+    expect(EP.customers.due.path(day)).toBe('/customers/due?dayStart=2026-09-26T00%3A00%3A00.000Z&dayEnd=2026-09-26T23%3A59%3A59.999Z&limit=3');
+    expect(kept(EP.customers.due, day)).toBe(true);
   });
 
   const r = (id: string, kind = 'CALL') => ({ id, customerId: 'c1', kind, dueAt: null, name: 'A', shared: 1 }) as any;

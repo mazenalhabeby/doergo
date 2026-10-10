@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { API_URL } from '../lib/api/client';
+import { call, E } from '../lib/api/client';
 
 import {
   View,
@@ -91,28 +91,24 @@ export function LocationSearchPicker({
     debounceRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        // Primary: our self-hosted Photon (full-planet) via the gateway — no public
-        // OSM rate limits. Falls back to Nominatim if it returns nothing.
+        // Our own geocoding proxy (Google, then our Photon) — through the API
+        // client, so it carries the member's token like every other request.
         try {
           if (!sessionRef.current) sessionRef.current = genSessionToken();
-          const sess = `&session=${encodeURIComponent(sessionRef.current)}`;
-          const gr = await fetch(`${API_URL}/geo/search?q=${encodeURIComponent(q)}&limit=6${sess}`);
-          if (gr.ok) {
-            const gd = await gr.json();
-            const mapped: NominatimResult[] = (gd?.results || []).map(
-              (r: { id?: string; label: string; lat?: number; lon?: number }, i: number) => ({
-                place_id: i,
-                display_name: r.label,
-                lat: r.lat != null ? String(r.lat) : '',
-                lon: r.lon != null ? String(r.lon) : '',
-                gid: r.id || undefined,
-              })
-            );
-            if (mapped.length > 0) {
-              setResults(mapped);
-              setShowResults(true);
-              return;
-            }
+          const gd: { results?: Array<{ id?: string; label: string; lat?: number; lon?: number }> } | null = await call(E.geo.search, { q, limit: 6, session: sessionRef.current });
+          const mapped: NominatimResult[] = (gd?.results || []).map(
+            (r: { id?: string; label: string; lat?: number; lon?: number }, i: number) => ({
+              place_id: i,
+              display_name: r.label,
+              lat: r.lat != null ? String(r.lat) : '',
+              lon: r.lon != null ? String(r.lon) : '',
+              gid: r.id || undefined,
+            })
+          );
+          if (mapped.length > 0) {
+            setResults(mapped);
+            setShowResults(true);
+            return;
           }
         } catch {
           /* reported below as "nothing found" */
@@ -148,8 +144,8 @@ export function LocationSearchPicker({
         // Through our own proxy only — see the note in the search above.
         let label = '';
         try {
-          const gr = await fetch(`${API_URL}/geo/reverse?lat=${rlat}&lon=${rlng}`);
-          if (gr.ok) label = (await gr.json())?.result?.label || '';
+          const gr: { result?: { label?: string } | null } | null = await call(E.geo.reverse, { lat: rlat, lon: rlng });
+          label = gr?.result?.label || '';
         } catch {
           /* the pin still records its coordinates; only the label is missing */
         }
@@ -181,16 +177,15 @@ export function LocationSearchPicker({
     // Google row: resolve coordinates now (this closes the billed session).
     if (result.gid) {
       try {
-        const sess = sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : '';
-        const res = await fetch(`${API_URL}/geo/place?id=${encodeURIComponent(result.gid)}${sess}`);
-        if (res.ok) {
-          const data = await res.json();
-          const r = data?.result;
-          if (r && typeof r.lat === 'number' && typeof r.lon === 'number') {
-            applyCoords(r.label || result.display_name, r.lat, r.lon);
-            sessionRef.current = '';
-            return;
-          }
+        const data: { result?: { label?: string; lat?: unknown; lon?: unknown } | null } | null = await call(E.geo.place, {
+          id: result.gid,
+          session: sessionRef.current || undefined,
+        });
+        const r = data?.result;
+        if (r && typeof r.lat === 'number' && typeof r.lon === 'number') {
+          applyCoords(r.label || result.display_name, r.lat, r.lon);
+          sessionRef.current = '';
+          return;
         }
       } catch {
         /* fall through */

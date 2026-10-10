@@ -121,19 +121,23 @@ describe('the job page — the server pieces it uses', () => {
 
   it('edits with PUT — the gateway has no PATCH /tasks/:id', () => {
     const update = tasks.slice(tasks.indexOf('update: async'), tasks.indexOf('assign: async'));
-    expect(update).toMatch(/method: 'PUT'/);
+    expect(update).toMatch(/E\.tasks\.update\b/);
+    const { apiEndpoints } = require('@hbcfield/shared/client');
+    expect(apiEndpoints.tasks.update.method).toBe('PUT');
   });
 
   it('ticks a checklist item with PATCH /tasks/:id/checklist/:itemId and { isCompleted }', () => {
     const toggle = tasks.slice(tasks.indexOf('toggleChecklistItem'), tasks.indexOf('getTimeline'));
-    expect(toggle).toMatch(/\/tasks\/\$\{taskId\}\/checklist\/\$\{itemId\}/);
-    expect(toggle).toMatch(/method: 'PATCH'/);
-    expect(toggle).toMatch(/JSON\.stringify\(\{ isCompleted \}\)/);
+    expect(toggle).toMatch(/E\.tasks\.updateChecklistItem, \{ id: taskId, itemId \}/);
+    expect(toggle).toMatch(/body: \{ isCompleted \}/);
+    const { apiEndpoints } = require('@hbcfield/shared/client');
+    expect(apiEndpoints.tasks.updateChecklistItem.method).toBe('PATCH');
+    expect(apiEndpoints.tasks.updateChecklistItem.path({ id: 't', itemId: 'i' })).toBe('/tasks/t/checklist/i');
   });
 
   it('reads a finished report from GET /tasks/:id/report, and "none" is null', () => {
     const get = reports.slice(reports.indexOf('getByTask'));
-    expect(get).toMatch(/\/tasks\/\$\{taskId\}\/report/);
+    expect(get).toMatch(/E\.tasks\.report, \{ id: taskId \}/);
     expect(get).toMatch(/typeof r\.summary === 'string'/);
   });
 

@@ -1,6 +1,9 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
-import { buildUrlWithQuery, type Rect } from '@hbcfield/shared/client';
+import type { DocumentChainStep, DocumentChainView, Rect } from '@hbcfield/shared/client';
+import { call, E } from './client';
+
+export type { DocumentChainStep };
+/** `GET /documents/:id/chain` — who has signed, and who is next. */
+export type DocumentChain = DocumentChainView;
 
 /**
  * The member's own personnel file.
@@ -69,40 +72,18 @@ export interface DocumentType {
   multiPage?: boolean;
 }
 
-/** One step of a document's signing chain, as the signing screen sees it. */
-export interface DocumentChainStep {
-  order: number;
-  role: string;
-  status: 'PENDING' | 'SIGNED' | 'SKIPPED';
-  name: string | null;
-  signedAt: string | null;
-  isYou: boolean;
-}
-
-export interface DocumentChain {
-  documentId: string;
-  title: string;
-  steps: DocumentChainStep[];
-  total: number;
-  signed: number;
-  complete: boolean;
-  currentOrder: number | null;
-}
-
 export const documentsApi = {
   list: async (params?: { typeId?: string; year?: number; search?: string }): Promise<MemberDocument[]> => {
-    const result = await fetchWithAuth<any>(
-      buildUrlWithQuery('/documents', {
-        typeId: params?.typeId,
-        year: params?.year,
-        search: params?.search,
-      }),
-    );
+    const result = await call(E.documents.list, {
+      typeId: params?.typeId,
+      year: params?.year,
+      search: params?.search,
+    });
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   listTypes: async (): Promise<DocumentType[]> => {
-    const result = await fetchWithAuth<any>('/documents/types');
+    const result = await call(E.documents.types);
     return Array.isArray(result) ? result : result?.data || [];
   },
 
@@ -120,7 +101,7 @@ export const documentsApi = {
     expiresOn: string | null;
     blocksWork: boolean;
   }[]> => {
-    const result = await fetchWithAuth<any>('/documents/requirements');
+    const result = await call(E.documents.requirements);
     return Array.isArray(result) ? result : result?.data || [];
   },
 
@@ -139,7 +120,7 @@ export const documentsApi = {
     // Null on your own.
     toSign: { id: string; title: string; forMember?: string | null }[];
   }> => {
-    const result = await fetchWithAuth<any>('/documents/pending');
+    const result = await call(E.documents.pending);
     const data = result?.data ?? result ?? {};
     return {
       toUpload: data.toUpload ?? [],
@@ -156,10 +137,7 @@ export const documentsApi = {
     mimeType: string;
     sizeBytes: number;
   }): Promise<{ url: string; key: string }> => {
-    const result = await fetchWithAuth<any>('/documents/mine/upload-url', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const result = await call(E.documents.ownUploadUrl, undefined, { body: data });
     return result?.data ?? result;
   },
 
@@ -180,14 +158,13 @@ export const documentsApi = {
     fields: { holderName: string | null; documentNumber: string | null } | null;
     verdict: 'CONSISTENT' | 'UNVERIFIED' | 'SUSPECT' | null;
   }> => {
-    const result = await fetchWithAuth<any>('/documents/mine/read', {
-      method: 'POST',
-      body: JSON.stringify({
+    const result = await call(E.documents.readOwnUpload, undefined, {
+      body: {
         stagingKey,
         crop,
         backStagingKey: back?.stagingKey,
         backCrop: back?.crop,
-      }),
+      },
     });
     return result?.data ?? result;
   },
@@ -219,19 +196,13 @@ export const documentsApi = {
      */
     pageStagingKeys?: string[];
   }): Promise<MemberDocument> => {
-    const result = await fetchWithAuth<any>('/documents/mine', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const result = await call(E.documents.submitOwn, undefined, { body: data });
     return result?.data ?? result;
   },
 
   /** Record agreement to sign electronically — its own act, before the drawing. */
   consent: async (id: string): Promise<{ consentText: string; consentAt: string }> => {
-    const result = await fetchWithAuth<any>(path`/documents/${id}/consent`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const result = await call(E.documents.consent, { id });
     return result?.data ?? result;
   },
 
@@ -246,19 +217,13 @@ export const documentsApi = {
     id: string,
     body: { signatureImage: string; idempotencyKey: string },
   ): Promise<{ documentId: string; alreadySigned: boolean }> => {
-    const result = await fetchWithAuth<any>(path`/documents/${id}/sign`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
+    const result = await call(E.documents.sign, { id }, { body });
     return result?.data ?? result;
   },
 
   /** "I have read this" — receipt, not agreement. */
   acknowledge: async (id: string): Promise<{ success: boolean }> => {
-    const result = await fetchWithAuth<any>(path`/documents/${id}/acknowledge`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const result = await call(E.documents.acknowledge, { id });
     return result?.data ?? result;
   },
 
@@ -274,15 +239,12 @@ export const documentsApi = {
    * rubber-stamping, which is the thing a chain is supposed to prevent.
    */
   chain: async (id: string): Promise<DocumentChain> => {
-    const result = await fetchWithAuth<any>(path`/documents/${id}/chain`);
+    const result = await call(E.documents.chain, { id });
     return result?.data ?? result;
   },
 
   downloadUrl: async (id: string): Promise<{ url: string; fileName: string }> => {
-    const result = await fetchWithAuth<any>(path`/documents/${id}/download-url`, {
-      method: 'POST',
-      body: JSON.stringify({}),
-    });
+    const result = await call(E.documents.downloadUrl, { id });
     return result?.data ?? result;
   },
 };

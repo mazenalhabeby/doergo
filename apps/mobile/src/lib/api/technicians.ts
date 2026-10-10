@@ -1,18 +1,17 @@
-import { buildUrlWithQuery } from '@hbcfield/shared/client';
-import { path } from './path';
-import { fetchWithAuth } from './client';
+import type { EmployeesQueryParams } from '@hbcfield/shared/client';
+import { call, E } from './client';
 import type { TechniciansListResponse, TechnicianListItem } from './types';
 import type { TimeOffRequest, AvailabilityResponse, ScheduleEntry } from './types';
 
 // Technicians API - admin/dispatcher listing
 export const techniciansApi = {
   list: async (params?: { search?: string; status?: string; page?: number; limit?: number }): Promise<TechniciansListResponse> => {
-    const endpoint = buildUrlWithQuery('/employees', params ?? {});
-    return fetchWithAuth<TechniciansListResponse>(endpoint, { method: 'GET' });
+    // `status` is the server's active | inactive | all; a screen hands it over as a string.
+    return call(E.employees.list, { ...params } as EmployeesQueryParams);
   },
 
   getById: async (id: string): Promise<TechnicianListItem> => {
-    return fetchWithAuth<TechnicianListItem>(path`/employees/${id}`, { method: 'GET' });
+    return call(E.employees.get, { id });
   },
 };
 
@@ -29,47 +28,35 @@ export const timeOffApi = {
    * request, because the server narrows it through the roster.
    */
   listOrg: async (status?: string): Promise<TimeOffRequest[]> => {
-    const endpoint = buildUrlWithQuery('/employees/time-off', { status });
-    const result = await fetchWithAuth<any>(endpoint, { method: 'GET' });
+    const result = await call(E.timeOff.listOrg, { status });
     return Array.isArray(result) ? result : result?.data ?? [];
   },
 
   list: async (technicianId: string, status?: string): Promise<TimeOffRequest[]> => {
-    const endpoint = buildUrlWithQuery(path`/employees/${technicianId}/time-off`, { status });
-    return fetchWithAuth<TimeOffRequest[]>(endpoint, { method: 'GET' });
+    return call(E.timeOff.listFor, { employeeId: technicianId, status });
   },
 
   request: async (technicianId: string, data: { startDate: string; endDate: string; reason?: string }): Promise<TimeOffRequest> => {
-    return fetchWithAuth<TimeOffRequest>(path`/employees/${technicianId}/time-off`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.timeOff.request, { employeeId: technicianId }, { body: data });
   },
 
   cancel: async (timeOffId: string): Promise<void> => {
-    return fetchWithAuth<void>(path`/employees/time-off/${timeOffId}`, {
-      method: 'DELETE',
-    });
+    return call(E.timeOff.cancel, { timeOffId });
   },
 
   approve: async (timeOffId: string, data: { approved: boolean; rejectionReason?: string }): Promise<TimeOffRequest> => {
-    return fetchWithAuth<TimeOffRequest>(path`/employees/time-off/${timeOffId}/approve`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return call(E.timeOff.approve, { timeOffId }, { body: data });
   },
 };
 
 // Availability API
 export const availabilityApi = {
   getForDate: async (date: string): Promise<AvailabilityResponse> => {
-    const endpoint = buildUrlWithQuery('/employees/availability', { date });
-    return fetchWithAuth<AvailabilityResponse>(endpoint, { method: 'GET' });
+    return call(E.employees.availability, { date });
   },
   /** Every day from `startDate` to `endDate` (YYYY-MM-DD, inclusive) in ONE request — one entry per day. */
   getForRange: async (startDate: string, endDate: string): Promise<AvailabilityResponse[]> => {
-    const endpoint = buildUrlWithQuery('/employees/availability', { startDate, endDate });
-    return fetchWithAuth<AvailabilityResponse[]>(endpoint, { method: 'GET' });
+    return call(E.employees.availability, { startDate, endDate });
   },
 };
 
@@ -77,7 +64,7 @@ export const availabilityApi = {
 export const scheduleApi = {
   getMine: async (technicianId: string): Promise<ScheduleEntry[]> => {
     // `{ success, data: null }` now arrives as null (envelope.ts), so read it null-safe.
-    const result = await fetchWithAuth<{ schedule: ScheduleEntry[] } | null>(path`/employees/${technicianId}/schedule`, { method: 'GET' });
+    const result: { schedule: ScheduleEntry[] } | null = await call(E.employees.schedule, { id: technicianId });
     return result?.schedule || [];
   },
 };

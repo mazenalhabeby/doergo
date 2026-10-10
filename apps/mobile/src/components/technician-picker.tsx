@@ -51,7 +51,7 @@ export function TechnicianPicker({
       setIsLoading(true);
       setError(null);
       const result = await techniciansApi.list({ status: 'active', limit: 50 });
-      // fetchWithAuth unwraps { data: T } → T, so result may already be the array
+      // the client unwraps { data: T } → T, so result may already be the array
       const all = Array.isArray(result) ? result : (result as any)?.data || [];
       // All active workers are assignable; office-vs-field is derived from access
       // where it matters (dashboards), not filtered here.

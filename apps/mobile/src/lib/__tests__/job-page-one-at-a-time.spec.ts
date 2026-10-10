@@ -40,10 +40,18 @@ describe('said on the page', () => {
 describe('the direct status write sends only what the endpoint takes', () => {
   it('a full status fix (fixAt, mocked) is trimmed to lat, lng, accuracy', async () => {
     jest.resetModules();
-    const calls: Array<{ url: string; init: { body: string } }> = [];
-    jest.doMock('../api/client', () => ({ fetchWithAuth: jest.fn(async (url: string, init: { body: string }) => { calls.push({ url, init }); return {}; }) }));
+    const calls: Array<{ url: string; body: unknown }> = [];
+    jest.doMock('../api/client', () => ({
+      E: jest.requireActual('@hbcfield/shared/client').apiEndpoints,
+      call: jest.fn(async (def: { path: (a: unknown) => string }, args: unknown, opts: { body: unknown }) => {
+        calls.push({ url: def.path(args), body: opts.body });
+        return {};
+      }),
+    }));
     const { tasksApi } = require('../api/tasks');
     await tasksApi.updateStatus('t1', 'ARRIVED', undefined, { lat: 48.1, lng: 16.3, accuracy: 12, fixAt: '2026-09-27T09:00:00Z', mocked: false } as never);
-    expect(JSON.parse(calls[0]!.init.body)).toEqual({ status: 'ARRIVED', lat: 48.1, lng: 16.3, accuracy: 12 });
+    expect(calls[0]!.url).toBe('/tasks/t1/status');
+    // As JSON on the wire: `reason: undefined` is not sent.
+    expect(JSON.parse(JSON.stringify(calls[0]!.body))).toEqual({ status: 'ARRIVED', lat: 48.1, lng: 16.3, accuracy: 12 });
   });
 });

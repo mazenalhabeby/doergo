@@ -14,7 +14,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { SYNC_OPERATIONS } from '@hbcfield/shared/client';
+import { SYNC_OPERATIONS, apiEndpoints } from '@hbcfield/shared/client';
 
 const ROOT = path.resolve(__dirname, '../../..');
 const API_DIR = path.join(ROOT, 'src/lib/api');
@@ -118,8 +118,15 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
 
 const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 
-/** `/tasks/:taskId/comments` and `/tasks/${id}/comments` → `/tasks/:/comments`. */
+/** `/tasks/:taskId/comments` → `/tasks/:/comments`. */
 const shape = (p: string) => p.split('?')[0]!.replace(/\$\{[^}]+\}/g, ':').replace(/:[A-Za-z]+/g, ':');
+
+type EndpointDef = { method: string; path: (a: unknown) => string };
+const PLACEHOLDER = 'XPLACEHOLDERX';
+const placeholderArgs = new Proxy({}, { get: (_t, k) => (k === 'then' ? undefined : PLACEHOLDER) });
+/** An endpoint's path with every argument a placeholder, in the same `:` shape. */
+const builtShape = (def: EndpointDef) =>
+  def.path(placeholderArgs).split('?')[0]!.split('/').map((seg) => (seg === PLACEHOLDER ? ':' : seg)).join('/');
 
 function queuedApiFunctions(): Set<string> {
   const queued = new Set(Object.values(SYNC_OPERATIONS).map((r) => `${r.method} ${shape(r.path)}`));
@@ -141,8 +148,11 @@ function queuedApiFunctions(): Set<string> {
       members.forEach((m, k) => {
         const end = members[k + 1]?.index ?? body.length;
         const fn = body.slice(m.index!, end);
-        for (const call of fn.matchAll(/fetchWithAuth(?:<[^(]*>)?\(\s*(?:path)?[`'"]([^`'"]+)[`'"]\s*,\s*\{[^}]*?method:\s*'(\w+)'/g)) {
-          if (queued.has(`${call[2]} ${shape(call[1]!)}`)) found.add(`${obj[1]}.${m[1]}`);
+        // Each request names its endpoint (`call(E.tasks.addComment, …)`); its method and path come from the table.
+        for (const ref of fn.matchAll(/\bE\.(\w+)\.(\w+)\b/g)) {
+          const def = (apiEndpoints as unknown as Record<string, Record<string, EndpointDef> | undefined>)[ref[1]!]?.[ref[2]!];
+          if (!def || def.method === 'GET') continue;
+          if (queued.has(`${def.method} ${builtShape(def)}`)) found.add(`${obj[1]}.${m[1]}`);
         }
       });
     }

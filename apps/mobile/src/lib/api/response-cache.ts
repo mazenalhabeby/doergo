@@ -24,132 +24,65 @@ export function setResponseCache(next: ResponseCacheStore | null): void {
 }
 
 /*
-  An allow-list, not a deny-list: a new endpoint is kept only once somebody has
-  decided its answer is the member's own data and harmless to hold.
+  WHAT MAY BE HELD — DECIDED BY THE ENDPOINT, NOT BY A PATH PATTERN.
 
-  ⚠️ Never kept: sign-in, billing, signed links (they expire and are
-  credentials), the live map and presence (stale is wrong, not old), and the
-  sync protocol itself (it has its own store). The customer portal keeps only
-  a client's own config, units and requests — each member has their own
-  database, so nothing crosses between a client and a colleague on one phone.
+  Every GET the phone makes comes from the shared endpoint table
+  (packages/shared/src/http/endpoints), and the table marks each one:
+  `keep: true` — the member's own data, harmless to hold (their history, their
+  documents, their calendar, the Clients card, a job's time…); `keep: false` —
+  never (presence: who is on RIGHT NOW, running rests, no-shows, the approvals
+  COUNT beside them; the shift and the work log, which have their own richer
+  offline readers; sign-in, billing, the sync protocol). A `keep` function
+  decides per call — `all-entries?status=CLOCKED_IN` is presence, the same
+  route for last week is history.
+
+  This file used to hold those decisions as two lists of regular expressions
+  (KEEP / NEVER) matched against the path. Every one of them is now carried by
+  the table (offline-reads.spec walks the phone's GETs and checks it), so what
+  remains here is only what is the PHONE's own:
+
+  - An endpoint the table has not marked is NOT kept (an allow-list, as
+    before): it is kept once somebody has decided its answer is the member's
+    own data. `FALLBACK_KEEP` is where such a decision goes until the table
+    carries it.
+  - `PHONE_NEVER` — where the phone deliberately keeps LESS than the table.
+  - `CREDENTIALS` — signed links (they expire and are credentials), the sync
+    protocol and live GPS are never held, whatever any table says.
 */
-const KEEP: readonly RegExp[] = [
-  /^\/attendance(\/|\?|$)/,
+
+/** Unmarked endpoints the phone keeps anyway — empty: the table marks every one the phone reads. */
+const FALLBACK_KEEP: readonly RegExp[] = [];
+
+const PHONE_NEVER: readonly RegExp[] = [
   /*
-    My own calendar for a week (the member's own appointments, leave and their workspace's
-    holidays) and one of my own events — a day's plan must still read with no signal.
+    `/rota/week` — other people's staffing, read by a rota manager: not the
+    member's own data to hold on a phone, and a stale week is a wrong one. The
+    shared table marks it `keep: true`; the phone has never kept it.
   */
-  /^\/calendar(\?|$)/,
-  /^\/calendar\/events\/[^/?]+$/,
-  /^\/reports\//,
-  /^\/documents(\/|\?|$)/,
-  /^\/assets\/(mine|expenses\/mine|proposals\/mine|custody)/,
-  // My own logbook entries and what is due on what I hold — read offline so an
-  // entry queued with no signal is shown beside the ones already delivered.
-  /^\/assets\/log\/(mine|due-mine)(\?|$)/,
-  /^\/shift-issues(\/|\?|$)/,
-  /*
-    My own stopped work: the jobs I am on, the handover notes I owe, the jobs
-    paused on me. The member's own data — and "write what you did on X" must
-    still be asked in a basement, where the note can be queued.
-  */
-  /^\/tasks\/handover\/mine$/,
-  // A job's time: what the job page shows of a job the member opened — held so it reads the same with no signal.
-  /^\/tasks\/[^/?]+\/time$/,
-  /*
-    ⚠️ `(\/|\?|$)`, not `\/`. The pattern used to demand a trailing slash, so
-    `/employees/:id` was kept and the LIST behind it — `/employees?page=1`, the
-    whole Team tab — was not. A member offline could open one colleague and
-    never the roster they reached them through.
-  */
-  /^\/employees(\/|\?|$)/,
-  /^\/overtime(\/|\?|$)/,
-  /^\/support(\/|\?|$)/,
-  /^\/chat(\/|\?|$)/,
-  /*
-    ⚠️ INCLUDING `/customers/due` — THE CLIENTS CARD — AND THAT IS DECIDED, NOT
-    INHERITED. Its answer is the member's own to-do list, not presence: a
-    reminder owed at 14:00 is still owed with no signal, and "Needs a
-    connection" would hide the phone number they are about to ring. The key
-    carries the member's day (`dayStart`/`dayEnd`), so yesterday's list can
-    never answer for today; and the card lays the queue over it
-    (`queuedDoneIds`), so a reminder ticked off offline does not come back.
-  */
-  /^\/customers(\/|\?|$)/,
-  /^\/users\/me(\?|$)/,
-  /^\/locations(\/|\?|$)/,
-  /^\/organizations\/(members|join-code)(\/|\?|$)/,
-  /^\/join-requests(\?|$)/,
-  /^\/invitations(\?|$)/,
-  /^\/custom-fields(\/|\?|$)/,
-  /*
-    The task's own extra fields. NOT covered by src/offline/tasks, which fetches
-    the task, its notes and its photos — so a task opened in a basement showed
-    every field the organization added as missing rather than as what it holds.
-  */
-  /^\/tasks\/[^/]+\/custom-fields(\?|$)/,
-  // The task's history. Read-only, already-happened facts about one job — the
-  // Activity panel rendered empty with no signal on a task the phone holds.
-  /^\/tasks\/[^/]+\/timeline(\?|$)/,
-  // The report a finished job was closed with — already-happened facts, read by
-  // the job page's Service report section only once the job is closed.
-  /^\/tasks\/[^/]+\/report(\?|$)/,
-  // The step forms a job was moved through with — the same already-happened
-  // facts as the report above (signed links included, as there), read only when
-  // a report section is opened.
-  /^\/tasks\/[^/]+\/submissions(\?|$)/,
-  // The kinds of thing an organization owns — the vocabulary every asset screen
-  // reads before it can label a single row.
-  /^\/asset-categories(\/|\?|$)/,
-  /^\/organizations\/contacts(\/|\?|$)/,
-  // The member's own notification choices: their data, and the settings screen
-  // renders switches from it.
-  /^\/users\/me\/notification-prefs(\?|$)/,
-  /^\/routes(\/|\?|$)/,
-  // A portal client's own portal, requests and units — what they already saw.
-  /^\/portal\/(config|units|requests)(\/|\?|$)/,
-];
-const NEVER: readonly RegExp[] = [
-  /url(\?|$)/i, /presign/i, /download/i, /\/sync\//, /\/tracking\//,
-  /*
-    Read offline by their own, richer path — pulled records with unsent changes
-    laid on top, on a screen that says the copy is from the phone. A kept
-    response would answer first, older, and pretend to be fresh. (Tasks are not
-    in the list above for the same reason: src/offline/tasks.)
-  */
-  /^\/attendance\/(status|breaks\/status)(\?|$)/,
-  /^\/attendance\/entries\/[^/]+\/worklog(\?|$)/,
-  /*
-    ⚠️ WHO IS ON RIGHT NOW — presence, never kept. The Crew card read these and
-    got this morning's answer back with no signal, drawn under a fresh clock:
-    "6h 53 late" about somebody who may have arrived an hour ago. Stale is
-    wrong, not old; the card says it needs a connection instead.
-  */
-  /^\/attendance\/all-entries\?(.*&)?status=CLOCKED_IN/,
-  /^\/attendance\/active-entries(\?|$)/,
-  /^\/attendance\/breaks\/active(\?|$)/,
-  /^\/attendance\/no-shows(\?|$)/,
-  /*
-    The Crew card's approvals COUNT is read beside presence and hidden with it
-    offline — a kept count would be a number from another moment, drawn next
-    to a dash. Never kept.
-  */
-  /^\/attendance\/approvals\/pending\?(.*&)?summary=true/,
+  /^\/rota\/week(\?|$)/,
 ];
 
-export function isKeptResponse(endpoint: string): boolean {
-  return KEEP.some((r) => r.test(endpoint)) && !NEVER.some((r) => r.test(endpoint));
+const CREDENTIALS: readonly RegExp[] = [/url(\?|$)/i, /presign/i, /download/i, /\/sync\//, /\/tracking\//];
+
+/**
+ * May this answer be held? `keep` is the endpoint's own verdict (the cache
+ * request carries it); an unmarked path falls back to `FALLBACK_KEEP`.
+ */
+export function shouldKeep(endpoint: string, keep?: boolean): boolean {
+  if (CREDENTIALS.some((r) => r.test(endpoint)) || PHONE_NEVER.some((r) => r.test(endpoint))) return false;
+  if (keep !== undefined) return keep;
+  return FALLBACK_KEEP.some((r) => r.test(endpoint));
 }
 
 /** Save an answer. Never fails the request it belongs to. */
-export function keepResponse(endpoint: string, body: unknown): void {
-  if (!store || !isKeptResponse(endpoint)) return;
+export function keepResponse(endpoint: string, body: unknown, keep?: boolean): void {
+  if (!store || !shouldKeep(endpoint, keep)) return;
   void store.put(endpoint, body).catch(() => undefined);
 }
 
 /** The last answer to this request, when there is no network to ask. */
-export async function keptResponse(endpoint: string): Promise<unknown | undefined> {
-  if (!store || !isKeptResponse(endpoint)) return undefined;
+export async function keptResponse(endpoint: string, keep?: boolean): Promise<unknown | undefined> {
+  if (!store || !shouldKeep(endpoint, keep)) return undefined;
   try {
     return await store.get(endpoint);
   } catch {

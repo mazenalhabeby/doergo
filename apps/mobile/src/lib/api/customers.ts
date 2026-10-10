@@ -1,7 +1,6 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
+import { call, E } from './client';
 import {
-  buildUrlWithQuery, type ClientTypeParam, type ContactsParam,
+  type ClientTypeParam, type ContactsParam,
   type ContactImportBody, type ContactImportSummary,
 } from '@hbcfield/shared/client';
 
@@ -173,7 +172,7 @@ export const customersApi = {
      */
     portalResident?: boolean;
   }): Promise<MobileCustomer[]> =>
-    fetchWithAuth<MobileCustomer[]>(buildUrlWithQuery('/customers', { ...params, limit: params?.limit ?? 100 })),
+    call(E.customers.list, { ...params, limit: params?.limit ?? 100 }),
   /**
    * Add a client.
    *
@@ -193,34 +192,32 @@ export const customersApi = {
     /** What the record has no column for — see `CustomerDetail`. */
     details?: CustomerDetail[];
   }): Promise<MobileCustomer> =>
-    fetchWithAuth<MobileCustomer>('/customers', { method: 'POST', body: JSON.stringify(input) }),
+    call(E.customers.create, undefined, { body: input }),
 
   /**
    * The organization's clients as hashed keys — how the contacts picker says
    * "already a client" without sending a single contact. See `matchKeyMaterial`.
    */
   matchKeys: (): Promise<{ hashes: string[]; complete: boolean }> =>
-    fetchWithAuth<{ hashes: string[]; complete: boolean }>('/customers/match-keys'),
+    call(E.customers.matchKeys),
   /**
    * Import picked phone contacts — one transaction on the server, which decides
    * what each one matches. ONLINE ONLY: a queued import would promise clients
    * the duplicate check has not seen yet.
    */
   importContacts: (body: ContactImportBody): Promise<ContactImportSummary> =>
-    fetchWithAuth<ContactImportSummary>('/customers/import', { method: 'POST', body: JSON.stringify(body) }),
+    call(E.customers.importContacts, undefined, { body }),
 
   get: (id: string): Promise<MobileCustomer> =>
-    fetchWithAuth<MobileCustomer>(path`/customers/${id}`),
+    call(E.customers.get, { id }),
   update: (id: string, dto: Partial<MobileCustomer>): Promise<MobileCustomer> =>
-    fetchWithAuth<MobileCustomer>(path`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+    call(E.customers.update, { id }, { body: { ...dto } }),
   /** What the caller owes clients today — the home Clients card. `day` is the member's own day. */
   due: (day: { start: Date; end: Date }, limit = 3): Promise<ClientsDue> =>
-    fetchWithAuth<ClientsDue>(buildUrlWithQuery('/customers/due', {
-      dayStart: day.start.toISOString(), dayEnd: day.end.toISOString(), limit,
-    })),
+    call(E.customers.due, { dayStart: day.start.toISOString(), dayEnd: day.end.toISOString(), limit }),
 
   activities: (id: string): Promise<MobileCustomerActivity[]> =>
-    fetchWithAuth<MobileCustomerActivity[]>(path`/customers/${id}/activities`),
+    call(E.customers.activities, { id }),
   /**
    * Log a note, a call that happened, or a reminder.
    *
@@ -244,9 +241,9 @@ export const customersApi = {
       reminderAssigneeId?: string | null; repeat?: string;
     },
   ): Promise<MobileCustomerActivity> =>
-    fetchWithAuth<MobileCustomerActivity>(path`/customers/${id}/activities`, { method: 'POST', body: JSON.stringify(input) }),
+    call(E.customers.addActivity, { id }, { body: input }),
   updateActivity: (id: string, activityId: string, input: { done?: boolean }): Promise<MobileCustomerActivity> =>
-    fetchWithAuth<MobileCustomerActivity>(path`/customers/${id}/activities/${activityId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    call(E.customers.updateActivity, { id, activityId }, { body: input }),
 
   /*
     Contact people — a person who works at a company.
@@ -261,22 +258,22 @@ export const customersApi = {
     and deleting them would take their history with them.
   */
   contacts: (companyId: string): Promise<MobileCustomerContact[]> =>
-    fetchWithAuth<MobileCustomerContact[]>(path`/customers/${companyId}/contacts`),
+    call(E.customers.contacts, { id: companyId }),
   companies: (personId: string): Promise<MobileCustomerContact[]> =>
-    fetchWithAuth<MobileCustomerContact[]>(path`/customers/${personId}/companies`),
+    call(E.customers.companies, { id: personId }),
   addContact: (
     companyId: string,
     input: { personId?: string; person?: { name: string; email?: string; phone?: string }; role?: string; isPrimary?: boolean },
   ): Promise<MobileCustomerContact> =>
-    fetchWithAuth<MobileCustomerContact>(path`/customers/${companyId}/contacts`, { method: 'POST', body: JSON.stringify(input) }),
+    call(E.customers.addContact, { id: companyId }, { body: input }),
   updateContact: (linkId: string, input: { role?: string; isPrimary?: boolean }): Promise<MobileCustomerContact> =>
-    fetchWithAuth<MobileCustomerContact>(path`/customers/contacts/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    call(E.customers.updateContact, { linkId }, { body: input }),
   removeContact: (linkId: string): Promise<void> =>
-    fetchWithAuth<void>(path`/customers/contacts/${linkId}`, { method: 'DELETE' }),
+    call(E.customers.removeContact, { linkId }),
 
   /** Where the work happens. One is primary; the rest are sites. */
   addresses: (id: string): Promise<MobileCustomerAddress[]> =>
-    fetchWithAuth<MobileCustomerAddress[]>(path`/customers/${id}/addresses`),
+    call(E.customers.addresses, { id }),
 };
 
 export interface MobileCustomerContact {

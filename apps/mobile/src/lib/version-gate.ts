@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import i18next from 'i18next';
 import type { ReleaseNote } from '@hbcfield/shared/client';
-import { API_URL } from './api/client';
+import { api } from './api/client';
 import { IN_APP_UPDATES_SUPPORTED, checkStore } from './in-app-updates';
 
 /**
@@ -64,19 +64,18 @@ export async function checkVersion(): Promise<VersionStatus> {
   };
 
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const lang = encodeURIComponent((i18next.language || 'en').slice(0, 2));
-    const res = await fetch(`${API_URL}/app/version?lang=${lang}`, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return open; // 404 on an older API, 5xx, anything — let it run
-
-    const data = (await res.json()) as {
+    const lang = (i18next.language || 'en').slice(0, 2);
+    /*
+      Public (asked before anybody is signed in), one try, 6 s. Any failure —
+      a 404 on an older API, a 5xx, no signal — is caught below and lets the
+      app run. ⚠️ `/app/version` is not in the shared endpoint table yet.
+    */
+    const data = await api.get<{
       minimum?: string | null;
       latest?: string | null;
       downloads?: { android?: string | null; ios?: string | null };
       whatsNew?: ReleaseNote | null;
-    };
+    } | null>('/app/version', { auth: false, query: { lang }, timeoutMs: TIMEOUT_MS, retry: false, cache: false, dedupe: false });
 
     const minimum = data?.minimum ?? null;
     const downloadUrl =

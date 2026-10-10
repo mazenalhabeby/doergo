@@ -13,9 +13,7 @@ export {
   setAuthFailureCallback,
   setUserRefreshedCallback,
   observeResponses,
-  fetchApi,
-  fetchWithAuth,
-  fetchPageWithAuth,
+  api,
   getApiUrl,
   resolveMediaUrl,
 } from './client';

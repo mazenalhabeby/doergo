@@ -166,7 +166,7 @@ describe('stuckFor', () => {
 
 describe('buildTelemetry', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  jest.mock('../../lib/api/client', () => ({ APP_VERSION: '1.0.6', fetchWithAuth: jest.fn() }));
+  jest.mock('../../lib/api/client', () => ({ APP_VERSION: '1.0.6', call: jest.fn(), E: { sync: {} } }));
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { buildTelemetry } = require('../telemetry') as typeof import('../telemetry');
   const op = (state: string, createdAt: number, code?: string) => ({ state, createdAt, lastError: code ? { code } : undefined }) as any;

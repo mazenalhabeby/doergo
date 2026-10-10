@@ -1,30 +1,22 @@
-import { fetchWithAuth } from './client';
-import { path } from './path';
+import type { PresignedUpload } from '@hbcfield/shared/client';
+import { call, E } from './client';
 
 // Task Attachments API
 export const taskAttachmentsApi = {
-  getPresignedUrl: async (taskId: string, fileName: string, fileType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }> => {
-    return fetchWithAuth(path`/tasks/${taskId}/attachments/presign`, {
-      method: 'POST',
-      body: JSON.stringify({ fileName, fileType }),
-    });
+  getPresignedUrl: async (taskId: string, fileName: string, fileType: string): Promise<PresignedUpload & { fileUrl: string }> => {
+    return call(E.tasks.attachmentPresign, { id: taskId }, { body: { fileName, fileType } });
   },
 
   confirmUpload: async (taskId: string, data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number }): Promise<any> => {
-    return fetchWithAuth(path`/tasks/${taskId}/attachments`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.tasks.attachmentConfirm, { id: taskId }, { body: data });
   },
 
   getAttachments: async (taskId: string): Promise<any[]> => {
-    return fetchWithAuth(path`/tasks/${taskId}/attachments`);
+    return call(E.tasks.attachments, { id: taskId });
   },
 
   delete: async (taskId: string, attachmentId: string): Promise<void> => {
-    return fetchWithAuth<void>(path`/tasks/${taskId}/attachments/${attachmentId}`, {
-      method: 'DELETE',
-    });
+    return call(E.tasks.removeAttachment, { id: taskId, attachmentId });
   },
 };
 

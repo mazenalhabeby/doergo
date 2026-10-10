@@ -2,9 +2,7 @@
  * Locations API — company locations (spaces) and member assignments.
  * Mirrors the web `locationsApi` surface used by the admin dashboard.
  */
-import { fetchWithAuth } from './client';
-import { path } from './path';
-import { buildUrlWithQuery } from '@hbcfield/shared/client';
+import { call, E } from './client';
 import type { CompanyLocation } from './types';
 
 /** A location plus its active member assignments (from the list endpoint). */
@@ -42,19 +40,15 @@ export interface AssignMemberInput {
 
 export const locationsApi = {
   list: async (params?: { includeInactive?: boolean; limit?: number }): Promise<LocationWithMembers[]> => {
-    const endpoint = buildUrlWithQuery('/locations', {
+    const result = await call(E.locations.list, {
       includeInactive: params?.includeInactive,
       limit: params?.limit ?? 200,
     });
-    const result = await fetchWithAuth<any>(endpoint);
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   create: async (data: { name: string; address?: string; lat?: number; lng?: number }): Promise<CompanyLocation> => {
-    return fetchWithAuth<CompanyLocation>('/locations', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.locations.create, undefined, { body: data });
   },
 
   /**
@@ -68,25 +62,20 @@ export const locationsApi = {
    */
   getRosters: async (locationIds: string[]): Promise<LocationAssignment[]> => {
     if (locationIds.length === 0) return [];
-    const result = await fetchWithAuth<any>(buildUrlWithQuery('/locations/rosters', { ids: locationIds.join(',') }));
+    const result = await call(E.locations.rosters, { ids: locationIds });
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   getAssignedMembers: async (locationId: string): Promise<LocationAssignment[]> => {
-    const result = await fetchWithAuth<any>(path`/locations/${locationId}/members`);
+    const result = await call(E.locations.members, { id: locationId });
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   assignMember: async (locationId: string, data: AssignMemberInput): Promise<LocationAssignment> => {
-    return fetchWithAuth<LocationAssignment>(path`/locations/${locationId}/members`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return call(E.locations.assignMember, { id: locationId }, { body: { ...data } });
   },
 
   removeMember: async (locationId: string, assignmentId: string): Promise<void> => {
-    await fetchWithAuth<any>(path`/locations/${locationId}/members/${assignmentId}`, {
-      method: 'DELETE',
-    });
+    await call(E.locations.removeMember, { id: locationId, assignmentId });
   },
 };

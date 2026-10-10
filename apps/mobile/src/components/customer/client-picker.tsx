@@ -103,9 +103,8 @@ export function ClientPicker({
     write state. Typing "sie" fires after "si" and the two answers race: on a
     slow connection the shorter query's longer list arrives last and overwrites
     the narrower one, so the member watches their search visibly UN-narrow
-    itself as they type. Aborting is not available here — `fetchWithAuth` takes
-    no signal — so the stale answer is discarded instead, which costs the same
-    on screen.
+    itself as they type. The stale answer is discarded rather than aborted
+    (`customersApi.list` takes no signal), which costs the same on screen.
 
     It doubles as the unmount guard: the counter is bumped on the way out, so a
     reply landing after the sheet closes writes nothing.

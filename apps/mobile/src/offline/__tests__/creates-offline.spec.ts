@@ -192,8 +192,10 @@ describe('the transport', () => {
     jest.resetModules();
     jest.doMock('../../lib/api/client', () => ({
       ApiError: class extends Error {},
-      fetchWithAuth: async (_path: string, init: { body: string }) => {
-        posted.push(JSON.parse(init.body));
+      E: { sync: { push: {} } },
+      api: {},
+      call: async (_def: unknown, _args: unknown, opts: { body: unknown }) => {
+        posted.push(JSON.parse(JSON.stringify(opts.body)));
         return { results: [] };
       },
     }));

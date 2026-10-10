@@ -1,106 +1,33 @@
-import {
-  buildUrlWithQuery,
-  type CalendarItem, type CalendarPlace, type DayKind, type Repeat, type RsvpResponse, type EventVisibility,
+import type {
+  CalendarEventDetail, CalendarEventInput, CalendarPerson, CalendarRange, LeaveCount, RsvpResponse,
 } from '@hbcfield/shared/client';
-import { fetchWithAuth } from './client';
-import { path } from './path';
+import { call, E } from './client';
 
 /** The organization's own calendar (shared calendar/*) — the same endpoints the web reads. */
 
-export interface CalendarRange {
-  from: string;
-  to: string;
-  timezone: string;
-  places: CalendarPlace[];
-  days: { day: string; kind: DayKind }[];
-  items: CalendarItem[];
-}
-
-export interface CalendarEventDetail {
-  id: string;
-  kind: 'APPOINTMENT' | 'REMINDER';
-  title: string;
-  description: string | null;
-  location: string | null;
-  meetingUrl: string | null;
-  startAt: string;
-  endAt: string;
-  allDay: boolean;
-  timezone: string;
-  repeat: Repeat | null;
-  reminders: number[];
-  visibility: EventVisibility;
-  canceled: boolean;
-  customer?: { id: string; name: string } | null;
-  /** How and where (shared calendar/meeting.ts). */
-  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
-  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
-  placeSpace?: { id: string; name: string; address: string | null; lat: number | null; lng: number | null } | null;
-  room?: string | null;
-  phone?: string | null;
-  callDirection?: 'OUTGOING' | 'INCOMING' | null;
-  organizerId: string;
-  canEdit: boolean;
-  myResponse: RsvpResponse;
-  attendees: { userId: string; response: RsvpResponse; isOrganizer: boolean; firstName: string; lastName: string; avatarUrl?: string | null }[];
-}
-
-export interface CalendarEventInput {
-  kind?: 'APPOINTMENT' | 'REMINDER';
-  title?: string;
-  description?: string | null;
-  location?: string | null;
-  meetingUrl?: string | null;
-  allDay?: boolean;
-  startAt?: string;
-  endAt?: string;
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
-  repeat?: Repeat | null;
-  reminders?: number[];
-  attendeeIds?: string[];
-  customerId?: string | null;
-  spaceId?: string | null;
-  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
-  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
-  placeSpaceId?: string | null;
-  room?: string | null;
-  phone?: string | null;
-  callDirection?: 'OUTGOING' | 'INCOMING' | null;
-}
-
-export interface CalendarPerson { id: string; firstName: string; lastName: string; avatarUrl?: string | null; position?: string | null }
-
-export interface LeaveCount {
-  calendarDays: number;
-  counted: number;
-  restDays: number;
-  holidays: { day: string; name: string; halfDay: boolean; estimated: boolean }[];
-  days: { day: string; kind: DayKind; cost: number; holiday: string | null }[];
-}
+export type { CalendarRange, CalendarEventDetail, CalendarEventInput, CalendarPerson, LeaveCount };
 
 export const calendarApi = {
   range: (q: { from: string; to: string; spaceId?: string | null; layers?: string[]; lang?: string }): Promise<CalendarRange> =>
-    fetchWithAuth<CalendarRange>(buildUrlWithQuery('/calendar', {
-      from: q.from, to: q.to, spaceId: q.spaceId || undefined, layers: q.layers?.join(',') || undefined, lang: q.lang,
-    }), { method: 'GET' }),
-  event: (eventId: string): Promise<CalendarEventDetail> => fetchWithAuth(path`/calendar/events/${eventId}`, { method: 'GET' }),
+    call(E.calendar.range, {
+      from: q.from, to: q.to, spaceId: q.spaceId || undefined, layers: q.layers?.length ? q.layers : undefined, lang: q.lang,
+    }),
+  event: (eventId: string): Promise<CalendarEventDetail> => call(E.calendar.event, { id: eventId }),
   create: (input: CalendarEventInput & { id?: string }): Promise<CalendarEventDetail> =>
-    fetchWithAuth('/calendar/events', { method: 'POST', body: JSON.stringify(input) }),
+    call(E.calendar.create, undefined, { body: input }),
   update: (eventId: string, input: CalendarEventInput): Promise<CalendarEventDetail> =>
-    fetchWithAuth(path`/calendar/events/${eventId}`, { method: 'PATCH', body: JSON.stringify(input) }),
-  cancel: (eventId: string): Promise<{ ok: true }> => fetchWithAuth(path`/calendar/events/${eventId}`, { method: 'DELETE' }),
+    call(E.calendar.update, { id: eventId }, { body: input }),
+  cancel: (eventId: string): Promise<{ ok: true }> => call(E.calendar.cancel, { id: eventId }),
   respond: (eventId: string, response: 'ACCEPTED' | 'MAYBE' | 'DECLINED'): Promise<{ response: RsvpResponse }> =>
-    fetchWithAuth(path`/calendar/events/${eventId}/respond`, { method: 'POST', body: JSON.stringify({ response }) }),
+    call(E.calendar.respond, { id: eventId }, { body: { response } }),
   /** `occurrence` = the one the push announced; without it, the next one the server has planned. */
   snooze: (eventId: string, minutes = 10, occurrence?: string): Promise<{ nextRemindAt: string }> =>
-    fetchWithAuth(path`/calendar/events/${eventId}/snooze`, { method: 'POST', body: JSON.stringify({ minutes, ...(occurrence ? { occurrence } : {}) }) }),
+    call(E.calendar.snooze, { id: eventId }, { body: { minutes, ...(occurrence ? { occurrence } : {}) } }),
   done: (eventId: string, occurrence?: string): Promise<{ nextRemindAt: string | null }> =>
-    fetchWithAuth(path`/calendar/events/${eventId}/done`, { method: 'POST', body: JSON.stringify(occurrence ? { occurrence } : {}) }),
+    call(E.calendar.done, { id: eventId }, { body: occurrence ? { occurrence } : {} }),
   people: (q?: string): Promise<CalendarPerson[]> =>
-    fetchWithAuth(buildUrlWithQuery('/calendar/people', { q: q || undefined }), { method: 'GET' }),
+    call(E.calendar.people, { q: q || undefined }),
   /** What a leave range would cost — the server's count, the one the request is charged by. */
   countLeave: (personId: string, from: string, to: string): Promise<LeaveCount> =>
-    fetchWithAuth(buildUrlWithQuery(path`/employees/${personId}/time-off/count`, { from, to }), { method: 'GET' }),
+    call(E.timeOff.count, { employeeId: personId, from, to }),
 };

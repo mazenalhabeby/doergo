@@ -198,7 +198,7 @@ export function useScheduleTotals(input: {
     /*
       ⚠️ `/attendance/history` RETURNS A BARE ARRAY, NOT A PAGINATED ENVELOPE —
       whatever `attendanceApi.getHistory`'s return type says. The server
-      answers `{ success, data: [ … ] }`, `fetchWithAuth` unwraps the one
+      answers `{ success, data: [ … ] }`, the API client unwraps the one
       `data`, and what arrives here is the LIST. Reading `res.data` gave
       `undefined` on every call, so every total was 0 and ⑥ could never appear
       — with a 200 and no error anywhere to say so.
