@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Linking, Pressable, View, type LayoutChangeEvent } from 'react-native';
+import { Image, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { parseStoredStepForm } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
@@ -8,6 +8,7 @@ import type { StepSubmission } from '../../lib/api';
 import { AText, Well, WellDivider } from '../amazen';
 import { SectionLabel } from './job-ui';
 import { fieldLabel, shownAnswer } from './step-form-logic';
+import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
 
 /**
  * "Reports" — the step forms this job was moved through, `GET /tasks/:id/submissions`.
@@ -95,7 +96,7 @@ function Answer({ answer, files }: { answer: NonNullable<ReturnType<typeof shown
             return (
               <Pressable
                 key={id}
-                onPress={() => { if (url) void Linking.openURL(url); }}
+                onPress={() => { void openSafeUrl(httpsUrl(url)); }}
                 disabled={!url}
                 accessibilityRole="button"
                 accessibilityLabel={files[id]?.fileName ?? t('job.submissions.photo')}

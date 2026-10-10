@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/lib/marketing-seo";
+import { JsonLd } from "./json-ld";
 import { INDUSTRY_SLUGS, industryPath, industriesHubPath, localePath } from "@/lib/industries";
 import { homeCopy, industryData } from "@/lib/industry-copy";
 
@@ -16,12 +17,7 @@ import { homeCopy, industryData } from "@/lib/industry-copy";
 const abs = (rel: string) => `${SITE_URL}${rel === "/" ? "" : rel}`;
 
 function jsonLd(graph: unknown) {
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
-    />
-  );
+  return <JsonLd data={graph} />;
 }
 
 export function IndustryJsonLd({ lang, slug }: { lang: string; slug: string }) {

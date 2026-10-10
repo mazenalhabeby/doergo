@@ -41,4 +41,13 @@ export class PlatformAuthController {
 
   @MessagePattern({ cmd: 'platform_2fa_disable' })
   disable2fa(@Payload() d: any) { return this.svc.disable2fa(d); }
+
+  @MessagePattern({ cmd: 'platform_users_reset_2fa' })
+  reset2fa(@Payload() d: any) { return this.svc.reset2fa(d); }
+
+  @MessagePattern({ cmd: 'platform_logout' })
+  logout(@Payload() d: any) { return this.svc.logout(d); }
+
+  @MessagePattern({ cmd: 'platform_refresh' })
+  refresh(@Payload() d: any) { return this.svc.refresh(d); }
 }

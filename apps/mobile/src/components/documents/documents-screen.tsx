@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Pressable, RefreshControl, SectionList, View } from 'react-native';
+import { Pressable, RefreshControl, SectionList, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { centeredContent } from '../screen-container';
 import { JobSheet, Pill, SectionLabel, SheetOption } from '../job/job-ui';
 import { SupplyDocumentSheet } from '../supply-document-sheet';
 import { DocumentRow, dayOf, useDocumentTag, usePeriod } from './document-row';
+import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
 
 type Section = { key: string; title: string; data: MemberDocument[]; tone?: 'warn' };
 type Queued = { id: string; title: string; typeId: string };
@@ -139,7 +140,8 @@ export function DocumentsScreen() {
     try {
       const res = await documentsApi.downloadUrl(d.id);
       if (!res?.url) throw new Error(t('documents.openFailed'));
-      await Linking.openURL(res.url);
+      // A signed link from our server — https only, never another scheme.
+      if (!(await openSafeUrl(httpsUrl(res.url)))) throw new Error(t('documents.openFailed'));
       void load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t('documents.openFailed'));
@@ -150,12 +152,12 @@ export function DocumentsScreen() {
 
   const tapDocument = useCallback((d: MemberDocument) => {
     if (d.needsSignature) {
-      const type = types.find((ty) => ty.id === d.typeId);
-      router.push({ pathname: '/sign-document', params: { id: d.id, title: d.title, mode: type?.signatureMode ?? 'IN_APP' } } as never);
+      // Only the id: the signing screen reads the title and the mode from the server.
+      router.push({ pathname: '/sign-document', params: { id: d.id } } as never);
       return;
     }
     setOpened(d);
-  }, [types]);
+  }, []);
 
   /* Arrived from a notification about one document: waiting on a signature → sign; otherwise show it. */
   const handled = useRef<string | null>(null);

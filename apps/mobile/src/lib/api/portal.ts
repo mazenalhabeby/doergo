@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import type {
   IntakeCategory,
   CustomerUnit,
@@ -38,7 +39,7 @@ export const portalApi = {
     (await fetchWithAuth<CustomerRequestView[]>('/portal/requests', { method: 'GET' })) ?? [],
 
   request: async (id: string): Promise<PortalRequestDetail> =>
-    fetchWithAuth<PortalRequestDetail>(`/portal/requests/${id}`, { method: 'GET' }),
+    fetchWithAuth<PortalRequestDetail>(path`/portal/requests/${id}`, { method: 'GET' }),
 
   submit: async (input: SubmitRequestInput): Promise<{ id: string }> =>
     fetchWithAuth<{ id: string }>('/portal/requests', {

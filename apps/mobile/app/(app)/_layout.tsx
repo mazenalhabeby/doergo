@@ -10,6 +10,9 @@ import { type NotificationResponse } from 'expo-notifications';
 import { crewJoinTarget, notificationTarget, type NotificationTarget } from '../../src/lib/notification-route';
 import { CREW_JOIN_ACTION, usePushNotifications } from '../../src/hooks/usePushNotifications';
 import { isCalendarAction, runCalendarAction } from '../../src/lib/calendar-push-actions';
+import { armCrewJoin } from '../../src/lib/join-intent';
+import { mayActOnPush } from '../../src/lib/push-recipient';
+import { sessionStartedAt } from '../../src/lib/api/client';
 import { holds } from '../../src/lib/permissions';
 import { SocketProvider, useSocketContext } from '../../src/contexts/socket-context';
 import { LocationTrackingProvider } from '../../src/contexts/location-tracking-context';
@@ -130,18 +133,33 @@ export default function AppLayout() {
     const data = response.notification?.request?.content?.data as Record<string, unknown> | undefined;
     // "A new version is ready": open the full-page update, even after "Later".
     if (data?.type === 'app_update') { showUpdatePageNow(); return; }
+    const deliveredAt = response.notification?.date ?? null;
     // A calendar button (Done, +10 min, Accept …) does its one thing and stays where the member is.
     if (isCalendarAction(response.actionIdentifier)) {
-      void runCalendarAction(response.actionIdentifier, data).then((r) => {
-        if (r === 'failed') calendarToast.error(t('common.error', 'Error'), t('calendar.offline', 'Needs a connection to load your calendar.'));
+      void runCalendarAction(response.actionIdentifier, data, { userId: user?.id ?? null, deliveredAt }).then((r) => {
+        if (r === 'not-yours') calendarToast.warning(t('calendar.pushNotYours'));
+        else if (r === 'failed') calendarToast.error(t('common.error', 'Error'), t('calendar.offline', 'Needs a connection to load your calendar.'));
         else calendarToast.success(r === 'snoozed' ? t('calendar.snoozed', 'Reminding you again in 10 minutes') : r === 'answered' ? t('calendar.answered', 'Answer sent') : t('calendar.done', 'Done'));
       });
       return;
     }
-    // The crew push's button ("I'm with him") joins as the job opens; a plain tap just opens it.
-    const target = response.actionIdentifier === CREW_JOIN_ACTION ? crewJoinTarget(data) : notificationTarget(data, { managesIssues });
+    if (response.actionIdentifier === CREW_JOIN_ACTION) {
+      /*
+        "I'm with him": the job opens, and joins — the join is handed over in
+        memory, never in the URL (`lib/join-intent.ts`). Only for the member
+        the push was for; anybody else just sees the job.
+      */
+      const target = crewJoinTarget(data);
+      const taskId = typeof data?.taskId === 'string' ? data.taskId : null;
+      void sessionStartedAt().then((started) => {
+        if (taskId && mayActOnPush({ data, deliveredAt, userId: user?.id ?? null, sessionStartedAt: started })) armCrewJoin(taskId);
+        if (target) setPendingTarget(target);
+      });
+      return;
+    }
+    const target = notificationTarget(data, { managesIssues });
     if (target) setPendingTarget(target);
-  }, [managesIssues, calendarToast, t]);
+  }, [managesIssues, calendarToast, t, user?.id]);
 
   /*
     Navigate once the app has SETTLED, not the moment the tap is known.

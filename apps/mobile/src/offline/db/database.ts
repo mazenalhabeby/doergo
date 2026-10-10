@@ -134,6 +134,20 @@ export function databaseFailureText(err: unknown): string {
  * silently, so a mis-built app looks exactly like a working one right up until
  * a database will not open.
  */
+/** The database library on this build cannot encrypt. Never recovered from by starting a new file — a new file would be plaintext too. */
+export class SqlCipherMissingError extends Error {
+  readonly code = 'SQLCIPHER_MISSING';
+  constructor(readonly cipher: string) {
+    super(`SQLCipher is not in this build (cipher_version: ${cipher}) — refusing to store data unencrypted`);
+    this.name = 'SqlCipherMissingError';
+  }
+}
+
+/** Does `PRAGMA cipher_version` name a SQLCipher release? */
+export function isSqlCipher(cipherVersion: string | null | undefined): boolean {
+  return !!cipherVersion && cipherVersion !== 'NO SQLCIPHER' && /\d/.test(cipherVersion);
+}
+
 async function cipherVersion(db: SqlDb): Promise<string> {
   try {
     const rows = await (db as unknown as { getAllAsync: (sql: string) => Promise<unknown[]> }).getAllAsync('PRAGMA cipher_version;');
@@ -203,6 +217,17 @@ async function openEncrypted(lib: NonNullable<ReturnType<typeof loadSQLite>>, fi
   let cipher = '?';
   try {
     cipher = await cipherVersion(db);
+    /*
+      ⚠️ NO SQLCIPHER, NO DATABASE. On a build whose SQLite is not SQLCipher,
+      `PRAGMA key` is silently ignored and every statement after it works — on a
+      PLAINTEXT file holding the member's jobs, clients, photos' metadata and
+      unsent clock-ins. That used to be logged and carried on with. It is now a
+      refusal: the offline layer reports itself unavailable (the app works
+      online, as on a build without it) rather than writing personal data to
+      disk in the clear. Every real build has `useSQLCipher: true`
+      (app.config.ts); Expo Go and a misconfigured build are what this catches.
+    */
+    if (!isSqlCipher(cipher)) throw new SqlCipherMissingError(cipher);
     step = 'key';
     // The key must be the FIRST statement on a SQLCipher connection. The value
     // is 64 hex characters we generated — never user input.
@@ -262,6 +287,11 @@ export function openOfflineDatabase(userId: string): Promise<SqlDb> | null {
       try {
         return await openEncrypted(lib, fileName, key);
       } catch (err) {
+        // Not a broken file: a build that cannot encrypt. Close and refuse — never "start fresh" in plaintext.
+        if (err instanceof SqlCipherMissingError) {
+          await (err as { db?: SqlDb }).db?.closeAsync().catch(() => undefined);
+          throw err;
+        }
         /*
           ⚠️ ANY failure, not a recognised one.
 

@@ -3,29 +3,17 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { keepResponse, keptResponse } from './response-cache';
 import { networkErrorText } from './network-error';
+import { resolveApiUrl } from './base-url';
+import { urlEnvironment } from './url-environment';
+import { envelopeMeta, readBody, refusalDetails, unwrapEnvelope, type PageMeta } from './envelope';
+import { jwtSubject } from './session-owner';
 
-// Dynamically get API URL based on Expo dev server host
+/**
+ * The API's address. ⚠️ A release build only ever gets an https address — see
+ * `base-url.ts`, shared with the socket so the two can never disagree again.
+ */
 export function getApiUrl(): string {
-  // If explicitly set in env (non-empty), use that for production
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl && envUrl.trim().length > 0) {
-    return envUrl;
-  }
-
-  // In development, get host from Expo's dev server
-  const debuggerHost = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
-
-  if (debuggerHost) {
-    // debuggerHost is like "192.168.178.26:8081" - extract IP and use API port 4000
-    const host = debuggerHost.split(':')[0];
-    const url = `http://${host}:4000/api/v1`;
-    return url;
-  }
-
-  // No env and no dev host: in a shipped (production) app this must hit the real
-  // API — NEVER localhost (that's how an OTA with an un-inlined EXPO_PUBLIC_API_URL
-  // silently breaks login). Only dev builds fall back to localhost.
-  return __DEV__ ? 'http://localhost:4000/api/v1' : 'https://hbcfield.com/api/v1';
+  return resolveApiUrl(urlEnvironment());
 }
 
 export const API_URL = getApiUrl();
@@ -61,6 +49,8 @@ export function resolveMediaUrl(url?: string | null): string | undefined {
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
 const REFRESH_TOKEN_KEY = 'hbcfield_refresh_token';
+/** When the session now on this phone began — see `sessionStartedAt`. */
+const SESSION_STARTED_KEY = 'hbcfield_session_started_at';
 
 // ============================================================================
 // API Response / Error
@@ -78,13 +68,28 @@ export class ApiError extends Error {
   statusCode: number;
   /** The server's machine-readable reason (e.g. TASK_REASSIGNED), when it sent one. */
   code?: string;
+  /**
+   * The values the server's sentence is written with (`distanceMetres`,
+   * `radiusMetres`, `previousAt`…) — what `refusalText` fills a translated
+   * refusal from. Without them a coded refusal could only be shown in the
+   * server's English, or with its numbers missing.
+   */
+  params?: Record<string, unknown>;
 
-  constructor(message: string, statusCode: number, code?: string) {
+  constructor(message: string, statusCode: number, code?: string, params?: Record<string, unknown>) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+    if (params) this.params = params;
     this.name = 'ApiError';
   }
+}
+
+/** A refusal from the server, as the error every screen already knows how to read. */
+function refusal(body: unknown, status: number): ApiError {
+  const { code, params } = refusalDetails(body);
+  const message = (body as { message?: unknown } | null)?.message;
+  return new ApiError(sanitizeErrorMessage(typeof message === 'string' ? message : undefined, status), status, code, params);
 }
 
 // ============================================================================
@@ -124,12 +129,51 @@ function notifyObservers(o: ResponseObservation) {
 // Token Management
 // ============================================================================
 
+/*
+  Whose tokens these are, remembered for this run of the app.
+
+  `undefined` = not read yet (a cold start, before any request); `null` = no
+  session. Kept in memory so the GET merge below can key by person without an
+  await in front of the lookup.
+*/
+let knownOwner: string | null | undefined;
+/** In-memory copy of SESSION_STARTED_KEY. */
+let knownSessionStart: number | null | undefined;
+
 export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  const token = await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+  if (knownOwner === undefined) knownOwner = jwtSubject(token);
+  return token;
 }
 
 export async function getRefreshToken(): Promise<string | null> {
   return SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+}
+
+/**
+ * The member the stored tokens were issued to — their `sub` — or null when
+ * nobody is signed in. Work kept on the phone is only ever sent when this is
+ * its owner (background sync, kept check-ins, route points).
+ */
+export async function sessionOwnerId(): Promise<string | null> {
+  try {
+    return jwtSubject(await getAccessToken());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * When the session now on this phone began (epoch ms), or null when there is
+ * none. A push that arrived BEFORE it was meant for somebody else's session —
+ * its buttons must not act as the person signed in now.
+ */
+export async function sessionStartedAt(): Promise<number | null> {
+  if (knownSessionStart !== undefined) return knownSessionStart;
+  const raw = await SecureStore.getItemAsync(SESSION_STARTED_KEY).catch(() => null);
+  const at = raw ? Number(raw) : NaN;
+  knownSessionStart = Number.isFinite(at) ? at : null;
+  return knownSessionStart;
 }
 
 export async function saveTokens(accessToken: string, refreshToken: string): Promise<void> {
@@ -148,16 +192,40 @@ export async function saveTokens(accessToken: string, refreshToken: string): Pro
     stopping a session from being cloned by a device migration.
   */
   const opts = { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY };
+  const previous = await sessionOwnerId();
+  const owner = jwtSubject(accessToken);
+  /*
+    A NEW session — nobody signed in before, or somebody else was — starts its
+    clock now. A refresh for the same member keeps the original start.
+  */
+  const sameMember = !!previous && previous === owner;
+  const started = sameMember ? await sessionStartedAt() : null;
+  // The same member with no recorded start (a session from before this was kept): 0 = "began before
+  // anything this phone holds", so none of their own pushes is ever mistaken for somebody else's.
+  const startAt = started ?? (sameMember ? 0 : Date.now());
+  if (previous !== owner) {
+    // Somebody else's answers must not be handed to this member.
+    inflightRequests.clear();
+  }
   await Promise.all([
     SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken, opts),
     SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken, opts),
+    started !== null ? Promise.resolve() : SecureStore.setItemAsync(SESSION_STARTED_KEY, String(startAt), opts),
   ]);
+  knownOwner = owner;
+  knownSessionStart = startAt;
 }
 
 export async function clearTokens(): Promise<void> {
+  // First, synchronously: a GET answered for the last person must never be
+  // handed to the next one — not even one still in flight.
+  inflightRequests.clear();
+  knownOwner = null;
+  knownSessionStart = null;
   await Promise.all([
     SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY),
     SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY),
+    SecureStore.deleteItemAsync(SESSION_STARTED_KEY).catch(() => undefined),
   ]);
 }
 
@@ -165,10 +233,10 @@ export async function clearTokens(): Promise<void> {
 // Auth Failure Callback
 // ============================================================================
 
-// Callback to notify auth context of logout
+// Called when the server has said the session is over (the refresh token was refused).
 let onAuthFailure: (() => void) | null = null;
 
-export function setAuthFailureCallback(callback: () => void) {
+export function setAuthFailureCallback(callback: (() => void) | null) {
   onAuthFailure = callback;
 }
 
@@ -183,8 +251,32 @@ export function setUserRefreshedCallback(callback: (user: any) => void) {
 // Token Refresh
 // ============================================================================
 
+/**
+ * What a refresh found out — three answers, because two were one too few.
+ *
+ * - `refreshed`: a new pair is stored.
+ * - `invalid`: the SERVER said no (400/401/403) or there is no refresh token.
+ *   The session is over; only this clears the tokens and signs the member out.
+ * - `unreachable`: anything else — no network, a timeout, a 429, a 5xx, an
+ *   answer that could not be read. Says nothing about the session, so the
+ *   tokens stay and the request that needed them fails with a retryable error.
+ *
+ * ⚠️ It used to be two: a 502 from a restarting gateway or a 429 at shift
+ * change was "refresh failed", which cleared the tokens and logged a field
+ * worker out mid-shift — losing their clocked-in context to a server blip.
+ */
+export type RefreshOutcome =
+  | { kind: 'refreshed'; accessToken: string }
+  | { kind: 'invalid' }
+  | { kind: 'unreachable' };
+
+/** Only these answers from /auth/refresh mean the session itself is no longer valid. */
+export function refreshRefusedSession(status: number): boolean {
+  return status === 400 || status === 401 || status === 403;
+}
+
 // Token refresh state - shared promise prevents concurrent refreshes
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 interface RefreshResponse {
   accessToken: string;
@@ -193,52 +285,46 @@ interface RefreshResponse {
 }
 
 /**
- * Refresh access token with queue management
- * Uses a shared promise to ensure only one refresh request is made at a time
- * Backend handles grace period for concurrent requests using the same token
+ * Refresh the access token. One request at a time: concurrent callers share it
+ * (the backend also tolerates the same token twice within a grace period).
  */
-export function refreshAccessToken(): Promise<string | null> {
-  // If a refresh is already in progress, wait for it
-  if (refreshPromise) {
-    return refreshPromise;
-  }
+export function refreshSession(): Promise<RefreshOutcome> {
+  if (refreshPromise) return refreshPromise;
 
-  // Create the promise IMMEDIATELY (synchronously) before any await
-  refreshPromise = (async () => {
+  // Created IMMEDIATELY (synchronously) before any await.
+  refreshPromise = (async (): Promise<RefreshOutcome> => {
     try {
       const storedRefreshToken = await getRefreshToken();
-
-      if (!storedRefreshToken) {
-        return null;
-      }
+      if (!storedRefreshToken) return { kind: 'invalid' };
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-      const response = await fetch(`${API_URL}/auth/refresh`, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Client-Platform': 'mobile',
-        },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
-      });
-
-      clearTimeout(timeoutId);
-
-      const result = await response.json() as ApiResponse<RefreshResponse>;
-
-      if (!response.ok || !result.success) {
-        await clearTokens();
-        return null;
+      let response: Response;
+      try {
+        response = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Client-Platform': 'mobile',
+          },
+          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        });
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      const data = result.data;
-      if (!data?.accessToken || !data?.refreshToken) {
+      if (refreshRefusedSession(response.status)) {
         await clearTokens();
-        return null;
+        return { kind: 'invalid' };
       }
+      // 429, 5xx, a proxy's error page: the server did not decide anything.
+      if (!response.ok) return { kind: 'unreachable' };
+
+      const result = (await readBody(response).catch(() => null)) as ApiResponse<RefreshResponse> | null;
+      const data = unwrapEnvelope<RefreshResponse | null>(result);
+      // A 2xx we cannot read is not proof of anything — keep what we have.
+      if (!data?.accessToken || !data?.refreshToken) return { kind: 'unreachable' };
 
       await saveTokens(data.accessToken, data.refreshToken);
 
@@ -247,14 +333,12 @@ export function refreshAccessToken(): Promise<string | null> {
         onUserRefreshed(data.user);
       }
 
-      return data.accessToken;
-    } catch (error) {
+      return { kind: 'refreshed', accessToken: data.accessToken };
+    } catch {
       // Network error / timeout / abort — NOT proof the session is invalid. A
       // field worker in poor coverage must not be logged out and lose their
-      // clocked-in context; only an explicit non-2xx / unsuccessful refresh above
-      // clears the tokens. Return null so the caller's request fails and retries.
-      // (Sec audit mobile-H2.)
-      return null;
+      // clocked-in context. (Sec audit mobile-H2.)
+      return { kind: 'unreachable' };
     } finally {
       refreshPromise = null;
     }
@@ -263,12 +347,40 @@ export function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
+/** The older shape — the new access token, or null for any failure. Prefer `refreshSession`. */
+export async function refreshAccessToken(): Promise<string | null> {
+  const outcome = await refreshSession();
+  return outcome.kind === 'refreshed' ? outcome.accessToken : null;
+}
+
 // ============================================================================
 // HTTP Fetch Functions
 // ============================================================================
 
-// Request deduplication for GET requests
+/*
+  Request deduplication for GET requests.
+
+  ⚠️ KEYED BY PERSON AND ENDPOINT, AND EMPTIED WHEN THE TOKENS GO. Keyed by the
+  endpoint alone, a `/attendance/status` still in flight when one member signed
+  out was handed — answer and all — to the next member who asked for it.
+*/
 const inflightRequests = new Map<string, Promise<any>>();
+const inflightKey = (endpoint: string) => `${knownOwner ?? '?'}|${endpoint}`;
+
+/** Every merged GET is forgotten — on sign-out, before anything else. */
+export function clearInflightRequests(): void {
+  inflightRequests.clear();
+}
+
+/** Headers every request carries. */
+function baseHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'X-Client-Platform': 'mobile',
+    'X-App-Version': APP_VERSION,
+    'X-App-Platform': APP_PLATFORM,
+  };
+}
 
 /**
  * Base fetch function without auth
@@ -287,27 +399,18 @@ export async function fetchApi<T>(
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Platform': 'mobile',
-        'X-App-Version': APP_VERSION,
-        'X-App-Platform': APP_PLATFORM,
+        ...baseHeaders(),
         ...options.headers,
       },
     });
 
     clearTimeout(timeoutId);
 
-    const data = await response.json() as ApiResponse<T>;
+    const body = await readBody(response);
 
-    if (!response.ok) {
-      throw new ApiError(
-        sanitizeErrorMessage(data.message, response.status),
-        response.status,
-        typeof (data as { code?: unknown }).code === 'string' ? (data as { code: string }).code : undefined,
-      );
-    }
+    if (!response.ok) throw refusal(body, response.status);
 
-    return (data.data ?? data) as T;
+    return unwrapEnvelope<T>(body);
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
@@ -330,7 +433,8 @@ function sanitizeErrorMessage(message: string | undefined, status: number): stri
 }
 
 /**
- * Authenticated fetch with automatic 401 handling, retry, and GET deduplication
+ * Authenticated fetch with automatic 401 handling, retry, and GET deduplication.
+ * Resolves to the answer itself — the envelope's `data` (see `envelope.ts`).
  */
 export async function fetchWithAuth<T>(
   endpoint: string,
@@ -339,28 +443,51 @@ export async function fetchWithAuth<T>(
 ): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
 
-  // Deduplicate GET requests - reuse in-flight promise for same endpoint
+  // Deduplicate GET requests - reuse in-flight promise for same person + endpoint
+  const key = inflightKey(endpoint);
   if (method === 'GET') {
-    const existing = inflightRequests.get(endpoint);
+    const existing = inflightRequests.get(key);
     if (existing) {
       return existing as Promise<T>;
     }
   }
 
-  const promise = method === 'GET' ? getKeptWhenOffline<T>(endpoint, options, retry) : _fetchWithAuthInner<T>(endpoint, options, retry);
+  const promise =
+    method === 'GET'
+      ? getKeptWhenOffline<T>(endpoint, options, retry)
+      : _fetchWithAuthInner(endpoint, options, retry).then((body) => unwrapEnvelope<T>(body));
 
   if (method === 'GET') {
-    inflightRequests.set(endpoint, promise);
+    inflightRequests.set(key, promise);
     /*
       `.finally()` returns a NEW promise, and it rejects whenever the request
       does. Nobody awaits that one, so every failed GET also produced an
       unhandled rejection — a warning in the app, and enough to take a test
       runner down. The caller still gets the real rejection from `promise`.
     */
-    void promise.finally(() => inflightRequests.delete(endpoint)).catch(() => undefined);
+    void promise
+      .finally(() => {
+        if (inflightRequests.get(key) === promise) inflightRequests.delete(key);
+      })
+      .catch(() => undefined);
   }
 
   return promise;
+}
+
+/**
+ * A page of a list WITH its `meta` (`total`, `totalPages`…) — the one thing
+ * `fetchWithAuth` cannot give, because it resolves to the answer itself.
+ *
+ * Not merged and not kept offline: a caller asking for the total is asking the
+ * server, and a kept list would answer with yesterday's count.
+ */
+export async function fetchPageWithAuth<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<{ data: T; meta: PageMeta | null }> {
+  const body = await _fetchWithAuthInner(endpoint, options, true, (options.method || 'GET').toUpperCase() === 'GET');
+  return { data: unwrapEnvelope<T>(body), meta: envelopeMeta(body) };
 }
 
 /**
@@ -370,7 +497,7 @@ export async function fetchWithAuth<T>(
  */
 async function getKeptWhenOffline<T>(endpoint: string, options: RequestInit, retry: boolean): Promise<T> {
   try {
-    const body = await _fetchWithAuthInner<T>(endpoint, options, retry, true);
+    const body = unwrapEnvelope<T>(await _fetchWithAuthInner(endpoint, options, retry, true));
     keepResponse(endpoint, body);
     return body;
   } catch (err) {
@@ -389,7 +516,8 @@ async function getKeptWhenOffline<T>(endpoint: string, options: RequestInit, ret
  */
 const NETWORK_RETRY_MS = 400;
 
-async function _fetchWithAuthInner<T>(
+/** The raw body of an authenticated request — still in its envelope. */
+async function _fetchWithAuthInner(
   endpoint: string,
   options: RequestInit = {},
   retry = true,
@@ -407,7 +535,7 @@ async function _fetchWithAuthInner<T>(
    * that must survive no signal go through the outbox (src/offline).
    */
   retryNetwork = false
-): Promise<T> {
+): Promise<unknown> {
   const accessToken = await getAccessToken();
   const url = `${API_URL}${endpoint}`;
 
@@ -419,10 +547,7 @@ async function _fetchWithAuthInner<T>(
       ...options,
       signal: controller.signal,
       headers: {
-        'Content-Type': 'application/json',
-        'X-Client-Platform': 'mobile',
-        'X-App-Version': APP_VERSION,
-        'X-App-Platform': APP_PLATFORM,
+        ...baseHeaders(),
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },
@@ -433,30 +558,39 @@ async function _fetchWithAuthInner<T>(
 
     // Handle 401 - Automatic token refresh and retry
     if (response.status === 401 && retry) {
-      const newToken = await refreshAccessToken();
+      const outcome = await refreshSession();
 
-      if (newToken) {
-        return _fetchWithAuthInner<T>(endpoint, options, false, retryNetwork);
+      if (outcome.kind === 'refreshed') {
+        return _fetchWithAuthInner(endpoint, options, false, retryNetwork);
       }
 
-      // Refresh failed - notify auth context which will redirect to login
-      if (onAuthFailure) {
+      if (outcome.kind === 'unreachable') {
+        /*
+          ⚠️ The server could not be asked, so nothing is known about the
+          session: the tokens stay, nobody is signed out, and this request
+          fails the way a request with no signal does — retryable, kept answers
+          shown, the outbox trying again later.
+        */
+        throw new ApiError(networkErrorText('offline'), 0, 'SESSION_UNREACHABLE');
+      }
+
+      /*
+        The server refused the session — notify auth context, which ends it.
+        Not for a request that carried NO token: that is a screen still asking
+        after its session already ended (a sign-out in progress), and reporting
+        it would only end the same session a second time.
+      */
+      if (onAuthFailure && accessToken) {
         onAuthFailure();
       }
       throw new ApiError('Session expired', 401);
     }
 
-    const data = await response.json() as ApiResponse<T>;
+    const body = await readBody(response);
 
-    if (!response.ok) {
-      throw new ApiError(
-        sanitizeErrorMessage(data.message, response.status),
-        response.status,
-        typeof (data as { code?: unknown }).code === 'string' ? (data as { code: string }).code : undefined,
-      );
-    }
+    if (!response.ok) throw refusal(body, response.status);
 
-    return (data.data ?? data) as T;
+    return body;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
@@ -478,7 +612,7 @@ async function _fetchWithAuthInner<T>(
     */
     if (retryNetwork) {
       await new Promise((resolve) => setTimeout(resolve, NETWORK_RETRY_MS));
-      return _fetchWithAuthInner<T>(endpoint, options, retry, false);
+      return _fetchWithAuthInner(endpoint, options, retry, false);
     }
     notifyObservers({ kind: 'network-error' });
     throw new ApiError(networkErrorText('offline'), 0, 'NO_CONNECTION');

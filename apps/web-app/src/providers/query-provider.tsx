@@ -2,6 +2,17 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { isTransientError } from '@/lib/server-error';
+
+/**
+ * Ask again only when nothing was decided — no answer, the rate limiter, or a
+ * server failure — and at most once (the request pipeline has already retried
+ * GETs on 429/5xx). A 4xx is an answer: retrying a 403 only doubles the traffic
+ * and delays the screen that explains it.
+ */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  return failureCount < 1 && isTransientError(error);
+}
 
 interface QueryProviderProps {
   children: ReactNode;
@@ -17,7 +28,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
             gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache for 30 min
             refetchOnWindowFocus: false, // Don't refetch when window regains focus
             refetchOnMount: true, // Refetch on mount only if data is stale
-            retry: 1, // Only retry once on failure
+            retry: shouldRetryQuery,
             refetchOnReconnect: true, // Refetch stale data when network reconnects
           },
         },

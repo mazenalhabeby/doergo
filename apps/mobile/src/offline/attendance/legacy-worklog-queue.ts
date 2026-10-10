@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import type { PickedImage } from '../../hooks/useImagePicker';
 import { worklogApi } from '../../lib/api/worklog';
 import { uploadToPresignedUrl } from '../../lib/api/attachments';
+import { sessionOwnerId } from '../../lib/api/client';
 import type { OfflineFiles } from '../files/offline-files';
 import type { SyncEngine } from '../sync-engine';
 import { addWorklogEntry } from './worklog';
@@ -20,28 +21,74 @@ import { addWorklogEntry } from './worklog';
   try, because nothing identifies the note across attempts.
 */
 
-const keyFor = (entryId: string) => `worklog_pending_${entryId}`;
+/*
+  ⚠️ KEYED BY MEMBER. These are somebody's notes and photos from their shift,
+  and they used to sit under the time entry's id alone — readable and sendable
+  by whoever signed in next. The owner is the session's (the token's `sub`);
+  the old unkeyed list is still read once, so an update loses nothing, and is
+  removed the first time it is written back.
+*/
+const PREFIX = 'worklog_pending_';
+const oldKeyFor = (entryId: string) => `${PREFIX}${entryId}`;
+const keyFor = (owner: string, entryId: string) => `${PREFIX}${owner}:${entryId}`;
 const localId = () => `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 const DIR = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}worklog/` : null;
 
 type LegacyItem = { id: string; body: string; at: string; photos?: PickedImage[] };
 
-export async function readLegacy(entryId: string): Promise<LegacyItem[]> {
+async function parse(raw: string | null): Promise<LegacyItem[]> {
   try {
-    const raw = await AsyncStorage.getItem(keyFor(entryId));
-    return raw ? (JSON.parse(raw) as LegacyItem[]) : [];
+    const items = raw ? (JSON.parse(raw) as LegacyItem[]) : [];
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function readLegacy(entryId: string): Promise<LegacyItem[]> {
+  const owner = await sessionOwnerId();
+  if (!owner) return [];
+  try {
+    const [mine, old] = await Promise.all([AsyncStorage.getItem(keyFor(owner, entryId)), AsyncStorage.getItem(oldKeyFor(entryId))]);
+    return [...(await parse(old)), ...(await parse(mine))];
   } catch {
     return [];
   }
 }
 
 async function writeLegacy(entryId: string, items: LegacyItem[]): Promise<void> {
+  const owner = await sessionOwnerId();
+  if (!owner) return;
   try {
-    if (items.length) await AsyncStorage.setItem(keyFor(entryId), JSON.stringify(items));
-    else await AsyncStorage.removeItem(keyFor(entryId));
+    // What was read from the old shared key is now in `items`; it lives under the owner from here on.
+    await AsyncStorage.removeItem(oldKeyFor(entryId));
+    if (items.length) await AsyncStorage.setItem(keyFor(owner, entryId), JSON.stringify(items));
+    else await AsyncStorage.removeItem(keyFor(owner, entryId));
   } catch {
     /* best effort */
   }
+}
+
+/** Does the old queue still hold anything for this member? — counted as unsent work at sign-out. */
+export async function legacyWorklogWaiting(owner: string): Promise<boolean> {
+  try {
+    const all = (await AsyncStorage.getAllKeys()) ?? [];
+    return all.some((k) => k.startsWith(`${PREFIX}${owner}:`) || (k.startsWith(PREFIX) && !k.includes(':')));
+  } catch {
+    return false;
+  }
+}
+
+/** The end of a session with nothing kept: every queued note and its photos go. */
+export async function forgetLegacyWorklog(): Promise<void> {
+  try {
+    const all = (await AsyncStorage.getAllKeys()) ?? [];
+    const drop = all.filter((k) => k.startsWith(PREFIX));
+    if (drop.length) await AsyncStorage.multiRemove(drop);
+  } catch {
+    /* best effort */
+  }
+  if (DIR) await FileSystem.deleteAsync(DIR, { idempotent: true }).catch(() => undefined);
 }
 
 async function persistPhoto(img: PickedImage): Promise<PickedImage> {

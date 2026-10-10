@@ -37,7 +37,7 @@ describe('the session cut-off reaches sockets', () => {
 
 describe('operator sockets ask the database', () => {
   const can = (role: string) => role === 'OWNER' || role === 'SUPPORT';
-  const op = (over: Record<string, unknown> = {}) => ({ platformUser: { findUnique: jest.fn().mockResolvedValue({ isActive: true, role: 'SUPPORT', tokensValidAfter: null, ...over }) } });
+  const op = (over: Record<string, unknown> = {}) => ({ platformUser: { findUnique: jest.fn().mockResolvedValue({ isActive: true, role: 'SUPPORT', tokensValidAfter: null, twoFactorEnabled: true, ...over }) } });
   const token = { typ: 'platform', sub: 'op-1', iat: 2_000_000_000 };
 
   it('admits an active operator whose CURRENT role supports', async () => {
@@ -48,6 +48,10 @@ describe('operator sockets ask the database', () => {
     expect(await operatorMaySupport(op({ isActive: false }), token, can)).toBe(false);
     expect(await operatorMaySupport(op({ role: 'BILLING' }), token, can)).toBe(false);
     expect(await operatorMaySupport(op({ tokensValidAfter: new Date(2_000_000_100 * 1000) }), token, can)).toBe(false);
+  });
+
+  it('refuses an operator who has not enrolled a second factor (2FA is mandatory on the console)', async () => {
+    expect(await operatorMaySupport(op({ twoFactorEnabled: false }), token, can)).toBe(false);
   });
 
   it('refuses a token that is not an operator token at all', async () => {
@@ -71,5 +75,16 @@ describe('a task open to a work role', () => {
     const full = db(null, { ...openTask, openSpotsLeft: 0 }, { user: { role: 'EMPLOYEE', enabledModules: null, isExternal: false } });
     expect(await socketMayOpenTask(full, caller, 't1')).toBe(false);
     expect(full.spaceAssignment.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe('a static-key agent socket is recorded in the operator audit trail', () => {
+  it('writes one STATIC_KEY row with the declared agent name', async () => {
+    const { recordStaticKeyAgentSocket } = require('../socket-access');
+    const create = jest.fn().mockResolvedValue({});
+    await recordStaticKeyAgentSocket({ platformAuditLog: { create } }, { agent: 'Lena', ip: '1.2.3.4', userAgent: 'ua' });
+    expect(create).toHaveBeenCalledWith({ data: expect.objectContaining({ actorType: 'STATIC_KEY', actorLabel: 'Lena', action: 'SUPPORT_AGENT_SOCKET_OPENED', ok: true }) });
+    await recordStaticKeyAgentSocket({ platformAuditLog: { create } }, {});
+    expect(create).toHaveBeenLastCalledWith({ data: expect.objectContaining({ actorLabel: 'static-key' }) });
   });
 });

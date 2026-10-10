@@ -1159,7 +1159,7 @@ describe('AttendanceService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data.mimeType).toBe('text/csv');
-      expect(result.data.content).toContain('Date,Technician,Email');
+      expect(result.data.content).toContain('"Date","Technician","Email"');
       expect(result.data.recordCount).toBe(1);
     });
   });

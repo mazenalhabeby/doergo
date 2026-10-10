@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Inject, Injectable, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Injectable, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
 import { BaseGatewayService, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 
 /** Gateway → task-service proxy for curating the shared task-type library. */
@@ -35,6 +36,7 @@ export class PlatformLibraryService extends BaseGatewayService {
 @Controller('platform/library')
 @Public()
 @UseGuards(PlatformAuthGuard)
+@UseInterceptors(PlatformAuditInterceptor)
 @Throttle({ default: { limit: 120, ttl: 60_000 } })
 export class PlatformLibraryController {
   constructor(private readonly svc: PlatformLibraryService) {}

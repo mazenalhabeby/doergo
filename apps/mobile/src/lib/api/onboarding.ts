@@ -1,4 +1,5 @@
 import { fetchApi, fetchWithAuth } from './client';
+import { path } from './path';
 import type { User, LoginResponse, InvitationValidation, AcceptInvitationInput } from './types';
 
 // Onboarding API - post-registration onboarding flow
@@ -15,7 +16,7 @@ export const onboardingApi = {
   },
 
   validateOrgCode: async (code: string): Promise<{ valid: boolean; organizationName?: string; joinPolicy?: string; message?: string }> => {
-    return fetchWithAuth<any>(`/onboarding/validate-org-code/${encodeURIComponent(code)}`);
+    return fetchWithAuth<any>(path`/onboarding/validate-org-code/${code}`);
   },
 
   submitJoinRequest: async (data: { orgCode: string; message?: string }): Promise<any> => {
@@ -33,7 +34,7 @@ export const onboardingApi = {
   },
 
   cancelJoinRequest: async (id: string): Promise<any> => {
-    return fetchWithAuth<any>(`/onboarding/join-requests/${id}`, {
+    return fetchWithAuth<any>(path`/onboarding/join-requests/${id}`, {
       method: 'DELETE',
     });
   },
@@ -42,7 +43,7 @@ export const onboardingApi = {
 // Invitations API - invite code registration flow (public endpoints)
 export const invitationsApi = {
   validate: async (code: string): Promise<InvitationValidation> => {
-    return fetchApi<InvitationValidation>(`/invitations/validate/${encodeURIComponent(code)}`);
+    return fetchApi<InvitationValidation>(path`/invitations/validate/${code}`);
   },
 
   accept: async (input: AcceptInvitationInput): Promise<LoginResponse> => {
@@ -63,7 +64,7 @@ export const pushApi = {
   },
 
   removeToken: async (token: string): Promise<{ success: boolean }> => {
-    return fetchWithAuth<{ success: boolean }>(`/users/push-token/${encodeURIComponent(token)}`, {
+    return fetchWithAuth<{ success: boolean }>(path`/users/push-token/${token}`, {
       method: 'DELETE',
     });
   },

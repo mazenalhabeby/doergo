@@ -7,6 +7,7 @@ import {
   getEndOfWeek,
   getStartOfMonth,
   getEndOfMonth,
+  toCsv,
 } from '@hbcfield/shared';
 import { format } from 'date-fns';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
@@ -261,12 +262,13 @@ export class AttendanceReportService {
       entry.notes || '',
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
-      ),
-    ].join('\n');
+    // The shared builder quotes every cell (header row too) and defuses a cell
+    // a spreadsheet would run as a formula — a member's note or a location
+    // name starting with "=" must arrive as text on the office PC.
+    const csvContent = toCsv(
+      rows,
+      headers.map((header, i) => ({ header, value: (row: (typeof rows)[number]) => row[i] })),
+    );
 
     return success({
       filename: `attendance_${format(new Date(data.startDate), 'yyyy-MM-dd')}_to_${format(new Date(data.endDate), 'yyyy-MM-dd')}.csv`,

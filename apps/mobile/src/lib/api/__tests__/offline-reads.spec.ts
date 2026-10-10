@@ -74,7 +74,7 @@ function endpoints(): { file: string; ep: string }[] {
       whole Team tab) sat uncached without anything noticing. Collect the
       literal wherever the endpoint is actually written.
     */
-    for (const m of s.matchAll(/(?:buildUrlWithQuery\(|const\s+(?:url|endpoint)\s*(?::[^=]*)?=)\s*[`'"](\/[^`'"]*)[`'"]/g)) {
+    for (const m of s.matchAll(/(?:buildUrlWithQuery\(|const\s+(?:url|endpoint)\s*(?::[^=]*)?=)\s*(?:path)?[`'"](\/[^`'"]*)[`'"]/g)) {
       out.push({ file: f, ep: norm(m[1]) });
     }
     /*
@@ -83,7 +83,7 @@ function endpoints(): { file: string; ep: string }[] {
       from the scan — and a guard that quietly sees less than it claims is
       worse than none. Proved by planting a call right after another.
     */
-    for (const m of s.matchAll(/fetchWithAuth(?:<[^>]*>)?\(\s*[`'"]([^`'"]+)[`'"]\s*([,)])(?=([\s\S]{0,140}))/g)) {
+    for (const m of s.matchAll(/fetchWithAuth(?:<[^>]*>)?\(\s*(?:path)?[`'"]([^`'"]+)[`'"]\s*([,)])(?=([\s\S]{0,140}))/g)) {
       const [, raw, sep, tail] = m;
       if (sep === ',' && /method:\s*'(POST|PATCH|PUT|DELETE)'/.test(tail)) continue;
       out.push({ file: f, ep: norm(raw) });

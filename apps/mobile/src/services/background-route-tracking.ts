@@ -3,7 +3,8 @@ import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackingApi, ApiError } from '../lib/api';
-import { getAccessToken } from '../lib/api/client';
+import { getAccessToken, sessionOwnerId } from '../lib/api/client';
+import i18n from '../i18n';
 import { requestBackgroundLocationConsent } from './location-consent';
 import { checkArrival, setRouteDestination, clearRouteDestination } from './route-arrival';
 import { cleanRoutePoints, type RoutePoint } from '@hbcfield/shared/client';
@@ -45,7 +46,15 @@ const BATCH_MAX_POINTS = 500;
 const LAST_POINT_KEY = 'route_last_point';
 
 // Bursts that couldn't be delivered wait here until the next one succeeds.
+/*
+  ⚠️ ONE LIST PER MEMBER. A route is where a person drove. A device-wide list
+  meant the points member A collected in a tunnel were uploaded with member B's
+  token as soon as B signed in — onto B's route, as B's movements. The key now
+  carries the session owner (the token's `sub`), only the owner's list is ever
+  sent, and `forgetRouteData` removes every list at the end of a session.
+*/
 const PENDING_KEY = 'route_pending_bursts';
+const pendingKey = (owner: string) => `${PENDING_KEY}:${owner}`;
 // Ceiling on what we hold without signal: at ~20 m per point about 100 km of
 // route, under 1 MB on the phone. Past it the OLDEST points go, because the
 // recent ones describe where the member is now.
@@ -78,9 +87,9 @@ interface PendingBurst {
   points: FlushPoint[];
 }
 
-async function loadPending(): Promise<PendingBurst[]> {
+async function loadPending(owner: string): Promise<PendingBurst[]> {
   try {
-    const raw = await AsyncStorage.getItem(PENDING_KEY);
+    const raw = await AsyncStorage.getItem(pendingKey(owner));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as PendingBurst[];
     if (!Array.isArray(parsed)) return [];
@@ -96,10 +105,10 @@ async function loadPending(): Promise<PendingBurst[]> {
   }
 }
 
-async function savePending(bursts: PendingBurst[]): Promise<void> {
+async function savePending(owner: string, bursts: PendingBurst[]): Promise<void> {
   try {
     if (!bursts.length) {
-      await AsyncStorage.removeItem(PENDING_KEY);
+      await AsyncStorage.removeItem(pendingKey(owner));
       return;
     }
     // Trim from the front — oldest points are the least useful.
@@ -116,7 +125,7 @@ async function savePending(bursts: PendingBurst[]): Promise<void> {
         total -= excess;
       }
     }
-    await AsyncStorage.setItem(PENDING_KEY, JSON.stringify(trimmed));
+    await AsyncStorage.setItem(pendingKey(owner), JSON.stringify(trimmed));
   } catch (err) {
     console.warn('[Route] Could not persist pending points:', err);
   }
@@ -206,7 +215,10 @@ async function flushPoints(taskId: string | undefined, points: FlushPoint[]): Pr
 }
 
 async function flushQueue(fresh: PendingBurst[]): Promise<void> {
-  const queue: PendingBurst[] = [...(await loadPending()), ...fresh];
+  // Whose points these are: the member the token belongs to. Nobody → nothing is sent or kept.
+  const owner = await sessionOwnerId();
+  if (!owner) return;
+  const queue: PendingBurst[] = [...(await loadPending(owner)), ...fresh];
   if (!queue.length) return;
   const remaining: PendingBurst[] = [];
 
@@ -220,7 +232,7 @@ async function flushQueue(fresh: PendingBurst[]): Promise<void> {
     }
   }
 
-  await savePending(remaining);
+  await savePending(owner, remaining);
 }
 
 // ── Background task — runs in a separate JS context, no React state access ──
@@ -320,9 +332,10 @@ export async function startRouteTracking(
       activityType: Location.ActivityType.AutomotiveNavigation,
       pausesUpdatesAutomatically: false,
       showsBackgroundLocationIndicator: true, // iOS blue bar
+      // In the member's language — the notification sits on their lock screen for the whole drive.
       foregroundService: {
-        notificationTitle: 'HBCField — Route tracking',
-        notificationBody: 'Recording your route to the job site.',
+        notificationTitle: i18n.t('tracking.foreground.routeTitle'),
+        notificationBody: i18n.t('tracking.foreground.routeBody'),
         notificationColor: '#2563EB',
       },
     });
@@ -375,7 +388,10 @@ export async function stopRouteTracking(): Promise<void> {
  */
 export async function forgetRouteData(): Promise<void> {
   await stopRouteTracking().catch(() => undefined);
-  await AsyncStorage.multiRemove([PENDING_KEY, LAST_POINT_KEY]).catch(() => undefined);
+  // Every member's held points, and the old device-wide list from before they were keyed.
+  const all = await Promise.resolve(AsyncStorage.getAllKeys?.()).catch(() => null);
+  const keyed = (all ?? []).filter((k) => k.startsWith(`${PENDING_KEY}:`));
+  await AsyncStorage.multiRemove([PENDING_KEY, LAST_POINT_KEY, ...keyed]).catch(() => undefined);
 }
 
 async function loadLastPoint(): Promise<RoutePoint | null> {

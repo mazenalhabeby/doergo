@@ -14,7 +14,7 @@ export {
   type KeyOwner,
 } from './types';
 
-export { confirmWithBiometrics, SecureStoreCredential } from './credential';
+export { confirmWithBiometrics } from './credential';
 export { DeviceKeyCredential, getKeyOwner, classifySignFailure } from './device-key-credential';
 
 import { DeviceKeyCredential } from './device-key-credential';

@@ -34,6 +34,12 @@ export type BiometricFailure =
   /** The server refused the credential — revoked, or expired. */
   | 'rejected'
   /**
+   * The server could not be reached or did not answer properly (no network, a
+   * timeout, a 429 or 5xx). Nothing is known about the key, so it STAYS:
+   * "try again", never "enrol again".
+   */
+  | 'unreachable'
+  /**
    * The prompt did not produce a signature, and nothing says the key is gone:
    * a lockout, a face not recognised, iOS reporting a cancel in its own words.
    * The key STAYS — see `classifySignFailure`.
@@ -56,7 +62,7 @@ export class BiometricError extends Error {
  */
 export interface BiometricCredential {
   /** Which implementation — recorded with enrolment so a migration can tell. */
-  readonly kind: 'secure-store' | 'device-key';
+  readonly kind: 'device-key';
   /**
    * Is this phone bound — and to WHOM.
    *

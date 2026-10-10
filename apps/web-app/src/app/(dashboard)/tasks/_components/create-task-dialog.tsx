@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, lazy, Suspense, useEffect } from "react
 import { useTranslation } from "react-i18next"
 import { format } from "date-fns"
 import { useClientAddresses } from "@/hooks/use-client-addresses"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Building2, Calendar as CalendarIcon, CheckSquare, ChevronRight, Clock, FileText, GitBranch, Layers, Loader2, MapPin, Plus, Repeat, SlidersHorizontal, Trash2, Upload, User, Users, X } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
@@ -19,7 +20,6 @@ import {
   sprintsApi,
   epicsApi,
   customFieldsApi,
-  organizationsApi,
   locationsApi,
   customersApi,
   recurringTasksApi,
@@ -409,28 +409,17 @@ export function CreateTaskDialog({ open, onOpenChange, defaultSprintId, defaultS
   */
   // "none" is this dialog's unset sentinel, not an empty string.
   const hasSpace = !!spaceId && spaceId !== "none"
-  const { data: rosterData } = useQuery({
-    queryKey: ["space-roster", spaceId],
-    queryFn: () => locationsApi.getAssignedMembers(spaceId),
-    staleTime: 60000,
-    enabled: open && showAssigneePicker && hasSpace,
+  // No workspace chosen: the directory for whoever may read it, otherwise the
+  // rosters of the workspaces this person can see (lib/assignable-members.ts).
+  const { members: assignable } = useAssignableMembers({
+    spaceId: hasSpace ? spaceId : null,
+    rosterOnly: true,
+    enabled: open && showAssigneePicker,
   })
-  const { data: membersData } = useQuery({
-    queryKey: ["orgMembers", { limit: 50 }],
-    queryFn: () => organizationsApi.getMembers({ limit: 50 }),
-    staleTime: 60000,
-    // Only when no workspace is chosen — otherwise the roster above answers it.
-    enabled: open && showAssigneePicker && !hasSpace,
-  })
-  // A member can only receive tasks if their Access Profile includes the
-  // `tasks` module — clock-only members would never see the task on mobile.
-  // Assignable members first, then the rest (rendered disabled with a hint).
-  const members: AssigneeOption[] = useMemo(() => {
-    const list = hasSpace
-      ? (rosterData ?? []).flatMap((a) => (a.user ? [a.user] : []))
-      : (membersData?.data ?? [])
-    return [...list].sort(byAssignableFirst)
-  }, [hasSpace, rosterData, membersData])
+  const members: AssigneeOption[] = useMemo(
+    () => [...assignable].sort(byAssignableFirst),
+    [assignable],
+  )
 
   // ── Fetch spaces ──
   const { data: spacesData } = useQuery({

@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import {
   buildUrlWithQuery, type ClientTypeParam, type ContactsParam,
   type ContactImportBody, type ContactImportSummary,
@@ -209,9 +210,9 @@ export const customersApi = {
     fetchWithAuth<ContactImportSummary>('/customers/import', { method: 'POST', body: JSON.stringify(body) }),
 
   get: (id: string): Promise<MobileCustomer> =>
-    fetchWithAuth<MobileCustomer>(`/customers/${id}`),
+    fetchWithAuth<MobileCustomer>(path`/customers/${id}`),
   update: (id: string, dto: Partial<MobileCustomer>): Promise<MobileCustomer> =>
-    fetchWithAuth<MobileCustomer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+    fetchWithAuth<MobileCustomer>(path`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(dto) }),
   /** What the caller owes clients today — the home Clients card. `day` is the member's own day. */
   due: (day: { start: Date; end: Date }, limit = 3): Promise<ClientsDue> =>
     fetchWithAuth<ClientsDue>(buildUrlWithQuery('/customers/due', {
@@ -219,7 +220,7 @@ export const customersApi = {
     })),
 
   activities: (id: string): Promise<MobileCustomerActivity[]> =>
-    fetchWithAuth<MobileCustomerActivity[]>(`/customers/${id}/activities`),
+    fetchWithAuth<MobileCustomerActivity[]>(path`/customers/${id}/activities`),
   /**
    * Log a note, a call that happened, or a reminder.
    *
@@ -243,9 +244,9 @@ export const customersApi = {
       reminderAssigneeId?: string | null; repeat?: string;
     },
   ): Promise<MobileCustomerActivity> =>
-    fetchWithAuth<MobileCustomerActivity>(`/customers/${id}/activities`, { method: 'POST', body: JSON.stringify(input) }),
+    fetchWithAuth<MobileCustomerActivity>(path`/customers/${id}/activities`, { method: 'POST', body: JSON.stringify(input) }),
   updateActivity: (id: string, activityId: string, input: { done?: boolean }): Promise<MobileCustomerActivity> =>
-    fetchWithAuth<MobileCustomerActivity>(`/customers/${id}/activities/${activityId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    fetchWithAuth<MobileCustomerActivity>(path`/customers/${id}/activities/${activityId}`, { method: 'PATCH', body: JSON.stringify(input) }),
 
   /*
     Contact people — a person who works at a company.
@@ -260,22 +261,22 @@ export const customersApi = {
     and deleting them would take their history with them.
   */
   contacts: (companyId: string): Promise<MobileCustomerContact[]> =>
-    fetchWithAuth<MobileCustomerContact[]>(`/customers/${companyId}/contacts`),
+    fetchWithAuth<MobileCustomerContact[]>(path`/customers/${companyId}/contacts`),
   companies: (personId: string): Promise<MobileCustomerContact[]> =>
-    fetchWithAuth<MobileCustomerContact[]>(`/customers/${personId}/companies`),
+    fetchWithAuth<MobileCustomerContact[]>(path`/customers/${personId}/companies`),
   addContact: (
     companyId: string,
     input: { personId?: string; person?: { name: string; email?: string; phone?: string }; role?: string; isPrimary?: boolean },
   ): Promise<MobileCustomerContact> =>
-    fetchWithAuth<MobileCustomerContact>(`/customers/${companyId}/contacts`, { method: 'POST', body: JSON.stringify(input) }),
+    fetchWithAuth<MobileCustomerContact>(path`/customers/${companyId}/contacts`, { method: 'POST', body: JSON.stringify(input) }),
   updateContact: (linkId: string, input: { role?: string; isPrimary?: boolean }): Promise<MobileCustomerContact> =>
-    fetchWithAuth<MobileCustomerContact>(`/customers/contacts/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    fetchWithAuth<MobileCustomerContact>(path`/customers/contacts/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) }),
   removeContact: (linkId: string): Promise<void> =>
-    fetchWithAuth<void>(`/customers/contacts/${linkId}`, { method: 'DELETE' }),
+    fetchWithAuth<void>(path`/customers/contacts/${linkId}`, { method: 'DELETE' }),
 
   /** Where the work happens. One is primary; the rest are sites. */
   addresses: (id: string): Promise<MobileCustomerAddress[]> =>
-    fetchWithAuth<MobileCustomerAddress[]>(`/customers/${id}/addresses`),
+    fetchWithAuth<MobileCustomerAddress[]>(path`/customers/${id}/addresses`),
 };
 
 export interface MobileCustomerContact {

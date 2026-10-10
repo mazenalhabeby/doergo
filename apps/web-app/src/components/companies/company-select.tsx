@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { LEGAL_ENTITY_READ_KEYS } from "@/lib/org-letterhead"
 import { useQuery } from "@tanstack/react-query"
 import { bankForInvoice, issuerSnapshotOf, type IssuerSnapshot } from "@hbcfield/shared/client"
 import { useTranslation } from "react-i18next"
@@ -25,7 +26,8 @@ import {
  */
 export const COMPANIES_QUERY_KEY = ["legal-entities"] as const
 
-const READ_PERMISSIONS = ["canManageInvoices", "canManageWorkspaces", "crmEditInfo", "crmManageClients"]
+// One list with the letterhead rule — the permissions GET /legal-entities accepts.
+const READ_PERMISSIONS = LEGAL_ENTITY_READ_KEYS
 
 export function useCompanies() {
   const { user, hasPermission } = useAuth()

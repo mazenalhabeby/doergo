@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
 import { Pill, RoundButton } from '../job/job-ui';
@@ -7,6 +7,7 @@ import { CallGlyph } from '../glyphs/work-glyphs';
 import { EmailGlyph } from '../glyphs/crm-glyphs';
 import { initials } from './client-avatar';
 import type { MobileCustomerContact } from '../../lib/api/customers';
+import { mailtoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
 
 
 /**
@@ -68,8 +69,8 @@ function ContactRowBase({ link, side, onOpen, onMore, labels, waiting, busy, fir
           {!waiting && link.role ? <AText variant="caption" tone="muted" numberOfLines={1}>{link.role}</AText> : null}
         </View>
       </Pressable>
-      {person?.phone ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void Linking.openURL(`tel:${person.phone}`)} /> : null}
-      {person?.email ? <RoundButton Glyph={EmailGlyph} label={labels.email} size={34} onPress={() => void Linking.openURL(`mailto:${person.email}`)} /> : null}
+      {telUrl(person?.phone) ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void openSafeUrl(telUrl(person?.phone))} /> : null}
+      {mailtoUrl(person?.email) ? <RoundButton Glyph={EmailGlyph} label={labels.email} size={34} onPress={() => void openSafeUrl(mailtoUrl(person?.email))} /> : null}
       {onMore ? (
         <Pressable onPress={() => onMore(link)} disabled={busy} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${labels.more}: ${end.name}`}
           style={({ pressed }) => ({ width: 30, height: 34, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>

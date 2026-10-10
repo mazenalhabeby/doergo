@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { forgetEverythingKept } from '../home/remember/store';
-import { biometricCredential } from '../lib/biometrics';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
 import {
   authApi,
@@ -10,15 +7,18 @@ import {
   setAuthFailureCallback,
   setUserRefreshedCallback,
   getAccessToken as getStoredAccessToken,
-  clearTokens,
   type User
 } from '../lib/api';
-import { forgetRouteData } from '../services/background-route-tracking';
-import { stopBackgroundHeartbeat } from '../services/background-heartbeat';
-import { stopGeofence } from '../services/background-geofence';
-import { purgePushTokenRegistration } from '../hooks/usePushNotifications';
+import { endSession, type SessionEndReason } from '../lib/session/end-session';
+import { loadStoredUser, saveStoredUser } from '../lib/session/stored-user';
 
-const USER_KEY = 'hbcfield_user';
+/** How a sign-out was asked for — see `endSession`. */
+export interface LogoutOptions {
+  /** Default `signed-out`. `account-deleted` also forgets this phone's Face ID key and always erases local data. */
+  reason?: Extract<SessionEndReason, 'signed-out' | 'account-deleted'>;
+  /** Keep a member's unsent work on the phone (default true). False only after the member chose to discard it. */
+  keepUnsent?: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -27,10 +27,11 @@ interface AuthContextType {
   needsOnboarding: boolean;
   login: (email: string, password: string) => Promise<void>;
   /**
-   * `forgetBiometrics` only when the account itself is going away. A plain
-   * sign-out keeps the phone's fingerprint binding — see `clearStorage`.
+   * Every sign-out goes through `endSession` — see there for what it clears.
+   * A plain sign-out keeps the phone's fingerprint binding; only
+   * `reason: 'account-deleted'` forgets it.
    */
-  logout: (opts?: { forgetBiometrics?: boolean }) => Promise<void>;
+  logout: (opts?: LogoutOptions) => Promise<void>;
   /** Set by an explicit sign-out; the login screen must not auto-prompt then. */
   signedOutByUser: boolean;
   refreshUser: () => Promise<void>;
@@ -45,10 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [signedOutByUser, setSignedOutByUser] = useState(false);
 
-  // Handle auth failure (called by api.ts when refresh fails)
+  /*
+    The server refused the session (the client calls this only for a 400/401/403
+    from /auth/refresh — never for no signal). It used to delete ONE key and
+    leave everything else of the member's on the phone for whoever came next.
+    Unsent work is kept: the member signs back in and it is sent.
+  */
   const handleAuthFailure = useCallback(async () => {
-    console.log('[AuthContext] Auth failure - clearing user state');
-    await SecureStore.deleteItemAsync(USER_KEY);
+    console.log('[AuthContext] Session refused by the server - ending it');
+    await endSession({ reason: 'expired', keepUnsent: true });
     setUser(null);
   }, []);
 
@@ -73,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const merged = prev ? { ...prev, ...userData } : userData;
       // Fire-and-forget: persistence must not block the render, and a failed
       // write only costs a re-fetch on next launch.
-      void SecureStore.setItemAsync(USER_KEY, JSON.stringify(merged));
+      void saveStoredUser(merged).catch(() => undefined);
       return merged;
     });
   }, []);
@@ -88,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const merged = { ...prev, ...patch };
-      void SecureStore.setItemAsync(USER_KEY, JSON.stringify(merged));
+      void saveStoredUser(merged).catch(() => undefined);
       return merged;
     });
   }, []);
@@ -96,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const updatedUser = await userApi.me();
-      await saveUser(updatedUser);
+      await saveStoredUser(updatedUser);
       setUser(updatedUser);
       console.log('[AuthContext] User refreshed, onboardingCompleted:', updatedUser.onboardingCompleted);
     } catch (error) {
@@ -132,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const [storedAccessToken, storedUser] = await Promise.all([
         getStoredAccessToken(),
-        SecureStore.getItemAsync(USER_KEY),
+        loadStoredUser(),
       ]);
 
       if (storedAccessToken && storedUser) {
@@ -140,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // This avoids race conditions where eager refresh uses the token
         // before user requests can use it
         console.log('[AuthContext] Found stored tokens, restoring session');
-        setUser(JSON.parse(storedUser));
+        setUser(storedUser);
         // Reconcile in the background: an admin may have changed this user's
         // Access Profile (enabledModules/platform/scope) on the web while they
         // were logged in here. Pull the latest /auth/me so tab/module visibility
@@ -151,59 +157,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading stored auth:', error);
-      await clearStorage();
+      await endSession({ reason: 'expired', keepUnsent: true });
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const saveUser = async (userData: User) => {
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData));
-  };
-
-  const clearStorage = async (forgetBiometrics = false) => {
-    // Stop any background location work FIRST so the OS foreground-service
-    // notification and GPS subscription are torn down immediately — otherwise
-    // a distance-based tracker can linger until the device next moves.
-    await Promise.all([
-      // …and wipe any route points still held for upload (shared devices).
-      forgetRouteData().catch(() => undefined),
-      stopBackgroundHeartbeat().catch(() => undefined),
-      stopGeofence().catch(() => undefined),
-      // Unregister this device's push token while the session token is still
-      // valid, so a shared device stops receiving the previous user's push. (H11.)
-      purgePushTokenRegistration().catch(() => undefined),
-    ]);
-    /*
-      ⚠️ THE NEXT PERSON ON THIS PHONE IS NOT ON THIS CLOCK — and does not hold
-      these vans or run this route. Every widget paints what it last knew
-      before the server answers, so anything left behind would greet a
-      colleague signing in on the same device with somebody else's card. One
-      call, so a widget added later is covered without touching this file.
-    */
-    forgetEverythingKept();
-    await Promise.all([
-      clearTokens(),
-      SecureStore.deleteItemAsync(USER_KEY),
-      /*
-        ⚠️ The device key STAYS on an ordinary sign-out.
-
-        It used to go too, which made the feature unusable: the fingerprint
-        button only exists on the login screen, the login screen is reached by
-        signing out, and signing out destroyed the key — so a member enrolled,
-        signed out, and found the fingerprint gone and the switch off.
-
-        Deleting it was a fix for "member B unlocks as member A". That is now
-        handled where it belongs, without destroying anything: the key records
-        its OWNER, the login screen says whose account it opens, Settings only
-        shows "on" to that owner, and the server revokes A's key the moment B
-        enrols on the same phone. Password changes revoke it server-side.
-
-        Only the account going away forgets it here.
-      */
-      forgetBiometrics ? biometricCredential.forget() : Promise.resolve(),
-    ]);
-    setUser(null);
   };
 
   const login = async (email: string, password: string) => {
@@ -213,23 +170,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Platform hard-block: a web-only Access Profile may not use the mobile app.
     // (Per-feature access within mobile is still gated by enabledModules/hasModule.)
     if (getAccessPlatforms(response.user) === 'web') {
-      await clearStorage();
+      await endSession({ reason: 'refused-platform', userId: response.user.id });
       throw new Error('This account is restricted to the web app. Please sign in at the web portal.');
     }
 
-    await saveUser(response.user);
+    await saveStoredUser(response.user);
     setSignedOutByUser(false);
     setUser(response.user);
   };
 
-  const logout = async (opts?: { forgetBiometrics?: boolean }) => {
+  /*
+    ⚠️ THE ONE SIGN-OUT. Profile, the onboarding pass, the customer portal and
+    account deletion all call this, and this calls `endSession` — so what is
+    cleared cannot depend on which button somebody happened to press.
+
+    The device key STAYS on an ordinary sign-out. It used to go too, which made
+    the feature unusable: the fingerprint button only exists on the login
+    screen, the login screen is reached by signing out, and signing out
+    destroyed the key. "Member B unlocks as member A" is handled where it
+    belongs — the key records its OWNER, the login screen says whose account it
+    opens, and the server revokes A's key the moment B enrols. Only the account
+    going away forgets it.
+  */
+  const logout = async (opts?: LogoutOptions) => {
     try {
-      await authApi.logout();
+      await endSession({ reason: opts?.reason ?? 'signed-out', keepUnsent: opts?.keepUnsent ?? true, userId: user?.id });
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
       setSignedOutByUser(true);
-      await clearStorage(opts?.forgetBiometrics);
+      setUser(null);
     }
   };
 

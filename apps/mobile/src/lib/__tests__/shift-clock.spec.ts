@@ -227,7 +227,8 @@ describe('§1 — the eight states, and no ninth', () => {
     expect(store).toMatch(/rules\.sameDay && kept\.day !== localDay/);
     // ⚠️ Keyed by user, and one call forgets the lot on sign-out.
     expect(store).toMatch(/@hbcfield\/kept\/\$\{name\}\/\$\{userId\}/);
-    expect(code('contexts/auth-context.tsx')).toMatch(/forgetEverythingKept\(\)/);
+    // Every sign-out goes through endSession (lib/session/end-session.ts), and it forgets them.
+    expect(code('lib/session/end-session.ts')).toMatch(/forgetEverythingKept\(\)/);
 
     // Both readers go through it — one implementation, not two.
     expect(shift).toMatch(/keep\(KEPT, userId, \{ status, breaks, serverAt \}\)/);

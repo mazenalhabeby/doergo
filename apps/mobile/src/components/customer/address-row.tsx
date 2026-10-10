@@ -1,10 +1,11 @@
 import { memo } from 'react';
-import { Linking, View } from 'react-native';
+import { View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
 import { Pill, RoundButton } from '../job/job-ui';
 import { CallGlyph, NavigateGlyph } from '../glyphs/work-glyphs';
 import type { MobileCustomerAddress } from '../../lib/api/customers';
+import { geoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
 
 
 /**
@@ -47,9 +48,9 @@ export const AddressRow = memo(function AddressRow({
           </AText>
         ) : null}
       </View>
-      {address.contactPhone ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void Linking.openURL(`tel:${address.contactPhone}`)} /> : null}
+      {telUrl(address.contactPhone) ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void openSafeUrl(telUrl(address.contactPhone))} /> : null}
       {/* `geo:` with a query is the platform-neutral form — Apple Maps on an iPhone, the person's own choice on Android. */}
-      {text ? <RoundButton Glyph={NavigateGlyph} label={labels.navigate} size={34} onPress={() => void Linking.openURL(`geo:0,0?q=${encodeURIComponent(text)}`)} /> : null}
+      {geoUrl(text) ? <RoundButton Glyph={NavigateGlyph} label={labels.navigate} size={34} onPress={() => void openSafeUrl(geoUrl(text))} /> : null}
     </View>
   );
 });

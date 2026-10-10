@@ -1,4 +1,6 @@
 import { calendarApi } from './api';
+import { sessionStartedAt } from './api/client';
+import { mayActOnPush } from './push-recipient';
 
 /**
  * The buttons on a calendar push (notification-service sends `category: calendar_reminder |
@@ -26,10 +28,22 @@ export function isCalendarAction(actionId: string | undefined | null): boolean {
   return !!actionId && (Object.values(CALENDAR_ACTIONS) as string[]).includes(actionId);
 }
 
-/** Do what the button said. Resolves to the kind of outcome for the toast; never throws. */
-export async function runCalendarAction(actionId: string, data: Record<string, unknown> | undefined): Promise<'done' | 'snoozed' | 'answered' | 'failed'> {
+/**
+ * Do what the button said. Resolves to the kind of outcome for the toast; never throws.
+ *
+ * ⚠️ `not-yours`: the push was not for the member signed in now (see
+ * `push-recipient.ts`) — a reminder left in the tray by the last person on a
+ * shared phone must not be ticked off, snoozed or answered as the next one.
+ */
+export async function runCalendarAction(
+  actionId: string,
+  data: Record<string, unknown> | undefined,
+  who: { userId: string | null; deliveredAt: number | null },
+): Promise<'done' | 'snoozed' | 'answered' | 'failed' | 'not-yours'> {
   const eventId = typeof data?.eventId === 'string' ? data.eventId : null;
   if (!eventId) return 'failed';
+  const started = await sessionStartedAt().catch(() => null);
+  if (!mayActOnPush({ data, deliveredAt: who.deliveredAt, userId: who.userId, sessionStartedAt: started })) return 'not-yours';
   // Which occurrence the push was about — a weekly reminder's "Done" is about THIS week's.
   const occurrence = typeof data?.occurrence === 'string' ? data.occurrence : undefined;
   try {

@@ -1,4 +1,5 @@
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
+import { path } from './path';
 import { fetchWithAuth } from './client';
 import type { TechniciansListResponse, TechnicianListItem } from './types';
 import type { TimeOffRequest, AvailabilityResponse, ScheduleEntry } from './types';
@@ -11,7 +12,7 @@ export const techniciansApi = {
   },
 
   getById: async (id: string): Promise<TechnicianListItem> => {
-    return fetchWithAuth<TechnicianListItem>(`/employees/${id}`, { method: 'GET' });
+    return fetchWithAuth<TechnicianListItem>(path`/employees/${id}`, { method: 'GET' });
   },
 };
 
@@ -34,25 +35,25 @@ export const timeOffApi = {
   },
 
   list: async (technicianId: string, status?: string): Promise<TimeOffRequest[]> => {
-    const endpoint = buildUrlWithQuery(`/employees/${technicianId}/time-off`, { status });
+    const endpoint = buildUrlWithQuery(path`/employees/${technicianId}/time-off`, { status });
     return fetchWithAuth<TimeOffRequest[]>(endpoint, { method: 'GET' });
   },
 
   request: async (technicianId: string, data: { startDate: string; endDate: string; reason?: string }): Promise<TimeOffRequest> => {
-    return fetchWithAuth<TimeOffRequest>(`/employees/${technicianId}/time-off`, {
+    return fetchWithAuth<TimeOffRequest>(path`/employees/${technicianId}/time-off`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   cancel: async (timeOffId: string): Promise<void> => {
-    return fetchWithAuth<void>(`/employees/time-off/${timeOffId}`, {
+    return fetchWithAuth<void>(path`/employees/time-off/${timeOffId}`, {
       method: 'DELETE',
     });
   },
 
   approve: async (timeOffId: string, data: { approved: boolean; rejectionReason?: string }): Promise<TimeOffRequest> => {
-    return fetchWithAuth<TimeOffRequest>(`/employees/time-off/${timeOffId}/approve`, {
+    return fetchWithAuth<TimeOffRequest>(path`/employees/time-off/${timeOffId}/approve`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -70,7 +71,8 @@ export const availabilityApi = {
 // Schedule API
 export const scheduleApi = {
   getMine: async (technicianId: string): Promise<ScheduleEntry[]> => {
-    const result = await fetchWithAuth<{ schedule: ScheduleEntry[] }>(`/employees/${technicianId}/schedule`, { method: 'GET' });
-    return result.schedule || [];
+    // `{ success, data: null }` now arrives as null (envelope.ts), so read it null-safe.
+    const result = await fetchWithAuth<{ schedule: ScheduleEntry[] } | null>(path`/employees/${technicianId}/schedule`, { method: 'GET' });
+    return result?.schedule || [];
   },
 };

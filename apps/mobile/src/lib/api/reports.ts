@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import type { ServiceReport } from './types';
 
 /*
@@ -13,13 +14,13 @@ export const reportsApi = {
   /**
    * The service report a finished job was closed with — `GET /tasks/:id/report`.
    *
-   * ⚠️ The server answers `{ data: null }` when there is none, and the client
-   * unwraps `data ?? envelope` — so "no report" arrives as the ENVELOPE, not
-   * as null. Anything without a summary is no report.
+   * The server answers `{ success, data: null }` when there is none, and the
+   * client unwraps by SHAPE (`envelope.ts`), so "no report" arrives as null.
+   * The summary check stays as a guard against a malformed row, not as the
+   * way "none" is told apart from the envelope.
    */
   getByTask: async (taskId: string): Promise<ServiceReport | null> => {
-    const result = await fetchWithAuth<unknown>(`/tasks/${taskId}/report`, { method: 'GET' });
-    const r = result as Partial<ServiceReport> | null;
+    const r = await fetchWithAuth<Partial<ServiceReport> | null>(path`/tasks/${taskId}/report`, { method: 'GET' });
     return r && typeof r === 'object' && typeof r.summary === 'string' ? (r as ServiceReport) : null;
   },
 };

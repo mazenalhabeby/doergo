@@ -117,6 +117,7 @@ export function useBiometricUnlock(): BiometricUnlock {
         instead — which teaches people the feature is broken.
       */
       setFailure(f === 'cancelled' ? null : f);
+      // ⚠️ Not on `unreachable`: no network says nothing about the key, which is still there.
       if (f === 'invalidated' || f === 'rejected' || f === 'not-enrolled') setEnrolled(false);
       return false;
     } finally {

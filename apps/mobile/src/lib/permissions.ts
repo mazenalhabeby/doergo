@@ -82,3 +82,16 @@ export function oversees(
 ): boolean {
   return holds(user, 'canViewAllTasks');
 }
+
+/**
+ * May this member read the team's availability (`GET /employees/availability`)?
+ *
+ * ⚠️ It used to be `role === 'ADMIN' || 'CLIENT' || 'DISPATCHER'` — two retired
+ * role strings and one that misses everybody who holds the right through a
+ * role. The route is `@RequirePermissionInSpace('canViewAllTasks')`, so the
+ * question is that permission, held anywhere; asking anybody else only ever
+ * produced a page of 403s.
+ */
+export function mayReadTeamAvailability(user: Parameters<typeof holds>[0]): boolean {
+  return holds(user, 'canViewAllTasks');
+}

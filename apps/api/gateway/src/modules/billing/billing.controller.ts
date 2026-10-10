@@ -9,7 +9,9 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  UseInterceptors,
 } from '@nestjs/common';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
@@ -178,6 +180,7 @@ export class BillingController {
   }
 
   @Public()
+  @UseInterceptors(PlatformAuditInterceptor)
   @Get('admin/orgs')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: list orgs + billing state (secret-gated)' })
@@ -197,6 +200,7 @@ export class BillingController {
    * omitting the field.
    */
   @Public()
+  @UseInterceptors(PlatformAuditInterceptor)
   @Post('admin/org-add-ons')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: grant an org its capabilities (secret-gated, not a customer route)' })

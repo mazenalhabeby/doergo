@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useTranslation } from "react-i18next"
-import { cn, formatDuration } from "@/lib/utils"
+import { cn, formatDurationSeconds } from "@/lib/utils"
 
 interface ServiceReportSectionProps {
   taskId: string
@@ -524,7 +524,7 @@ export function ServiceReportSection({ taskId, taskStatus }: ServiceReportSectio
           <Clock className="size-5 text-blue-500" />
           <div>
             <p className="text-xs text-muted-foreground">{t("common.duration")}</p>
-            <p className="text-sm font-semibold text-foreground">{formatDuration(report.workDuration)}</p>
+            <p className="text-sm font-semibold text-foreground">{formatDurationSeconds(report.workDuration)}</p>
           </div>
         </div>
         <div className="bg-muted rounded-lg p-4 flex items-center gap-3">

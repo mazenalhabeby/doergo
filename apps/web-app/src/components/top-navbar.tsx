@@ -28,9 +28,10 @@ import { useOverflowNav } from "@/hooks/use-overflow-nav"
 
 import { AnimatedLogo } from "@hbcfield/shared/components"
 import { hasAccessModule, resolveCrmCaps, moduleAnywhere as moduleAnywhereShared } from "@hbcfield/shared/client"
-import { NAV_OPTION } from "@hbcfield/shared/client"
+import { NAV_OPTION, isAdmin as isAdminRole } from "@hbcfield/shared/client"
 import { useMySections } from "@/hooks/use-my-sections"
 import { useAuth } from "@/contexts/auth-context"
+import { mayListOrgMembers } from "@/lib/assignable-members"
 import { useScheduleAccess } from "@/hooks/use-schedule-access"
 import { useCommandPalette } from "@/contexts/command-palette-context"
 import { NotificationBell } from "@/components/notification-bell"
@@ -114,7 +115,7 @@ const bottomIndicator =
 // ---------------------------------------------------------------------------
 const PREFETCH_STALE = 60_000
 
-function usePrefetchRoutes() {
+function usePrefetchRoutes(mayListOrg: boolean) {
   const qc = useQueryClient()
 
   const prefetchDashboard = useCallback(() => {
@@ -132,8 +133,10 @@ function usePrefetchRoutes() {
   }, [qc])
 
   const prefetchTeam = useCallback(() => {
+    // The directory is canManageUsers (flat flag) — warming it for anybody else is a 403.
+    if (!mayListOrg) return
     qc.prefetchQuery({ queryKey: ["orgMembers", "", "all", 1], queryFn: () => organizationsApi.getMembers({ page: 1, limit: 20 }), staleTime: PREFETCH_STALE })
-  }, [qc])
+  }, [qc, mayListOrg])
 
   const prefetchSpaces = useCallback(() => {
     qc.prefetchQuery({ queryKey: ["locations"], queryFn: () => locationsApi.list(), staleTime: PREFETCH_STALE })
@@ -171,7 +174,7 @@ export function TopNavbar() {
   const scheduleAccess = useScheduleAccess()
   const pathname = usePathname()
   const { resolvedTheme } = useTheme()
-  const prefetch = usePrefetchRoutes()
+  const prefetch = usePrefetchRoutes(mayListOrgMembers(user))
   const { t, i18n } = useTranslation()
 
   if (!user) return null
@@ -296,7 +299,13 @@ export function TopNavbar() {
     from a page or a save. `optionAllows` closes that, from the one table in
     shared that also drives the workspace tabs and the settings list.
   */
-  const showInvoices = user.canViewAllTasks && optionAllows("/invoices")
+  //
+  // ⚠️ The reads are `@RequirePermission('canManageInvoices')` now — its own
+  // capability, held as the flat org flag (admins pass) — not canViewAllTasks.
+  // Asking canViewAllTasks hid the item from a bookkeeper who holds only
+  // canManageInvoices, and showed it to a dispatcher whose every request 403s.
+  const showInvoices =
+    (isAdminRole(user) || user.canManageInvoices === true) && optionAllows("/invoices")
 
   // Personal, module-driven items (Access Profile). These are ADDITIVE — a
   // member who ALSO manages people keeps their own Time Off / clock. Driven by

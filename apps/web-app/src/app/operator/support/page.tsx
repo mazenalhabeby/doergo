@@ -1,25 +1,36 @@
 'use client';
 
 /**
- * Operator support inbox — platform staff (agents). Reuses the same platform key
- * as the operator console (sessionStorage `platformKey`, sent as
- * `x-platform-admin-key`). Priority-routed queue; real-time is left to a manual
- * refresh here (agents keep it open) — the customer side is fully live.
+ * Operator support inbox — platform staff (agents). Priority-routed queue;
+ * real-time is left to a manual refresh here (agents keep it open) — the
+ * customer side is fully live.
+ *
+ * ⚠️ The PLATFORM admin key is held in this page's memory only and asked for on
+ * every visit. It used to sit in sessionStorage on the product's main origin,
+ * where any script running for any customer page on hbcfield.com could read the
+ * one credential that opens every organization.
+ *
+ * TODO: this page belongs on admin.hbcfield.com (the operator console), not on
+ * the customer-facing origin at all. Until it moves, it keeps the key in memory
+ * and talks through the same request pipeline as the rest of the app (timeout,
+ * retries) — WITHOUT the signed-in member's token, which it has no use for.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client'
 import { SocketEvents, type SupportTicket, type SupportMessage } from '@hbcfield/shared/client';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4001';
+import { apiRequest } from '@/lib/http-client';
+import { SOCKET_URL } from '@/lib/endpoints';
 
-async function agentFetch<T>(key: string, path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
+async function agentFetch<T>(key: string, path: string, init?: { method?: string; body?: string }): Promise<T> {
+  const res = await apiRequest<T>(path, {
     ...init,
-    headers: { 'Content-Type': 'application/json', 'x-platform-admin-key': key, ...(init?.headers || {}) },
+    // The platform key, not the member's session.
+    auth: false,
+    headers: { 'x-platform-admin-key': key },
   });
-  if (!res.ok) throw new Error(`${res.status}`);
-  return res.json();
+  if (res.error) throw new Error(`${res.status}`);
+  return res.data as T;
 }
 
 export default function OperatorSupportPage() {
@@ -37,9 +48,13 @@ export default function OperatorSupportPage() {
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
 
+  // A key left in sessionStorage by an earlier version of this page is removed, never read.
   useEffect(() => {
-    const saved = sessionStorage.getItem('platformKey');
-    if (saved) setKey(saved);
+    try {
+      sessionStorage.removeItem('platformKey');
+    } catch {
+      /* storage blocked — nothing to clean */
+    }
   }, []);
 
   const loadInbox = useCallback(async () => {
@@ -85,7 +100,8 @@ export default function OperatorSupportPage() {
       if (cancelled) return;
       // Bound to a const so the connect handler cannot see the outer `socket`
       // as possibly-undefined — it is assigned exactly once, right here.
-      const s = io(SOCKET_URL, { auth: { platformKey: key }, transports: ['websocket', 'polling'] });
+      const opts = { auth: { platformKey: key }, transports: ['websocket', 'polling'] };
+      const s = SOCKET_URL ? io(SOCKET_URL, opts) : io(opts);
       socket = s;
       socketRef.current = s;
       s.on('connect', () => s.emit('authenticate_agent'));
@@ -103,9 +119,10 @@ export default function OperatorSupportPage() {
     };
   }, [key, loadInbox, loadTicket]);
 
+  // Memory only: a reload asks again.
   const saveKey = (k: string) => {
-    sessionStorage.setItem('platformKey', k);
-    setKey(k);
+    setKey(k.trim());
+    setKeyInput('');
   };
 
   const doReply = async () => {

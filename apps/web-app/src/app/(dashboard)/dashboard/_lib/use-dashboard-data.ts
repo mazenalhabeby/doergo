@@ -71,6 +71,15 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   // see every space. Resolved before the queries because it decides whether the
   // spaces request is worth making at all.
   const spaceScope = getSpaceScope(user ?? {})
+  /*
+    Who may read the live attendance feeds (active entries, active breaks,
+    pending approvals): the gateway gates all three on
+    `@RequirePermissionInSpace('canViewSpaceAttendance')` — held org-wide or in
+    any workspace, admins always. It was asked as canViewAllTasks, so a
+    dispatcher without attendance polled three 403s a minute, and a shift
+    supervisor who holds attendance saw no presence at all.
+  */
+  const canReadAttendance = user?.role === "ADMIN" || hasPermission("canViewSpaceAttendance")
   const showsSpaces = isAdminOrDispatcher || spaceScope !== "tasks"
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
@@ -126,7 +135,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     queryKey: ["attendance-active"],
     queryFn: () => attendanceApi.getActiveEntries(),
     staleTime: 30000,
-    enabled: isAdminOrDispatcher,
+    enabled: canReadAttendance,
     // Safety refetch so clock-in/out state self-heals if a socket event is missed.
     refetchInterval: PRESENCE_REFETCH_MS,
   })
@@ -138,7 +147,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     queryKey: ["active-breaks"],
     queryFn: () => attendanceApi.getActiveBreaks().catch(() => []),
     staleTime: 30000,
-    enabled: isAdminOrDispatcher,
+    enabled: canReadAttendance,
   })
 
   // Attendance entries awaiting approval — feeds the "Pending Actions" panel so
@@ -147,7 +156,7 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
     queryKey: ["pending-approvals"],
     queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }).catch(() => ({ data: [] })),
     staleTime: 30000,
-    enabled: isAdminOrDispatcher,
+    enabled: canReadAttendance,
   })
 
   // ── Derived Data ───────────────────────────────────────────────────────────
@@ -197,15 +206,15 @@ export function useDashboardData(user: DashboardUser | null | undefined) {
   const { data: batchAttendance } = useQuery({
     queryKey: ["locationAttendanceBatch", locKey, getTodayString()],
     queryFn: () => attendanceApi.getEntriesBatch(locationIds, getTodayString()),
-    enabled: !isAdminOrDispatcher && locationIds.length > 0,
+    enabled: !canReadAttendance && locationIds.length > 0,
     staleTime: 30000,
   })
 
   // Today's presence entries: admins read org-wide; employees use the batch.
   const todayEntries: TimeEntry[] = useMemo(() => {
-    if (isAdminOrDispatcher) return attendanceData?.data || []
+    if (canReadAttendance) return attendanceData?.data || []
     return batchAttendance || []
-  }, [isAdminOrDispatcher, attendanceData, batchAttendance])
+  }, [canReadAttendance, attendanceData, batchAttendance])
 
   // Build the member lookup. Admins/managers get the full org member list; for
   // employees (who can't read /organizations/members) we fall back to the user

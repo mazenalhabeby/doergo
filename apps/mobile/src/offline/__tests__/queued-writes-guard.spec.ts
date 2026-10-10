@@ -141,7 +141,7 @@ function queuedApiFunctions(): Set<string> {
       members.forEach((m, k) => {
         const end = members[k + 1]?.index ?? body.length;
         const fn = body.slice(m.index!, end);
-        for (const call of fn.matchAll(/fetchWithAuth(?:<[^(]*>)?\(\s*[`'"]([^`'"]+)[`'"]\s*,\s*\{[^}]*?method:\s*'(\w+)'/g)) {
+        for (const call of fn.matchAll(/fetchWithAuth(?:<[^(]*>)?\(\s*(?:path)?[`'"]([^`'"]+)[`'"]\s*,\s*\{[^}]*?method:\s*'(\w+)'/g)) {
           if (queued.has(`${call[2]} ${shape(call[1]!)}`)) found.add(`${obj[1]}.${m[1]}`);
         }
       });

@@ -133,10 +133,13 @@ export function formatClockString(hhmm: string | null | undefined, hour12: boole
 }
 
 /**
- * Format duration in seconds to human-readable format
- * e.g., 3665 -> "1h 1m 5s", 125 -> "2m 5s", 45 -> "45s"
+ * Format a duration in SECONDS — e.g. 3665 -> "1h 1m 5s", 125 -> "2m 5s", 45 -> "45s".
+ *
+ * Named for its unit: the shared `formatDuration` takes MINUTES, and two
+ * functions called the same thing with different units let an import from the
+ * wrong module print a 60× wrong figure with no type error.
  */
-export function formatDuration(seconds: number): string {
+export function formatDurationSeconds(seconds: number): string {
   if (seconds < 0) return "0s"
 
   const hours = Math.floor(seconds / 3600)
@@ -156,7 +159,7 @@ export function formatDuration(seconds: number): string {
  * e.g., 3665000 -> "1h 1m", 125000 -> "2m 5s"
  */
 export function formatDurationMs(ms: number): string {
-  return formatDuration(Math.floor(ms / 1000))
+  return formatDurationSeconds(Math.floor(ms / 1000))
 }
 
 /**

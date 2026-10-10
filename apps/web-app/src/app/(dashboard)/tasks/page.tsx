@@ -32,6 +32,7 @@ import { useBillingLock } from "@/hooks/use-billing-lock"
 import { useOrgWorkflow, useWorkflow, buildStatusTabs, buildKanbanColumns, type StatusTabGroup } from "@/hooks/use-org-workflow"
 import { useSpaceWorkflow } from "@/hooks/use-space-modules"
 import { tasksApi, phasesApi, sprintsApi, epicsApi, locationsApi, type Task, type Sprint, type Epic, type TasksListResponse, type OnBehalf } from "@/lib/api"
+import { runBulk } from "@/lib/concurrency"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
@@ -885,9 +886,8 @@ export default function TasksPage() {
       handleClearSelection()
       return
     }
-    Promise.allSettled(movable.map(id => tasksApi.updateStatus(id, status)))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(movable, (id) => tasksApi.updateStatus(id, status))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: movable.length }))
         else notify.bulk(movable.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
@@ -897,9 +897,8 @@ export default function TasksPage() {
   }, [handleClearSelection, queryClient, tasks, workflowForTask, user?.id, t])
 
   const handleBulkPriorityChange = useCallback((taskIds: string[], priority: string) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.update(id, { priority })))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(taskIds, (id) => tasksApi.update(id, { priority }))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionUpdated"))
         handleClearSelection()
@@ -908,9 +907,8 @@ export default function TasksPage() {
   }, [handleClearSelection, queryClient])
 
   const handleBulkSprintChange = useCallback((taskIds: string[], sprintId: string | null) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.update(id, { sprintId })))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(taskIds, (id) => tasksApi.update(id, { sprintId }))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()
@@ -920,9 +918,8 @@ export default function TasksPage() {
   }, [handleClearSelection, queryClient])
 
   const handleBulkDelete = useCallback((taskIds: string[]) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.delete(id)))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(taskIds, (id) => tasksApi.delete(id))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.deletesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionDeleted"))
         handleClearSelection()
@@ -932,9 +929,8 @@ export default function TasksPage() {
   }, [handleClearSelection, queryClient])
 
   const handleBulkEstimate = useCallback((taskIds: string[], points: number) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.update(id, { storyPoints: points })))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(taskIds, (id) => tasksApi.update(id, { storyPoints: points }))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionEstimated"))
         handleClearSelection()
@@ -943,9 +939,8 @@ export default function TasksPage() {
   }, [handleClearSelection, queryClient])
 
   const handleBulkSpaceChange = useCallback((taskIds: string[], spaceId: string | null) => {
-    Promise.allSettled(taskIds.map(id => tasksApi.update(id, { spaceId })))
-      .then((results) => {
-        const failed = results.filter(r => r.status === "rejected").length
+    runBulk(taskIds, (id) => tasksApi.update(id, { spaceId }))
+      .then(({ failed }) => {
         if (failed > 0) notify.error(t("tasks.notify.updatesFailed", { failed, total: taskIds.length }))
         else notify.bulk(taskIds.length, t("tasks.notify.actionMoved"))
         handleClearSelection()

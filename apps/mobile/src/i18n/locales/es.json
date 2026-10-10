@@ -3087,7 +3087,8 @@
     "welcomeBack": "Bienvenido de nuevo, {{name}}",
     "tapToUnlock": "Toca para desbloquear con {{method}}",
     "notYou": "¿No eres {{name}}? Inicia sesión con otra cuenta",
-    "backTo": "Volver a {{method}} para {{name}}"
+    "backTo": "Volver a {{method}} para {{name}}",
+    "unreachableBody": "No se pudo conectar con el servidor. Su acceso en este teléfono sigue configurado; inténtelo de nuevo en un momento."
   },
   "offline": {
     "banner": {
@@ -4668,7 +4669,8 @@
     "tooLong": "Como máximo {{days}} días.",
     "durDays": "{{n}} d",
     "durHours": "{{n}} h",
-    "durMinutes": "{{n}} min"
+    "durMinutes": "{{n}} min",
+    "pushNotYours": "Esta notificación era para un inicio de sesión anterior en este teléfono. Abra el calendario para hacerlo usted mismo."
   },
   "contactsImport": {
     "option": "Importar de contactos",
@@ -4763,6 +4765,14 @@
       "open": "Abrir clientes",
       "more": "Importar más",
       "failed": "No se pudo importar. No se añadió nada."
+    }
+  },
+  "tracking": {
+    "foreground": {
+      "routeTitle": "HBCField — Registro de ruta",
+      "routeBody": "Se está registrando su ruta hasta el lugar del trabajo.",
+      "shiftTitle": "HBCField — Fichaje activo",
+      "shiftBody": "Durante su turno se comprueba que está en su lugar de trabajo."
     }
   }
 }

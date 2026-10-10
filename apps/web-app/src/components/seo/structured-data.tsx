@@ -6,6 +6,7 @@
  * Keep facts here accurate — AI engines quote them. Prices are expressed as an
  * AggregateOffer (lowPrice = cheapest seat) to stay correct as tiers change.
  */
+import { JsonLd } from "./json-ld";
 
 const SITE = "https://hbcfield.com";
 const IOS_URL = "https://apps.apple.com/app/id6762745260";
@@ -78,11 +79,5 @@ const graph = {
 };
 
 export function StructuredData() {
-  return (
-    <script
-      type="application/ld+json"
-      // JSON-LD is static, server-rendered — safe to inline.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
-    />
-  );
+  return <JsonLd data={graph} />;
 }

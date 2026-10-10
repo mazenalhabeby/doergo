@@ -1,10 +1,12 @@
 "use client"
 
 import { useTranslation } from "react-i18next"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { UserPlus, X, Check, Users, Star } from "lucide-react"
 
-import { customersApi, organizationsApi, type Customer, type OrgMember } from "@/lib/api"
+import { customersApi, type Customer } from "@/lib/api"
+import type { AssignablePerson } from "@/lib/assignable-members"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,15 +14,17 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
-const memberInitials = (m: OrgMember) => `${m.firstName?.[0] ?? ""}${m.lastName?.[0] ?? ""}`.toUpperCase() || "?"
-const fullName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
+const memberInitials = (m: AssignablePerson) => `${m.firstName?.[0] ?? ""}${m.lastName?.[0] ?? ""}`.toUpperCase() || "?"
+const fullName = (m: AssignablePerson) => `${m.firstName} ${m.lastName}`.trim()
 
 /** Assigned sales managers for a CRM customer. Hidden once the customer has app
  *  access (handled by the caller) — an app customer is self-serve. */
 export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Customer; ownerId?: string; onChanged: () => void }) {
   const { t } = useTranslation()
-  const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }) })
-  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+  // The directory for whoever may read it, else the client's workspace roster
+  // (or the rosters this person can see) — lib/assignable-members.ts.
+  const membersQ = useAssignableMembers({ spaceId: customer.spaceId })
+  const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
   const assignedIds = customer.managerIds ?? []
   // Primary owner (accountability) first, then the rest of the team.
   const assigned = members
@@ -90,7 +94,7 @@ export function ManagersPanel({ customer, ownerId, onChanged }: { customer: Cust
   )
 }
 
-function Avatar({ m }: { m: OrgMember }) {
+function Avatar({ m }: { m: AssignablePerson }) {
   if (m.avatarUrl) return <img src={m.avatarUrl} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
   return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{memberInitials(m)}</span>
 }

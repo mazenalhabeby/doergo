@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken } from '../amazen';
 import { JobSheet, QuietButton, SectionLabel } from '../job/job-ui';
-import { MEETING_PROVIDER_NAMES, meetingProvider, telHref } from '@hbcfield/shared/client';
+import { MEETING_PROVIDER_NAMES, meetingProvider } from '@hbcfield/shared/client';
 import { calendarApi, type CalendarEventDetail } from '../../lib/api';
 import { calendarError } from './errors';
+import { httpsUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
 
 const RSVP = [
   { v: 'ACCEPTED' as const, key: 'calendar.rsvp.accept' },
@@ -61,7 +62,7 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
       : `${s.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })} · ${s.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}–${e.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}`
     : '';
   const going = ev?.attendees.filter((a) => a.response === 'ACCEPTED').length ?? 0;
-  const safeLink = ev?.meetingUrl && /^https:\/\//i.test(ev.meetingUrl) ? ev.meetingUrl : null;
+  const safeLink = httpsUrl(ev?.meetingUrl, false);
 
   return (
     <JobSheet
@@ -100,10 +101,10 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
 
           {ev.description ? <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 20 }}>{ev.description}</AText> : null}
 
-          {safeLink ? <PrimaryButton label={t('calendar.join', 'Join')} onPress={() => void Linking.openURL(safeLink)} /> : null}
-          {ev.meetingMode === 'PHONE' && ev.phone ? <PrimaryButton label={t('calendar.callNow', 'Call')} onPress={() => void Linking.openURL(telHref(ev.phone!))} /> : null}
+          {safeLink ? <PrimaryButton label={t('calendar.join', 'Join')} onPress={() => void openSafeUrl(safeLink)} /> : null}
+          {ev.meetingMode === 'PHONE' && telUrl(ev.phone) ? <PrimaryButton label={t('calendar.callNow', 'Call')} onPress={() => void openSafeUrl(telUrl(ev.phone))} /> : null}
           {ev.meetingMode === 'IN_PERSON' && ev.location ? (
-            <QuietButton label={t('calendar.directions', 'Directions')} tone="accent" onPress={() => void Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location!)}`)} />
+            <QuietButton label={t('calendar.directions', 'Directions')} tone="accent" onPress={() => void openSafeUrl(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location!)}`)} />
           ) : null}
 
           {!ev.canEdit ? (

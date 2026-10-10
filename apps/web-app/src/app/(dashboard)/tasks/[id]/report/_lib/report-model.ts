@@ -13,6 +13,7 @@ import {
   type TaskReportStepAnswer,
   type TaskReportSection,
   type TaskReportStatus,
+  formatDistance,
 } from "@hbcfield/shared/client"
 
 import { dayKeyOf, fileNamePart, pdfFileName } from "@/lib/pdf-filename"
@@ -331,11 +332,9 @@ export function formatReportMinutes(minutes: number | null | undefined, t: Trans
   return t("tasks.report.units.hoursMinutes", { h, m })
 }
 
-/** Metres as "850 m" / "12.4 km". */
+/** Metres as "850 m" / "12.4 km" — THE distance formatter (shared), bound to the report's language. */
 export function formatReportDistance(meters: number | null | undefined, locale: string): string {
-  if (meters == null || !Number.isFinite(meters)) return "—"
-  if (meters < 1000) return `${Math.round(meters)} m`
-  return `${(meters / 1000).toLocaleString(locale, { maximumFractionDigits: 1 })} km`
+  return formatDistance(meters, { locale })
 }
 
 /** An instant in the workspace's zone: "9 Oct 2026, 14:05". */

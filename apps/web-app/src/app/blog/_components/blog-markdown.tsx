@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
+import { isSameAppPath } from "@/lib/safe-links";
 import { resolveBlogAssetUrl } from "@/lib/blog";
 
 /**
@@ -33,11 +34,11 @@ export function BlogMarkdown({ children }: { children: string }) {
           />
         ),
         a: ({ href, ...rest }) => {
-          const internal = href?.startsWith("/");
-          return internal ? (
-            <Link href={href!} className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...(rest as React.ComponentProps<"a">)} />
+          // `//host` is another site, not a path here (isSameAppPath).
+          return isSameAppPath(href) ? (
+            <Link href={href} className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...(rest as React.ComponentProps<"a">)} />
           ) : (
-            <a href={href} target="_blank" rel="noreferrer" className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...rest} />
+            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...rest} />
           );
         },
         table: (p) => (

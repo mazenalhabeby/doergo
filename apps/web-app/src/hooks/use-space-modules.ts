@@ -17,12 +17,14 @@ import { useWorkflow } from "@/hooks/use-org-workflow"
 export function useSpaceModules(spaceId: string | null) {
   const { user, hasModule: orgHasModule } = useAuth()
 
-  const { data: spaceModules } = useQuery({
+  const { data: spaceModules, isSuccess, isError } = useQuery({
     queryKey: ["space-modules", spaceId],
     queryFn: () => locationsApi.getEffectiveModules(spaceId!),
     enabled: !!spaceId,
     staleTime: 60000,
   })
+  /** The answer is the workspace's own (or there is no workspace) — not the org fallback used while it loads. */
+  const isResolved = !spaceId || isSuccess || isError
 
   const hasModule = useCallback(
     (module: string) => {
@@ -38,7 +40,7 @@ export function useSpaceModules(spaceId: string | null) {
     return user?.orgModules ?? []
   }, [spaceId, spaceModules, user?.orgModules])
 
-  return { hasModule, enabledModules }
+  return { hasModule, enabledModules, isResolved }
 }
 
 /**

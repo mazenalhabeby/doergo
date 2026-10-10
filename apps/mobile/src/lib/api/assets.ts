@@ -1,4 +1,6 @@
 import type { ParsedReceipt } from '@hbcfield/shared/client';
+import { path } from './path';
+import { buildUrlWithQuery } from '@hbcfield/shared/client';
 import { fetchWithAuth } from './client';
 
 /**
@@ -138,7 +140,7 @@ export const assetsApi = {
    */
   presignReceipt: (assetId: string, input: { fileName: string; mimeType: string; occurredAt?: string }) =>
     fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
-      `/assets/${assetId}/expenses/presign`,
+      path`/assets/${assetId}/expenses/presign`,
       { method: 'POST', body: JSON.stringify(input) },
     ),
 
@@ -158,10 +160,10 @@ export const assetsApi = {
     fetchWithAuth<
       | { read: true; receipt: ParsedReceipt }
       | { read: false; reason: 'NOT_A_PDF' | 'NO_TEXT_LAYER' }
-    >(`/assets/${assetId}/expenses/read`, { method: 'POST', body: JSON.stringify(input) }),
+    >(path`/assets/${assetId}/expenses/read`, { method: 'POST', body: JSON.stringify(input) }),
 
   submitExpense: (assetId: string, input: SubmitExpenseInput) =>
-    fetchWithAuth<MyExpense>(`/assets/${assetId}/expenses`, {
+    fetchWithAuth<MyExpense>(path`/assets/${assetId}/expenses`, {
       method: 'POST',
       body: JSON.stringify(input),
     }),
@@ -170,10 +172,7 @@ export const assetsApi = {
 
   /** Everything I logged, costs included, with what happened to each. */
   myLog: async (input: { assetId?: string; limit?: number } = {}): Promise<MyLogEntry[]> => {
-    const q = new URLSearchParams();
-    if (input.assetId) q.set('assetId', input.assetId);
-    if (input.limit) q.set('limit', String(input.limit));
-    const res = await fetchWithAuth<MyLogEntry[]>(`/assets/log/mine${q.toString() ? `?${q}` : ''}`);
+    const res = await fetchWithAuth<MyLogEntry[]>(buildUrlWithQuery('/assets/log/mine', { assetId: input.assetId, limit: input.limit || undefined }));
     return res ?? [];
   },
 
@@ -190,19 +189,19 @@ export const assetsApi = {
    */
   presignLog: (assetId: string, input: { logType: string; fileName: string; mimeType: string; occurredAt?: string }) =>
     fetchWithAuth<{ uploadUrl: string; fileKey: string; expiresIn: number; maxFileSize: number }>(
-      `/assets/${assetId}/log/presign`,
+      path`/assets/${assetId}/log/presign`,
       { method: 'POST', body: JSON.stringify(input) },
     ),
 
   createLog: (assetId: string, input: CreateLogInput) =>
-    fetchWithAuth<MyLogEntry>(`/assets/${assetId}/log`, {
+    fetchWithAuth<MyLogEntry>(path`/assets/${assetId}/log`, {
       method: 'POST',
       body: JSON.stringify(input),
     }),
 
   /** Take back my own entry while it is still waiting. */
   withdrawLog: (assetId: string, entryId: string) =>
-    fetchWithAuth<{ id: string }>(`/assets/${assetId}/log/${entryId}`, { method: 'DELETE' }),
+    fetchWithAuth<{ id: string }>(path`/assets/${assetId}/log/${entryId}`, { method: 'DELETE' }),
 };
 
 /** The reading off a contract, after a person has corrected it. */
@@ -267,5 +266,5 @@ export const assetProposalsApi = {
   },
 
   withdraw: (id: string) =>
-    fetchWithAuth<{ id: string }>(`/assets/proposals/${id}/withdraw`, { method: 'POST' }),
+    fetchWithAuth<{ id: string }>(path`/assets/proposals/${id}/withdraw`, { method: 'POST' }),
 };

@@ -34,7 +34,7 @@ describe('operator console sessions', () => {
     tokensValidAfter: null as Date | null,
   };
   const prisma: Record<string, any> = {
-    platformUser: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+    platformUser: { findUnique: jest.fn(), update: jest.fn(async ({ data }: any) => ({ ...operator, ...data })), updateMany: jest.fn() },
     supportTeamMember: { findMany: jest.fn().mockResolvedValue([]) },
   };
   const jwt = { sign: jest.fn(() => 'op-token'), verify: jest.fn() };

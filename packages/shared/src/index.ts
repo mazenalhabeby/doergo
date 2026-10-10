@@ -60,6 +60,8 @@ export * from './utils/crypto';
 // Platform-staff RBAC (permissions matrix)
 export * from './platform/permissions';
 export * from './platform/org-suspension';
+export * from './platform/session';
+export * from './platform/support-scope';
 
 // The single per-task authorization rule — pure, shared by every service.
 export * from './access/space-routing';

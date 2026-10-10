@@ -11,7 +11,6 @@ import { useTheme, type ThemeMode } from '../../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { userApi } from '../../../src/lib/api';
-import { usePushNotifications } from '../../../src/hooks/usePushNotifications';
 import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../../src/i18n';
 
 const THEME_OPTIONS: { mode: ThemeMode; icon: any; key: string; fallback: string }[] = [
@@ -24,20 +23,14 @@ export default function CustomerProfile() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { unregisterPushToken } = usePushNotifications();
   const { colors, isDark, mode, setMode } = useTheme();
   const { t, i18n } = useTranslation();
 
   const [sheet, setSheet] = useState<null | 'unit' | 'language'>(null);
 
-  const signOut = async () => {
-    try {
-      await unregisterPushToken();
-    } catch {
-      // best-effort — never block logout on token cleanup
-    }
-    await logout();
-  };
+  // The same sign-out as the staff app (`endSession`): push token, caches, the
+  // phone's copy — a request still waiting to be sent is kept for next time.
+  const signOut = () => logout();
   const confirmSignOut = () =>
     Alert.alert(t('portal.signOut', 'Sign out'), t('portal.signOutConfirm', 'Are you sure you want to sign out?'), [
       { text: t('common.cancel', 'Cancel'), style: 'cancel' },

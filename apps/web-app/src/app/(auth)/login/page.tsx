@@ -36,6 +36,16 @@ function AuthPageContent() {
     }
   }, [searchParams, router]);
 
+  // A session that ended elsewhere (auth-context → loginPathFor): say why, once.
+  // `suspended` = the organization was switched off; the gateway's refusal names no reason, nor does this.
+  useEffect(() => {
+    const ended = searchParams.get('session');
+    if (ended !== 'suspended' && ended !== 'expired') return;
+    if (ended === 'suspended') notify.error(t('auth.sessionEnded.suspended'));
+    else notify.error(t('auth.sessionEnded.expired'));
+    router.replace('/login', { scroll: false });
+  }, [searchParams, router, t]);
+
   // Redirect if already signed in
   useEffect(() => {
     if (!authLoading && isAuthenticated) router.push('/dashboard');

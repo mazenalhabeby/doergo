@@ -62,6 +62,7 @@ import {
   locationsApi,
   type OrgMember,
 } from "@/lib/api"
+import { runBulk } from "@/lib/concurrency"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -812,9 +813,9 @@ export default function MembersPage() {
 
   const handleBulkRemove = useCallback(async (memberIds: string[]) => {
     try {
-      const results = await Promise.allSettled(memberIds.map((id) => organizationsApi.removeMember(id)))
-      const ok = results.filter((r) => r.status === "fulfilled").length
-      const failed = results.length - ok
+      // Bounded (lib/concurrency) so a large removal is not refused by the rate limiter.
+      const { failed, total } = await runBulk(memberIds, (id) => organizationsApi.removeMember(id))
+      const ok = total - failed
       queryClient.invalidateQueries({ queryKey: ["orgMembers"] })
       setSelectedIds(new Set())
       if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))

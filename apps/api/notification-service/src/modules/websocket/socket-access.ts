@@ -1,4 +1,4 @@
-import { buildResolvedAccess, canAccessTask, holdsOpenRole, tokenIssuedBeforeCutoff, type ResolvedAccess } from '@hbcfield/shared';
+import { buildResolvedAccess, canAccessTask, holdsOpenRole, platformEnrolmentRequired, tokenIssuedBeforeCutoff, type ResolvedAccess } from '@hbcfield/shared';
 
 /**
  * What a socket's user may see — resolved from the DATABASE, the same way the
@@ -153,9 +153,38 @@ export async function operatorMaySupport(
   if (!payload || payload.typ !== 'platform' || typeof payload.sub !== 'string' || !payload.sub) return false;
   const op = await prisma.platformUser.findUnique({
     where: { id: payload.sub },
-    select: { isActive: true, role: true, tokensValidAfter: true },
+    select: { isActive: true, role: true, tokensValidAfter: true, twoFactorEnabled: true },
   });
   if (!op || !op.isActive) return false;
   if (tokenIssuedBeforeCutoff(typeof payload.iat === 'number' ? payload.iat : 0, op.tokensValidAfter)) return false;
+  // Second factor is mandatory for every operator (shared session.ts): a
+  // session that has not enrolled one reaches the enrolment screen and nothing
+  // else — on the API (gateway guard) and here alike.
+  if (platformEnrolmentRequired(op)) return false;
   return can(op.role, 'manageSupport');
+}
+
+/**
+ * The static PLATFORM_ADMIN_KEY opened an agent socket — written to the
+ * operator audit trail like every other static-key call (the gateway's
+ * PlatformAuditInterceptor writes the HTTP ones). Append-only; best effort:
+ * a failed write is logged by the caller and never refuses the socket.
+ */
+export async function recordStaticKeyAgentSocket(
+  prisma: { platformAuditLog: { create: (args: any) => Promise<any> } },
+  info: { agent?: unknown; ip?: string | null; userAgent?: unknown },
+): Promise<void> {
+  const label = typeof info.agent === 'string' && info.agent.trim() ? info.agent.trim().slice(0, 80) : 'static-key';
+  await prisma.platformAuditLog.create({
+    data: {
+      actorType: 'STATIC_KEY',
+      actorLabel: label,
+      ipAddress: info.ip ? String(info.ip).slice(0, 100) : null,
+      userAgent: typeof info.userAgent === 'string' ? info.userAgent.slice(0, 300) : null,
+      method: 'WS',
+      route: 'socket:authenticate_agent',
+      action: 'SUPPORT_AGENT_SOCKET_OPENED',
+      ok: true,
+    },
+  });
 }

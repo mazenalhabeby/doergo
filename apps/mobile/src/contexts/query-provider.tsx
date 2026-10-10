@@ -1,6 +1,7 @@
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useEffect, useMemo, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from './auth-context';
+import { onSessionEnd } from '../lib/session/session-registry';
 
 /**
  * The staff app's react-query cache.
@@ -21,5 +22,7 @@ export function AppQueryProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId],
   );
+  // …and emptied the moment the session ends, before the next person's first render.
+  useEffect(() => onSessionEnd('app-query-client', () => client.clear()), [client]);
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

@@ -3087,7 +3087,8 @@
     "welcomeBack": "Bentornato, {{name}}",
     "tapToUnlock": "Tocca per sbloccare con {{method}}",
     "notYou": "Non sei {{name}}? Accedi con un altro account",
-    "backTo": "Torna a {{method}} per {{name}}"
+    "backTo": "Torna a {{method}} per {{name}}",
+    "unreachableBody": "Impossibile raggiungere il server. L’accesso su questo telefono resta configurato: riprova tra un momento."
   },
   "offline": {
     "banner": {
@@ -4668,7 +4669,8 @@
     "tooLong": "Al massimo {{days}} giorni.",
     "durDays": "{{n}} g",
     "durHours": "{{n}} h",
-    "durMinutes": "{{n}} min"
+    "durMinutes": "{{n}} min",
+    "pushNotYours": "Questa notifica riguardava un accesso precedente su questo telefono. Apri il calendario per farlo tu."
   },
   "contactsImport": {
     "option": "Importa dai contatti",
@@ -4763,6 +4765,14 @@
       "open": "Apri clienti",
       "more": "Importa altri",
       "failed": "Impossibile importare. Non è stato aggiunto nulla."
+    }
+  },
+  "tracking": {
+    "foreground": {
+      "routeTitle": "HBCField — Registrazione del percorso",
+      "routeBody": "Stiamo registrando il tuo percorso verso il luogo di lavoro.",
+      "shiftTitle": "HBCField — Timbratura attiva",
+      "shiftBody": "Durante il turno verifichiamo che tu sia sul luogo di lavoro."
     }
   }
 }

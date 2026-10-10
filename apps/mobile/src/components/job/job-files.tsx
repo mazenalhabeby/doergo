@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
 import { CameraGlyph, GalleryGlyph } from './job-glyphs';
 import { SectionLabel } from './job-ui';
+import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
+import { resolveMediaUrl } from '../../lib/api/client';
 
 export interface JobFile {
   id: string;
@@ -53,7 +55,7 @@ export function JobFiles({
           return (
             <Pressable
               key={f.id}
-              onPress={() => { if (f.fileUrl && !f.pendingSync) void Linking.openURL(f.fileUrl); }}
+              onPress={() => { if (!f.pendingSync) void openSafeUrl(httpsUrl(resolveMediaUrl(f.fileUrl))); }}
               onLongPress={f.pendingSync ? undefined : () => onDelete(f)}
               accessibilityRole="button"
               accessibilityLabel={f.pendingSync ? t('offline.chip.waiting') : f.fileName}

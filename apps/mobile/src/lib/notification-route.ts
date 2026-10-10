@@ -180,8 +180,12 @@ export function notificationTarget(data: Data | null | undefined, viewer: Notifi
   return TASK(data, viewer);
 }
 
-/** "I'm with him" on a crew push: the job, joining as it opens. */
+/**
+ * "I'm with him" on a crew push: the job it is about. The JOIN itself is not in
+ * the target — a route is a URL, and a URL must never act. The caller arms it
+ * in memory (`armCrewJoin`) and the job page takes it once.
+ */
 export function crewJoinTarget(data: Data | null | undefined): NotificationTarget | null {
   const id = data ? str(data.taskId) : null;
-  return id ? to('/(app)/task/[id]', { id, sheet: 'join' }) : null;
+  return id ? to('/(app)/task/[id]', { id }) : null;
 }

@@ -154,3 +154,8 @@ export * from './tasks/task-report';
 
 // What is new in a store version of the phone app (the full-page update) — pure, client-safe
 export * from './app-release/release-notes';
+
+// Operator console: session rules and support-ticket scope (pure, browser-safe).
+export * from './platform/permissions';
+export * from './platform/session';
+export * from './platform/support-scope';

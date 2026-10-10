@@ -7,7 +7,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Loader2, Clock, Package, FileText, ChevronDown, ChevronRight, CalendarDays } from "lucide-react"
 
-import { invoicesApi, locationsApi, customersApi, organizationsApi, spaceMembersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { invoicesApi, locationsApi, customersApi, spaceMembersApi, type Invoice, type InvoiceItemInput } from "@/lib/api"
+import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -307,11 +308,8 @@ function NewInvoiceInner() {
     Cheap and shared: the same query key the rest of the app uses, so opening
     this screen costs no extra request on a warm cache.
   */
-  const { data: org } = useQuery({
-    queryKey: ["organization-profile"],
-    queryFn: () => organizationsApi.getProfile(),
-    staleTime: 5 * 60_000,
-  })
+  // The profile is ADMIN-only; whoever else invoices reads the main company (hooks/use-org-letterhead).
+  const { data: org } = useOrgLetterhead()
 
   /** The workspaces to choose from, only once somebody is choosing one. */
   const { data: spacePage } = useQuery({

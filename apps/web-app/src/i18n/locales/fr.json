@@ -646,6 +646,8 @@
     "searching": "Recherche…",
     "mobileOnlyAccount": "Compte mobile uniquement",
     "mobileOnlyAccountBody": "Votre compte est configuré pour l’application mobile. Veuillez utiliser l’application HBCField sur votre téléphone pour continuer.",
+    "clientAccount": "Compte client",
+    "clientAccountBody": "Ce compte appartient à un client. Le portail du personnel est réservé à l’équipe ; veuillez utiliser l’application HBCField sur votre téléphone pour suivre vos interventions et demandes.",
     "timeAgo": {
       "justNow": "à l'instant",
       "minutes": "il y a {{count}} min",
@@ -669,6 +671,10 @@
     "selectDate": "Choisir une date"
   },
   "auth": {
+    "sessionEnded": {
+      "suspended": "Cette organisation est actuellement désactivée. Veuillez contacter le support HBCField.",
+      "expired": "Votre session a pris fin. Veuillez vous reconnecter."
+    },
     "login": {
       "title": "Bon retour",
       "subtitle": "Connectez-vous pour accéder à votre tableau de bord",
@@ -4408,6 +4414,7 @@
     "somethingWentWrong": "Une erreur s’est produite",
     "copied": "Copié",
     "copiedWhat": "{{what}} copié",
+    "copyFailed": "Copie impossible. Sélectionnez le texte et copiez-le manuellement.",
     "savedToClipboard": "Enregistré dans le presse-papiers",
     "billingLoadFailed": "Impossible de charger les informations de facturation.",
     "billingUpdated": "Facturation mise à jour.",

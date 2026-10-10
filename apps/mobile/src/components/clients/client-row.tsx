@@ -1,11 +1,12 @@
 import React, { memo } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { isCompany } from '@hbcfield/shared/client';
 import type { MobileCustomer } from '../../lib/api';
 import { AText } from '../amazen';
 import { initials } from '../customer/client-avatar';
 import { CallGlyph } from '../glyphs/work-glyphs';
+import { openSafeUrl, telUrl } from '../../lib/safe-links';
 
 /**
  * One client in the book.
@@ -76,7 +77,7 @@ export const ClientRow = memo(function ClientRow({
         {phone ? (
           /* Ring from the row — the rest of the row opens the record. */
           <Pressable
-            onPress={() => { void Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() => onOpen(client.id)); }}
+            onPress={() => { void openSafeUrl(telUrl(phone)).then((opened) => { if (!opened) onOpen(client.id); }); }}
             hitSlop={6}
             accessibilityRole="button"
             accessibilityLabel={phone}

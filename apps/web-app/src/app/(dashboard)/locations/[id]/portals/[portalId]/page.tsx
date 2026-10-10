@@ -22,6 +22,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { copyText } from "@/lib/clipboard"
 
 // Lazy (audit P-C1). Both are dialogs that render on a click; the CustomerForm
 // import also drags in the whole customers-tab module.
@@ -606,7 +607,7 @@ export default function PortalDetailPage() {
               <p className="text-sm text-muted-foreground mb-3">{t("portal.shareCode", "Share this code with the client to activate their login:")}</p>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl font-mono font-bold tracking-widest text-foreground rounded-xl bg-muted px-4 py-2">{code}</span>
-                <Button variant="outline" size="sm" className="h-11 w-11 p-0" onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}</Button>
+                <Button variant="outline" size="sm" className="h-11 w-11 p-0" onClick={async () => { if (await copyText(code)) { setCopied(true); setTimeout(() => setCopied(false), 1500) } }}>{copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}</Button>
               </div>
               <p className="text-xs text-muted-foreground mt-3">{t("portal.codeHint", "In the app: register → Use Invitation → enter this code.")}</p>
             </div>

@@ -21,7 +21,8 @@ export interface PendingAvatarDeps {
   isUnreachable(err: unknown): boolean;
 }
 
-const PENDING_AVATAR_KEY = (memberId: string) => `pending_avatar_v1_${memberId}`;
+/** Where one member's waiting photo change is kept — exported so the end of a session can remove it with their files. */
+export const PENDING_AVATAR_KEY = (memberId: string) => `pending_avatar_v1_${memberId}`;
 
 export function createPendingAvatar(memberId: string, deps: PendingAvatarDeps) {
   const key = PENDING_AVATAR_KEY(memberId);

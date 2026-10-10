@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 
 export type MobileCustomFieldType =
   | 'TEXT' | 'NUMBER' | 'DATE' | 'DROPDOWN' | 'CHECKBOX' | 'URL' | 'EMAIL';
@@ -31,13 +32,13 @@ export interface MobileCustomFieldValue {
  */
 export const customFieldsApi = {
   getTaskValues: (taskId: string): Promise<MobileCustomFieldValue[]> =>
-    fetchWithAuth<MobileCustomFieldValue[]>(`/tasks/${taskId}/custom-fields`, { method: 'GET' }),
+    fetchWithAuth<MobileCustomFieldValue[]>(path`/tasks/${taskId}/custom-fields`, { method: 'GET' }),
 
   setTaskValues: (
     taskId: string,
     values: { definitionId: string; value: string }[],
   ): Promise<MobileCustomFieldValue[]> =>
-    fetchWithAuth<MobileCustomFieldValue[]>(`/tasks/${taskId}/custom-fields`, {
+    fetchWithAuth<MobileCustomFieldValue[]>(path`/tasks/${taskId}/custom-fields`, {
       method: 'PATCH',
       body: JSON.stringify({ values }),
     }),

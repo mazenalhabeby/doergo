@@ -9,7 +9,8 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "react-i18next"
-import { formatDistanceToNow } from "date-fns"
+import { formatTimeAgo } from "@/lib/format-date"
+import { isSameAppPath } from "@/lib/safe-links"
 import type { TFunction } from "i18next"
 import { useQuery } from "@tanstack/react-query"
 
@@ -427,7 +428,9 @@ export function NotificationBell() {
       // Chat opens the drawer (not a route). link = "chat:<senderUserId>".
       setOpen(false)
       openChatWith(notif.link.slice(5))
-    } else if (notif.link) {
+    } else if (isSameAppPath(notif.link)) {
+      // Only a path inside this app: a notification link is data, and
+      // `//host` would leave the product looking like an in-app jump.
       setOpen(false)
       router.push(notif.link)
     }
@@ -496,7 +499,7 @@ export function NotificationBell() {
                     </p>
                     {notif.message && <p className="text-xs text-foreground/70 truncate">{notif.message}</p>}
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {formatDistanceToNow(notif.createdAt, { addSuffix: true })}
+                      {formatTimeAgo(notif.createdAt)}
                     </p>
                   </div>
                   {!notif.read && (

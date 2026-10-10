@@ -22,3 +22,6 @@ export * from './zoned-time';
 // NOTE: crypto utilities are NOT exported here because they use Node's
 // "crypto" module which is unavailable in React Native / browser runtimes.
 // Import directly: import { hashCode, generateSecureCode } from '@hbcfield/shared/utils/crypto';
+
+// CSV — formula-injection-safe cells and files (web exports + task-service)
+export * from './csv';

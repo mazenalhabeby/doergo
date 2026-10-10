@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next"
 import { distanceRefusalParams } from "@hbcfield/shared/client"
+import { isTransportMessage } from "./http-client"
 
 /**
  * Saying a server refusal in the reader's language.
@@ -19,6 +20,8 @@ import { distanceRefusalParams } from "@hbcfield/shared/client"
 interface ServerError extends Error {
   code?: string
   params?: Record<string, unknown>
+  /** HTTP status of the answer; 0 = no answer (network, timeout). */
+  status?: number
 }
 
 /**
@@ -28,11 +31,27 @@ interface ServerError extends Error {
  * `throw new Error(response.error)` call sites keep working untouched; a call
  * site opts in by using this instead.
  */
-export function apiError(response: { error?: string; errorCode?: string; errorParams?: Record<string, unknown> }): ServerError {
+export function apiError(response: { error?: string; errorCode?: string; errorParams?: Record<string, unknown>; status?: number }): ServerError {
   const err = new Error(response.error || "Request failed") as ServerError
   if (response.errorCode) err.code = response.errorCode
   if (response.errorParams) err.params = response.errorParams
+  if (typeof response.status === "number") err.status = response.status
   return err
+}
+
+/**
+ * Is this failure worth asking again? Only when nothing was decided: no answer
+ * at all (network / timeout), the rate limiter, or the server failing. A 4xx is
+ * an answer — asking again gets the same one. An error without a known status
+ * (most call sites still throw a bare Error) is NOT retried.
+ */
+export function isTransientError(error: unknown): boolean {
+  const e = error as { status?: unknown; code?: unknown } | null
+  if (e?.code === "NETWORK" || e?.code === "TIMEOUT") return true
+  if (isTransportMessage((error as { message?: unknown } | null)?.message)) return true
+  const status = typeof e?.status === "number" ? e.status : undefined
+  if (status === undefined) return false
+  return status === 0 || status === 429 || status >= 500
 }
 
 /**

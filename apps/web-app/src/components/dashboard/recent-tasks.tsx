@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { formatDistanceToNow } from "date-fns"
+import { formatRelativeTime } from "@/lib/format-date"
 import { Inbox } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
@@ -49,7 +49,7 @@ export function RecentTasks({ tasks, className, showViewAll = true }: RecentTask
         const hex = statusConfig.hex
         const meta = [
           task.location,
-          task.dueDate ? formatDistanceToNow(task.dueDate, { addSuffix: true }) : null,
+          task.dueDate ? formatRelativeTime(task.dueDate) : null,
           task.assignee?.name,
         ].filter(Boolean) as string[]
 

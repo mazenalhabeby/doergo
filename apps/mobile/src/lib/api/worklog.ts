@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 
 export interface WorkLogAttachment {
   id: string;
@@ -31,16 +32,16 @@ export interface WorkLogNote {
  * during a clock-in session; at clock-out they compose "what I did today".
  * Photos upload phone→S3 direct via presign→PUT→confirm.
  */
-// NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope (returns
-// `data.data ?? data`), so these methods must NOT unwrap `.data` again.
+// NOTE: fetchWithAuth already unwraps the `{ data: T }` envelope
+// (`envelope.ts`), so these methods must NOT unwrap `.data` again.
 export const worklogApi = {
   list: async (entryId: string): Promise<WorkLogNote[]> => {
-    const res = await fetchWithAuth<WorkLogNote[]>(`/attendance/entries/${entryId}/worklog`);
+    const res = await fetchWithAuth<WorkLogNote[]>(path`/attendance/entries/${entryId}/worklog`);
     return res ?? [];
   },
 
   addNote: async (entryId: string, input: { body: string; at?: string; taskId?: string }): Promise<WorkLogNote> => {
-    return fetchWithAuth<WorkLogNote>(`/attendance/entries/${entryId}/worklog`, {
+    return fetchWithAuth<WorkLogNote>(path`/attendance/entries/${entryId}/worklog`, {
       method: 'POST',
       body: JSON.stringify(input),
     });
@@ -48,19 +49,19 @@ export const worklogApi = {
 
   /** Offline flush: many notes in one round-trip. */
   addNotesBatch: async (entryId: string, notes: Array<{ body: string; at?: string; taskId?: string }>): Promise<{ inserted: number }> => {
-    return fetchWithAuth<{ inserted: number }>(`/attendance/entries/${entryId}/worklog/batch`, {
+    return fetchWithAuth<{ inserted: number }>(path`/attendance/entries/${entryId}/worklog/batch`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });
   },
 
   deleteNote: async (noteId: string): Promise<void> => {
-    await fetchWithAuth<void>(`/attendance/worklog/${noteId}`, { method: 'DELETE' });
+    await fetchWithAuth<void>(path`/attendance/worklog/${noteId}`, { method: 'DELETE' });
   },
 
   presignAttachment: async (noteId: string, fileName: string, mimeType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }> => {
     return fetchWithAuth<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }>(
-      `/attendance/worklog/${noteId}/attachments/presign`,
+      path`/attendance/worklog/${noteId}/attachments/presign`,
       { method: 'POST', body: JSON.stringify({ fileName, mimeType }) },
     );
   },
@@ -69,13 +70,13 @@ export const worklogApi = {
     noteId: string,
     data: { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number },
   ): Promise<WorkLogAttachment> => {
-    return fetchWithAuth<WorkLogAttachment>(`/attendance/worklog/${noteId}/attachments`, {
+    return fetchWithAuth<WorkLogAttachment>(path`/attendance/worklog/${noteId}/attachments`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   deleteAttachment: async (attachmentId: string): Promise<void> => {
-    await fetchWithAuth<void>(`/attendance/worklog/attachments/${attachmentId}`, { method: 'DELETE' });
+    await fetchWithAuth<void>(path`/attendance/worklog/attachments/${attachmentId}`, { method: 'DELETE' });
   },
 };

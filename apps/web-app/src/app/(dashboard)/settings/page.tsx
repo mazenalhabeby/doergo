@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/dialog"
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
 import { PhoneInput } from "@/components/ui/phone-input"
+import { copyText } from "@/lib/clipboard"
 import { getCountries } from "@/lib/countries"
 
 // ============================================================================
@@ -718,7 +719,7 @@ function MembersSection() {
 
   const handleCopy = async () => {
     if (!displayCode) return
-    await navigator.clipboard.writeText(displayCode)
+    if (!(await copyText(displayCode))) return
     setCopied(true)
     notify.copied()
     setTimeout(() => setCopied(false), 2000)

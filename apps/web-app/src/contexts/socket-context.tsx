@@ -5,14 +5,15 @@ import { io, Socket } from "socket.io-client"
 import { useTranslation } from "react-i18next"
 import { SocketEvents } from "@hbcfield/shared/client"
 import { useAuth } from "./auth-context"
-import { getAccessToken } from "@/lib/api"
+import { getAccessToken, getFreshAccessToken } from "@/lib/auth-session"
+import { SOCKET_URL } from "@/lib/endpoints"
 import { notify } from "@/lib/toast"
 
 // ============================================================================
 // Singleton Socket — ONE connection for the entire app
 // ============================================================================
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:4001"
+// Where: the one endpoints module (same origin in production, never localhost).
 
 interface SocketContextValue {
   isConnected: boolean
@@ -53,18 +54,24 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const accessToken = getAccessToken()
     if (!accessToken) return
 
-    const socket = io(SOCKET_URL, {
-      // Function form: socket.io re-invokes this on every (re)connect, so a
-      // reconnect after the ~15-min access-token refresh sends the CURRENT token
-      // instead of the stale one captured at mount — otherwise all realtime
-      // updates silently die after the first post-expiry reconnect. (Sec audit H9.)
-      auth: (cb: (data: { token: string | null }) => void) => cb({ token: getAccessToken() }),
+    const options = {
+      // Function form: socket.io re-invokes this on every (re)connect. It asks
+      // for a token good for the next 30 s — refreshing first if the one in
+      // memory is about to expire — so a reconnect after a laptop slept never
+      // presents a stale token and silently loses realtime. (Sec audit H9.)
+      auth: (cb: (data: { token: string | null }) => void) => {
+        getFreshAccessToken(30)
+          .then((token) => cb({ token }))
+          .catch(() => cb({ token: getAccessToken() }))
+      },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 2000,
       reconnectionDelayMax: 30000,
-    })
+    }
+    // No URL = the page's own origin (production serves /socket.io/ there).
+    const socket = SOCKET_URL ? io(SOCKET_URL, options) : io(options)
 
     socket.on("connect", () => {
       setIsConnected(true)

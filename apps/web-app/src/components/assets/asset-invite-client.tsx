@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
+import { copyText } from "@/lib/clipboard"
 
 /**
  * Invite a client into the app, tied to THIS asset.
@@ -95,9 +96,8 @@ export function AssetInviteClient({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  navigator.clipboard?.writeText(code)
-                  setCopied(true)
+                onClick={async () => {
+                  if (await copyText(code)) setCopied(true)
                 }}
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}

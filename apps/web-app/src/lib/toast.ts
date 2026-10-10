@@ -88,6 +88,11 @@ export const notify = {
     }
   },
 
+  /** The clipboard refused — never followed by "Copied" (see lib/clipboard). */
+  copyFailed: () => {
+    toast.error(i18n.t("toast.copyFailed"))
+  },
+
   /** Copied to clipboard */
   copied: (what?: string) => {
     toast(what ? i18n.t("toast.copiedWhat", { what }) : i18n.t("toast.copied"), {

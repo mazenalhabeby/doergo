@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
 import { Ban, Check, Search, Smartphone, User, X } from "lucide-react"
 
-import { customersApi, organizationsApi, type OrgMember } from "@/lib/api"
+import { customersApi } from "@/lib/api"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { type KindShape } from "@hbcfield/shared/client"
 import { cn } from "@/lib/utils"
 
@@ -30,7 +31,7 @@ import { cn } from "@/lib/utils"
 */
 export type HolderKey = string
 
-export const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
+export const memberName = (m: { firstName: string; lastName: string }) => `${m.firstName} ${m.lastName}`.trim()
 export const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
 /** "u:x" / "c:x" → what the API takes. */
@@ -64,12 +65,13 @@ export function HolderPicker({
   const [tab, setTab] = useState<"members" | "clients">(shape.holder.members ? "members" : "clients")
   const [q, setQ] = useState("")
 
-  const membersQ = useQuery({
-    queryKey: ["org-members-assignable"],
-    queryFn: () => organizationsApi.getMembers({ limit: 100 }),
+  // The directory for whoever may read it (canManageUsers), this workspace's
+  // roster otherwise — an asset manager need not manage people.
+  const membersQ = useAssignableMembers({
+    spaceId,
     enabled: enabled && shape.holder.enabled && shape.holder.members,
   })
-  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+  const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
 
   const clientsQ = useQuery({
     queryKey: ["space-clients", spaceId],

@@ -8,10 +8,6 @@ import { uuidv7 } from '../../offline/ids';
 import type { AvatarChange } from '../../offline/profile/pending-avatar';
 import { updateOwnProfile } from '../../offline/profile/profile-actions';
 import { useOffline, useSyncStatus } from '../../offline/offline-context';
-import { destroyOfflineDatabase } from '../../offline/db/database';
-import { DeviceFileDisk } from '../../offline/files/device-file-disk';
-import { MediaCache } from '../../offline/files/media-cache';
-import { unregisterBackgroundSync } from '../../offline/background-sync';
 import { useVersionStatus } from '../../contexts/version-context';
 import { openUpdate } from '../../lib/in-app-updates';
 import { useAuth } from '../../contexts/auth-context';
@@ -20,7 +16,6 @@ import { useTheme, type ThemeMode } from '../../contexts/theme-context';
 import { useHeldAssets } from '../../hooks/use-held-assets';
 import { useDocumentRequirements } from '../../contexts/document-requirements-context';
 import { useToast } from '../../island/island-context';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { useImagePicker } from '../../hooks/useImagePicker';
 import { avatarApi, userApi, resolveMediaUrl } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
@@ -58,7 +53,6 @@ export function ProfileScreen() {
   const c = amazen.color;
   const toast = useToast();
   const { t } = useTranslation();
-  const { unregisterPushToken } = usePushNotifications();
   const { pickFromGallery, takePhoto } = useImagePicker();
   // Already loaded for the home card — this reads the same fetch, not a second one.
   const { total: outstandingDocs, blocksWork: docsBlockWork } = useDocumentRequirements();
@@ -226,16 +220,9 @@ export function ProfileScreen() {
   const confirmSignOut = async () => {
     setShowSignOutConfirm(false);
     setShowUnsentConfirm(false);
-    const userId = user?.id;
-    await unregisterPushToken();
-    await logout();
-    // Nothing unsent (or the member chose to delete it): the copy goes too.
-    if (userId) {
-      await unregisterBackgroundSync();
-      await destroyOfflineDatabase(userId).catch(() => undefined);
-      DeviceFileDisk.forMember(userId).destroyAll();
-      MediaCache.destroyForMember(userId);
-    }
+    // Nothing unsent, or the member chose to delete it: the phone's copy goes too.
+    // Everything else a sign-out clears is `endSession`'s, the same for every exit.
+    await logout({ keepUnsent: false });
   };
   /* ---------------- the page ---------------- */
 

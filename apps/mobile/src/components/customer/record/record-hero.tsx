@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { CUSTOMER_STAGES, customerStageLabel, isCompany } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
@@ -9,6 +9,7 @@ import { RoundButton } from '../../job/job-ui';
 import { CallGlyph, NavigateGlyph } from '../../glyphs/work-glyphs';
 import { EmailGlyph, ReminderGlyph } from '../../glyphs/crm-glyphs';
 import { initials } from '../client-avatar';
+import { geoUrl, mailtoUrl, openSafeUrl, telUrl } from '../../../lib/safe-links';
 
 /** The four steps of the pipeline; Inactive is not a step, it is leaving it. */
 const STEPS = CUSTOMER_STAGES.filter((s) => s.key !== 'INACTIVE').map((s) => s.key);
@@ -51,9 +52,11 @@ export function RecordHero({
   ].filter(Boolean).join(' · ');
 
   const acts: { key: string; label: string; Glyph: typeof CallGlyph; jade?: boolean; onPress: () => void }[] = [];
-  if (phone) acts.push({ key: 'call', label: t('customers.record.call'), Glyph: CallGlyph, jade: true, onPress: () => void Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`) });
-  if (email) acts.push({ key: 'email', label: t('customers.record.email'), Glyph: EmailGlyph, onPress: () => void Linking.openURL(`mailto:${email}`) });
-  if (address) acts.push({ key: 'dir', label: t('customers.record.directions', 'Directions'), Glyph: NavigateGlyph, onPress: () => void Linking.openURL(`geo:0,0?q=${encodeURIComponent(address)}`) });
+  // Built from typed CRM text: each link is one scheme or no button (`safe-links.ts`).
+  const tel = telUrl(phone), mail = mailtoUrl(email), geo = geoUrl(address);
+  if (tel) acts.push({ key: 'call', label: t('customers.record.call'), Glyph: CallGlyph, jade: true, onPress: () => void openSafeUrl(tel) });
+  if (mail) acts.push({ key: 'email', label: t('customers.record.email'), Glyph: EmailGlyph, onPress: () => void openSafeUrl(mail) });
+  if (geo) acts.push({ key: 'dir', label: t('customers.record.directions', 'Directions'), Glyph: NavigateGlyph, onPress: () => void openSafeUrl(geo) });
   acts.push({ key: 'remind', label: t('customers.record.remind', 'Remind'), Glyph: ReminderGlyph, onPress: onRemind });
 
   const app = record.app;

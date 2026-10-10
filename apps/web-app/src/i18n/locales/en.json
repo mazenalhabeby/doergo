@@ -646,6 +646,8 @@
     "searching": "Searching...",
     "mobileOnlyAccount": "Mobile-only account",
     "mobileOnlyAccountBody": "Your account is set up for the mobile app. Please use the HBCField app on your phone to continue.",
+    "clientAccount": "Client account",
+    "clientAccountBody": "This account belongs to a client. The staff portal is for the team; please use the HBCField app on your phone to follow your jobs and requests.",
     "timeAgo": {
       "justNow": "just now",
       "minutes": "{{count}}m ago",
@@ -669,6 +671,10 @@
     "selectDate": "Pick a date"
   },
   "auth": {
+    "sessionEnded": {
+      "suspended": "This organization is currently deactivated. Please contact HBCField support.",
+      "expired": "Your session has ended. Please sign in again."
+    },
     "login": {
       "title": "Welcome back",
       "subtitle": "Sign in to access your dashboard",
@@ -4399,6 +4405,7 @@
     "somethingWentWrong": "Something went wrong",
     "copied": "Copied",
     "copiedWhat": "Copied {{what}}",
+    "copyFailed": "Could not copy. Select the text and copy it by hand.",
     "savedToClipboard": "Saved to clipboard",
     "billingLoadFailed": "Couldn't load billing details.",
     "billingUpdated": "Billing updated.",

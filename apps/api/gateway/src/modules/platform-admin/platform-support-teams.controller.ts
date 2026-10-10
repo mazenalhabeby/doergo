@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService, assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 
 /** Gateway → auth-service proxy for support-team administration. */
@@ -31,6 +32,7 @@ export class PlatformSupportTeamsService extends BaseGatewayService {
 @Controller('platform/support/teams')
 @Public()
 @UseGuards(PlatformAuthGuard)
+@UseInterceptors(PlatformAuditInterceptor)
 @RequirePlatformPerm('manageSupportTeams')
 export class PlatformSupportTeamsController {
   constructor(private readonly svc: PlatformSupportTeamsService) {}

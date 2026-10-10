@@ -24,6 +24,7 @@ import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
 import { newest } from './freshness';
 import { registerBackgroundSync } from './background-sync';
+import { onSessionEnd, registerUnsentProbe } from '../lib/session/session-registry';
 import type { SyncEngine, SyncSnapshot } from './sync-engine';
 import type { OutboxOp } from './outbox/types';
 
@@ -164,6 +165,10 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         return;
       }
       const live = engine;
+      // The end of a session asks this before deciding whether the phone's copy may go.
+      unsubscribers.push(registerUnsentProbe(user.id, () => live.hasUnsent()));
+      // …and stops the engine before the database under it is closed and deleted.
+      unsubscribers.push(onSessionEnd('offline-engine', () => live.stop()));
       if (!offlineMode) {
         // Drain only: send what was queued while it was on, offer nothing new.
         if (live.hasUnsent()) {

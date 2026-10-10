@@ -1,6 +1,7 @@
 import { assertServiceOk } from '@hbcfield/shared';
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Public } from '../../common/decorators';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
 
@@ -16,6 +17,7 @@ import { PlatformAdminService } from './platform-admin.service';
 @Controller('platform/pricing')
 @Public()
 @UseGuards(PlatformAuthGuard)
+@UseInterceptors(PlatformAuditInterceptor)
 export class PlatformPricingController {
   constructor(private readonly svc: PlatformAdminService) {}
   private unwrap<T>(r: any): T {

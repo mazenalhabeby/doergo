@@ -51,6 +51,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
+import { copyText } from "@/lib/clipboard"
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -454,7 +455,7 @@ export function EditMemberDialog({
 
   const handleCopyPassword = async () => {
     if (!tempPassword) return
-    await navigator.clipboard.writeText(tempPassword)
+    if (!(await copyText(tempPassword))) return
     setCopied(true)
     notify.copied("password")
     setTimeout(() => setCopied(false), 3000)

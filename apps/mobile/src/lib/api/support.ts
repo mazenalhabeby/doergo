@@ -1,4 +1,6 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
+import { buildUrlWithQuery } from '@hbcfield/shared/client';
 import type { SupportTicket, SupportMessage, SupportAttachment } from '@hbcfield/shared/client';
 
 export interface SupportConfig {
@@ -27,9 +29,9 @@ export interface SupportConfig {
   so declaring `<{ data: SupportTicket }>` simply asserts a shape that never
   arrives at runtime — `tsc` was clean the whole time this was broken.
 
-  ⚠️ `meta` is not available to callers, for the same reason: `fetchWithAuth`
-  returns `data.data` and drops everything beside it. `list` therefore returns
-  the array, which is what it actually resolves to.
+  ⚠️ `fetchWithAuth` resolves to the envelope's `data` and nothing beside it.
+  `list` therefore returns the array, which is what it actually resolves to;
+  a caller that needs `meta` (a total) asks `fetchPageWithAuth`.
 */
 export const supportApi = {
   getConfig: async (): Promise<SupportConfig> =>
@@ -37,12 +39,12 @@ export const supportApi = {
 
   list: async (status?: string): Promise<SupportTicket[]> =>
     fetchWithAuth<SupportTicket[]>(
-      `/support/tickets${status ? `?status=${status}` : ''}`,
+      buildUrlWithQuery('/support/tickets', { status }),
       { method: 'GET' },
     ),
 
   get: async (id: string): Promise<SupportTicket> =>
-    fetchWithAuth<SupportTicket>(`/support/tickets/${id}`, { method: 'GET' }),
+    fetchWithAuth<SupportTicket>(path`/support/tickets/${id}`, { method: 'GET' }),
 
   create: async (payload: {
     subject: string;
@@ -56,12 +58,12 @@ export const supportApi = {
     }),
 
   reply: async (id: string, body: string, attachments?: SupportAttachment[]): Promise<SupportMessage> =>
-    fetchWithAuth<SupportMessage>(`/support/tickets/${id}/messages`, {
+    fetchWithAuth<SupportMessage>(path`/support/tickets/${id}/messages`, {
       method: 'POST',
       body: JSON.stringify({ body, attachments }),
     }),
 
   markRead: async (id: string): Promise<void> => {
-    await fetchWithAuth(`/support/tickets/${id}/read`, { method: 'POST', body: '{}' });
+    await fetchWithAuth(path`/support/tickets/${id}/read`, { method: 'POST', body: '{}' });
   },
 };

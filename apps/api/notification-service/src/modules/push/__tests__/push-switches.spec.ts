@@ -39,7 +39,7 @@ describe('the push sender respects them', () => {
   it('drops a member who switched the category off', async () => {
     const { svc } = service({ a: { tasks: false } });
     const res = await svc.sendToUsers(['a', 'b'], text, { type: 'task_assigned' });
-    expect((svc as any).deliver).toHaveBeenCalledWith(['ExponentPushToken[b]'], expect.anything(), expect.anything(), expect.anything());
+    expect((svc as any).deliver).toHaveBeenCalledWith([{ token: 'ExponentPushToken[b]', userId: 'b' }], expect.anything(), expect.anything(), expect.anything());
     expect(res.sent).toBe(1);
   });
 

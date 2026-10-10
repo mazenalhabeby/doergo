@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import { buildUrlWithQuery, type Rect } from '@hbcfield/shared/client';
 
 /**
@@ -227,7 +228,7 @@ export const documentsApi = {
 
   /** Record agreement to sign electronically — its own act, before the drawing. */
   consent: async (id: string): Promise<{ consentText: string; consentAt: string }> => {
-    const result = await fetchWithAuth<any>(`/documents/${id}/consent`, {
+    const result = await fetchWithAuth<any>(path`/documents/${id}/consent`, {
       method: 'POST',
       body: JSON.stringify({}),
     });
@@ -245,7 +246,7 @@ export const documentsApi = {
     id: string,
     body: { signatureImage: string; idempotencyKey: string },
   ): Promise<{ documentId: string; alreadySigned: boolean }> => {
-    const result = await fetchWithAuth<any>(`/documents/${id}/sign`, {
+    const result = await fetchWithAuth<any>(path`/documents/${id}/sign`, {
       method: 'POST',
       body: JSON.stringify(body),
     });
@@ -254,7 +255,7 @@ export const documentsApi = {
 
   /** "I have read this" — receipt, not agreement. */
   acknowledge: async (id: string): Promise<{ success: boolean }> => {
-    const result = await fetchWithAuth<any>(`/documents/${id}/acknowledge`, {
+    const result = await fetchWithAuth<any>(path`/documents/${id}/acknowledge`, {
       method: 'POST',
       body: JSON.stringify({}),
     });
@@ -273,12 +274,12 @@ export const documentsApi = {
    * rubber-stamping, which is the thing a chain is supposed to prevent.
    */
   chain: async (id: string): Promise<DocumentChain> => {
-    const result = await fetchWithAuth<any>(`/documents/${id}/chain`);
+    const result = await fetchWithAuth<any>(path`/documents/${id}/chain`);
     return result?.data ?? result;
   },
 
   downloadUrl: async (id: string): Promise<{ url: string; fileName: string }> => {
-    const result = await fetchWithAuth<any>(`/documents/${id}/download-url`, {
+    const result = await fetchWithAuth<any>(path`/documents/${id}/download-url`, {
       method: 'POST',
       body: JSON.stringify({}),
     });

@@ -5,7 +5,6 @@ export { ScreenHeader, HeaderBackButton, goBack } from './screen-header';
 export type { ScreenHeaderProps } from './screen-header';
 export { FieldArrowIcon } from './field-arrow-icon';
 export { AnimatedSplash } from './animated-splash';
-export { TokenMonitor } from './token-monitor';
 export { TaskCard } from './task-card';
 export type { TaskCardData } from './task-card';
 export { FilterChip } from './filter-chip';

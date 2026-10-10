@@ -1,6 +1,7 @@
 import fs from "fs"
 import path from "path"
 import { geoFetch } from "../geocode"
+import { setAccessToken, __resetAuthSessionForTests } from "../auth-session"
 
 /**
  * Every web call to the gateway's /geo proxy carries the bearer token.
@@ -15,16 +16,18 @@ describe("geoFetch", () => {
   afterEach(() => {
     global.fetch = realFetch
     localStorage.clear()
+    __resetAuthSessionForTests()
   })
 
-  it("sends the bearer token and keeps the caller's options", async () => {
-    localStorage.setItem("hbcfield_access_token", "tok-1")
-    const signal = new AbortController().signal
-    await geoFetch("/geo/timezone?lat=1&lon=2", { signal })
+  it("sends the bearer token (from memory) and follows the caller's signal", async () => {
+    setAccessToken("tok-1", { broadcast: false })
+    const caller = new AbortController()
+    await geoFetch("/geo/timezone?lat=1&lon=2", { signal: caller.signal })
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0]
     expect(url).toMatch(/\/geo\/timezone\?lat=1&lon=2$/)
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer tok-1")
-    expect(init.signal).toBe(signal)
+    // The pipeline adds its own timeout signal, wired to the caller's.
+    expect(init.signal).toBeInstanceOf(AbortSignal)
   })
 
   it("still calls without a token (signed-out pickers on public routes)", async () => {

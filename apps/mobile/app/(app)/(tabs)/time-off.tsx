@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
+import { mayReadTeamAvailability } from '../../../src/lib/permissions';
 import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useMyTimeOff } from '../../../src/components/time/use-my-time-off';
@@ -239,12 +240,12 @@ export default function TimeOffScreen() {
     refreshData();
   }, [fetchData]);
 
-  // Only admins/dispatchers can fetch availability data
-  const isAdminOrDispatcher = user?.role === 'ADMIN' || user?.role === 'CLIENT' || user?.role === 'DISPATCHER';
+  // Only somebody who may read the team's availability asks for it (see mayReadTeamAvailability).
+  const canSeeTeamAvailability = mayReadTeamAvailability(user);
 
   // Fetch availability when range changes (admin/dispatcher only)
   useEffect(() => {
-    if (!rangeStart || !rangeEnd || !isAdminOrDispatcher) return;
+    if (!rangeStart || !rangeEnd || !canSeeTeamAvailability) return;
 
     const days: string[] = [];
     const d = new Date(rangeStart);
@@ -286,7 +287,7 @@ export default function TimeOffScreen() {
     })();
 
     return () => { cancelled = true; };
-  }, [rangeStart, rangeEnd]);
+  }, [rangeStart, rangeEnd, canSeeTeamAvailability]);
 
   // =========================================================================
   // CALENDAR NAVIGATION
@@ -712,7 +713,7 @@ export default function TimeOffScreen() {
         {/* ============================================================= */}
         {/* AVAILABILITY INSIGHT PANEL                                    */}
         {/* ============================================================= */}
-        {hasRangeSelected && isAdminOrDispatcher && (
+        {hasRangeSelected && canSeeTeamAvailability && (
           <View style={[styles.insightCard, { backgroundColor: colors.card }]}>
             <View style={styles.insightHeader}>
               <Ionicons name="people" size={18} color={COLORS.primary} />

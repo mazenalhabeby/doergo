@@ -5,13 +5,15 @@ import {
   Body,
   Param,
   Query,
-  Req
+  Req,
+  UseInterceptors,
 } from '@nestjs/common';
+import { PlatformAuditInterceptor, staticKeyAgent } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
-import { orgHasAddOn, slaBusinessMinutes } from '@hbcfield/shared';
+import { orgHasAddOn, slaBusinessMinutes, type SupportAgentScope } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { SupportService } from './support.service';
 import { CreateTicketDto, AddMessageDto, SetStatusDto, AssignDto } from './dto';
@@ -109,9 +111,18 @@ export class SupportController {
   // ════════════════════ AGENT (platform-key gated, no JWT) ════════════════════
   // Agents are operator staff — same fail-closed x-platform-admin-key gate as the
   // billing operator console. `x-support-agent` optionally attributes the reply.
+  //
+  // Kept for the web app's /operator/support page, which still signs in with the
+  // static key (pending its move to the platform console's staff login). Every
+  // call is rate-limited and recorded in the platform audit trail as
+  // "static-key" + the agent name it declared. The key is the whole-platform
+  // secret, so its scope is explicitly the supervisor's — stated, not implied by
+  // a missing scope (which the task-service treats as the narrowest).
+  private static readonly STATIC_KEY_SCOPE: SupportAgentScope = { isSupervisor: true, teamIds: [], platformUserId: null };
 
   @Public()
   @Get('agent/inbox')
+  @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: prioritized ticket inbox (secret-gated)' })
   inbox(
@@ -123,19 +134,24 @@ export class SupportController {
     @Req() req: any,
   ) {
     this.assertPlatformKey(req);
-    return this.support.inbox({ status, tier, atRisk: atRisk === 'true', page, limit });
+    const scope = SupportController.STATIC_KEY_SCOPE;
+    return this.support.inbox({ status, tier, atRisk: atRisk === 'true', page, limit, isSupervisor: scope.isSupervisor, teamIds: scope.teamIds });
   }
 
   @Public()
   @Get('agent/tickets/:id')
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: full thread incl. internal notes (secret-gated)' })
   agentThread(@Param('id') id: string, @Req() req: any) {
     this.assertPlatformKey(req);
-    return this.support.thread({ ticketId: id, asAgent: true });
+    return this.support.thread({ ticketId: id, asAgent: true, scope: SupportController.STATIC_KEY_SCOPE });
   }
 
   @Public()
   @Post('agent/tickets/:id/messages')
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: reply or add internal note (secret-gated)' })
   agentReply(@Param('id') id: string, @Body() dto: AddMessageDto, @Req() req: any) {
     this.assertPlatformKey(req);
@@ -147,31 +163,38 @@ export class SupportController {
       attachments: dto.attachments,
       isInternalNote: dto.isInternalNote,
       asAgent: true,
+      scope: SupportController.STATIC_KEY_SCOPE,
     });
   }
 
   @Public()
   @Post('agent/tickets/:id/assign')
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: assign a ticket (secret-gated)' })
   agentAssign(@Param('id') id: string, @Body() dto: AssignDto, @Req() req: any) {
     this.assertPlatformKey(req);
-    return this.support.assign({ ticketId: id, agentId: dto.agentId ?? this.agentHandle(req) });
+    return this.support.assign({ ticketId: id, agentId: dto.agentId ?? this.agentHandle(req), scope: SupportController.STATIC_KEY_SCOPE });
   }
 
   @Public()
   @Post('agent/tickets/:id/status')
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: set ticket status (secret-gated)' })
   agentStatus(@Param('id') id: string, @Body() dto: SetStatusDto, @Req() req: any) {
     this.assertPlatformKey(req);
-    return this.support.setStatus({ ticketId: id, status: dto.status });
+    return this.support.setStatus({ ticketId: id, status: dto.status, scope: SupportController.STATIC_KEY_SCOPE });
   }
 
   @Public()
   @Post('agent/tickets/:id/read')
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Agent: mark ticket read (secret-gated)' })
   agentRead(@Param('id') id: string, @Req() req: any) {
     this.assertPlatformKey(req);
-    return this.support.markRead({ ticketId: id, reader: 'AGENT' });
+    return this.support.markRead({ ticketId: id, reader: 'AGENT', scope: SupportController.STATIC_KEY_SCOPE });
   }
 
   // ── operator gate (mirrors billing.controller) ──
@@ -187,6 +210,6 @@ export class SupportController {
   }
 
   private agentHandle(req: any): string {
-    return (req.headers['x-support-agent'] as string)?.slice(0, 80) || 'operator';
+    return staticKeyAgent(req) || 'operator';
   }
 }

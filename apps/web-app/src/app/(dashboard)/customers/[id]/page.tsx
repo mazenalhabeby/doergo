@@ -13,7 +13,8 @@ import {
 import type { LucideIcon } from "lucide-react"
 import type { TFunction } from "i18next"
 
-import { customersApi, locationsApi, organizationsApi, tasksApi, spacePortalApi, type CustomerActivity, type Customer, type PortalSummary, type Task } from "@/lib/api"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
+import { customersApi, locationsApi, tasksApi, spacePortalApi, type CustomerActivity, type Customer, type PortalSummary, type Task } from "@/lib/api"
 import { CUSTOMER_STAGES, customerStageLabel } from "@hbcfield/shared/client"
 import { CreateTaskDialog } from "../../tasks/_components/create-task-dialog"
 import { CheckSquare, Repeat, ChevronDown as ChevronDownIcon } from "lucide-react"
@@ -38,6 +39,7 @@ import { Truncated } from "@/components/truncated"
 import { ActivityFeedSkeleton, ClientRecordSkeleton } from "@/components/skeletons/crm"
 import { ManagersPanel } from "./customer-managers"
 import { clientLocaleName } from "@/lib/client-locale"
+import { copyText } from "@/lib/clipboard"
 
 // stage tone → dot color
 const STAGE_DOT: Record<string, string> = {
@@ -457,8 +459,8 @@ function Composer({ customer, onAdded }: { customer: Customer; onAdded: () => vo
   const isReminder = type === "REMINDER"
 
   // Assigned managers = who can be picked to receive a reminder.
-  const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }), enabled: isReminder })
-  const managers = (membersQ.data?.data ?? []).filter((m) => (customer.managerIds ?? []).includes(m.id))
+  const { members: assignable } = useAssignableMembers({ spaceId: customer.spaceId, enabled: isReminder })
+  const managers = assignable.filter((m) => (customer.managerIds ?? []).includes(m.id))
 
   const add = useMutation({
     mutationFn: () => customersApi.addActivity(customerId, {
@@ -756,7 +758,7 @@ function InviteCard({ customer, hasB2C, onChanged }: { customer: Customer; hasB2
     onSuccess: (res) => { setCode(res.code ?? null); setPickerOpen(false); notify.success(t("customers.invited", "Invite sent")); onChanged() },
     onError: (e: Error) => notify.error(e.message || "Could not invite"),
   })
-  const copy = () => { if (code) { navigator.clipboard?.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) } }
+  const copy = async () => { if (code && (await copyText(code))) { setCopied(true); setTimeout(() => setCopied(false), 1500) } }
 
   // The portal decides the client's entity AND their categories. Fetch this
   // space's portals so we can auto-bind (one portal) or let the office choose

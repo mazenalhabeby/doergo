@@ -5,8 +5,31 @@ import { getAccessToken } from '../lib/api/client';
 import { requestBackgroundLocationConsent } from './location-consent';
 import { keptCheckIns } from './kept-check-ins';
 import { isUnreachable } from '../offline/actions/unreachable';
+import i18n from '../i18n';
 
 const TASK_NAME = 'ATTENDANCE_HEARTBEAT';
+
+interface RawFix {
+  coords: { latitude: number; longitude: number; accuracy?: number | null };
+  timestamp?: number;
+}
+
+/**
+ * The fix to report from one delivery: the NEWEST.
+ *
+ * ⚠️ Deliveries are deferred (up to fifteen minutes), so one wake-up can carry
+ * a quarter of an hour of fixes, oldest first. Reporting `locations[0]` told
+ * the server where the member was at the START of that window — somebody who
+ * had already walked off the site read as still on it until the next batch.
+ */
+export function newestFix<T extends RawFix>(locations: readonly T[] | null | undefined): T | null {
+  if (!locations?.length) return null;
+  let best = locations[0]!;
+  for (const l of locations) {
+    if ((l.timestamp ?? 0) >= (best.timestamp ?? 0)) best = l;
+  }
+  return best;
+}
 
 // Define the background task
 TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
@@ -31,7 +54,8 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
     return;
   }
 
-  const location = data.locations[0];
+  const location = newestFix<RawFix>(data.locations);
+  if (!location) return;
   const point = {
     lat: location.coords.latitude,
     lng: location.coords.longitude,
@@ -65,8 +89,13 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
  */
 export async function startBackgroundHeartbeat(): Promise<boolean> {
   try {
-    // Check if already running
-    const isRunning = await TaskManager.isTaskRegisteredAsync(TASK_NAME);
+    /*
+      ⚠️ STARTED, NOT MERELY REGISTERED — the route tracker's rule. A task stays
+      registered after the OS stops its location updates (a force-stop, a
+      battery saver, an app update), so "registered" returned "already running"
+      for a heartbeat that was sending nothing, for the rest of the shift.
+    */
+    const isRunning = await Location.hasStartedLocationUpdatesAsync(TASK_NAME).catch(() => false);
     if (isRunning) {
       console.log('[Heartbeat] Already running');
       return true;
@@ -103,9 +132,10 @@ export async function startBackgroundHeartbeat(): Promise<boolean> {
       pausesUpdatesAutomatically: true,  // iOS: let the OS pause when stationary
       activityType: Location.ActivityType.Other,
       showsBackgroundLocationIndicator: true, // iOS blue bar
+      // In the member's language — it stays on their lock screen for the whole shift.
       foregroundService: {
-        notificationTitle: 'HBCField - Clocked In',
-        notificationBody: 'Tracking your attendance at work location',
+        notificationTitle: i18n.t('tracking.foreground.shiftTitle'),
+        notificationBody: i18n.t('tracking.foreground.shiftBody'),
         notificationColor: '#059669',
       },
     });

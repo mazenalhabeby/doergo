@@ -1,5 +1,6 @@
 import { assertServiceOk } from '@hbcfield/shared';
-import { BadRequestException, Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards, UseInterceptors } from '@nestjs/common';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators';
@@ -71,25 +72,33 @@ export class BlogController {
 
   @Get('platform/blog/posts')
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
   async listAll() { return this.unwrap(await this.svc.listAll()); }
 
   @Post('platform/blog/posts')
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async create(@Body() body: any) { return this.unwrap(await this.svc.create(body ?? {})); }
 
   @Patch('platform/blog/posts/:id')
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async update(@Param('id') id: string, @Body() body: any) {
     return this.unwrap(await this.svc.update({ ...(body ?? {}), id }));
   }
 
   @Delete('platform/blog/posts/:id')
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async remove(@Param('id') id: string) { return this.unwrap(await this.svc.remove(id)); }
 
   @Post('platform/blog/images')
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   async uploadImage(@Body() body: { dataBase64?: string; mime?: string; fileName?: string }) {
     const mime = blogImageMime(body?.mime);

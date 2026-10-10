@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../src/lib/constants';
 import { portalApi } from '../../../src/lib/api/portal';
 import { portalColor, portalTint, portalIcon } from '../../../src/lib/portal-ui';
 import { StatusPill } from '../../../src/components/customer/request-bits';
+import { httpsUrl, openSafeUrl } from '../../../src/lib/safe-links';
 
 export default function RequestDetail() {
   const insets = useSafeAreaInsets();
@@ -99,7 +100,7 @@ export default function RequestDetail() {
               <Text style={[styles.section, { color: colors.textPrimary }]}>{t('portal.photos', 'Photos')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.sm }}>
                 {photos.map((a) => (
-                  <Pressable key={a.id} onPress={() => Linking.openURL(a.fileUrl).catch(() => {})}>
+                  <Pressable key={a.id} onPress={() => void openSafeUrl(httpsUrl(a.fileUrl))}>
                     <Image source={{ uri: a.fileUrl }} style={[styles.photo, { borderColor: colors.border }]} resizeMode="cover" />
                   </Pressable>
                 ))}

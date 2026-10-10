@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, type ReactNode } from 'react';
 import { BootScreen } from '@/components/skeletons/boot-screen';
 import { useRouter, usePathname } from 'next/navigation';
 import { PageContentSkeleton } from '@/components/skeletons';
@@ -13,7 +13,7 @@ import { ActivityPanelProvider } from '@/contexts/activity-panel-context';
 import { CommandPaletteProvider } from '@/contexts/command-palette-context';
 import { useAuth } from '@/contexts/auth-context';
 import { getAccessPlatforms } from '@hbcfield/shared/client';
-import { Smartphone, LogOut } from 'lucide-react';
+import { Smartphone, LogOut, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SocketProvider } from '@/contexts/socket-context';
 import { BreadcrumbProvider } from '@/contexts/breadcrumb-context';
@@ -75,6 +75,30 @@ function RealtimeSyncLayer() {
   return null;
 }
 
+/** A signed-in account this web shell is not for: what it is, the apps, and the way out. */
+function AccountBlockScreen({ icon, title, body, signOutLabel, onSignOut }: {
+  icon: ReactNode
+  title: string
+  body: string
+  signOutLabel: string
+  onSignOut: () => void
+}) {
+  return (
+    <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        {icon}
+      </div>
+      <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+      <p className="max-w-sm text-sm text-muted-foreground">{body}</p>
+      <StoreBadges size="sm" className="mt-2 justify-center" />
+      <Button variant="outline" className="mt-2" onClick={onSignOut}>
+        <LogOut className="mr-2 h-4 w-4" />
+        {signOutLabel}
+      </Button>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
   const { t } = useTranslation();
@@ -125,23 +149,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <BootScreen />;
   }
 
+  /*
+    A CLIENT account on the staff shell. The CUSTOMER role belongs to the client
+    app (the portal on the phone); here every request is refused by the
+    CustomerConfinement guard, so the shell rendered as a broken, empty app.
+    Same block as the mobile-only one — say what this account is for, and the
+    way out.
+  */
+  if (user && String(user.role).toUpperCase() === 'CUSTOMER') {
+    return (
+      <AccountBlockScreen
+        icon={<Building2 className="h-8 w-8" />}
+        title={t('common.clientAccount')}
+        body={t('common.clientAccountBody')}
+        signOutLabel={t('nav.userMenu.signOut')}
+        onSignOut={() => logout()}
+      />
+    );
+  }
+
   // Platform hard-block: a mobile-only Access Profile may not use the web portal.
   if (user && getAccessPlatforms(user) === 'mobile') {
     return (
-      <div className="h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Smartphone className="h-8 w-8" />
-        </div>
-        <h1 className="text-xl font-semibold text-foreground">{t('common.mobileOnlyAccount')}</h1>
-        <p className="max-w-sm text-sm text-muted-foreground">
-          {t('common.mobileOnlyAccountBody')}
-        </p>
-        <StoreBadges size="sm" className="mt-2 justify-center" />
-        <Button variant="outline" className="mt-2" onClick={() => logout()}>
-          <LogOut className="mr-2 h-4 w-4" />
-          {t('nav.userMenu.signOut')}
-        </Button>
-      </div>
+      <AccountBlockScreen
+        icon={<Smartphone className="h-8 w-8" />}
+        title={t('common.mobileOnlyAccount')}
+        body={t('common.mobileOnlyAccountBody')}
+        signOutLabel={t('nav.userMenu.signOut')}
+        onSignOut={() => logout()}
+      />
     );
   }
 

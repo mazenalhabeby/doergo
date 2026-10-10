@@ -3,6 +3,7 @@
  * Join requests, members, invitations, organization settings
  */
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
 
 // ============================================================================
@@ -99,14 +100,14 @@ export const joinRequestsApi = {
     workMode?: string;
     specialty?: string;
   }): Promise<void> => {
-    await fetchWithAuth<any>(`/join-requests/${id}/approve`, {
+    await fetchWithAuth<any>(path`/join-requests/${id}/approve`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
 
   reject: async (id: string, reason?: string): Promise<void> => {
-    await fetchWithAuth<any>(`/join-requests/${id}/reject`, {
+    await fetchWithAuth<any>(path`/join-requests/${id}/reject`, {
       method: 'PATCH',
       body: JSON.stringify({ reason }),
     });
@@ -132,14 +133,14 @@ export const membersApi = {
    * exists; a second grant path would be a second place to forget the ceiling.
    */
   setRole: async (id: string, memberRoleId: string | null): Promise<void> => {
-    await fetchWithAuth<any>(`/organizations/members/${id}`, {
+    await fetchWithAuth<any>(path`/organizations/members/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ memberRoleId }),
     });
   },
 
   remove: async (id: string): Promise<void> => {
-    await fetchWithAuth<any>(`/organizations/members/${id}`, {
+    await fetchWithAuth<any>(path`/organizations/members/${id}`, {
       method: 'DELETE',
     });
   },
@@ -163,7 +164,7 @@ export const adminInvitationsApi = {
   },
 
   revoke: async (id: string): Promise<void> => {
-    await fetchWithAuth<any>(`/invitations/${id}`, {
+    await fetchWithAuth<any>(path`/invitations/${id}`, {
       method: 'DELETE',
     });
   },

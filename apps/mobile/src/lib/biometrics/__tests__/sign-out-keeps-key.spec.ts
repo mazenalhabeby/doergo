@@ -16,15 +16,17 @@ const read = (p: string) =>
   fs.readFileSync(path.join(MOBILE, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 describe('sign-out keeps the device key', () => {
-  it('forgets only when the caller asks for it', () => {
-    const ctx = read('src/contexts/auth-context.tsx');
-    const calls = ctx.match(/biometricCredential\.forget\(\)/g) ?? [];
+  it('forgets only when the account itself is deleted', () => {
+    // Every exit goes through endSession now; it is the only place the key is forgotten.
+    expect(read('src/contexts/auth-context.tsx')).not.toMatch(/biometricCredential\.forget\(\)/);
+    const end = read('src/lib/session/end-session.ts');
+    const calls = end.match(/biometricCredential\.forget\(\)/g) ?? [];
     expect(calls).toHaveLength(1);
-    expect(ctx).toMatch(/forgetBiometrics\s*\?\s*biometricCredential\.forget\(\)/);
+    expect(end).toMatch(/if \(reason === 'account-deleted'\) \{\s*await quietly\(biometricCredential\.forget\(\)\);/);
   });
 
   it('account deletion is the one sign-out that asks', () => {
-    expect(read('src/components/settings/account-page.tsx')).toContain('logout({ forgetBiometrics: true })');
+    expect(read('src/components/settings/account-page.tsx')).toContain("logout({ reason: 'account-deleted' })");
   });
 
   it('the login screen does not auto-prompt straight after a sign-out', () => {

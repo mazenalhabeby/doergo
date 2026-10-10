@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllPosts, getFilePosts, getPost, formatPostDate } from "@/lib/blog";
 import { SITE_URL } from "@/lib/marketing-seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { BlogMarkdown } from "../_components/blog-markdown";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
@@ -61,7 +62,7 @@ export default async function BlogPostPage({ params }: Params) {
     // `dark` wrapper: the blog is always dark, so the shared nav/footer's
     // theme tokens must resolve to the dark palette regardless of user theme.
     <main className={`dark min-h-screen bg-[#0e1116] text-[#d8d8d8] ${DISPLAY}`}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <SiteNav active="blog" />
 
       <div className="mx-auto max-w-[820px]">

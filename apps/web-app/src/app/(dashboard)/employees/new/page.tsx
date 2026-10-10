@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { copyText } from "@/lib/clipboard"
 
 // Specialty options
 const SPECIALTY_OPTIONS = [
@@ -113,7 +114,7 @@ export default function NewTechnicianPage() {
   // Copy password handler
   const handleCopyPassword = async () => {
     if (generatedPassword) {
-      await navigator.clipboard.writeText(generatedPassword)
+      if (!(await copyText(generatedPassword))) return
       setCopiedPassword(true)
       setTimeout(() => setCopiedPassword(false), 2000)
     }

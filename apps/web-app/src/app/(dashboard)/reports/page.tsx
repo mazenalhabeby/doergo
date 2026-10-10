@@ -16,10 +16,12 @@ const ReportBarChart = dynamic(
 import { Timer, BarChart3, Download, FileText, Play, Clock, Save, Trash2, Pencil, Lock, CalendarClock, ChevronDown, Table2, SlidersHorizontal } from "lucide-react"
 
 import {
-  analyticsApi, organizationsApi, customersApi, type ReportDefinition, type ReportResult,
+  analyticsApi, customersApi, type ReportDefinition, type ReportResult,
   type ReportDatePreset, type ReportGranularity, type DatasetMeta, type SavedReport,
   type ReportCadence,
 } from "@/lib/api"
+import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { useAuth } from "@/contexts/auth-context"
 import { useTimeFormat } from "@/hooks/use-time-format"
 import { notify } from "@/lib/toast"
@@ -34,7 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { localizeReportColumns, reportLabel, formatHours } from "@hbcfield/shared/client"
+import { localizeReportColumns, reportLabel, formatHours, toCsv } from "@hbcfield/shared/client"
 
 const DATE_PRESETS: { value: ReportDatePreset; label: string }[] = [
   { value: "last_7d", label: "Last 7 days" }, { value: "last_30d", label: "Last 30 days" },
@@ -57,10 +59,9 @@ function fmt(value: unknown, format?: string): string {
   if (!isNaN(d.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(s)) return d.toLocaleDateString()
   return s
 }
+// Through the shared builder: every cell quoted, formula-looking cells defused.
 function toCSV(result: ReportResult): string {
-  const head = result.columns.map((c) => `"${c.label}"`).join(",")
-  const lines = result.rows.map((r) => result.columns.map((c) => `"${String(r[c.key] ?? "").replace(/"/g, '""')}"`).join(","))
-  return [head, ...lines].join("\n")
+  return toCsv(result.rows, result.columns.map((c) => ({ header: c.label, value: (r: (typeof result.rows)[number]) => r[c.key] })))
 }
 
 // Tasteful, colorful chart palette (Stripe-ish).
@@ -128,11 +129,12 @@ export default function ReportsPage() {
 
   const { data: catalog } = useQuery({ queryKey: ["analyticsCatalog"], queryFn: () => analyticsApi.catalog() })
   const { data: saved } = useQuery({ queryKey: ["savedReports"], queryFn: () => analyticsApi.listSaved() })
-  const { data: orgProfile } = useQuery({ queryKey: ["organization-profile"], queryFn: () => organizationsApi.getProfile() })
+  // Letterhead from what this reader may read (the profile is ADMIN-only) — hooks/use-org-letterhead.
+  const { data: orgProfile } = useOrgLetterhead()
   const { data: customersData } = useQuery({ queryKey: ["customersAll"], queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
-  const { data: membersData } = useQuery({ queryKey: ["reportMembers"], queryFn: () => organizationsApi.getMembers({ limit: 200 }) })
-  const members = membersData?.data || []
+  // People to report on: the directory for whoever may read it, else the rosters they can see.
+  const { members } = useAssignableMembers({})
   const datasets = catalog?.datasets || []
   const dsMeta: DatasetMeta | undefined = datasets.find((d) => d.key === active?.def.dataset)
   // "Detailed" attendance view (day-by-day per user) — only for the attendance dataset.

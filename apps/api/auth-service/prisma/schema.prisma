@@ -4924,8 +4924,11 @@ model PlatformUser {
   lastName            String
   role                String    @default("SUPPORT") // OWNER | CONTROLLER | SUPPORT | BILLING
   isActive            Boolean   @default(true)
-  twoFactorSecret     String? // TOTP (base32) — set once 2FA is enrolled
+  twoFactorSecret     String? // TOTP (base32) — the ACTIVE second factor
   twoFactorEnabled    Boolean   @default(false)
+  /// A secret being enrolled. Becomes `twoFactorSecret` only when a code from
+  /// it is verified, so starting a setup never weakens the factor in force.
+  twoFactorPendingSecret String?
   failedLoginAttempts Int       @default(0)
   lockedUntil         DateTime?
   lastLoginAt         DateTime?
@@ -4940,6 +4943,38 @@ model PlatformUser {
   updatedAt           DateTime  @updatedAt
 
   @@map("platform_users")
+}
+
+/// Every operator action on the platform console, and every call made with the
+/// static PLATFORM_ADMIN_KEY. APPEND-ONLY: no code path updates or deletes a row,
+/// and a database trigger refuses both (migration 20261010120000).
+model PlatformAuditLog {
+  id             String   @id @default(cuid())
+  /// STAFF (a platform user) | STATIC_KEY (PLATFORM_ADMIN_KEY) | ANONYMOUS (sign-in attempts, refused keys)
+  actorType      String
+  /// The platform user id for STAFF; null otherwise.
+  actorId        String?
+  /// Who it was, as readable at the time: the operator's email, or the agent name a static-key caller declared.
+  actorLabel     String?
+  actorRole      String?
+  ipAddress      String?
+  userAgent      String?
+  method         String
+  /// The route as declared on the controller ("/platform/orgs/:id/suspend").
+  route          String
+  action         String
+  targetOrganizationId String?
+  /// The request, redacted (secrets removed, bulk personal data summarised).
+  summary        Json?
+  ok             Boolean
+  statusCode     Int?
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetOrganizationId, createdAt])
+  @@map("platform_audit_logs")
 }
 
 // ── Editable pricing (C2) — versioned price book, source of truth for display ──

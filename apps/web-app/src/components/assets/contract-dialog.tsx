@@ -2,14 +2,14 @@
 
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import {
   ArrowRight, Check, FileText, Loader2, PackagePlus, UserMinus, UserPlus, Wand2,
 } from "lucide-react"
 
 import {
-  assetsApi, organizationsApi, locationsApi,
-  type AssetCategory, type ContractFields, type ContractPreview, type ContractReading, type OrgMember,
+  assetsApi,
+  type AssetCategory, type ContractFields, type ContractPreview, type ContractReading,
 } from "@/lib/api"
 import {
   normalizeKindShape, kindHolderLabel, assetManageSpaces, canManageAssetsIn,
@@ -25,6 +25,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog"
 import { memberName } from "./holder-picker"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 
 /**
  * A contract in, a record out — with the two things people forget done for them.
@@ -106,24 +107,14 @@ export function ContractDialog({
     THIS workspace's roster, which is also the honest list: they run this depot,
     not the company. An org-wide manager keeps the whole organization.
   */
+  //
+  // ⚠️ "Org-wide asset manager" is not "may read the member directory" — that is
+  // canManageUsers. The shared hook asks the directory only of who may read it
+  // and this workspace's roster otherwise (lib/assignable-members.ts).
+  // A space-scoped asset manager runs this depot, not the company: its roster.
   const orgWide = assetManageSpaces(user) === null
-  const membersQ = useQuery({
-    queryKey: ["org-members-assignable"],
-    queryFn: () => organizationsApi.getMembers({ limit: 100 }),
-    enabled: open && orgWide,
-  })
-  const rosterQ = useQuery({
-    queryKey: ["space-roster", spaceId],
-    queryFn: () => locationsApi.getAssignedMembers(spaceId!),
-    enabled: open && !orgWide && !!spaceId,
-  })
-  const members: OrgMember[] = orgWide
-    ? (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
-    : (rosterQ.data ?? [])
-        .filter((a) => a.user && !a.user.isExternal)
-        .map((a) => ({ ...(a.user as object), id: a.userId, isActive: true } as unknown as OrgMember))
-        // One row per person — a member can hold several assignments to one space.
-        .filter((m, i, all) => all.findIndex((x) => x.id === m.id) === i)
+  const { members: people } = useAssignableMembers({ spaceId, enabled: open, rosterOnly: !orgWide })
+  const members = people.filter((m) => m.isActive !== false && m.role !== "CUSTOMER" && !m.isExternal)
 
   const read = useMutation({
     mutationFn: () => assetsApi.readContract(text),

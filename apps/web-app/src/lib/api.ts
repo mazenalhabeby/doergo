@@ -69,265 +69,86 @@ export type {
   OrgCodeValidation,
 };
 
-// API base URL — proxy through Next.js for regular requests
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-// Direct gateway URL for auth endpoints (cookies need to go directly to the server that sets them)
-const AUTH_BASE_URL = process.env.NEXT_PUBLIC_AUTH_URL || 'http://localhost:4000/api/v1';
+// Base URLs, the session and the request pipeline live in their own modules —
+// one definition each, shared with the socket, the geocoder and the uploads.
+import { API_BASE_URL, AUTH_BASE_URL } from './endpoints';
+import {
+  getAccessToken as sessionAccessToken,
+  hasAccessToken,
+  clearSession,
+  setAccessToken,
+  refreshAccessToken,
+} from './auth-session';
+import {
+  apiRequest,
+  authorizedFetch,
+  HttpTransportError,
+  type ApiResponse,
+  type RequestOptions,
+} from './http-client';
 
-interface ApiResponse<T = unknown> {
-  data?: T;
-  error?: string;
-  status: number;
-  /**
-   * A stable identifier for a refusal, when the server sent one.
-   *
-   * The server's `error` text is English and always will be — it is written
-   * where no locale is known. A code plus its params lets the client say the
-   * same thing in the reader's language, and falls back to the English text
-   * for every refusal that does not have one yet.
-   */
-  errorCode?: string;
-  errorParams?: Record<string, unknown>;
-}
+export { API_BASE_URL };
+export type { ApiResponse, RequestOptions };
+export { apiRequest, authorizedFetch };
 
-interface AuthTokens {
-  accessToken: string;
-}
-
-// Token storage — the short-lived ACCESS token lives in localStorage (for page
-// reload persistence); the long-lived REFRESH token is kept ONLY in the gateway's
-// httpOnly cookie and is never readable from JS (so XSS can't steal a durable
-// credential). The browser sends the cookie automatically on credentialed
-// requests to /auth/refresh and /auth/logout.
-const ACCESS_TOKEN_KEY = 'hbcfield_access_token';
-
-// In-memory access token (primary) + localStorage backup for page reload persistence
-let memoryAccessToken: string | null = null;
-
-// Token refresh state management - shared promise ensures only one refresh at a time
-let refreshPromise: Promise<boolean> | null = null;
-
-// Get access token (memory first, then localStorage fallback)
+/**
+ * The access token lives IN MEMORY only (see auth-session.ts). The refresh
+ * token is only ever in the gateway's httpOnly cookie.
+ */
 export function getAccessToken(): string | null {
-  if (memoryAccessToken) return memoryAccessToken;
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return sessionAccessToken();
 }
 
-// Store the access token (refresh token is set as an httpOnly cookie by the gateway).
-function setTokens(tokens: AuthTokens): void {
-  memoryAccessToken = tokens.accessToken;
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
-}
-
-// Clear the access token (logout also clears the httpOnly cookie server-side).
+/** Forget the session in this tab and every other one. */
 export function clearTokens(): void {
-  memoryAccessToken = null;
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  // Best-effort cleanup of any legacy refresh token from before the cookie migration.
-  localStorage.removeItem('hbcfield_refresh_token');
+  clearSession();
 }
 
-// Check if we have an access token (refresh token is in cookie, can't check from JS)
 export function hasTokens(): boolean {
-  return !!getAccessToken();
+  return hasAccessToken();
 }
 
-// Request timeout in milliseconds
-const REQUEST_TIMEOUT = 15000;
-
-// Refresh access token using refresh token
+/** Get a new access token with the refresh cookie. True only when one arrived. */
 export async function refreshTokens(): Promise<boolean> {
-  return refreshAccessToken();
+  return (await refreshAccessToken()) === 'ok';
 }
 
-/**
- * Refresh access token with queue management
- * Uses a shared promise to ensure only one refresh request is made
- */
-function refreshAccessToken(): Promise<boolean> {
-  // If a refresh is already in progress, return the existing promise
-  if (refreshPromise) {
-    return refreshPromise;
-  }
+// Timeout for the unauthenticated auth calls (sign-in, register, reset).
+const AUTH_REQUEST_TIMEOUT = 15000;
 
-  // Create the promise IMMEDIATELY and store it
-  // This ensures any concurrent calls will get the same promise
-  refreshPromise = (async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+const withBody = (method: string, body?: unknown, options?: RequestOptions): RequestOptions => ({
+  ...options,
+  method,
+  body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
+});
 
-    try {
-      // The refresh token rides in the httpOnly cookie (credentials: 'include').
-      // No token is read from JS or sent in the body.
-      const response = await fetch(`${AUTH_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Client-Platform': 'web',
-        },
-        credentials: 'include',
-        body: JSON.stringify({}),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-      const result = await response.json();
-
-      // Check both HTTP status and response body for success
-      if (!response.ok || !result.success) {
-        clearTokens();
-        return false;
-      }
-
-      // We only need the new access token; the rotated refresh token is set
-      // back as an httpOnly cookie by the gateway.
-      const data = result.data;
-      if (!data?.accessToken) {
-        clearTokens();
-        return false;
-      }
-
-      setTokens({ accessToken: data.accessToken });
-
-      return true;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      clearTokens();
-      return false;
-    } finally {
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
-}
-
-/**
- * Generic API request function with automatic token refresh
- *
- * OAuth 2.0 Standard Flow:
- * 1. Make request with access token
- * 2. If 401 (unauthorized), attempt to refresh tokens
- * 3. If refresh successful, retry original request with new token
- * 4. If refresh fails (expired refresh token), redirect to login
- */
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {},
-  retry = true
-): Promise<ApiResponse<T>> {
-  const accessToken = getAccessToken();
-
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    // Names this client so the Access Profile's Web / Mobile choice can be
-    // enforced server-side — it was previously stored and checked nowhere.
-    'X-Client-Platform': 'web',
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: 'include', // Always send httpOnly cookies
-    });
-
-    // Handle 401 - Automatic token refresh
-    if (response.status === 401 && retry) {
-      // Attempt refresh — refresh token is in httpOnly cookie
-      const refreshed = await refreshAccessToken();
-
-      if (refreshed) {
-        // Retry the original request with new token
-        return apiRequest<T>(endpoint, options, false);
-      }
-
-      // Refresh failed — clear tokens, let auth context detect and redirect gracefully
-      clearTokens();
-      return { status: 401, error: 'Session expired. Please log in again.' };
-    }
-
-    const data = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      return {
-        status: response.status,
-        error: data?.message || 'Request failed',
-        // A server refusal can carry a stable code and values to interpolate, so
-        // the client can say it in the reader's language. Absent on most errors;
-        // `error` remains the fallback and nothing depends on these being here.
-        errorCode: typeof data?.code === 'string' ? data.code : undefined,
-        errorParams: data?.params && typeof data.params === 'object' ? data.params : undefined,
-      };
-    }
-
-    return { status: response.status, data };
-  } catch (error) {
-    return {
-      status: 500,
-      error: error instanceof Error ? error.message : 'Network error',
-    };
-  }
-}
-
-// API methods
+// API methods — every one goes through the pipeline (token, refresh, timeout, retries).
 export const api = {
-  get: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: 'GET' }),
-
-  post: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, {
-      method: 'POST',
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-
-  put: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, {
-      method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-
-  patch: <T>(endpoint: string, body?: unknown) =>
-    apiRequest<T>(endpoint, {
-      method: 'PATCH',
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-
-  delete: <T>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
+  get: <T>(endpoint: string, options?: RequestOptions) => apiRequest<T>(endpoint, { ...options, method: 'GET' }),
+  post: <T>(endpoint: string, body?: unknown, options?: RequestOptions) => apiRequest<T>(endpoint, withBody('POST', body, options)),
+  put: <T>(endpoint: string, body?: unknown, options?: RequestOptions) => apiRequest<T>(endpoint, withBody('PUT', body, options)),
+  patch: <T>(endpoint: string, body?: unknown, options?: RequestOptions) => apiRequest<T>(endpoint, withBody('PATCH', body, options)),
+  delete: <T>(endpoint: string, options?: RequestOptions) => apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
+  /** A multipart upload (avatar, cover…) — same pipeline, no JSON content type. */
+  upload: <T>(endpoint: string, form: FormData, options?: RequestOptions) =>
+    apiRequest<T>(endpoint, { timeoutMs: 120000, ...options, method: 'POST', body: form }),
 };
 
-// Helper to create fetch with timeout
+/**
+ * The unauthenticated auth calls. Same pipeline, but no bearer token, no
+ * refresh and no retries — a 429 here is the account lockout, not the limiter.
+ * Credentials are included so the gateway's Set-Cookie (the refresh token) is kept.
+ */
 async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
   try {
-    const response = await fetch(url, {
-      // Always send/receive the httpOnly refresh-token cookie. Without this the
-      // browser discards the Set-Cookie from a cross-origin login/register
-      // response, so refresh later has no cookie → every refresh 401s → logout.
-      credentials: 'include',
-      ...options,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return response;
+    return await authorizedFetch(url, { ...options, auth: false, maxRetries: 0, timeoutMs: AUTH_REQUEST_TIMEOUT });
   } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (error instanceof HttpTransportError && error.code === 'TIMEOUT') {
       throw new Error('Request timed out. Please check your connection and try again.');
     }
     throw new Error('Unable to connect to server. Please check if the API is running.');
   }
 }
-
 // Auth-specific API methods
 export const authApi = {
   login: async (email: string, password: string, rememberMe = false) => {
@@ -353,7 +174,7 @@ export const authApi = {
       throw new Error('Invalid server response');
     }
 
-    setTokens({ accessToken: data.accessToken });
+    setAccessToken(data.accessToken);
 
     return data;
   },
@@ -1029,24 +850,10 @@ export const usersApi = {
   uploadAvatar: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-
-    const token = getAccessToken();
-    const response = await fetch(`${API_BASE_URL}/users/avatar/upload`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: formData,
-      credentials: 'include',
-    });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || 'Upload failed');
-    }
-
-    const data = await response.json();
-    return data.data as { avatarUrl: string };
+    // Through the pipeline: token, refresh on 401, timeout.
+    const response = await api.upload<{ data: { avatarUrl: string } }>('/users/avatar/upload', formData);
+    if (response.error) throw apiError({ ...response, error: response.error || 'Upload failed' });
+    return response.data?.data as { avatarUrl: string };
   },
 
   // Remove avatar
@@ -7276,19 +7083,9 @@ export const portalAdminApi = {
   uploadCover: async (portalId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const token = getAccessToken();
-    const response = await fetch(`${API_BASE_URL}/portal/admin/portals/${portalId}/cover`, {
-      method: "POST",
-      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: formData,
-      credentials: "include",
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      throw new Error(data?.message || "Upload failed");
-    }
-    const data = await response.json();
-    return data.data as { coverImageUrl: string };
+    const response = await api.upload<{ data: { coverImageUrl: string } }>(`/portal/admin/portals/${portalId}/cover`, formData);
+    if (response.error) throw apiError({ ...response, error: response.error || "Upload failed" });
+    return response.data?.data as { coverImageUrl: string };
   },
 
   removeCover: async (portalId: string) => {

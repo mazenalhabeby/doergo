@@ -3,6 +3,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
+import { isSameAppPath } from '@/lib/safe-links';
 
 /**
  * Help-article Markdown renderer. Styled inline (the project has no typography
@@ -28,12 +29,11 @@ export function Markdown({ children }: { children: string }) {
         // `node` is react-markdown's own AST handle — it is not a DOM prop and
         // must not be spread onto an element.
         a: ({ href, node: _node, ...rest }) => {
-          const internal = href?.startsWith('/');
-          // `internal` already proved href is a string starting with "/".
-          return internal && href ? (
+          // `//host` is another site, not a path here (isSameAppPath).
+          return isSameAppPath(href) ? (
             <Link href={href} className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
           ) : (
-            <a href={href} target="_blank" rel="noreferrer" className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
+            <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
           );
         },
         table: (p) => <table className="my-4 w-full border-collapse text-[14px]" {...p} />,

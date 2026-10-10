@@ -10,6 +10,8 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { fetchAllPages } from "@/lib/paginate"
 import { useAuth } from "@/contexts/auth-context"
+import { mayListOrgMembers, type AssignablePerson } from "@/lib/assignable-members"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import {
   locationsApi,
   organizationsApi,
@@ -624,12 +626,22 @@ function AddMemberDialog({
     Everyone on the staff — admins and managers included — paged through, not
     the first hundred. `lite`: a name, an avatar and a job title is all a picker draws.
   */
+  //
+  // ⚠️ The directory is `canManageUsers`; a workspace manager adds people
+  // (canManageWorkspaces in the space) without holding it. For them the
+  // candidates are the people on the workspaces they can see — the most this
+  // product lets them read (lib/assignable-members.ts).
+  const { user } = useAuth()
+  const mayListOrg = mayListOrgMembers(user)
   const { data: orgPeople } = useQuery({
     queryKey: ["org-people-for-routing"],
     queryFn: () => fetchAllPages((page) => organizationsApi.getMembers({ limit: 200, page, lite: true })),
+    enabled: mayListOrg,
   })
+  const { members: visiblePeople } = useAssignableMembers({ enabled: !mayListOrg })
   const assigned = new Set(members.map((m) => m.userId))
-  const available = (orgPeople ?? []).filter((e) => e.isActive !== false && !assigned.has(e.id))
+  const candidates: AssignablePerson[] = mayListOrg ? (orgPeople ?? []) : visiblePeople
+  const available = candidates.filter((e) => e.isActive !== false && !assigned.has(e.id))
   const dupes = useMemo(() => {
     const seen = new Set<string>(), d = new Set<string>()
     for (const e of available) { const n = fullName(e).toLowerCase(); if (seen.has(n)) d.add(n); seen.add(n) }

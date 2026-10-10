@@ -27,7 +27,7 @@ export class BillingController {
   }
 
   @MessagePattern({ cmd: 'billing_admin_set_addons' })
-  adminSetOrgAddOns(@Payload() d: { organizationId: string; addOns: string[] }) {
+  adminSetOrgAddOns(@Payload() d: { organizationId: string; addOns: string[]; byUserId?: string }) {
     return this.billing.adminSetOrgAddOns(d);
   }
 

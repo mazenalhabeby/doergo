@@ -4,6 +4,8 @@ import type { AmazenColors } from '../../theme/amazen';
 import { calendarApi, type CalendarRange } from '../../lib/api';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import i18n from '../../i18n';
+import { useAuth } from '../../contexts/auth-context';
+import { calendarPageKey, calendarPages } from './calendar-pages';
 
 /** Local day key, YYYY-MM-DD. */
 export function dayKey(d: Date): string {
@@ -62,17 +64,8 @@ export function useCalendarWeek(monday: Date) {
 
 export type CalendarView = 'day' | 'three' | 'month' | 'list';
 
-/** Pages read this session, newest last — bounded, so a long swipe never grows memory. */
-const PAGES = new Map<string, CalendarRange>();
-const PAGE_MAX = 24;
-const pageKey = (from: string, to: string, spaceId: string | null, layers: string, lang: string) => `${from}|${to}|${spaceId ?? ''}|${layers}|${lang}`;
-function remember(key: string, r: CalendarRange) {
-  PAGES.delete(key);
-  PAGES.set(key, r);
-  if (PAGES.size > PAGE_MAX) PAGES.delete(PAGES.keys().next().value as string);
-}
 /** After a write the cached pages are stale: drop them so the next look reads fresh. */
-export function forgetCalendarPages() { PAGES.clear(); }
+export function forgetCalendarPages() { calendarPages.forget(); }
 
 /** First day of the month grid (Monday on or before the 1st) — always 6 weeks, so the grid never jumps. */
 export function monthGridStart(anchor: Date): Date {
@@ -106,31 +99,32 @@ export function useCalendarRange(view: CalendarView, anchor: Date, spaceId: stri
   const f = dayKey(from), tt = dayKey(to);
   const lang = (i18n.language || 'en').slice(0, 2);
   const layerKey = layers ? layers.join(',') : '';
-  const key = pageKey(f, tt, spaceId, layerKey, lang);
-  const [data, setData] = useState<CalendarRange | null>(() => PAGES.get(key) ?? null);
+  const userId = useAuth().user?.id ?? null;
+  const key = calendarPageKey(userId, f, tt, spaceId, layerKey, lang);
+  const [data, setData] = useState<CalendarRange | null>(() => calendarPages.get(key) ?? null);
   const [failed, setFailed] = useState(false);
   // A page already read (or prefetched) is drawn at once; the read below refreshes it.
-  useEffect(() => { const hit = PAGES.get(key); if (hit) setData(hit); }, [key]);
+  useEffect(() => { const hit = calendarPages.get(key); if (hit) setData(hit); }, [key]);
   const load = useCallback(async () => {
     try {
       const r = await calendarApi.range({ from: f, to: tt, spaceId, layers: layers ?? undefined, lang });
-      remember(key, r);
+      calendarPages.remember(key, r);
       setData(r);
       setFailed(false);
     } catch {
       setFailed(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layerKey stands for layers
-  }, [f, tt, spaceId, layerKey, lang]);
+  }, [key]);
   useLiveRefresh(load, 120_000);
   useEffect(() => {
     if (!data || data.from !== f) return;
     const timer = setTimeout(() => {
       for (const dir of [1, -1] as const) {
         const n = viewRange(view, stepAnchor(view, anchor, dir));
-        const nf = dayKey(n.from), nt = dayKey(n.to), nk = pageKey(nf, nt, spaceId, layerKey, lang);
-        if (PAGES.has(nk)) continue;
-        calendarApi.range({ from: nf, to: nt, spaceId, layers: layers ?? undefined, lang }).then((r) => remember(nk, r)).catch(() => undefined);
+        const nf = dayKey(n.from), nt = dayKey(n.to), nk = calendarPageKey(userId, nf, nt, spaceId, layerKey, lang);
+        if (calendarPages.has(nk)) continue;
+        calendarApi.range({ from: nf, to: nt, spaceId, layers: layers ?? undefined, lang }).then((r) => calendarPages.remember(nk, r)).catch(() => undefined);
       }
     }, 600);
     return () => clearTimeout(timer);

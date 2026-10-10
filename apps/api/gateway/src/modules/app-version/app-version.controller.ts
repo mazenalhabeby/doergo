@@ -1,4 +1,6 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Inject, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Inject, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { SERVICE_NAMES, releaseNoteFor } from '@hbcfield/shared';
@@ -60,6 +62,8 @@ export class AppUpdateNoticeController {
 
   @Public()
   @UseGuards(PlatformAdminGuard)
+  @UseInterceptors(PlatformAuditInterceptor)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('notify')
   @ApiOperation({ summary: 'Notify people on an older app version (once per version)' })
   async notify(@Body() body: { dryRun?: boolean }) {

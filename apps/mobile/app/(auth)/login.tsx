@@ -137,7 +137,8 @@ export default function LoginScreen() {
   const bioNotice =
     bio.failure === 'invalidated' ? t('biometrics.invalidatedBody', { method: bio.label })
       : bio.failure === 'rejected' ? t('biometrics.rejectedBody')
-        : null;
+        : bio.failure === 'unreachable' ? t('biometrics.unreachableBody')
+          : null;
 
   const switchToPassword = (sameAccount: boolean) => {
     setUsePassword(true);

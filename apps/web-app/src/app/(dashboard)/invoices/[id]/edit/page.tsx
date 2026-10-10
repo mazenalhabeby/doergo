@@ -8,7 +8,8 @@ import { Loader2 } from "lucide-react"
 
 import { PlanGate } from "@/components/plan-gate"
 import { useAuth } from "@/contexts/auth-context"
-import { invoicesApi, locationsApi, organizationsApi, type InvoiceItem } from "@/lib/api"
+import { invoicesApi, locationsApi, type InvoiceItem } from "@/lib/api"
+import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
 import { notify } from "@/lib/toast"
 import { errorMessage } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
@@ -80,10 +81,8 @@ function EditInvoiceInner({ id }: { id: string }) {
   })
 
   // The letterhead on the client's copy. Same source as the create screen.
-  const { data: org } = useQuery({
-    queryKey: ["organization-profile"],
-    queryFn: () => organizationsApi.getProfile(),
-  })
+  // The profile is ADMIN-only; whoever else invoices reads the main company (hooks/use-org-letterhead).
+  const { data: org } = useOrgLetterhead()
 
   const [view, setView] = useState<DocumentView>("build")
   const [clientName, setClientName] = useState("")

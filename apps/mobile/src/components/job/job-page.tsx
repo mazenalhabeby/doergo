@@ -63,6 +63,7 @@ import { EditSheet } from './sheets/edit-sheet';
 import { StepFormSheet } from './sheets/step-form-sheet';
 import { SignSheet } from './sheets/sign-sheet';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
+import { takeCrewJoin } from '../../lib/join-intent';
 
 type SheetKind = 'more' | 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'form' | 'sign' | 'delete' | 'clockIn' | 'handover' | 'myIssue' | 'handOverLead';
 
@@ -71,9 +72,9 @@ const RESUME = '__resume__';
 
 /** A link's sheet as the page's own: `finish` and `form:<STEP>` are both the step form. */
 function sheetOf(open: OpenSheet | null): SheetKind | null {
-  if (!open || open === 'join') return null;
+  if (!open) return null;
   if (open === 'finish' || formSheetTarget(open)) return 'form';
-  return open as Exclude<OpenSheet, 'finish' | 'join' | `form:${string}`>;
+  return open as Exclude<OpenSheet, 'finish' | `form:${string}`>;
 }
 
 const ACTIVE: string[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
@@ -128,13 +129,16 @@ export function JobPage({
     "I'm with him" on the crew push: the job opens and joins, from the leader's
     start (the server allows it within 30 minutes). Asked once, when the crew
     is known — joined already, or not on this crew, it does nothing.
+
+    ⚠️ ONLY when the push's own button armed it (`lib/join-intent.ts`), never
+    from the URL: a plain hbcfield:// link can open this page but never join.
   */
   const joinAsked = useRef(false);
   useEffect(() => {
-    if (initialSheet !== 'join' || joinAsked.current || !crew.view || !crew.me) return;
+    if (joinAsked.current || !crew.view || !crew.me) return;
     joinAsked.current = true;
-    if (!crew.me.joined) void crew.join(true);
-  }, [initialSheet, crew]);
+    if (takeCrewJoin(taskId) && !crew.me.joined) void crew.join(true);
+  }, [taskId, crew]);
   const { task } = job;
 
   /* ---------------- the panel ---------------- */

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { OfflineProvider } from '../../src/offline/offline-context';
 import { Stack, useRouter, type Href } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -6,27 +6,41 @@ import { type NotificationResponse } from 'expo-notifications';
 import { usePushNotifications, getTaskIdFromNotification } from '../../src/hooks/usePushNotifications';
 import { useTheme } from '../../src/contexts/theme-context';
 import { SocketProvider } from '../../src/contexts/socket-context';
+import { useAuth } from '../../src/contexts/auth-context';
+import { onSessionEnd } from '../../src/lib/session/session-registry';
 
-// The rest of the mobile app doesn't use react-query, so the customer portal
-// owns its own QueryClient here. Sensible defaults: config/units change rarely
-// (60s stale), requests refresh via pull-to-refresh; no refetch storms on tab
-// switches.
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
+/*
+  The customer portal's own QueryClient. Sensible defaults: config/units change
+  rarely (60s stale), requests refresh via pull-to-refresh; no refetch storms
+  on tab switches.
+
+  ⚠️ ONE CLIENT PER SIGNED-IN PERSON — the AppQueryProvider rule. It used to be
+  a module-level constant, so a client who signed out and handed the phone to
+  another client showed the second one the first one's flats and requests
+  from cache. A new client per user id, and the end of a session clears it.
+*/
+function createPortalQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000,
+        gcTime: 5 * 60_000,
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-});
+  });
+}
 
 // Customer-portal stack. Sits parallel to (app); the root nav guard sends
 // role=CUSTOMER users here and never lets them into the staff app.
 export default function CustomerLayout() {
   const { colors } = useTheme();
   const router = useRouter();
+  const userId = useAuth().user?.id ?? null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- a new cache per person is the point
+  const queryClient = useMemo(() => createPortalQueryClient(), [userId]);
+  useEffect(() => onSessionEnd('portal-query-client', () => queryClient.clear()), [queryClient]);
 
   // A tapped push about a request → open that request (never a staff route).
   const handleNotificationResponse = useCallback(

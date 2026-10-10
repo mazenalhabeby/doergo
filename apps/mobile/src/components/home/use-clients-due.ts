@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { customersApi, type ClientsDue, type DueReminder } from '../../lib/api/customers';
@@ -11,6 +10,7 @@ import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { localDay, queuedDoneIds, withoutDone } from './clients-state';
 import { UNDO_MS, type RowState } from './reminder-row';
 import { impact, selection } from '../../lib/haptics';
+import { mailtoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';
 
 const REFRESH_MS = 60_000;
 
@@ -57,9 +57,9 @@ export function useClientsDue(rows: number) {
 
   /* The jade disc: the act itself. No number or address on file → the client, where one can be added. */
   const act = (r: DueReminder) => {
-    const url = r.kind === 'CALL' && r.phone ? `tel:${r.phone.replace(/\s+/g, '')}` : r.kind === 'EMAIL' && r.email ? `mailto:${r.email}` : null;
+    const url = r.kind === 'CALL' ? telUrl(r.phone) : r.kind === 'EMAIL' ? mailtoUrl(r.email) : null;
     if (!url) { openClient(r.customerId); return; }
-    Linking.openURL(url).catch(() => openClient(r.customerId));
+    void openSafeUrl(url).then((opened) => { if (!opened) openClient(r.customerId); });
   };
 
   /*

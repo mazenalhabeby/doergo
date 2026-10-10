@@ -4,13 +4,13 @@ import { StripeService } from '../billing/stripe.service';
 import { BillingService } from '../billing/billing.service';
 import { OrgBillService } from '../billing/org-bill.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, validateAgreedPrice, modeRequiresBillingEmail } from '@hbcfield/shared';
+import { success, validateAgreedPrice, modeRequiresBillingEmail, clampListLimit, platformCan } from '@hbcfield/shared';
 
 // Lean shapes — select only what billing/seat classification needs (perf).
 const ORG_SELECT = {
   id: true, name: true, planTier: true, subStatus: true, billingInterval: true,
   trialEndsAt: true, currentPeriodEnd: true, suspendedAt: true, usesExternalWorkers: true,
-  isActive: true, createdAt: true, stripeCustomerId: true, addOns: true,
+  isActive: true, createdAt: true, addOns: true,
   // How they pay. On the LIST, not only the detail: "who is on invoice?" is a
   // question about the whole book, and answering it by opening organizations
   // one at a time is how a contract customer gets missed at renewal.
@@ -49,6 +49,31 @@ type LeanOrg = {
  */
 function orgMrrCents(org: { subscription?: { lastBilledCents: number } | null }): number {
   return org.subscription?.lastBilledCents ?? 0;
+}
+
+const SUB_STATUSES = new Set(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'INCOMPLETE']);
+
+/** The organization columns the console renders — one shape for the list and the drawer. */
+function consoleOrgFields(o: any) {
+  return {
+    id: o.id,
+    name: o.name,
+    planTier: o.planTier ?? null,
+    subStatus: o.subStatus,
+    trialEndsAt: o.trialEndsAt ?? null,
+    suspendedAt: o.suspendedAt ?? null,
+    createdAt: o.createdAt,
+    // What this org has actually BOUGHT (planTier is a vestige nothing gates on).
+    addOns: o.addOns ?? [],
+    billingMode: o.billingMode ?? 'AUTOMATIC',
+    invoiceDueDays: o.invoiceDueDays ?? 14,
+    agreedMonthlyCents: o.agreedMonthlyCents ?? null,
+    agreedListCents: o.agreedListCents ?? null,
+    agreedUntil: o.agreedUntil ?? null,
+    agreedNote: o.agreedNote ?? null,
+    agreedSetAt: o.agreedSetAt ?? null,
+    mrrCents: String(o.subStatus ?? '').toUpperCase() === 'ACTIVE' && !o.suspendedAt ? orgMrrCents(o) : 0,
+  };
 }
 
 /**
@@ -106,51 +131,55 @@ export class PlatformAdminService {
   }
 
   // ── Overview metrics ─────────────────────────────────────────────────────────
+  /**
+   * The header numbers, aggregated in the DATABASE.
+   *
+   * This used to load every organization (with its subscription) and every
+   * member grouped by organization, then add them up in memory — on every tab
+   * visit. Counts and sums are what the database is for; the only rows still
+   * read are the organizations on an agreed price (a handful), because "what
+   * the deals cost us" is a per-row difference.
+   */
   async overview() {
-    const orgs = (await this.prisma.organization.findMany({ select: ORG_SELECT })) as unknown as LeanOrg[];
-    const seatMap = await this.seatsByOrg(orgs);
+    const since30 = new Date(Date.now() - 30 * 86_400_000);
+    const [totalOrgs, statusGroups, suspended, newLast30, seats, mrr, agreed] = await Promise.all([
+      this.prisma.organization.count(),
+      this.prisma.organization.groupBy({ by: ['subStatus'], _count: { _all: true } }),
+      this.prisma.organization.count({ where: { suspendedAt: { not: null } } }),
+      this.prisma.organization.count({ where: { createdAt: { gte: since30 } } }),
+      // One seat per active member, exactly as the invoice counts them.
+      this.prisma.user.count({ where: { isActive: true, organizationId: { not: null }, role: { not: 'CUSTOMER' as any } } }),
+      // MRR from ACTIVE, non-suspended orgs only. `lastBilledCents` IS the agreed
+      // price once one is set — so MRR stays the truth with no arithmetic of its own.
+      this.prisma.subscription.aggregate({
+        _sum: { lastBilledCents: true },
+        where: { organization: { subStatus: 'ACTIVE', suspendedAt: null } },
+      }),
+      /*
+        What the agreed prices cost us, measured against the list price AS IT WAS
+        AT THE AGREEMENT — the number stored with the deal. Growth since the
+        handshake is the nightly drift alert's question, not this one.
+      */
+      this.prisma.organization.findMany({
+        where: { agreedMonthlyCents: { not: null } },
+        select: { agreedMonthlyCents: true, agreedListCents: true },
+      }),
+    ]);
 
     const byStatus: Record<string, number> = {};
-    let suspended = 0, trialing = 0, mrrCents = 0, seatTotal = 0;
-    /*
-      What the agreed prices cost us, and how many organizations are on one.
-
-      Measured against the list price AS IT WAS AT THE AGREEMENT — the number
-      stored with the deal — rather than recomputing every contracted bill here.
-      This method runs on every tab of the console, and a fresh bill per
-      contracted organization would put eight queries each behind a header.
-      Growth since the handshake is a different question with a different
-      answer: the nightly drift alert.
-    */
-    let agreedCount = 0, agreedAwayCents = 0;
-    const now = Date.now();
-    let newLast30 = 0;
-    for (const o of orgs) {
-      const st = (o.subStatus ?? '').toLowerCase();
-      byStatus[st] = (byStatus[st] ?? 0) + 1;
-      if (o.suspendedAt) suspended += 1;
-      if (st === 'trialing') trialing += 1;
-      if (o.createdAt && now - new Date(o.createdAt).getTime() < 30 * 86_400_000) newLast30 += 1;
-      seatTotal += seatMap.get(o.id) ?? 0;
-      // MRR from ACTIVE, non-suspended orgs only. It reads `lastBilledCents`,
-      // which IS the agreed price once one is set — so MRR stays the truth with
-      // no arithmetic of its own.
-      if (st === 'active' && !o.suspendedAt) mrrCents += orgMrrCents(o);
-      if (o.agreedMonthlyCents != null) {
-        agreedCount += 1;
-        agreedAwayCents += Math.max(0, (o.agreedListCents ?? 0) - o.agreedMonthlyCents);
-      }
-    }
+    for (const g of statusGroups) byStatus[String(g.subStatus).toLowerCase()] = g._count._all;
+    const mrrCents = mrr._sum.lastBilledCents ?? 0;
+    const agreedAwayCents = agreed.reduce((sum, o) => sum + Math.max(0, (o.agreedListCents ?? 0) - (o.agreedMonthlyCents ?? 0)), 0);
     return success({
-      totalOrgs: orgs.length,
+      totalOrgs,
       byStatus,
-      trialing,
+      trialing: byStatus.trialing ?? 0,
       suspended,
       newLast30,
-      seats: seatTotal,
+      seats,
       mrrCents,
       arrCents: mrrCents * 12,
-      agreedCount,
+      agreedCount: agreed.length,
       agreedAwayCents,
       // What the book would bill at list. Only meaningful beside the two above.
       listMrrCents: mrrCents + agreedAwayCents,
@@ -159,69 +188,79 @@ export class PlatformAdminService {
   }
 
   // ── Organizations list (with seat + member counts) ───────────────────────────
-  async listOrgs(params: { search?: string; status?: string } = {}) {
+  /**
+   * One page of organizations, newest first.
+   *
+   * Cursor-paginated (`cursor` = the last row's id, `nextCursor` in the reply)
+   * rather than a fixed 500: the console asks for a page and a "Load more".
+   * Returns exactly the columns the console renders — no Stripe customer id,
+   * no VAT number, nothing a screenshot of the list should carry.
+   */
+  async listOrgs(params: { search?: string; status?: string; cursor?: string; limit?: number } = {}) {
     const where: any = {};
-    if (params.search) where.name = { contains: params.search, mode: 'insensitive' };
-    if (params.status && params.status !== 'all') where.subStatus = params.status.toUpperCase();
-    const orgs = (await this.prisma.organization.findMany({ where, select: ORG_SELECT, orderBy: { createdAt: 'desc' }, take: 500 })) as unknown as (LeanOrg & any)[];
+    const search = typeof params.search === 'string' ? params.search.trim().slice(0, 100) : '';
+    if (search) where.name = { contains: search, mode: 'insensitive' };
+    const status = String(params.status ?? '').toUpperCase();
+    if (SUB_STATUSES.has(status)) where.subStatus = status;
+    const limit = clampListLimit(params.limit, 100, 200);
+    const rows = (await this.prisma.organization.findMany({
+      where,
+      select: ORG_SELECT,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+    })) as unknown as (LeanOrg & any)[];
+    const orgs = rows.slice(0, limit);
     const seatMap = await this.seatsByOrg(orgs);
     // Member totals per org in one grouped query (perf).
     const counts = orgs.length
       ? await this.prisma.user.groupBy({ by: ['organizationId'], where: { organizationId: { in: orgs.map((o) => o.id) } }, _count: { id: true } })
       : [];
     const memberCount = new Map(counts.map((c) => [c.organizationId, c._count.id]));
-    return success(
-      orgs.map((o) => {
-        const seats = seatMap.get(o.id) ?? 0;
-        return {
-          id: o.id, name: o.name, planTier: o.planTier, subStatus: o.subStatus,
-          billingInterval: (o as any).billingInterval, trialEndsAt: o.trialEndsAt,
-          currentPeriodEnd: (o as any).currentPeriodEnd, suspendedAt: o.suspendedAt,
-          createdAt: o.createdAt, stripeCustomerId: (o as any).stripeCustomerId ?? null,
-          agreedMonthlyCents: o.agreedMonthlyCents ?? null,
-          agreedListCents: o.agreedListCents ?? null,
-          agreedUntil: o.agreedUntil ?? null,
-          agreedNote: (o as any).agreedNote ?? null,
-          agreedSetAt: (o as any).agreedSetAt ?? null,
-          memberCount: memberCount.get(o.id) ?? 0,
-          seats,
-          // What this org has actually BOUGHT. `planTier` is a vestige kept for
-          // the webhook's fallback; nothing reads it to decide access any more,
-          // so the console reports the add-ons that do.
-          addOns: (o as any).addOns ?? [],
-          billingMode: (o as any).billingMode ?? 'AUTOMATIC',
-          invoiceDueDays: (o as any).invoiceDueDays ?? 14,
-          mrrCents: (o.subStatus ?? '').toLowerCase() === 'active' && !o.suspendedAt ? orgMrrCents(o) : 0,
-        };
-      }),
-    );
+    return {
+      success: true,
+      data: orgs.map((o) => ({
+        ...consoleOrgFields(o),
+        memberCount: memberCount.get(o.id) ?? 0,
+        seats: seatMap.get(o.id) ?? 0,
+      })),
+      nextCursor: rows.length > limit ? orgs[orgs.length - 1]?.id ?? null : null,
+    };
   }
 
   // ── One org: full detail + members ───────────────────────────────────────────
-  async orgDetail(organizationId: string) {
+  /**
+   * One organization, as the console's drawer renders it.
+   *
+   * Members are capped (`memberLimit`, default 100) with the total beside them,
+   * and their EMAIL addresses go only to operators who manage organizations —
+   * a support agent reading this panel sees who is in the company, not a
+   * contact list. The billing email is reduced to "is there one", which is all
+   * the drawer asks of it; the VAT id and Stripe customer id are not sent.
+   */
+  async orgDetail(organizationId: string, opts: { viewerRole?: string; memberLimit?: number } = {}) {
     const org = (await this.prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { ...ORG_SELECT, enabledModules: true, billingEmail: true, vatId: true },
+      select: { ...ORG_SELECT, billingInterval: true, currentPeriodEnd: true, enabledModules: true, billingEmail: true, email: true },
     })) as any;
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     const seats = (await this.seatsByOrg([org as LeanOrg])).get(org.id) ?? 0;
-    const members = await this.prisma.user.findMany({
-      where: { organizationId, role: { not: 'CUSTOMER' as any } },
-      select: { id: true, firstName: true, lastName: true, email: true, role: true, isActive: true, enabledModules: true, employmentType: true, lastActiveAt: true, createdAt: true },
-      orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
-      take: 1000,
-    });
+    const memberLimit = clampListLimit(opts.memberLimit, 100, 500);
+    const showEmails = platformCan(opts.viewerRole, 'manageOrgs') || platformCan(opts.viewerRole, 'billingOps');
+    const memberWhere = { organizationId, role: { not: 'CUSTOMER' as any } };
+    const [members, memberTotal] = await Promise.all([
+      this.prisma.user.findMany({
+        where: memberWhere,
+        select: { id: true, firstName: true, lastName: true, email: showEmails, role: true, isActive: true },
+        orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+        take: memberLimit,
+      }),
+      this.prisma.user.count({ where: memberWhere }),
+    ]);
     /*
-      What the price list says they owe TODAY.
-
-      Computed here and not on the list, because this is the screen where a price
-      is agreed and the operator needs the live number to agree it against — the
-      one stored with an old deal has aged. One bill for one organization the
-      operator deliberately opened is cheap; the same on a 500-row table would
-      not be.
-
-      Never allowed to fail the panel: a bill that cannot be computed is a reason
-      to hide a number, not to hide the members and the controls beside it.
+      What the price list says they owe TODAY — the live number an agreed price
+      is struck against. Never allowed to fail the panel: a bill that cannot be
+      computed is a reason to hide a number, not the members beside it.
     */
     const listMonthlyCents = await this.bill
       .compute(organizationId)
@@ -229,11 +268,16 @@ export class PlatformAdminService {
       .catch(() => null);
 
     return success({
-      ...org,
+      ...consoleOrgFields(org),
+      billingInterval: org.billingInterval ?? null,
+      currentPeriodEnd: org.currentPeriodEnd ?? null,
+      enabledModules: org.enabledModules ?? [],
+      // INVOICE needs somewhere to send the invoice; the drawer warns without it.
+      hasBillingEmail: !!(org.billingEmail || org.email),
       seats,
       listMonthlyCents,
-      mrrCents: (org.subStatus ?? '').toLowerCase() === 'active' && !org.suspendedAt ? orgMrrCents(org) : 0,
-      members,
+      members: members.map((m) => ({ ...m, email: showEmails ? (m as any).email : null })),
+      memberTotal,
     });
   }
 

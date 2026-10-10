@@ -3087,7 +3087,8 @@
     "welcomeBack": "Welcome back, {{name}}",
     "tapToUnlock": "Tap to unlock with {{method}}",
     "notYou": "Not {{name}}? Sign in with another account",
-    "backTo": "Back to {{method}} for {{name}}"
+    "backTo": "Back to {{method}} for {{name}}",
+    "unreachableBody": "Could not reach the server. Your sign-in on this phone is still set up — try again in a moment."
   },
   "offline": {
     "banner": {
@@ -4668,7 +4669,8 @@
     "tooLong": "At most {{days}} days.",
     "durDays": "{{n}} d",
     "durHours": "{{n}} h",
-    "durMinutes": "{{n}} min"
+    "durMinutes": "{{n}} min",
+    "pushNotYours": "This notification was for an earlier sign-in on this phone. Open the calendar to do this yourself."
   },
   "contactsImport": {
     "option": "Import from contacts",
@@ -4763,6 +4765,14 @@
       "open": "Open clients",
       "more": "Import more",
       "failed": "Could not import. Nothing was added."
+    }
+  },
+  "tracking": {
+    "foreground": {
+      "routeTitle": "HBCField — Route tracking",
+      "routeBody": "Recording your route to the job site.",
+      "shiftTitle": "HBCField — Clocked in",
+      "shiftBody": "Checking that you are at your work location during your shift."
     }
   }
 }

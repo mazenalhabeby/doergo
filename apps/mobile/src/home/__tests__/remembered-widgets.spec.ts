@@ -64,7 +64,8 @@ describe('remembering is a rule, not a fix', () => {
 
     // ⚠️ One call clears the lot, so a widget added later needs no sign-out edit.
     expect(store).toMatch(/export function forgetEverythingKept/);
-    expect(code('contexts/auth-context.tsx')).toMatch(/forgetEverythingKept\(\)/);
+    // Every sign-out goes through endSession (lib/session/end-session.ts), and it forgets them.
+    expect(code('lib/session/end-session.ts')).toMatch(/forgetEverythingKept\(\)/);
   });
 
   it('no widget rebuilds the remembering by hand', () => {

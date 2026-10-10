@@ -6,14 +6,21 @@ export {
   saveTokens,
   clearTokens,
   refreshAccessToken,
+  refreshSession,
+  sessionOwnerId,
+  sessionStartedAt,
+  clearInflightRequests,
   setAuthFailureCallback,
   setUserRefreshedCallback,
   observeResponses,
   fetchApi,
   fetchWithAuth,
+  fetchPageWithAuth,
   getApiUrl,
   resolveMediaUrl,
 } from './client';
+export type { RefreshOutcome } from './client';
+export { path } from './path';
 
 // All types (local + re-exported from @hbcfield/shared)
 export type {

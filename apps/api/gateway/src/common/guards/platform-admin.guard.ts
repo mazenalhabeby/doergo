@@ -26,7 +26,7 @@ export class PlatformAdminGuard implements CanActivate {
    * secret protecting "list every organization" and "grant an org every paid
    * capability" (audit B-B1). One implementation, two callers.
    */
-  assertKey(req: { headers?: Record<string, unknown> }): void {
+  assertKey(req: { headers?: Record<string, unknown>; platformKeyVerified?: boolean }): void {
     const expected = this.config.get<string>('PLATFORM_ADMIN_KEY') || '';
     if (!expected) throw new ForbiddenException('Forbidden');
     const raw = req.headers?.['x-platform-admin-key'];
@@ -34,5 +34,8 @@ export class PlatformAdminGuard implements CanActivate {
     // The shared constant-time compare (SHA-256 both sides to a fixed length, then
     // timingSafeEqual) — the same one the socket gate and Bull Board use.
     if (!safeEqual(provided, expected)) throw new ForbiddenException('Forbidden');
+    // Read by the PlatformAuditInterceptor: this call is recorded as made with
+    // the static key (actor "static-key" + the agent name it declared).
+    req.platformKeyVerified = true;
   }
 }

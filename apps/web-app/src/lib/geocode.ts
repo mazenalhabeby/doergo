@@ -1,4 +1,5 @@
-import { getAccessToken } from './api';
+import { API_BASE_URL } from './endpoints';
+import { authorizedFetch, type RequestOptions } from './http-client';
 // Helpers to turn raw geocoder payloads into a clean, human address like
 // "Kapellenstraße 30, 4664 Laakirchen" instead of the long hierarchy string
 // (…Oberweis, Bergham, …) that Nominatim's `display_name` returns.
@@ -61,31 +62,24 @@ export function formatPhotonFeature(p: PhotonProperties | undefined, fallback?: 
   return out || p.name || fallback || ""
 }
 
-/**
- * Where the geocoding proxy lives.
- *
- * ⚠️ The fallback is `/api/v1`, not "". `NEXT_PUBLIC_API_URL` is inlined at
- * build time and is simply absent in some environments; an empty base makes the
- * request relative, so it lands on the Next server instead of the gateway and
- * returns a 404 that reads like "this address could not be found".
- */
-export const geoBase = () => process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+/** Where the geocoding proxy lives — the API base, from the one endpoints module. */
+export const geoBase = () => API_BASE_URL;
 
 /**
- * Every call to the gateway's `/geo/*` proxy goes through here, WITH the
- * caller's bearer token.
+ * Every call to the gateway's `/geo/*` proxy goes through here — the same
+ * request pipeline as every other API call: the caller's bearer token (and a
+ * refresh on 401), a timeout, and 429 handling.
  *
  * They were bare `fetch`es. search/place/reverse are still `@Public()` on the
  * gateway — installed phone apps call them without a token — so they worked
  * anonymously, which leaves a paid Google proxy open to anybody. Sending the
  * token from the web is the first half of closing it; `/geo/timezone` is
  * authenticated already and was refused without it.
+ *
+ * Resolves with the Response; rejects (like fetch) when there was no answer.
  */
-export function geoFetch(pathAndQuery: string, init: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(init.headers);
-  const token = getAccessToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(`${geoBase()}${pathAndQuery}`, { ...init, headers });
+export function geoFetch(pathAndQuery: string, init: RequestOptions = {}): Promise<Response> {
+  return authorizedFetch(`${geoBase()}${pathAndQuery}`, { timeoutMs: 10_000, ...init });
 }
 
 /**

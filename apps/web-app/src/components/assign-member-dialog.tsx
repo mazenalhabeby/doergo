@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Search, Check, Loader2 } from "lucide-react"
 
@@ -15,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { organizationsApi, locationsApi, type OrgMember } from "@/lib/api"
+import type { AssignablePerson } from "@/lib/assignable-members"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { UserAvatar } from "@/components/user-avatar"
 
 // =============================================================================
@@ -55,12 +55,12 @@ const MemberRow = React.memo(function MemberRow({
   isAssigning,
   onAssign,
 }: {
-  member: OrgMember
+  member: AssignablePerson
   isCurrent: boolean
   isAssigning: boolean
   onAssign: (id: string) => void
 }) {
-  const title = member.position || member.specialty || member.role
+  const title = member.position || member.specialty || member.role || member.email || ""
 
   return (
     <button
@@ -157,32 +157,16 @@ export function AssignMemberDialog({
     onOpenChange(nextOpen)
   }, [onOpenChange])
 
-  // Fetch all org members
-  const { data: membersData, isLoading: loadingMembers } = useQuery({
-    queryKey: ["org-members-for-assign"],
-    queryFn: () => organizationsApi.getMembers({ limit: 200 }),
+  /*
+    Who can be picked — the organization directory for whoever may read it, the
+    workspace's roster otherwise (see lib/assignable-members.ts). Reading the
+    directory unconditionally 403'd for every manager without canManageUsers and
+    the dialog listed nobody.
+  */
+  const { members: allMembers, spaceMemberIds, isLoading } = useAssignableMembers({
+    spaceId,
     enabled: open,
-    staleTime: 30000,
   })
-
-  // Fetch space-assigned members (only when spaceId is set)
-  const { data: spaceAssignments, isLoading: loadingSpace } = useQuery({
-    queryKey: ["space-assignments", spaceId],
-    queryFn: () => locationsApi.getAssignedMembers(spaceId!),
-    enabled: open && !!spaceId,
-    staleTime: 30000,
-  })
-
-  const allMembers: OrgMember[] = useMemo(() => {
-    return membersData?.data || []
-  }, [membersData])
-
-  const spaceMemberIds: Set<string> = useMemo(() => {
-    if (!spaceAssignments) return new Set<string>()
-    return new Set(spaceAssignments.map((a) => a.userId))
-  }, [spaceAssignments])
-
-  const isLoading = loadingMembers || (!!spaceId && loadingSpace)
 
   // Filter by search
   const filtered = useMemo(() => {
@@ -199,8 +183,8 @@ export function AssignMemberDialog({
     if (!spaceId || spaceMemberIds.size === 0) {
       return { spaceMembers: [], otherMembers: filtered }
     }
-    const space: OrgMember[] = []
-    const other: OrgMember[] = []
+    const space: AssignablePerson[] = []
+    const other: AssignablePerson[] = []
     for (const m of filtered) {
       if (spaceMemberIds.has(m.id)) {
         space.push(m)

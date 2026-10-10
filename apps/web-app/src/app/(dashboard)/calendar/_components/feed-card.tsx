@@ -8,6 +8,7 @@ import { Copy, Link2, RefreshCw, Unlink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { calendarApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
+import { copyText } from "@/lib/clipboard"
 
 /**
  * "See it in Google" — optional and one-way. The link is shown once (only its hash is stored), so
@@ -34,12 +35,9 @@ export function FeedCard() {
 
   const copy = async () => {
     if (!url) return
-    try {
-      await navigator.clipboard.writeText(url)
-      toast.success(t("calendar.feed.copied"))
-    } catch {
-      toast.message(url)
-    }
+    // On a refused copy the link is still shown, so it can be copied by hand.
+    if (await copyText(url)) toast.success(t("calendar.feed.copied"))
+    else toast.message(url)
   }
 
   return (

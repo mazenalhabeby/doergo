@@ -16,6 +16,12 @@ import { msg, render, renderText, type LocalizedText, type Msg } from '../../i18
  * and sent once, so a push to thirty approvers is at most five batches, and
  * their languages cost one query (`RecipientLocales`).
  */
+/** One device to reach, and whose it is. */
+interface PushTarget {
+  token: string;
+  userId: string;
+}
+
 @Injectable()
 export class PushService {
   private readonly logger = new Logger(PushService.name);
@@ -137,11 +143,11 @@ export class PushService {
     }
 
     const localeOf = await this.locales.localesFor([...new Set(rows.map((r) => r.userId))]);
-    const byLocale = new Map<SupportedLocale, string[]>();
+    const byLocale = new Map<SupportedLocale, PushTarget[]>();
     for (const row of rows) {
       const locale = localeOf.get(row.userId) ?? DEFAULT_LOCALE;
       const list = byLocale.get(locale) ?? [];
-      list.push(row.token);
+      list.push({ token: row.token, userId: row.userId });
       byLocale.set(locale, list);
     }
 
@@ -172,10 +178,10 @@ export class PushService {
     const newest = new Map<string, string>();
     for (const r of rows) if (!newest.has(r.userId) && Expo.isExpoPushToken(r.token)) newest.set(r.userId, r.token);
     const localeOf = await this.locales.localesFor([...newest.keys()]);
-    const byLocale = new Map<SupportedLocale, string[]>();
+    const byLocale = new Map<SupportedLocale, PushTarget[]>();
     for (const [userId, token] of newest) {
       const locale = localeOf.get(userId) ?? DEFAULT_LOCALE;
-      byLocale.set(locale, [...(byLocale.get(locale) ?? []), token]);
+      byLocale.set(locale, [...(byLocale.get(locale) ?? []), { token, userId }]);
     }
     let sent = 0, failed = 0;
     for (const [locale, tokens] of byLocale) {
@@ -191,8 +197,9 @@ export class PushService {
   }
 
   /** Already rendered, already grouped: hand it to Expo. */
-  private async deliver(tokens: string[], title: string, body: string, data?: Record<string, any>) {
-    const validTokens = tokens.filter((token) => Expo.isExpoPushToken(token));
+  private async deliver(targets: PushTarget[], title: string, body: string, data?: Record<string, any>) {
+    const valid = targets.filter((t) => Expo.isExpoPushToken(t.token));
+    const validTokens = valid.map((t) => t.token);
     if (validTokens.length === 0) {
       this.logger.warn('No valid Expo push tokens found');
       return { sent: 0, failed: 0 };
@@ -208,12 +215,18 @@ export class PushService {
       the two things worth interrupting for.
     */
     const routing = pushRouting(data?.type);
-    const messages: ExpoPushMessage[] = validTokens.map((token) => ({
+    /*
+      ⚠️ Every push names WHO it was for (`recipientId`). A phone keeps a
+      notification across a sign-out, and its buttons (answer an invite, "I'm
+      with him") act as whoever is signed in when it is tapped — the app refuses
+      to act when the recipient is not the signed-in member.
+    */
+    const messages: ExpoPushMessage[] = valid.map(({ token, userId }) => ({
       to: token,
       sound: 'default',
       title,
       body,
-      data,
+      data: { ...(data ?? {}), recipientId: userId },
       priority: 'high',
       channelId: routing.channelId,
       interruptionLevel: routing.interruptionLevel,

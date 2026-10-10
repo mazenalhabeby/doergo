@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import type { RoutingConditions } from '@hbcfield/shared';
+import { isTeamColor, type RoutingConditions } from '@hbcfield/shared';
 
 const ok = <T>(data: T) => ({ success: true, data });
 const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
@@ -54,6 +54,7 @@ export class PlatformSupportTeamsService {
 
   async createTeam(d: { name: string; color?: string; description?: string }) {
     if (!d?.name?.trim()) return fail('Team name is required');
+    if (d.color != null && !isTeamColor(d.color)) return fail('Team colour must be #rrggbb');
     const team = await this.prisma.supportTeam.create({
       data: { name: d.name.trim().slice(0, 80), color: d.color ?? null, description: d.description ?? null },
     });
@@ -63,7 +64,11 @@ export class PlatformSupportTeamsService {
   async updateTeam(d: { teamId: string; name?: string; color?: string | null; description?: string | null; isActive?: boolean }) {
     const patch: Record<string, any> = {};
     if (d.name !== undefined) patch.name = d.name.trim().slice(0, 80);
-    if (d.color !== undefined) patch.color = d.color;
+    if (d.color !== undefined) {
+      // Rendered into a style attribute on the console — a colour is a colour.
+      if (d.color !== null && !isTeamColor(d.color)) return fail('Team colour must be #rrggbb');
+      patch.color = d.color;
+    }
     if (d.description !== undefined) patch.description = d.description;
     if (d.isActive !== undefined) patch.isActive = d.isActive;
     const team = await this.prisma.supportTeam.update({ where: { id: d.teamId }, data: patch });

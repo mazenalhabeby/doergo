@@ -14,6 +14,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     setItem: jest.fn(async (k: string, v: string) => { store.set(k, v); }),
     removeItem: jest.fn(async (k: string) => { store.delete(k); }),
     multiRemove: jest.fn(async (ks: string[]) => { ks.forEach((k) => store.delete(k)); }),
+    getAllKeys: jest.fn(async () => [...store.keys()]),
   },
 }));
 const secure = new Map<string, string>();
@@ -48,7 +49,9 @@ class ApiError extends Error {
 }
 const trackingApi = { updateLocationBatch: jest.fn(), updateLocation: jest.fn() };
 jest.mock('../../lib/api', () => ({ trackingApi, ApiError }));
-jest.mock('../../lib/api/client', () => ({ getAccessToken: jest.fn(async () => 'token') }));
+let owner: string | null = 'mike';
+jest.mock('../../lib/api/client', () => ({ getAccessToken: jest.fn(async () => 'token'), sessionOwnerId: jest.fn(async () => owner) }));
+jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string) => k } }));
 
 import { cleanRoutePoints, ROUTE_MAX_ACCURACY_M } from '@hbcfield/shared/client';
 import { startRouteTracking, flushPendingRoute, forgetRouteData } from '../background-route-tracking';
@@ -57,7 +60,7 @@ const at = (s: number) => new Date(Date.UTC(2026, 8, 30, 6, 0, s)).toISOString()
 const loc = (lat: number, lng: number, s: number, accuracy = 5) => ({
   coords: { latitude: lat, longitude: lng, accuracy }, timestamp: Date.parse(at(s)),
 });
-const pending = () => JSON.parse(store.get('route_pending_bursts') ?? '[]') as { points: unknown[] }[];
+const pending = () => JSON.parse(store.get('route_pending_bursts:mike') ?? '[]') as { points: unknown[] }[];
 const heldCount = () => pending().reduce((n, b) => n + b.points.length, 0);
 
 beforeEach(() => {
@@ -68,6 +71,7 @@ beforeEach(() => {
   secure.clear();
   jest.clearAllMocks();
   secure.set('active_route_task_id', 'task-1');
+  owner = 'mike';
 });
 
 describe('which points are kept (shared with the server)', () => {
@@ -150,7 +154,7 @@ describe('delivering points', () => {
 
   it('splits a long dead zone into batches of at most 500', async () => {
     const points = Array.from({ length: 1200 }, (_, i) => ({ lat: 47.98 + i * 0.0002, lng: 13.82, timestamp: at(i) }));
-    store.set('route_pending_bursts', JSON.stringify([{ taskId: 'task-1', points }]));
+    store.set('route_pending_bursts:mike', JSON.stringify([{ taskId: 'task-1', points }]));
     trackingApi.updateLocationBatch.mockResolvedValue({});
     await flushPendingRoute();
     const sizes = trackingApi.updateLocationBatch.mock.calls.map((c: any) => c[0].points.length);
@@ -165,12 +169,46 @@ describe('delivering points', () => {
   });
 });
 
+describe('a route belongs to the member who drove it', () => {
+  it('another member signed in never uploads the first one\'s held points', async () => {
+    store.set('route_pending_bursts:mike', JSON.stringify([{ taskId: 'task-1', points: [{ lat: 1, lng: 1, timestamp: at(1200) }] }]));
+    owner = 'karim';
+    trackingApi.updateLocationBatch.mockResolvedValue({});
+    await flushPendingRoute();
+    expect(trackingApi.updateLocationBatch).not.toHaveBeenCalled();
+    expect(store.has('route_pending_bursts:mike')).toBe(true);
+  });
+
+  it('nobody signed in: nothing is sent', async () => {
+    store.set('route_pending_bursts:mike', JSON.stringify([{ taskId: 'task-1', points: [{ lat: 1, lng: 1, timestamp: at(1200) }] }]));
+    owner = null;
+    await flushPendingRoute();
+    expect(trackingApi.updateLocationBatch).not.toHaveBeenCalled();
+  });
+});
+
 describe('signing out', () => {
+  it('wipes every member\'s held points and the old shared list', async () => {
+    store.set('route_pending_bursts:karim', '[]');
+    store.set('route_pending_bursts', '[]');
+    await forgetRouteData();
+    expect([...store.keys()].filter((k) => k.startsWith('route_pending_bursts'))).toEqual([]);
+  });
+
   it('wipes every held point from the phone', async () => {
-    store.set('route_pending_bursts', JSON.stringify([{ taskId: 'task-1', points: [{ lat: 1, lng: 1 }] }]));
+    store.set('route_pending_bursts:mike', JSON.stringify([{ taskId: 'task-1', points: [{ lat: 1, lng: 1 }] }]));
     store.set('route_last_point', JSON.stringify({ lat: 1, lng: 1 }));
     await forgetRouteData();
-    expect(store.has('route_pending_bursts')).toBe(false);
+    expect(store.has('route_pending_bursts:mike')).toBe(false);
     expect(store.has('route_last_point')).toBe(false);
+  });
+});
+
+describe('the lock-screen notification while recording', () => {
+  it('is written in the member\'s language', async () => {
+    await startRouteTracking('task-9');
+    const opts = (location.startLocationUpdatesAsync.mock.calls[0] as unknown[])[1] as { foregroundService: { notificationTitle: string; notificationBody: string } };
+    expect(opts.foregroundService.notificationTitle).toBe('tracking.foreground.routeTitle');
+    expect(opts.foregroundService.notificationBody).toBe('tracking.foreground.routeBody');
   });
 });

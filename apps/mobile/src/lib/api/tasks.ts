@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import { buildUrlWithQuery, type StepFormAnswers } from '@hbcfield/shared/client';
 import type { CrewView, JobTimeView, MyHandovers, TaskHandover, StepSubmission, Task, Comment, TaskEvent, CreateTaskInput, UpdateTaskInput, OpenRoleTask, LocationUpdate, LocationResponse, LocationBatchUpdate, ChecklistItem } from './types';
 
@@ -39,7 +40,7 @@ export const tasksApi = {
   },
 
   getById: async (id: string): Promise<Task> => {
-    return fetchWithAuth<Task>(`/tasks/${id}`, { method: 'GET' });
+    return fetchWithAuth<Task>(path`/tasks/${id}`, { method: 'GET' });
   },
 
   // `accuracy` travels with the fix: the arrival check widens its zone by it
@@ -59,55 +60,55 @@ export const tasksApi = {
       with "property fixAt should not exist".
     */
     const where = location ? { lat: location.lat, lng: location.lng, accuracy: location.accuracy } : {};
-    return fetchWithAuth<Task>(`/tasks/${id}/status`, {
+    return fetchWithAuth<Task>(path`/tasks/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status, reason, ...where, ...(answers ? { answers } : {}) }),
     });
   },
 
   getComments: async (taskId: string): Promise<Comment[]> => {
-    return fetchWithAuth<Comment[]>(`/tasks/${taskId}/comments`, { method: 'GET' });
+    return fetchWithAuth<Comment[]>(path`/tasks/${taskId}/comments`, { method: 'GET' });
   },
 
   addComment: async (taskId: string, content: string): Promise<Comment> => {
-    return fetchWithAuth<Comment>(`/tasks/${taskId}/comments`, {
+    return fetchWithAuth<Comment>(path`/tasks/${taskId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     });
   },
 
   /** A job's time — travel, working, blocked, per worker. */
-  jobTime: async (taskId: string): Promise<JobTimeView> => fetchWithAuth<JobTimeView>(`/tasks/${taskId}/time`, { method: 'GET' }),
+  jobTime: async (taskId: string): Promise<JobTimeView> => fetchWithAuth<JobTimeView>(path`/tasks/${taskId}/time`, { method: 'GET' }),
 
   /** My jobs in work, notes I owe, jobs paused on me — one read. */
   myHandovers: async (): Promise<MyHandovers> => fetchWithAuth<MyHandovers>('/tasks/handover/mine', { method: 'GET' }),
 
   /** A crew on one job — direct path for a build without the offline engine (offline/tasks/crew-actions.ts). */
   crew: async (taskId: string, action: 'join' | 'leave' | 'issue' | 'resume', body: Record<string, unknown> = {}): Promise<CrewView> =>
-    fetchWithAuth<CrewView>(`/tasks/${taskId}/crew/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+    fetchWithAuth<CrewView>(path`/tasks/${taskId}/crew/${action}`, { method: 'POST', body: JSON.stringify(body) }),
 
   /** Hand THIS job's lead to somebody on its crew — for today, or for good. */
   changeLead: async (taskId: string, body: { toUserId: string; scope: 'TODAY' | 'PERMANENT'; reason?: string }): Promise<CrewView> =>
-    fetchWithAuth<CrewView>(`/tasks/${taskId}/lead`, { method: 'PUT', body: JSON.stringify(body) }),
+    fetchWithAuth<CrewView>(path`/tasks/${taskId}/lead`, { method: 'PUT', body: JSON.stringify(body) }),
 
   /** Direct path for a build without the offline engine — see offline/tasks/task-actions.ts. */
-  resumeWork: async (taskId: string): Promise<Task> => fetchWithAuth<Task>(`/tasks/${taskId}/resume`, { method: 'POST', body: '{}' }),
+  resumeWork: async (taskId: string): Promise<Task> => fetchWithAuth<Task>(path`/tasks/${taskId}/resume`, { method: 'POST', body: '{}' }),
 
   writeHandover: async (taskId: string, body: { id?: string; note: string; attachmentIds?: string[] }): Promise<TaskHandover> =>
-    fetchWithAuth<TaskHandover>(`/tasks/${taskId}/handover`, { method: 'POST', body: JSON.stringify(body) }),
+    fetchWithAuth<TaskHandover>(path`/tasks/${taskId}/handover`, { method: 'POST', body: JSON.stringify(body) }),
 
   // ── A task open to a WORK role (shared tasks/role-pool.ts) ──
   /** Tasks open to a role I hold, in the workspace I hold it in — urgent first, then the longest waiting. */
   openForMe: async (): Promise<OpenRoleTask[]> => fetchWithAuth<OpenRoleTask[]>('/tasks/open-for-me', { method: 'GET' }),
   /** Take a place. Refused with ROLE_TASK_TAKEN (params.takers) when somebody was faster. */
   take: async (taskId: string): Promise<{ id: string; spotsLeft: number; waitedMinutes: number | null }> =>
-    fetchWithAuth(`/tasks/${taskId}/take`, { method: 'POST', body: '{}' }),
+    fetchWithAuth(path`/tasks/${taskId}/take`, { method: 'POST', body: '{}' }),
   /** Hand it back to its role before the work starts; it is offered again. */
   returnToRole: async (taskId: string, reason?: string): Promise<void> =>
-    fetchWithAuth<void>(`/tasks/${taskId}/return-to-role`, { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) }),
+    fetchWithAuth<void>(path`/tasks/${taskId}/return-to-role`, { method: 'POST', body: JSON.stringify(reason ? { reason } : {}) }),
 
   declineTask: async (taskId: string): Promise<void> => {
-    return fetchWithAuth<void>(`/tasks/${taskId}/decline`, {
+    return fetchWithAuth<void>(path`/tasks/${taskId}/decline`, {
       method: 'POST',
     });
   },
@@ -125,21 +126,21 @@ export const tasksApi = {
     "Failed to update", with no change on the server.
   */
   update: async (id: string, input: UpdateTaskInput): Promise<Task> => {
-    return fetchWithAuth<Task>(`/tasks/${id}`, {
+    return fetchWithAuth<Task>(path`/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(input),
     });
   },
 
   assign: async (taskId: string, workerId: string): Promise<Task> => {
-    return fetchWithAuth<Task>(`/tasks/${taskId}/assign`, {
+    return fetchWithAuth<Task>(path`/tasks/${taskId}/assign`, {
       method: 'PATCH',
       body: JSON.stringify({ workerId }),
     });
   },
 
   delete: async (id: string): Promise<void> => {
-    return fetchWithAuth<void>(`/tasks/${id}`, {
+    return fetchWithAuth<void>(path`/tasks/${id}`, {
       method: 'DELETE',
     });
   },
@@ -152,7 +153,7 @@ export const tasksApi = {
    * than pretending a tick was kept.
    */
   toggleChecklistItem: async (taskId: string, itemId: string, isCompleted: boolean): Promise<ChecklistItem> => {
-    return fetchWithAuth<ChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+    return fetchWithAuth<ChecklistItem>(path`/tasks/${taskId}/checklist/${itemId}`, {
       method: 'PATCH',
       body: JSON.stringify({ isCompleted }),
     });
@@ -164,14 +165,14 @@ export const tasksApi = {
    * ⚠️ NOT QUEUED, like the tick.
    */
   setChecklistOwner: async (taskId: string, itemId: string, assigneeId: string | null): Promise<ChecklistItem> => {
-    return fetchWithAuth<ChecklistItem>(`/tasks/${taskId}/checklist/${itemId}`, {
+    return fetchWithAuth<ChecklistItem>(path`/tasks/${taskId}/checklist/${itemId}`, {
       method: 'PATCH',
       body: JSON.stringify({ assigneeId }),
     });
   },
 
   getTimeline: async (taskId: string): Promise<TaskEvent[]> => {
-    return fetchWithAuth<TaskEvent[]>(`/tasks/${taskId}/timeline`, { method: 'GET' });
+    return fetchWithAuth<TaskEvent[]>(path`/tasks/${taskId}/timeline`, { method: 'GET' });
   },
 
   /**
@@ -180,7 +181,7 @@ export const tasksApi = {
    * Kept by the response cache, like the service report.
    */
   getSubmissions: async (taskId: string): Promise<StepSubmission[]> => {
-    const rows = await fetchWithAuth<unknown>(`/tasks/${taskId}/submissions`, { method: 'GET' });
+    const rows = await fetchWithAuth<unknown>(path`/tasks/${taskId}/submissions`, { method: 'GET' });
     return Array.isArray(rows) ? (rows as StepSubmission[]) : [];
   },
 };

@@ -3,10 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, isSupportSupervisor, type PlatformRole, normalizeEmail, tokenIssuedBeforeCutoff, maskEmail, nextLockStateAfterFailure } from '@hbcfield/shared';
+import {
+  BCRYPT_COST_FACTOR, PLATFORM_ROLES, platformCapsFor, isSupportSupervisor, type PlatformRole, normalizeEmail,
+  tokenIssuedBeforeCutoff, maskEmail, nextLockStateAfterFailure, PLATFORM_TOKEN_TTL_SECONDS,
+  platformEnrolmentRequired, platformLogoutCutoff, mayRefreshPlatformSession,
+} from '@hbcfield/shared';
 import { generateBase32Secret, matchTotpStep, otpauthUri } from './totp.util';
 
-const TOKEN_TTL = '12h';
 const ok = <T>(data: T) => ({ success: true, data });
 const fail = (message: string, statusCode = 400) => ({ success: false, statusCode, message });
 
@@ -32,7 +35,52 @@ export class PlatformAuthService {
     return s;
   }
   private publicUser(u: any) {
-    return { id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, role: u.role, isActive: u.isActive, twoFactorEnabled: u.twoFactorEnabled, lastLoginAt: u.lastLoginAt, createdAt: u.createdAt };
+    return {
+      id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, role: u.role, isActive: u.isActive,
+      twoFactorEnabled: u.twoFactorEnabled,
+      // Mandatory second factor: until one is enrolled this session reaches
+      // /platform/auth/* only (enforced by the gateway's platform guard).
+      enrolmentRequired: platformEnrolmentRequired(u),
+      lastLoginAt: u.lastLoginAt, createdAt: u.createdAt,
+    };
+  }
+
+  /**
+   * Mint a platform token.
+   *
+   * `auth_time` is when the password (and code) were last typed; a refresh
+   * carries it forward unchanged so a chain of refreshes cannot outlive
+   * PLATFORM_SESSION_MAX_SECONDS. Short-lived (PLATFORM_TOKEN_TTL_SECONDS): the
+   * console slides it while somebody is working.
+   */
+  private issueToken(user: { id: string; role: string }, authTime?: number): string {
+    const now = Math.floor(Date.now() / 1000);
+    return this.jwt.sign(
+      { sub: user.id, role: user.role, typ: 'platform', auth_time: authTime ?? now },
+      { secret: this.secret(), expiresIn: PLATFORM_TOKEN_TTL_SECONDS },
+    );
+  }
+
+  /** The response every session-changing call returns: a fresh token + who you are now. */
+  private async session(user: any, authTime?: number) {
+    const scope = await this.supportScope(user.id, user.role);
+    return {
+      token: this.issueToken(user, authTime),
+      expiresIn: PLATFORM_TOKEN_TTL_SECONDS,
+      user: { ...this.publicUser(user), ...scope },
+      permissions: platformCapsFor(user.role),
+    };
+  }
+
+  /**
+   * End every OTHER session of this operator and hand the caller a fresh one.
+   *
+   * Used by every change to the second factor: whoever else holds a token for
+   * this account — the reason somebody re-keys their authenticator — is out.
+   */
+  private async rotateSessions(userId: string, authTime?: number) {
+    const updated = await this.prisma.platformUser.update({ where: { id: userId }, data: { tokensValidAfter: new Date() } });
+    return this.session(updated, authTime);
   }
 
   // ── Login (2FA-aware) ─────────────────────────────────────────────────────────
@@ -61,10 +109,38 @@ export class PlatformAuthService {
     }
 
     await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() } });
-    const token = this.jwt.sign({ sub: user.id, role: user.role, typ: 'platform' }, { secret: this.secret(), expiresIn: TOKEN_TTL });
-    const scope = await this.supportScope(user.id, user.role);
-    this.logger.log(`[PLATFORM] login: ${user.email} (${user.role})`);
-    return ok({ token, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) });
+    const session = await this.session(user);
+    this.logger.log(`[PLATFORM] login: ${maskEmail(user.email)} (${user.role})${session.user.enrolmentRequired ? ' — 2FA enrolment required' : ''}`);
+    return ok(session);
+  }
+
+  /**
+   * Sign out — server side.
+   *
+   * Moves the operator's session cut-off past the signing-out token, so the
+   * token (and every other one this operator holds) is refused from now on.
+   * One switch for all of an operator's sessions is deliberate: it is the
+   * mechanism password changes already use, and "sign out" on a shared or lost
+   * machine should not depend on which tab pressed it.
+   */
+  async logout(data: { userId: string; iat?: number }) {
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId }, select: { id: true, email: true } });
+    if (!user) return fail('Not found', 404);
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { tokensValidAfter: platformLogoutCutoff(data.iat) } });
+    this.logger.log(`[PLATFORM] logout: ${maskEmail(user.email)}`);
+    return ok({ signedOut: true });
+  }
+
+  /**
+   * Slide a live session forward. The token presented has already been
+   * validated by the gateway guard (active, after the cut-off); this only
+   * refuses a chain older than PLATFORM_SESSION_MAX_SECONDS.
+   */
+  async refresh(data: { userId: string; authTime?: number }) {
+    if (!mayRefreshPlatformSession(data.authTime)) return fail('Session expired — sign in again', 401);
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
+    if (!user || !user.isActive) return fail('Session expired — sign in again', 401);
+    return ok(await this.session(user, data.authTime));
   }
 
   /**
@@ -86,7 +162,7 @@ export class PlatformAuthService {
   }
 
   // ── Self-service: change own password ─────────────────────────────────────────
-  async changePassword(data: { userId: string; currentPassword?: string; newPassword?: string }) {
+  async changePassword(data: { userId: string; currentPassword?: string; newPassword?: string; authTime?: number }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
     if (!(await bcrypt.compare(data.currentPassword ?? '', user.passwordHash))) return fail('Current password is incorrect', 401);
@@ -94,39 +170,93 @@ export class PlatformAuthService {
     // tokensValidAfter: every operator token already issued — on any machine —
     // stops working now. Changing the password is the answer to "somebody has
     // my session"; a 12-hour token outliving it would make that answer a lie.
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR), tokensValidAfter: new Date() } });
+    const updated = await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR), tokensValidAfter: new Date() } });
     this.logger.log(`[PLATFORM] ${maskEmail(user.email)} changed their password`);
-    return ok({ id: user.id });
+    // Every OTHER session ends; this one continues on a fresh token.
+    return ok({ id: user.id, ...(await this.session(updated, data.authTime)) });
   }
 
   // ── Self-service: 2FA (TOTP) ──────────────────────────────────────────────────
-  /** Generate a secret (not yet enabled) + the otpauth URI for the authenticator. */
-  async setup2fa(data: { userId: string }) {
+  /**
+   * Start enrolling an authenticator.
+   *
+   * The new secret is held as PENDING: the factor in force is untouched until a
+   * code from the new one is verified (enable2fa). It used to be written
+   * straight over the active secret with `twoFactorEnabled: false` — so anybody
+   * holding a session (a stolen token, an unlocked laptop) could strip 2FA with
+   * one request and no proof.
+   *
+   * While 2FA is ON, re-keying needs a CURRENT code: possession of the old
+   * factor is what authorises replacing it.
+   */
+  async setup2fa(data: { userId: string; code?: string; authTime?: number }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
+    if (user.twoFactorEnabled) {
+      if (!data.code) return { ...fail('Enter a current code from your authenticator to replace it', 400), code: 'PLATFORM_2FA_CODE_REQUIRED' };
+      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
+    }
     const secret = generateBase32Secret();
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorSecret: secret, twoFactorEnabled: false, twoFactorLastStep: null } });
-    return ok({ secret, otpauthUri: otpauthUri(user.email, secret) });
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorPendingSecret: secret } });
+    this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} started 2FA enrolment`);
+    const session = await this.rotateSessions(user.id, data.authTime);
+    return ok({ secret, otpauthUri: otpauthUri(user.email, secret), ...session });
   }
 
-  /** Confirm the first code → turn 2FA on. */
-  async enable2fa(data: { userId: string; code?: string }) {
+  /**
+   * Confirm a code from the PENDING secret → it becomes the factor in force.
+   *
+   * The step check is against the new secret, whose codes have never been
+   * used, and the write is conditional on the pending secret still being the
+   * one verified — two racing confirmations cannot swap in different secrets.
+   */
+  async enable2fa(data: { userId: string; code?: string; authTime?: number }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
-    if (!user || !user.twoFactorSecret) return fail('Start 2FA setup first', 400);
-    if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: true } });
-    this.logger.warn(`[PLATFORM] ${user.email} enabled 2FA`);
-    return ok({ twoFactorEnabled: true });
+    if (!user || !user.twoFactorPendingSecret) return fail('Start 2FA setup first', 400);
+    const pending = user.twoFactorPendingSecret;
+    const step = matchTotpStep(pending, data.code ?? '');
+    if (step === null) return fail('Invalid code', 400);
+    const claimed = await this.prisma.platformUser.updateMany({
+      where: { id: user.id, twoFactorPendingSecret: pending },
+      data: { twoFactorSecret: pending, twoFactorPendingSecret: null, twoFactorEnabled: true, twoFactorLastStep: step },
+    });
+    if (claimed.count !== 1) return fail('Start 2FA setup first', 409);
+    this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} enabled 2FA`);
+    return ok({ twoFactorEnabled: true, ...(await this.rotateSessions(user.id, data.authTime)) });
   }
 
-  /** Turn 2FA off — requires a current code (proves possession). */
-  async disable2fa(data: { userId: string; code?: string }) {
+  /**
+   * Turn 2FA off — requires a current code (proves possession).
+   *
+   * Every platform role must hold a second factor, so this does not free the
+   * account: the session it returns is limited to enrolling a new one.
+   */
+  async disable2fa(data: { userId: string; code?: string; authTime?: number }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
-    if (user.twoFactorEnabled && !(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null } });
-    this.logger.warn(`[PLATFORM] ${user.email} disabled 2FA`);
-    return ok({ twoFactorEnabled: false });
+    if (!user.twoFactorEnabled) return fail('Two-factor authentication is not on', 400);
+    if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
+    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null } });
+    this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} disabled 2FA`);
+    return ok({ twoFactorEnabled: false, ...(await this.rotateSessions(user.id, data.authTime)) });
+  }
+
+  /**
+   * An Owner clears somebody else's second factor (a lost phone).
+   *
+   * Never one's own — that would be a way round needing a code to disable it.
+   * Ends every session of that operator; their next sign-in is enrolment-only.
+   */
+  async reset2fa(data: { id: string; byUserId?: string }) {
+    if (!data.byUserId || data.id === data.byUserId) return fail('Use Security → Disable 2FA for your own account', 400);
+    const user = await this.prisma.platformUser.findUnique({ where: { id: data.id }, select: { id: true, email: true } });
+    if (!user) return fail('Not found', 404);
+    await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null, twoFactorLastStep: null, tokensValidAfter: new Date() },
+    });
+    this.logger.warn(`[PLATFORM] 2FA reset for ${maskEmail(user.email)} by ${data.byUserId}`);
+    return ok({ id: user.id, twoFactorEnabled: false });
   }
 
   /** The caller's support-team scope, resolved for inbox filtering. */
@@ -152,7 +282,13 @@ export class PlatformAuthService {
       // Issued before the operator's last password change/reset → dead.
       if (tokenIssuedBeforeCutoff(payload.iat, user.tokensValidAfter)) return { valid: false };
       const scope = await this.supportScope(user.id, user.role);
-      return { valid: true, user: { ...this.publicUser(user), ...scope }, permissions: platformCapsFor(user.role) };
+      return {
+        valid: true,
+        user: { ...this.publicUser(user), ...scope },
+        permissions: platformCapsFor(user.role),
+        // What logout and refresh need about THIS token (not the account).
+        session: { iat: payload.iat, authTime: typeof payload.auth_time === 'number' ? payload.auth_time : payload.iat },
+      };
     } catch {
       return { valid: false };
     }
@@ -187,25 +323,46 @@ export class PlatformAuthService {
     const user = await this.prisma.platformUser.create({
       data: { email, passwordHash, firstName: (data.firstName ?? '').trim() || 'Staff', lastName: (data.lastName ?? '').trim() || '', role, createdById: data.byUserId ?? null },
     });
-    this.logger.warn(`[PLATFORM] user created: ${email} (${role}) by ${data.byUserId ?? 'bootstrap'}`);
+    this.logger.warn(`[PLATFORM] user created: ${maskEmail(email)} (${role}) by ${data.byUserId ?? 'bootstrap'}`);
     return ok(this.publicUser(user));
   }
 
+  /**
+   * Change another operator's role or switch them off.
+   *
+   * Only `role` and `isActive` are read — the caller's body never reaches the
+   * query, and the target is the PATH id (the gateway passes it last so a body
+   * `id` cannot replace it).
+   *
+   * Refused: changing your own role or switching yourself off (an Owner who
+   * demotes themselves by a mis-click has no Owner left to undo it, and nobody
+   * should be able to quietly widen or narrow their own access), and leaving the
+   * console with no active Owner.
+   */
   async updateUser(data: { id: string; role?: string; isActive?: boolean; byUserId?: string }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.id } });
     if (!user) return fail('Not found', 404);
-    const patch: any = {};
+    const patch: { role?: PlatformRole; isActive?: boolean } = {};
     if (data.role !== undefined) { const r = this.validRole(data.role); if (!r) return fail('Invalid role'); patch.role = r; }
-    if (data.isActive !== undefined) patch.isActive = !!data.isActive;
+    if (data.isActive !== undefined) patch.isActive = data.isActive === true;
+    const self = !!data.byUserId && data.byUserId === user.id;
+    if (self && ((patch.role && patch.role !== user.role) || patch.isActive === false)) {
+      return fail('You cannot change your own role or deactivate yourself — ask another Owner', 403);
+    }
     // Safety: never leave zero active OWNERs (can't demote/deactivate the last owner).
     const demotingOwner = user.role === 'OWNER' && ((patch.role && patch.role !== 'OWNER') || patch.isActive === false);
     if (demotingOwner) {
       const owners = await this.prisma.platformUser.count({ where: { role: 'OWNER', isActive: true } });
       if (owners <= 1) return fail('Cannot remove the last active Owner');
     }
-    // Deactivating/demoting resets any lockout implicitly on next login.
-    const updated = await this.prisma.platformUser.update({ where: { id: user.id }, data: patch });
-    this.logger.warn(`[PLATFORM] user ${user.email} updated (${JSON.stringify(patch)}) by ${data.byUserId ?? 'operator'}`);
+    // A role change or a switch-off ends their live sessions: the token carries
+    // nothing the guard trusts, but a socket opened with it should not linger.
+    const changesAccess = (patch.role && patch.role !== user.role) || patch.isActive === false;
+    const updated = await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { ...patch, ...(changesAccess ? { tokensValidAfter: new Date() } : {}) },
+    });
+    this.logger.warn(`[PLATFORM] user ${maskEmail(user.email)} updated (${JSON.stringify(patch)}) by ${data.byUserId ?? 'operator'}`);
     return ok(this.publicUser(updated));
   }
 

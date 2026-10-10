@@ -122,3 +122,14 @@ describe("format-date", () => {
     })
   })
 })
+
+describe("formatRelativeTime", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { formatRelativeTime } = require("@/lib/format-date")
+  const now = Date.UTC(2026, 9, 10, 12)
+  it("says the future and the past", () => {
+    expect(formatRelativeTime(now + 3 * 86_400_000, now)).toMatch(/3/)
+    expect(formatRelativeTime(now - 2 * 3_600_000, now)).toMatch(/2/)
+    expect(formatRelativeTime(now + 3 * 86_400_000, now)).not.toBe(formatRelativeTime(now - 3 * 86_400_000, now))
+  })
+})

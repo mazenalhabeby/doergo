@@ -1,27 +1,28 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 
 // Task Attachments API
 export const taskAttachmentsApi = {
   getPresignedUrl: async (taskId: string, fileName: string, fileType: string): Promise<{ uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number }> => {
-    return fetchWithAuth(`/tasks/${taskId}/attachments/presign`, {
+    return fetchWithAuth(path`/tasks/${taskId}/attachments/presign`, {
       method: 'POST',
       body: JSON.stringify({ fileName, fileType }),
     });
   },
 
   confirmUpload: async (taskId: string, data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number }): Promise<any> => {
-    return fetchWithAuth(`/tasks/${taskId}/attachments`, {
+    return fetchWithAuth(path`/tasks/${taskId}/attachments`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   getAttachments: async (taskId: string): Promise<any[]> => {
-    return fetchWithAuth(`/tasks/${taskId}/attachments`);
+    return fetchWithAuth(path`/tasks/${taskId}/attachments`);
   },
 
   delete: async (taskId: string, attachmentId: string): Promise<void> => {
-    return fetchWithAuth<void>(`/tasks/${taskId}/attachments/${attachmentId}`, {
+    return fetchWithAuth<void>(path`/tasks/${taskId}/attachments/${attachmentId}`, {
       method: 'DELETE',
     });
   },

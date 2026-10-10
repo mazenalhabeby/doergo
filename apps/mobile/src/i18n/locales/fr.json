@@ -3087,7 +3087,8 @@
     "welcomeBack": "Bon retour, {{name}}",
     "tapToUnlock": "Touchez pour déverrouiller avec {{method}}",
     "notYou": "Vous n'êtes pas {{name}} ? Connectez-vous avec un autre compte",
-    "backTo": "Revenir à {{method}} pour {{name}}"
+    "backTo": "Revenir à {{method}} pour {{name}}",
+    "unreachableBody": "Impossible de joindre le serveur. Votre connexion sur ce téléphone reste configurée — réessayez dans un instant."
   },
   "offline": {
     "banner": {
@@ -4668,7 +4669,8 @@
     "tooLong": "{{days}} jours au maximum.",
     "durDays": "{{n}} j",
     "durHours": "{{n}} h",
-    "durMinutes": "{{n}} min"
+    "durMinutes": "{{n}} min",
+    "pushNotYours": "Cette notification concernait une connexion précédente sur ce téléphone. Ouvrez le calendrier pour le faire vous-même."
   },
   "contactsImport": {
     "option": "Importer depuis les contacts",
@@ -4763,6 +4765,14 @@
       "open": "Ouvrir les clients",
       "more": "En importer d'autres",
       "failed": "Import impossible. Rien n'a été ajouté."
+    }
+  },
+  "tracking": {
+    "foreground": {
+      "routeTitle": "HBCField — Suivi du trajet",
+      "routeBody": "Votre trajet vers le lieu d’intervention est enregistré.",
+      "shiftTitle": "HBCField — Pointage en cours",
+      "shiftBody": "Pendant votre service, nous vérifions que vous êtes sur votre lieu de travail."
     }
   }
 }

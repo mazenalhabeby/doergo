@@ -9,8 +9,9 @@ export class PlatformAdminService extends BaseGatewayService {
     super(authClient, PlatformAdminService.name);
   }
   overview() { return this.send({ cmd: 'platform_overview' }, {}); }
-  listOrgs(data: { search?: string; status?: string }) { return this.send({ cmd: 'platform_list_orgs' }, data); }
-  orgDetail(data: { organizationId: string }) { return this.send({ cmd: 'platform_org_detail' }, data); }
+  listOrgs(data: { search?: string; status?: string; cursor?: string; limit?: number }) { return this.send({ cmd: 'platform_list_orgs' }, data); }
+  orgDetail(data: { organizationId: string; viewerRole?: string; memberLimit?: number }) { return this.send({ cmd: 'platform_org_detail' }, data); }
+  auditList(data: { cursor?: string; limit?: number; actorId?: string; organizationId?: string }) { return this.send({ cmd: 'platform_audit_list' }, data); }
   setAgreedPrice(data: { organizationId: string; monthlyCents: number; until?: string | null; note?: string | null; byUserId?: string }) {
     return this.send({ cmd: 'platform_set_agreed_price' }, data);
   }
@@ -40,8 +41,11 @@ export class PlatformAdminService extends BaseGatewayService {
   setup2fa(data: any) { return this.send({ cmd: 'platform_2fa_setup' }, data); }
   enable2fa(data: any) { return this.send({ cmd: 'platform_2fa_enable' }, data); }
   disable2fa(data: any) { return this.send({ cmd: 'platform_2fa_disable' }, data); }
+  reset2fa(data: { id: string; byUserId?: string }) { return this.send({ cmd: 'platform_users_reset_2fa' }, data); }
+  logout(data: { userId: string; iat?: number }) { return this.send({ cmd: 'platform_logout' }, data); }
+  refresh(data: { userId: string; authTime?: number }) { return this.send({ cmd: 'platform_refresh' }, data); }
   // Operator grant — capabilities, not a tier (reuses the billing service).
-  setAddOns(data: { organizationId: string; addOns: string[] }) { return this.send({ cmd: 'billing_admin_set_addons' }, data); }
+  setAddOns(data: { organizationId: string; addOns: string[]; byUserId?: string }) { return this.send({ cmd: 'billing_admin_set_addons' }, data); }
 
   // Pricing — READ ONLY. Prices live in `packages/shared/src/billing/*`; the
   // editable price book this replaced kept a second copy in the database that

@@ -26,7 +26,7 @@ const closeAsync = jest.fn().mockResolvedValue(undefined);
 const deleteDatabaseAsync = jest.fn(async () => {
   if (closeAsync.mock.calls.length === 0) throw new Error('database is still open');
 });
-const openDatabaseAsync = jest.fn(async (_name: string) => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync }));
+const openDatabaseAsync = jest.fn(async (_name: string) => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([{ cipher_version: '4.6.1 community' }]), runAsync: jest.fn(), closeAsync }));
 
 jest.mock('../native', () => ({ loadSQLite: () => ({ openDatabaseAsync, deleteDatabaseAsync }) }));
 jest.mock('../../lib/optional-native', () => ({
@@ -134,4 +134,28 @@ it('gives up rather than looping when the fresh database fails the same way', as
   await expect(openOfflineDatabase('member-with-a-deeper-fault')).rejects.toThrow(/not a database/i);
   // Deleted once, retried once, then surfaced — never a loop.
   expect(deleteDatabaseAsync).toHaveBeenCalledTimes(1);
+});
+
+/**
+ * ⚠️ No SQLCipher = no database. On a build without it `PRAGMA key` does
+ * nothing and the member's data would be written in plaintext — and "start a
+ * fresh file" would only make a second plaintext file.
+ */
+describe('a build without SQLCipher', () => {
+  it('refuses to open, closes the connection, and does not start a fresh file', async () => {
+    openDatabaseAsync.mockImplementation(async () => ({ execAsync, getAllAsync: jest.fn().mockResolvedValue([]), runAsync: jest.fn(), closeAsync }));
+    const { openOfflineDatabase, SqlCipherMissingError } = require('../db/database');
+    await expect(openOfflineDatabase('no-cipher')).rejects.toBeInstanceOf(SqlCipherMissingError);
+    expect(openDatabaseAsync).toHaveBeenCalledTimes(1);
+    expect(closeAsync).toHaveBeenCalled();
+    // The key was never handed to a library that would ignore it.
+    expect(execAsync.mock.calls.map(([sql]: [string]) => sql).some((sql: string) => sql.startsWith('PRAGMA key'))).toBe(false);
+  });
+
+  it('recognises what cipher_version reports', () => {
+    const { isSqlCipher } = require('../db/database');
+    expect(isSqlCipher('4.6.1 community')).toBe(true);
+    expect(isSqlCipher('NO SQLCIPHER')).toBe(false);
+    expect(isSqlCipher('')).toBe(false);
+  });
 });

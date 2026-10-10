@@ -14,7 +14,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../../src/contexts/theme-context';
 import { useToast } from '../../../../src/island/island-context';
-import { overtimeApi, membersApi, OrgMember } from '../../../../src/lib/api';
+import { overtimeApi, teamApi } from '../../../../src/lib/api';
+import { useAuth } from '../../../../src/contexts/auth-context';
+import { approverCandidates, type ApproverCandidate } from '../../../../src/lib/overtime-approvers';
 import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../../../src/components';
 import {
   COLORS,
@@ -42,31 +44,29 @@ export default function OvertimeSignatureScreen() {
   const toast = useToast();
   const { t } = useTranslation();
 
-  const [leaders, setLeaders] = useState<OrgMember[]>([]);
-  const [selectedLeader, setSelectedLeader] = useState<OrgMember | null>(null);
+  const { user } = useAuth();
+  const [leaders, setLeaders] = useState<ApproverCandidate[]>([]);
+  const [selectedLeader, setSelectedLeader] = useState<ApproverCandidate | null>(null);
   const [duration, setDuration] = useState(120);
   const [notes, setNotes] = useState('');
   const [signature, setSignature] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLeaders, setIsLoadingLeaders] = useState(true);
 
-  // Fetch admins/dispatchers as potential approvers
+  // The people this member can reach — see `approverCandidates` for why it is not a role filter.
   useEffect(() => {
-    const fetchLeaders = async () => {
-      try {
-        const data = await membersApi.list();
-        const adminsDispatchers = (data || []).filter(
-          (m: OrgMember) => m.role === 'ADMIN' || m.role === 'DISPATCHER'
-        );
-        setLeaders(adminsDispatchers);
-      } catch {
-        // Ignore
-      } finally {
-        setIsLoadingLeaders(false);
-      }
-    };
-    fetchLeaders();
-  }, []);
+    let cancelled = false;
+    void Promise.allSettled([teamApi.managers(), teamApi.list()])
+      .then(([managers, team]) => {
+        if (cancelled) return;
+        setLeaders(approverCandidates({
+          managers: managers.status === 'fulfilled' ? managers.value ?? [] : [],
+          team: team.status === 'fulfilled' ? team.value ?? [] : [],
+        }, user?.id));
+      })
+      .finally(() => { if (!cancelled) setIsLoadingLeaders(false); });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const approve = useQueuedCreate('overtime.approveSignature', { idField: null });
 
@@ -137,13 +137,13 @@ export default function OvertimeSignatureScreen() {
                   onPress={() => setSelectedLeader(leader)}
                 >
                   <View style={[styles.leaderAvatar, { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted }]}>
-                    <Text style={styles.leaderInitial}>{leader.firstName[0]}</Text>
+                    <Text style={styles.leaderInitial}>{leader.firstName[0] ?? '?'}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.leaderName, { color: colors.textPrimary }]}>
                       {leader.firstName} {leader.lastName}
                     </Text>
-                    <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{leader.role}</Text>
+                    {leader.subtitle ? <Text style={[styles.leaderRole, { color: colors.textSecondary }]}>{leader.subtitle}</Text> : null}
                   </View>
                   {selectedLeader?.id === leader.id && (
                     <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />

@@ -1,11 +1,15 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Query, Request, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAdminService } from './platform-admin.service';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { IsBoolean } from 'class-validator';
-import { ADD_ON_KEYS, isAddOn, BILLING_MODES, type BillingMode, assertServiceOk } from '@hbcfield/shared';
+import { BILLING_MODES, type BillingMode, assertServiceOk } from '@hbcfield/shared';
+import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
+// The same body contract as the customer's own add-on purchase: an explicit,
+// validated, duplicate-free list of real add-on keys — never "omitted = all".
+import { SetAddOnsDto } from '../billing/dto';
 
 /*
   Offline mode on or off.
@@ -29,6 +33,7 @@ class OfflineModeDto {
 @Controller('platform')
 @Public()
 @UseGuards(PlatformAuthGuard)
+@UseInterceptors(PlatformAuditInterceptor)
 @Throttle({ default: { limit: 120, ttl: 60_000 } })
 export class PlatformAdminController {
   constructor(
@@ -58,15 +63,39 @@ export class PlatformAdminController {
   @RequirePlatformPerm('view')
   async mail() { return this.unwrap(await this.svc.mailStatus()); }
 
+  /** One page of organizations; `nextCursor` in the reply asks for the next. */
   @Get('orgs')
   @RequirePlatformPerm('view')
-  async listOrgs(@Query('search') search?: string, @Query('status') status?: string) {
-    return this.unwrap(await this.svc.listOrgs({ search, status }));
+  async listOrgs(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.unwrap(await this.svc.listOrgs({ search, status, cursor: cursor || undefined, limit: limit ? Number(limit) : undefined }));
   }
 
+  /** The viewer's ROLE travels so the service can leave member emails out for support readers. */
   @Get('orgs/:id')
   @RequirePlatformPerm('view')
-  async orgDetail(@Param('id') id: string) { return this.unwrap(await this.svc.orgDetail({ organizationId: id })); }
+  async orgDetail(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.orgDetail({ organizationId: id, viewerRole: req.platformUser?.role }));
+  }
+
+  /**
+   * The operator audit trail, newest first. Owners only: it names every
+   * operator and every customer they acted on.
+   */
+  @Get('audit')
+  @RequirePlatformPerm('viewPlatformAudit')
+  async audit(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+    @Query('actorId') actorId?: string,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    return this.unwrap(await this.svc.auditList({ cursor: cursor || undefined, limit: limit ? Number(limit) : undefined, actorId: actorId || undefined, organizationId: organizationId || undefined }));
+  }
 
   @Post('orgs/:id/extend-trial')
   @RequirePlatformPerm('extendTrial')
@@ -160,9 +189,12 @@ export class PlatformAdminController {
    * revenue arriving. So it takes an explicit mode rather than a toggle, the
    * service refuses a mode the organization cannot support, and every change is
    * written to the audit log with who did it.
+   *
+   * `billingOps`, like the agreed price: how a customer is charged is a billing
+   * decision, not an account-management one.
    */
   @Post('orgs/:id/billing-mode')
-  @RequirePlatformPerm('manageOrgs')
+  @RequirePlatformPerm('billingOps')
   async setBillingMode(
     @Param('id') id: string,
     @Body() body: { mode?: string; invoiceDueDays?: number },
@@ -187,15 +219,19 @@ export class PlatformAdminController {
   /**
    * Grant an organization its capabilities. Replaces setting a tier — a
    * negotiated contract grants what it covers, and the gate only understands
-   * bought things. Omitting `addOns` grants everything, which is what setting
-   * the enterprise tier used to mean.
+   * bought things.
+   *
+   * `billingOps`: this changes what the organization is entitled to and billed
+   * for. The list is EXPLICIT and validated (SetAddOnsDto): omitting it used to
+   * grant every add-on, so a malformed request handed out the whole catalogue.
+   * The operator is recorded, and the organization's cached sessions are
+   * dropped so the change is read on their next request, not a minute later.
    */
   @Post('orgs/:id/add-ons')
-  @RequirePlatformPerm('manageOrgs')
-  async setAddOns(@Param('id') id: string, @Body() body: { addOns?: string[] }) {
-    const addOns = Array.isArray(body?.addOns) ? body.addOns : ADD_ON_KEYS;
-    const unknown = addOns.filter((k) => !isAddOn(k));
-    if (unknown.length) throw new HttpException({ message: `Not an add-on: ${unknown.join(', ')}` }, HttpStatus.BAD_REQUEST);
-    return this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns }));
+  @RequirePlatformPerm('billingOps')
+  async setAddOns(@Param('id') id: string, @Body() body: SetAddOnsDto, @Request() req: any) {
+    const result = this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns: body.addOns, byUserId: this.actor(req) }));
+    await this.authCache.invalidateOrganization(id).catch(() => undefined);
+    return result;
   }
 }

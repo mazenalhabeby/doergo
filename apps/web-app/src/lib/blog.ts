@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { serverApiBaseUrl } from "./endpoints";
 
 /**
  * File-based blog: posts live in `content/blog/<slug>.md` with a minimal
@@ -79,7 +80,8 @@ export function getFilePosts(): BlogPost[] {
 // the site within the revalidation window, no deploy needed. File posts remain
 // as a second source; on a slug collision the DB wins.
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://hbcfield.com/api/v1";
+// Rendered on the Next server, so it needs an absolute URL — from the one endpoints module.
+const API_URL = serverApiBaseUrl();
 
 /** API-relative asset URLs (e.g. /api/v1/blog/images/x) → absolute against the API host. */
 export function resolveBlogAssetUrl(u: string | undefined | null): string | undefined {

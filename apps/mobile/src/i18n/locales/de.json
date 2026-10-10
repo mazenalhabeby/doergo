@@ -3087,7 +3087,8 @@
     "welcomeBack": "Willkommen zurück, {{name}}",
     "tapToUnlock": "Tippen, um mit {{method}} zu entsperren",
     "notYou": "Nicht {{name}}? Mit einem anderen Konto anmelden",
-    "backTo": "Zurück zu {{method}} für {{name}}"
+    "backTo": "Zurück zu {{method}} für {{name}}",
+    "unreachableBody": "Der Server war nicht erreichbar. Ihre Anmeldung auf diesem Telefon bleibt eingerichtet – bitte versuchen Sie es gleich noch einmal."
   },
   "offline": {
     "banner": {
@@ -4668,7 +4669,8 @@
     "tooLong": "Höchstens {{days}} Tage.",
     "durDays": "{{n}} T",
     "durHours": "{{n}} Std.",
-    "durMinutes": "{{n}} Min."
+    "durMinutes": "{{n}} Min.",
+    "pushNotYours": "Diese Benachrichtigung galt einer früheren Anmeldung auf diesem Telefon. Öffnen Sie den Kalender, um dies selbst zu erledigen."
   },
   "contactsImport": {
     "option": "Aus Kontakten importieren",
@@ -4763,6 +4765,14 @@
       "open": "Kunden öffnen",
       "more": "Weitere importieren",
       "failed": "Import nicht möglich. Es wurde nichts hinzugefügt."
+    }
+  },
+  "tracking": {
+    "foreground": {
+      "routeTitle": "HBCField – Routenaufzeichnung",
+      "routeBody": "Ihre Route zum Einsatzort wird aufgezeichnet.",
+      "shiftTitle": "HBCField – Eingestempelt",
+      "shiftBody": "Während Ihrer Schicht wird geprüft, ob Sie sich am Arbeitsort befinden."
     }
   }
 }

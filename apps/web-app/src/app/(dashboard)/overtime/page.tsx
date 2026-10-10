@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
 import { useTimeFormat } from "@/hooks"
 import { notify } from "@/lib/toast"
-import { format, formatDistanceToNow } from "date-fns"
+import { format } from "date-fns"
+import { formatTimeAgo } from "@/lib/format-date"
 import { msLeft, formatCountdown, urgencyOf, shiftLength, isLongShift } from "./_lib/countdown"
 import {
   Clock,
@@ -548,7 +549,7 @@ function OvertimeCard({
                 </span>
               )}
               <span className="text-muted-foreground/70">
-                {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true })}
+                {formatTimeAgo(request.createdAt)}
               </span>
             </div>
             {request.technicianReason && (

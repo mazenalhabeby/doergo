@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { copyText } from "@/lib/clipboard"
 
 interface CreateInvitationDialogProps {
   open: boolean
@@ -111,7 +112,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       if (code) {
         setGeneratedCode(code)
         setSuccess(true)
-        navigator.clipboard.writeText(code).catch(() => {})
+        // A courtesy copy on creation: silent, the Copy button reports for itself.
+        void copyText(code, { silent: true })
       }
       queryClient.invalidateQueries({ queryKey: ["invitations"] })
       queryClient.invalidateQueries({ queryKey: ["pendingInvitations"] })
@@ -168,7 +170,7 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
 
   const handleCopyCode = useCallback(async () => {
     if (!generatedCode) return
-    await navigator.clipboard.writeText(generatedCode)
+    if (!(await copyText(generatedCode))) return
     setCodeCopied(true)
     notify.success(t("invitations.inviteDialog.codeCopied"))
     setTimeout(() => setCodeCopied(false), 3000)

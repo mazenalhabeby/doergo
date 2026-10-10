@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { COMPANY_FIELD_KEYS, COMPANY_ONLY_FIELDS, isCompany, type CompanyOnlyField } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
@@ -10,6 +10,7 @@ import { ContactRow } from '../contact-row';
 import { AddressRow } from '../address-row';
 import { isWaiting, type ClientRecordModel } from './use-client-record';
 import type { MobileCustomerContact } from '../../../lib/api/customers';
+import { geoUrl, mailtoUrl, openSafeUrl, telUrl, webUrl } from '../../../lib/safe-links';
 
 /**
  * ABOUT — who to ask for, and everything written down about them.
@@ -59,9 +60,9 @@ export function RecordAbout({
   const address = record.address?.trim();
   const website = record.website?.trim();
   const facts: { key: string; label: string; value: string; action?: { label: string; onPress: () => void } }[] = [];
-  if (address) facts.push({ key: 'address', label: t('customers.record.fAddress', 'Address'), value: address, action: { label: t('customers.record.directions', 'Directions'), onPress: () => void Linking.openURL(`geo:0,0?q=${encodeURIComponent(address)}`) } });
-  if (phone) facts.push({ key: 'phone', label: t('customers.fPhone'), value: phone, action: { label: t('customers.record.call'), onPress: () => void Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`) } });
-  if (email) facts.push({ key: 'email', label: t('customers.fEmail'), value: email, action: { label: t('customers.record.write', 'Write'), onPress: () => void Linking.openURL(`mailto:${email}`) } });
+  if (address) facts.push({ key: 'address', label: t('customers.record.fAddress', 'Address'), value: address, action: geoUrl(address) ? { label: t('customers.record.directions', 'Directions'), onPress: () => void openSafeUrl(geoUrl(address)) } : undefined });
+  if (phone) facts.push({ key: 'phone', label: t('customers.fPhone'), value: phone, action: telUrl(phone) ? { label: t('customers.record.call'), onPress: () => void openSafeUrl(telUrl(phone)) } : undefined });
+  if (email) facts.push({ key: 'email', label: t('customers.fEmail'), value: email, action: mailtoUrl(email) ? { label: t('customers.record.write', 'Write'), onPress: () => void openSafeUrl(mailtoUrl(email)) } : undefined });
   if (company) {
     for (const field of COMPANY_ONLY_FIELDS) {
       const v = (record[field as CompanyOnlyField] as string | null | undefined)?.trim();
@@ -71,7 +72,7 @@ export function RecordAbout({
         label: t(COMPANY_FIELD_KEYS[field], { defaultValue: t(`customers.form.${field}`) }),
         value: v,
         action: field === 'website' && website
-          ? { label: t('customers.record.open', 'Open'), onPress: () => void Linking.openURL(/^https?:\/\//i.test(website) ? website : `https://${website}`) }
+          ? { label: t('customers.record.open', 'Open'), onPress: () => void openSafeUrl(webUrl(website)) }
           : undefined,
       });
     }

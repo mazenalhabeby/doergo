@@ -85,3 +85,21 @@ export function formatRelativeDay(value: string | number | Date): string {
   if (days < 7) return i18n.t("common.timeAgo.days", { count: days })
   return formatDayMonth(d)
 }
+
+/**
+ * Past OR future, in the reader's language — "in 3 days", "vor 2 Stunden".
+ *
+ * For dates that can lie ahead (a due date), which `formatTimeAgo` cannot say.
+ * Intl does the wording, so there is no string to translate.
+ */
+export function formatRelativeTime(value: string | number | Date, now: number = Date.now()): string {
+  const diffSec = Math.round((new Date(value).getTime() - now) / 1000)
+  const abs = Math.abs(diffSec)
+  const rtf = new Intl.RelativeTimeFormat(dateLocale(), { numeric: "auto" })
+  if (abs < 60) return rtf.format(diffSec, "second")
+  if (abs < 3600) return rtf.format(Math.round(diffSec / 60), "minute")
+  if (abs < 86_400) return rtf.format(Math.round(diffSec / 3600), "hour")
+  if (abs < 30 * 86_400) return rtf.format(Math.round(diffSec / 86_400), "day")
+  if (abs < 365 * 86_400) return rtf.format(Math.round(diffSec / (30 * 86_400)), "month")
+  return rtf.format(Math.round(diffSec / (365 * 86_400)), "year")
+}

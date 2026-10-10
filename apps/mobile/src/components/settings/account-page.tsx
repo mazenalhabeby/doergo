@@ -74,8 +74,13 @@ export function AccountPage() {
     try {
       await accountApi.deleteAccount(deletePassword.trim());
       setDeleting(false);
-      // The one sign-out that also forgets this phone's Face ID key: there is no account left to unlock.
-      await logout({ forgetBiometrics: true });
+      /*
+        ⚠️ The account is gone, so everything of it on this phone goes too —
+        the encrypted database and its queue included, unsent or not (there is
+        nobody left to send it as, and erasure is the member's right). Also the
+        one sign-out that forgets this phone's Face ID key.
+      */
+      await logout({ reason: 'account-deleted' });
     } catch (err) {
       toast.error(t('common.error'), err instanceof Error ? err.message : t('profile.account.deleteFailed'));
     } finally {

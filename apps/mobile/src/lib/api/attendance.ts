@@ -1,4 +1,5 @@
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
+import { path } from './path';
 import { fetchWithAuth } from './client';
 import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse, GeofenceExcursion } from './types';
 import type { BreakType } from './types';
@@ -213,7 +214,7 @@ export const attendanceApi = {
 
   /** Approve one entry (`canReconcileAttendance`). */
   approveEntry: async (entryId: string, notes?: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(`/attendance/approvals/${entryId}/approve`, {
+    return fetchWithAuth<TimeEntry>(path`/attendance/approvals/${entryId}/approve`, {
       method: 'POST',
       body: JSON.stringify({ notes }),
     });
@@ -221,7 +222,7 @@ export const attendanceApi = {
 
   /** Reject one entry — the reason is required and is shown to the member. */
   rejectEntry: async (entryId: string, reason: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(`/attendance/approvals/${entryId}/reject`, {
+    return fetchWithAuth<TimeEntry>(path`/attendance/approvals/${entryId}/reject`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
@@ -255,7 +256,7 @@ export const attendanceApi = {
     entryId: string,
     body: { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string },
   ): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(`/attendance/entries/${entryId}/edit`, {
+    return fetchWithAuth<TimeEntry>(path`/attendance/entries/${entryId}/edit`, {
       method: 'PUT',
       body: JSON.stringify(body),
     });
@@ -270,7 +271,7 @@ export const attendanceApi = {
 
   /** Excuse a no-show, or put it back on the list (`canReconcileAttendance`). */
   resolveNoShow: async (id: string, action: 'excuse' | 'reopen', reason?: string): Promise<NoShow> => {
-    return fetchWithAuth<NoShow>(`/attendance/no-shows/${id}`, {
+    return fetchWithAuth<NoShow>(path`/attendance/no-shows/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ action, reason }),
     });
@@ -280,7 +281,7 @@ export const attendanceApi = {
 
   /** "I forgot to clock out" — self-report the real leave time (ISO string). */
   resolveForgotClockOut: async (entryId: string, clockOutAt: string): Promise<TimeEntry> => {
-    return fetchWithAuth<TimeEntry>(`/attendance/entries/${entryId}/forgot-clock-out`, {
+    return fetchWithAuth<TimeEntry>(path`/attendance/entries/${entryId}/forgot-clock-out`, {
       method: 'POST',
       body: JSON.stringify({ clockOutAt }),
     });
@@ -288,7 +289,7 @@ export const attendanceApi = {
 
   /** "I'm working extra time" — routes to a space leader for approval. */
   requestExtraTime: async (entryId: string): Promise<{ entryId: string; status: string }> => {
-    return fetchWithAuth(`/attendance/entries/${entryId}/request-extra-time`, { method: 'POST' });
+    return fetchWithAuth(path`/attendance/entries/${entryId}/request-extra-time`, { method: 'POST' });
   },
 
   /** Leader: open extra-time requests the caller can approve. */
@@ -300,7 +301,7 @@ export const attendanceApi = {
 
   /** Leader: approve N more minutes of overtime for an open shift. */
   approveExtraTime: async (entryId: string, minutes: number): Promise<any> => {
-    return fetchWithAuth(`/attendance/extra-time/${entryId}/approve`, {
+    return fetchWithAuth(path`/attendance/extra-time/${entryId}/approve`, {
       method: 'POST',
       body: JSON.stringify({ minutes }),
     });
@@ -308,6 +309,6 @@ export const attendanceApi = {
 
   /** Leader: reject an extra-time request. */
   rejectExtraTime: async (entryId: string): Promise<any> => {
-    return fetchWithAuth(`/attendance/extra-time/${entryId}/reject`, { method: 'POST' });
+    return fetchWithAuth(path`/attendance/extra-time/${entryId}/reject`, { method: 'POST' });
   },
 };

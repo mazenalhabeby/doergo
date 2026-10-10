@@ -133,3 +133,46 @@ describe('a failed prompt only deletes the key on proof', () => {
     expect(await run(signed)).toEqual({ failure: 'invalidated', deleted: true });
   });
 });
+
+/**
+ * ⚠️ The binding is forgotten only when the SERVER says the key is no good
+ * (401/403/404). A 429 at shift change or a 502 during a deploy used to delete
+ * it as well, silently switching Face ID off for the member.
+ */
+describe('a failed verify only forgets the key on the server\'s word', () => {
+  const verifyWith = async (verify: () => Promise<unknown>) => {
+    const { deleteKeys } = require('@sbaiahmed1/react-native-biometrics');
+    deleteKeys.mockClear();
+    signWithOptions.mockResolvedValue({ success: true, signature: 'sig' });
+    global.fetch = jest.fn(async (url: any) => {
+      if (String(url).includes('challenge')) return { ok: true, status: 200, json: async () => ({ success: true, data: { challenge: 'Y2g=' } }) } as any;
+      return verify();
+    }) as any;
+    const { DeviceKeyCredential } = require('../device-key-credential');
+    const err = await new DeviceKeyCredential().unlock().catch((e: unknown) => e);
+    return { failure: (err as { failure?: string })?.failure, deleted: deleteKeys.mock.calls.length > 0 };
+  };
+
+  it.each([401, 403, 404])('%i → rejected, key forgotten', async (status) => {
+    expect(await verifyWith(async () => ({ ok: false, status, json: async () => ({}) }))).toEqual({ failure: 'rejected', deleted: true });
+  });
+
+  it.each([429, 500, 502, 503])('%i → unreachable, key kept', async (status) => {
+    expect(await verifyWith(async () => ({ ok: false, status, json: async () => ({}) }))).toEqual({ failure: 'unreachable', deleted: false });
+  });
+
+  it('no network → unreachable, key kept', async () => {
+    expect(await verifyWith(async () => { throw new TypeError('Network request failed'); })).toEqual({ failure: 'unreachable', deleted: false });
+  });
+
+  it('every request carries an abort signal (a timeout), not an open-ended wait', async () => {
+    await verifyWith(async () => ({ ok: true, status: 200, json: async () => ({ data: { accessToken: 'a', refreshToken: 'r' } }) }));
+    for (const [, init] of (global.fetch as jest.Mock).mock.calls) expect(init.signal).toBeDefined();
+  });
+
+  it('the rule itself', () => {
+    const { serverRevokedKey } = require('../device-key-credential');
+    expect([401, 403, 404].every(serverRevokedKey)).toBe(true);
+    expect([0, 400, 408, 429, 500, 502].some(serverRevokedKey)).toBe(false);
+  });
+});

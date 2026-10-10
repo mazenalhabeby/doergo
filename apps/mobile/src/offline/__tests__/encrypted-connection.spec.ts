@@ -66,7 +66,7 @@ it('runs the transaction body on the SAME connection that holds the key', async 
 const execAsync = jest.fn();
 const openDatabaseAsync = jest.fn(async (_name: string) => ({
   execAsync,
-  getAllAsync: jest.fn().mockResolvedValue([]),
+  getAllAsync: jest.fn().mockResolvedValue([{ cipher_version: '4.6.1 community' }]),
   getFirstAsync: jest.fn().mockResolvedValue(null),
   runAsync: jest.fn(),
   closeAsync: jest.fn(),

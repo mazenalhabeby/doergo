@@ -1,4 +1,5 @@
 import en from "@/i18n/locales/en.json";
+import { JsonLd } from "./json-ld";
 
 /**
  * FAQPage JSON-LD for Google rich results + AI answer engines. Built from the
@@ -21,10 +22,5 @@ export function FaqJsonLd() {
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
-    />
-  );
+  return <JsonLd data={graph} />;
 }

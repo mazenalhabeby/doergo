@@ -189,10 +189,16 @@ export function moreOptions(input: {
  * hands a step with a form over this way). `finish` is the older link and
  * means the same for the dock's own next step.
  */
-export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | 'handover' | 'join' | `form:${string}`;
+export type OpenSheet = 'issue' | 'decline' | 'cancel' | 'assign' | 'edit' | 'finish' | 'handover' | `form:${string}`;
 // `handover`: "write what you did" — the home strip opens the job on it.
-// `join`: "I'm with him" on a crew push — not a sheet, the job joins on open.
-const OPEN_SHEETS: readonly string[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish', 'handover', 'join'];
+/*
+  ⚠️ NO `join`. "I'm with him" used to arrive as `?sheet=join` and the page
+  joined the crew on open — so any hbcfield:// link could join a member to a
+  job. Every sheet here only OPENS something the member then confirms; a link
+  that ACTS is not a sheet. The push's button now hands the join over in
+  memory (`lib/join-intent.ts`).
+*/
+const OPEN_SHEETS: readonly string[] = ['issue', 'decline', 'cancel', 'assign', 'edit', 'finish', 'handover'];
 const FORM_SHEET = /^form:([A-Za-z0-9_-]{1,64})$/;
 
 export function parseOpenSheet(v: unknown): OpenSheet | null {

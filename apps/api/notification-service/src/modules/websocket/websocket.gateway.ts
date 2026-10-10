@@ -12,7 +12,7 @@ import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
 import { SocketEvents, PrismaService, platformCan, safeEqual } from '@hbcfield/shared';
-import { operatorMaySupport, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
+import { operatorMaySupport, recordStaticKeyAgentSocket, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
 
 export interface ClientInfo {
   userId: string;
@@ -483,7 +483,15 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     let authed = false;
     // Path 1: legacy shared platform key (operator console).
     // Constant-time: `===` leaks how much of the operator key matched.
-    if (this.platformAdminKey && typeof auth.platformKey === 'string' && safeEqual(auth.platformKey, this.platformAdminKey)) authed = true;
+    if (this.platformAdminKey && typeof auth.platformKey === 'string' && safeEqual(auth.platformKey, this.platformAdminKey)) {
+      authed = true;
+      // Recorded like every static-key call (actor "static-key" + declared agent name).
+      recordStaticKeyAgentSocket(this.prisma as any, {
+        agent: auth.agent,
+        ip: client.handshake?.address ?? null,
+        userAgent: client.handshake?.headers?.['user-agent'],
+      }).catch((e) => this.logger.warn(`[AUTH] platform audit write failed for agent socket ${client.id}: ${e}`));
+    }
     // Path 2: platform-staff JWT (admin.hbcfield.com) — verify, then ask the
     // DATABASE: still active, minted after their cut-off, and their CURRENT
     // role holds manageSupport (socket-access.ts operatorMaySupport). Like an

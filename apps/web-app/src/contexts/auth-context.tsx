@@ -6,11 +6,22 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
   useRef,
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { authApi, hasTokens, clearTokens, refreshTokens, getAccessToken } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api';
+import {
+  getAccessToken,
+  restoreSession,
+  refreshAccessToken,
+  onSessionEvent,
+  decodeJwtPayload,
+  tokenExpiresWithin,
+  type SessionEndReason,
+} from '@/lib/auth-session';
 import { hasFeatureModule, orgHasAddOn, isAddOn, isAdmin, accessAllowsAnywhere } from '@hbcfield/shared/client';
 import { BootScreen } from '@/components/skeletons/boot-screen';
 
@@ -119,31 +130,35 @@ interface TokenInfo {
   refreshTokenExp: Date | null;
 }
 
-// Parse JWT to get expiry
-function parseJwt(token: string): { exp?: number } | null {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
+const EMPTY_TOKEN_INFO: TokenInfo = { accessToken: null, refreshToken: null, accessTokenExp: null, refreshTokenExp: null };
+
+type MeResponse = NonNullable<Awaited<ReturnType<typeof authApi.getMe>>>;
+
+/**
+ * The session's user as the client holds it.
+ *
+ * ⚠️ `canCreateTasks` is the SERVER's value. This used to be recomputed here as
+ * "ADMIN, or canViewAllTasks, or any creation scope" — which showed a New Task
+ * button to people the server then refused, and hid it from people it allowed.
+ * Only a token minted before the field existed falls back to the scope.
+ */
+export function sessionUserFrom(u: MeResponse | Record<string, unknown>): User {
+  const d = u as unknown as User & { taskCreationScope?: string; canCreateTasks?: boolean };
+  const scope = d.taskCreationScope || (d.role === 'ADMIN' ? 'ORG' : d.canViewAllTasks ? 'SPACE' : 'NONE');
+  return {
+    ...d,
+    taskCreationScope: scope,
+    canCreateTasks: typeof d.canCreateTasks === 'boolean' ? d.canCreateTasks : scope !== 'NONE',
+    avatarUrl: d.avatarUrl || null,
+    enabledModules: d.enabledModules || [],
+    orgModules: d.orgModules || [],
+    spaceModules: d.spaceModules || [],
+  };
 }
 
-// Check if token will expire within the given seconds
-function isTokenExpiringSoon(token: string | null, withinSeconds: number): boolean {
-  if (!token) return true;
-  const payload = parseJwt(token);
-  if (!payload?.exp) return true;
-  const expiresAt = payload.exp * 1000;
-  const now = Date.now();
-  return expiresAt - now < withinSeconds * 1000;
+/** Where a session that ended sends the reader, and why. */
+export function loginPathFor(reason: SessionEndReason): string {
+  return reason === 'signed-out' ? '/login' : `/login?session=${reason}`;
 }
 
 // Auth context type
@@ -178,58 +193,40 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tokenInfo, setTokenInfo] = useState<TokenInfo>({
-    accessToken: null,
-    refreshToken: null,
-    accessTokenExp: null,
-    refreshTokenExp: null,
-  });
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo>(EMPTY_TOKEN_INFO);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
-  // Update token info from storage. The refresh token now lives only in an
-  // httpOnly cookie and is not readable from JS, so it isn't surfaced here.
+  // Token info for the dev panel. The access token is in memory; the refresh
+  // token is in an httpOnly cookie and is not readable from JS.
   const updateTokenInfo = useCallback(() => {
     const accessToken = getAccessToken();
-
-    let accessTokenExp: Date | null = null;
-    if (accessToken) {
-      const payload = parseJwt(accessToken);
-      if (payload?.exp) {
-        accessTokenExp = new Date(payload.exp * 1000);
-      }
-    }
-
+    const exp = decodeJwtPayload(accessToken)?.exp;
     setTokenInfo({
       accessToken,
       refreshToken: null,
-      accessTokenExp,
+      accessTokenExp: exp ? new Date(exp * 1000) : null,
       refreshTokenExp: null,
     });
   }, []);
 
-  // Check authentication status on mount
+  /*
+    On load: nothing is on disk any more, so ask for a token — from another
+    open tab, else from the gateway with the httpOnly refresh cookie — then
+    who it belongs to.
+  */
   const checkAuth = useCallback(async () => {
-    if (!hasTokens()) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const outcome = await restoreSession();
+      if (outcome !== 'ok') return;
       const userData = await authApi.getMe();
       if (userData) {
-        setUser({
-          ...userData,
-          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.canViewAllTasks ? 'SPACE' : 'NONE'),
-          canCreateTasks: userData.role === 'ADMIN' || userData.canViewAllTasks || (userData.taskCreationScope || 'NONE') !== 'NONE',
-          avatarUrl: userData.avatarUrl || null,
-          enabledModules: userData.enabledModules || [],
-          orgModules: userData.orgModules || [],
-          spaceModules: userData.spaceModules || [],
-        });
+        setUser(sessionUserFrom(userData));
         updateTokenInfo();
       }
     } catch {
-      clearTokens();
+      // A failed /auth/me is not proof the session is over — a refused refresh
+      // is, and that path clears it. Show signed-out for now.
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -245,6 +242,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (user) updateTokenInfo();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /*
+    The session as other tabs and the request pipeline see it.
+
+      • ended            — a refresh was REFUSED (401/403), or another tab signed
+                           out: drop the user, drop every cached answer, go to
+                           sign-in (saying why when the organization is switched off);
+      • identity-changed — somebody else signed in on this browser: nothing on
+                           this page is theirs, so clear and reload;
+      • token            — another tab signed in or refreshed: adopt it, and sign
+                           this tab in too if it was signed out.
+  */
+  const userRef = useRef<User | null>(null);
+  userRef.current = user;
+  useEffect(() => {
+    return onSessionEvent((event) => {
+      if (event.type === 'ended') {
+        const wasSignedIn = !!userRef.current;
+        queryClient.clear();
+        setUser(null);
+        setTokenInfo(EMPTY_TOKEN_INFO);
+        if (wasSignedIn && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+          router.replace(loginPathFor(event.reason));
+        }
+        return;
+      }
+      if (event.type === 'identity-changed') {
+        queryClient.clear();
+        if (typeof window !== 'undefined') window.location.reload();
+        return;
+      }
+      if (event.type === 'token') {
+        updateTokenInfo();
+        if (!userRef.current) void checkAuth();
+      }
+    });
+  }, [queryClient, router, updateTokenInfo, checkAuth]);
+
   // Proactive token refresh — refresh access token before it expires
   // This avoids the 401 → refresh → retry cycle (3 requests instead of 1)
   useEffect(() => {
@@ -253,17 +287,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const checkAndRefresh = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) return;
-
-      // Refresh when access token will expire within 2 minutes
-      if (isTokenExpiringSoon(accessToken, 120)) {
-        const success = await refreshTokens();
-        if (success) {
-          updateTokenInfo();
-        } else {
-          // Refresh token also expired — session is dead
-          clearTokens();
-          setUser(null);
-        }
+      // Refresh when the access token will expire within 2 minutes. A refused
+      // refresh announces itself (session event); a transient failure keeps
+      // the session and is tried again on the next tick.
+      if (tokenExpiresWithin(accessToken, 120)) {
+        if ((await refreshAccessToken()) === 'ok') updateTokenInfo();
       }
     };
 
@@ -281,47 +309,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Clear all cached data from previous session before setting new user
     queryClient.clear();
     const response = await authApi.login(email, password, rememberMe);
-    const u = response.user;
-    setUser({
-      ...u,
-      taskCreationScope: u.taskCreationScope || (u.role === 'ADMIN' ? 'ORG' : u.canViewAllTasks ? 'SPACE' : 'NONE'),
-      canCreateTasks: u.role === 'ADMIN' || u.canViewAllTasks || (u.taskCreationScope || 'NONE') !== 'NONE',
-      avatarUrl: u.avatarUrl || null,
-      enabledModules: u.enabledModules || [],
-      orgModules: u.orgModules || [],
-    });
+    setUser(sessionUserFrom(response.user));
     updateTokenInfo();
   }, [updateTokenInfo, queryClient]);
 
-  // Logout function
+  // Logout function — signs out every tab of this browser (auth-session broadcasts it).
   const logout = useCallback(async () => {
     await authApi.logout();
     // Clear all cached data so next login doesn't show stale data
     queryClient.clear();
     setUser(null);
-    setTokenInfo({
-      accessToken: null,
-      refreshToken: null,
-      accessTokenExp: null,
-      refreshTokenExp: null,
-    });
+    setTokenInfo(EMPTY_TOKEN_INFO);
   }, [queryClient]);
 
   // Refresh user data
   const refreshUser = useCallback(async () => {
     try {
       const userData = await authApi.getMe();
-      if (userData) {
-        setUser({
-          ...userData,
-          taskCreationScope: userData.taskCreationScope || (userData.role === 'ADMIN' ? 'ORG' : userData.canViewAllTasks ? 'SPACE' : 'NONE'),
-          canCreateTasks: userData.role === 'ADMIN' || userData.canViewAllTasks || (userData.taskCreationScope || 'NONE') !== 'NONE',
-          avatarUrl: userData.avatarUrl || null,
-          enabledModules: userData.enabledModules || [],
-          orgModules: userData.orgModules || [],
-          spaceModules: userData.spaceModules || [],
-        });
-      }
+      if (userData) setUser(sessionUserFrom(userData));
     } catch {
       // Ignore errors
     }
@@ -359,7 +364,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [refreshUser]);
 
-  // Check if a FEATURE module (sprints, checklists, tracking…) is enabled.
+// Check if a FEATURE module (sprints, checklists, tracking…) is enabled.
   // Resolves from the org's feature modules (orgModules) for ALL users —
   // never from the per-user access profile, so org settings apply to everyone.
   const hasModule = useCallback((module: string) => {
@@ -418,32 +423,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Manual refresh function
   const manualRefresh = useCallback(async () => {
-    try {
-      const success = await refreshTokens();
-      if (success) {
-        updateTokenInfo();
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
+    if ((await refreshAccessToken()) === 'ok') {
+      updateTokenInfo();
+      return true;
     }
+    return false;
   }, [updateTokenInfo]);
 
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    tokenInfo,
-    login,
-    logout,
-    refreshUser,
-    patchUser,
-    manualRefresh,
-    hasModule,
-    hasPlanFeature,
-    hasPermission,
-  };
+  // Memoised: every consumer of useAuth() re-rendered on each provider render.
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      tokenInfo,
+      login,
+      logout,
+      refreshUser,
+      patchUser,
+      manualRefresh,
+      hasModule,
+      hasPlanFeature,
+      hasPermission,
+    }),
+    [user, isLoading, tokenInfo, login, logout, refreshUser, patchUser, manualRefresh, hasModule, hasPlanFeature, hasPermission],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

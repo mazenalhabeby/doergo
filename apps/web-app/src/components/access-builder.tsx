@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { UserAvatar } from "@/components/user-avatar"
 import { AccessFields, Field } from "@/components/access-fields"
 import { notify } from "@/lib/toast"
+import { runBulk, isFailure, firstFailureReason } from "@/lib/concurrency"
 
 /** Stable, order-insensitive canonical form of a draft's PERSISTED shape — so
  *  dirty tracking ignores field ordering and collapsed values (e.g. task scope
@@ -122,12 +123,29 @@ export function AccessBuilder({
       }
       // Bulk: apply the same access to every selected member. Single: just this one.
       const targetIds = isBulk ? (applyToIds as string[]) : [member.id]
-      await Promise.all(targetIds.map((id) => organizationsApi.updateMember(id, payload)))
+      //
+      // At most four requests at a time (lib/concurrency) — a bulk apply to thirty
+      // members fired thirty at once into a gateway that allows twenty in ten
+      // seconds, and Promise.all reported the first 429 as if the whole batch
+      // had failed while most of it had in fact been written.
+      const access = await runBulk(targetIds, (id) => organizationsApi.updateMember(id, payload))
+      const failedIds = new Set(targetIds.filter((_, i) => isFailure(access.results[i])))
+      let firstReason = firstFailureReason(access.results)
       // Persist notification watchers together with the access — only when the
       // admin actually touched them, so an untouched Save never clears them.
       if (watchersTouched) {
         const ids = [...watcherIds]
-        await Promise.all(targetIds.map((id) => organizationsApi.setMemberWatchers(id, ids)))
+        const written = targetIds.filter((id) => !failedIds.has(id))
+        const watchers = await runBulk(written, (id) => organizationsApi.setMemberWatchers(id, ids))
+        written.forEach((id, i) => { if (isFailure(watchers.results[i])) failedIds.add(id) })
+        firstReason ??= firstFailureReason(watchers.results)
+      }
+      if (failedIds.size > 0) {
+        // One member: the server's own sentence. Several: how many did not take.
+        if (!isBulk) throw firstReason instanceof Error ? firstReason : new Error(t("accessBuilder.updateFailed"))
+        notify.error(t("tasks.notify.updatesFailed", { failed: failedIds.size, total: targetIds.length }))
+        onSaved?.()
+        return
       }
       if (isBulk) {
         notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.bulkAppliedDesc", "Access applied to {{count}} members", { count: targetIds.length }))

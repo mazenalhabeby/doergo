@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next"
 import { Download, Printer, Trash2, Pencil, Loader2, MoreHorizontal, Languages, Check } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
-import { invoicesApi, organizationsApi, type Invoice } from "@/lib/api"
+import { invoicesApi, type Invoice } from "@/lib/api"
+import { useOrgLetterhead } from "@/hooks/use-org-letterhead"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -102,10 +103,8 @@ function InvoiceDetailInner({ id }: { id: string }) {
     queryKey: ["invoice", id],
     queryFn: () => invoicesApi.getById(id),
   })
-  const { data: org } = useQuery({
-    queryKey: ["organization-profile"],
-    queryFn: () => organizationsApi.getProfile(),
-  })
+  // The profile is ADMIN-only; whoever else invoices reads the main company (hooks/use-org-letterhead).
+  const { data: org } = useOrgLetterhead()
 
   const statusMutation = useMutation({
     mutationFn: (status: string) => invoicesApi.updateStatus(id, status),

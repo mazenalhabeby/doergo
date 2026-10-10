@@ -7,7 +7,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
-  Linking,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { useToast } from '../../src/island/island-context';
 import { documentsApi, type DocumentChain } from '../../src/lib/api';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { SignatureCapture, ScreenContainer, ScreenHeader } from '../../src/components';
+import { httpsUrl, openSafeUrl } from '../../src/lib/safe-links';
 
 /*
   Signing, on a phone.
@@ -48,7 +48,14 @@ export default function SignDocumentScreen() {
   const { colors } = useTheme();
   const toast = useToast();
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ id: string; title?: string; mode?: string }>();
+  /*
+    ⚠️ ONLY THE ID IS READ FROM THE ROUTE. `title` and `mode` used to come from
+    the URL too — so a hbcfield:// link could put any words above the consent
+    and signature ("Overtime approval" over a contract), or turn a signature
+    into a bare acknowledgement on screen. Both are now resolved from the server
+    for this document id; the URL can only say WHICH document.
+  */
+  const params = useLocalSearchParams<{ id: string }>();
 
   const [step, setStep] = useState<Step>('read');
   const [opening, setOpening] = useState(false);
@@ -67,12 +74,18 @@ export default function SignDocumentScreen() {
     panel on every payslip would be noise.
   */
   const [chain, setChain] = useState<DocumentChain | null>(null);
+  // The document's own title, as the server has it (the chain answers for every signer).
+  const [title, setTitle] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     documentsApi
       .chain(String(params.id))
-      .then((c) => { if (!cancelled && c?.steps?.length > 1) setChain(c); })
+      .then((c) => {
+        if (cancelled) return;
+        if (typeof c?.title === 'string' && c.title) setTitle(c.title);
+        if (c?.steps?.length > 1) setChain(c);
+      })
       // Best effort: the panel is context, not a precondition for signing.
       .catch(() => {});
     return () => { cancelled = true; };
@@ -92,16 +105,13 @@ export default function SignDocumentScreen() {
   );
 
   /*
-    The mode, resolved when the caller did not know it.
-
-    The home action strip goes STRAIGHT here from `/documents/pending`, whose
-    rows carry an id and a title but not the type's signing mode. Rather than
-    send the member through the documents list to learn it, this screen looks
-    it up — the same list + types the documents screen reads.
+    The signing mode, always from the server — the same list + types the
+    documents screen reads. A document routed to somebody else for a
+    countersignature is not in their own list; that is an in-app signature
+    (the server refuses anything else on the step), so IN_APP stands.
   */
-  const [mode, setMode] = useState<string | undefined>(params.mode);
+  const [mode, setMode] = useState<string | undefined>(undefined);
   useEffect(() => {
-    if (params.mode) return;
     let cancelled = false;
     Promise.all([documentsApi.list(), documentsApi.listTypes()])
       .then(([docs, types]) => {
@@ -111,7 +121,7 @@ export default function SignDocumentScreen() {
       })
       .catch(() => { if (!cancelled) setMode('IN_APP'); });
     return () => { cancelled = true; };
-  }, [params.id, params.mode]);
+  }, [params.id]);
   const isAcknowledge = mode === 'ACKNOWLEDGE';
 
   const openDocument = useCallback(async () => {
@@ -119,7 +129,8 @@ export default function SignDocumentScreen() {
     try {
       const res = await documentsApi.downloadUrl(String(params.id));
       if (!res?.url) throw new Error(t('documents.openFailed'));
-      await Linking.openURL(res.url);
+      // A signed link from our server — https only, never another scheme.
+      if (!(await openSafeUrl(httpsUrl(res.url)))) throw new Error(t('documents.openFailed'));
       // Opening is what "read" means here. The app cannot know they read it —
       // but it can record that it was opened, which is what the trail claims.
       setHasRead(true);
@@ -131,6 +142,8 @@ export default function SignDocumentScreen() {
   }, [params.id, t, toast]);
 
   const agree = useCallback(async () => {
+    // Not before the server has said how this document is signed.
+    if (!mode) return;
     setBusy(true);
     try {
       await documentsApi.consent(String(params.id));
@@ -143,7 +156,7 @@ export default function SignDocumentScreen() {
     } finally {
       setBusy(false);
     }
-  }, [params.id, isAcknowledge, t, toast]);
+  }, [params.id, mode, isAcknowledge, t, toast]);
 
   const submit = useCallback(async (signatureImage: string) => {
     setBusy(true);
@@ -169,7 +182,7 @@ export default function SignDocumentScreen() {
 
   return (
     <View style={[s.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
-      <ScreenHeader title={params.title || t('documents.sign.title')} />
+      <ScreenHeader title={title || t('documents.sign.title')} />
 
       <ScreenContainer>
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + SPACING.xxl }}>

@@ -14,6 +14,10 @@ import {
   clampListLimit,
   clampListPage,
   paginated,
+  normalizeSupportScope,
+  supportScopeWhere,
+  ticketInSupportScope,
+  type SupportAgentScope,
 } from '@hbcfield/shared';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -37,6 +41,45 @@ export class SupportService {
 
   private slaJobId(ticketId: string) {
     return `support-sla-${ticketId}`;
+  }
+
+  /**
+   * The one door every AGENT action on a single ticket goes through.
+   *
+   * The inbox was scoped to the caller's teams, but opening, answering,
+   * re-routing, closing or marking a ticket read took only its id — so a
+   * scoped agent could reach any ticket by guessing one. The same rule now
+   * decides both (shared `support-scope.ts`), and a ticket outside it is 404,
+   * exactly like one that does not exist: a 403 would confirm it is there.
+   *
+   * `scope` is REQUIRED on the agent path. The static-key operator page passes
+   * a supervisor scope explicitly; a call that forgot it gets the narrowest
+   * scope (triage only), never everything.
+   */
+  private async agentTicket(ticketId: string, rawScope: unknown) {
+    const ticket = await this.prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    if (!ticket || !ticketInSupportScope(ticket, normalizeSupportScope(rawScope))) {
+      throw new NotFoundException('Ticket not found');
+    }
+    return ticket;
+  }
+
+  /**
+   * Operator names, read at display time.
+   *
+   * `assignedAgentId` and an agent message's `authorId` now hold the platform
+   * user's ID (a name can change; an id is what the "assigned to me" view and
+   * the scope match on). Rows written before that hold a display name — those
+   * simply find no operator here and are shown as written.
+   */
+  private async agentNames(ids: (string | null | undefined)[]): Promise<Map<string, string>> {
+    const unique = [...new Set(ids.filter((x): x is string => !!x))];
+    if (!unique.length) return new Map();
+    const ops = await this.prisma.platformUser.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, firstName: true, lastName: true, email: true },
+    });
+    return new Map(ops.map((o) => [o.id, `${o.firstName ?? ''} ${o.lastName ?? ''}`.trim() || o.email]));
   }
 
   /**
@@ -150,11 +193,14 @@ export class SupportService {
     // Authorization context (one of):
     organizationId?: string; // customer path — must own the ticket's org
     userId?: string; // customer path — must be the ticket OWNER (not just same org)
-    asAgent?: boolean; // agent path — already authorized upstream
+    asAgent?: boolean; // agent path — scoped by `scope`
+    scope?: SupportAgentScope;
     /** Made on the phone: a reply sent twice is one reply. */
     id?: string;
   }) {
-    const ticket = await this.prisma.supportTicket.findUnique({ where: { id: data.ticketId } });
+    const ticket = data.asAgent
+      ? await this.agentTicket(data.ticketId, data.scope)
+      : await this.prisma.supportTicket.findUnique({ where: { id: data.ticketId } });
     if (!ticket) throw new NotFoundException('Ticket not found');
     // A customer may only touch a ticket they OPENED — org-scope alone would let a
     // coworker read/reply to someone else's private ticket by id (IDOR).
@@ -239,7 +285,8 @@ export class SupportService {
   // Assign to an individual agent and/or reassign to a team. Passing `agentId`
   // and/or `teamId` (each optional) patches only the provided fields; pass null
   // to clear. Reassigning the team moves the ticket between scoped queues.
-  async assign(data: { ticketId: string; agentId?: string | null; teamId?: string | null }) {
+  async assign(data: { ticketId: string; agentId?: string | null; teamId?: string | null; scope?: SupportAgentScope }) {
+    await this.agentTicket(data.ticketId, data.scope);
     const patch: Record<string, any> = {};
     if ('agentId' in data) patch.assignedAgentId = data.agentId ?? null;
     if ('teamId' in data) patch.assignedTeamId = data.teamId ?? null;
@@ -251,7 +298,8 @@ export class SupportService {
     return { success: true, data: ticket };
   }
 
-  async setStatus(data: { ticketId: string; status: SupportStatus }) {
+  async setStatus(data: { ticketId: string; status: SupportStatus; scope?: SupportAgentScope }) {
+    await this.agentTicket(data.ticketId, data.scope);
     const now = new Date();
     const extra: Record<string, any> = {};
     if (data.status === 'RESOLVED') extra.resolvedAt = now;
@@ -264,7 +312,8 @@ export class SupportService {
     return { success: true, data: ticket };
   }
 
-  async markRead(data: { ticketId: string; reader: 'CUSTOMER' | 'AGENT'; userId?: string }) {
+  async markRead(data: { ticketId: string; reader: 'CUSTOMER' | 'AGENT'; userId?: string; scope?: SupportAgentScope }) {
+    if (data.reader === 'AGENT') await this.agentTicket(data.ticketId, data.scope);
     // Customer path must own the ticket — otherwise any authed user could mark
     // someone else's ticket read by id (write IDOR).
     if (data.reader === 'CUSTOMER') {
@@ -306,7 +355,8 @@ export class SupportService {
     return paginated(enriched, { page, limit, total });
   }
 
-  async getThread(data: { ticketId: string; organizationId?: string; userId?: string; asAgent?: boolean }) {
+  async getThread(data: { ticketId: string; organizationId?: string; userId?: string; asAgent?: boolean; scope?: SupportAgentScope }) {
+    if (data.asAgent) await this.agentTicket(data.ticketId, data.scope);
     const ticket = await this.prisma.supportTicket.findUnique({
       where: { id: data.ticketId },
       include: {
@@ -323,7 +373,19 @@ export class SupportService {
     if (!data.asAgent && (ticket.organizationId !== data.organizationId || ticket.createdById !== data.userId)) {
       throw new ForbiddenException('Not your ticket');
     }
-    return { success: true, data: ticket };
+    if (!data.asAgent) return { success: true, data: ticket };
+    // Agents see who handled it by NAME; the id stays for the "mine" match.
+    const names = await this.agentNames([ticket.assignedAgentId, ...ticket.messages.filter((m) => m.authorType === 'AGENT').map((m) => m.authorId)]);
+    return {
+      success: true,
+      data: {
+        ...ticket,
+        assignedAgentName: ticket.assignedAgentId ? names.get(ticket.assignedAgentId) ?? ticket.assignedAgentId : null,
+        messages: ticket.messages.map((m) =>
+          m.authorType === 'AGENT' ? { ...m, authorName: (m.authorId && names.get(m.authorId)) || m.authorId || 'agent' } : m,
+        ),
+      },
+    };
   }
 
   /**
@@ -372,24 +434,19 @@ export class SupportService {
     }
 
     // ── Access scoping ────────────────────────────────────────────────────────
-    const teamIds = Array.isArray(data.teamIds) ? data.teamIds.filter(Boolean) : [];
-    // The set of tickets this caller is permitted to see.
-    const allowed: any[] = data.isSupervisor
-      ? [] // supervisors: no restriction
-      : [
-          { assignedTeamId: null }, // unassigned triage queue
-          ...(teamIds.length ? [{ assignedTeamId: { in: teamIds } }] : []),
-          ...(data.agentId ? [{ assignedAgentId: data.agentId }] : []),
-        ];
+    // The SAME rule every single-ticket action asks (agentTicket above).
+    const scope = normalizeSupportScope({ isSupervisor: data.isSupervisor, teamIds: data.teamIds, platformUserId: data.agentId });
+    const allowed = supportScopeWhere(scope);
+    const teamIds = scope.teamIds;
 
     // Optional explicit view narrows further, but never beyond `allowed`.
     const viewClauses: any[] = [];
-    if (data.view === 'mine' && data.agentId) viewClauses.push({ assignedAgentId: data.agentId });
+    if (data.view === 'mine' && scope.platformUserId) viewClauses.push({ assignedAgentId: scope.platformUserId });
     else if (data.view === 'unassigned') viewClauses.push({ assignedTeamId: null });
     else if (data.view === 'team' && teamIds.length) viewClauses.push({ assignedTeamId: { in: teamIds } });
 
     const andParts: any[] = [];
-    if (allowed.length) andParts.push({ OR: allowed });
+    if (allowed) andParts.push(allowed);
     if (viewClauses.length) andParts.push({ OR: viewClauses });
     if (andParts.length) where.AND = andParts;
 
@@ -405,7 +462,11 @@ export class SupportService {
       this.prisma.supportTicket.count({ where }),
     ]);
     const enriched = await this.attachUnread(rows, 'AGENT');
-    return paginated(enriched, { page, limit, total });
+    const names = await this.agentNames(rows.map((r) => r.assignedAgentId));
+    return paginated(
+      enriched.map((r) => ({ ...r, assignedAgentName: r.assignedAgentId ? names.get(r.assignedAgentId) ?? r.assignedAgentId : null })),
+      { page, limit, total },
+    );
   }
 
   // ── SLA breach (delayed BullMQ job) ─────────────────────────────────────────

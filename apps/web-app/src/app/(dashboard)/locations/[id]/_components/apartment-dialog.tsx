@@ -7,7 +7,9 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Check, User, Smartphone, Search, Ban, Plus, Trash2 } from "lucide-react"
 
-import { spaceUnitsApi, customersApi, organizationsApi, type SpaceUnit, type OrgMember } from "@/lib/api"
+import { spaceUnitsApi, customersApi, type SpaceUnit } from "@/lib/api"
+import type { AssignablePerson } from "@/lib/assignable-members"
+import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,7 +30,7 @@ const LocationPicker = dynamic(
 
 // Resident is encoded as "u:<userId>" (member) or "c:<customerId>" (client).
 const encodeResident = (u?: SpaceUnit) => u?.residentUserId ? `u:${u.residentUserId}` : u?.customer ? `c:${u.customer.id}` : "none"
-const memberName = (m: OrgMember) => `${m.firstName} ${m.lastName}`.trim()
+const memberName = (m: AssignablePerson) => `${m.firstName} ${m.lastName}`.trim()
 const initials = (n: string) => n.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
 export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved, trigger, hideResident, entityLabel }: {
@@ -54,8 +56,9 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   const [details, setDetails] = useState<{ label: string; value: string }[]>(existing?.details ?? [])
   const setDetail = (i: number, k: "label" | "value", v: string) => setDetails((d) => d.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
 
-  const membersQ = useQuery({ queryKey: ["org-members-assignable"], queryFn: () => organizationsApi.getMembers({ limit: 100 }), enabled: open })
-  const members = (membersQ.data?.data ?? []).filter((m) => m.isActive && m.role !== "CUSTOMER")
+  // The directory for whoever may read it, this workspace's roster otherwise.
+  const membersQ = useAssignableMembers({ spaceId, enabled: open })
+  const members = membersQ.members.filter((m) => m.isActive !== false && m.role !== "CUSTOMER")
   // Clients = this SPACE's app-access customers, scoped to the Apartment-entity
   // portals (a rental+logistics space won't offer logistics clients as residents).
   const clientsQ = useQuery({

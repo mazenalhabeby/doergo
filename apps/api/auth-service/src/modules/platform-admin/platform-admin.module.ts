@@ -4,6 +4,7 @@ import { PlatformAdminController } from './platform-admin.controller';
 import { PlatformAdminService } from './platform-admin.service';
 import { PlatformAuthController } from './platform-auth.controller';
 import { PlatformAuthService } from './platform-auth.service';
+import { PlatformAuditService } from './platform-audit.service';
 import { PlatformPricingController } from './platform-pricing.controller';
 import { PricingService } from './platform-pricing.service';
 import { PlatformSupportTeamsController } from './platform-support-teams.controller';
@@ -23,7 +24,7 @@ import { BillingModule } from '../billing/billing.module';
 @Module({
   imports: [SessionEventsModule, BillingModule],
   controllers: [PlatformAdminController, PlatformAuthController, PlatformPricingController, PlatformSupportTeamsController],
-  providers: [PlatformAdminService, PlatformAuthService, PricingService, PlatformSupportTeamsService, StripeService],
-  exports: [PlatformAdminService, PlatformAuthService, PricingService, PlatformSupportTeamsService],
+  providers: [PlatformAdminService, PlatformAuthService, PlatformAuditService, PricingService, PlatformSupportTeamsService, StripeService],
+  exports: [PlatformAdminService, PlatformAuthService, PlatformAuditService, PricingService, PlatformSupportTeamsService],
 })
 export class PlatformAdminModule {}

@@ -4,7 +4,7 @@ import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import i18n, { i18nReady } from '../i18n';
-import { getAccessToken } from '../lib/api/client';
+import { sessionOwnerId } from '../lib/api/client';
 import { flushPendingRoute } from '../services/background-route-tracking';
 import { loadBackgroundTask, loadNetInfo } from './native';
 import { OPEN_STATES } from './outbox/types';
@@ -60,12 +60,30 @@ async function warnIfStuck(ops: readonly { state: string; createdAt: number }[])
   await AsyncStorage.setItem(STUCK_WARNED_KEY, String(Date.now())).catch(() => undefined);
 }
 
-async function runOnce(): Promise<boolean> {
+/**
+ * May the queued work of `member` be sent with the tokens on this phone now?
+ *
+ * ⚠️ ONLY WHEN THE TOKENS ARE THE MEMBER'S OWN. The member record and the tokens
+ * are stored separately, and nothing tied them together: member A signs out
+ * with unsent work, member B signs in, and the next background run opened A's
+ * queue and sent A's clock-in with B's token — filed on B, as B. The tokens say
+ * whose they are (`sub`); anything else is somebody else's session.
+ */
+export function mayRunFor(member: Member | null, tokenOwner: string | null): member is Member {
+  return !!member && !!member.userId && !!tokenOwner && member.userId === tokenOwner;
+}
+
+export async function runOnce(): Promise<boolean> {
   const raw = await SecureStore.getItemAsync(MEMBER_KEY).catch(() => null);
   if (!raw) return true;
-  // Signed out since: nothing to send as anybody.
-  if (!(await getAccessToken().catch(() => null))) return true;
-  const member = JSON.parse(raw) as Member;
+  let member: Member | null = null;
+  try {
+    member = JSON.parse(raw) as Member;
+  } catch {
+    return true;
+  }
+  // Signed out since, or somebody else is signed in now: nothing is sent as anybody.
+  if (!mayRunFor(member, await sessionOwnerId())) return true;
 
   // The monitor is not running in this context; ask once whether this is Wi-Fi.
   const state = await loadNetInfo()?.default.fetch().catch(() => null);

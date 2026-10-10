@@ -1,4 +1,5 @@
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
 
 export interface OvertimeRequest {
@@ -39,7 +40,7 @@ export const overtimeApi = {
   },
 
   approveRemote: async (id: string, data: { maxDurationMinutes: number; notes?: string }): Promise<any> => {
-    return fetchWithAuth(`/overtime/${id}/approve`, {
+    return fetchWithAuth(path`/overtime/${id}/approve`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -55,14 +56,14 @@ export const overtimeApi = {
       notes?: string;
     },
   ): Promise<any> => {
-    return fetchWithAuth(`/overtime/${id}/approve-signature`, {
+    return fetchWithAuth(path`/overtime/${id}/approve-signature`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   reject: async (id: string, data: { reason: string }): Promise<any> => {
-    return fetchWithAuth(`/overtime/${id}/reject`, {
+    return fetchWithAuth(path`/overtime/${id}/reject`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

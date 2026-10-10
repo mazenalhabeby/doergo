@@ -101,7 +101,7 @@ export class BillingService {
    * honest and the only thing the gate understands. Marks them ACTIVE and ends
    * the trial, exactly as setting a tier did.
    */
-  async adminSetOrgAddOns(data: { organizationId: string; addOns: string[] }) {
+  async adminSetOrgAddOns(data: { organizationId: string; addOns: string[]; byUserId?: string }) {
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
       select: { id: true, name: true },
@@ -122,7 +122,7 @@ export class BillingService {
       },
       select: { id: true, name: true, addOns: true, subStatus: true },
     });
-    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) add-ons set to [${updated.addOns.join(', ')}] by operator`);
+    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) add-ons set to [${updated.addOns.join(', ')}] by ${data.byUserId ?? 'operator'}`);
     return { success: true, data: updated };
   }
 

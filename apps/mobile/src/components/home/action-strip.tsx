@@ -67,7 +67,7 @@ export function ActionStrip() {
   const go = (item: StripItem) => {
     setOpen(false);
     if (item.documentId) {
-      router.push({ pathname: '/sign-document', params: { id: item.documentId, title: item.label } } as unknown as Href);
+      router.push({ pathname: '/sign-document', params: { id: item.documentId } } as unknown as Href);
       return;
     }
     if (item.typeId) {

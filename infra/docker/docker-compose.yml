@@ -389,6 +389,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
+      # Staff (platform) routes answer only on the operator console's host; the
+      # public site's proxy reaching them gets a 404 (defence behind nginx).
+      - PLATFORM_ALLOWED_HOSTS=${PLATFORM_ALLOWED_HOSTS:-admin.hbcfield.com}
       # Bearer token for /api/v1/sync/metrics (Prometheus). Unset = the route is a 404.
       - METRICS_TOKEN=${METRICS_TOKEN:-}
       - REDIS_HOST=redis

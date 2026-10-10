@@ -3,6 +3,7 @@
  * Mirrors the web `locationsApi` surface used by the admin dashboard.
  */
 import { fetchWithAuth } from './client';
+import { path } from './path';
 import { buildUrlWithQuery } from '@hbcfield/shared/client';
 import type { CompanyLocation } from './types';
 
@@ -67,24 +68,24 @@ export const locationsApi = {
    */
   getRosters: async (locationIds: string[]): Promise<LocationAssignment[]> => {
     if (locationIds.length === 0) return [];
-    const result = await fetchWithAuth<any>(`/locations/rosters?ids=${locationIds.join(',')}`);
+    const result = await fetchWithAuth<any>(buildUrlWithQuery('/locations/rosters', { ids: locationIds.join(',') }));
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   getAssignedMembers: async (locationId: string): Promise<LocationAssignment[]> => {
-    const result = await fetchWithAuth<any>(`/locations/${locationId}/members`);
+    const result = await fetchWithAuth<any>(path`/locations/${locationId}/members`);
     return Array.isArray(result) ? result : result?.data || [];
   },
 
   assignMember: async (locationId: string, data: AssignMemberInput): Promise<LocationAssignment> => {
-    return fetchWithAuth<LocationAssignment>(`/locations/${locationId}/members`, {
+    return fetchWithAuth<LocationAssignment>(path`/locations/${locationId}/members`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   removeMember: async (locationId: string, assignmentId: string): Promise<void> => {
-    await fetchWithAuth<any>(`/locations/${locationId}/members/${assignmentId}`, {
+    await fetchWithAuth<any>(path`/locations/${locationId}/members/${assignmentId}`, {
       method: 'DELETE',
     });
   },
