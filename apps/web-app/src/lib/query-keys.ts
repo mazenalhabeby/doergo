@@ -208,6 +208,10 @@ const timeOffKeys = {
   member: (...a: [memberId?: string, status?: string]) => named("employeeTimeOff", a),
   mine: (userId: string | undefined) => named("my-time-off", [userId]),
   myBalance: (...a: [userId?: string]) => named("my-leave-balance", a),
+  /** A member's leave-ledger lines (the leave year containing `on`); the prefix reaches every member. */
+  ledger: (...a: [memberId?: string, on?: string]) => named("leave-adjustments", a),
+  /** The starting balances table for the leave year containing `on`. */
+  opening: (...a: [on?: string]) => named("leave-opening", a),
   /** The kinds of request the signed-in member may send, and where a remote day may be filed. */
   myOptions: (userId: string | undefined) => named("my-request-options", [userId]),
   /** What a range would cost, in working days. */

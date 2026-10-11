@@ -221,6 +221,12 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
     why: "GET /employees/time-off — @RequirePermissionInSpace('canViewAllTasks'); the rota is the Shift Scheduling Option",
   },
 
+  "/employees/leave-opening": {
+    denyExternal: true,
+    need: ["any:canManageRota"],
+    why: "GET/POST /employees/leave-opening — @RequirePermissionInSpace('canManageRota'); the service narrows to the caller's workspaces",
+  },
+
   // ── Time ──
   "/attendance": {
     need: ["any:canViewSpaceAttendance"],

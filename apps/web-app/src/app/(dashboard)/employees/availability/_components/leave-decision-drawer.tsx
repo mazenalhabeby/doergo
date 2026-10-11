@@ -14,6 +14,7 @@ import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { isAbsence, requestDetail, requestKindEffectKey, requestKindOf, formatRequestMinutes } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
+import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -274,16 +275,10 @@ function DrawerBody({
           </Section>
         )}
 
-        {pendingVacation && balance && balance.allowance > 0 && (
+        {pendingVacation && balance && (balance.allowance > 0 || (balance.lines?.length ?? 0) > 1) && (
           <Section title={t("requests.drawer.balance", "Vacation allowance")}>
-            <div className="overflow-hidden rounded-xl border border-border text-[13px]">
-              <Fact label={t("requests.drawer.balanceNow")} value={t("requests.drawer.daysLeft", { count: balance.remaining, total: balance.allowance })} />
-              <Fact
-                label={t("requests.drawer.balanceAfter")}
-                value={t("requests.drawer.daysLeft", { count: balance.remaining - days, total: balance.allowance })}
-                warn={balance.remaining - days < 0}
-              />
-            </div>
+            {/* The same breakdown the member saw before sending — and what approving leaves. */}
+            <LeaveBalanceBreakdown balance={balance} requestDays={days} />
           </Section>
         )}
 

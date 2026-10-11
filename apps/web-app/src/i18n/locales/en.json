@@ -9333,7 +9333,26 @@
     "REQUEST_TOO_MANY_DAYS": "A remote request can cover at most 31 days at once.",
     "REQUEST_REMOTE_NOT_ALLOWED": "You are not allowed to work away from a site, so a remote day cannot be requested.",
     "REQUEST_SPACE_NOT_YOURS": "That workspace is not one of yours.",
-    "REQUEST_KIND_NOT_OFFERED": "This kind of request is not offered in your workspace."
+    "REQUEST_KIND_NOT_OFFERED": "This kind of request is not offered in your workspace.",
+    "ADJUSTMENT_KIND_INVALID": "Choose what kind of line this is.",
+    "ADJUSTMENT_DAYS_INVALID": "Enter the days as a number in half days (e.g. 1 or 2,5), not zero, at most 366.",
+    "ADJUSTMENT_REASON_REQUIRED": "A correction or extra days need a reason.",
+    "ADJUSTMENT_REASON_TOO_LONG": "The reason is too long — 500 characters at most.",
+    "ADJUSTMENT_DATE_INVALID": "Choose a valid date.",
+    "ADJUSTMENT_ALREADY_VOIDED": "This line was already undone.",
+    "LEAVE_DAY_INVALID": "Choose a valid day.",
+    "MEMBER_NOT_FOUND": "This person could not be found.",
+    "OPENING_ROW_INVALID": "Each person once, with days in half days from 0 to 366.",
+    "OPENING_ROWS_EMPTY": "Nothing to save.",
+    "OPENING_TEXT_EMPTY": "Paste the table first.",
+    "OPENING_TOO_MANY_ROWS": "At most 500 people at a time.",
+    "LEAVE_ALLOWANCE_INVALID": "Annual vacation days must be a whole number from 0 to 100.",
+    "LEAVE_YEAR_MODE_INVALID": "Choose the calendar year or the work year.",
+    "CARRY_OVER_MODE_INVALID": "Choose what happens to days left at the end of the year.",
+    "CARRY_OVER_MAX_INVALID": "Enter how many days may be carried over — a whole number from 1 to 100.",
+    "CARRY_EXPIRY_INVALID": "Carried days expire after 1 to 24 months, or leave the field empty for never.",
+    "LEAVE_TRACKING_DATE_INVALID": "Choose a valid start date.",
+    "LEAVE_POLICY_EMPTY": "Nothing to save."
   },
   "signLink": {
     "tabs": {
@@ -10304,16 +10323,139 @@
       "noUsualHours": "No working week set",
       "overtime": "Extra time",
       "kind": "Kind",
-      "balance": "Vacation allowance",
-      "balanceNow": "Left now",
-      "balanceAfter": "Left if approved",
-      "daysLeft_one": "{{count}} of {{total}} day",
-      "daysLeft_other": "{{count}} of {{total}} days"
+      "balance": "Vacation allowance"
     },
     "settings": {
       "title": "Requests members can send here",
       "subtitle": "Switch off a kind of request this workspace does not use. Saved straight away.",
       "note": "At least one kind stays on. Remote days are offered only to members allowed to work away from a site."
+    }
+  },
+  "leaveLedger": {
+    "balanceTitle": "Vacation balance",
+    "yearCalendar": "Leave year {{year}}",
+    "yearWork": "Work year {{from}} – {{to}}",
+    "remaining": "Left",
+    "carryExpires": "Carried days can be used until {{date}}.",
+    "thisRequest_one": "This request · {{count}} working day",
+    "thisRequest_other": "This request · {{count}} working days",
+    "allowanceTitleWork": "Vacation days left · {{from}} – {{to}}",
+    "showLines": "How is this counted?",
+    "hideLines": "Hide the breakdown",
+    "lines": {
+      "ALLOWANCE": "Annual allowance",
+      "OPENING_USED": "Used before HBCField",
+      "CARRY_OVER": "Carried from last year",
+      "CARRY_EXPIRED": "Carried days expired",
+      "GRANT": "Extra days granted",
+      "CORRECTION": "Correction",
+      "TAKEN": "Vacation taken"
+    },
+    "kinds": {
+      "OPENING_USED": {
+        "label": "Used before HBCField",
+        "hint": "Days already used this leave year in the system you had before.",
+        "daysHint": "Enter the days used, e.g. 10 — they are subtracted."
+      },
+      "CORRECTION": {
+        "label": "Correction",
+        "hint": "Put a number right, either way. Always with a reason.",
+        "daysHint": "Positive adds days, negative removes them (e.g. -1,5). Half days are allowed."
+      },
+      "GRANT": {
+        "label": "Extra days granted",
+        "hint": "Days the company gives on top of the allowance. Always with a reason.",
+        "daysHint": "Enter the days granted, e.g. 1 or 0,5."
+      }
+    },
+    "adjust": {
+      "title": "Add a line to the balance",
+      "description": "{{name}}'s balance is the allowance plus every line, minus vacation taken. Each line keeps who added it and why.",
+      "kind": "What kind of line?",
+      "days": "Days",
+      "date": "In the leave year of",
+      "reason": "Reason",
+      "optional": "(optional)",
+      "reasonPlaceholder": "e.g. agreed at the annual review",
+      "submit": "Add line",
+      "saved": "Line added to the balance"
+    },
+    "ledger": {
+      "title": "Vacation balance",
+      "description": "The allowance, every line added to it, and the vacation taken this leave year.",
+      "add": "Add line",
+      "linesTitle": "Lines this leave year",
+      "empty": "No lines yet — the balance is the allowance minus vacation taken.",
+      "byRule": "the carry-over rule",
+      "byWhen": "{{name}} · {{date}}",
+      "voidedOn": "Undone on {{date}}",
+      "undo": "Undo",
+      "undoConfirm": "Undo this line? It stays here struck through, and the balance changes back.",
+      "undoYes": "Undo line",
+      "keep": "Keep",
+      "undone": "Line undone",
+      "voidedByOn": "Undone by {{name}} on {{date}}"
+    },
+    "opening": {
+      "title": "Starting balances",
+      "subtitle": "What each person had already used this leave year before HBCField, and what they carried over from last year. Filled once — each figure becomes a visible line on their balance.",
+      "link": "Starting balances",
+      "paste": "Paste from file",
+      "noAccess": "Only people who decide leave can set starting balances.",
+      "unavailable": "Starting balances are not available on this server yet.",
+      "yearNote": "These figures belong to the leave year that contains {{date}} — the calendar year, or each person's own work year if the company counts in work years.",
+      "search": "Search people",
+      "count_one": "{{count}} person",
+      "count_other": "{{count}} people",
+      "colMember": "Person",
+      "colUsed": "Used before HBCField",
+      "colCarried": "Carried from last year",
+      "none": "Nobody matches.",
+      "halfDays": "Half days are allowed (e.g. 2,5). An empty cell counts as 0.",
+      "fixCells_one": "{{count}} row has a number that cannot be read",
+      "fixCells_other": "{{count}} rows have numbers that cannot be read",
+      "saved": "Starting balances saved",
+      "pasteTitle": "Paste from your old system",
+      "pasteHint": "One person per line: email or full name; days used; days carried. Tabs, semicolons or commas between them; a header row is skipped.",
+      "match": "Match people",
+      "filled_one": "{{count}} row filled",
+      "filled_other": "{{count}} rows filled",
+      "notPlaced_one": "{{count}} line could not be placed",
+      "notPlaced_other": "{{count}} lines could not be placed",
+      "line": "Line {{line}}",
+      "unmatched": "nobody with this name or email",
+      "unreadable": "numbers cannot be read",
+      "startedOn": "Started counting leave in HBCField on",
+      "ambiguous": "more than one person matches",
+      "duplicate": "this person is on another line too"
+    },
+    "banner": {
+      "title": "Set the starting balances",
+      "body": "Started mid-year? Enter what everyone already used before HBCField, so nobody shows a full year left."
+    },
+    "settings": {
+      "yearLabel": "Leave year",
+      "year": {
+        "CALENDAR": {
+          "label": "Calendar year",
+          "hint": "1 January – 31 December for everyone."
+        },
+        "WORK_YEAR": {
+          "label": "Work year",
+          "hint": "From each person's start date, e.g. 15 April – 14 April."
+        }
+      },
+      "austriaNote": "In Austria the work year is the legal default, unless the company has agreed on the calendar year.",
+      "carryLabel": "Days left at the end of the year",
+      "carry": {
+        "NONE": "Not carried over",
+        "UP_TO": "Carry up to a limit",
+        "ALL": "Carry all days"
+      },
+      "maxDays": "Most days carried",
+      "expiry": "Carried days expire after (months)",
+      "never": "Never",
+      "carryHint": "Carried days are added on the first day of the new leave year as a visible line, and can be undone."
     }
   }
 }

@@ -25,6 +25,7 @@ export { epicsApi } from './epics';
 export { invitationsApi } from './invitations';
 export { invoicesApi } from './invoices';
 export { joinRequestsApi } from './join-requests';
+export { leaveLedgerApi } from './leave-ledger';
 export { legalEntitiesApi } from './legal-entities';
 export { locationsApi } from './locations';
 export { onboardingApi } from './onboarding';
@@ -61,6 +62,8 @@ export type { CustomFieldDefinition, CustomFieldType, CustomFieldValue } from '.
 export type { Customer, CustomerActivity, CustomerAddress, CustomerContactLink, CustomerDetail } from './types/customers';
 export type { BrowseFolder, BrowseLevel, ComplianceRow, ContractTemplateRow, DocumentChain, DocumentTypeRow, DraftDocumentRow, IssuedRegister, IssuedRow, MatchCandidateRow, MemberDocumentRow, PendingReviewRow, RequirementRow, RouteCandidateStep } from './types/documents';
 export type { CoverDay, CoverVerdict, FloorPerson, FloorSpace, OrgTimeOffRequest, ScheduleEntry, ScheduleEntryInput, TimeOffRequest, TimeOffStatus } from './types/employees';
+export type { LeaveBalance } from './types/employees';
+export type { LeaveAdjustmentDto, LeaveBalanceLedgerFields, LeaveLedger, LeaveOpening, LeavePolicyFields, OpeningBalanceMatch, OpeningBalanceRowDto } from './types/leave-ledger';
 export type { Epic } from './types/epics';
 export type { Invoice, InvoiceItem, InvoiceItemInput, InvoiceStatus } from './types/invoices';
 export type { LegalEntity, LegalEntityBankAccount, LegalEntityInput } from './types/legal-entities';
