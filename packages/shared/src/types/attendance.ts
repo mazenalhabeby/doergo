@@ -352,6 +352,8 @@ export interface ClockInInput {
   lat: number;
   lng: number;
   accuracy?: number;
+  /** AUTO = made by the automatic clock (attendance/auto-clock.ts). The server re-checks it; not allowed → recorded as a manual clock-in. */
+  trigger?: 'MANUAL' | 'AUTO';
 }
 
 export interface ClockOutInput {
@@ -370,6 +372,8 @@ export interface ClockOutInput {
    * client asking is a courtesy, not a gate.
    */
   earlyReason?: string;
+  /** AUTO = made by the automatic clock on leaving the area; re-checked by the server like a clock-in. */
+  trigger?: 'MANUAL' | 'AUTO';
   /** Why they stayed past the shift end — sent with a late clock-out, it asks a leader for the overtime. */
   overtimeReason?: string;
   /**

@@ -202,3 +202,38 @@ export const AUTO_CLOCK_UNDO_MINUTES = 10;
 /** What a clock step says about how it was made — sent by the phone, re-checked by the server. */
 export const CLOCK_TRIGGERS = ['MANUAL', 'AUTO'] as const;
 export type ClockTrigger = (typeof CLOCK_TRIGGERS)[number];
+
+/* ------------------------------------------------------------------ API */
+
+/**
+ * One workspace the phone arms for the CALLER — `GET /attendance/auto-clock/plan`.
+ * Only workspaces where the workspace switched it on, the member is chosen
+ * (`SpaceAssignment.autoClock`) and the assignment is active; never the Remote
+ * bucket. The phone keeps it offline and arms OS geofences from it.
+ */
+export interface AutoClockPlace {
+  spaceId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  /** Metres. A drawn boundary is armed as its enclosing circle; the decision still uses `isAtSite`. */
+  radius: number;
+  polygon?: Array<{ lat: number; lng: number }> | null;
+  settings: AutoClockSettings;
+  /** The planned shifts, after approved requests (changed day / agreed overtime). ISO instants. */
+  shifts: Array<{ start: string; end: string }>;
+}
+
+export interface AutoClockPlan {
+  /** When the member consented in the app (null = never / withdrawn → the phone arms nothing). */
+  consentAt: string | null;
+  /** Today and tomorrow in each workspace's zone, so a phone offline overnight still arms the morning. */
+  places: AutoClockPlace[];
+  generatedAt: string;
+}
+
+/** Codes the automatic clock answers with. */
+export type AutoClockErrorCode =
+  | 'AUTO_CLOCK_SETTING_INVALID'
+  /** Undo refused: not an automatic clock-in, too late, or work already recorded on it. */
+  | 'AUTO_CLOCK_UNDO_NOT_ALLOWED';
