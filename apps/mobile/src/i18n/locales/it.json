@@ -274,7 +274,7 @@
     "createTask": "Crea",
     "manage": "Gestisci",
     "attendance": "Tempo",
-    "timeOff": "Ferie",
+    "timeOff": "Richieste",
     "team": "Team",
     "profile": "Profilo",
     "more": "Altro",
@@ -938,13 +938,13 @@
       "alsoOnTimeOff": "Anche in ferie/permesso:"
     },
     "requestForm": {
-      "title": "Richiedi ferie/permesso",
+      "title": "Richiedere un’assenza",
       "reasonLabel": "Motivo",
       "notesLabel": "Note (facoltativo)",
       "notesPlaceholder": "Dettagli aggiuntivi...",
       "clearSelection": "Cancella selezione",
       "submitRequest": "Invia richiesta",
-      "successMessage": "Richiesta di ferie/permesso inviata.",
+      "successMessage": "Richiesta inviata.",
       "failedToSubmit": "Impossibile inviare la richiesta"
     },
     "reasonTypes": {
@@ -960,10 +960,10 @@
       "all": "Tutte"
     },
     "empty": {
-      "upcoming": "Nessuna richiesta di ferie/permesso in arrivo",
-      "past": "Nessuna richiesta di ferie/permesso passata",
-      "all": "Nessuna richiesta di ferie/permesso ancora",
-      "hint": "Tocca le date sul calendario sopra per richiedere ferie/permesso"
+      "upcoming": "Nessuna richiesta in arrivo",
+      "past": "Nessuna richiesta passata",
+      "all": "Ancora nessuna richiesta",
+      "hint": "Scelga i giorni sul calendario per un’assenza o tocchi Nuova richiesta."
     },
     "approvedBy": "Approvata da {{firstName}} {{lastName}}",
     "cancelRequest": "Annulla richiesta",
@@ -1070,7 +1070,7 @@
       "tasksDescription": "Nuove assegnazioni, cambiamenti di stato, commenti",
       "attendance": "Presenze",
       "attendanceDescription": "Promemoria di timbratura entrata/uscita",
-      "timeOff": "Ferie e permessi",
+      "timeOff": "Richieste",
       "timeOffDescription": "Approvazioni delle richieste e aggiornamenti",
       "footerNote": "Le categorie sono memorizzate su questo dispositivo, le scelte email nel tuo account. Le autorizzazioni per le notifiche push sono gestite nelle impostazioni del dispositivo.",
       "emails": "Email",
@@ -1103,7 +1103,7 @@
   },
   "manage": {
     "timeOff": {
-      "label": "Ferie e permessi",
+      "label": "Richieste",
       "desc": "Approva le richieste"
     },
     "members": {
@@ -1191,15 +1191,15 @@
       },
       "rejectReasonPrompt": "Motivo (facoltativo):",
       "rejectConfirmTitle": "Rifiuta richiesta",
-      "rejectConfirmMessage": "Rifiutare questa richiesta di ferie/permesso?",
-      "failedToLoad": "Impossibile caricare le richieste di ferie/permesso",
+      "rejectConfirmMessage": "Rifiutare questa richiesta?",
+      "failedToLoad": "Impossibile caricare le richieste",
       "failedToApprove": "Impossibile approvare",
       "failedToReject": "Impossibile rifiutare",
       "noRequests": "Nessuna richiesta {{filter}}",
       "noRequestsAll": "Nessuna richiesta"
     },
     "titles": {
-      "timeOffRequests": "Richieste di ferie e permessi",
+      "timeOffRequests": "Richieste",
       "attendance": "Presenze"
     },
     "attendance": {
@@ -1537,8 +1537,8 @@
           "body": "Timbri l'entrata e l'uscita, faccia una pausa e veda le Sue ore di oggi e di questa settimana."
         },
         "tabsTimeOff": {
-          "title": "Permessi",
-          "body": "Richieda giorni di permesso e monitori le Sue richieste qui."
+          "title": "Richieste",
+          "body": "Richieda assenze, lavoro da remoto e altro, e segua qui le sue richieste."
         },
         "profile": {
           "title": "Il Suo profilo",
@@ -1562,7 +1562,7 @@
         },
         "tabsMore": {
           "title": "Altro",
-          "body": "Tutto il resto è qui: assenze, documenti, clienti e le pagine che gestisce."
+          "body": "Tutto il resto è qui: richieste, documenti, clienti e le pagine che gestisce."
         }
       }
     },
@@ -1694,15 +1694,15 @@
       }
     },
     "timeOff": {
-      "title": "Assenze",
+      "title": "Richieste",
       "steps": {
         "intro": {
           "title": "Il Suo anno finora",
-          "body": "Giorni usati, assenze in arrivo, richieste in attesa di risposta e richieste rifiutate."
+          "body": "Giorni di assenza usati e in arrivo, richieste in attesa di risposta e richieste rifiutate."
         },
         "request": {
-          "title": "Scelga i giorni",
-          "body": "Scelga i giorni sul calendario per chiedere un'assenza. Il Suo responsabile riceve la richiesta da approvare."
+          "title": "Richiedere qualcosa",
+          "body": "Scelga i giorni sul calendario per un’assenza, oppure tocchi Nuova richiesta per lavorare da remoto, cambiare l’orario di un giorno o concordare straordinari in anticipo. Il suo responsabile la riceve per l’approvazione."
         },
         "list": {
           "title": "Le Sue richieste",
@@ -3155,7 +3155,7 @@
       "worklog_note": "Nota di lavoro",
       "worklog_attachment": "Foto di lavoro",
       "shiftIssue_message": "Messaggio sul problema",
-      "timeOff_request": "Richiesta di assenza",
+      "timeOff_request": "Richiesta",
       "expense_submit": "Spesa",
       "chat_send": "Messaggio",
       "log_create": "Voce del registro",
@@ -3217,7 +3217,19 @@
       "ROLE_TASK_NOT_ROLE": "Questo lavoro non è stato aperto a un ruolo.",
       "ROLE_TASK_FINISHED": "Questo lavoro è concluso.",
       "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere.",
-      "REMOTE_NOT_FOR_ASSIGNED": "Lei è assegnato a uno spazio di lavoro. Timbri lì, in sede o fuori se il suo spazio lo consente."
+      "REMOTE_NOT_FOR_ASSIGNED": "Lei è assegnato a uno spazio di lavoro. Timbri lì, in sede o fuori se il suo spazio lo consente.",
+      "REQUEST_KIND_INVALID": "Questo tipo di richiesta non è riconosciuto.",
+      "REQUEST_DATES_INVALID": "Controlli le date: l’ultimo giorno non può precedere il primo.",
+      "REQUEST_TYPE_INVALID": "Scelga il tipo di assenza.",
+      "REQUEST_SPACE_REQUIRED": "Scelga lo spazio di lavoro.",
+      "REQUEST_TIME_INVALID": "Scelga un nuovo inizio o una nuova fine, con la fine dopo l’inizio.",
+      "REQUEST_MINUTES_INVALID": "Scelga tra 15 minuti e 12 ore.",
+      "REQUEST_REASON_REQUIRED": "Indichi cosa richiede.",
+      "REQUEST_REASON_TOO_LONG": "Il motivo è troppo lungo: al massimo 500 caratteri.",
+      "REQUEST_TOO_MANY_DAYS": "Troppi giorni in una richiesta: al massimo 31.",
+      "REQUEST_REMOTE_NOT_ALLOWED": "Non è autorizzato a lavorare da remoto.",
+      "REQUEST_SPACE_NOT_YOURS": "Non lavora in quello spazio di lavoro.",
+      "REQUEST_KIND_NOT_OFFERED": "Questo tipo di richiesta non è disponibile nel suo spazio di lavoro."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",
@@ -4389,7 +4401,7 @@
       "jobsSub": "Assegnati a lei, modificati, un commento sui suoi",
       "clock": "Timbrature e turni",
       "clockSub": "Ora di timbrare, una pausa, risposte agli straordinari",
-      "timeOff": "Assenze",
+      "timeOff": "Richieste",
       "timeOffSub": "Le sue richieste con risposta",
       "allowed": "Questo telefono può avvisarla",
       "allowedSub": "Consentito nelle impostazioni del telefono",
@@ -4636,7 +4648,7 @@
     "declineReason": "Motivo (facoltativo)",
     "declineLeave": "Rifiuta",
     "approveLeave": "Approva",
-    "openTimeOff": "Le mie assenze",
+    "openTimeOff": "Le mie richieste",
     "openSchedule": "Apri nella pianificazione",
     "view": {
       "day": "Giorno",
@@ -4779,5 +4791,60 @@
       "shiftTitle": "HBCField — Timbratura attiva",
       "shiftBody": "Durante il turno verifichiamo che tu sia sul luogo di lavoro."
     }
+  },
+  "requests": {
+    "title": "Richieste",
+    "new": "Nuova richiesta",
+    "chooseTitle": "Cosa vuole richiedere?",
+    "chooseNote": "Ciò che può richiedere dipende dal suo spazio di lavoro e dai suoi permessi.",
+    "leaveSection": "Assenze",
+    "kind": {
+      "LEAVE": "Assenza",
+      "REMOTE": "Lavoro da remoto",
+      "HOURS": "Orario modificato",
+      "OVERTIME": "Straordinari in anticipo",
+      "OTHER": "Altra richiesta"
+    },
+    "kindHint": {
+      "LEAVE": "Ferie, malattia, famiglia",
+      "REMOTE": "Lavorare fuori sede",
+      "HOURS": "Inizio o fine diversi",
+      "OVERTIME": "Ore in più concordate prima",
+      "OTHER": "Qualsiasi altra cosa, con parole sue"
+    },
+    "effect": {
+      "REMOTE": "Se approvata, la timbratura di quel giorno non andrà in revisione.",
+      "HOURS": "Se approvata: nessuna segnalazione di ritardo o di uscita anticipata.",
+      "OVERTIME": "Se approvata: conteggiati automaticamente."
+    },
+    "facts": {
+      "between": "{{start}}–{{end}}",
+      "startsAt": "Inizio {{time}}",
+      "endsAt": "Fine {{time}}",
+      "overtime": "+{{duration}}"
+    },
+    "form": {
+      "day": "Giorno",
+      "days": "Giorni",
+      "workspace": "Spazio di lavoro",
+      "hours": "Orario",
+      "howLong": "Quanto tempo",
+      "sameDay": "Stesso giorno",
+      "newHours": "Nuovo orario",
+      "start": "Inizio",
+      "end": "Fine",
+      "unchanged": "Invariato",
+      "less": "15 minuti in meno",
+      "more": "15 minuti in più",
+      "overtimeRange": "Tra {{min}} e {{max}}",
+      "reason": "Motivo",
+      "reasonOptional": "Motivo (facoltativo)",
+      "otherPlaceholder": "Cosa richiede?",
+      "reasonPlaceholder": "Un breve motivo",
+      "startAt": "Inizio alle",
+      "endAt": "Fine alle"
+    },
+    "noRemoteSpace": "Non c’è nessuno spazio di lavoro per cui possa lavorare da remoto.",
+    "balance": "Saldo"
   }
 }

@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
-import { calendarApi, type LeaveCount } from '../../lib/api';
 import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton, Sunken, Well, WellDivider } from '../amazen';
 import { JobField, JobSheet, QuietButton, ReceiptRow, SectionLabel, StateEyebrow } from '../job/job-ui';
@@ -14,10 +13,10 @@ import {
   addDays, dayKey, dayOf, daysOff, leaveDays, monthGrid, overlapIn, upcomingLeave, usedThisYear, workWeekdays,
 } from './time-logic';
 import type { useMyTimeOff, MyTimeOffRequest } from './use-my-time-off';
-import { personName } from '@hbcfield/shared/client';
-
-const KINDS = ['vacation', 'sickLeave', 'family', 'other'] as const;
-type Kind = (typeof KINDS)[number];
+import { personName, type LeaveType } from '@hbcfield/shared/client';
+import { LeaveTypePicker, useRequestWords } from '../requests/request-parts';
+import { draftToBody, leaveTypeLabelKey } from '../requests/request-model';
+import { useLeaveCost } from '../requests/use-leave-preview';
 
 /**
  * TIME OFF, ON THE TIME TAB — what is coming up, and one button to ask.
@@ -42,8 +41,9 @@ export function TimeOffSection({
   const { t } = useTranslation();
   const [detail, setDetail] = useState<MyTimeOffRequest | null>(null);
   const weekdays = useMemo(() => workWeekdays(leave.schedule), [leave.schedule]);
-  const ahead = useMemo(() => upcomingLeave(leave.requests, now).slice(0, 3), [leave.requests, now]);
-  const used = useMemo(() => usedThisYear(leave.requests, weekdays, now), [leave.requests, weekdays, now]);
+  // ⚠️ LEAVE only — a remote day or agreed overtime is a day worked, never "time off coming up".
+  const ahead = useMemo(() => upcomingLeave(leave.absences, now).slice(0, 3), [leave.absences, now]);
+  const used = useMemo(() => usedThisYear(leave.absences, weekdays, now), [leave.absences, weekdays, now]);
 
   return (
     <Well style={{ padding: amazen.space(3.5), gap: amazen.space(1) }}>
@@ -82,10 +82,6 @@ export function TimeOffSection({
   );
 }
 
-/** The reason as the office reads it: the kind, then the note — the format the Time off tab has always sent. */
-const reasonOf = (kindLabel: string, note: string) => (note.trim() ? `${kindLabel}: ${note.trim()}` : kindLabel);
-const kindLabelOf = (reason?: string | null) => (reason ?? '').split(':')[0].trim();
-
 function useRangeText() {
   const { i18n } = useTranslation();
   return (a: Date, b: Date) => {
@@ -99,6 +95,7 @@ function LeaveRow({ request, weekdays, onPress }: { request: MyTimeOffRequest; w
   const c = amazen.color;
   const { t, i18n } = useTranslation();
   const range = useRangeText();
+  const words = useRequestWords();
   const a = dayOf(request.startDate);
   const b = dayOf(request.endDate);
   const n = daysOff(a, b, weekdays);
@@ -112,7 +109,7 @@ function LeaveRow({ request, weekdays, onPress }: { request: MyTimeOffRequest; w
       trailing={<AText variant="body" tone="muted">›</AText>}
     >
       <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>
-        {[kindLabelOf(request.reason) || t('time.off.kind.other'), range(a, b)].join(' · ')}
+        {[words.describe(request).title, range(a, b)].join(' · ')}
       </AText>
       <AText variant="caption" numberOfLines={1} style={{ color: approved ? c.accent : c.warn }}>
         {request.pendingSync
@@ -144,7 +141,7 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
   const { t, i18n } = useTranslation();
   const toast = useToast();
   const range = useRangeText();
-  const [kind, setKind] = useState<Kind>('vacation');
+  const [kind, setKind] = useState<LeaveType>('VACATION');
   const [a, setA] = useState<Date | null>(null);
   const [b, setB] = useState<Date | null>(null);
   const [note, setNote] = useState('');
@@ -152,10 +149,10 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<{ a: Date; b: Date; n: number; queued: boolean } | null>(null);
   const [month, setMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const taken = useMemo(() => leaveDays(leave.requests), [leave.requests]);
+  const taken = useMemo(() => leaveDays(leave.absences), [leave.absences]);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const reset = () => { setA(null); setB(null); setNote(''); setNoteOpen(false); setSent(null); setKind('vacation'); setMonth(new Date(now.getFullYear(), now.getMonth(), 1)); };
+  const reset = () => { setA(null); setB(null); setNote(''); setNoteOpen(false); setSent(null); setKind('VACATION'); setMonth(new Date(now.getFullYear(), now.getMonth(), 1)); };
   const close = () => { onClose(); setTimeout(reset, 300); };
 
   const works = (d: Date) => !weekdays || weekdays.has(d.getDay());
@@ -183,27 +180,20 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
     Offline, the phone's own count from the working week stands in.
   */
   const { user } = useAuth();
-  const [cost, setCost] = useState<LeaveCount | null>(null);
-  const aKey = a ? dayKey(a) : null, endKey = end ? dayKey(end) : null;
-  useEffect(() => {
-    setCost(null);
-    if (!user?.id || !aKey || !endKey) return;
-    let live = true;
-    const timer = setTimeout(() => {
-      calendarApi.countLeave(user.id, aKey, endKey).then((r) => { if (live) setCost(r); }).catch(() => undefined);
-    }, 250);
-    return () => { live = false; clearTimeout(timer); };
-  }, [user?.id, aKey, endKey]);
+  const cost = useLeaveCost(user?.id, a ? dayKey(a) : null, end ? dayKey(end) : null);
   const costDay = useMemo(() => new Map((cost?.days ?? []).map((d) => [d.day, d])), [cost]);
   const n = cost ? cost.counted : a && end ? daysOff(a, end, weekdays) : 0;
   const clash = a && end ? overlapIn(a, end, taken) : null;
-  const kindLabel = t(`timeOff.reasonTypes.${kind}`);
+  const kindLabel = t(leaveTypeLabelKey(kind));
 
   const send = async () => {
     if (!a || !end || clash || busy) return;
     setBusy(true);
     try {
-      const outcome = await leave.request({ startDate: dayKey(a), endDate: dayKey(end), reason: reasonOf(kindLabel, note) });
+      // The leave type travels as `type`; the note is the note (request-model.ts).
+      const built = draftToBody({ kind: 'LEAVE', startDate: dayKey(a), endDate: dayKey(end), type: kind, reason: note });
+      if (!built.ok) { toast.error(t('common.error'), t(`offline.errors.${built.code}`)); return; }
+      const outcome = await leave.request(built.body);
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
         return;
@@ -244,23 +234,7 @@ function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boo
   const canBack = month > new Date(now.getFullYear(), now.getMonth() - 1, 1);
   return (
     <JobSheet visible={visible} onClose={close} busy={busy} title={t('time.off.requestTitle', 'Request time off')}>
-      <View style={{ flexDirection: 'row', gap: amazen.space(1.5) }}>
-        {KINDS.map((k) => {
-          const on = k === kind;
-          return (
-            <Pressable
-              key={k}
-              onPress={() => setKind(k)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{ flex: 1, alignItems: 'center', gap: 4, paddingVertical: amazen.space(2.5), borderRadius: 16, backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1, borderColor: on ? c.accent : 'transparent' }}
-            >
-              <KindMark kind={k} color={on ? c.accent : c.inkMuted} />
-              <AText variant="caption" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 12.5, color: on ? c.inkStrong : c.ink }}>{t(`time.off.kind.${k}`)}</AText>
-            </Pressable>
-          );
-        })}
-      </View>
+      <LeaveTypePicker value={kind} onChange={setKind} />
 
       <View style={{ flexDirection: 'row', gap: amazen.space(1.5) }}>
         {(['tomorrow', 'nextWeek'] as const).map((k) => (
@@ -398,6 +372,7 @@ function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOff
   const { amazen } = useTheme();
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const words = useRequestWords();
   const [busy, setBusy] = useState(false);
   if (!request) return <JobSheet visible={false} onClose={onClose}><View /></JobSheet>;
   const a = dayOf(request.startDate);
@@ -405,7 +380,8 @@ function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOff
   const waiting = request.status === 'PENDING';
   const who = request.approvedBy ? personName(request.approvedBy) : null;
   const f = (d: Date) => d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
-  const note = (request.reason ?? '').split(':').slice(1).join(':').trim();
+  const described = words.describe(request);
+  const note = described.note;
 
   const withdraw = async () => {
     setBusy(true);
@@ -430,7 +406,7 @@ function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOff
       onClose={onClose}
       busy={busy}
       eyebrow={<StateEyebrow tone={waiting ? 'warn' : 'accent'} label={waiting ? t('time.off.waiting', 'Waiting for approval') : who ? t('time.off.approvedBy', { defaultValue: 'Approved by {{name}}', name: who }) : t('time.off.approved', 'Approved')} />}
-      title={kindLabelOf(request.reason) || t('time.off.kind.other')}
+      title={described.title}
     >
       <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
         <Line label={t('time.off.from', 'From')} value={f(a)} />
@@ -459,32 +435,5 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
       strong={strong}
       style={{ borderTopWidth: strong ? 1 : 0, borderTopColor: amazen.color.lineWell, paddingTop: strong ? amazen.space(2) : 0 }}
     />
-  );
-}
-
-/** One colour, depth from opacity — the kinds read before their words do. */
-function KindMark({ kind, color }: { kind: Kind; color: string }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24">
-      {kind === 'vacation' ? (
-        <>
-          <Circle cx={12} cy={12} r={4.6} fill={color} />
-          <Path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke={color} strokeOpacity={0.55} strokeWidth={1.8} strokeLinecap="round" />
-        </>
-      ) : kind === 'sickLeave' ? (
-        <>
-          <Circle cx={12} cy={12} r={9.5} fill={color} fillOpacity={0.18} />
-          <Path d="M12 7v10M7 12h10" stroke={color} strokeWidth={2.4} strokeLinecap="round" />
-        </>
-      ) : kind === 'family' ? (
-        <Path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill={color} fillOpacity={0.85} />
-      ) : (
-        <>
-          <Circle cx={6} cy={12} r={2} fill={color} fillOpacity={0.5} />
-          <Circle cx={12} cy={12} r={2} fill={color} fillOpacity={0.75} />
-          <Circle cx={18} cy={12} r={2} fill={color} />
-        </>
-      )}
-    </Svg>
   );
 }

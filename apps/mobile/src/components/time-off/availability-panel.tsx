@@ -1,11 +1,10 @@
-import { ActivityIndicator, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS, SPACING } from '../../lib/constants';
 import { formatShortDate } from '../../lib/utils';
+import { AText, Well } from '../amazen';
+import { Banner, SectionLabel } from '../job/job-ui';
 import type { AvailabilityInsights } from './helpers';
-import { styles } from './styles';
 
 /** Who else is out over the picked range, and how thin the team gets — for somebody who may read it. */
 export function TeamAvailabilityPanel({
@@ -20,67 +19,45 @@ export function TeamAvailabilityPanel({
   locale: string;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
 
   return (
-    <View style={[styles.insightCard, { backgroundColor: colors.card }]}>
-      <View style={styles.insightHeader}>
-        <Ionicons name="people" size={18} color={COLORS.primary} />
-        <Text style={[styles.insightTitle, { color: colors.textPrimary }]}>{t('timeOff.teamAvailability.title')}</Text>
-      </View>
-
-      {loading ? (
-        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.md }} />
-      ) : failed ? (
-        <Text style={[styles.insightMuted, { color: colors.textMuted }]}>{t('timeOff.teamAvailability.unableToLoad')}</Text>
-      ) : insights ? (
-        <View style={styles.insightContent}>
-          <Text style={[styles.insightSummary, { color: colors.textPrimary }]}>
-            {t('timeOff.teamAvailability.techsAvailable', { available: insights.worstAvailable, total: insights.worstTotal })}
-            {insights.worstDay && (
-              <Text style={[styles.insightMuted, { color: colors.textMuted }]}>
-                {' '}{t('timeOff.teamAvailability.worst', { date: formatShortDate(insights.worstDay, locale) })}
-              </Text>
-            )}
-          </Text>
-
-          {insights.lowCoverage && (
-            <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
-              <Ionicons name="warning" size={16} color={COLORS.amber} />
-              <Text style={styles.warningText}>
-                {t('timeOff.teamAvailability.lowCoverage', { date: formatShortDate(insights.worstDay, locale) })}
-              </Text>
-            </View>
-          )}
-
-          {insights.userNotScheduledDays.length > 0 && (
-            <View style={[styles.warningRow, { backgroundColor: colors.amberLight }]}>
-              <Ionicons name="information-circle" size={16} color={COLORS.primary} />
-              <Text style={styles.warningText}>
-                {insights.userNotScheduledDays.length > 1
-                  ? t('timeOff.teamAvailability.notScheduledPlural', { count: insights.userNotScheduledDays.length })
-                  : t('timeOff.teamAvailability.notScheduled', { count: insights.userNotScheduledDays.length })}
-              </Text>
-            </View>
-          )}
-
-          {insights.teamOnTimeOff.length > 0 && (
-            <View style={styles.teamOffSection}>
-              <Text style={[styles.teamOffLabel, { color: colors.textSecondary }]}>{t('timeOff.teamAvailability.alsoOnTimeOff')}</Text>
-              {insights.teamOnTimeOff.slice(0, 5).map((name, i) => (
-                <Text key={i} style={[styles.teamOffName, { color: colors.textSecondary }]}>{name}</Text>
-              ))}
-              {insights.teamOnTimeOff.length > 5 && (
-                <Text style={[styles.teamOffMore, { color: colors.textMuted }]}>
-                  {t('common.more', { count: insights.teamOnTimeOff.length - 5 })}
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
+    <Well style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
+      <SectionLabel>{t('timeOff.teamAvailability.title')}</SectionLabel>
+      {failed ? (
+        <AText variant="caption" tone="muted">{t('timeOff.teamAvailability.unableToLoad')}</AText>
+      ) : loading || !insights ? (
+        <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
       ) : (
-        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: SPACING.md }} />
+        <>
+          <AText variant="body" tone="strong" style={{ fontSize: 14 }}>
+            {t('timeOff.teamAvailability.techsAvailable', { available: insights.worstAvailable, total: insights.worstTotal })}
+            {insights.worstDay ? (
+              <AText variant="caption" tone="muted">{` ${t('timeOff.teamAvailability.worst', { date: formatShortDate(insights.worstDay, locale) })}`}</AText>
+            ) : null}
+          </AText>
+          {insights.lowCoverage ? (
+            <Banner tone="warn" text={t('timeOff.teamAvailability.lowCoverage', { date: formatShortDate(insights.worstDay, locale) })} />
+          ) : null}
+          {insights.userNotScheduledDays.length > 0 ? (
+            <Banner
+              tone="neutral"
+              text={insights.userNotScheduledDays.length > 1
+                ? t('timeOff.teamAvailability.notScheduledPlural', { count: insights.userNotScheduledDays.length })
+                : t('timeOff.teamAvailability.notScheduled', { count: insights.userNotScheduledDays.length })}
+            />
+          ) : null}
+          {insights.teamOnTimeOff.length > 0 ? (
+            <View style={{ gap: 2 }}>
+              <AText variant="caption" tone="muted">{t('timeOff.teamAvailability.alsoOnTimeOff')}</AText>
+              <AText variant="caption" tone="ink" numberOfLines={3}>
+                {insights.teamOnTimeOff.slice(0, 5).join(' · ')}
+                {insights.teamOnTimeOff.length > 5 ? ` · ${t('common.more', { count: insights.teamOnTimeOff.length - 5 })}` : ''}
+              </AText>
+            </View>
+          ) : null}
+        </>
       )}
-    </View>
+    </Well>
   );
 }

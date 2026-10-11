@@ -274,7 +274,7 @@
     "createTask": "Créer",
     "manage": "Gérer",
     "attendance": "Temps",
-    "timeOff": "Congés",
+    "timeOff": "Demandes",
     "team": "Équipe",
     "profile": "Profil",
     "more": "Plus",
@@ -944,7 +944,7 @@
       "notesPlaceholder": "Détails complémentaires...",
       "clearSelection": "Effacer la sélection",
       "submitRequest": "Envoyer la demande",
-      "successMessage": "Demande de congé envoyée.",
+      "successMessage": "Demande envoyée.",
       "failedToSubmit": "Échec de l'envoi de la demande"
     },
     "reasonTypes": {
@@ -960,10 +960,10 @@
       "all": "Toutes"
     },
     "empty": {
-      "upcoming": "Aucune demande de congé à venir",
-      "past": "Aucune demande de congé passée",
-      "all": "Aucune demande de congé pour l'instant",
-      "hint": "Appuyez sur les dates du calendrier ci-dessus pour demander un congé"
+      "upcoming": "Aucune demande à venir",
+      "past": "Aucune demande passée",
+      "all": "Aucune demande pour l’instant",
+      "hint": "Choisissez des jours dans le calendrier pour un congé, ou touchez Nouvelle demande."
     },
     "approvedBy": "Approuvé par {{firstName}} {{lastName}}",
     "cancelRequest": "Annuler la demande",
@@ -1070,7 +1070,7 @@
       "tasksDescription": "Nouvelles attributions, changements de statut, commentaires",
       "attendance": "Présences",
       "attendanceDescription": "Rappels de pointage d'arrivée/départ",
-      "timeOff": "Congés",
+      "timeOff": "Demandes",
       "timeOffDescription": "Approbations et mises à jour des demandes",
       "footerNote": "Les catégories sont stockées sur cet appareil ; les choix d’e-mail sont enregistrés dans votre compte. Les autorisations de notifications push sont gérées dans les paramètres de votre appareil.",
       "emails": "E-mail",
@@ -1103,7 +1103,7 @@
   },
   "manage": {
     "timeOff": {
-      "label": "Congés",
+      "label": "Demandes",
       "desc": "Approuver les demandes"
     },
     "members": {
@@ -1191,15 +1191,15 @@
       },
       "rejectReasonPrompt": "Motif (facultatif) :",
       "rejectConfirmTitle": "Refuser la demande",
-      "rejectConfirmMessage": "Refuser cette demande de congé ?",
-      "failedToLoad": "Échec du chargement des demandes de congé",
+      "rejectConfirmMessage": "Refuser cette demande ?",
+      "failedToLoad": "Impossible de charger les demandes",
       "failedToApprove": "Échec de l'approbation",
       "failedToReject": "Échec du refus",
       "noRequests": "Aucune demande {{filter}}",
       "noRequestsAll": "Aucune demande"
     },
     "titles": {
-      "timeOffRequests": "Demandes de congé",
+      "timeOffRequests": "Demandes",
       "attendance": "Présence"
     },
     "attendance": {
@@ -1537,8 +1537,8 @@
           "body": "Pointez votre arrivée et votre départ, prenez une pause et consultez vos heures du jour et de la semaine."
         },
         "tabsTimeOff": {
-          "title": "Congés",
-          "body": "Demandez des jours de congé et suivez vos demandes ici."
+          "title": "Demandes",
+          "body": "Demandez un congé, du télétravail et plus encore, et suivez vos demandes ici."
         },
         "profile": {
           "title": "Votre profil",
@@ -1562,7 +1562,7 @@
         },
         "tabsMore": {
           "title": "Plus",
-          "body": "Tout le reste se trouve ici : congés, documents, clients et les pages que vous gérez."
+          "body": "Tout le reste se trouve ici : demandes, documents, clients et les pages que vous gérez."
         }
       }
     },
@@ -1694,15 +1694,15 @@
       }
     },
     "timeOff": {
-      "title": "Congés",
+      "title": "Demandes",
       "steps": {
         "intro": {
           "title": "Votre année jusqu'ici",
-          "body": "Jours utilisés, congés à venir, demandes en attente de réponse et demandes refusées."
+          "body": "Jours de congé pris et à venir, demandes en attente de réponse et demandes refusées."
         },
         "request": {
-          "title": "Choisissez vos jours",
-          "body": "Choisissez les jours dans le calendrier pour demander un congé. Votre responsable reçoit la demande pour l'approuver."
+          "title": "Demander quelque chose",
+          "body": "Choisissez des jours dans le calendrier pour un congé, ou touchez Nouvelle demande pour télétravailler, changer les horaires d’une journée ou convenir d’heures supplémentaires à l’avance. Votre responsable la reçoit pour approbation."
         },
         "list": {
           "title": "Vos demandes",
@@ -3155,7 +3155,7 @@
       "worklog_note": "Note de travail",
       "worklog_attachment": "Photo de travail",
       "shiftIssue_message": "Message d'incident",
-      "timeOff_request": "Demande d'absence",
+      "timeOff_request": "Demande",
       "expense_submit": "Dépense",
       "chat_send": "Message",
       "log_create": "Saisie du carnet",
@@ -3217,7 +3217,19 @@
       "ROLE_TASK_NOT_ROLE": "Cette mission n’a pas été ouverte à un rôle.",
       "ROLE_TASK_FINISHED": "Cette mission est terminée.",
       "LEAVE_NO_WORKING_DAYS": "Ces jours sont tous des week-ends ou des jours fériés : il n’y a rien à poser.",
-      "REMOTE_NOT_FOR_ASSIGNED": "Vous êtes affecté à un espace de travail. Pointez-y, sur place ou à distance si votre espace l’autorise."
+      "REMOTE_NOT_FOR_ASSIGNED": "Vous êtes affecté à un espace de travail. Pointez-y, sur place ou à distance si votre espace l’autorise.",
+      "REQUEST_KIND_INVALID": "Ce type de demande n’est pas reconnu.",
+      "REQUEST_DATES_INVALID": "Vérifiez les dates : le dernier jour ne peut pas précéder le premier.",
+      "REQUEST_TYPE_INVALID": "Choisissez le type de congé.",
+      "REQUEST_SPACE_REQUIRED": "Choisissez l’espace de travail.",
+      "REQUEST_TIME_INVALID": "Choisissez un nouveau début ou une nouvelle fin, la fin après le début.",
+      "REQUEST_MINUTES_INVALID": "Choisissez entre 15 minutes et 12 heures.",
+      "REQUEST_REASON_REQUIRED": "Dites ce que vous demandez.",
+      "REQUEST_REASON_TOO_LONG": "Le motif est trop long : 500 caractères au maximum.",
+      "REQUEST_TOO_MANY_DAYS": "Trop de jours dans une demande : 31 au maximum.",
+      "REQUEST_REMOTE_NOT_ALLOWED": "Vous n’êtes pas autorisé à télétravailler.",
+      "REQUEST_SPACE_NOT_YOURS": "Vous ne travaillez pas dans cet espace de travail.",
+      "REQUEST_KIND_NOT_OFFERED": "Ce type de demande n’est pas proposé dans votre espace de travail."
     },
     "signOut": {
       "title_one": "{{count}} modification n'a pas été envoyée",
@@ -4389,7 +4401,7 @@
       "jobsSub": "Attribuées à vous, modifiées, un commentaire sur les vôtres",
       "clock": "Pointage et postes",
       "clockSub": "L’heure de pointer, une pause, les réponses aux heures sup.",
-      "timeOff": "Absences",
+      "timeOff": "Demandes",
       "timeOffSub": "Vos demandes traitées",
       "allowed": "Ce téléphone peut vous avertir",
       "allowedSub": "Autorisé dans les réglages du téléphone",
@@ -4636,7 +4648,7 @@
     "declineReason": "Motif (facultatif)",
     "declineLeave": "Refuser",
     "approveLeave": "Approuver",
-    "openTimeOff": "Mes absences",
+    "openTimeOff": "Mes demandes",
     "openSchedule": "Ouvrir dans le planning",
     "view": {
       "day": "Jour",
@@ -4779,5 +4791,60 @@
       "shiftTitle": "HBCField — Pointage en cours",
       "shiftBody": "Pendant votre service, nous vérifions que vous êtes sur votre lieu de travail."
     }
+  },
+  "requests": {
+    "title": "Demandes",
+    "new": "Nouvelle demande",
+    "chooseTitle": "Que souhaitez-vous demander ?",
+    "chooseNote": "Ce que vous pouvez demander dépend de votre espace de travail et de vos autorisations.",
+    "leaveSection": "Congés",
+    "kind": {
+      "LEAVE": "Congé",
+      "REMOTE": "Télétravail",
+      "HOURS": "Horaires modifiés",
+      "OVERTIME": "Heures sup. à l’avance",
+      "OTHER": "Autre demande"
+    },
+    "kindHint": {
+      "LEAVE": "Vacances, maladie, famille",
+      "REMOTE": "Travailler hors du site",
+      "HOURS": "Un autre début ou une autre fin",
+      "OVERTIME": "Heures en plus convenues avant",
+      "OTHER": "Tout le reste, avec vos mots"
+    },
+    "effect": {
+      "REMOTE": "Si elle est acceptée, le pointage de ce jour-là ne passera pas en vérification.",
+      "HOURS": "Si elle est acceptée : pas de signalement de retard ni de départ anticipé.",
+      "OVERTIME": "Si elle est acceptée : comptées automatiquement."
+    },
+    "facts": {
+      "between": "{{start}}–{{end}}",
+      "startsAt": "Début {{time}}",
+      "endsAt": "Fin {{time}}",
+      "overtime": "+{{duration}}"
+    },
+    "form": {
+      "day": "Jour",
+      "days": "Jours",
+      "workspace": "Espace de travail",
+      "hours": "Horaires",
+      "howLong": "Combien de temps",
+      "sameDay": "Le même jour",
+      "newHours": "Nouveaux horaires",
+      "start": "Début",
+      "end": "Fin",
+      "unchanged": "Inchangé",
+      "less": "15 minutes de moins",
+      "more": "15 minutes de plus",
+      "overtimeRange": "Entre {{min}} et {{max}}",
+      "reason": "Motif",
+      "reasonOptional": "Motif (facultatif)",
+      "otherPlaceholder": "Que demandez-vous ?",
+      "reasonPlaceholder": "Un motif court",
+      "startAt": "Commencer à",
+      "endAt": "Terminer à"
+    },
+    "noRemoteSpace": "Aucun espace de travail ne vous permet le télétravail.",
+    "balance": "Solde"
   }
 }

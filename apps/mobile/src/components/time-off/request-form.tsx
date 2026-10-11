@@ -1,100 +1,101 @@
-import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import type { LeaveType } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS } from '../../lib/constants';
-import { FilterChip } from '../filter-chip';
-import { REASON_TYPE_KEYS, formatLongDate } from './helpers';
-import { styles } from './styles';
+import { useAuth } from '../../contexts/auth-context';
+import { AText, PrimaryButton, Sunken, Well } from '../amazen';
+import { JobField, QuietButton, ReceiptRow, SectionLabel } from '../job/job-ui';
+import { LeaveTypePicker, useRequestWords } from '../requests/request-parts';
+import { balancePreview } from '../requests/request-model';
+import { useLeaveBalance, useLeaveCost } from '../requests/use-leave-preview';
+import { toDateString } from './helpers';
 
-/** The request for the picked range: kind, a note, Clear / Send. */
+/**
+ * LEAVE FOR THE PICKED RANGE — which kind, what it costs, a note, Send.
+ *
+ * The cost is the server's count (weekend, holidays and the member's rota left
+ * out); for VACATION the allowance is shown before and after, since only
+ * vacation is paid from it. Offline, the calendar days stand in and the
+ * balance is simply left out — never a guessed number.
+ */
 export function TimeOffRequestForm({
   rangeStart,
   rangeEnd,
   rangeDays,
-  locale,
-  reasonType,
-  onReasonType,
-  reasonNotes,
-  onReasonNotes,
+  leaveType,
+  onLeaveType,
+  notes,
+  onNotes,
   isSubmitting,
   onClear,
   onSubmit,
 }: {
   rangeStart: Date;
   rangeEnd: Date;
+  /** The phone's own count, when the server's is not known. */
   rangeDays: number;
-  locale: string;
-  reasonType: string;
-  onReasonType: (key: string) => void;
-  reasonNotes: string;
-  onReasonNotes: (text: string) => void;
+  leaveType: LeaveType;
+  onLeaveType: (t: LeaveType) => void;
+  notes: string;
+  onNotes: (text: string) => void;
   isSubmitting: boolean;
   onClear: () => void;
   onSubmit: () => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
+  const { user } = useAuth();
+  const w = useRequestWords();
+  const from = toDateString(rangeStart);
+  const to = toDateString(rangeEnd);
+  const cost = useLeaveCost(user?.id, from, to);
+  const balance = useLeaveBalance(user?.id, leaveType === 'VACATION');
+  const preview = balancePreview(balance, cost, leaveType);
+  const days = cost ? cost.counted : rangeDays;
 
   return (
-    <View style={[styles.formCard, { backgroundColor: colors.card }]}>
-      <Text style={[styles.formTitle, { color: colors.textPrimary }]}>{t('timeOff.requestForm.title')}</Text>
-
-      {/* Date range display */}
-      <View style={[styles.formDateRow, { backgroundColor: colors.primaryLight }]}>
-        <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
-        <Text style={styles.formDateText}>
-          {formatLongDate(rangeStart, locale)} – {formatLongDate(rangeEnd, locale)} ({rangeDays} {rangeDays > 1 ? t('common.days') : t('common.day')})
-        </Text>
+    <Well style={{ padding: amazen.space(4), gap: amazen.space(3) }}>
+      <View style={{ gap: amazen.space(1) }}>
+        <SectionLabel tone="accent">{t('timeOff.requestForm.title')}</SectionLabel>
+        <AText variant="h2" tone="strong" style={{ fontFamily: amazen.font.sansLight }}>{w.range(from, to)}</AText>
       </View>
 
-      {/* Reason type chips */}
-      <Text style={[styles.formLabel, { color: colors.textPrimary }]}>{t('timeOff.requestForm.reasonLabel')}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-        <View style={styles.chipRow}>
-          {REASON_TYPE_KEYS.map(key => (
-            <FilterChip
-              key={key}
-              label={t(`timeOff.reasonTypes.${key}`)}
-              active={reasonType === key}
-              onPress={() => onReasonType(key)}
-            />
-          ))}
-        </View>
-      </ScrollView>
+      <LeaveTypePicker value={leaveType} onChange={onLeaveType} />
 
-      {/* Optional notes */}
-      <Text style={[styles.formLabel, { color: colors.textPrimary }]}>{t('timeOff.requestForm.notesLabel')}</Text>
-      <TextInput
-        style={[styles.notesInput, { borderColor: colors.border, color: colors.textPrimary }]}
-        placeholder={t('timeOff.requestForm.notesPlaceholder')}
-        placeholderTextColor={colors.textMuted}
-        value={reasonNotes}
-        onChangeText={onReasonNotes}
+      <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
+        <ReceiptRow
+          label={cost ? t('time.off.workingDaysLabel', 'Working days') : t('time.off.daysLabel', 'Days')}
+          value={String(days)}
+        />
+        {preview ? (
+          <ReceiptRow strong label={t('requests.balance', 'Balance')} value={`${preview.before} → ${preview.after}`} />
+        ) : null}
+        {cost && (cost.restDays > 0 || cost.holidays.length > 0) ? (
+          <AText variant="caption" tone="muted" style={{ fontSize: 12 }}>
+            {[
+              cost.restDays > 0 ? t('time.off.restLeftOut', { count: cost.restDays }) : null,
+              ...cost.holidays.map((h) => h.name),
+            ].filter(Boolean).join(' · ')}
+          </AText>
+        ) : null}
+      </Sunken>
+
+      <JobField
+        value={notes}
+        onChangeText={onNotes}
+        placeholder={t('time.off.notePlaceholder', 'Anything the office should know (optional)')}
         multiline
         maxLength={500}
       />
 
-      {/* Action buttons */}
-      <View style={styles.formButtons}>
-        <TouchableOpacity style={[styles.clearButton, { borderColor: colors.border }]} onPress={onClear}>
-          <Text style={[styles.clearButtonText, { color: colors.textSecondary }]}>{t('timeOff.requestForm.clearSelection')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.submitButton, isSubmitting && styles.buttonDisabled]}
-          onPress={onSubmit}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <>
-              <Ionicons name="paper-plane" size={16} color={COLORS.white} />
-              <Text style={styles.submitButtonText}>{t('timeOff.requestForm.submitRequest')}</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+      <PrimaryButton
+        label={t('time.off.send', 'Send the request')}
+        detail={t('time.off.days', { count: days })}
+        onPress={onSubmit}
+        disabled={isSubmitting}
+        loading={isSubmitting}
+      />
+      <QuietButton label={t('timeOff.requestForm.clearSelection')} onPress={onClear} disabled={isSubmitting} />
+    </Well>
   );
 }

@@ -1,17 +1,17 @@
 import { useMemo } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS } from '../../lib/constants';
 import { isSameDay } from '../../lib/utils';
-import { TourTarget } from '../tour';
+import { AText, Well } from '../amazen';
+import { SectionLabel } from '../job/job-ui';
 import { getMonthGrid, isDateInRange, toDateString } from './helpers';
-import { styles } from './styles';
 
 /**
- * The month: the member's own leave as dots, off days greyed, the picked
- * range highlighted. Tapping a day is the parent's decision (`onDayPress`).
+ * The month — where LEAVE is asked for: the member's own leave marked, off days
+ * dimmed, the picked range drawn. Tap a first day, then a last day; tapping a
+ * day is the parent's decision (`onDayPress`). The interaction members already
+ * know, in the v2 look of the Time tab's month (`time-off-section.tsx`).
  */
 export function TimeOffCalendarCard({
   today,
@@ -44,126 +44,104 @@ export function TimeOffCalendarCard({
   isSelecting: boolean;
   onDayPress: (date: Date) => void;
 }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { t, i18n } = useTranslation();
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const monthGrid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
   const hasRangeSelected = rangeStart !== null && rangeEnd !== null;
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const navBtn = { width: 36, height: 36, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.tile };
 
   return (
-    <TourTarget name="timeoff-request" style={[styles.calendarCard, { backgroundColor: colors.card }]}>
-      {/* Month header */}
-      <View style={styles.calendarHeader}>
-        <TouchableOpacity onPress={onPrevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onToday}>
-          <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
-            {t(`monthNames.${viewMonth}`)} {viewYear}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onNextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="chevron-forward" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
+    <Well style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
+      <SectionLabel>{t('requests.leaveSection', 'Leave')}</SectionLabel>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+        <Pressable onPress={onPrevMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('time.off.prevMonth', 'Previous month')} style={navBtn}>
+          <AText variant="body" tone="strong">‹</AText>
+        </Pressable>
+        <Pressable onPress={onToday} accessibilityRole="button" style={{ flex: 1 }}>
+          <AText variant="body" tone="strong" style={{ textAlign: 'center', fontSize: 15 }}>
+            {new Date(viewYear, viewMonth, 1).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
+          </AText>
+        </Pressable>
+        <Pressable onPress={onNextMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('time.off.nextMonth', 'Next month')} style={navBtn}>
+          <AText variant="body" tone="strong">›</AText>
+        </Pressable>
       </View>
 
-      {/* Day headers */}
-      <View style={styles.dayHeaderRow}>
-        {[0, 1, 2, 3, 4, 5, 6].map(i => (
-          <View key={i} style={styles.dayHeaderCell}>
-            <Text style={[styles.dayHeaderText, { color: colors.textMuted }]}>{t(`dayNames.short.${i}`)}</Text>
+      <View style={{ flexDirection: 'row' }}>
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+          <AText key={i} variant="caption" tone="muted" numeric style={{ flex: 1, textAlign: 'center', fontSize: 10.5 }}>{t(`dayNames.short.${i}`)}</AText>
+        ))}
+      </View>
+
+      <View style={{ gap: 3 }}>
+        {monthGrid.map((week, rowIdx) => (
+          <View key={rowIdx} style={{ flexDirection: 'row' }}>
+            {week.map((date, colIdx) => {
+              if (!date) return <View key={colIdx} style={{ flex: 1, height: 40 }} />;
+              const ds = toDateString(date);
+              const isPast = date < todayStart;
+              // 0 = Mon … 6 = Sun, the schedule's numbering.
+              const isScheduled = scheduleLength === 0 || scheduleDays[colIdx] === true;
+              const approved = !!approvedDates[ds];
+              const pending = !!pendingDates[ds];
+              const inRange = hasRangeSelected && isDateInRange(date, rangeStart!, rangeEnd!);
+              const edge = (!!rangeStart && isSameDay(date, rangeStart)) || (!!rangeEnd && isSameDay(date, rangeEnd));
+              const disabled = isPast || !isScheduled;
+              const isToday = isSameDay(date, today);
+              return (
+                <View key={colIdx} style={{ flex: 1, padding: 1.5 }}>
+                  <Pressable
+                    onPress={() => onDayPress(date)}
+                    disabled={disabled}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: inRange || edge, disabled }}
+                    accessibilityLabel={date.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
+                    style={{
+                      height: 38, borderRadius: edge ? 12 : 8, alignItems: 'center', justifyContent: 'center',
+                      backgroundColor: edge && isScheduled ? c.accentSolid : inRange && isScheduled ? c.accentTint : approved ? c.accentTint : 'transparent',
+                      borderWidth: pending && !edge ? 1.5 : isToday && !edge && !inRange ? 1 : 0,
+                      borderColor: pending ? c.warn : c.lineField,
+                    }}
+                  >
+                    <AText
+                      variant="caption"
+                      numeric
+                      style={{
+                        fontSize: 13.5,
+                        color: edge && isScheduled ? c.accentInk : approved ? c.accent : isToday ? c.accent : c.inkStrong,
+                        opacity: isPast ? 0.3 : !isScheduled ? 0.4 : 1,
+                      }}
+                    >
+                      {date.getDate()}
+                    </AText>
+                  </Pressable>
+                </View>
+              );
+            })}
           </View>
         ))}
       </View>
 
-      {/* Grid */}
-      {monthGrid.map((week, rowIdx) => (
-        <View key={rowIdx} style={styles.weekRow}>
-          {week.map((date, colIdx) => {
-            if (!date) {
-              return <View key={colIdx} style={styles.dayCell} />;
-            }
-
-            const ds = toDateString(date);
-            const isToday = isSameDay(date, today);
-            const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const dow = colIdx; // 0=Mon..6=Sun
-
-            // Schedule: user is active on this day?
-            const isScheduled = scheduleLength === 0 || scheduleDays[dow] === true;
-
-            // Time-off dots
-            const hasApproved = !!approvedDates[ds];
-            const hasPending = !!pendingDates[ds];
-
-            // Range highlighting
-            const inRange = hasRangeSelected && isDateInRange(date, rangeStart!, rangeEnd!);
-            const isRangeEndpoint =
-              (rangeStart && isSameDay(date, rangeStart)) ||
-              (rangeEnd && isSameDay(date, rangeEnd));
-            const isOnlyStart = rangeStart && !rangeEnd && isSameDay(date, rangeStart);
-
-            const isDayDisabled = isPast || (!isScheduled && !isPast);
-
-            return (
-              <TouchableOpacity
-                key={colIdx}
-                style={[
-                  styles.dayCell,
-                  inRange && isScheduled && [styles.dayCellInRange, { backgroundColor: colors.primaryLight }],
-                  (isRangeEndpoint || isOnlyStart) && isScheduled && styles.dayCellEndpoint,
-                  isToday && !inRange && !isRangeEndpoint && !isOnlyStart && styles.dayCellToday,
-                ]}
-                onPress={() => onDayPress(date)}
-                disabled={isDayDisabled}
-                activeOpacity={0.6}
-              >
-                <Text
-                  style={[
-                    styles.dayText,
-                    { color: colors.textPrimary },
-                    isPast && [styles.dayTextPast, { color: colors.borderLight }],
-                    !isScheduled && !isPast && [styles.dayTextOffDay, { color: colors.textMuted, opacity: 0.4 }],
-                    inRange && isScheduled && styles.dayTextInRange,
-                    (isRangeEndpoint || isOnlyStart) && isScheduled && styles.dayTextEndpoint,
-                  ]}
-                >
-                  {date.getDate()}
-                </Text>
-                {/* Dots container */}
-                <View style={styles.dotRow}>
-                  {hasApproved && <View style={[styles.dot, { backgroundColor: COLORS.success }]} />}
-                  {hasPending && <View style={[styles.dot, { backgroundColor: COLORS.amber }]} />}
-                  {!isScheduled && !isPast && !hasApproved && !hasPending && (
-                    <View style={[styles.dot, { backgroundColor: COLORS.slate300 }]} />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
-
-      {/* Legend */}
-      <View style={[styles.legendRow, { borderTopColor: colors.border }]}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.success }]} />
-          <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.approved')}</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.amber }]} />
-          <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.pending')}</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.slate300 }]} />
-          <Text style={[styles.legendText, { color: colors.textSecondary }]}>{t('timeOff.calendar.legend.offDay')}</Text>
-        </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
+        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }} />} label={t('timeOff.calendar.legend.approved')} />
+        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />} label={t('timeOff.calendar.legend.pending')} />
+        {scheduleLength > 0 ? <Legend swatch={<AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.4 }}>7</AText>} label={t('timeOff.calendar.legend.offDay')} /> : null}
       </View>
 
-      {isSelecting && rangeStart && !rangeEnd && (
-        <Text style={styles.selectionHint}>
-          {t('timeOff.calendar.selectionHint')}
-        </Text>
-      )}
-    </TourTarget>
+      <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 12 }}>
+        {isSelecting && rangeStart && !rangeEnd ? t('timeOff.calendar.selectionHint') : !rangeStart ? t('time.off.hintFirst', 'Tap your first day off') : ' '}
+      </AText>
+    </Well>
+  );
+}
+
+function Legend({ swatch, label }: { swatch: React.ReactNode; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      {swatch}
+      <AText variant="caption" tone="muted" style={{ fontSize: 10.5 }}>{label}</AText>
+    </View>
   );
 }

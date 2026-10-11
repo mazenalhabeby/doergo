@@ -274,7 +274,7 @@
     "createTask": "Erstellen",
     "manage": "Verwalten",
     "attendance": "Zeit",
-    "timeOff": "Urlaub",
+    "timeOff": "Anträge",
     "team": "Team",
     "profile": "Profil",
     "more": "Mehr",
@@ -944,7 +944,7 @@
       "notesPlaceholder": "Weitere Details...",
       "clearSelection": "Auswahl löschen",
       "submitRequest": "Antrag einreichen",
-      "successMessage": "Abwesenheitsantrag eingereicht.",
+      "successMessage": "Antrag gesendet.",
       "failedToSubmit": "Antrag konnte nicht eingereicht werden"
     },
     "reasonTypes": {
@@ -960,10 +960,10 @@
       "all": "Alle"
     },
     "empty": {
-      "upcoming": "Keine anstehenden Abwesenheitsanträge",
-      "past": "Keine vergangenen Abwesenheitsanträge",
-      "all": "Noch keine Abwesenheitsanträge",
-      "hint": "Tippen Sie auf Daten im Kalender oben, um Abwesenheit zu beantragen"
+      "upcoming": "Keine anstehenden Anträge",
+      "past": "Keine vergangenen Anträge",
+      "all": "Noch keine Anträge",
+      "hint": "Wählen Sie Tage im Kalender für eine Abwesenheit oder tippen Sie auf Neuer Antrag."
     },
     "approvedBy": "Genehmigt von {{firstName}} {{lastName}}",
     "cancelRequest": "Antrag abbrechen",
@@ -1070,7 +1070,7 @@
       "tasksDescription": "Neue Zuweisungen, Statusänderungen, Kommentare",
       "attendance": "Anwesenheit",
       "attendanceDescription": "Ein-/Ausstempel-Erinnerungen",
-      "timeOff": "Abwesenheit",
+      "timeOff": "Anträge",
       "timeOffDescription": "Genehmigungen und Aktualisierungen",
       "footerNote": "Kategorien werden auf diesem Gerät gespeichert, E-Mail-Einstellungen in Ihrem Konto. Push-Benachrichtigungsberechtigungen werden in Ihren Geräteeinstellungen verwaltet.",
       "emails": "E-Mail",
@@ -1103,7 +1103,7 @@
   },
   "manage": {
     "timeOff": {
-      "label": "Abwesenheit",
+      "label": "Anträge",
       "desc": "Anträge genehmigen"
     },
     "members": {
@@ -1191,15 +1191,15 @@
       },
       "rejectReasonPrompt": "Grund (optional):",
       "rejectConfirmTitle": "Antrag ablehnen",
-      "rejectConfirmMessage": "Diesen Abwesenheitsantrag ablehnen?",
-      "failedToLoad": "Abwesenheitsanträge konnten nicht geladen werden",
+      "rejectConfirmMessage": "Diesen Antrag ablehnen?",
+      "failedToLoad": "Anträge konnten nicht geladen werden",
       "failedToApprove": "Genehmigung fehlgeschlagen",
       "failedToReject": "Ablehnung fehlgeschlagen",
       "noRequests": "Keine {{filter}} Anträge",
       "noRequestsAll": "Keine Anträge"
     },
     "titles": {
-      "timeOffRequests": "Abwesenheitsanträge",
+      "timeOffRequests": "Anträge",
       "attendance": "Anwesenheit"
     },
     "attendance": {
@@ -1537,8 +1537,8 @@
           "body": "Ein- und ausstempeln, eine Pause machen und Ihre Stunden für heute und diese Woche sehen."
         },
         "tabsTimeOff": {
-          "title": "Abwesenheit",
-          "body": "Beantragen Sie freie Tage und verfolgen Sie Ihre Anträge hier."
+          "title": "Anträge",
+          "body": "Beantragen Sie Abwesenheit, Remote-Arbeit und mehr und verfolgen Sie Ihre Anträge hier."
         },
         "profile": {
           "title": "Ihr Profil",
@@ -1562,7 +1562,7 @@
         },
         "tabsMore": {
           "title": "Mehr",
-          "body": "Alles Weitere finden Sie hier: Abwesenheiten, Dokumente, Kunden und die Seiten, die Sie verwalten."
+          "body": "Alles Weitere finden Sie hier: Anträge, Dokumente, Kunden und die Seiten, die Sie verwalten."
         }
       }
     },
@@ -1694,15 +1694,15 @@
       }
     },
     "timeOff": {
-      "title": "Abwesenheit",
+      "title": "Anträge",
       "steps": {
         "intro": {
           "title": "Ihr Jahr bisher",
-          "body": "Genommene Tage, anstehende Abwesenheit, Anträge, die auf eine Antwort warten, und abgelehnte Anträge."
+          "body": "Genommene und anstehende Abwesenheitstage, Anträge, die auf eine Antwort warten, und abgelehnte Anträge."
         },
         "request": {
-          "title": "Tage wählen",
-          "body": "Wählen Sie die Tage im Kalender, um Abwesenheit zu beantragen. Ihre Führungskraft erhält den Antrag zur Genehmigung."
+          "title": "Etwas beantragen",
+          "body": "Wählen Sie Tage im Kalender für eine Abwesenheit, oder tippen Sie auf Neuer Antrag, um remote zu arbeiten, die Arbeitszeit eines Tages zu ändern oder Überstunden vorab zu vereinbaren. Ihre Führungskraft erhält den Antrag zur Genehmigung."
         },
         "list": {
           "title": "Ihre Anträge",
@@ -3155,7 +3155,7 @@
       "worklog_note": "Arbeitsnotiz",
       "worklog_attachment": "Arbeitsfoto",
       "shiftIssue_message": "Nachricht zum Problem",
-      "timeOff_request": "Abwesenheitsantrag",
+      "timeOff_request": "Antrag",
       "expense_submit": "Ausgabe",
       "chat_send": "Nachricht",
       "log_create": "Geräte-Logbucheintrag",
@@ -3217,7 +3217,19 @@
       "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
       "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen.",
       "LEAVE_NO_WORKING_DAYS": "Diese Tage sind alle Wochenenden oder Feiertage – es gibt nichts freizunehmen.",
-      "REMOTE_NOT_FOR_ASSIGNED": "Sie sind einem Arbeitsbereich zugeordnet. Stempeln Sie dort ein – vor Ort oder auswärts, wenn Ihr Arbeitsbereich es erlaubt."
+      "REMOTE_NOT_FOR_ASSIGNED": "Sie sind einem Arbeitsbereich zugeordnet. Stempeln Sie dort ein – vor Ort oder auswärts, wenn Ihr Arbeitsbereich es erlaubt.",
+      "REQUEST_KIND_INVALID": "Diese Art von Antrag ist nicht bekannt.",
+      "REQUEST_DATES_INVALID": "Prüfen Sie die Daten – der letzte Tag kann nicht vor dem ersten liegen.",
+      "REQUEST_TYPE_INVALID": "Wählen Sie die Art der Abwesenheit.",
+      "REQUEST_SPACE_REQUIRED": "Wählen Sie den Arbeitsbereich.",
+      "REQUEST_TIME_INVALID": "Wählen Sie einen neuen Beginn oder ein neues Ende – das Ende nach dem Beginn.",
+      "REQUEST_MINUTES_INVALID": "Wählen Sie zwischen 15 Minuten und 12 Stunden.",
+      "REQUEST_REASON_REQUIRED": "Beschreiben Sie, was Sie beantragen.",
+      "REQUEST_REASON_TOO_LONG": "Die Begründung ist zu lang – höchstens 500 Zeichen.",
+      "REQUEST_TOO_MANY_DAYS": "Zu viele Tage in einem Antrag – höchstens 31.",
+      "REQUEST_REMOTE_NOT_ALLOWED": "Sie dürfen nicht remote arbeiten.",
+      "REQUEST_SPACE_NOT_YOURS": "Sie arbeiten nicht in diesem Arbeitsbereich.",
+      "REQUEST_KIND_NOT_OFFERED": "Diese Art von Antrag ist in Ihrem Arbeitsbereich nicht verfügbar."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",
@@ -4389,7 +4401,7 @@
       "jobsSub": "Ihnen zugewiesen, geändert, ein Kommentar zu Ihren",
       "clock": "Stempeln und Schichten",
       "clockSub": "Zeit zum Einstempeln, eine Pause, Antworten zu Überstunden",
-      "timeOff": "Abwesenheit",
+      "timeOff": "Anträge",
       "timeOffSub": "Ihre Anträge beantwortet",
       "allowed": "Dieses Telefon darf Sie benachrichtigen",
       "allowedSub": "In den Einstellungen des Telefons erlaubt",
@@ -4636,7 +4648,7 @@
     "declineReason": "Grund (optional)",
     "declineLeave": "Ablehnen",
     "approveLeave": "Genehmigen",
-    "openTimeOff": "Meine Abwesenheiten",
+    "openTimeOff": "Meine Anträge",
     "openSchedule": "Im Zeitplan öffnen",
     "view": {
       "day": "Tag",
@@ -4779,5 +4791,60 @@
       "shiftTitle": "HBCField – Eingestempelt",
       "shiftBody": "Während Ihrer Schicht wird geprüft, ob Sie sich am Arbeitsort befinden."
     }
+  },
+  "requests": {
+    "title": "Anträge",
+    "new": "Neuer Antrag",
+    "chooseTitle": "Was möchten Sie beantragen?",
+    "chooseNote": "Was Sie beantragen können, hängt von Ihrem Arbeitsbereich und Ihren Berechtigungen ab.",
+    "leaveSection": "Abwesenheit",
+    "kind": {
+      "LEAVE": "Abwesenheit",
+      "REMOTE": "Remote-Arbeit",
+      "HOURS": "Geänderte Arbeitszeit",
+      "OVERTIME": "Überstunden im Voraus",
+      "OTHER": "Sonstiger Antrag"
+    },
+    "kindHint": {
+      "LEAVE": "Urlaub, Krankheit, Familie",
+      "REMOTE": "Nicht vor Ort arbeiten",
+      "HOURS": "Anderer Beginn oder anderes Ende",
+      "OVERTIME": "Mehrstunden vorab vereinbaren",
+      "OTHER": "Alles andere, in Ihren Worten"
+    },
+    "effect": {
+      "REMOTE": "Wenn genehmigt, geht das Einstempeln an diesem Tag nicht in die Prüfung.",
+      "HOURS": "Wenn genehmigt: kein Hinweis auf Verspätung oder frühes Gehen.",
+      "OVERTIME": "Wenn genehmigt: wird automatisch gezählt."
+    },
+    "facts": {
+      "between": "{{start}}–{{end}}",
+      "startsAt": "Beginn {{time}}",
+      "endsAt": "Ende {{time}}",
+      "overtime": "+{{duration}}"
+    },
+    "form": {
+      "day": "Tag",
+      "days": "Tage",
+      "workspace": "Arbeitsbereich",
+      "hours": "Arbeitszeit",
+      "howLong": "Wie lange",
+      "sameDay": "Gleicher Tag",
+      "newHours": "Neue Arbeitszeit",
+      "start": "Beginn",
+      "end": "Ende",
+      "unchanged": "Unverändert",
+      "less": "15 Minuten weniger",
+      "more": "15 Minuten mehr",
+      "overtimeRange": "Zwischen {{min}} und {{max}}",
+      "reason": "Grund",
+      "reasonOptional": "Grund (optional)",
+      "otherPlaceholder": "Was möchten Sie beantragen?",
+      "reasonPlaceholder": "Eine kurze Begründung",
+      "startAt": "Beginn um",
+      "endAt": "Ende um"
+    },
+    "noRemoteSpace": "Es gibt keinen Arbeitsbereich, für den Sie remote arbeiten dürfen.",
+    "balance": "Resturlaub"
   }
 }

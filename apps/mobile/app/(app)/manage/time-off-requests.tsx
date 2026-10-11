@@ -1,238 +1,159 @@
 import { useState, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
-  RefreshControl, ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
+import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useToast } from '../../../src/island/island-context';
 import { timeOffApi } from '../../../src/lib/api';
-import { FilterChip } from '../../../src/components/filter-chip';
-import {
-  COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS,
-} from '../../../src/lib/constants';
-import { Skeleton, ConfirmSheet, ScreenContainer, ScreenHeader } from '../../../src/components';
-import { getTimeOffStatusStyle } from '../../../src/lib/styles';
-import { personName } from '@hbcfield/shared/client';
+import { useResponsive } from '../../../src/lib/responsive';
+import { centeredContent } from '../../../src/components/screen-container';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, useTabSafe } from '../../../src/components/amazen';
+import { Initials, JobSheet } from '../../../src/components/job/job-ui';
+import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
-
 const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
 
-export default function TimeOffRequestsScreen() {
-  const { colors } = useTheme();
+/** Waiting first, then the newest. */
+function byWaitingThenNewest(a: RequestRowData, b: RequestRowData): number {
+  if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+  if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+}
+
+/**
+ * REQUESTS TO DECIDE — every kind (leave, remote, changed hours, overtime,
+ * other), each with what it needs to be decided: who, what, when, where, how
+ * long, and their words. Approve or reject, exactly as for leave.
+ *
+ * One request for the whole list (`timeOffApi.listOrg`): the server answers
+ * with the organization for an org-wide holder and with their own crew for a
+ * supervisor, and brings the member with each row.
+ */
+export default function RequestsToDecideScreen() {
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
-  // Dates follow the active language rather than a hardcoded en-US locale.
-  const { locale } = useTimeFormat();
   const toast = useToast();
-  const [requests, setRequests] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const router = useRouter();
+  const tabSafe = useTabSafe();
+  const r = useResponsive();
+  const wide = r.isTablet ? centeredContent(720) : null;
+  const w = useRequestWords();
+  const [requests, setRequests] = useState<RequestRowData[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>('PENDING');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<{ techId: string; requestId: string } | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<RequestRowData | null>(null);
 
-  const fetchRequests = useCallback(async (showRefresh = false) => {
+  const load = useCallback(async () => {
     try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-
-      /*
-        One request, not one per employee.
-
-        This listed the whole staff and then asked each of them for their leave
-        — a fan-out that grew with the payroll and capped silently at a hundred
-        people. It also could not work for a supervisor at all: the employee
-        directory is an org-wide read they are refused, so the loop had nobody
-        to ask about.
-
-        The org endpoint answers with what this caller may decide — everyone,
-        or their own crew — and brings the member with each row.
-      */
       const rows = await timeOffApi.listOrg();
-      const allRequests = rows.map((r: any) => ({
-        ...r,
-        techName: personName(r.technician),
-        techId: r.technician?.id ?? r.technicianId,
-      }));
-
-      // Sort: pending first, then by date
-      allRequests.sort((a, b) => {
-        if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
-        if (b.status === 'PENDING' && a.status !== 'PENDING') return 1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-
-      setRequests(allRequests);
-    } catch (err: any) {
-      if (err?.statusCode === 401) return;
-      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToLoad'));
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      setRequests([...rows].sort(byWaitingThenNewest));
+    } catch (err: unknown) {
+      if ((err as { statusCode?: number })?.statusCode === 401) return;
+      setRequests((cur) => cur ?? []);
+      toast.error(t('common.error'), (err as Error)?.message || t('manage.timeOffRequestsScreen.failedToLoad'));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useFocusEffect(useCallback(() => { fetchRequests(); }, [fetchRequests]));
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  const handleApprove = async (techId: string, requestId: string) => {
-    setActionLoading(requestId);
+  const decide = async (request: RequestRowData, approved: boolean) => {
+    setActionLoading(request.id);
     try {
-      await timeOffApi.approve(requestId, { approved: true });
-      await fetchRequests();
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToApprove'));
+      await timeOffApi.approve(request.id, { approved });
+      await load();
+    } catch (err: unknown) {
+      toast.error(t('common.error'), (err as Error)?.message || t(approved ? 'manage.timeOffRequestsScreen.failedToApprove' : 'manage.timeOffRequestsScreen.failedToReject'));
     } finally {
       setActionLoading(null);
     }
-  };
-
-  const handleReject = (techId: string, requestId: string) => {
-    setRejectTarget({ techId, requestId });
   };
 
   const confirmReject = async () => {
     if (!rejectTarget) return;
-    const { requestId } = rejectTarget;
+    const target = rejectTarget;
     setRejectTarget(null);
-    setActionLoading(requestId);
-    try {
-      await timeOffApi.approve(requestId, { approved: false });
-      await fetchRequests();
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('manage.timeOffRequestsScreen.failedToReject'));
-    } finally {
-      setActionLoading(null);
-    }
+    await decide(target, false);
   };
 
-  const filtered = useMemo(() => filter === 'ALL' ? requests : requests.filter(r => r.status === filter), [requests, filter]);
+  const filtered = useMemo(() => (requests ?? []).filter((x) => filter === 'ALL' || x.status === filter), [requests, filter]);
+  const filterLabel = (f: StatusFilter) => t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
-
-  const renderItem = ({ item }: { item: any }) => {
-    const statusStyle = getTimeOffStatusStyle(item.status);
-    const isPending = item.status === 'PENDING';
-    const isActioning = actionLoading === item.id;
-
-    return (
-      <View style={[s.card, { backgroundColor: colors.card }]}>
-        <View style={s.cardTop}>
-          <View style={s.cardInfo}>
-            <Text style={[s.techName, { color: colors.textPrimary }]}>{item.techName}</Text>
-            <Text style={[s.dates, { color: colors.textSecondary }]}>
-              {formatDate(item.startDate)} — {formatDate(item.endDate)}
-            </Text>
-            {item.reason && (
-              <Text style={[s.reason, { color: colors.textMuted }]} numberOfLines={1}>{item.reason}</Text>
-            )}
-          </View>
-          <View style={[s.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[s.statusText, { color: statusStyle.text }]}>{t(`timeOffStatus.${item.status}`)}</Text>
-          </View>
-        </View>
-        {isPending && (
-          <View style={s.actions}>
-            <TouchableOpacity
-              style={[s.actionBtn, s.rejectBtn, { borderColor: COLORS.error }]}
-              onPress={() => handleReject(item.techId, item.id)}
-              disabled={isActioning}
-            >
-              {isActioning ? <ActivityIndicator size="small" color={COLORS.error} /> : (
-                <>
-                  <Ionicons name="close" size={16} color={COLORS.error} />
-                  <Text style={[s.actionBtnText, { color: COLORS.error }]}>{t('common.reject')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[s.actionBtn, s.approveBtn]}
-              onPress={() => handleApprove(item.techId, item.id)}
-              disabled={isActioning}
-            >
-              {isActioning ? <ActivityIndicator size="small" color={COLORS.white} /> : (
-                <>
-                  <Ionicons name="checkmark" size={16} color={COLORS.white} />
-                  <Text style={[s.actionBtnText, { color: COLORS.white }]}>{t('common.approve')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
+  const back = () => {
+    if (router.canGoBack()) router.back();
+    else router.navigate('/(app)/(tabs)/manage' as Href);
   };
-
-  if (isLoading) {
-    return (
-      <View style={[s.container, { backgroundColor: colors.surface }]}>
-        <Skeleton.ListScreen />
-      </View>
-    );
-  }
 
   return (
-    <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
-      <ScreenHeader title={t('manage.titles.timeOffRequests')} />
-      <View style={s.filterRow}>
-        {FILTER_KEYS.map(f => (
-          <FilterChip key={f} label={t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`)} active={filter === f} onPress={() => setFilter(f)} />
-        ))}
+    <Ground style={{ flex: 1 }}>
+      <ScreenHeader title={t('manage.titles.timeOffRequests')} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
+      <View style={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(2) }, wide]}>
+        <FilterRow>
+          {FILTER_KEYS.map((f) => <FilterPill key={f} label={filterLabel(f)} on={filter === f} onPress={() => setFilter(f)} />)}
+        </FilterRow>
       </View>
-      <ScreenContainer width="content">
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={s.list}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => fetchRequests(true)} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
-          ListEmptyComponent={
-            <View style={s.empty}>
-              <Ionicons name="calendar-outline" size={40} color={colors.textMuted} />
-              <Text style={[s.emptyText, { color: colors.textMuted }]}>{filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: t(`manage.timeOffRequestsScreen.filters.${filter.toLowerCase()}`) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+      >
+        {requests === null ? (
+          <AText variant="caption" tone="onGlass" style={{ paddingVertical: amazen.space(4), textAlign: 'center' }}>{t('common.loading', 'Loading…')}</AText>
+        ) : filtered.length === 0 ? (
+          <Well style={{ paddingVertical: amazen.space(8), paddingHorizontal: amazen.space(5), alignItems: 'center', gap: amazen.space(2) }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+              <AText variant="h2" tone="accent">✓</AText>
             </View>
-          }
-        />
-      </ScreenContainer>
+            <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>
+              {filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: filterLabel(filter) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}
+            </AText>
+          </Well>
+        ) : (
+          filtered.map((item) => {
+            const pending = item.status === 'PENDING';
+            const note = w.describe(item).note;
+            return (
+              <Well key={item.id} style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
+                  <Initials first={item.technician?.firstName} last={item.technician?.lastName} size={36} />
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 15, fontFamily: amazen.font.sansMedium }}>
+                    {personName(item.technician) || t('shiftReminder.unknownWorker')}
+                  </AText>
+                </View>
+                <RequestRow request={item} />
+                {note ? <AText variant="body" tone="ink" numberOfLines={4} style={{ fontSize: 13.5, lineHeight: 20 }}>{note}</AText> : null}
+                {item.rejectionReason ? <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>{item.rejectionReason}</AText> : null}
+                {pending ? (
+                  <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: amazen.space(1) }}>
+                    <Pressable
+                      onPress={() => setRejectTarget(item)}
+                      disabled={actionLoading === item.id}
+                      accessibilityRole="button"
+                      style={({ pressed }) => ({ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(4.5), minHeight: amazen.layout.tapMin + 2, alignItems: 'center', justifyContent: 'center', backgroundColor: c.tile, opacity: pressed || actionLoading === item.id ? 0.6 : 1 })}
+                    >
+                      <AText variant="body" tone="ink" style={{ fontSize: 15 }}>{t('common.reject')}</AText>
+                    </Pressable>
+                    <PrimaryButton style={{ flex: 1 }} label={t('common.approve')} onPress={() => void decide(item, true)} loading={actionLoading === item.id} />
+                  </View>
+                ) : null}
+              </Well>
+            );
+          })
+        )}
+      </ScrollView>
 
-      <ConfirmSheet
-        visible={!!rejectTarget}
-        onClose={() => setRejectTarget(null)}
-        onConfirm={confirmReject}
-        title={t('manage.timeOffRequestsScreen.rejectConfirmTitle')}
-        message={t('manage.timeOffRequestsScreen.rejectConfirmMessage')}
-        confirmLabel={t('common.reject')}
-        cancelLabel={t('common.cancel')}
-        variant="danger"
-      />
-    </View>
+      <JobSheet visible={!!rejectTarget} onClose={() => setRejectTarget(null)} title={t('manage.timeOffRequestsScreen.rejectConfirmTitle')}>
+        <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('manage.timeOffRequestsScreen.rejectConfirmMessage')}</AText>
+        <PrimaryButton label={t('common.cancel')} onPress={() => setRejectTarget(null)} />
+        <Pressable onPress={() => void confirmReject()} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
+          <AText variant="body" tone="critical" style={{ fontSize: 14.5 }}>{t('common.reject')}</AText>
+        </Pressable>
+      </JobSheet>
+    </Ground>
   );
 }
-
-const s = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  filterRow: { flexDirection: 'row', gap: SPACING.sm, paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
-  list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-  card: { borderRadius: RADIUS.md, padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.sm },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardInfo: { flex: 1, marginRight: SPACING.md },
-  techName: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
-  dates: { fontSize: FONT_SIZE.sm, marginTop: 2 },
-  reason: { fontSize: FONT_SIZE.sm, marginTop: 4 },
-  statusBadge: { paddingHorizontal: SPACING.md, paddingVertical: SPACING.xs, borderRadius: RADIUS.sm },
-  statusText: { fontSize: FONT_SIZE.xs, fontWeight: FONT_WEIGHT.semibold },
-  actions: { flexDirection: 'row', gap: SPACING.md, marginTop: SPACING.md },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.xs, paddingVertical: SPACING.sm + 2, borderRadius: RADIUS.md },
-  rejectBtn: { borderWidth: 1 },
-  approveBtn: { backgroundColor: COLORS.primary },
-  actionBtnText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
-  empty: { paddingVertical: SPACING.xxxl * 2, alignItems: 'center' },
-  emptyText: { fontSize: FONT_SIZE.base, marginTop: SPACING.md },
-});
