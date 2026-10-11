@@ -143,6 +143,7 @@ export * from './attendance/zoned-time';
 
 // Break plan — see client.ts.
 export * from './attendance/break-plan';
+export * from './attendance/break-totals';
 
 // Away policy — see client.ts.
 export * from './attendance/away-policy';
