@@ -11,8 +11,28 @@ import {
   SERVICE_NAMES,
 } from '@hbcfield/shared';
 import { scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
-import { localPartsIn } from '@hbcfield/shared';
+import { localPartsIn, toISODateString } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
+
+/**
+ * A shift's own nudge cadence — gap between nudges and how many before a
+ * leader is told — with the defaults where there is no shift row to read.
+ *
+ * ONE reading for both sweeps (an open shift that will not end, and a shift
+ * nobody turned up for). The no-show sweep used to hard-code the defaults, so
+ * a shift set to "nudge every 15 min, twice" was nudged every 5, three times,
+ * when nobody came — and as configured only when they forgot to leave.
+ * (The GRACE before the first nudge is already the shift's: it is baked into
+ * `nextRemindAt` when the instance is materialized.)
+ */
+export function shiftNudgeCadence(
+  shift?: { reminderIntervalMin?: number | null; maxReminders?: number | null } | null,
+): { intervalMin: number; maxReminders: number } {
+  return {
+    intervalMin: shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
+    maxReminders: shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
+  };
+}
 
 /**
  * The shift engines that run on a clock: reminders on an open shift, the
@@ -75,12 +95,12 @@ export class ShiftSweepService {
       // No expected end → this was an unscheduled clock-in armed by the safety net;
       // use the slower unscheduled cadence, not the tight shift cadence.
       const isUnscheduled = !entry.expectedClockOutAt;
-      const intervalMin = isUnscheduled
-        ? UNSCHEDULED_SESSION_DEFAULTS.REMINDER_INTERVAL_MINUTES
-        : (entry.shift?.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES);
-      const maxReminders = isUnscheduled
-        ? UNSCHEDULED_SESSION_DEFAULTS.MAX_REMINDERS
-        : (entry.shift?.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS);
+      const { intervalMin, maxReminders } = isUnscheduled
+        ? {
+            intervalMin: UNSCHEDULED_SESSION_DEFAULTS.REMINDER_INTERVAL_MINUTES,
+            maxReminders: UNSCHEDULED_SESSION_DEFAULTS.MAX_REMINDERS,
+          }
+        : shiftNudgeCadence(entry.shift);
       const nextCount = entry.reminderCount + 1;
       if (nextCount <= maxReminders) toRemind.push({ entry, nextCount, intervalMin, maxReminders });
       else toEscalate.push(entry);
@@ -333,33 +353,59 @@ export class ShiftSweepService {
     });
     if (due.length === 0) return success({ remindedCount: 0, escalatedCount: 0, excusedCount: 0 });
 
-    const interval = SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES;
-    const maxReminders = SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS;
-
-    // Batch-load names + approved time-off (ShiftInstance is fk-less by design).
+    // Batch-load names, approved time-off and each shift's cadence
+    // (ShiftInstance is fk-less by design) — one query each, whatever the batch.
     const userIds = [...new Set(due.map((d) => d.userId))];
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds } },
-      select: { id: true, firstName: true, lastName: true },
-    });
+    const shiftIds = [...new Set(due.map((d) => d.shiftId))];
+    // The earliest shift day in the batch: leave that ended before it cannot
+    // excuse anything here, so it is not read (a member's whole leave history
+    // otherwise rides along every minute).
+    const earliestDay = due.reduce((min, d) => (d.localDate < min ? d.localDate : min), due[0].localDate);
+    const [users, leaves, shifts] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      this.prisma.timeOff.findMany({
+        where: { technicianId: { in: userIds }, status: 'APPROVED', endDate: { gte: new Date(`${earliestDay}T00:00:00.000Z`) } },
+        select: { technicianId: true, startDate: true, endDate: true },
+      }),
+      this.prisma.shift.findMany({
+        where: { id: { in: shiftIds } },
+        select: { id: true, reminderIntervalMin: true, maxReminders: true },
+      }),
+    ]);
     const nameById = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
-    const leaves = await this.prisma.timeOff.findMany({
-      where: { technicianId: { in: userIds }, status: 'APPROVED' },
-      select: { technicianId: true, startDate: true, endDate: true },
-    });
-    const onLeave = (userId: string, at: Date) =>
-      leaves.some((l) => l.technicianId === userId && l.startDate <= at && l.endDate >= at);
+    const shiftById = new Map(shifts.map((s) => [s.id, s]));
+    /*
+      ⚠️ Compared as CALENDAR DAYS, never as instants. `startDate`/`endDate` are
+      DATE columns (read back as UTC midnight) and the last day is INCLUSIVE, so
+      `endDate >= expectedClockInAt` failed for any shift on the last day of
+      leave — 07:00 in Vienna is 05:00Z, after the stored midnight — and the
+      member was chased on a day they had off. `localDate` is the shift's own day
+      in the zone it was materialized in (the workspace's), which is exactly the
+      day the leave was booked against.
+    */
+    const onLeave = (userId: string, localDate: string) =>
+      leaves.some(
+        (l) =>
+          l.technicianId === userId &&
+          toISODateString(l.startDate) <= localDate &&
+          toISODateString(l.endDate) >= localDate,
+      );
 
-    const toRemind: { inst: (typeof due)[number]; nextCount: number }[] = [];
+    const toRemind: { inst: (typeof due)[number]; nextCount: number; intervalMin: number }[] = [];
     const toEscalate: (typeof due)[number][] = [];
     const toExcuse: string[] = [];
     for (const inst of due) {
-      if (onLeave(inst.userId, inst.expectedClockInAt)) {
+      if (onLeave(inst.userId, inst.localDate)) {
         toExcuse.push(inst.id);
         continue;
       }
+      // A deleted shift (no row) falls back to the defaults rather than stalling.
+      const { intervalMin, maxReminders } = shiftNudgeCadence(shiftById.get(inst.shiftId));
       const nextCount = inst.reminderCount + 1;
-      if (nextCount <= maxReminders) toRemind.push({ inst, nextCount });
+      if (nextCount <= maxReminders) toRemind.push({ inst, nextCount, intervalMin });
       else toEscalate.push(inst);
     }
 
@@ -377,9 +423,9 @@ export class ShiftSweepService {
     }
 
     const tasks: Array<() => Promise<void>> = [];
-    for (const { inst, nextCount } of toRemind) {
+    for (const { inst, nextCount, intervalMin } of toRemind) {
       const userName = nameById.get(inst.userId) ?? 'A worker';
-      const nextRemindAt = new Date(now.getTime() + interval * 60_000);
+      const nextRemindAt = new Date(now.getTime() + intervalMin * 60_000);
       tasks.push(async () => {
         await this.prisma.shiftInstance.update({
           where: { id: inst.id },
