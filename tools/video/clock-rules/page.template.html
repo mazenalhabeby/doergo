@@ -1,0 +1,486 @@
+<title>قواعد الحضور والانصراف</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f2f5f6; --surface:#ffffff; --surface2:#e9eef0; --line:rgba(11,20,22,.10);
+  --ink:#0b1416; --ink2:#3f4f57; --muted:#6b7a82;
+  --accent:#0d8f72; --accentTint:rgba(13,143,114,.10);
+  --warn:#a8650f; --warnTint:rgba(168,101,15,.12);
+  --bad:#bf4336; --badTint:rgba(191,67,54,.10);
+  --phone:#05080a; --phoneInk:#f1f6fa; --phoneMuted:#8b979e; --phoneLine:rgba(241,246,250,.09);
+  --pAccent:#66dbba; --pWarn:#f2b263; --pBad:#fd978c; --pTile:rgba(241,246,250,.06);
+  --sans:"Readex Pro",system-ui,"Segoe UI",Tahoma,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
+.eyebrow{font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+h1{font-weight:500;font-size:clamp(26px,4vw,38px);line-height:1.3;margin:4px 0 6px;text-wrap:balance}
+.lede{color:var(--ink2);max-width:60ch;margin:0}
+.player{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 16px;min-width:min(100%,340px)}
+.play{appearance:none;border:0;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex:none}
+.play:focus-visible,.chap:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.play svg{width:18px;height:18px}
+.bar{position:relative;flex:1;height:6px;border-radius:3px;background:var(--surface2);cursor:pointer}
+.bar i{position:absolute;inset-block:0;right:0;width:0;border-radius:3px;background:var(--accent)}
+.time{font-size:12.5px;color:var(--muted);min-width:84px;text-align:center}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+@media (max-width:860px){.stage{grid-template-columns:1fr}}
+.phoneCol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;align-items:center;gap:14px}
+@media (max-width:860px){.phoneCol{position:static}}
+.phone{position:relative;width:min(100%,320px);aspect-ratio:9/19;border-radius:44px;background:var(--phone);border:10px solid #1a2226;box-shadow:0 30px 60px -30px rgba(0,0,0,.55);overflow:hidden;color:var(--phoneInk)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:14px;background:#000;z-index:5}
+.status{position:absolute;top:12px;inset-inline:22px;display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);z-index:4}
+.screen{position:absolute;inset:0;padding:54px 16px 18px;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .45s ease;pointer-events:none}
+.screen.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.screen{transition:none}}
+.sTitle{font-size:16px;font-weight:500}
+.sSub{font-size:12px;color:var(--phoneMuted);margin-top:-6px}
+.card{background:var(--pTile);border:1px solid var(--phoneLine);border-radius:18px;padding:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;border-radius:999px;padding:3px 10px;background:var(--pTile);color:var(--phoneInk)}
+.chip.ok{background:rgba(102,219,186,.14);color:var(--pAccent)}
+.chip.warn{background:rgba(242,178,99,.14);color:var(--pWarn)}
+.chip.bad{background:rgba(253,151,140,.14);color:var(--pBad)}
+.btn{border-radius:999px;padding:11px;text-align:center;font-size:14px;font-weight:500;background:var(--pAccent);color:#04120d}
+.btn.ghost{background:var(--pTile);color:var(--phoneInk)}
+.btn.off{background:var(--pTile);color:var(--phoneMuted)}
+.bigClock{margin:22px auto 8px;width:178px;height:178px;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 40%,rgba(102,219,186,.28),rgba(102,219,186,.06) 70%);border:1.5px solid rgba(102,219,186,.6)}
+.bigClock b{display:block;font-size:30px;font-weight:400}
+.bigClock span{font-size:12.5px;color:var(--pAccent)}
+.map{position:relative;height:210px;border-radius:18px;overflow:hidden;background:
+  linear-gradient(90deg,rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,
+  linear-gradient(rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,#0a1214}
+.ring{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px;border-radius:50%;border:1.5px dashed rgba(102,219,186,.7);background:rgba(102,219,186,.07)}
+.pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--pAccent)}
+.me{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:#7fb2ff;box-shadow:0 0 0 4px rgba(127,178,255,.22)}
+.halo{position:absolute;border-radius:50%;background:rgba(127,178,255,.13);border:1px solid rgba(127,178,255,.35)}
+.scale{position:absolute;bottom:8px;left:10px;font-size:10.5px;color:var(--phoneMuted)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0;border-bottom:1px solid var(--phoneLine)}
+.check:last-child{border-bottom:0}
+.dot{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;margin-top:2px}
+.dot.ok{background:rgba(102,219,186,.16);color:var(--pAccent)}
+.dot.bad{background:rgba(253,151,140,.16);color:var(--pBad)}
+.tl{position:relative;height:56px;margin:8px 4px}
+.tl .track{position:absolute;inset-inline:0;top:24px;height:8px;border-radius:4px;background:var(--pTile)}
+.tl .seg{position:absolute;top:24px;height:8px;border-radius:4px}
+.tl .lbl{position:absolute;top:0;font-size:10.5px;color:var(--phoneMuted);transform:translateX(50%)}
+.tl .lbl.b{top:38px}
+.notif{background:rgba(241,246,250,.08);border-radius:16px;padding:9px 12px;font-size:12.5px}
+.notif small{display:block;color:var(--phoneMuted);font-size:10.5px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1px solid var(--phoneLine);border-radius:12px;padding:7px 10px;font-size:12px}
+.opt.sel{border-color:var(--pAccent);color:var(--pAccent);background:rgba(102,219,186,.08)}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bars .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);margin-bottom:4px}
+.bars .b{height:14px;border-radius:7px;background:var(--pTile);position:relative;overflow:hidden}
+.bars .b i{position:absolute;inset-block:0;border-radius:7px}
+.flow{display:flex;flex-direction:column;gap:8px}
+.flow .step{display:flex;gap:10px;align-items:center;font-size:13px}
+.flow .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;background:var(--pTile)}
+.caption{width:min(100%,360px);min-height:84px;text-align:center;font-size:15px;line-height:1.7;color:var(--ink2);text-wrap:balance}
+.side{display:flex;flex-direction:column;gap:6px}
+.side h2{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+.chap{appearance:none;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:start;display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-radius:14px}
+.chap:hover{background:var(--surface)}
+.chap.on{background:var(--surface);border-color:var(--line)}
+.chap .k{font-size:12px;color:var(--muted);min-width:42px}
+.chap b{font-weight:500;font-size:14.5px;display:block}
+.chap span{font-size:12.5px;color:var(--muted)}
+.chap.on b{color:var(--accent)}
+section.rules{margin-top:56px}
+section.rules > h2,section.issues > h2{font-weight:500;font-size:24px;margin:0 0 6px}
+.sectionLede{color:var(--ink2);margin:0 0 22px;max-width:62ch}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.group h3{font-size:16px;font-weight:500;margin:0 0 10px;display:flex;gap:10px;align-items:baseline}
+.group h3 .num{font-size:12px;color:var(--accent)}
+.group ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:7px;color:var(--ink2);font-size:14px}
+.group li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:12px;background:var(--surface2);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate}
+section.issues{margin-top:48px}
+.issueList{display:flex;flex-direction:column;gap:10px}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.sev{font-size:11.5px;border-radius:999px;padding:2px 10px;height:fit-content;white-space:nowrap}
+.sev.h{background:var(--badTint);color:var(--bad)}
+.sev.m{background:var(--warnTint);color:var(--warn)}
+.issue b{font-weight:500}
+.issue p{grid-column:2;margin:0;color:var(--ink2);font-size:14px}
+footer{margin-top:40px;color:var(--muted);font-size:12.5px}
+</style>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · كما يطبّقها الكود اليوم</div>
+      <h1>قواعد الحضور والانصراف</h1>
+      <p class="lede">من يسجّل حضوره، وأين، ومتى، وماذا يحدث أثناء الوردية وعند الانصراف، وكيف يُحسب الوقت. اضغط تشغيل لتسمع الشرح وترى الشاشة المقابلة لكل قاعدة.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / 4:58</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="intro">
+          <div class="sTitle">صباح الخير، كريم</div>
+          <div class="sSub">المكتب الرئيسي · لاكيرشن</div>
+          <div class="bigClock"><div><b class="num">08:02</b><span>تسجيل الحضور</span></div></div>
+          <div class="card row"><span>وردية اليوم</span><span class="num">08:00 – 16:00</span></div>
+          <div class="card row"><span>الاستراحة المخطّطة</span><span class="num">12:00 · 30 min</span></div>
+        </div>
+
+        <div class="screen" data-scene="who">
+          <div class="sTitle">قبل تسجيل الحضور</div>
+          <div class="sSub">يتحقّق النظام من أربعة أمور</div>
+          <div class="card">
+            <div class="check"><span class="dot ok">✓</span><span>حساب موظف أو مدير، لا حساب عميل</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>تبويب الساعة ضمن صلاحياتك</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>تتبّع الوقت مفعّل في مساحة العمل</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>أنت معيّن في المساحة الآن</span></div>
+            <div class="check"><span class="dot bad">×</span><span>العضو الخارجي: لا ساعة إطلاقاً</span></div>
+          </div>
+        </div>
+
+        <div class="screen" data-scene="picker">
+          <div class="sTitle">أين تسجّل حضورك؟</div>
+          <div class="sSub">مساحات العمل التي أنت معيّن فيها الآن</div>
+          <div class="card row" style="border-color:rgba(102,219,186,.55)"><span>المكتب الرئيسي</span><span class="chip ok">داخل المنطقة</span></div>
+          <div class="card row"><span>المستودع</span><span class="chip">وردية اليوم</span></div>
+          <div class="card row"><span>مركز الخدمة</span><span class="chip num">2.4 km</span></div>
+          <div class="notif"><small>قاعدة</small>وردية مفتوحة واحدة فقط في الوقت نفسه</div>
+          <div class="btn" style="margin-top:auto">تسجيل الحضور هنا</div>
+        </div>
+
+        <div class="screen" data-scene="geo-in">
+          <div class="sTitle">داخل المنطقة</div>
+          <div class="map"><div class="ring"></div><div class="pin"></div><div class="me" style="left:58%;top:44%"></div><div class="scale num">r = 50 m</div></div>
+          <div class="card row"><span>المسافة من المركز</span><span class="chip ok num">18 m</span></div>
+          <div class="notif"><small>لصالحك</small>دقّة الجي بي إس تُضاف إلى نصف القطر</div>
+          <div class="btn" style="margin-top:auto">تمّ تسجيل الحضور · <span class="num">08:02</span></div>
+        </div>
+
+        <div class="screen" data-scene="gps">
+          <div class="sTitle">الإشارة ضعيفة</div>
+          <div class="map"><div class="ring"></div><div class="pin"></div><div class="halo" style="left:50%;top:50%;width:190px;height:190px;margin:-95px"></div><div class="me" style="left:54%;top:52%"></div></div>
+          <div class="card row"><span>دقّة الموقع</span><span class="chip warn num">±140 m</span></div>
+          <div class="notif"><small>مرفوض</small>الحدّ الأقصى <span class="num">100 m</span>. انتظر حتى تتحسّن الإشارة.</div>
+        </div>
+
+        <div class="screen" data-scene="geo-strict">
+          <div class="sTitle">خارج المنطقة</div>
+          <div class="map"><div class="ring"></div><div class="pin"></div><div class="me" style="left:15%;top:22%"></div></div>
+          <div class="card row"><span>المسافة</span><span class="chip bad num">320 m / 50 m</span></div>
+          <div class="notif"><small>مكان صارم</small>لا تسجيل من الخارج، حتى للمدير</div>
+          <div class="btn off" style="margin-top:auto">غير متاح من هنا</div>
+        </div>
+
+        <div class="screen" data-scene="geo-away">
+          <div class="sTitle">عمل خارج الموقع</div>
+          <div class="map"><div class="ring"></div><div class="pin"></div><div class="me" style="left:18%;top:70%"></div></div>
+          <div class="card"><div class="row"><span>المكان يسمح</span><span class="chip ok">✓</span></div><div class="row"><span>إذنك الشخصي</span><span class="chip ok">✓</span></div></div>
+          <div class="card row"><span>السبب</span><span>زيارة عميل</span></div>
+          <div class="btn" style="margin-top:auto;background:var(--pWarn)">سجّل كعمل خارج الموقع</div>
+          <div class="sSub" style="text-align:center;margin-top:0">يُرسل للمراجعة</div>
+        </div>
+
+        <div class="screen" data-scene="shift">
+          <div class="sTitle">ورديتك اليوم</div>
+          <div class="card">
+            <div class="tl">
+              <div class="track"></div>
+              <div class="seg" style="right:12%;width:76%;background:rgba(102,219,186,.35)"></div>
+              <div class="seg" style="right:5%;width:7%;background:repeating-linear-gradient(45deg,rgba(241,246,250,.25) 0 3px,transparent 3px 6px)"></div>
+              <div class="lbl num" style="right:12%">08:00</div>
+              <div class="lbl num" style="right:88%">16:00</div>
+              <div class="lbl b num" style="right:5%">07:40</div>
+            </div>
+          </div>
+          <div class="card row"><span>وصلت <span class="num">07:40</span></span><span class="chip">مبكر · لا يُحتسب</span></div>
+          <div class="card row"><span>لو وصلت <span class="num">08:12</span></span><span class="chip bad">متأخر · أكثر من <span class="num">10 min</span></span></span></div>
+          <div class="notif"><small>مرة واحدة</small>يُبحث عن الوردية عند تسجيل الحضور فقط</div>
+        </div>
+
+        <div class="screen" data-scene="noshift">
+          <div class="sTitle">بدون وردية اليوم</div>
+          <div class="sSub">حسب إعداد مساحة العمل</div>
+          <div class="opts"><span class="opt">مسموح دائماً</span><span class="opt">بوردية فقط</span><span class="opt sel">حدّ يومي</span></div>
+          <div class="card row"><span>الحدّ اليومي</span><span class="num">8:00 h</span></div>
+          <div class="card row"><span>متبقٍّ اليوم في كل المساحات</span><span class="chip ok num">5:20 h</span></div>
+          <div class="notif"><small>عند الصفر</small>يُرفض تسجيل الحضور: لم يبقَ وقت اليوم</div>
+        </div>
+
+        <div class="screen" data-scene="noshow">
+          <div class="sTitle">لم تحضر بعد</div>
+          <div class="notif"><small class="num">08:05</small>ورديتك بدأت. هل نسيت تسجيل الحضور؟</div>
+          <div class="notif"><small class="num">08:10</small>تذكير ثانٍ</div>
+          <div class="notif"><small class="num">08:15</small>تذكير ثالث</div>
+          <div class="notif" style="background:rgba(253,151,140,.12)"><small class="num">08:20</small>أُبلغ المشرف</div>
+          <div class="sSub" style="margin-top:6px">من لديه إجازة معتمدة لا يُلاحَق</div>
+        </div>
+
+        <div class="screen" data-scene="rest">
+          <div class="sTitle">حان وقت الاستراحة</div>
+          <div class="card row"><span>استراحة الغداء</span><span class="num">30 min</span></div>
+          <div class="btn">ابدأ الاستراحة</div>
+          <div class="btn ghost">لاحقاً · <span class="num">15 min</span></div>
+          <div class="card row"><span>التأجيل</span><span class="chip warn num">1 / 3</span></div>
+          <div class="notif"><small>بعد التأجيل الثالث</small>تُسجَّل الاستراحة كفائتة ويتوقّف السؤال</div>
+        </div>
+
+        <div class="screen" data-scene="excursion">
+          <div class="sTitle">خرجت من المنطقة</div>
+          <div class="map" style="height:150px"><div class="ring"></div><div class="pin"></div><div class="me" style="left:80%;top:30%"></div><div class="scale num">+15 m</div></div>
+          <div class="sSub" style="margin-top:0">لماذا؟ وكم ستغيب؟</div>
+          <div class="opts"><span class="opt num">15</span><span class="opt sel num">30</span><span class="opt num">60</span><span class="opt num">120</span><span class="opt">دقيقة</span></div>
+          <div class="notif" style="background:rgba(253,151,140,.12)"><small>إن رفض المشرف</small>تنتهي ورديتك فوراً</div>
+        </div>
+
+        <div class="screen" data-scene="jobs">
+          <div class="sTitle">صيانة التكييف</div>
+          <div class="sSub">مدرسة غموندن · الطابق 2</div>
+          <div class="btn off">ابدأ العمل</div>
+          <div class="notif"><small>غير متاح</small>سجّل حضورك أولاً</div>
+          <div class="card"><div class="row"><span>عند الانصراف</span><span class="chip warn">تتوقّف المهمة</span></div><div class="row" style="margin-top:6px"><span>زميل ما زال حاضراً</span><span class="chip ok">تستمر</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="clockout">
+          <div class="sTitle">تسجيل الانصراف</div>
+          <div class="card row"><span>الآن</span><span class="num">15:20</span></div>
+          <div class="card row"><span>نهاية الوردية</span><span class="num">16:00</span></div>
+          <div class="notif" style="background:rgba(242,178,99,.12)"><small>مغادرة مبكرة · <span class="num">40 min</span></small>ما السبب؟ سيُبلَّغ المشرف.</div>
+          <div class="sSub">لا يُرفض الانصراف بسبب المكان أو الإشارة</div>
+          <div class="btn" style="margin-top:auto">انصراف</div>
+        </div>
+
+        <div class="screen" data-scene="overtime">
+          <div class="sTitle">بعد نهاية الوردية</div>
+          <div class="card row"><span>الآن</span><span class="num">16:25</span></div>
+          <div class="card row"><span>السبب</span><span>إنهاء الإصلاح</span></div>
+          <div class="card row"><span>طلب وقت إضافي</span><span class="chip warn">بانتظار الموافقة</span></div>
+          <div class="notif"><small class="num">16:05 · 16:10 · 16:15</small>ثلاثة تذكيرات، ثم المشرف. لا خروج تلقائي.</div>
+        </div>
+
+        <div class="screen" data-scene="forgot">
+          <div class="sTitle">نسيت تسجيل الانصراف؟</div>
+          <div class="sSub">متى غادرت فعلاً؟</div>
+          <div class="card row" style="justify-content:center;font-size:26px"><span class="num">16:05</span></div>
+          <div class="btn">احفظ وأرسل للمراجعة</div>
+          <div class="notif"><small>وردية متروكة مفتوحة</small>تُغلق مؤقتاً بعد <span class="num">12 h</span> من نهايتها، حتى تصحّحها</div>
+        </div>
+
+        <div class="screen" data-scene="counted">
+          <div class="sTitle">ساعتان</div>
+          <div class="bars card">
+            <div><div class="lab"><span>الوقت الفعلي</span><span class="num">07:40 – 16:30 · 8:50</span></div><div class="b"><i style="right:0;width:100%;background:rgba(127,178,255,.5)"></i></div></div>
+            <div><div class="lab"><span>الوقت المحتسب</span><span class="num">08:00 – 16:00 − 0:30 · 7:30</span></div><div class="b"><i style="right:4%;width:85%;background:var(--pAccent)"></i></div></div>
+          </div>
+          <div class="notif"><small>لصالحك</small>فارق ضمن <span class="num">10 min</span> يُحتسب كاملاً</div>
+          <div class="notif"><small>وقت إضافي</small>يُحتسب تلقائياً عند الموافقة عليه</div>
+        </div>
+
+        <div class="screen" data-scene="office">
+          <div class="sTitle">للمراجعة</div>
+          <div class="card row"><span>كريم أحمد</span><span class="chip bad">متأخر</span></div>
+          <div class="card row"><span>سارة فاغنر</span><span class="chip warn">خارج الموقع</span></div>
+          <div class="card row"><span>مايك فيبر</span><span class="chip warn">نسي الانصراف</span></div>
+          <div class="opts" style="margin-top:4px"><span class="opt sel">موافقة</span><span class="opt">رفض مع سبب</span><span class="opt">تعديل</span></div>
+          <div class="sSub">لا أحد يوافق على حضوره بنفسه</div>
+        </div>
+
+        <div class="screen" data-scene="notify">
+          <div class="sTitle">من يُبلَّغ؟</div>
+          <div class="card flow">
+            <div class="step"><span class="n num">1</span><span>من يملك الصلاحية في المساحة</span></div>
+            <div class="step"><span class="n num">2</span><span>وإلا: من يتابع الموظف</span></div>
+            <div class="step"><span class="n num">3</span><span>وإلا: لا أحد</span></div>
+          </div>
+          <div class="notif"><small>المدير</small>لا يُبلَّغ بكل شيء تلقائياً، لكن صلاحيته باقية</div>
+        </div>
+
+        <div class="screen" data-scene="outro">
+          <div class="bigClock"><div><b class="num">80</b><span>قاعدة · 8 مجموعات</span></div></div>
+          <div class="card row"><span>نقاط تحتاج مراجعة</span><span class="chip warn num">12</span></div>
+          <div class="sSub" style="text-align:center">القائمة الكاملة أسفل الصفحة</div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      <button class="chap on" data-ch="intro"><span class="k num">0:00</span><div><b>مقدّمة</b><span>ما تغطيه هذه القواعد</span></div></button>
+      <button class="chap" data-ch="who"><span class="k num">0:21</span><div><b>من يسجّل حضوره</b><span>الحساب، الصلاحيات، مساحة العمل</span></div></button>
+      <button class="chap" data-ch="where"><span class="k num">0:57</span><div><b>المكان</b><span>المنطقة، دقّة الموقع، خارج الموقع</span></div></button>
+      <button class="chap" data-ch="when"><span class="k num">1:51</span><div><b>الوقت</b><span>الوردية، التأخّر، بدون وردية، الغياب</span></div></button>
+      <button class="chap" data-ch="during"><span class="k num">2:28</span><div><b>أثناء الوردية</b><span>الاستراحات، الخروج المؤقت، المهام</span></div></button>
+      <button class="chap" data-ch="out"><span class="k num">3:10</span><div><b>الانصراف</b><span>مبكر، وقت إضافي، نسيان</span></div></button>
+      <button class="chap" data-ch="counted"><span class="k num">3:55</span><div><b>الوقت المحتسب</b><span>الفعلي مقابل المحتسب</span></div></button>
+      <button class="chap" data-ch="office"><span class="k num">4:20</span><div><b>المكتب والإشعارات</b><span>المراجعة، التعديل، من يُبلَّغ</span></div></button>
+    </nav>
+  </div>
+
+  <section class="rules" id="rules">
+    <h2>القائمة الكاملة</h2>
+    <p class="sectionLede">مختصرة من الكود كما هو اليوم. الأرقام هي القيم الافتراضية، وما بين القوسين يمكن تغييره لكل مساحة أو وردية.</p>
+    <div class="groups">
+      <div class="group"><h3><span class="num">1</span>من يسجّل حضوره</h3><ul>
+        <li>الموظفون والمديرون فقط، لا حسابات العملاء.</li>
+        <li>تبويب الساعة يجب أن يكون في صلاحيات الشخص. المدير ومن ليس له ملف صلاحيات يمرّان دائماً.</li>
+        <li>العضو الخارجي لا يملك ساعة أبداً.</li>
+        <li>تتبّع الوقت مفعّل في المساحة (شرط للحضور فقط، لا للانصراف).</li>
+        <li>معيّن في المساحة لحظة الضغط. للتسجيل دون اتصال يُعتمد وقت الضغط نفسه.</li>
+        <li>وردية مفتوحة واحدة فقط في الوقت نفسه.</li>
+        <li>بلا مساحة عمل: تسجيل «عن بُعد» لمن لديه إذن العمل عن بُعد أو للمدير.</li>
+        <li>بدون وردية: مسموح، أو بوردية فقط، أو حدّ يومي <span class="num">8 h</span> (من <span class="num">30 min</span> إلى <span class="num">24 h</span>) يُجمع في كل المساحات.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">2</span>المكان</h3><ul>
+        <li>دائرة <span class="num">50 m</span> حول الموقع (من <span class="num">10</span> إلى <span class="num">500 m</span>)، أو حدود مرسومة (<span class="num">3–60</span> نقطة، حتى <span class="num">5 km²</span>).</li>
+        <li>مساحة بلا موقع على الخريطة لا ترفض أحداً.</li>
+        <li>دقّة الجي بي إس تُضاف لصالحك. أسوأ من <span class="num">100 m</span>: يُرفض.</li>
+        <li>خارج المنطقة = سياسة المكان × إذن الشخص: صارم يرفض الجميع، «يسمح بالعمل خارج الموقع» يحتاج إذناً شخصياً.</li>
+        <li>الحضور من خارج المنطقة يُعلَّم «خارج الموقع» ويذهب للمراجعة، ويحتفظ بورديته واستراحاته.</li>
+        <li>دون اتصال: لا يُقبل وقت في المستقبل بأكثر من دقيقتين، ولا موقع أقدم من دقيقتين، وموقع وهمي يُعلَّم.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">3</span>الوقت</h3><ul>
+        <li>تُطابق الوردية مرة واحدة عند الحضور: جدول الورديات أولاً، ثم الجدول الأسبوعي القديم.</li>
+        <li>متأخر إذا تجاوزت البداية بأكثر من <span class="num">10 min</span> (حسب الوردية).</li>
+        <li>لا رفض للوصول المبكر، لكن الوقت المبكر لا يُحتسب.</li>
+        <li>الوردية الليلية: الحضور قبل نهايتها يتبع وردية الأمس.</li>
+        <li>الغياب: تذكير عند البداية + <span class="num">5 min</span>، ثلاث مرات كل <span class="num">5 min</span>، ثم المشرف. صاحب الإجازة المعتمدة معذور.</li>
+        <li>تغيير الجدول لاحقاً يعيد مطابقة الأيام التي بلا وردية، حتى <span class="num">90</span> يوماً.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">4</span>أثناء الوردية</h3><ul>
+        <li>الاستراحات من قواعد المكان، أو قواعد الوردية إن وُجدت، وتُثبَّت عند الحضور.</li>
+        <li>عند موعدها يُسأل الموظف؛ التأجيل <span class="num">15 min</span>، حتى <span class="num">3</span> مرات، ثم تُسجَّل فائتة.</li>
+        <li>الاستراحة غير المخطّطة لا تُحتسب من وقت العمل.</li>
+        <li>الخروج من المنطقة بأكثر من <span class="num">15 m</span> يفتح خروجاً مؤقتاً: سبب ومدّة (<span class="num">15–120</span> دقيقة، حتى <span class="num">8 h</span>).</li>
+        <li>رفض المشرف للخروج المؤقت يُنهي الوردية فوراً.</li>
+        <li>بدء العمل على مهمة يتطلّب أن تكون حاضراً. الانصراف يوقف مهامك ما لم يبقَ زميل حاضر.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">5</span>الانصراف</h3><ul>
+        <li>لا يُرفض أبداً بسبب المكان أو غياب الإشارة.</li>
+        <li>خارج المنطقة: علامة وتنبيه للمتابعين.</li>
+        <li>مغادرة مبكرة بأكثر من المسموح: سبب، وإشعار للمشرف.</li>
+        <li>بعد النهاية مع سبب: طلب وقت إضافي. بلا موافقة لا يُحتسب.</li>
+        <li>تذكيرات بعد النهاية: بعد <span class="num">5 min</span>، ثلاث مرات كل <span class="num">5 min</span>، ثم المشرف. لا خروج تلقائي.</li>
+        <li>«نسيت الانصراف»: تُدخل الوقت الحقيقي ويذهب للمراجعة.</li>
+        <li>الوردية المتروكة تُغلق مؤقتاً بعد <span class="num">12 h</span> من نهايتها (أو <span class="num">24 h</span> بلا وردية)، بأفضل دليل: لحظة الخروج من المنطقة، ثم نهاية الوردية.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">6</span>الوقت المحتسب</h3><ul>
+        <li>ساعتان: الفعلي دليل لا يتغيّر، والمحتسب هو ما تقرؤه الرواتب.</li>
+        <li>البداية: الأبعد بين الحضور وبداية الوردية. النهاية: الأقرب بين الانصراف ونهاية الوردية.</li>
+        <li>فارق ضمن <span class="num">10 min</span> يُحتسب كاملاً لصالح الموظف.</li>
+        <li>تُطرح الاستراحات غير المحتسبة فقط.</li>
+        <li>الموافقة على وقت إضافي تنقل نهاية الوردية، فيُحتسب تلقائياً.</li>
+        <li>بلا وردية: المحتسب = الفعلي.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">7</span>الإشعارات</h3><ul>
+        <li>من يملك الصلاحية في المساحة، ثم المتابعون، ثم لا أحد.</li>
+        <li>الحضور والانصراف العاديان: تحديث على الشاشات فقط، بلا إشعار.</li>
+        <li>التذكيرات والاستراحات وقرارات الوقت الإضافي: للموظف نفسه.</li>
+        <li>الإغلاق المؤقت للوردية المتروكة: إشعار وبريد للموظف فقط.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">8</span>المكتب</h3><ul>
+        <li>أي علامة ترسل الحضور للمراجعة (إلا «سُجّل دون اتصال»).</li>
+        <li>موافقة أو رفض مع سبب، أو تعديل مع سبب؛ تُحفظ الأوقات الأصلية.</li>
+        <li>لا أحد يقرّر في حضوره بنفسه، إلا المدير العام.</li>
+        <li>الإدخال اليدوي: حتى <span class="num">366</span> يوماً، يتخطّى الأيام المسجّلة، ويُعتمد مباشرة.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="issues" id="issues">
+    <h2>نقاط تحتاج مراجعة</h2>
+    <p class="sectionLede">وجدناها أثناء قراءة الكود. لم يُغيَّر شيء بعد؛ هذه للقرار.</p>
+    <div class="issueList">
+      <div class="issue"><span class="sev h">مهم</span><b>انتهاء الاشتراك يمنع الانصراف أيضاً</b><p>القاعدة المقصودة أن الانصراف لا يُمنع أبداً، لكن الاشتراك المتوقّف يرفضه، فتبقى الوردية مفتوحة.</p></div>
+      <div class="issue"><span class="sev h">مهم</span><b>التسجيل «عن بُعد» يتجاوز سياسة المكان الصارم</b><p>من لديه إذن العمل عن بُعد يستطيع التسجيل عن بُعد حتى لو كانت مساحاته صارمة، ولا يذهب للمراجعة، ويُلاحَق كغائب عن ورديته.</p></div>
+      <div class="issue"><span class="sev h">مهم</span><b>الانصراف لا يُنهي الاستراحة الجارية</b><p>إن انصرف الموظف وهو في استراحة، تبقى مفتوحة ولا تُطرح من الوقت.</p></div>
+      <div class="issue"><span class="sev h">مهم</span><b>التعديل يطرح كل الاستراحات</b><p>حتى المحتسبة منها، بخلاف كل المسارات الأخرى، فينقص الوقت المحتسب بعد أي تعديل من المكتب.</p></div>
+      <div class="issue"><span class="sev h">مهم</span><b>رفض الوقت الإضافي له سلوكان</b><p>مسار يعيد التذكير فقط، ومسار قديم يُخرج الموظف فوراً دون حساب الوقت المحتسب ودون إيقاف المهام.</p></div>
+      <div class="issue"><span class="sev h">مهم</span><b>المساحات الافتراضية لا تطابق أي وردية</b><p>نموذج العمل الافتراضي «بدون» يجعل كل حضور «يوم غير مجدول» يذهب للمراجعة، و«بوردية فقط» فيه يرفض الجميع.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>الاستراحة الفائتة لا تُعلَّم</b><p>الوثائق تقول إنها تُعلَّم ولا تُخصم؛ في الكود لا تُعلَّم أصلاً.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>أي استراحة تستهلك الاستراحة المخطّطة التالية</b><p>استراحة قهوة الساعة التاسعة تُسجّل الغداء كمأخوذ.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>الوردية تُطابق حتى بعد انتهائها</b><p>حضور بعد نهاية الوردية يرتبط بها: وقت محتسب قريب من الصفر وعلامة تأخّر.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>الوردية الليلية تفحص اليوم الخطأ</b><p>ذيل وردية الجمعة الليلية يوم السبت يُعتبر غير مجدول في جدول الإثنين–الجمعة.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>آخر يوم من الإجازة لا يُعذَر</b><p>يُلاحَق الموظف كغائب في آخر يوم من إجازته المعتمدة.</p></div>
+      <div class="issue"><span class="sev m">متوسط</span><b>بعض الإجراءات بلا شرط «شخص آخر»</b><p>حذف حضور، وإضافة أو حذف استراحة لعضو، يمكن فعلها لنفسك، والحذف لا يُسجَّل في سجلّ النشاط.</p></div>
+    </div>
+  </section>
+
+  <footer>المصدر: الكود في <code>apps/api/task-service/src/modules/attendance</code> و<code>packages/shared/src/attendance</code> · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __TIMELINE__;
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>
