@@ -1917,7 +1917,7 @@ The pricing model changed shape. `bill = seats × €9.99 + Σ spaces(modules + 
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 5 | ✅ All Fixed (2026-01-16) |
-| HIGH | 6 | HttpOnly refresh cookie done; access-token revocation on sign-out DEPLOYED 2026-10-10 (`24632815`, prod `c728bb59`) — see SECURITY_PERF_REPORT_2026-10-10.md |
+| HIGH | 6 | HttpOnly refresh cookie done; access-token revocation on sign-out DEPLOYED 2026-10-10 (`24632815`, prod `c728bb59`) — see docs/archive/root-plans/SECURITY_PERF_REPORT_2026-10-10.md |
 | MEDIUM | 4 | Fix within 30 days |
 | LOW | 2 | Fix as resources allow |
 

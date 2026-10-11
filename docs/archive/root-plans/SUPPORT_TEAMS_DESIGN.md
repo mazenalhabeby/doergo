@@ -82,6 +82,6 @@ roster and reassign within it.
   backfill (auth-service) can't drift.
 - Reuses the existing SLA/priority engine untouched; the `[assignedAgentId, status]` index already
   in the schema finally gets used, plus a new `[assignedTeamId, status]`.
-- Two agent entry points exist today (RBAC `/platform/support/*` used by `apps/admin`, and the
-  legacy secret-key `/support/agent/*` used by the web-app operator page). **Phase 1 scopes the
-  RBAC path** (the future); the legacy path keeps its all-tickets behavior until it's retired.
+- One agent entry point: RBAC `/platform/support/*` used by `apps/admin`. (The legacy secret-key
+  `/support/agent/*` used by the web-app operator page was retired 2026-10-10 — page, routes and
+  the socket's static-key path removed; nginx 404s the prefix.)
