@@ -1,0 +1,241 @@
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · يعمل بدون إنترنت</div>
+      <h1>الحضور والانصراف التلقائي</h1>
+      <p class="lede">للمصانع والفرق التي تنسى التسجيل: الهاتف يقرّر بنفسه عند الدخول والخروج، بنفس قواعد الخادم، ويحفظ كل شيء حتى تعود الإشارة. مبني على ما يفعله التطبيق اليوم.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / 3:38</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">7:31</span><span id="sigTop">HBCField</span></div>
+
+        <div class="screen on" data-scene="why">
+          <div class="sTitle">مصنع بندرهولتس</div>
+          <div class="sSub">قاعة الإنتاج 2 · لا توجد إشارة</div>
+          <div class="card"><div class="ln"><span>نسي الحضور هذا الأسبوع</span><span class="chip bad num">14×</span></div><div class="ln"><span>نسي الانصراف</span><span class="chip bad num">21×</span></div><div class="ln"><span>تصحيحات المكتب</span><span class="chip warn num">35</span></div></div>
+          <div class="card row"><span>الإشارة داخل القاعة</span><span class="sig off"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span></div>
+          <div class="notif"><small>الشرط</small>يجب أن يعمل كل شيء بدون إنترنت</div>
+        </div>
+
+        <div class="screen" data-scene="setup">
+          <div class="sTitle">التسجيل التلقائي</div>
+          <div class="sSub">المصنع · إعدادات المساحة</div>
+          <div class="card row"><span>مفعّل لهذه المساحة</span><span class="chip ok">تشغيل</span></div>
+          <div class="card"><div class="ln"><span>الأعضاء المختارون</span><span class="num">12 / 18</span></div><div class="ln"><span>وافقوا من التطبيق</span><span class="chip ok num">12</span></div></div>
+          <div class="card"><div class="ln"><span>يبدأ قبل الوردية</span><span class="num">30 min</span></div><div class="ln"><span>البقاء داخل المنطقة</span><span class="num">3 min</span></div><div class="ln"><span>الاستراحة التلقائية</span><span class="num">60 min</span></div><div class="ln"><span>مهلة بعد نهاية الوردية</span><span class="num">10 min</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="arm">
+          <div class="sTitle">مراقبة اليوم</div>
+          <div class="sSub">سُجّلت لدى نظام الهاتف · <span class="num">06:00</span></div>
+          <div class="card row"><span>المصنع · وردية <span class="num">08:00–16:30</span></span><span class="chip ok">مراقَب</span></div>
+          <div class="card row"><span>المستودع · لا وردية اليوم</span><span class="chip">غير مراقَب</span></div>
+          <div class="notif"><small>يعمل اليوم في التطبيق</small>النظام يوقظ التطبيق عند الدخول والخروج، حتى لو كان مغلقاً</div>
+          <div class="card row"><span>البطارية</span><span class="chip ok">شبه معدوم</span></div>
+        </div>
+
+        <div class="screen" data-scene="in-enter">
+          <div class="sTitle">دخل المنطقة</div>
+          <div class="map" style="height:180px"><div class="ring"></div><div class="pin"></div><div class="me" style="left:47%;top:57%"></div><div class="scale num">07:31</div></div>
+          <div class="card row"><span>الانتظار للتأكّد</span><span class="chip warn num">3 min</span></div>
+          <div class="card row"><span>الإشارة</span><span class="sig off"><i style="height:4px"></i><i style="height:7px"></i><i style="height:10px"></i><i style="height:12px"></i></span></div>
+        </div>
+
+        <div class="screen" data-scene="in-local">
+          <div class="sTitle">فحص على الهاتف</div>
+          <div class="sSub">نفس قواعد الخادم</div>
+          <div class="card">
+            <div class="check"><span class="dot ok">✓</span><span>داخل المنطقة · <span class="num">22 m</span></span></div>
+            <div class="check"><span class="dot ok">✓</span><span>دقّة الموقع · <span class="num">±12 m</span></span></div>
+            <div class="check"><span class="dot ok">✓</span><span>ضمن <span class="num">30 min</span> قبل الوردية</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>لا وردية مفتوحة</span></div>
+          </div>
+          <div class="notif" style="background:rgba(102,219,186,.14)"><small class="num">07:34</small>سُجّل حضورك تلقائياً · المصنع · <span class="num">07:31</span></div>
+          <div class="btn ghost">تراجع</div>
+        </div>
+
+        <div class="screen" data-scene="outbox">
+          <div class="sTitle">بانتظار الإرسال</div>
+          <div class="sSub">صندوق الإرسال على الهاتف</div>
+          <div class="card">
+            <div class="ln"><span>تسجيل حضور تلقائي</span><span class="chip warn">محفوظ</span></div>
+            <div class="ln"><span>الوقت</span><span class="num">07:31:12</span></div>
+            <div class="ln"><span>الموقع</span><span class="num">47.98, 13.83 · ±12 m</span></div>
+            <div class="ln"><span>ساعة مرجعية</span><span class="chip ok">من الخادم</span></div>
+          </div>
+          <div class="notif"><small>عند عودة الإشارة</small>يُرسل بالترتيب، مع الاستراحات والانصراف</div>
+        </div>
+
+        <div class="screen" data-scene="synced">
+          <div class="sTitle">أُرسل</div>
+          <div class="sSub">عادت الإشارة · <span class="num">08:05</span></div>
+          <div class="card row"><span>الحضور</span><span class="num">07:31</span></div>
+          <div class="card row"><span>العلامات</span><span><span class="chip">تلقائي</span> <span class="chip">دون اتصال</span></span></div>
+          <div class="card row"><span>الوقت المحتسب يبدأ</span><span class="chip ok num">08:00</span></div>
+          <div class="notif"><small>الخادم</small>أعاد الفحص وقبل الوقت الأصلي</div>
+        </div>
+
+        <div class="screen" data-scene="rest">
+          <div class="sTitle">استراحة الغداء</div>
+          <div class="notif" style="background:rgba(242,178,99,.14)"><small class="num">12:15 – 13:15</small>بدأت استراحتك تلقائياً</div>
+          <div class="btn ghost">ما زلت أعمل</div>
+          <div class="card row"><span>من خطّة الاستراحات</span><span class="chip ok">محفوظة على الهاتف</span></div>
+          <div class="card row"><span>الحدّ الأدنى قانوناً</span><span class="num">30 min · &gt; 6 h</span></div>
+        </div>
+
+        <div class="screen" data-scene="out-exit">
+          <div class="sTitle">خرج من المنطقة</div>
+          <div class="map" style="height:170px"><div class="ring"></div><div class="pin"></div><div class="me" style="left:84%;top:24%"></div><div class="scale num">16:41</div></div>
+          <div class="card row"><span>نهاية الوردية</span><span class="num">16:30</span></div>
+          <div class="notif" style="background:rgba(102,219,186,.14)"><small class="num">16:41</small>سُجّل انصرافك تلقائياً</div>
+          <div class="sSub">بلحظة الخروج · حتى بدون إشارة</div>
+        </div>
+
+        <div class="screen" data-scene="out-chain">
+          <div class="sTitle">ما زال في المصنع</div>
+          <div class="flow card">
+            <div class="step"><span class="n t num">16:30</span><span>نهاية الوردية</span></div>
+            <div class="step"><span class="n t num">16:40</span><span>تذكير من الهاتف نفسه</span></div>
+            <div class="step"><span class="n t num">16:55</span><span>قائد الفريق · إن كان متصلاً</span></div>
+          </div>
+          <div class="opts"><span class="opt sel">وقت إضافي</span><span class="opt">انصراف</span></div>
+        </div>
+
+        <div class="screen" data-scene="out-offline">
+          <div class="sTitle">لا ردّ</div>
+          <div class="card"><div class="ln"><span>الخادم يُغلق مؤقتاً</span><span class="chip warn num">16:30</span></div><div class="ln"><span>دليل الهاتف يصل لاحقاً</span><span class="chip ok num">17:02</span></div></div>
+          <div class="notif"><small>يحلّ محلّ الوقت المؤقت</small>هذا موجود في التطبيق اليوم</div>
+          <div class="card row"><span>الانصراف النهائي</span><span class="chip ok num">17:02 · خرج من المنطقة</span></div>
+        </div>
+
+        <div class="screen" data-scene="guard">
+          <div class="sTitle">منع التلاعب</div>
+          <div class="card">
+            <div class="check"><span class="dot ok">✓</span><span>ساعة مرجعية: ساعة الهاتف المعدّلة تُكشف</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>الموقع الوهمي يُعلَّم</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>دقّة أسوأ من <span class="num">100 m</span> تُرفض</span></div>
+          </div>
+          <div class="card row"><span>تلقائي وسليم</span><span class="chip ok">يُعتمد</span></div>
+          <div class="card row"><span>عليه علامة</span><span class="chip warn">للمراجعة</span></div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">ما الموجود وما الجديد</div>
+          <div class="card"><div class="ln"><span>مراقبة المنطقة من النظام</span><span class="chip ok">موجود</span></div><div class="ln"><span>صندوق الإرسال دون اتصال</span><span class="chip ok">موجود</span></div><div class="ln"><span>القواعد المشتركة على الهاتف</span><span class="chip ok">موجود</span></div><div class="ln"><span>استبدال الإغلاق المؤقت</span><span class="chip ok">موجود</span></div></div>
+          <div class="card"><div class="ln"><span>المراقبة قبل الحضور</span><span class="chip warn">جديد</span></div><div class="ln"><span>الإعدادات والموافقة</span><span class="chip warn">جديد</span></div><div class="ln"><span>إصدار جديد من التطبيق</span><span class="chip warn">مطلوب</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      __CHAPTERS__
+    </nav>
+  </div>
+
+  <section class="rules" id="decide">
+    <h2>كيف يقرّر الهاتف</h2>
+    <p class="sectionLede">كل قرار يُتخذ على الهاتف بالقواعد المشتركة نفسها، ويُحفظ مع دليله، ثم يعيد الخادم فحصه. الإنترنت يسرّع الأمور فقط، ولا يغيّر النتيجة.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>الحدث</th><th>على الهاتف، بدون إنترنت</th><th>عند الاتصال</th><th>الوقت المسجّل</th></tr></thead>
+      <tbody>
+        <tr><td>دخل المنطقة</td><td>ينتظر <span class="num">3 min</span>، يفحص المكان والدقّة والنافذة، يحفظ الحضور، إشعار مع «تراجع»</td><td>يُرسل؛ الخادم يعيد الفحص</td><td>لحظة الدخول</td></tr>
+        <tr><td>ضغط «تراجع»</td><td>يُحذف من صندوق الإرسال إن لم يُرسل، وإلا يُرسل إلغاء</td><td>يُلغى الحضور، مع سجلّ</td><td>—</td></tr>
+        <tr><td>منتصف الوردية بلا استراحة</td><td>يبدأ الاستراحة من الخطّة المحفوظة، إشعار مع «ما زلت أعمل»</td><td>تُرسل الاستراحة</td><td>حسب الخطّة</td></tr>
+        <tr><td>خرج قبل النهاية</td><td>خروج مؤقت كما اليوم، يُحفظ</td><td>يُسأل عن السبب</td><td>لا انصراف</td></tr>
+        <tr><td>خرج بعد النهاية</td><td>ينتظر المهلة (<span class="num">10 min</span>)، يحفظ الانصراف</td><td>يُرسل</td><td>لحظة الخروج</td></tr>
+        <tr><td>بقي بعد النهاية</td><td>تذكير محلّي</td><td>قائد الفريق، ثم إغلاق مؤقت</td><td>لحظة الخروج إن عُرفت لاحقاً</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules" id="code">
+    <h2>على ماذا يُبنى</h2>
+    <p class="sectionLede">ما يقوم به التطبيق اليوم، وما يجب إضافته.</p>
+    <div class="groups">
+      <div class="group"><h3><span class="num">✓</span>موجود اليوم</h3><ul>
+        <li>مراقبة المنطقة من نظام الهاتف، توقظ التطبيق حتى مغلقاً: <code>services/background-geofence.ts</code></li>
+        <li>صندوق إرسال بترتيب لكل وردية ومعرّف من الهاتف: <code>offline/attendance/shift-actions.ts</code></li>
+        <li>فحص الحضور على الهاتف بقواعد الخادم: <code>offline/attendance/clock-in-check.ts</code></li>
+        <li>دليل كل خطوة: الوقت، الموقع، ساعة مرجعية: <code>offline/clock.ts</code></li>
+        <li>الخادم يقبل الوقت الأصلي ويعلّم «دون اتصال»: <code>shared/sync/occurrence.ts</code></li>
+        <li>الإغلاق المؤقت للوردية واستبداله بدليل لاحق: <code>open-shift-close.ts</code></li>
+        <li>الهاتف يعرف نهاية الوردية وخطّة الاستراحات مسبقاً.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">+</span>يجب إضافته</h3><ul>
+        <li>تشغيل المراقبة قبل الحضور، لمساحات فيها وردية اليوم (حتى <span class="num">20</span> منطقة على iOS).</li>
+        <li>إعدادات المساحة واختيار الأعضاء، وموافقة العضو من التطبيق.</li>
+        <li>علامة «تلقائي» وقاعدة الاعتماد المباشر للتسجيل السليم.</li>
+        <li>الاستراحة التلقائية وزرّ «ما زلت أعمل».</li>
+        <li>«تراجع» عن الحضور التلقائي.</li>
+        <li>اختياري: بطاقة NFC عند البوابة كدليل ثانٍ داخل القاعات.</li>
+        <li>إصدار جديد من التطبيق، وإذن الموقع «دائماً».</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">§</span>القانون والخصوصية</h3><ul>
+        <li>مراقبة بالموقع: اتفاق مع مجلس العمال، أو موافقة كل عضو حيث لا مجلس (ArbVG §96).</li>
+        <li>لحظة الدخول والخروج فقط، لا تتبّع مستمر (اللائحة الأوروبية لحماية البيانات).</li>
+        <li>الاستراحة: <span class="num">30 min</span> لمن يعمل أكثر من <span class="num">6 h</span> (AZG §11)، والخصم الصامت لا يثبت أنها أُخذت.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __TIMELINE__;
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = { why:'7:31', setup:'6:00', arm:'6:00', 'in-enter':'7:31', 'in-local':'7:34', outbox:'7:35', synced:'8:05', rest:'12:15', 'out-exit':'16:41', 'out-chain':'16:40', 'out-offline':'17:05', guard:'9:41', build:'9:41' };
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>

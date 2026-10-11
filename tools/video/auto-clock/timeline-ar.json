@@ -1,0 +1,173 @@
+{
+ "chapters": [
+  {
+   "id": "why",
+   "start": 0.4,
+   "end": 19.247,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 9.398,
+     "scene": "why"
+    },
+    {
+     "start": 10.362,
+     "end": 18.547,
+     "scene": "why"
+    }
+   ]
+  },
+  {
+   "id": "setup",
+   "start": 19.247,
+   "end": 37.809,
+   "phrases": [
+    {
+     "start": 19.247,
+     "end": 30.044,
+     "scene": "setup"
+    },
+    {
+     "start": 30.769,
+     "end": 37.109,
+     "scene": "setup"
+    }
+   ]
+  },
+  {
+   "id": "arm",
+   "start": 37.809,
+   "end": 57.949,
+   "phrases": [
+    {
+     "start": 37.809,
+     "end": 45.007,
+     "scene": "arm"
+    },
+    {
+     "start": 45.964,
+     "end": 57.25,
+     "scene": "arm"
+    }
+   ]
+  },
+  {
+   "id": "in",
+   "start": 57.949,
+   "end": 99.044,
+   "phrases": [
+    {
+     "start": 57.949,
+     "end": 67.852,
+     "scene": "in-enter"
+    },
+    {
+     "start": 68.531,
+     "end": 78.365,
+     "scene": "in-local"
+    },
+    {
+     "start": 79.009,
+     "end": 86.486,
+     "scene": "in-local"
+    },
+    {
+     "start": 87.071,
+     "end": 98.345,
+     "scene": "outbox"
+    }
+   ]
+  },
+  {
+   "id": "sync",
+   "start": 99.044,
+   "end": 115.98,
+   "phrases": [
+    {
+     "start": 99.044,
+     "end": 108.831,
+     "scene": "synced"
+    },
+    {
+     "start": 109.394,
+     "end": 115.28,
+     "scene": "synced"
+    }
+   ]
+  },
+  {
+   "id": "rest",
+   "start": 115.98,
+   "end": 137.932,
+   "phrases": [
+    {
+     "start": 115.98,
+     "end": 125.86,
+     "scene": "rest"
+    },
+    {
+     "start": 126.539,
+     "end": 137.231,
+     "scene": "rest"
+    }
+   ]
+  },
+  {
+   "id": "out",
+   "start": 137.932,
+   "end": 172.822,
+   "phrases": [
+    {
+     "start": 137.932,
+     "end": 149.565,
+     "scene": "out-exit"
+    },
+    {
+     "start": 150.348,
+     "end": 157.129,
+     "scene": "out-chain"
+    },
+    {
+     "start": 157.935,
+     "end": 172.123,
+     "scene": "out-offline"
+    }
+   ]
+  },
+  {
+   "id": "guard",
+   "start": 172.822,
+   "end": 195.749,
+   "phrases": [
+    {
+     "start": 172.822,
+     "end": 183.132,
+     "scene": "guard"
+    },
+    {
+     "start": 183.741,
+     "end": 195.049,
+     "scene": "guard"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "start": 195.749,
+   "end": 216.804,
+   "phrases": [
+    {
+     "start": 195.749,
+     "end": 210.145,
+     "scene": "build"
+    },
+    {
+     "start": 210.824,
+     "end": 216.304,
+     "scene": "build"
+    }
+   ]
+  }
+ ],
+ "duration": 218.3
+}
