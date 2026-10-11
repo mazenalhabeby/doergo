@@ -30,6 +30,7 @@ export class AttendanceProcessor extends JobProcessor {
       case ATTENDANCE_JOB_TYPES.SHIFT_REMINDER:
       // Route any stray legacy job (queued in Redis before the upgrade) to the
       // reminder engine too, so it never throws "Unknown job type".
+      // falls through
       case ATTENDANCE_JOB_TYPES.AUTO_CLOCK_OUT: {
         /*
           One tick drives four sweeps: forgot-to-clock-out, no-show, the

@@ -106,7 +106,7 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
     "dev": "tsc --watch",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src",
     "clean": "rm -rf dist dist-esm",
     "build:esm": "tsc -p tsconfig.esm.json"
   },

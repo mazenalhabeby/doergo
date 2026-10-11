@@ -69,7 +69,6 @@ export function AnimatedLogo({
   return (
     <div className={`flex items-center ${className}`} style={{ gap: s.gap }}>
       {/* Brand mark (faceted logo). Colorful on both light and dark backgrounds. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/logo_HBCFIELD.png"
         alt="HBCField"

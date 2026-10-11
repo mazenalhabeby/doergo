@@ -17,7 +17,7 @@ describe('the open-role read exemption covers the task, not its work', () => {
   const body = (name: string): string => {
     const start = src.indexOf(`async ${name}(`);
     expect(start).toBeGreaterThan(-1);
-    const next = src.slice(start + 1).search(/\n  (?:async |private |public |protected )?[a-zA-Z]+\([^)]*\)?[^;\n]*\{\s*\n/);
+    const next = src.slice(start + 1).search(/\n {2}(?:async |private |public |protected )?[a-zA-Z]+\([^)]*\)?[^;\n]*\{\s*\n/);
     return next === -1 ? src.slice(start) : src.slice(start, start + 1 + next);
   };
 

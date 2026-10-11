@@ -46,8 +46,8 @@ describe('assertExternalMayWriteTask', () => {
     const tasks = readFileSync(join(__dirname, '..', '..', 'modules', 'tasks', 'tasks.controller.ts'), 'utf8');
     const fields = readFileSync(join(__dirname, '..', '..', 'modules', 'custom-fields', 'custom-fields.controller.ts'), 'utf8');
     const routes = [
-      ...[...tasks.matchAll(/@(Post|Delete)\(':id\/(?:comments|attachments)[^']*'\)[\s\S]*?async (\w+)\([\s\S]*?\{([\s\S]*?)\n  \}/g)],
-      ...[...fields.matchAll(/@(Patch)\(':id\/custom-fields'\)[\s\S]*?async (\w+)\([\s\S]*?\{([\s\S]*?)\n  \}/g)],
+      ...[...tasks.matchAll(/@(Post|Delete)\(':id\/(?:comments|attachments)[^']*'\)[\s\S]*?async (\w+)\([\s\S]*?\{([\s\S]*?)\n {2}\}/g)],
+      ...[...fields.matchAll(/@(Patch)\(':id\/custom-fields'\)[\s\S]*?async (\w+)\([\s\S]*?\{([\s\S]*?)\n {2}\}/g)],
     ];
     it('finds them', () => expect(routes.length).toBe(5));
     it.each(routes.map((m) => [m[2], m[3]] as const))('%s', (_n, body) => {

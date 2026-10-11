@@ -78,7 +78,7 @@ describe('every document read is scoped by type visibility', () => {
     // Method boundaries: two-space indentation is a class member in this file.
     const starts: { name: string; line: number }[] = [];
     lines.forEach((l, i) => {
-      const m = /^  (?:private |public )?(?:async )?(\w+)\(/.exec(l);
+      const m = /^ {2}(?:private |public )?(?:async )?(\w+)\(/.exec(l);
       if (m && !l.trim().startsWith('//') && !l.trim().startsWith('*')) {
         starts.push({ name: m[1], line: i });
       }
