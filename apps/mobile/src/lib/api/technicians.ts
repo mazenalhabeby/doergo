@@ -1,5 +1,6 @@
+import type { RequestKindOptions } from '@hbcfield/shared/client';
 import {
-  ApiError, defineEndpoints, endpoint, requestKindsOffered,
+  ApiError, requestKindsOffered,
   type EmployeesQueryParams, type EndpointBody, type RequestKind,
 } from '@hbcfield/shared/client';
 import { call, E } from './client';
@@ -53,22 +54,8 @@ export const timeOffApi = {
   },
 };
 
-/** What the member may ask for, and where they may work remotely. */
-export interface RequestOptions {
-  kinds: RequestKind[];
-  remoteSpaces: Array<{ id: string; name: string }>;
-}
-
-/*
-  ⚠️ ONE LINE TO MERGE. The server adds `GET /employees/me/request-options` to
-  the shared endpoint table in the same release; until that lands here it is
-  named locally with the same path and the same offline verdict (`keep`: the
-  member's own options, harmless to hold). When the shared table carries it,
-  this block becomes `call(E.timeOff.myOptions)`.
-*/
-const requestEndpoints = defineEndpoints('phoneRequests', {
-  myOptions: endpoint<void, RequestOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
-});
+/** What the member may ask for, and where they may work remotely — the shared shape. */
+export type RequestOptions = RequestKindOptions;
 
 /** A server from before requests: it still takes leave, and the phone offers no more than the contract's default. */
 export const OPTIONS_BEFORE_REQUESTS: RequestOptions = {
@@ -79,7 +66,7 @@ export const OPTIONS_BEFORE_REQUESTS: RequestOptions = {
 export const requestsApi = {
   myOptions: async (): Promise<RequestOptions> => {
     try {
-      const r = await call(requestEndpoints.myOptions);
+      const r = await call(E.timeOff.requestOptions);
       const kinds = Array.isArray(r?.kinds) ? r.kinds : OPTIONS_BEFORE_REQUESTS.kinds;
       return { kinds, remoteSpaces: Array.isArray(r?.remoteSpaces) ? r.remoteSpaces : [] };
     } catch (err) {
