@@ -159,10 +159,17 @@ describe('"when did you leave?" on a shift closed with a temporary time', () => 
       timeEntry: {
         findFirst: jest.fn().mockResolvedValue(entry),
         updateMany: jest.fn().mockResolvedValue({ count: claim }),
-        update: jest.fn(async ({ data }: any) => ({ id: entry?.id, ...data, location: { name: 'Site' }, user: { firstName: 'K', lastName: 'A' } })),
+        // The close claims with every column in one write, then reads the row back.
+        findUnique: jest.fn(async () => ({ ...entry, ...svc.prisma.timeEntry.updateMany.mock.calls.at(-1)[0].data, location: { name: 'Site' }, user: { firstName: 'K', lastName: 'A' } })),
       },
+      break: { update: jest.fn() },
+      geofenceExcursion: { updateMany: jest.fn() },
+      $transaction: jest.fn(async (fn: any) => fn(svc.prisma)),
     };
-    svc.countedTime = { columnsFor: jest.fn().mockResolvedValue({ countedStartAt: at('14T08:00'), countedEndAt: at('14T17:00'), paidMinutes: 540 }) };
+    svc.countedTime = {
+      columnsFor: jest.fn().mockResolvedValue({ countedStartAt: at('14T08:00'), countedEndAt: at('14T17:00'), paidMinutes: 540 }),
+      toleranceFor: jest.fn().mockResolvedValue(10),
+    };
     svc.notificationClient = { emit: jest.fn() };
     svc.sendPendingApprovalAlert = jest.fn();
     return svc;
@@ -186,7 +193,7 @@ describe('"when did you leave?" on a shift closed with a temporary time', () => 
       where: { id: 'e1', status: 'CLOCKED_OUT', clockOutProvisional: true },
       data: expect.objectContaining({ clockOutAt: at('14T18:35'), clockOutProvisional: false }),
     });
-    const data = svc.prisma.timeEntry.update.mock.calls[0][0].data;
+    const data = svc.prisma.timeEntry.updateMany.mock.calls[0][0].data;
     expect(data.flagReasons).toEqual(expect.arrayContaining(['MISSED_CLOCK_OUT', 'OVERTIME']));
     expect(data.flagReasons).not.toContain('CLOCK_OUT_PROVISIONAL');
     expect(data.clockOutProvisional).toBe(false);

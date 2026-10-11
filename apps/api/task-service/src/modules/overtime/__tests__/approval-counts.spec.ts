@@ -15,7 +15,7 @@ function setup() {
   };
   const queue = { add: jest.fn() };
   const attendance = { approveExtraTime: jest.fn(async () => ({ success: true, data: { entryId: 'entry-1' } })) };
-  const service = new OvertimeService(prisma, { emit: jest.fn() } as any, queue as any, attendance as any);
+  const service = new OvertimeService(prisma, { emit: jest.fn() } as any, queue as any, attendance as any, {} as any);
   return { service, prisma, queue, attendance };
 }
 

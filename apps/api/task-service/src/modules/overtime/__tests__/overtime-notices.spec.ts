@@ -34,7 +34,7 @@ describe('overtime pushes', () => {
     };
     const emit = jest.fn();
     const attendance: any = { notifyTargetsFor: jest.fn().mockResolvedValue(targets) };
-    const svc = new OvertimeService(prisma, { emit } as any, {} as any, attendance);
+    const svc = new OvertimeService(prisma, { emit } as any, {} as any, attendance, {} as any);
     return { svc, prisma, emit, attendance };
   };
 

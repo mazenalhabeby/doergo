@@ -56,7 +56,11 @@ function prismaDouble() {
     spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),
-      findUnique: jest.fn().mockResolvedValue(null),
+      // A close claims with every column in one write, then reads the row back.
+      findUnique: jest.fn(async () => {
+        const claim = p.timeEntry.updateMany.mock.calls.at(-1);
+        return claim ? { id: 'e1', ...claim[0].data, location, user: { firstName: 'Mike', lastName: 'Weber' } } : null;
+      }),
       create: jest.fn(async ({ data }: any) => ({ id: data.id ?? 'server-id', ...data, location, user: { firstName: 'Mike', lastName: 'Weber' } })),
       update: jest.fn(async ({ data }: any) => ({ id: 'e1', ...data, location, user: { firstName: 'Mike', lastName: 'Weber' } })),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
@@ -68,6 +72,7 @@ function prismaDouble() {
       create: jest.fn(async ({ data }: any) => ({ id: data.id ?? 'b-server', ...data })),
       update: jest.fn(async ({ data }: any) => ({ id: 'b1', type: 'SHORT', ...data })),
     },
+    geofenceExcursion: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     shiftInstance: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) },
     breakRule: { findMany: jest.fn().mockResolvedValue([]) },
     shift: { findUnique: jest.fn().mockResolvedValue(null), findFirst: jest.fn().mockResolvedValue(null) },
@@ -224,7 +229,7 @@ describe('attendance recorded offline', () => {
       await service.clockOut(clockOut());
       expect(prisma.timeEntry.findFirst.mock.calls[0][0].where).toMatchObject({ id: 'e1', userId: 'u1' });
       expect(prisma.timeEntry.updateMany).toHaveBeenCalledWith({ where: { id: 'e1', status: TimeEntryStatus.CLOCKED_IN }, data: expect.objectContaining({ clockOutAt: TAP }) });
-      const data = prisma.timeEntry.update.mock.calls[0][0].data;
+      const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
       expect(data.clockOutAt).toEqual(TAP);
       expect(data.totalMinutes).toBe(118);
       expect(data.flagReasons).toContain('RECORDED_OFFLINE');
@@ -235,7 +240,7 @@ describe('attendance recorded offline', () => {
       prisma.timeEntry.findFirst.mockResolvedValue({ ...open(), status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: TAP });
       const res: any = await service.clockOut(clockOut());
       expect(res.data.id).toBe('e1');
-      expect(prisma.timeEntry.update).not.toHaveBeenCalled();
+      expect(prisma.timeEntry.updateMany).not.toHaveBeenCalled();
     });
 
     it('is a conflict when the shift was closed some other way meanwhile', async () => {
@@ -275,7 +280,7 @@ describe('attendance recorded offline', () => {
         where: { id: 'e1', status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true },
         data: expect.objectContaining({ clockOutAt: TAP, clockOutProvisional: false, clockOutBasis: null }),
       });
-      const data = prisma.timeEntry.update.mock.calls[0][0].data;
+      const data = prisma.timeEntry.updateMany.mock.calls[0][0].data;
       expect(data.clockOutAt).toEqual(TAP);
       expect(data.flagReasons).toContain('LATE_ARRIVAL');
       expect(data.flagReasons).toContain('RECORDED_OFFLINE');

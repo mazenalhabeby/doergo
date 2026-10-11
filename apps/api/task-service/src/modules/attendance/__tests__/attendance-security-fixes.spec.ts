@@ -66,7 +66,8 @@ describe('clock-in/out broadcast', () => {
   it('every clock emit goes through the projector — never the raw row', () => {
     const src = readAttendanceServiceSource();
     const emits = src.match(/emit\('attendance_clock_(in|out)',\s*\{[\s\S]*?\}\);/g) ?? [];
-    expect(emits.length).toBeGreaterThanOrEqual(4);
+    // Every close goes through ClockOutService.closeEntry, so the clock-out emit is ONE place.
+    expect(emits.length).toBeGreaterThanOrEqual(3);
     for (const e of emits) expect(e).toMatch(/timeEntry: clockEventEntry\(/);
   });
 });

@@ -10,12 +10,13 @@ import { Queue } from 'bullmq';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AttendanceService } from '../attendance/attendance.service';
+import { ClockOutService } from '../attendance/clock-out.service';
+import { assertNotSelfDecision } from '../attendance/self-decision';
 import {
   success,
   SERVICE_NAMES,
   QUEUE_NAMES,
   OVERTIME_CONSTANTS,
-  TimeEntryStatus,
   scopeWhere,
   type SpaceScopeIds,
   OVERTIME_NOTICE_EVENT,
@@ -39,6 +40,10 @@ export class OvertimeService {
     @InjectQueue(QUEUE_NAMES.OVERTIME)
     private readonly overtimeQueue: Queue,
     private readonly attendance: AttendanceService,
+    // ⚠️ Ending the shift is attendance's ONE close (ClockOutService.closeByDecision):
+    // counted time, rests, excursions, reminders, jobs and the event, never a
+    // hand-written status flip. Needs ClockOutService in AttendanceModule's exports.
+    private readonly clockOuts: ClockOutService,
   ) {}
 
   /**
@@ -53,6 +58,13 @@ export class OvertimeService {
 
   /**
    * Technician responds YES or NO to overtime prompt
+   *
+   * ⚠️ Unreachable today: nothing creates a PENDING_TECHNICIAN round any more —
+   * every round is created PENDING_APPROVAL (a request) or APPROVED (a manager
+   * adding time) in extra-time.service.ts — so this always answers 404, and the
+   * first branch of `checkTimeouts` never matches. Kept while old phones may
+   * still call /overtime/respond; it ends a shift through the same close if it
+   * ever runs.
    */
   async technicianRespond(data: {
     userId: string;
@@ -89,7 +101,7 @@ export class OvertimeService {
         },
       });
 
-      await this.clockOutEntry(request.timeEntryId, request.organizationId, 'Overtime declined by technician');
+      await this.endShift(request.timeEntryId, request.organizationId, 'Overtime declined by technician', 'CLOCK_OUT');
 
       return success({ status: 'CANCELED' }, 'Overtime declined, clocked out');
     }
@@ -299,10 +311,25 @@ export class OvertimeService {
     organizationId: string;
   }) {
     const request = await this.findPendingApproval(data.overtimeRequestId, data.organizationId, data.scopeSpaceIds);
-    const now = new Date();
 
-    await this.prisma.overtimeRequest.update({
-      where: { id: request.id },
+    /*
+      Nobody refuses their own overtime — and here refusing ENDS the shift, so a
+      shift leader could otherwise clock themselves out "by decision" with an
+      AUTO_OUT that reads as the system's. The approve path has carried the
+      second-party rule since AT-B1 (through attendance's approveExtraTime);
+      the reject path never did. A true org admin is exempt, as everywhere.
+    */
+    await assertNotSelfDecision(this.prisma, {
+      deciderId: data.approverId,
+      subjectId: request.technicianId,
+      organizationId: data.organizationId,
+      message: 'You cannot decide on your own overtime',
+    });
+
+    const now = new Date();
+    // Claimed: an approval or a second reject arriving together must not both act.
+    const claimed = await this.prisma.overtimeRequest.updateMany({
+      where: { id: request.id, status: 'PENDING_APPROVAL' },
       data: {
         status: 'REJECTED',
         approvedById: data.approverId,
@@ -310,9 +337,12 @@ export class OvertimeService {
         rejectionReason: data.reason,
       },
     });
+    if (claimed.count === 0) {
+      throw new NotFoundException('Overtime request not found or not pending approval');
+    }
 
-    // Clock out the technician
-    await this.clockOutEntry(request.timeEntryId, data.organizationId, `Overtime rejected: ${data.reason}`);
+    // This product's rule: a refusal ends the shift, at the decision.
+    await this.endShift(request.timeEntryId, data.organizationId, `Overtime rejected: ${data.reason}`, 'OFFICE_CLOSE', now);
 
     // Notify technician
     this.notify({
@@ -343,11 +373,13 @@ export class OvertimeService {
     });
 
     for (const req of expiredTechRequests) {
-      await this.prisma.overtimeRequest.update({
-        where: { id: req.id },
+      // Claimed, so two replicas running the sweep cannot both act on one request.
+      const claim = await this.prisma.overtimeRequest.updateMany({
+        where: { id: req.id, status: 'PENDING_TECHNICIAN' },
         data: { status: 'EXPIRED_NO_RESPONSE' },
       });
-      await this.clockOutEntry(req.timeEntryId, req.organizationId, 'Auto clock-out: no response to overtime prompt');
+      if (claim.count === 0) continue;
+      await this.endShift(req.timeEntryId, req.organizationId, 'Auto clock-out: no response to overtime prompt', 'AUTO_CLOSE', now);
 
       this.notify({
         recipientIds: [req.technicianId],
@@ -368,11 +400,17 @@ export class OvertimeService {
     });
 
     for (const req of expiredApprovalRequests) {
-      await this.prisma.overtimeRequest.update({
-        where: { id: req.id },
+      const claim = await this.prisma.overtimeRequest.updateMany({
+        where: { id: req.id, status: 'PENDING_APPROVAL' },
         data: { status: 'EXPIRED_NO_APPROVAL' },
       });
-      await this.clockOutEntry(req.timeEntryId, req.organizationId, 'Auto clock-out: overtime approval expired');
+      if (claim.count === 0) continue;
+      /*
+        Path B: the signature drawn on the technician's phone was never confirmed
+        in time. The shift ends at the sweep — and what COUNTS still stops at the
+        planned end, because a request nobody approved never moved it.
+      */
+      await this.endShift(req.timeEntryId, req.organizationId, 'Auto clock-out: overtime approval expired', 'AUTO_CLOSE', now);
 
       this.notify({
         recipientIds: [req.technicianId],
@@ -538,24 +576,19 @@ export class OvertimeService {
     return result;
   }
 
-  private async clockOutEntry(timeEntryId: string, organizationId: string, notes: string) {
-    const entry = await this.prisma.timeEntry.findUnique({ where: { id: timeEntryId } });
-    if (!entry || entry.status !== TimeEntryStatus.CLOCKED_IN) return;
-
-    const now = new Date();
-    const totalMinutes = Math.round((now.getTime() - entry.clockInAt.getTime()) / 60000);
-    const existingFlags = (entry as any).flagReasons || [];
-
-    await this.prisma.timeEntry.update({
-      where: { id: timeEntryId },
-      data: {
-        status: TimeEntryStatus.AUTO_OUT,
-        clockOutAt: now,
-        totalMinutes,
-        notes,
-        flagReasons: [...new Set([...existingFlags, 'MISSED_CLOCK_OUT'])],
-        approvalStatus: 'PENDING',
-      },
-    });
+  /**
+   * The legacy flow's "this ends the shift" — through attendance's one close,
+   * which ends a running rest, counts only up to the planned end, expires open
+   * excursions, clears reminders, pauses jobs and announces the clock-out.
+   * Quiet when the shift is already closed.
+   */
+  private async endShift(
+    timeEntryId: string,
+    organizationId: string,
+    note: string,
+    reason: 'CLOCK_OUT' | 'OFFICE_CLOSE' | 'AUTO_CLOSE',
+    at?: Date,
+  ): Promise<void> {
+    await this.clockOuts.closeByDecision({ entryId: timeEntryId, organizationId, note, reason, at });
   }
 }
