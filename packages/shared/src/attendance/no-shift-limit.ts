@@ -35,6 +35,39 @@ export function isNoShiftPolicy(v: unknown): v is NoShiftPolicy {
   return typeof v === 'string' && (NO_SHIFT_POLICIES as readonly string[]).includes(v);
 }
 
+/**
+ * Does this workspace schedule shifts at all?
+ *
+ * ⚠️ `workModel` NONE — the default, and most workspaces — schedules nothing BY
+ * DESIGN. "You had no shift today" means nothing there: flagging every clock-in
+ * at such a workspace UNSCHEDULED_DAY put each one in review and pushed a
+ * pending-approval notice, for a shift nobody was ever meant to have.
+ */
+export function workspaceSchedulesShifts(workModel: string | null | undefined): boolean {
+  return (workModel ?? 'NONE') !== 'NONE';
+}
+
+/**
+ * The no-shift rule that actually applies at a workspace.
+ *
+ * ⚠️ SHIFT_ONLY where nothing is scheduled would refuse EVERYBODY, forever — no
+ * shift can ever match there. Saving that pair is refused
+ * (`noShiftPolicyConflict`); any row that already holds it reads as ALLOW.
+ * LIMIT is unaffected: "up to N hours a day" means exactly as much without a rota.
+ */
+export function effectiveNoShiftPolicy(policy: string | null | undefined, workModel: string | null | undefined): NoShiftPolicy {
+  const p = isNoShiftPolicy(policy) ? policy : DEFAULT_NO_SHIFT_POLICY;
+  return p === 'SHIFT_ONLY' && !workspaceSchedulesShifts(workModel) ? 'ALLOW' : p;
+}
+
+/** Why this pair may not be saved, or null when it may. */
+export function noShiftPolicyConflict(
+  policy: string | null | undefined,
+  workModel: string | null | undefined,
+): 'SHIFT_ONLY_WITHOUT_SHIFTS' | null {
+  return policy === 'SHIFT_ONLY' && !workspaceSchedulesShifts(workModel) ? 'SHIFT_ONLY_WITHOUT_SHIFTS' : null;
+}
+
 export type NoShiftAllowance =
   /** No limit applies. */
   | { kind: 'free' }
