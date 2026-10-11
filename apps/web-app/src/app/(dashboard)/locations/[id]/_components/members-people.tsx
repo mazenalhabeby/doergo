@@ -15,6 +15,7 @@ import { mayListOrgMembers, type AssignablePerson } from "@/lib/assignable-membe
 import { useAssignableMembers } from "@/hooks/use-assignable-members"
 import {
   locationsApi,
+  type LocationAssignment,
   organizationsApi,
   rateHistoryApi,
   spaceMembersApi,
@@ -37,6 +38,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DatedRateField } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
+import { MemberAutoClock, useWorkspaceAutoClock } from "./member-auto-clock"
 import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
 
 /**
@@ -95,6 +97,8 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
     enabled: !!hasApartments,
   })
   const isClient = space?.kind === "CUSTOMER"
+  // The automatic clock: per-person switch + consent, read only while the workspace has it on.
+  const autoClock = useWorkspaceAutoClock(spaceId, space as (typeof space & { autoClock?: unknown }) | undefined)
   const roleById = useMemo(() => new Map((roles ?? []).map((r) => [r.id, r])), [roles])
 
   const rows = useMemo(() => {
@@ -200,6 +204,12 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                                 {t("members.external.badge")}
                               </Badge>
                             )}
+                            {/* Neutral: a fact about how they clock here, not something to look at. */}
+                            {autoClock.on && !external && autoClock.rowFor(m.userId)?.autoClock === true && (
+                              <Badge variant="outline" className="shrink-0 px-1.5 py-0 text-[10px] font-normal text-muted-foreground">
+                                {t("attendance.autoClock.badge")}
+                              </Badge>
+                            )}
                           </span>
                           <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
                             {m.user?.position}
@@ -261,6 +271,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
         roles={roles ?? []}
         roster={members ?? []}
         isClient={isClient}
+        autoClockRow={autoClock.on && open && open.user?.isExternal !== true ? autoClock.rowFor(open.userId) ?? null : undefined}
         onClose={() => setOpenId(null)}
       />
       {adding && (
@@ -330,6 +341,7 @@ function MemberPanel({
   roles,
   roster,
   isClient,
+  autoClockRow,
   onClose,
 }: {
   spaceId: string
@@ -337,6 +349,12 @@ function MemberPanel({
   roles: SpaceRoleInSpace[]
   roster: SpaceMember[]
   isClient: boolean
+  /**
+   * The automatic clock's roster row for this member. `undefined` = not offered
+   * (the workspace has it off, or an external member — they hold no clock);
+   * `null` = offered, still loading.
+   */
+  autoClockRow?: LocationAssignment | null
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -547,6 +565,11 @@ function MemberPanel({
                     />
                   )}
                 </section>
+              )}
+
+              {/* Only while the workspace has the automatic clock on, and never for an external member. */}
+              {autoClockRow !== undefined && (
+                <MemberAutoClock spaceId={spaceId} row={autoClockRow ?? undefined} section={section} heading={heading} />
               )}
 
               <section className={section}>

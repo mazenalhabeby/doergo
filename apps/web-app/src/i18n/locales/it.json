@@ -2331,7 +2331,10 @@
         "pastDailyLimit": "Oltre il limite di oggi",
         "missedRest": "Pausa saltata",
         "remoteWithWorkspace": "Da remoto con spazio assegnato",
-        "approvedRemote": "Da remoto · approvato in anticipo"
+        "approvedRemote": "Da remoto · approvato in anticipo",
+        "autoClockIn": "Entrata automatica",
+        "autoClockOut": "Uscita automatica",
+        "autoRest": "Pausa automatica"
       }
     },
     "locationsTab": {
@@ -4082,6 +4085,48 @@
         "STILL_OUT": "Ancora fuori, fermo",
         "JOBS_TODAY": "Lavori con indirizzo oggi",
         "AWAY": "Fuori dall'area, fermo"
+      }
+    },
+    "autoClock": {
+      "title": "Timbratura automatica",
+      "subtitle": "I membri timbrano l’entrata quando arrivano in questo spazio di lavoro e l’uscita quando se ne vanno dopo il turno.",
+      "enable": "Timbrare entrata e uscita automaticamente qui",
+      "enableHint": "Poi scelga nella pagina Membri a chi si applica.",
+      "noCoordinates": "Questo spazio di lavoro non ha un punto sulla mappa, quindi non c’è un’area in cui arrivare o da cui uscire. Imposti l’indirizzo o il punto sulla mappa nella scheda Generale per usare la timbratura automatica.",
+      "note": "Il telefono rileva solo l’ingresso e l’uscita dall’area di questo spazio di lavoro — mai un percorso. Per un membro non succede nulla finché non accetta nell’app.",
+      "min": "min",
+      "errorRange": "Inserisca un numero intero da {{min}} a {{max}}.",
+      "errorAfterLeader": "Deve essere dopo l’avviso al responsabile.",
+      "badge": "Timbratura automatica",
+      "memberSwitch": "Timbrare entrata e uscita automaticamente",
+      "memberSwitchHint": "All’arrivo e all’uscita dopo il turno.",
+      "consentAgreed": "Accettato nell’app il {{date}}",
+      "consentMissing": "Non ancora accettato — non succede nulla finché non accetta nell’app.",
+      "fields": {
+        "leadMinutes": {
+          "label": "Iniziare fino a",
+          "hint": "Minuti prima dell’inizio del turno. Un arrivo anticipato viene timbrato da quel momento; il tempo conteggiato inizia comunque con il turno."
+        },
+        "dwellMinutes": {
+          "label": "Restare prima nell’area",
+          "hint": "Minuti nell’area prima che valga come arrivo — passare in auto non è arrivare."
+        },
+        "exitGraceMinutes": {
+          "label": "Dopo il turno, timbrare l’uscita",
+          "hint": "Minuti dopo aver lasciato l’area. Andare al furgone non è tornare a casa."
+        },
+        "autoRestMinutes": {
+          "label": "Pausa automatica a metà turno",
+          "hint": "Per turni oltre 6 ore senza pausa. Il telefono chiede prima «Sta ancora lavorando?»."
+        },
+        "leaderAfterMinutes": {
+          "label": "Avvisare il responsabile dopo",
+          "hint": "Minuti ancora nell’area dopo la fine del turno."
+        },
+        "closeAfterMinutes": {
+          "label": "Chiudere il turno dopo",
+          "hint": "Minuti senza risposta. L’uscita viene segnata come non confermata."
+        }
       }
     }
   },
@@ -9361,7 +9406,9 @@
     "CARRY_OVER_MAX_INVALID": "Indichi quanti giorni si possono riportare: un numero intero da 1 a 100.",
     "CARRY_EXPIRY_INVALID": "I giorni riportati scadono dopo 1-24 mesi; lasci il campo vuoto per mai.",
     "LEAVE_TRACKING_DATE_INVALID": "Scelga una data di inizio valida.",
-    "LEAVE_POLICY_EMPTY": "Niente da salvare."
+    "LEAVE_POLICY_EMPTY": "Niente da salvare.",
+    "AUTO_CLOCK_SETTING_INVALID": "Una delle impostazioni della timbratura automatica è fuori dai limiti consentiti. Controlli il numero evidenziato.",
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Questa entrata non può più essere annullata."
   },
   "signLink": {
     "tabs": {

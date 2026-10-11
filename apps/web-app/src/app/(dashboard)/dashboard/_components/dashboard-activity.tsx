@@ -2,7 +2,7 @@ import React from "react"
 import i18n from "@/i18n"
 import type { Task, OrgMember } from "@/lib/api"
 import type { TimeEntry } from "@hbcfield/shared"
-import { personInitials } from "@hbcfield/shared/client"
+import { flagsForReview, personInitials } from "@hbcfield/shared/client"
 import type { LiveEvent, PendingAction } from "@/components/dashboard"
 import { AVATAR_COLORS, getAvatarColor, isClockedIn, timeAgo } from "./helpers"
 
@@ -114,8 +114,11 @@ const FLAG_LABEL_KEYS: Record<string, string> = {
   UNSCHEDULED_DAY: "unscheduledDay",
 }
 
-const flagSummary = (reasons?: string[]) =>
-  reasons && reasons.length
+// Why it waits for a person — informational flags (automatic clock, recorded
+// offline, …) explain an entry and never ask for a look, so they are not listed.
+const flagSummary = (all?: string[]) => {
+  const reasons = flagsForReview(all ?? [])
+  return reasons.length
     ? reasons
         .map((r) =>
           FLAG_LABEL_KEYS[r]
@@ -124,6 +127,7 @@ const flagSummary = (reasons?: string[]) =>
         )
         .join(", ")
     : i18n.t("dashboard.activity.flags.needsReview")
+}
 
 /**
  * Things needing attention, most time-sensitive first:

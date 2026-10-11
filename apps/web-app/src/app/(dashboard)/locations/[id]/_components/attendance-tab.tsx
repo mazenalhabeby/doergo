@@ -19,6 +19,7 @@ import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
 import { NoShiftSection } from "./no-shift-section"
 import { RequestKindsSection } from "./request-kinds-section"
+import { AutoClockSection } from "./auto-clock-section"
 import { workspaceSchedulesShifts } from "@hbcfield/shared/client"
 import { MinCoverSection } from "./min-cover-section"
 
@@ -159,6 +160,16 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       <div className="border-t border-border/60 pt-6">
         <RequestKindsSection space={space as CompanyLocation & { requestKinds?: string[] | null }} />
       </div>
+
+      {/*
+        The automatic clock — entering and leaving the area clocks in and out.
+        Renders nothing for the Remote bucket, so it brings its own divider.
+      */}
+      {!space.isRemote && (
+        <div className="border-t border-border/60 pt-6">
+          <AutoClockSection space={space as CompanyLocation & { autoClock?: unknown }} />
+        </div>
+      )}
 
       {/*
         The staffing floor.

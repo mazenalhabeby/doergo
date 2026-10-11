@@ -2331,7 +2331,10 @@
         "pastDailyLimit": "Au-delà de la limite du jour",
         "missedRest": "Pause manquée",
         "remoteWithWorkspace": "À distance, a un espace",
-        "approvedRemote": "À distance · validé à l’avance"
+        "approvedRemote": "À distance · validé à l’avance",
+        "autoClockIn": "Pointage d’arrivée automatique",
+        "autoClockOut": "Pointage de départ automatique",
+        "autoRest": "Pause automatique"
       }
     },
     "locationsTab": {
@@ -4082,6 +4085,48 @@
         "STILL_OUT": "Toujours dehors, immobile",
         "JOBS_TODAY": "Interventions avec adresse aujourd'hui",
         "AWAY": "Hors de la zone, immobile"
+      }
+    },
+    "autoClock": {
+      "title": "Pointage automatique",
+      "subtitle": "Les membres sont pointés à leur arrivée sur cet espace de travail et à leur départ après leur service.",
+      "enable": "Pointer automatiquement ici",
+      "enableHint": "Choisissez ensuite sur la page Membres à qui cela s’applique.",
+      "noCoordinates": "Cet espace de travail n’a pas de point sur la carte : il n’y a donc pas de zone où arriver ni d’où partir. Renseignez son adresse ou son point sur la carte dans l’onglet Général pour utiliser le pointage automatique.",
+      "note": "Le téléphone ne remarque que l’entrée et la sortie de la zone de cet espace de travail — jamais un trajet. Rien ne se passe pour un membre tant qu’il n’a pas accepté dans l’application.",
+      "min": "min",
+      "errorRange": "Saisissez un nombre entier de {{min}} à {{max}}.",
+      "errorAfterLeader": "Doit être plus tard que l’avis au responsable.",
+      "badge": "Pointage automatique",
+      "memberSwitch": "Pointer automatiquement",
+      "memberSwitchHint": "À l’arrivée et au départ après le service.",
+      "consentAgreed": "Accepté dans l’application le {{date}}",
+      "consentMissing": "Pas encore accepté — rien ne se passe tant qu’il n’a pas accepté dans l’application.",
+      "fields": {
+        "leadMinutes": {
+          "label": "Commencer jusqu’à",
+          "hint": "Minutes avant le début du service. Une arrivée plus tôt est pointée à partir de là ; le temps compté commence toujours avec le service."
+        },
+        "dwellMinutes": {
+          "label": "Rester d’abord dans la zone",
+          "hint": "Minutes dans la zone avant que cela compte comme une arrivée — passer en voiture n’est pas arriver."
+        },
+        "exitGraceMinutes": {
+          "label": "Après le service, pointer le départ",
+          "hint": "Minutes après avoir quitté la zone. Aller jusqu’à la camionnette n’est pas rentrer chez soi."
+        },
+        "autoRestMinutes": {
+          "label": "Pause automatique en milieu de service",
+          "hint": "Pour les services de plus de 6 heures sans pause. Le téléphone demande d’abord « Toujours au travail ? »."
+        },
+        "leaderAfterMinutes": {
+          "label": "Prévenir le responsable après",
+          "hint": "Minutes encore dans la zone après la fin du service."
+        },
+        "closeAfterMinutes": {
+          "label": "Clôturer le service après",
+          "hint": "Minutes sans réponse. Le départ est marqué comme non confirmé."
+        }
       }
     }
   },
@@ -9361,7 +9406,9 @@
     "CARRY_OVER_MAX_INVALID": "Indiquez combien de jours peuvent être reportés — un nombre entier de 1 à 100.",
     "CARRY_EXPIRY_INVALID": "Les jours reportés expirent après 1 à 24 mois ; laissez le champ vide pour jamais.",
     "LEAVE_TRACKING_DATE_INVALID": "Choisissez une date de début valide.",
-    "LEAVE_POLICY_EMPTY": "Rien à enregistrer."
+    "LEAVE_POLICY_EMPTY": "Rien à enregistrer.",
+    "AUTO_CLOCK_SETTING_INVALID": "L’un des réglages du pointage automatique est hors des limites autorisées. Vérifiez le nombre signalé.",
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Ce pointage ne peut plus être annulé."
   },
   "signLink": {
     "tabs": {

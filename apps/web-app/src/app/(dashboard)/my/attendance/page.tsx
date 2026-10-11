@@ -23,6 +23,7 @@ import { RestPanel } from "@/components/attendance/rest-panel"
 import { UnconfirmedClockOutCard } from "@/components/attendance/unconfirmed-clock-out-card"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
+import { deriveAttendanceFlags } from "@/lib/attendance-status"
 
 /** Human-readable duration between two ISO timestamps (or to now). */
 function duration(fromIso?: string | null, toIso?: string | null): string {
@@ -609,12 +610,22 @@ export default function MyAttendancePage() {
               */}
               {!!e.flagReasons?.length && (
                 <div className="hidden shrink-0 gap-1 sm:flex">
-                  {e.flagReasons.slice(0, 2).map((f) => (
+                  {/*
+                    The one flag mapping (lib/attendance-status): what asks for a
+                    look comes first and stays amber; what only says how the
+                    entry was made (automatic clock, recorded offline) is neutral.
+                  */}
+                  {deriveAttendanceFlags(e).slice(0, 2).map((f) => (
                     <span
-                      key={f}
-                      className="rounded-md border border-amber-500/25 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-400"
+                      key={f.key}
+                      className={cn(
+                        "rounded-md border px-1.5 py-0.5 text-[10px] font-semibold",
+                        f.tone === "muted"
+                          ? "border-border bg-muted text-muted-foreground"
+                          : "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+                      )}
                     >
-                      {t(`attendanceReview.flags.${f}`, f.replace(/_/g, " ").toLowerCase())}
+                      {t(f.labelKey, { defaultValue: f.fallback })}
                     </span>
                   ))}
                 </div>

@@ -219,6 +219,19 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
     reason: "APPROVED_REMOTE",
     chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.approvedRemote", fallback: "Remote · approved in advance" },
   },
+  // Informational: made by the automatic clock (shared attendance/auto-clock.ts) — marked, never suspected.
+  {
+    reason: "AUTO_CLOCK_IN",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoClockIn", fallback: "Automatic clock-in" },
+  },
+  {
+    reason: "AUTO_CLOCK_OUT",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoClockOut", fallback: "Automatic clock-out" },
+  },
+  {
+    reason: "AUTO_REST",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.autoRest", fallback: "Automatic rest" },
+  },
 ]
 
 export function deriveAttendanceFlags(entry: TimeEntry): AttendanceChip[] {

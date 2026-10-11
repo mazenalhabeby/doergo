@@ -76,4 +76,29 @@ describe('deriveAttendanceFlags', () => {
     const [chip] = deriveAttendanceFlags(entry({ flagReasons: ['APPROVED_REMOTE'] }))
     expect(chip).toMatchObject({ key: 'APPROVED_REMOTE', tone: 'muted', labelKey: 'technicians.attendanceTab.flag.approvedRemote' })
   })
+
+  it.each([
+    ['AUTO_CLOCK_IN', 'autoClockIn'],
+    ['AUTO_CLOCK_OUT', 'autoClockOut'],
+    ['AUTO_REST', 'autoRest'],
+  ])('shows %s as a neutral informational chip with its own label — never a warning colour', (flag, key) => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: [flag] }))
+    expect(chip).toMatchObject({ key: flag, tone: 'muted', labelKey: `technicians.attendanceTab.flag.${key}` })
+  })
+
+  it('puts what asks for a look ahead of the automatic-clock marks', () => {
+    const flags = deriveAttendanceFlags(entry({ flagReasons: ['AUTO_CLOCK_IN', 'LATE_ARRIVAL'] }))
+    expect(flags.map((f) => f.key)).toEqual(['LATE_ARRIVAL', 'AUTO_CLOCK_IN'])
+  })
+
+  it('has every informational flag the shared contract names in all five languages', () => {
+    const { INFORMATIONAL_FLAGS } = jest.requireActual('@hbcfield/shared/client') as { INFORMATIONAL_FLAGS: ReadonlySet<string> }
+    const langs = ['en', 'de', 'es', 'fr', 'it'].map((l) => jest.requireActual(`@/i18n/locales/${l}.json`) as { technicians: { attendanceTab: { flag: Record<string, string> } } })
+    for (const flag of INFORMATIONAL_FLAGS) {
+      const [chip] = deriveAttendanceFlags(entry({ flagReasons: [flag] }))
+      expect(chip.tone).toBe('muted')
+      const leaf = chip.labelKey.split('.').pop()!
+      for (const l of langs) expect(l.technicians.attendanceTab.flag[leaf]).toBeTruthy()
+    }
+  })
 })

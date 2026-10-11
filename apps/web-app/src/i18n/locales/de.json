@@ -2331,7 +2331,10 @@
         "pastDailyLimit": "Über dem Tageslimit",
         "missedRest": "Pause verpasst",
         "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich",
-        "approvedRemote": "Remote · im Voraus genehmigt"
+        "approvedRemote": "Remote · im Voraus genehmigt",
+        "autoClockIn": "Automatisch eingestempelt",
+        "autoClockOut": "Automatisch ausgestempelt",
+        "autoRest": "Automatische Pause"
       }
     },
     "locationsTab": {
@@ -4082,6 +4085,48 @@
         "STILL_OUT": "Weiterhin unterwegs, steht",
         "JOBS_TODAY": "Aufträge mit Adresse heute",
         "AWAY": "Außerhalb des Bereichs, steht"
+      }
+    },
+    "autoClock": {
+      "title": "Automatische Zeiterfassung",
+      "subtitle": "Mitglieder werden beim Ankommen an diesem Arbeitsort eingestempelt und beim Verlassen nach ihrer Schicht ausgestempelt.",
+      "enable": "Hier automatisch ein- und ausstempeln",
+      "enableHint": "Legen Sie danach auf der Seite „Mitglieder“ fest, für wen es gilt.",
+      "noCoordinates": "Dieser Arbeitsort hat keinen Kartenpunkt, daher gibt es keinen Bereich zum Ankommen oder Verlassen. Hinterlegen Sie Adresse oder Kartenpunkt im Reiter „Allgemein“, um die automatische Zeiterfassung zu nutzen.",
+      "note": "Das Telefon erkennt nur das Betreten und Verlassen des Bereichs dieses Arbeitsorts — niemals eine Route. Für ein Mitglied geschieht nichts, bis es in der App zustimmt.",
+      "min": "Min.",
+      "errorRange": "Geben Sie eine ganze Zahl von {{min}} bis {{max}} ein.",
+      "errorAfterLeader": "Muss später sein als die Benachrichtigung der Leitung.",
+      "badge": "Automatische Zeiterfassung",
+      "memberSwitch": "Automatisch ein- und ausstempeln",
+      "memberSwitchHint": "Beim Ankommen und beim Verlassen nach der Schicht.",
+      "consentAgreed": "In der App zugestimmt am {{date}}",
+      "consentMissing": "Noch nicht zugestimmt — es geschieht nichts, bis in der App zugestimmt wird.",
+      "fields": {
+        "leadMinutes": {
+          "label": "Frühestens",
+          "hint": "Minuten vor Schichtbeginn. Wer früher ankommt, wird ab dann eingestempelt; die gezählte Zeit beginnt weiterhin mit der Schicht."
+        },
+        "dwellMinutes": {
+          "label": "Erst so lange im Bereich",
+          "hint": "Minuten im Bereich, bevor es als Ankunft gilt — Vorbeifahren ist keine Ankunft."
+        },
+        "exitGraceMinutes": {
+          "label": "Nach der Schicht ausstempeln",
+          "hint": "Minuten nach dem Verlassen des Bereichs. Der Gang zum Wagen ist kein Heimweg."
+        },
+        "autoRestMinutes": {
+          "label": "Automatische Pause in der Schichtmitte",
+          "hint": "Bei Schichten über 6 Stunden ohne Pause. Das Telefon fragt zuerst „Arbeiten Sie noch?“."
+        },
+        "leaderAfterMinutes": {
+          "label": "Leitung benachrichtigen nach",
+          "hint": "Minuten, die jemand nach Schichtende noch im Bereich ist."
+        },
+        "closeAfterMinutes": {
+          "label": "Schicht schließen nach",
+          "hint": "Minuten ohne Antwort. Das Ausstempeln wird als nicht bestätigt markiert."
+        }
       }
     }
   },
@@ -9352,7 +9397,9 @@
     "CARRY_OVER_MAX_INVALID": "Geben Sie an, wie viele Tage übertragen werden dürfen — eine ganze Zahl von 1 bis 100.",
     "CARRY_EXPIRY_INVALID": "Übertragene Tage verfallen nach 1 bis 24 Monaten; lassen Sie das Feld leer für nie.",
     "LEAVE_TRACKING_DATE_INVALID": "Wählen Sie ein gültiges Startdatum.",
-    "LEAVE_POLICY_EMPTY": "Nichts zu speichern."
+    "LEAVE_POLICY_EMPTY": "Nichts zu speichern.",
+    "AUTO_CLOCK_SETTING_INVALID": "Eine der Einstellungen für die automatische Zeiterfassung liegt außerhalb des Erlaubten. Bitte prüfen Sie die markierte Zahl.",
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Dieses Einstempeln kann nicht mehr rückgängig gemacht werden."
   },
   "signLink": {
     "tabs": {

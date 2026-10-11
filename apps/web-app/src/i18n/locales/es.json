@@ -2331,7 +2331,10 @@
         "pastDailyLimit": "Por encima del límite diario",
         "missedRest": "Descanso perdido",
         "remoteWithWorkspace": "Remoto con espacio asignado",
-        "approvedRemote": "Remoto · aprobado de antemano"
+        "approvedRemote": "Remoto · aprobado de antemano",
+        "autoClockIn": "Entrada automática",
+        "autoClockOut": "Salida automática",
+        "autoRest": "Descanso automático"
       }
     },
     "locationsTab": {
@@ -4082,6 +4085,48 @@
         "STILL_OUT": "Sigue fuera, sin moverse",
         "JOBS_TODAY": "Trabajos con dirección hoy",
         "AWAY": "Fuera del área, sin moverse"
+      }
+    },
+    "autoClock": {
+      "title": "Fichaje automático",
+      "subtitle": "Los miembros fichan la entrada al llegar a este espacio de trabajo y la salida al irse después de su turno.",
+      "enable": "Fichar entrada y salida automáticamente aquí",
+      "enableHint": "Después elija en la página Miembros a quién se aplica.",
+      "noCoordinates": "Este espacio de trabajo no tiene punto en el mapa, así que no hay una zona a la que llegar o de la que salir. Indique su dirección o punto en el mapa en la pestaña General para usar el fichaje automático.",
+      "note": "El teléfono solo detecta la entrada y la salida de la zona de este espacio de trabajo — nunca una ruta. No ocurre nada para un miembro hasta que lo acepte en la app.",
+      "min": "min",
+      "errorRange": "Introduzca un número entero de {{min}} a {{max}}.",
+      "errorAfterLeader": "Debe ser posterior al aviso al responsable.",
+      "badge": "Fichaje automático",
+      "memberSwitch": "Fichar entrada y salida automáticamente",
+      "memberSwitchHint": "Al llegar y al irse después del turno.",
+      "consentAgreed": "Aceptado en la app el {{date}}",
+      "consentMissing": "Aún no aceptado — no ocurre nada hasta que lo acepte en la app.",
+      "fields": {
+        "leadMinutes": {
+          "label": "Empezar hasta",
+          "hint": "Minutos antes de que empiece el turno. Una llegada anterior ficha desde ese momento; el tiempo contado sigue empezando con el turno."
+        },
+        "dwellMinutes": {
+          "label": "Permanecer dentro primero",
+          "hint": "Minutos dentro de la zona antes de que cuente como llegada — pasar con el coche no es llegar."
+        },
+        "exitGraceMinutes": {
+          "label": "Tras el turno, fichar la salida",
+          "hint": "Minutos después de salir de la zona. Ir hasta la furgoneta no es irse a casa."
+        },
+        "autoRestMinutes": {
+          "label": "Descanso automático a mitad de turno",
+          "hint": "En turnos de más de 6 horas sin descanso. El teléfono pregunta antes «¿Sigue trabajando?»."
+        },
+        "leaderAfterMinutes": {
+          "label": "Avisar al responsable tras",
+          "hint": "Minutos aún dentro después de que termine el turno."
+        },
+        "closeAfterMinutes": {
+          "label": "Cerrar el turno tras",
+          "hint": "Minutos sin respuesta. La salida queda marcada como no confirmada."
+        }
       }
     }
   },
@@ -9352,7 +9397,9 @@
     "CARRY_OVER_MAX_INVALID": "Indique cuántos días se pueden traspasar: un número entero de 1 a 100.",
     "CARRY_EXPIRY_INVALID": "Los días traspasados caducan tras 1 a 24 meses; deje el campo vacío para nunca.",
     "LEAVE_TRACKING_DATE_INVALID": "Elija una fecha de inicio válida.",
-    "LEAVE_POLICY_EMPTY": "No hay nada que guardar."
+    "LEAVE_POLICY_EMPTY": "No hay nada que guardar.",
+    "AUTO_CLOCK_SETTING_INVALID": "Uno de los ajustes del fichaje automático está fuera de lo permitido. Revise el número marcado.",
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Esta entrada ya no se puede deshacer."
   },
   "signLink": {
     "tabs": {

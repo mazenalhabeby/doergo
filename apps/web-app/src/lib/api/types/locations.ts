@@ -1,4 +1,4 @@
-import type { CompanyLocation } from '@hbcfield/shared/client';
+import type { AutoClockSettings, CompanyLocation } from '@hbcfield/shared/client';
 
 // ============================================================================
 // LOCATIONS API
@@ -61,6 +61,8 @@ export interface UpdateLocationInput {
   minCover?: number;
   /** The request kinds members may send here (requests/request-kinds.ts). Empty = every kind. */
   requestKinds?: string[];
+  /** The automatic clock's settings here (attendance/auto-clock.ts); `enabled: false` switches it off and keeps the numbers. */
+  autoClock?: AutoClockSettings;
   kind?: string;
   contactName?: string | null;
   contactEmail?: string | null;
@@ -95,12 +97,18 @@ export interface LocationAssignment {
     isExternal?: boolean;
     /** Access profile — the assignee picker asks canReceiveTasks with it. */
     enabledModules?: unknown;
+    /** The same consent, when the server sends it on the person rather than the row. */
+    autoClockConsentAt?: string | null;
   };
   location?: CompanyLocation;
   // Server-computed presence: the member's current active task at this location
   // (so employees, who can't read colleagues' tasks, still see who is working).
   currentTask?: string | null;
   currentTaskStatus?: string | null;
+  /** Is the automatic clock armed for this member here (the workspace must have it on too)? Absent on an older server. */
+  autoClock?: boolean;
+  /** When the member agreed in the app (null = not agreed / withdrawn). Absent on an older server. */
+  autoClockConsentAt?: string | null;
 }
 
 
@@ -127,4 +135,6 @@ export interface UpdateAssignmentInput {
    * refused" are different answers.
    */
   allowRemote?: boolean | null;
+  /** Arm the automatic clock for this member here. Nothing happens until they also agree in the app. */
+  autoClock?: boolean;
 }

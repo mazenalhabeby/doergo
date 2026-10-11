@@ -30,6 +30,10 @@ const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string; labe
   UNANCHORED: { label: "Clock not checked", className: "bg-muted text-muted-foreground border-border" },
   // Calm and neutral: approved in advance, so it explains the entry rather than asking for a look.
   APPROVED_REMOTE: { label: "Remote · approved in advance", labelKey: "technicians.attendanceTab.flag.approvedRemote", className: "bg-muted text-muted-foreground border-border" },
+  // The automatic clock — informational, the same labels as the member's attendance (lib/attendance-status).
+  AUTO_CLOCK_IN: { label: "Automatic clock-in", labelKey: "technicians.attendanceTab.flag.autoClockIn", className: "bg-muted text-muted-foreground border-border" },
+  AUTO_CLOCK_OUT: { label: "Automatic clock-out", labelKey: "technicians.attendanceTab.flag.autoClockOut", className: "bg-muted text-muted-foreground border-border" },
+  AUTO_REST: { label: "Automatic rest", labelKey: "technicians.attendanceTab.flag.autoRest", className: "bg-muted text-muted-foreground border-border" },
 }
 
 function FlagReasonBadges({ reasons }: { reasons?: string[] }) {

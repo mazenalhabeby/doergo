@@ -2331,7 +2331,10 @@
         "pastDailyLimit": "Past today's limit",
         "missedRest": "Missed rest",
         "remoteWithWorkspace": "Remote, has a workspace",
-        "approvedRemote": "Remote · approved in advance"
+        "approvedRemote": "Remote · approved in advance",
+        "autoClockIn": "Automatic clock-in",
+        "autoClockOut": "Automatic clock-out",
+        "autoRest": "Automatic rest"
       }
     },
     "locationsTab": {
@@ -4082,6 +4085,48 @@
         "STILL_OUT": "Still out, not moving",
         "JOBS_TODAY": "Jobs at an address today",
         "AWAY": "Outside the area, not moving"
+      }
+    },
+    "autoClock": {
+      "title": "Automatic clock",
+      "subtitle": "Members are clocked in when they arrive at this workspace and out when they leave after their shift.",
+      "enable": "Clock in and out automatically here",
+      "enableHint": "Then choose on the Members page who it applies to.",
+      "noCoordinates": "This workspace has no map point, so there is no area to arrive in or leave. Set its address or map point on the General tab to use the automatic clock.",
+      "note": "The phone only notices entering and leaving this workspace's area — never a route. Nothing happens for a member until they agree in the app.",
+      "min": "min",
+      "errorRange": "Enter a whole number from {{min}} to {{max}}.",
+      "errorAfterLeader": "Must be later than telling the leader.",
+      "badge": "Automatic clock",
+      "memberSwitch": "Clock in and out automatically",
+      "memberSwitchHint": "When they arrive and when they leave after their shift.",
+      "consentAgreed": "Agreed in the app on {{date}}",
+      "consentMissing": "Not agreed yet — nothing happens until they agree in the app.",
+      "fields": {
+        "leadMinutes": {
+          "label": "Start up to",
+          "hint": "Minutes before the shift starts. An earlier arrival is clocked in from then; counted time still starts with the shift."
+        },
+        "dwellMinutes": {
+          "label": "Stay inside first",
+          "hint": "Minutes inside the area before it counts as arriving — driving past is not arriving."
+        },
+        "exitGraceMinutes": {
+          "label": "After the shift, clock out",
+          "hint": "Minutes after leaving the area. A walk to the van is not going home."
+        },
+        "autoRestMinutes": {
+          "label": "Automatic rest mid-shift",
+          "hint": "For shifts over 6 hours when no rest was taken. The phone asks \"Still working?\" first."
+        },
+        "leaderAfterMinutes": {
+          "label": "Tell the leader after",
+          "hint": "Minutes still inside after the shift ends."
+        },
+        "closeAfterMinutes": {
+          "label": "Close the shift after",
+          "hint": "Minutes with no answer. The clock-out is marked as not confirmed."
+        }
       }
     }
   },
@@ -9352,7 +9397,9 @@
     "CARRY_OVER_MAX_INVALID": "Enter how many days may be carried over — a whole number from 1 to 100.",
     "CARRY_EXPIRY_INVALID": "Carried days expire after 1 to 24 months, or leave the field empty for never.",
     "LEAVE_TRACKING_DATE_INVALID": "Choose a valid start date.",
-    "LEAVE_POLICY_EMPTY": "Nothing to save."
+    "LEAVE_POLICY_EMPTY": "Nothing to save.",
+    "AUTO_CLOCK_SETTING_INVALID": "One of the automatic clock settings is outside what is allowed. Check the highlighted number.",
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "This clock-in can no longer be undone."
   },
   "signLink": {
     "tabs": {
