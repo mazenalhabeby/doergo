@@ -1,0 +1,114 @@
+{
+ "phrases": [
+  {
+   "text": "If you run a field team, you probably spend half your day on the phone.",
+   "start": 0.3,
+   "end": 4.886,
+   "wordStarts": [
+    0.3,
+    0.497,
+    0.648,
+    0.834,
+    0.927,
+    1.24,
+    1.821,
+    2.053,
+    2.61,
+    3.028,
+    3.342,
+    3.516,
+    3.922,
+    4.213,
+    4.329
+   ]
+  },
+  {
+   "text": "Where are you? Are you done? Did the customer sign?",
+   "start": 5.516,
+   "end": 9.695,
+   "wordStarts": [
+    5.516,
+    5.875,
+    6.142,
+    6.711,
+    7.025,
+    7.245,
+    8.116,
+    8.337,
+    8.464,
+    9.068
+   ]
+  },
+  {
+   "text": "Here's the thing. You don't need to call.",
+   "start": 10.483,
+   "end": 13.199,
+   "wordStarts": [
+    10.483,
+    10.843,
+    10.982,
+    11.632,
+    11.934,
+    12.224,
+    12.503,
+    12.642
+   ]
+  },
+  {
+   "text": "With HBCField you see where everyone is, what's done, and the customer's signature, right on your phone.",
+   "start": 13.662,
+   "end": 20.546,
+   "wordStarts": [
+    13.662,
+    13.929,
+    14.962,
+    15.113,
+    15.299,
+    15.543,
+    16.112,
+    16.39,
+    16.843,
+    17.516,
+    17.737,
+    17.864,
+    18.457,
+    19.432,
+    19.769,
+    19.908,
+    20.07
+   ]
+  },
+  {
+   "text": "Your team works. You stop chasing.",
+   "start": 21.044,
+   "end": 23.435,
+   "wordStarts": [
+    21.044,
+    21.276,
+    21.566,
+    22.205,
+    22.449,
+    22.797
+   ]
+  },
+  {
+   "text": "Link's in the bio. Try it free for fourteen days.",
+   "start": 23.898,
+   "end": 27.706,
+   "wordStarts": [
+    23.898,
+    24.235,
+    24.328,
+    24.432,
+    25.094,
+    25.489,
+    25.663,
+    25.988,
+    26.232,
+    26.905
+   ]
+  }
+ ],
+ "duration": 29.71,
+ "lang": "en"
+}

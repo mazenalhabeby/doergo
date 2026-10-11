@@ -1,0 +1,56 @@
+{
+ "phrases": [
+  {
+   "text": "Minus one.",
+   "pause": 0.25
+  },
+  {
+   "text": "Minus two.",
+   "pause": 0.25
+  },
+  {
+   "text": "Minus three.",
+   "pause": 0.3
+  },
+  {
+   "text": "No signal.",
+   "pause": 0.3
+  },
+  {
+   "text": "Most apps stop here.",
+   "pause": 0.3
+  },
+  {
+   "text": "HBCField keeps going.",
+   "pause": 0.35
+  },
+  {
+   "text": "Photo, saved.",
+   "pause": 0.15
+  },
+  {
+   "text": "Note, saved.",
+   "pause": 0.15
+  },
+  {
+   "text": "Signature, saved.",
+   "pause": 0.4
+  },
+  {
+   "text": "Back up top,",
+   "pause": 0
+  },
+  {
+   "text": "it all arrives by itself.",
+   "pause": 0.4
+  },
+  {
+   "text": "Nothing lost. Nothing typed twice.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "pause": 0
+  }
+ ]
+}

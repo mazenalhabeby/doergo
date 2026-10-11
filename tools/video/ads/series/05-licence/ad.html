@@ -1,0 +1,212 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}
+body{font-family:Inter,system-ui,sans-serif;color:#fff}
+.abs{position:absolute}
+#screen{position:absolute;left:0;top:0;width:1080px;height:1920px;background:radial-gradient(ellipse at 50% 42%,#15161c 0%,#07070a 60%,#000 100%);overflow:hidden}
+#tint{position:absolute;inset:0;opacity:0}
+#flood{position:absolute;inset:0;background:#b3121b;opacity:0}
+.bar{position:absolute;left:0;width:1080px;height:200px;background:#000;z-index:20}
+#barT{top:0}#barB{bottom:0}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,transparent 38%,rgba(0,0,0,.92) 100%);z-index:10;pointer-events:none}
+#grain{position:absolute;inset:0;width:1080px;height:1920px;opacity:.09;mix-blend-mode:screen;z-index:11}
+#scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.13) 0 3px,transparent 3px 11px);z-index:12;opacity:0}
+#tear{position:absolute;left:0;width:1080px;height:70px;background:linear-gradient(transparent,rgba(255,255,255,.35),transparent);z-index:13;opacity:0}
+
+#num{left:0;width:1080px;top:400px;text-align:center;font:560px/1 "Bebas Neue",Impact,sans-serif;color:#ef4444;letter-spacing:4px}
+#unit{left:0;width:1080px;top:950px;text-align:center;font:64px/1 "Bebas Neue",sans-serif;letter-spacing:.32em;color:#fff}
+
+#card{left:120px;top:400px;width:840px;height:530px;border-radius:30px;background:linear-gradient(135deg,#f9d6e2 0%,#e9c3f0 45%,#cfe3f5 100%);box-shadow:0 40px 90px rgba(0,0,0,.7);color:#1f2440;overflow:hidden}
+#card .eu{position:absolute;left:34px;top:30px;width:92px;height:70px;border-radius:8px;background:#1e3a8a;display:grid;place-items:center;color:#fde047;font:700 30px/1 Inter}
+#card .ttl{position:absolute;left:150px;top:34px;font:800 30px/1.1 Inter;letter-spacing:.06em}
+#card .ttl small{display:block;font:600 18px/1.3 Inter;letter-spacing:.14em;opacity:.6}
+#card .ph{position:absolute;left:40px;top:140px;width:210px;height:270px;border-radius:14px;background:linear-gradient(#a8b3c7,#7c879c);overflow:hidden}
+#card .ph i{position:absolute;left:55px;top:40px;width:100px;height:100px;border-radius:50%;background:#dfe5ee}
+#card .ph b{position:absolute;left:20px;top:155px;width:170px;height:160px;border-radius:85px 85px 0 0;background:#dfe5ee}
+#card .f{position:absolute;left:290px;font:600 30px/1.2 Inter;color:#1f2440}
+#card .f span{font:700 18px/1 Inter;opacity:.5;margin-right:14px}
+#card .sig{position:absolute;left:290px;top:400px}
+#exp{padding:2px 10px;border-radius:8px}
+#stamp{left:250px;top:560px;border:14px solid #dc2626;color:#dc2626;border-radius:18px;padding:18px 40px;font:170px/1 "Bebas Neue",sans-serif;letter-spacing:.06em;background:rgba(255,255,255,.04)}
+
+#hit1,#hit2{left:0;width:1080px;text-align:center;font:230px/.9 "Bebas Neue",sans-serif;color:#fff}
+#hit1{top:520px;color:#ef4444}
+#hit2{top:470px}
+
+#osd{left:90px;top:250px;font:74px/1 "Bebas Neue",sans-serif;letter-spacing:.08em;z-index:21;color:#fff;text-shadow:4px 0 #ff2a55,-4px 0 #22d3ee}
+#tc{right:90px;top:258px;font:52px/1 "Bebas Neue",sans-serif;letter-spacing:.1em;z-index:21;color:#fff}
+
+#doc{left:470px;top:990px;font:700 42px/1.2 Inter;color:#86efac;display:flex;align-items:center;gap:14px}
+#doc svg{flex:none}
+#note{left:90px;top:260px;width:900px;background:rgba(28,30,36,.92);border:1px solid rgba(255,255,255,.12);border-radius:40px;padding:30px 36px;display:flex;gap:26px;align-items:flex-start;box-shadow:0 30px 70px rgba(0,0,0,.6);z-index:22}
+#note img{width:78px;height:78px;border-radius:20px;background:#0f172a;padding:10px}
+#note .tx{font:500 32px/1.3 Inter;color:#e5e7eb}
+#note .tx b{display:flex;justify-content:space-between;font:700 24px/1 Inter;color:#9ca3af;letter-spacing:.04em;margin-bottom:10px}
+#note .tx strong{color:#fff;font-weight:700}
+#renew{left:230px;top:560px;border:14px solid #22c55e;color:#22c55e;border-radius:18px;padding:18px 40px;font:160px/1 "Bebas Neue",sans-serif;letter-spacing:.05em;background:rgba(0,0,0,.35)}
+#nothing{left:0;width:1080px;top:560px;text-align:center;font:250px/.88 "Bebas Neue",sans-serif;color:#fff}
+#nothing i{font-style:normal;color:#4ade80}
+
+#sub{left:90px;width:900px;top:1110px;text-align:center;font:600 42px/1.3 Inter;color:#fff;text-shadow:0 3px 12px #000,0 0 3px #000;z-index:21}
+
+#end{left:0;top:0;width:1080px;height:1920px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;z-index:15}
+#end img{width:210px;height:210px}
+#end .wm{font:120px/1 "Bebas Neue",sans-serif;letter-spacing:.14em}
+#end .wm span{color:#60a5fa}
+#end .ln{font:700 50px/1.25 Inter;text-align:center}
+#end .ln i{font-style:normal;color:#4ade80}
+#end .cta{font:700 38px/1 Inter;background:#2563eb;border-radius:999px;padding:26px 46px}
+#end .url{font:600 36px/1 Inter;color:#9ca3af}
+
+/* landscape 1920×1080 */
+html.wide,html.wide body{width:1920px;height:1080px}
+.wide #screen{width:1920px;height:1080px}
+.wide .bar{width:1920px;height:100px}
+.wide #grain{width:1920px;height:1080px}
+.wide #tear{width:1920px}
+.wide #num{width:1920px;top:150px;font-size:540px}
+.wide #unit{width:1920px;top:715px}
+.wide #card{left:540px;top:230px}
+.wide #hit1,.wide #hit2{width:1920px;font-size:220px}
+.wide #hit1{top:300px}.wide #hit2{top:290px}
+.wide #osd{left:110px;top:125px}.wide #tc{right:110px;top:133px}
+.wide #doc{left:980px;top:218px;font-size:38px}
+.wide #note{left:100px;top:300px;width:800px}
+.wide #nothing{width:1920px;top:290px;font-size:240px}
+.wide #sub{left:210px;width:1500px;top:880px;font-size:40px}
+.wide #end{width:1920px;height:1080px;gap:26px}
+.wide #end img{width:160px;height:160px}
+.wide #end .wm{font-size:110px}
+/* German: longer words */
+.de #stamp{font-size:140px}
+.de #renew{font-size:130px}
+.de #hit1{font-size:180px;top:560px}
+.wide.de #hit1{font-size:220px;top:300px}
+.de #end .ln{font-size:44px}
+html.de:not(.wide) #doc{left:330px}
+</style></head><body>
+<div id="screen">
+  <div id="tint"></div>
+  <div class="abs" id="num">30</div>
+  <div class="abs" id="unit">DAYS LEFT</div>
+  <div class="abs" id="card">
+    <div class="eu">EU</div>
+    <div class="ttl" id="ttl">DRIVING LICENCE<small>FÜHRERSCHEIN · PERMIS</small></div>
+    <div class="ph"><i></i><b></b></div>
+    <div class="f" style="top:150px"><span>1.</span>WEBER</div>
+    <div class="f" style="top:200px"><span>2.</span>MIKE</div>
+    <div class="f" style="top:250px"><span>3.</span>12.04.1988</div>
+    <div class="f" style="top:320px"><span>4b.</span><b id="exp">30.09.2026</b></div>
+    <div class="f" style="top:380px"><span>9.</span>B · C1 · BE</div>
+    <svg class="sig" width="300" height="90"><path d="M8 60 C40 10 60 80 95 35 S150 70 180 30 S240 60 290 25" stroke="#1e3a8a" stroke-width="4" fill="none"/></svg>
+  </div>
+  <div class="abs" id="doc"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="2.2"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3"/><path d="M8 12h8"/></svg><span id="docT">Read from the document</span></div>
+  <div class="abs" id="stamp">EXPIRED</div>
+  <div class="abs" id="renew">RENEWED ✓</div>
+  <div class="abs" id="hit1">AUDIT<br>FAILED</div>
+  <div id="flood"></div>
+  <div class="abs" id="hit2">CONTRACT<br>LOST</div>
+  <div class="abs" id="nothing">NOTHING<br><i>LOST.</i></div>
+  <div class="abs" id="end"><img id="logo" src="logo.svg"><div class="wm">HBC <span>FIELD</span></div><div class="ln" id="endLn">Never miss a date.<br><i>Never lose a contract.</i></div><div class="cta" id="endCta">Try it free for 14 days</div><div class="url">hbcfield.com</div></div>
+  <canvas id="grain" width="270" height="480"></canvas>
+  <div id="scan"></div><div id="tear"></div>
+  <div id="vig"></div>
+</div>
+<div class="bar" id="barT"></div><div class="bar" id="barB"></div>
+<div class="abs" id="osd">◀◀ REWIND</div><div class="abs" id="tc">00:00:30</div>
+<div class="abs" id="note"><img src="logo.svg"><div class="tx"><b><span>HBCFIELD</span><span id="noteNow">now</span></b><span id="noteTx"><strong>Driving licence expires in 30 days.</strong><br>Reminder sent to Mike Weber.</span></div></div>
+<div class="abs" id="sub"></div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const $=id=>document.getElementById(id);
+const WIDE=innerWidth>innerHeight, DE=TL.lang==='de';
+const L=DE?{days:'TAGE ÜBRIG',day:'TAG ÜBRIG',ttl:'FÜHRERSCHEIN<small>DRIVING LICENCE · PERMIS</small>',stamp:'ABGELAUFEN',hit1:'AUDIT<br>DURCHGEFALLEN',hit2:'AUFTRAG<br>VERLOREN',
+  osd:'◀◀ ZURÜCKSPULEN',tc:'TAG -',doc:'Aus dem Dokument gelesen',now:'jetzt',note:'<strong>Führerschein läuft in 30 Tagen ab.</strong><br>Erinnerung an Mike Weber gesendet.',renew:'VERLÄNGERT ✓',
+  nothing:'NICHTS<br><i>VERLOREN.</i>',endLn:'Nie wieder eine Frist verpassen.<br><i>Nie wieder einen Auftrag verlieren.</i>',cta:'Jetzt 14 Tage kostenlos testen'}
+ :{days:'DAYS LEFT',day:'DAYS LEFT',ttl:null,stamp:null,hit1:null,hit2:null,osd:null,tc:'DAY -',doc:null,now:null,note:null,renew:null,nothing:null,endLn:null,cta:null};
+if(WIDE)document.documentElement.classList.add('wide');
+if(DE){document.documentElement.classList.add('de');document.documentElement.lang='de';
+  for(const [id,k] of [['ttl','ttl'],['stamp','stamp'],['hit1','hit1'],['hit2','hit2'],['osd','osd'],['docT','doc'],['noteNow','now'],['noteTx','note'],['renew','renew'],['nothing','nothing'],['endLn','endLn'],['endCta','cta']])$(id).innerHTML=L[k];}
+if(WIDE){$('grain').width=480;$('grain').height=270;}
+// the card's resting spot; in landscape it moves right to make room for the number
+const CARD=WIDE?{x0:540,x1:1000,y:230}:{x0:120,x1:120,y:400};
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=t=>1-Math.pow(1-clamp(t),3),eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const spring=t=>{t=Math.max(0,t);return 1-Math.exp(-7*t)*Math.cos(11*t)};
+const st=i=>P[i].start,en=i=>P[i].end;
+const vis=(el,o)=>{el.style.opacity=clamp(o)};
+const tf=(el,x,y,s=1,r=0)=>{el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`};
+// window of each beat
+const T={n30:st(0),n7:st(1),n1:st(2),lic:st(3),audit:st(4),lost:st(5),rw:st(6),out:st(7),rem:st(8)+.05,ren:st(9),noth:st(10),end:st(11)-.25};
+window.SFX=[
+  {t:T.n30,s:'s490',v:.95},{t:T.n7,s:'s490',v:.95},{t:T.n1,s:'s490',v:1},
+  {t:T.lic,s:'s493',v:.55,d:3.3},
+  {t:T.audit,s:'s490',v:.9},
+  {t:T.lost,s:'s1457',v:.75},
+  {t:T.rw-.05,s:'s1092',v:.8},
+  {t:T.rem,s:'s951',v:.55},
+  {t:T.ren,s:'s2870',v:.5}
+];
+const gctx=$('grain').getContext('2d'),gimg=gctx.createImageData($('grain').width,$('grain').height);
+function grain(seed){let s=seed*9301+49297;for(let i=0;i<gimg.data.length;i+=4){s=(s*9301+49297)%233280;const v=s/233280*255;gimg.data[i]=gimg.data[i+1]=gimg.data[i+2]=v;gimg.data[i+3]=255}gctx.putImageData(gimg,0,0)}
+function heart(t,a){const k=(t-a);return k<0?0:Math.exp(-k*6)*Math.abs(Math.sin(k*18))*(k<.6?1:0)}
+
+function render(t,frame){
+  grain(frame%9+1);
+  const green=t>=T.out-.2;
+  // ---- countdown number
+  const num=$('num'),unit=$('unit');
+  let n=null,col='#ef4444',ns=1,no=0,uo=0;
+  if(t<T.lic-.1){ const beats=[[T.n30,30],[T.n7,7],[T.n1,1]];let cur=null;for(const b of beats)if(t>=b[0]-.05)cur=b;
+    if(cur){n=cur[1];const k=(t-cur[0]+.05)/.35;ns=lerp(1.35,1,spring(k))+.07*heart(t,cur[0]+.25);no=clamp(k*4)*(1-clamp((t-(T.lic-.35))/.25));uo=no}}
+  else if(t>=T.rw&&t<T.out-.2){ const k=eio((t-T.rw-.3)/1.5);n=Math.round(lerp(0,30,k));no=clamp((t-T.rw)*4);uo=no;col='#fff'}
+  else if(t>=T.out-.2&&t<T.out+1.6){ n=30;col='#4ade80';const k=(t-T.out+.2)/.4;no=clamp(k*3)*(1-clamp((t-T.out-1.25)/.35));ns=lerp(1.12,1,eo(k));uo=no}
+  if(n!==null)num.textContent=n;num.style.color=col;unit.style.color=green?'#4ade80':'#fff';unit.textContent=n===1?L.day:L.days;
+  vis(num,no);vis(unit,uo);tf(num,0,0,ns);
+  // ---- licence card (red phase, and again green)
+  const card=$('card');let co=0,cy=0,cs=1,cr=0;
+  if(t>=T.lic-.1&&t<T.rw+.9){const k=(t-T.lic+.1)/.6;co=clamp(k*2)*(1-clamp((t-T.lost-.1)/.25));cy=lerp(160,0,eo(k));cs=lerp(.92,1,eo(k))+.012*heart(t%0.55+100,100);cr=lerp(-4,-2,eo(k))}
+  if(t>=T.rw+.2&&t<T.out+1.3){const k=1-clamp((t-T.rw-.2)/.9);co=Math.max(co,k*.9);cy=lerp(0,160,1-k)}
+  if(t>=T.out+1.3&&t<T.noth-.1){const k=(t-T.out-1.3)/.6;co=clamp(k*2)*(1-clamp((t-T.noth+.35)/.25));cy=lerp(160,70,eo(k));cr=lerp(-3,-1.5,eo(k))}
+  if(t>=T.audit)co*=lerp(1,.3,clamp((t-T.audit)/.15));vis(card,co);tf(card,0,cy,cs,cr);
+  const cx=WIDE?lerp(CARD.x0,CARD.x1,eio((t-T.rem+.1)/.5)):CARD.x0;if(WIDE){card.style.left=cx+'px';$('doc').style.left=(cx+20)+'px';}
+  if(WIDE||DE){for(const id of ['stamp','renew']){const e=$(id);e.style.left=(cx+(840-e.offsetWidth)/2)+'px';e.style.top=(CARD.y+160)+'px';}}
+  const exp=$('exp');const expired=t>=T.lic+1.6&&t<T.rw+.9,renewed=t>=T.ren;
+  exp.textContent=renewed?'30.09.2036':'30.09.2026';
+  exp.style.background=renewed?'#22c55e':expired?'#dc2626':(t>=T.out+1.3?'#fde68a':'transparent');exp.style.color=renewed||expired?'#fff':'#1f2440';
+  // EXPIRED stamp
+  const sk=(t-(T.lic+2.2))/.2;const so=sk>0&&t<T.lost?1:0;vis($('stamp'),so*(1-clamp((t-T.audit+.15)/.2)));tf($('stamp'),0,0,sk<0?2.8:lerp(2.8,1,clamp(sk)),-12);
+  // AUDIT FAILED
+  const ak=(t-T.audit)/.18;vis($('hit1'),ak>0&&t<T.lost-.05?1:0);tf($('hit1'),Math.sin(t*70)*(ak>0&&ak<3?10:0),0,ak<0?1.6:lerp(1.6,1,clamp(ak)));
+  // CONTRACT LOST + flood
+  const lk=(t-T.lost)/.15,inLost=t>=T.lost&&t<T.rw;
+  $('flood').style.opacity=inLost?(.92-.25*clamp((t-T.lost-.4)/1.5)):0;
+  vis($('hit2'),inLost?1:0);tf($('hit2'),Math.sin(t*80)*(lk>0&&lk<4?16:0),Math.cos(t*63)*(lk>0&&lk<4?8:0),lk<0?1.5:lerp(1.5,1,clamp(lk)));
+  const sh=(ak>0&&ak<2)||(lk>0&&lk<3)?1:0;$('screen').style.transform=`translate(${Math.sin(t*90)*14*sh}px,${Math.cos(t*77)*10*sh}px)`;
+  // ---- rewind VHS
+  const rw=t>=T.rw&&t<T.out-.2;
+  $('scan').style.opacity=rw?1:(inLost?.35:0);$('scan').style.backgroundPositionY=(t*900)+'px';
+  $('tear').style.opacity=rw?1:0;$('tear').style.top=((t*1400)%1920)+'px';
+  vis($('osd'),rw&&Math.floor(t*3)%2===0?1:rw?.85:0);vis($('tc'),rw?1:0);
+  if(rw){const k=eio((t-T.rw-.3)/1.5);$('tc').textContent=L.tc+String(Math.round(lerp(0,30,k))).padStart(2,'0')}
+  num.style.textShadow=rw?`${10+6*Math.sin(t*40)}px 0 #ff2a55,${-10-6*Math.sin(t*40)}px 0 #22d3ee`:'none';
+  // ---- calm green: read-from-document, reminder, renewed
+  const dk=(t-(T.out+2.2))/.4;vis($('doc'),clamp(dk*2)*(1-clamp((t-T.ren+.1)/.3)));tf($('doc'),lerp(-40,0,eo(dk)),0);
+  const note=$('note'),rk=(t-T.rem)/.45;vis(note,clamp(rk*3)*(1-clamp((t-T.noth+.3)/.25)));tf(note,0,lerp(-220,0,eo(rk)));
+  const nk=(t-T.ren)/.22;vis($('renew'),nk>0&&t<T.noth-.1?1:0);tf($('renew'),0,120,nk<0?2.6:lerp(2.6,1,clamp(nk)),-8);
+  const tint=$('tint');tint.style.background=green?'radial-gradient(ellipse at 50% 45%,rgba(34,197,94,.22),transparent 65%)':'radial-gradient(ellipse at 50% 45%,rgba(239,68,68,.28),transparent 65%)';
+  tint.style.opacity=t<T.lic?heart(t,[T.n30,T.n7,T.n1].filter(x=>x<=t).pop()||0)*1.2:(t<T.rw?.5+.4*Math.abs(Math.sin(t*5.7)):green?.8:0);
+  // NOTHING LOST
+  const hk=(t-T.noth)/.3;vis($('nothing'),hk>0&&t<T.end?clamp(hk*3)*(1-clamp((t-T.end+.2)/.2)):0);tf($('nothing'),0,0,lerp(1.4,1,spring(hk)));
+  // end card
+  const ek=(t-T.end)/.5;vis($('end'),clamp(ek*2));
+  $('end').querySelectorAll(':scope>*').forEach((e,i)=>{const k=(t-T.end-i*.12)/.45;e.style.transform=`translateY(${lerp(50,0,eo(k))}px) scale(${lerp(.85,1,spring(k))})`;e.style.opacity=clamp(k*2)});
+  // subtitles (cinematic, lower third) — hidden on the big-word beats
+  const sub=$('sub');let cur=null;for(let i=0;i<P.length;i++)if(t>=P[i].start-.05&&t<=P[i].end+.35)cur=i;
+  const hide=[0,1,2,4,5,6,10,11];
+  if(cur!==null&&!hide.includes(cur)){sub.textContent=P[cur].text.replace('HBCField','HBC Field');vis(sub,1)}else vis(sub,0);
+}
+async function preload(){await document.fonts.ready;for(const im of document.images)await im.decode().catch(()=>{});}
+window.__ready=preload();window.render=render;
+</script></body></html>

@@ -1,0 +1,53 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Der Kunde sagt, Sie waren nie da.",
+   "pause": 0.35
+  },
+  {
+   "text": "Kein Beweis.",
+   "pause": 0.15
+  },
+  {
+   "text": "Nur Ihr Wort gegen seins,",
+   "pause": 0
+  },
+  {
+   "text": "und eine Rechnung, die keiner zahlt.",
+   "pause": 0.5
+  },
+  {
+   "text": "Es sei denn, jeder Auftrag hinterlässt Beweise.",
+   "pause": 0.35
+  },
+  {
+   "text": "Ankunft, per GPS bestätigt.",
+   "pause": 0.3
+  },
+  {
+   "text": "Fotos, vorher und nachher.",
+   "pause": 0.3
+  },
+  {
+   "text": "Eine Unterschrift, direkt vor Ort.",
+   "pause": 0.4
+  },
+  {
+   "text": "Fall abgeschlossen.",
+   "pause": 0.2
+  },
+  {
+   "text": "Rechnung bezahlt.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jeder Auftrag, bewiesen.",
+   "pause": 0.2
+  },
+  {
+   "text": "Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

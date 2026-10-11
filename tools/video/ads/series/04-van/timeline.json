@@ -1,0 +1,128 @@
+{
+ "phrases": [
+  {
+   "text": "A fuel receipt from last month.",
+   "start": 0.3,
+   "end": 2.053,
+   "wordStarts": [
+    0.3,
+    0.509,
+    0.811,
+    1.171,
+    1.357,
+    1.67
+   ]
+  },
+  {
+   "text": "A speeding fine on the twenty-first.",
+   "start": 2.454,
+   "end": 4.706,
+   "wordStarts": [
+    2.454,
+    2.605,
+    3.116,
+    3.545,
+    3.661,
+    3.766
+   ]
+  },
+  {
+   "text": "Who had the van?",
+   "start": 5.366,
+   "end": 6.725,
+   "wordStarts": [
+    5.366,
+    5.738,
+    6.016,
+    6.179
+   ]
+  },
+  {
+   "text": "Nobody knows.",
+   "start": 7.285,
+   "end": 8.295,
+   "wordStarts": [
+    7.285,
+    7.784
+   ]
+  },
+  {
+   "text": "HBCField does.",
+   "start": 8.957,
+   "end": 10.617,
+   "wordStarts": [
+    8.957,
+    10.06
+   ]
+  },
+  {
+   "text": "It knows who held every van, on every day.",
+   "start": 11.115,
+   "end": 14.47,
+   "wordStarts": [
+    11.115,
+    11.324,
+    11.684,
+    11.904,
+    12.311,
+    12.775,
+    13.205,
+    13.518,
+    13.948
+   ]
+  },
+  {
+   "text": "The receipt is photographed at the pump.",
+   "start": 15.134,
+   "end": 17.467,
+   "wordStarts": [
+    15.134,
+    15.331,
+    15.842,
+    16.016,
+    16.678,
+    16.84,
+    16.979
+   ]
+  },
+  {
+   "text": "The fine finds its driver.",
+   "start": 17.895,
+   "end": 19.648,
+   "wordStarts": [
+    17.895,
+    18.104,
+    18.452,
+    18.812,
+    19.021
+   ]
+  },
+  {
+   "text": "Every euro has a name.",
+   "start": 20.269,
+   "end": 22.126,
+   "wordStarts": [
+    20.269,
+    20.652,
+    21.162,
+    21.464,
+    21.592
+   ]
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "start": 22.928,
+   "end": 27.084,
+   "wordStarts": [
+    22.928,
+    24.855,
+    25.204,
+    25.331,
+    25.656,
+    25.83,
+    26.376
+   ]
+  }
+ ],
+ "duration": 29.08
+}

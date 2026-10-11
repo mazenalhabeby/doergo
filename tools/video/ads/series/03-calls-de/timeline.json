@@ -1,0 +1,141 @@
+{
+ "phrases": [
+  {
+   "text": "Wann kommt er denn?",
+   "start": 0.3,
+   "end": 1.6,
+   "wordStarts": [
+    0.3,
+    0.66,
+    1.043,
+    1.148
+   ]
+  },
+  {
+   "text": "Ist es schon erledigt?",
+   "start": 1.828,
+   "end": 3.256,
+   "wordStarts": [
+    1.828,
+    2.095,
+    2.188,
+    2.443
+   ]
+  },
+  {
+   "text": "Haben Sie meine E-Mail bekommen?",
+   "start": 3.519,
+   "end": 5.074,
+   "wordStarts": [
+    3.519,
+    3.832,
+    3.96,
+    4.204,
+    4.482
+   ]
+  },
+  {
+   "text": "Drei\u00dfig Anrufe am Tag,",
+   "start": 5.522,
+   "end": 7.159,
+   "wordStarts": [
+    5.522,
+    6.253,
+    6.741,
+    6.903
+   ]
+  },
+  {
+   "text": "und keiner davon ist Arbeit.",
+   "start": 7.205,
+   "end": 8.9,
+   "wordStarts": [
+    7.205,
+    7.426,
+    7.832,
+    8.169,
+    8.401
+   ]
+  },
+  {
+   "text": "Oder.",
+   "start": 9.528,
+   "end": 10.12,
+   "wordStarts": [
+    9.528
+   ]
+  },
+  {
+   "text": "Ihr Kunde sieht es selbst.",
+   "start": 11.208,
+   "end": 12.67,
+   "wordStarts": [
+    11.208,
+    11.405,
+    11.765,
+    11.997,
+    12.09
+   ]
+  },
+  {
+   "text": "Unterwegs. Ankunft in vierzehn Minuten.",
+   "start": 13.052,
+   "end": 16.117,
+   "wordStarts": [
+    13.052,
+    14.34,
+    15.037,
+    15.176,
+    15.641
+   ]
+  },
+  {
+   "text": "Erledigt. Bericht im Anhang.",
+   "start": 16.575,
+   "end": 18.908,
+   "wordStarts": [
+    16.575,
+    17.655,
+    18.119,
+    18.304
+   ]
+  },
+  {
+   "text": "Ihr Telefon bleibt still.",
+   "start": 19.738,
+   "end": 21.409,
+   "wordStarts": [
+    19.738,
+    19.993,
+    20.597,
+    20.887
+   ]
+  },
+  {
+   "text": "Ihr Team kann arbeiten.",
+   "start": 21.881,
+   "end": 23.402,
+   "wordStarts": [
+    21.881,
+    22.183,
+    22.508,
+    22.787
+   ]
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "start": 23.983,
+   "end": 27.838,
+   "wordStarts": [
+    23.983,
+    25.144,
+    25.574,
+    26.026,
+    26.41,
+    27.083
+   ]
+  }
+ ],
+ "duration": 29.84,
+ "lang": "de"
+}

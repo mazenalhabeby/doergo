@@ -1,0 +1,158 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=JetBrains+Mono:wght@800&display=swap">
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#161616}
+body{font-family:"Barlow Condensed",sans-serif;color:#f5f5f0}
+#world{position:absolute;inset:0;transform-origin:540px 760px;background:radial-gradient(ellipse at 50% 40%,#2a2a28 0%,#161616 55%,#0b0b0b 100%)}
+#top{position:absolute;left:70px;right:70px;top:150px;display:flex;justify-content:space-between;align-items:center}
+#top .t{font:800 34px/1 "Barlow Condensed",sans-serif;letter-spacing:.22em;color:#d4d4cf}
+#top .t b{color:#fde047;font-weight:800}
+#clock{font:800 44px/1 "JetBrains Mono",monospace;color:#fde047;background:#0a0a0a;border-radius:10px;padding:10px 16px;box-shadow:inset 0 0 0 2px #2b2b2b}
+#panel{position:absolute;left:40px;right:40px;top:250px;height:1000px;background:#0c0c0c;border-radius:26px;box-shadow:0 40px 80px rgba(0,0,0,.6),inset 0 0 0 3px #262626,inset 0 3px 0 #333}
+.screw{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#6b6b6b,#2a2a2a)}
+.row{position:absolute;left:30px;height:104px;display:flex;gap:6px;align-items:center}
+.lamp{position:absolute;left:-22px;width:12px;height:12px;border-radius:50%;background:#262626}
+.c{position:relative;width:61px;height:104px;border-radius:7px;background:#1c1c1c;perspective:500px;box-shadow:0 3px 0 #050505}
+.h{position:absolute;left:0;right:0;height:52px;overflow:hidden;background:#222;backface-visibility:hidden}
+.h span{position:absolute;left:0;right:0;height:104px;display:grid;place-items:center;font:800 70px/1 "JetBrains Mono",monospace}
+.h.top{top:0;border-radius:7px 7px 0 0;transform-origin:50% 100%;background:linear-gradient(#262626,#1f1f1f)}
+.h.bot{top:52px;border-radius:0 0 7px 7px;transform-origin:50% 0;background:linear-gradient(#1b1b1b,#171717)}
+.h.bot span{top:-52px}
+.c::after{content:"";position:absolute;left:0;right:0;top:51px;height:2px;background:#050505;z-index:5}
+#foot{position:absolute;left:0;right:0;top:1290px;text-align:center}
+#sub{position:absolute;left:90px;right:90px;top:1310px;text-align:center;font:700 46px/1.15 "Barlow Condensed",sans-serif;letter-spacing:.06em;color:#a3a39c;text-transform:uppercase}
+#url{font:800 46px/1 "Barlow Condensed",sans-serif;letter-spacing:.08em;color:#e5e5e0}
+#logo{position:absolute;left:50%;width:150px;height:150px;margin-left:-75px;top:300px}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+/* 16:9 — a wide departure board filling the frame, subtitles underneath */
+html.wide,html.wide body{width:1920px;height:1080px}
+html.wide #world{transform-origin:960px 540px}
+html.wide #top{left:100px;right:100px;top:78px}
+html.wide #top .t{font-size:30px}
+html.wide #clock{font-size:36px;padding:8px 14px}
+html.wide #panel{left:100px;right:100px;top:140px;height:780px}
+html.wide .row{height:96px}
+html.wide .c{width:90px;height:96px}
+html.wide .h{height:48px}
+html.wide .h span{height:96px;font-size:66px}
+html.wide .h.bot{top:48px}
+html.wide .h.bot span{top:-48px}
+html.wide .c::after{top:47px}
+html.wide #sub{left:100px;right:100px;top:942px;font-size:40px}
+html.wide #foot{top:948px}
+html.wide #url{font-size:42px}
+html.wide #logo{width:130px;height:130px;margin-left:-65px}
+</style></head><body>
+<div id="world">
+  <div id="top"><div class="t" id="toptxt">NIGHT SHIFT · <b>BOARD</b></div><div id="clock">17:20</div></div>
+  <div id="panel"></div>
+  <img id="logo" src="logo.svg">
+  <div id="sub"></div><div id="foot"><div id="url">hbcfield.com</div></div>
+</div>
+<div id="flash"></div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const WIDE=innerWidth>innerHeight;if(WIDE)document.documentElement.classList.add('wide');
+// Board words per language. Each row holds 14 cells, so every string fits in 14 characters.
+const L=({
+ en:{top0:'NIGHT SHIFT · <b>BOARD</b>',top1:'HBCFIELD · <b>SHIFT BOARD</b>',
+  clockIn:'CLOCK IN 17:25',shift:'SHIFT    18:00',who:'WHO PAYS FOR',min:'   35 MIN?',day:'× EVERY DAY',person:'× EVERY PERSON',
+  counts:'  COUNTS THE',shiftW:'    SHIFT',notThe:'   NOT THE',carPark:'   CAR PARK',counted:'COUNTED  18:00',early:'EARLY  NOTED',
+  overtime:'OVERTIME',approved:'  APPROVED ✓',timesheet:'TIMESHEET',ready:'    READY ✓',countWhat:'  COUNT WHAT',countsEnd:'    COUNTS',free:'FREE · 14 DAYS'},
+ de:{top0:'NACHTSCHICHT · <b>TAFEL</b>',top1:'HBCFIELD · <b>SCHICHTTAFEL</b>',
+  clockIn:'KOMMEN   17:25',shift:'SCHICHT  18:00',who:'WER ZAHLT DIE',min:'   35 MIN?',day:'× JEDEN TAG',person:'× JEDE PERSON',
+  counts:'  ZÄHLT DIE',shiftW:'   SCHICHT',notThe:'   NICHT DEN',carPark:'  PARKPLATZ',counted:'GEZÄHLT  18:00',early:'FRÜH  NOTIERT',
+  overtime:'ÜBERSTUNDEN',approved:'FREIGEGEBEN ✓',timesheet:'STUNDENZETTEL',ready:'    FERTIG ✓',countWhat:' ZÄHLEN, WAS',countsEnd:'    ZÄHLT',free:'14 TAGE GRATIS'},
+})[TL.lang==='de'?'de':'en'];
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-clamp(k),3);
+const st=i=>P[i].start,en=i=>P[i].end;
+const COLS=14,ROWS=7,ROWY=i=>WIDE?30+i*104:40+i*134;
+const COL={w:'#f5f5f0',d:'#8a8a84',y:'#fde047',g:'#4ade80',r:'#f87171',b:'#93c5fd'};
+// Each row's states over time: [time, text, colour]
+const R=Array.from({length:ROWS},()=>[[-1,'','w']]);
+const set=(t,rows)=>rows.forEach((v,i)=>{if(v!==null)R[i].push([t,v[0],v[1]||'w'])});
+// A — the problem
+set(st(0)+.1,[[L.clockIn,'w'],null,null,null,null,null,null]);
+set(st(1),[null,[L.shift,'w'],null,null,null,null,null]);
+set(st(2)+.2,[null,null,null,[L.who,'w'],null,null,null]);
+set(st(2)+1.3,[null,null,null,null,[L.min,'r'],null,null]);
+set(st(3),[null,null,null,null,null,[L.day,'w'],null]);
+set(st(3)+1.35,[null,null,null,null,null,null,[L.person,'w']]);
+// B — the turn
+set(st(4)-.05,[['',''],['   HBCFIELD','b'],[L.counts,'w'],[L.shiftW,'y'],['',''],['',''],['','']]);
+set(st(5),[null,null,null,null,null,[L.notThe,'d'],[L.carPark,'d']]);
+// C — what it does
+set(st(6)-.1,[[L.clockIn,'d'],[L.counted,'y'],['',''],['',''],['',''],['',''],['','']]);
+set(st(6)+.9,[null,null,[L.early,'d'],null,null,null,null]);
+set(st(7),[null,null,null,[L.overtime,'w'],null,null,null]);
+set(st(7)+1.0,[null,null,null,null,[L.approved,'g'],null,null]);
+set(st(8)+.1,[null,null,null,null,null,[L.timesheet,'w'],null]);
+set(st(8)+1.2,[null,null,null,null,null,null,[L.ready,'g']]);
+// D — end card
+set(st(9)-.1,[['',''],['',''],['   HBCFIELD','w'],['',''],[L.countWhat,'y'],[L.countsEnd,'y'],['','']]);
+set(st(10),[null,null,null,null,null,null,[L.free,'g']]);
+
+const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:·'+(TL.lang==='de'?'ÄÖÜ':'');
+const DT=.065;
+const cells=[];
+function build(){const pan=$('panel');
+  const pw=WIDE?1720:1000,ph=WIDE?780:1000;for(const [x,y] of [[16,16],[pw-32,16],[16,ph-32],[pw-32,ph-32]]){const s=document.createElement('div');s.className='screw';s.style.left=x+'px';s.style.top=y+'px';pan.appendChild(s);}
+  for(let r=0;r<ROWS;r++){const row=document.createElement('div');row.className='row';row.style.top=ROWY(r)+'px';if(WIDE)row.style.left=Math.round((1720-(COLS*90+(COLS-1)*6))/2)+'px';
+    const lamp=document.createElement('div');lamp.className='lamp';row.appendChild(lamp);row._lamp=lamp;
+    cells.push([]);
+    for(let c=0;c<COLS;c++){const e=document.createElement('div');e.className='c';
+      e.innerHTML='<div class="h top s1"><span></span></div><div class="h bot s2"><span></span></div><div class="h top f1"><span></span></div><div class="h bot f2"><span></span></div>';
+      e._s=[...e.querySelectorAll('span')];e._h=[...e.querySelectorAll('.h')];row.appendChild(e);cells[r].push(e);}
+    pan.appendChild(row);cells[r]._row=row;}}
+const ch=(s,c)=>{const v=(s||'').padEnd(COLS);return v[c]===' '?'':v[c]};
+function stateAt(r,t){const S=R[r];let i=0;for(let k=0;k<S.length;k++)if(S[k][0]<=t)i=k;return i}
+// what one cell shows at time t: [current char, next char, progress 0..1 (or -1 = still), colour]
+function cellAt(r,c,t){const S=R[r],i=stateAt(r,t),[T,txt,col]=S[i];const prev=i>0?ch(S[i-1][1],c):'',tgt=ch(txt,c);
+  const pcol=i>0?S[i-1][2]:'w';
+  if(prev===tgt)return [tgt,tgt,-1,tgt?col:pcol];
+  const n=3+((c*7+r*3)%5),Ts=T+c*.03;
+  if(t<Ts)return [prev,prev,-1,pcol];
+  const seq=[prev];for(let k=1;k<n;k++)seq.push(A[(c*11+r*5+k*7+Math.floor(T*10))%A.length]);seq.push(tgt);
+  const x=(t-Ts)/DT;const idx=Math.floor(x);if(idx>=seq.length-1)return [tgt,tgt,-1,col];
+  return [seq[idx],seq[idx+1],x-idx,col];}
+function drawCell(e,[a,b,p,col]){const [s1,s2,f1,f2]=e._s,[h1,h2,h3,h4]=e._h;const cc=COL[col]||COL.w;
+  if(p<0){s1.textContent=s2.textContent=a;s1.style.color=s2.style.color=cc;h3.style.display=h4.style.display='none';return}
+  // static: top shows NEXT, bottom shows CURRENT; flaps: top CURRENT folds down, bottom NEXT unfolds
+  s1.textContent=b;s2.textContent=a;f1.textContent=a;f2.textContent=b;[s1,s2,f1,f2].forEach(s=>s.style.color=cc);
+  h3.style.display=h4.style.display='block';
+  if(p<.5){h3.style.transform=`rotateX(${-180*p}deg)`;h3.style.filter=`brightness(${1-p})`;h4.style.display='none'}
+  else{h3.style.display='none';h4.style.transform=`rotateX(${180*(1-p)}deg)`;h4.style.filter=`brightness(${.5+p/2})`}}
+
+function render(t,frame){
+  for(let r=0;r<ROWS;r++){let lit='';for(let c=0;c<COLS;c++){const v=cellAt(r,c,t);drawCell(cells[r][c],v);if(v[0])lit=v[3]}
+    const L=cells[r]._row._lamp;L.style.background=lit?(COL[lit]):'#262626';L.style.boxShadow=lit?`0 0 14px ${COL[lit]}`:'none'}
+  // camera: slow push per phase, a kick on each big re-flip
+  const phases=[0,st(4)-.05,st(6)-.1,st(9)-.1,TL.duration];let ph=0;for(let i=0;i<4;i++)if(t>=phases[i])ph=i;
+  const k=(t-phases[ph])/(phases[ph+1]-phases[ph]);const kick=Math.max(0,1-(t-phases[ph])/.25)*(ph?1:0);
+  $('world').style.transform=`scale(${1+.035*k+.02*kick}) translateY(${kick*-10}px)`;
+  $('flash').style.opacity=.18*kick;
+  // clock: the minutes the story is about
+  const clk=t<st(1)?'17:25':t<st(4)?'18:00':t<st(9)?'06:00':'—';$('clock').textContent=t<st(0)+.2?'17:20':clk;
+  $('toptxt').innerHTML=t<st(4)-.05?L.top0:t<st(9)-.1?L.top1:'HBCFIELD';
+  // end card: logo + address
+  const e=(t-st(9)+.1)/.5;$('logo').style.opacity=clamp(e);$('logo').style.transform=`scale(${lerp(.6,1,eo(e))})`;$('logo').style.top=WIDE?'182px':'290px';
+  $('url').style.opacity=clamp((t-st(10))/.4);
+  let cur=null;for(const p of P)if(t>=p.start-.1&&t<p.end+.35)cur=p;
+  const sb=$('sub');sb.textContent=cur&&t<st(9)-.1?cur.text:'';sb.style.opacity=cur?clamp((t-cur.start+.1)/.2)*clamp((cur.end+.35-t)/.2):0;
+  // on the end card the board rows 0–1 give way to the logo
+  $('panel').style.opacity=1;
+  for(const r of [0,1])cells[r]._row.style.opacity=t>st(9)-.1?0:1;
+}
+// sound: a clatter where a row flips, a chime where it turns green, a whoosh on the big re-flips
+const SFX=[];
+for(let r=0;r<ROWS;r++)R[r].forEach(([T,txt,col],i)=>{if(i===0)return;const prev=R[r][i-1][1]||'';if((prev||'').trim()===(txt||'').trim())return;
+  SFX.push({t:T,s:r%2?'s275':'s1109',v:.2,d:.4});if((txt||'').trim().length>6)SFX.push({t:T+.22,s:'s275',v:.16,d:.35});
+  if(col==='g')SFX.push({t:T+.55,s:'s2870',v:.35,d:1.4});});
+for(const T of [st(4)-.25,st(9)-.3])SFX.push({t:T,s:'s1492',v:.4,d:1.1});
+SFX.sort((a,b)=>a.t-b.t);
+window.SFX=SFX.filter(x=>x.t>=0);
+build();
+window.__ready=Promise.all([document.fonts.ready,$('logo').decode().catch(()=>{})]);window.render=render;
+</script></body></html>

@@ -1,0 +1,134 @@
+{
+ "phrases": [
+  {
+   "text": "Thirty days.",
+   "start": 0.3,
+   "end": 1.148,
+   "wordStarts": [
+    0.3,
+    0.695
+   ]
+  },
+  {
+   "text": "Seven.",
+   "start": 1.537,
+   "end": 2.024,
+   "wordStarts": [
+    1.537
+   ]
+  },
+  {
+   "text": "One.",
+   "start": 2.344,
+   "end": 2.82,
+   "wordStarts": [
+    2.344
+   ]
+  },
+  {
+   "text": "The driving licence expired, and nobody noticed.",
+   "start": 3.534,
+   "end": 7.005,
+   "wordStarts": [
+    3.534,
+    3.696,
+    4.079,
+    4.579,
+    5.333,
+    5.589,
+    6.25
+   ]
+  },
+  {
+   "text": "The audit failed.",
+   "start": 7.572,
+   "end": 8.698,
+   "wordStarts": [
+    7.572,
+    7.781,
+    8.234
+   ]
+  },
+  {
+   "text": "The contract is gone.",
+   "start": 8.921,
+   "end": 10.431,
+   "wordStarts": [
+    8.921,
+    9.038,
+    9.606,
+    9.85
+   ]
+  },
+  {
+   "text": "Rewind.",
+   "start": 11.46,
+   "end": 12.331,
+   "wordStarts": [
+    11.46
+   ]
+  },
+  {
+   "text": "Thirty days out, HBCField read the date from the document,",
+   "start": 13.512,
+   "end": 16.948,
+   "wordStarts": [
+    13.512,
+    13.895,
+    14.173,
+    14.545,
+    15.508,
+    15.717,
+    15.834,
+    16.077,
+    16.263,
+    16.379
+   ]
+  },
+  {
+   "text": "and sent the reminder.",
+   "start": 16.971,
+   "end": 18.585,
+   "wordStarts": [
+    16.971,
+    17.308,
+    17.679,
+    17.842
+   ]
+  },
+  {
+   "text": "Renewed. On time.",
+   "start": 19.466,
+   "end": 20.824,
+   "wordStarts": [
+    19.466,
+    20.081,
+    20.336
+   ]
+  },
+  {
+   "text": "Nothing lost.",
+   "start": 21.152,
+   "end": 22.313,
+   "wordStarts": [
+    21.152,
+    21.697
+   ]
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "start": 23.01,
+   "end": 26.702,
+   "wordStarts": [
+    23.01,
+    24.577,
+    24.902,
+    25.053,
+    25.367,
+    25.541,
+    26.005
+   ]
+  }
+ ],
+ "duration": 28.7
+}

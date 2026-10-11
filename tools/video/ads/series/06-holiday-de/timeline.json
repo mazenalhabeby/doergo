@@ -1,0 +1,127 @@
+{
+ "phrases": [
+  {
+   "text": "Anna nimmt die zweite Woche frei.",
+   "start": 0.3,
+   "end": 2.401,
+   "wordStarts": [
+    0.3,
+    0.695,
+    0.904,
+    1.066,
+    1.507,
+    1.809
+   ]
+  },
+  {
+   "text": "Mike auch.",
+   "start": 2.961,
+   "end": 4.053,
+   "wordStarts": [
+    2.961,
+    3.449
+   ]
+  },
+  {
+   "text": "Jetzt ist niemand vor Ort,",
+   "start": 4.771,
+   "end": 6.164,
+   "wordStarts": [
+    4.771,
+    5.131,
+    5.27,
+    5.595,
+    5.769
+   ]
+  },
+  {
+   "text": "und Sie merken es erst am Montag.",
+   "start": 6.303,
+   "end": 8.3,
+   "wordStarts": [
+    6.303,
+    6.477,
+    6.628,
+    6.977,
+    7.139,
+    7.418,
+    7.557
+   ]
+  },
+  {
+   "text": "HBCField zeigt die L\u00fccke, bevor Sie Ja sagen.",
+   "start": 9.067,
+   "end": 12.179,
+   "wordStarts": [
+    9.067,
+    10.228,
+    10.518,
+    10.646,
+    10.936,
+    11.238,
+    11.366,
+    11.598
+   ]
+  },
+  {
+   "text": "Eine Woche verschieben,",
+   "start": 12.796,
+   "end": 14.166,
+   "wordStarts": [
+    12.796,
+    13.155,
+    13.446
+   ]
+  },
+  {
+   "text": "und die Zeile wird gr\u00fcn.",
+   "start": 14.363,
+   "end": 16.151,
+   "wordStarts": [
+    14.363,
+    14.537,
+    14.723,
+    15.187,
+    15.489
+   ]
+  },
+  {
+   "text": "Alle bekommen ihren Urlaub.",
+   "start": 16.818,
+   "end": 18.861,
+   "wordStarts": [
+    16.818,
+    17.213,
+    17.758,
+    18.118
+   ]
+  },
+  {
+   "text": "Die Arbeit wird trotzdem erledigt.",
+   "start": 19.274,
+   "end": 21.504,
+   "wordStarts": [
+    19.274,
+    19.553,
+    20.087,
+    20.238,
+    20.911
+   ]
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "start": 22.085,
+   "end": 26.195,
+   "wordStarts": [
+    22.085,
+    23.699,
+    24.001,
+    24.418,
+    24.778,
+    25.44
+   ]
+  }
+ ],
+ "duration": 28.33,
+ "lang": "de"
+}

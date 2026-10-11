@@ -1,0 +1,52 @@
+{
+ "phrases": [
+  {
+   "text": "The customer says you were never there.",
+   "pause": 0.35
+  },
+  {
+   "text": "No proof.",
+   "pause": 0.15
+  },
+  {
+   "text": "Just your word against theirs,",
+   "pause": 0
+  },
+  {
+   "text": "and an invoice nobody pays.",
+   "pause": 0.5
+  },
+  {
+   "text": "Unless every job leaves evidence.",
+   "pause": 0.35
+  },
+  {
+   "text": "Arrival, checked by GPS.",
+   "pause": 0.3
+  },
+  {
+   "text": "Photos, before and after.",
+   "pause": 0.3
+  },
+  {
+   "text": "A signature, on the spot.",
+   "pause": 0.4
+  },
+  {
+   "text": "Case closed.",
+   "pause": 0.2
+  },
+  {
+   "text": "Invoice paid.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Every job, proven.",
+   "pause": 0.2
+  },
+  {
+   "text": "Try it free for fourteen days.",
+   "pause": 0
+  }
+ ]
+}

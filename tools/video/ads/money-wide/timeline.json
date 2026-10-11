@@ -1,0 +1,217 @@
+{
+ "phrases": [
+  {
+   "text": "You're losing money every day,",
+   "key": "money",
+   "start": 0.3,
+   "end": 1.9,
+   "wordStarts": [
+    0.3,
+    0.613,
+    0.997,
+    1.287,
+    1.624
+   ]
+  },
+  {
+   "text": "and you don't even see it.",
+   "key": "see",
+   "start": 1.94,
+   "end": 3.6,
+   "wordStarts": [
+    1.937,
+    2.088,
+    2.285,
+    2.587,
+    2.912,
+    3.237
+   ]
+  },
+  {
+   "text": "Calls to find your team.",
+   "key": "calls",
+   "start": 3.91,
+   "end": 5.61,
+   "wordStarts": [
+    3.911,
+    4.329,
+    4.48,
+    4.828,
+    5.014
+   ]
+  },
+  {
+   "text": "Hours on paper.",
+   "key": "paper",
+   "start": 5.75,
+   "end": 7.01,
+   "wordStarts": [
+    5.745,
+    6.291,
+    6.453
+   ]
+  },
+  {
+   "text": "Forgotten jobs.",
+   "key": "forgotten",
+   "start": 7.21,
+   "end": 8.62,
+   "wordStarts": [
+    7.208,
+    7.835
+   ]
+  },
+  {
+   "text": "Invoices sent weeks late.",
+   "key": "late",
+   "start": 8.86,
+   "end": 10.93,
+   "wordStarts": [
+    8.857,
+    9.611,
+    9.925,
+    10.377
+   ]
+  },
+  {
+   "text": "Time is money,",
+   "key": "money",
+   "start": 11.56,
+   "end": 12.46,
+   "wordStarts": [
+    11.556,
+    11.939,
+    12.125
+   ]
+  },
+  {
+   "text": "and HBCField gives you both back.",
+   "key": "back",
+   "start": 12.49,
+   "end": 15.0,
+   "wordStarts": [
+    12.485,
+    12.659,
+    13.576,
+    13.82,
+    14.018,
+    14.412
+   ]
+  },
+  {
+   "text": "Know where everyone is, without a single call.",
+   "key": "single",
+   "start": 15.62,
+   "end": 18.45,
+   "wordStarts": [
+    15.621,
+    15.958,
+    16.19,
+    16.69,
+    16.91,
+    17.235,
+    17.374,
+    17.839
+   ]
+  },
+  {
+   "text": "Every job done, with photo proof.",
+   "key": "proof",
+   "start": 19.38,
+   "end": 22.17,
+   "wordStarts": [
+    19.376,
+    19.852,
+    20.258,
+    20.896,
+    21.175,
+    21.628
+   ]
+  },
+  {
+   "text": "Hours counted for you. Payroll in minutes.",
+   "key": "minutes",
+   "start": 23.04,
+   "end": 26.28,
+   "wordStarts": [
+    23.037,
+    23.606,
+    24.07,
+    24.256,
+    24.802,
+    25.452,
+    25.661
+   ]
+  },
+  {
+   "text": "Invoice the same day, and get paid faster.",
+   "key": "faster",
+   "start": 27.02,
+   "end": 30.22,
+   "wordStarts": [
+    27.016,
+    27.642,
+    27.817,
+    28.177,
+    28.548,
+    28.803,
+    29.059,
+    29.43
+   ]
+  },
+  {
+   "text": "Less chasing.",
+   "key": "chasing",
+   "start": 30.95,
+   "end": 32.15,
+   "wordStarts": [
+    30.952,
+    31.312
+   ]
+  },
+  {
+   "text": "More jobs.",
+   "key": "jobs",
+   "start": 32.29,
+   "end": 33.24,
+   "wordStarts": [
+    32.287,
+    32.647
+   ]
+  },
+  {
+   "text": "More money.",
+   "key": "money",
+   "start": 33.38,
+   "end": 34.32,
+   "wordStarts": [
+    33.379,
+    33.727
+   ]
+  },
+  {
+   "text": "HBCField.",
+   "key": "hbcfield",
+   "start": 34.55,
+   "end": 35.98,
+   "wordStarts": [
+    34.551
+   ]
+  },
+  {
+   "text": "Try it free for fourteen days.",
+   "key": "free",
+   "start": 36.21,
+   "end": 39.14,
+   "wordStarts": [
+    36.211,
+    36.641,
+    36.85,
+    37.291,
+    37.57,
+    38.324
+   ]
+  }
+ ],
+ "duration": 41.74
+}

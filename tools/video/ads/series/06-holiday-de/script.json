@@ -1,0 +1,45 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Anna nimmt die zweite Woche frei.",
+   "pause": 0.2
+  },
+  {
+   "text": "Mike auch.",
+   "pause": 0.3
+  },
+  {
+   "text": "Jetzt ist niemand vor Ort,",
+   "pause": 0
+  },
+  {
+   "text": "und Sie merken es erst am Montag.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField zeigt die Lücke, bevor Sie Ja sagen.",
+   "pause": 0.35
+  },
+  {
+   "text": "Eine Woche verschieben,",
+   "pause": 0
+  },
+  {
+   "text": "und die Zeile wird grün.",
+   "pause": 0.4
+  },
+  {
+   "text": "Alle bekommen ihren Urlaub.",
+   "pause": 0.1
+  },
+  {
+   "text": "Die Arbeit wird trotzdem erledigt.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

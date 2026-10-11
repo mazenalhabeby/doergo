@@ -1,0 +1,53 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Dreißig Tage.",
+   "pause": 0.25
+  },
+  {
+   "text": "Sieben.",
+   "pause": 0.25
+  },
+  {
+   "text": "Ein Tag.",
+   "pause": 0.4
+  },
+  {
+   "text": "Der Führerschein ist abgelaufen, und keiner hat es gemerkt.",
+   "pause": 0.3
+  },
+  {
+   "text": "Das Audit ist durchgefallen.",
+   "pause": 0.2
+  },
+  {
+   "text": "Der Auftrag ist weg.",
+   "pause": 0.6
+  },
+  {
+   "text": "Zurückspulen.",
+   "pause": 0.6
+  },
+  {
+   "text": "Dreißig Tage vorher hat HBCField das Datum aus dem Dokument gelesen,",
+   "pause": 0
+  },
+  {
+   "text": "und die Erinnerung geschickt.",
+   "pause": 0.3
+  },
+  {
+   "text": "Verlängert. Rechtzeitig.",
+   "pause": 0.2
+  },
+  {
+   "text": "Nichts verloren.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

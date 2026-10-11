@@ -1,0 +1,278 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#05080f}
+body{font-family:"Archivo",system-ui,sans-serif;color:#fff}
+#stage{position:absolute;inset:0;overflow:hidden}
+#bg{position:absolute;inset:-200px;background:#05080f}
+.blob{position:absolute;border-radius:50%;filter:blur(120px)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+#frame{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay}
+.scene{position:absolute;inset:0;opacity:0}
+.abs{position:absolute}
+/* A: loss counter */
+#lossLbl{left:0;right:0;top:470px;text-align:center;font-size:44px;font-weight:800;color:#fca5a5;letter-spacing:1px;text-transform:uppercase}
+#loss{left:0;right:0;top:540px;text-align:center;font-size:230px;font-weight:900;letter-spacing:-8px;color:#ff4d4d;font-variant-numeric:tabular-nums;text-shadow:0 0 80px rgba(255,60,60,.45)}
+#lossSub{left:0;right:0;top:820px;text-align:center;font-size:40px;font-weight:700;color:#fecaca;opacity:.8}
+/* B: pain cards */
+.pain{left:90px;width:900px;height:140px;border-radius:32px;background:rgba(40,12,16,.85);border:2px solid rgba(248,113,113,.45);
+  display:flex;align-items:center;gap:30px;padding:0 36px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.pain .ic{width:76px;height:76px;border-radius:22px;background:#7f1d1d;display:grid;place-items:center;flex:none}
+.pain .tx{font-size:54px;font-weight:900;line-height:1}
+.pain .x{margin-left:auto;font-size:56px;font-weight:900;color:#f87171}
+/* C: time = money */
+.big{left:0;right:0;text-align:center;font-weight:900;letter-spacing:-6px;line-height:1}
+#tTime{top:470px;font-size:250px}
+#tEq{top:720px;font-size:170px;color:#60a5fa}
+#tMoney{top:890px;font-size:250px;color:#4ade80;text-shadow:0 0 90px rgba(74,222,128,.35)}
+#cLogo{left:50%;top:560px;width:200px;height:200px;margin-left:-100px}
+#cWord{left:0;right:0;top:790px;text-align:center;font-size:80px;font-weight:900;letter-spacing:6px}
+#cWord b,#word b{color:#60a5fa}
+#cBack{left:60px;right:60px;top:910px;text-align:center;font-size:70px;font-weight:900;line-height:1.05}
+#cBack em{font-style:normal;color:#4ade80}
+/* windows */
+.win{position:absolute;border-radius:28px;overflow:hidden;background:#0d121c;border:1.5px solid rgba(255,255,255,.12);box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(37,99,235,.15)}
+.win .bar{height:54px;display:flex;align-items:center;gap:12px;padding:0 22px;background:#111827;border-bottom:1px solid rgba(255,255,255,.06);font-size:22px;font-weight:700;color:#9aa6bf}
+.win .bar b{width:14px;height:14px;border-radius:50%;background:#2b3345}
+.win .bar span{margin-left:14px}
+.win canvas{display:block}
+.head{left:80px;right:80px;top:300px;font-size:30px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:#93c5fd}
+#pin{position:absolute;width:60px;height:60px;margin:-60px 0 0 -30px}
+#pin .ring{position:absolute;left:30px;top:60px;width:20px;height:20px;margin:-10px;border-radius:50%;border:4px solid #22c55e}
+.chip{position:absolute;padding:16px 26px;border-radius:999px;background:rgba(10,15,26,.94);border:2px solid rgba(34,197,94,.6);font-weight:800;font-size:34px;white-space:nowrap}
+.chip em{font-style:normal;color:#4ade80}
+.good{position:absolute;padding:18px 30px;border-radius:22px;background:#14532d;border:2px solid #22c55e;font-weight:900;font-size:40px;color:#dcfce7;white-space:nowrap}
+.note{position:absolute;left:90px;width:900px;height:104px;border-radius:28px;background:rgba(22,29,44,.85);border:1.5px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:22px;padding:0 28px;box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.note .ic{width:60px;height:60px;border-radius:18px;display:grid;place-items:center;font-size:30px;font-weight:900;flex:none}
+.note .tx{font-size:38px;font-weight:800;line-height:1.1}
+.note .tx small{display:block;font-size:26px;font-weight:500;color:#93a0ba;margin-top:4px}
+.note .tm{margin-left:auto;font-size:26px;color:#7d89a3;font-weight:600}
+#hours{position:absolute;left:90px;width:900px;padding:44px 50px;border-radius:36px;background:linear-gradient(160deg,rgba(37,99,235,.3),rgba(17,24,39,.92));border:1.5px solid rgba(96,165,250,.35)}
+#hours .lbl{font-size:34px;font-weight:700;color:#a9b8d6}
+#hours .num{font-size:210px;font-weight:900;letter-spacing:-6px;line-height:1;margin-top:10px;font-variant-numeric:tabular-nums}
+#hours .num span{font-size:96px;letter-spacing:0;color:#93c5fd;margin-left:14px}
+#hours .row{display:flex;gap:14px;margin-top:24px}
+#hours .row i{flex:1;height:16px;border-radius:8px;background:rgba(255,255,255,.1);overflow:hidden;position:relative}
+#hours .row i u{position:absolute;inset:0;background:#3b82f6;transform-origin:0 50%}
+#hours .days{display:flex;gap:14px;margin-top:10px}
+#hours .days div{flex:1;font-size:24px;color:#8b9ab8;font-weight:700}
+#amount{position:absolute;padding:18px 30px;border-radius:24px;background:#0b1222;border:2px solid #3b82f6;font-size:70px;font-weight:900;font-variant-numeric:tabular-nums;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#stamp{position:absolute;padding:14px 34px;border-radius:18px;border:7px solid #22c55e;color:#4ade80;font-size:76px;font-weight:900;letter-spacing:3px;background:rgba(5,20,10,.8)}
+/* H: less / more */
+.slam{left:70px;right:40px;white-space:nowrap;font-size:118px;font-weight:900;letter-spacing:-5px;line-height:1;text-transform:uppercase;display:flex;align-items:center;gap:30px}
+.slam .ar{font-size:100px;letter-spacing:0}
+#h0{top:450px}#h1{top:630px}#h2{top:810px}
+#h0 .ar{color:#f87171}#h1 .ar,#h2 .ar{color:#4ade80}
+#h2 .w{color:#4ade80}
+/* end */
+#logo{position:absolute;left:50%;top:400px;width:230px;height:230px;margin-left:-115px}
+#word{left:0;right:0;top:660px;text-align:center;font-size:84px;font-weight:900;letter-spacing:6px}
+#tag{left:70px;right:70px;top:800px;text-align:center;font-size:68px;font-weight:900;line-height:1.06;letter-spacing:-1px}
+#tag em{font-style:normal;color:#4ade80}
+#chips{left:0;right:0;top:1000px;display:flex;justify-content:center;gap:20px}
+#chips div{padding:20px 32px;border-radius:999px;font-size:38px;font-weight:800;border:2px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06)}
+#chips div.p{background:#2563eb;border-color:#2563eb}
+#url{left:0;right:0;top:1130px;text-align:center;font-size:42px;font-weight:700;color:#a8b8d8;letter-spacing:1px}
+/* captions */
+#cap{position:absolute;left:120px;width:720px;top:300px;justify-content:flex-start !important;display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:4px 22px}
+#cap span{font-weight:900;font-size:96px;line-height:1.02;text-transform:uppercase;letter-spacing:-1px;color:#fff;-webkit-text-stroke:3px #000;paint-order:stroke fill;text-shadow:0 8px 24px rgba(0,0,0,.7);display:inline-block}
+#cap span.k{background:#2563eb;-webkit-text-stroke:0;padding:0 16px;border-radius:14px;text-shadow:none}
+#cap.red span.k{background:#dc2626}
+</style></head>
+<body><div id="stage">
+<div id="bg"><div class="blob" id="b1"></div><div class="blob" id="b2"></div><div class="blob" id="b3"></div></div>
+
+<div id="frame">
+<div class="scene" id="sA">
+  <div class="abs" id="lossLbl">Lost to admin this month</div>
+  <div class="abs" id="loss">€0</div>
+  <div class="abs" id="lossSub">calls · paperwork · late invoices</div>
+</div>
+
+<div class="scene" id="sB">
+  <div class="abs pain" id="p0"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div><div class="tx">Calls to find your team</div><div class="x">✕</div></div>
+  <div class="abs pain" id="p1"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></div><div class="tx">Hours on paper</div><div class="x">✕</div></div>
+  <div class="abs pain" id="p2"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 17h.01"/></svg></div><div class="tx">Forgotten jobs</div><div class="x">✕</div></div>
+  <div class="abs pain" id="p3"><div class="ic"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div class="tx">Invoices weeks late</div><div class="x">✕</div></div>
+</div>
+
+<div class="scene" id="sC">
+  <div class="abs big" id="tTime">TIME</div>
+  <div class="abs big" id="tEq">=</div>
+  <div class="abs big" id="tMoney">MONEY</div>
+  <img class="abs" id="cLogo" src="logo.svg">
+  <div class="abs" id="cWord">HBC <b>FIELD</b></div>
+  <div class="abs" id="cBack">gives you <em>both</em> back.</div>
+</div>
+
+<div class="scene" id="sD">
+  <div class="abs head" id="hD">Where is everyone?</div>
+  <div class="win" id="wmap"><div class="bar"><b></b><b></b><b></b><span>HBCField · Live map</span></div><canvas id="cmap" width="720" height="368" style="width:900px;height:460px"></canvas></div>
+  <div id="pin"><svg viewBox="0 0 60 60" width="60" height="60"><path d="M30 58C30 58 6 34 6 21a24 24 0 0 1 48 0c0 13-24 37-24 37z" fill="#22c55e"/><circle cx="30" cy="21" r="9" fill="#05260f"/></svg><div class="ring"></div></div>
+  <div class="chip" id="chipD">Mike · <em>arrived 09:02</em></div>
+  <div class="good" id="gD">0 phone calls ✓</div>
+</div>
+
+<div class="scene" id="sE">
+  <div class="win" id="wprog"><div class="bar"><b></b><b></b><b></b><span>Job · Loading bay door will not close</span></div><canvas id="cprog" width="840" height="300" style="width:960px;height:343px"></canvas></div>
+  <div class="note" id="n0"><div class="ic" style="background:#14532d;color:#86efac">●</div><div class="tx">Arrived on site<small>Checked by GPS</small></div><div class="tm">09:02</div></div>
+  <div class="note" id="n1"><div class="ic" style="background:#3b2a0a;color:#fcd34d">▣</div><div class="tx">3 photos added<small>Before &amp; after</small></div><div class="tm">10:47</div></div>
+  <div class="note" id="n2"><div class="ic" style="background:#14532d;color:#86efac">✓</div><div class="tx">Customer signed<small>Job done · proof saved</small></div><div class="tm">11:05</div></div>
+</div>
+
+<div class="scene" id="sF">
+  <div id="hours"><div class="lbl">Mike · counted automatically</div><div class="num"><b id="hn">0.0</b><span>h</span></div>
+    <div class="row"><i><u id="d0"></u></i><i><u id="d1"></u></i><i><u id="d2"></u></i><i><u id="d3"></u></i><i><u id="d4"></u></i></div>
+    <div class="days"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div></div></div>
+  <div class="good" id="gF">Payroll ready ✓</div>
+</div>
+
+<div class="scene" id="sG">
+  <div class="win" id="winv"><div class="bar"><b></b><b></b><b></b><span>Invoice · sent the same day</span></div><canvas id="cinv" width="790" height="790" style="width:700px;height:700px"></canvas></div>
+  <div id="amount">€0.00</div>
+  <div id="stamp">PAID ✓</div>
+</div>
+
+<div class="scene" id="sH">
+  <div class="abs slam" id="h0"><span class="ar">↓</span><span>Less chasing</span></div>
+  <div class="abs slam" id="h1"><span class="ar">↑</span><span>More jobs</span></div>
+  <div class="abs slam" id="h2"><span class="ar">↑</span><span class="w">More money</span></div>
+</div>
+
+<div class="scene" id="sI">
+  <img id="logo" src="logo.svg">
+  <div class="abs" id="word">HBC <b>FIELD</b></div>
+  <div class="abs" id="tag">Save time.<br><em>Make more money.</em></div>
+  <div class="abs" id="chips"><div class="p">Try 14 days free</div><div>From €9.99 / person</div></div>
+  <div class="abs" id="url">hbcfield.com</div>
+</div>
+
+</div>
+<div id="flash"></div>
+<canvas id="grain" width="960" height="540" style="width:1920px;height:1080px"></canvas>
+<div id="cap"></div>
+</div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const FR={map:180,prog:200,inv:150};
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const eo=t=>1-Math.pow(1-clamp(t),3);
+const eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const spring=t=>{t=Math.max(0,t);return 1-Math.exp(-7*t)*Math.cos(11*t)};
+const st=i=>P[i].start;
+// scenes: [id, fromPhrase, toPhraseExclusive, showCaptions]
+const SC=[['sA',0,2,true],['sB',2,6,false],['sC',6,8,false],['sD',8,9,true],['sE',9,10,true],['sF',10,11,true],['sG',11,12,true],['sH',12,15,false],['sI',15,17,false]];
+const W=SC.map(([id,a,b],i)=>[st(a)-(i?0.12:0.3), b<P.length?st(b)-0.12:TL.duration+1]);
+const imgs={};
+async function preload(){const jobs=[document.fonts.ready];
+  for(const k in FR){imgs[k]=[];for(let i=1;i<=FR[k];i++){const im=new Image();im.src=`f/${k}/${String(i).padStart(4,'0')}.jpg`;imgs[k].push(im);jobs.push(im.decode().catch(()=>{}));}}
+  for(const id of ['logo','cLogo'])jobs.push($(id).decode().catch(()=>{}));
+  await Promise.all(jobs);}
+function draw(k,cv,f){const a=imgs[k];cv.getContext('2d').drawImage(a[clamp(Math.floor(f),0,a.length-1)],0,0,cv.width,cv.height);}
+const gctx=$('grain').getContext('2d');const gimg=gctx.createImageData(960,540);
+function grain(seed){let s=seed*9301+49297;for(let i=0;i<gimg.data.length;i+=4){s=(s*9301+49297)%233280;const v=s/233280*255;gimg.data[i]=gimg.data[i+1]=gimg.data[i+2]=v;gimg.data[i+3]=255;}gctx.putImageData(gimg,0,0);}
+function tf(el,x,y,s=1,r=0,o=1,extra=''){el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg) ${extra}`;el.style.opacity=o;}
+function pos(el,l,t){el.style.left=l+'px';el.style.top=t+'px';}
+const mix=(c1,c2,k)=>{const p=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));const a=p(c1),b=p(c2);return 'rgb('+a.map((v,i)=>Math.round(lerp(v,b[i],k))).join(',')+')';};
+
+function render(t,frame){
+  // background: red while the pain is on screen, blue once HBCField arrives
+  const calm=eo((t-st(7))/0.8);
+  const bl=[['b1',mix('#991b1b','#1d4ed8',calm),1000,150+80*Math.sin(t*.6),-150+60*Math.cos(t*.5)],['b2',mix('#7c2d12','#0e7490',calm),900,1100+90*Math.cos(t*.4),250+60*Math.sin(t*.7)],['b3',mix('#581c87','#4338ca',calm),700,500+70*Math.sin(t*.8),650]];
+  for(const [id,c,sz,x,y] of bl){const e=$(id);e.style.background=c;e.style.width=e.style.height=sz+'px';e.style.left=x+'px';e.style.top=y+'px';e.style.opacity=.55;}
+  $('flash').style.opacity=0.55*Math.max(0,1-(t-st(6))/0.25)*(t>=st(6)?1:0)+0.35*Math.max(0,1-(t-st(12))/0.2)*(t>=st(12)?1:0);
+  grain(frame%12+1);
+  {
+    const X_CAP = 800, X_MID = 420, Y = -220, T = 0.45;
+    // the opening counter sits high in the vertical frame: drop it to the middle
+    const YS = { sA: Y + 110 };
+    let x = X_MID, y = Y;
+    SC.forEach(([id, , , caps], i) => {
+      const [a] = W[i];
+      if (t >= a) {
+        const k = eio((t - a) / T), pid = i ? SC[i - 1][0] : id;
+        const prev = i ? (SC[i - 1][3] ? X_CAP : X_MID) : (caps ? X_CAP : X_MID);
+        x = lerp(prev, caps ? X_CAP : X_MID, k);
+        y = lerp(YS[pid] ?? Y, YS[id] ?? Y, k);
+      }
+    });
+    $('frame').style.transform = `translate(${x}px, ${y}px)`;
+  }
+  SC.forEach(([id],i)=>{const [a,b]=W[i];const fi=eo((t-a)/0.25),fo=i==SC.length-1?1:1-eo((t-(b-0.2))/0.25);$(id).style.opacity=(t>=a-0.01&&t<b+0.1)?Math.min(fi,fo):0;});
+
+  // A: the money leaking away
+  {const [a,b]=W[0];const k=spring((t-a)/0.8);tf($('loss'),Math.sin(t*50)*3*clamp((t-a)/.5),0,lerp(.6,1,k),0,clamp((t-a)*4));
+   $('loss').textContent='€'+Math.round(2340*eo((t-a)/2.4)).toLocaleString('en-GB');
+   const blur=eo((t-st(1))/0.8);$('loss').style.filter=`blur(${blur*10}px)`;$('loss').style.opacity=1-blur*0.6;
+   tf($('lossLbl'),0,lerp(30,0,eo((t-a)/.5)),1,0,clamp((t-a)*3));tf($('lossSub'),0,0,1,0,clamp((t-a-0.6)*3)*(1-blur*.6));}
+  // B: pain cards slam in one per phrase, then break away
+  {const ys=[400,580,760,940];const out=eio((t-(W[1][1]-0.3))/0.35);
+   for(let i=0;i<4;i++){const e=$('p'+i);const at=st(2+i)-0.05;const k=spring((t-at)/0.6);pos(e,90,ys[i]);
+     const shake=t>at&&t<at+0.35?Math.sin((t-at)*90)*10*(1-(t-at)/0.35):0;
+     tf(e,shake+lerp(0,(i%2?1:-1)*1200,out),lerp(-120,0,clamp(k)),lerp(1.35,1,clamp(k)),lerp(0,(i%2?8:-8),out),clamp((t-at)*6));}}
+  // C: time = money, then HBCField gives it back
+  {const a=W[2][0],m=st(7)-0.05;const k1=spring((t-a)/.6),k2=spring((t-a-.25)/.6),k3=spring((t-a-.45)/.6);const up=eio((t-m)/.5);
+   tf($('tTime'),0,lerp(-80,0,k1)-up*260,lerp(1.4,1,k1)*lerp(1,.5,up),0,clamp((t-a)*6)*(1-up));
+   tf($('tEq'),0,-up*430,lerp(.3,1,k2)*lerp(1,.4,up),0,clamp((t-a-.25)*6)*(1-up));
+   tf($('tMoney'),0,lerp(80,0,k3)-up*560,lerp(1.4,1,k3)*lerp(1,.5,up),0,clamp((t-a-.45)*6)*(1-up));
+   const lk=spring((t-m-0.1)/.8);tf($('cLogo'),0,lerp(60,0,lk),lerp(.3,1,lk),lerp(-30,0,lk),clamp((t-m-.1)*5));
+   tf($('cWord'),0,lerp(40,0,spring((t-m-.3)/.7)),1,0,clamp((t-m-.3)*5));
+   tf($('cBack'),0,lerp(40,0,spring((t-m-.55)/.7)),1,0,clamp((t-m-.55)*5));
+   // time/money parked at the top once the logo takes the centre
+   if(up>0){$('tTime').style.top='470px';}
+  }
+  // D: live map
+  {const [a]=W[3];const k=spring((t-a)/1.0);const w=$('wmap');const sc=0.95+0.05*eo((t-a)/3);pos(w,90,390);
+   tf(w,lerp(420,0,k),0,sc*lerp(.9,1,k),0,1,'perspective(1600px) rotateY('+lerp(-18,-3,eo((t-a)/1.4))+'deg)');
+   draw('map',$('cmap'),(t-a)*30);tf($('hD'),0,0,1,0,clamp((t-a)*4));
+   const px=90+(0.62*900)*sc,py=390+54*sc+(0.42*460)*sc;const pin=$('pin');pos(pin,px,py);
+   const pk=spring((t-a-0.6)/0.8);tf(pin,0,lerp(-260,0,clamp(pk)),1,0,clamp((t-a-.6)*6));
+   const rp=((t-a-1.1)%1.2+1.2)%1.2;const ring=pin.querySelector('.ring');ring.style.transform=`scale(${1+rp*4})`;ring.style.opacity=t-a>1.1?1-rp/1.2:0;
+   pos($('chipD'),px-250,py+40);tf($('chipD'),0,lerp(30,0,spring((t-a-1)/.8)),lerp(.7,1,spring((t-a-1)/.8)),0,clamp((t-a-1)*5));
+   pos($('gD'),250,930);const gk=spring((t-a-1.8)/.8);tf($('gD'),0,lerp(40,0,gk),lerp(.6,1,gk),-3,clamp((t-a-1.8)*5));}
+  // E: job progress + proof
+  {const [a,b]=W[4];const k=spring((t-a)/1.0);const w=$('wprog');pos(w,60,300);tf(w,0,lerp(-80,0,k),lerp(.92,1,k),0,1);
+   draw('prog',$('cprog'),160+clamp((t-a)/(b-a))*39);
+   const ys=[760,880,1000];for(let i=0;i<3;i++){const e=$('n'+i);const at=a+0.3+i*0.55;const nk=spring((t-at)/0.8);pos(e,90,ys[i]);tf(e,lerp(700,0,nk),0,lerp(.85,1,nk),0,clamp((t-at)*5));}}
+  // F: hours counted
+  {const [a]=W[5];const h=$('hours');pos(h,90,330);const hk=spring((t-a)/.9);tf(h,0,lerp(60,0,hk),lerp(.9,1,hk),0,clamp((t-a)*4));
+   $('hn').textContent=(38.5*eo((t-a-0.2)/1.4)).toFixed(1);
+   for(let i=0;i<5;i++)$('d'+i).style.transform=`scaleX(${eo((t-a-0.2-i*0.14)/0.6)*[0.9,1,0.85,0.95,0.7][i]})`;
+   pos($('gF'),300,860);const gk=spring((t-a-1.6)/.8);tf($('gF'),0,lerp(40,0,gk),lerp(.6,1,gk),-3,clamp((t-a-1.6)*5));}
+  // G: invoice, paid
+  {const [a]=W[6];const w=$('winv');pos(w,190,300);const ik=spring((t-a)/1.0);
+   tf(w,lerp(1100,0,ik),0,lerp(.9,1,ik)*(1+0.03*eo((t-a)/3)),lerp(4,0,ik),clamp((t-a)*4),'perspective(1600px) rotateY('+lerp(20,3,eo((t-a)/1.4))+'deg)');
+   draw('inv',$('cinv'),(t-a)*30);const am=$('amount');pos(am,520,820);const ak=spring((t-a-.4)/.8);
+   tf(am,0,lerp(40,0,ak),lerp(.6,1,ak),-2,clamp((t-a-.4)*5));am.textContent='€'+(4080*eo((t-a-.4)/1.0)).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+   const sp=$('stamp');pos(sp,100,820);const sk=clamp((t-a-1.5)/0.22);tf(sp,0,0,lerp(2.8,1,eo(sk)),-8,sk);}
+  // H: less chasing / more jobs / more money
+  {for(let i=0;i<3;i++){const e=$('h'+i);const at=st(12+i)-0.05;const k=spring((t-at)/0.55);tf(e,0,0,lerp(1.6,1,clamp(k)),0,clamp((t-at)*7));}}
+  // I: end card
+  {const [a]=W[8];const lk=spring((t-a)/1.0);tf($('logo'),0,lerp(80,0,lk),lerp(.3,1,lk),lerp(-40,0,lk),clamp((t-a)*4));
+   tf($('word'),0,lerp(40,0,spring((t-a-.2)/.9)),1,0,clamp((t-a-.2)*4));
+   tf($('tag'),0,lerp(50,0,spring((t-a-.45)/.9)),1,0,clamp((t-a-.45)*4));
+   const ck=spring((t-a-.9)/.9);tf($('chips'),0,lerp(50,0,ck),lerp(.8,1,ck),0,clamp((t-a-.9)*4));
+   tf($('chips').firstElementChild,0,0,1+0.035*Math.max(0,Math.sin((t-a-1.5)*5)),0,1);
+   tf($('url'),0,0,1,0,clamp((t-a-1.3)*3));}
+
+  // captions, word by word, only where the scene itself is not already the words
+  const cap=$('cap');let cur=null,ci=-1;
+  P.forEach((p,i)=>{if(t>=p.start-0.05&&t<p.end+0.35){cur=p;ci=i;}});
+  const scn=SC.findIndex(([,a,b])=>ci>=a&&ci<b);
+  if(!cur||scn<0||!SC[scn][3]){cap.innerHTML='';cap.dataset.p='';return;}
+  cap.className=ci<2?'red':'';
+
+  if(cap.dataset.p!==cur.text){cap.dataset.p=cur.text;cap.innerHTML=cur.text.split(' ').map(w=>`<span>${w}</span>`).join('');}
+  const words=cur.text.split(' ');const total=words.reduce((s,w)=>s+w.length+1,0);let acc=0;const dur=cur.end-cur.start;
+  {for(const sp of cap.children)sp.style.fontSize='';let fs=parseFloat(getComputedStyle(cap.children[0]||cap).fontSize);let h=cap.offsetHeight,f=1;while(h>620&&f>0.6){f-=0.06;for(const sp of cap.children)sp.style.fontSize=(fs*f)+'px';h=cap.offsetHeight;}cap.style.top=Math.round(540-h/2)+'px';}
+  [...cap.children].forEach((sp,i)=>{const ws=cur.wordStarts?cur.wordStarts[i]:cur.start+dur*acc/total;acc+=words[i].length+1;const k=spring((t-ws)/0.35);
+    sp.className=words[i].toLowerCase().replace(/[^a-z]/g,'')===cur.key?'k':'';
+    sp.style.opacity=t>=ws?1:0;sp.style.transform=`scale(${t>=ws?lerp(.55,1,k):.55})`;});
+}
+window.__ready=preload();window.render=render;
+</script></body></html>

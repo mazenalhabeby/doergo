@@ -1,0 +1,9 @@
+# Heavy, regenerable: footage frames, voice, renders. Never commit (see git-history-rewrite-20260921).
+f/
+vo/
+*.mp4
+*.wav
+index.html
+still-*.jpg
+music/
+*.mp3

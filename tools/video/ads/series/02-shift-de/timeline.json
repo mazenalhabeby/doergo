@@ -1,0 +1,141 @@
+{
+ "phrases": [
+  {
+   "text": "Eingestempelt um siebzehn Uhr f\u00fcnfundzwanzig.",
+   "start": 0.3,
+   "end": 3.516,
+   "wordStarts": [
+    0.3,
+    1.298,
+    1.531,
+    2.123,
+    2.332
+   ]
+  },
+  {
+   "text": "Die Schicht beginnt um achtzehn Uhr.",
+   "start": 3.948,
+   "end": 5.957,
+   "wordStarts": [
+    3.948,
+    4.157,
+    4.482,
+    4.842,
+    5.04,
+    5.562
+   ]
+  },
+  {
+   "text": "Wer zahlt also die f\u00fcnfunddrei\u00dfig Minuten?",
+   "start": 6.57,
+   "end": 9.09,
+   "wordStarts": [
+    6.57,
+    6.872,
+    7.232,
+    7.499,
+    7.661,
+    8.474
+   ]
+  },
+  {
+   "text": "Jeden Tag. F\u00fcr jede Person.",
+   "start": 9.552,
+   "end": 11.839,
+   "wordStarts": [
+    9.552,
+    10.04,
+    10.516,
+    10.783,
+    11.154
+   ]
+  },
+  {
+   "text": "HBCField z\u00e4hlt die Schicht,",
+   "start": 12.571,
+   "end": 14.731,
+   "wordStarts": [
+    12.571,
+    13.732,
+    14.058,
+    14.232
+   ]
+  },
+  {
+   "text": "nicht den Parkplatz.",
+   "start": 14.801,
+   "end": 16.066,
+   "wordStarts": [
+    14.801,
+    15.068,
+    15.288
+   ]
+  },
+  {
+   "text": "Zu fr\u00fch wird notiert, nicht gez\u00e4hlt.",
+   "start": 16.838,
+   "end": 19.566,
+   "wordStarts": [
+    16.838,
+    17.058,
+    17.36,
+    17.557,
+    18.242,
+    18.707
+   ]
+  },
+  {
+   "text": "\u00dcberstunden z\u00e4hlen, wenn Sie sie freigeben.",
+   "start": 20.179,
+   "end": 22.327,
+   "wordStarts": [
+    20.179,
+    20.911,
+    21.294,
+    21.468,
+    21.596,
+    21.723
+   ]
+  },
+  {
+   "text": "Und der Stundenzettel ist fertig, bevor Sie fragen.",
+   "start": 22.708,
+   "end": 25.518,
+   "wordStarts": [
+    22.708,
+    22.883,
+    23.103,
+    23.881,
+    24.02,
+    24.578,
+    24.868,
+    25.007
+   ]
+  },
+  {
+   "text": "HBCField. Z\u00e4hlen, was z\u00e4hlt.",
+   "start": 26.285,
+   "end": 28.862,
+   "wordStarts": [
+    26.285,
+    27.678,
+    28.166,
+    28.41
+   ]
+  },
+  {
+   "text": "Jetzt vierzehn Tage kostenlos testen.",
+   "start": 29.144,
+   "end": 32.511,
+   "wordStarts": [
+    29.144,
+    29.736,
+    30.456,
+    30.897,
+    31.651
+   ]
+  }
+ ],
+ "duration": 34.51,
+ "lang": "de"
+}

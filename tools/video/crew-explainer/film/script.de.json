@@ -1,0 +1,71 @@
+{
+ "lang": "de",
+ "chapters": [
+  {"id": "intro", "phrases": [
+   {"text": "Ein Auftrag. Drei Personen. Eine Leitung.", "pause": 0.8},
+   {"text": "Wenn ein Team einen Auftrag teilt, zählt HBCField jede Person für sich.", "pause": 0.5},
+   {"text": "Ab dem Moment, in dem sie dem Auftrag beitritt, bis zu dem Moment, in dem sie ihn verlässt.", "pause": 0.5},
+   {"text": "Und nur, solange sie eingestempelt ist.", "pause": 1.1}
+  ]},
+  {"id": "crew", "phrases": [
+   {"text": "Das Büro stellt das Team für den Auftrag zusammen und bestimmt die Leitung.", "pause": 0.5},
+   {"text": "Hier leitet Tobias. Priya und Conor arbeiten mit ihm.", "pause": 0.5},
+   {"text": "Alle sehen die Team-Karte am Auftrag: wer gerade dabei ist, seit wann, und wer leitet.", "pause": 1.1}
+  ]},
+  {"id": "start", "phrases": [
+   {"text": "Am Morgen tippt Tobias auf Unterwegs.", "pause": 0.5},
+   {"text": "Sein Team bekommt eine Benachrichtigung: Tobias hat begonnen. Ein Tipp auf Ich bin dabei, und sie sind ebenfalls am Auftrag.", "pause": 0.6},
+   {"text": "Drücken alle drei im selben Moment denselben Schritt, zählen alle drei. Niemand verliert Minuten, weil jemand anderes schneller war.", "pause": 0.6},
+   {"text": "Ein Beitritt zählt ab dem Start der Leitung, wenn er innerhalb einer halben Stunde kommt, und nie vor dem eigenen Einstempeln.", "pause": 1.1}
+  ]},
+  {"id": "leader", "phrases": [
+   {"text": "Bei Teamaufträgen bewegt die Leitung den Auftrag von Schritt zu Schritt.", "pause": 0.5},
+   {"text": "Die anderen sehen, wer es tut, so bewegt niemand den Auftrag aus Versehen.", "pause": 0.5},
+   {"text": "Das Büro kann jederzeit eingreifen. Und ist die Einstellung aus, bewegt jeder im Team die Schritte, wie bisher.", "pause": 1.1}
+  ]},
+  {"id": "issue", "phrases": [
+   {"text": "Um neun kommt der Kran zu spät. Priya tippt auf Mein Problem und schreibt, warum.", "pause": 0.6},
+   {"text": "Nur ihre Zeit hält an. Sie zählt als blockiert, nur für sie.", "pause": 0.5},
+   {"text": "Der Auftrag und der Rest des Teams machen weiter. Und Tobias erfährt, was sie aufhält.", "pause": 0.6},
+   {"text": "Als der Kran ankommt, tippt sie auf Zurück zur Arbeit, und ihre Arbeitszeit läuft wieder.", "pause": 1.1}
+  ]},
+  {"id": "leave", "phrases": [
+   {"text": "Conor wird auf einem anderen Auftrag gebraucht. Er tippt auf Auftrag verlassen.", "pause": 0.5},
+   {"text": "Seine Zeit auf diesem Auftrag hält an. Die anderen machen weiter.", "pause": 0.5},
+   {"text": "Wenn er zurückkommt, ein Tipp, und er zählt wieder ab diesem Moment.", "pause": 1.1}
+  ]},
+  {"id": "clockout", "phrases": [
+   {"text": "Ausstempeln ist dasselbe wie Verlassen.", "pause": 0.5},
+   {"text": "Stempelt jemand aus dem Team aus, läuft der Auftrag mit den anderen weiter.", "pause": 0.5},
+   {"text": "Erst wenn die letzte Person am Auftrag ausstempelt, wird der Auftrag pausiert, und über Nacht zählt nichts.", "pause": 1.1}
+  ]},
+  {"id": "absent", "phrases": [
+   {"text": "Und wenn die Leitung krank ist oder einfach nicht eingestempelt hat? Der Auftrag wartet nie auf sie.", "pause": 0.6},
+   {"text": "Die erste Person, die beigetreten und eingestempelt ist, übernimmt automatisch die Vertretung. Die Karte zeigt, wer vertritt.", "pause": 0.6},
+   {"text": "Hat die Leitung genehmigten Urlaub, bekommt das Büro am Morgen eine einzige Nachricht mit dem Namen der Vertretung. Sie behalten sie, oder wählen jemand anderen.", "pause": 1.1}
+  ]},
+  {"id": "handover", "phrases": [
+   {"text": "Die Leitung kann sie auch selbst übergeben. Für heute, oder dauerhaft.", "pause": 0.5},
+   {"text": "Nur für diesen einen Auftrag. Die anderen Aufträge bleiben, wie sie sind.", "pause": 0.6},
+   {"text": "Und das Büro kann die Leitung ändern oder jemanden hinzufügen oder abziehen, mit einem Grund, der im Verlauf steht.", "pause": 1.1}
+  ]},
+  {"id": "numbers", "phrases": [
+   {"text": "Am Ende des Tages hat jede Person ihre eigene Zeile.", "pause": 0.5},
+   {"text": "Tobias: acht Stunden Arbeit am Auftrag.", "pause": 0.4},
+   {"text": "Priya: sieben Stunden und zwanzig Minuten, und vierzig Minuten blockiert, weil sie auf den Kran gewartet hat.", "pause": 0.4},
+   {"text": "Conor: fünfeinhalb Stunden. Die Zeit auf dem anderen Auftrag zählt hier nicht.", "pause": 0.6},
+   {"text": "Zusammen zwanzig Stunden und fünfzig Minuten Arbeit. Einmal pro Person gezählt, nie doppelt, und nie mehr, als jemand eingestempelt war.", "pause": 0.6},
+   {"text": "Dieselben Zahlen gehen in den Stundenzettel, den Bericht und die Rechnung.", "pause": 1.1}
+  ]},
+  {"id": "rules", "phrases": [
+   {"text": "Sechs Regeln.", "pause": 0.5},
+   {"text": "Jede Person zählt vom Beitritt bis zum Verlassen.", "pause": 0.4},
+   {"text": "Nur innerhalb der eigenen Schicht.", "pause": 0.4},
+   {"text": "Denselben Schritt gemeinsam gedrückt: Alle zählen.", "pause": 0.4},
+   {"text": "Mein Problem hält nur Sie an.", "pause": 0.4},
+   {"text": "Die Leitung bewegt die Schritte, und jemand vertritt, wenn sie fehlt.", "pause": 0.4},
+   {"text": "Wer als Letzter geht, pausiert den Auftrag.", "pause": 0.8},
+   {"text": "Ein Team auf einem Auftrag. In HBCField.", "pause": 1.5}
+  ]}
+ ]
+}

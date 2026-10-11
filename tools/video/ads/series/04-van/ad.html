@@ -1,0 +1,236 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;900&display=swap">
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#c9d8b0}
+body{font-family:Rubik,system-ui,sans-serif;color:#111}
+.abs{position:absolute}
+#world{position:absolute;left:0;top:0;width:1080px;height:1920px;transform-origin:0 0}
+#world svg{position:absolute;left:0;top:0}
+#grey{position:absolute;inset:0;background:#7a7f86;mix-blend-mode:saturation;pointer-events:none}
+#dim{position:absolute;inset:0;background:#1f2937;pointer-events:none}
+/* van, top view */
+#van{width:96px;height:50px;margin:-25px 0 0 -48px;background:#f8fafc;border:5px solid #111;border-radius:10px;box-shadow:0 10px 0 rgba(0,0,0,.18)}
+#van::before{content:"";position:absolute;right:4px;top:4px;width:20px;height:32px;background:#38bdf8;border-radius:4px}
+#van::after{content:"";position:absolute;left:8px;top:6px;width:48px;height:28px;border:3px solid #cbd5e1;border-radius:4px}
+#tag{font:900 34px/1 Rubik,sans-serif;background:#111;color:#facc15;padding:10px 16px;border-radius:12px;white-space:nowrap;transform-origin:50% 100%}
+#tag::after{content:"";position:absolute;left:50%;bottom:-12px;margin-left:-10px;border:10px solid transparent;border-top-color:#111;border-bottom:0}
+/* calendar strip */
+#cal{left:70px;top:280px;width:940px;display:flex;gap:6px}
+#cal .d{flex:1;height:78px;border-radius:12px;background:rgba(255,255,255,.8);display:flex;flex-direction:column;align-items:center;justify-content:center;font:900 26px/1 Rubik,sans-serif;color:#334155;box-shadow:0 4px 0 rgba(0,0,0,.12)}
+#cal .d small{font:700 12px/1 Rubik,sans-serif;letter-spacing:.08em;margin-top:5px;color:#64748b}
+#calL{left:70px;top:236px;font:900 26px/1 Rubik,sans-serif;letter-spacing:.14em;color:#111}
+/* papers */
+.paper{background:#fffdf5;box-shadow:0 18px 30px rgba(0,0,0,.3);padding:26px 28px;font:500 26px/1.3 Rubik,sans-serif}
+.paper b{display:block;font:900 30px/1.1 Rubik,sans-serif;letter-spacing:.04em}
+.paper .amt{font:900 64px/1 Rubik,sans-serif;margin-top:10px}
+.q{width:120px;height:120px;border-radius:50%;background:#111;color:#facc15;font:900 90px/120px Rubik,sans-serif;text-align:center;box-shadow:0 8px 0 rgba(0,0,0,.2)}
+/* HUD */
+#hud{left:70px;top:1050px;width:940px;height:190px;background:#fff;border-radius:40px;box-shadow:0 12px 0 rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;text-align:center;padding:0 30px;box-sizing:border-box}
+#hudT{white-space:nowrap;font:900 70px/1 Rubik,sans-serif;text-transform:uppercase;letter-spacing:-1px}
+#hudT em{font-style:normal;background:#facc15;padding:0 14px;border-radius:14px}
+/* evidence cards */
+.card{width:620px;background:#fff;border-radius:28px;padding:26px 32px;box-shadow:0 18px 36px rgba(0,0,0,.28);transform-origin:0 0;box-sizing:border-box}
+.card .k{font:700 22px/1 Rubik,sans-serif;letter-spacing:.14em;color:#64748b}
+.card .a{font:900 58px/1.1 Rubik,sans-serif;margin-top:8px}
+.card .w{margin-top:14px;font:500 30px/1.2 Rubik,sans-serif;display:flex;align-items:center;gap:12px}
+.card .w span{font:900 30px/1 Rubik,sans-serif;background:#facc15;padding:8px 14px;border-radius:10px}
+.card .ok{font:900 34px/1 Rubik,sans-serif;color:#16a34a}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none}
+#cam{left:440px;top:560px;width:200px;height:140px;border:8px solid #fff;border-radius:22px;box-shadow:0 0 0 4px rgba(0,0,0,.25)}
+#cam::after{content:"";position:absolute;left:50%;top:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border:8px solid #fff;border-radius:50%}
+#hand{left:0;top:0;font:900 30px/1 Rubik,sans-serif;background:#fff;border:4px solid #111;border-radius:14px;padding:10px 16px;white-space:nowrap}
+#hand i{font-style:normal;color:#ca8a04}
+/* end card */
+#end{position:absolute;inset:0;background:#facc15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px}
+#end img{width:230px;height:230px}
+#end .wm{font:900 120px/1 Rubik,sans-serif;letter-spacing:-3px}
+#end .tl{font:700 46px/1.2 Rubik,sans-serif;text-align:center}
+#end .cta{font:900 44px/1 Rubik,sans-serif;background:#111;color:#facc15;padding:26px 44px;border-radius:999px}
+#end .url{font:700 38px/1 Rubik,sans-serif}
+/* 16:9 — the same scene laid out for landscape */
+html.wide,html.wide body{width:1920px;height:1080px}
+.wide #calL{left:100px;top:38px}
+.wide #cal{left:100px;top:78px;width:1720px}
+.wide #cal .d{height:70px}
+.wide #hud{left:360px;top:888px;width:1200px;height:150px}
+.wide #cam{left:860px;top:420px}
+.wide #end{gap:26px}
+.wide #end img{width:190px;height:190px}
+.wide #end .wm{font-size:110px}
+</style></head><body>
+<div id="world">
+  <svg id="map" width="1080" height="1920" viewBox="0 0 1080 1920"></svg>
+  <div class="abs" id="station"></div>
+  <div class="abs" id="speedcam"></div>
+  <div class="abs" id="van"></div>
+  <div class="abs" id="tag">?</div>
+</div>
+<div id="grey"></div><div id="dim"></div>
+<div class="abs" id="calL">SEPTEMBER</div>
+<div class="abs" id="cal"></div>
+<div class="abs paper" id="p1" style="left:110px;top:500px;width:420px"><b>FUEL RECEIPT</b>Station 24 · Pump 3<div class="amt">€62.40</div>09.09.2026</div>
+<div class="abs q" id="q1" style="left:460px;top:450px">?</div>
+<div class="abs paper" id="p2" style="left:540px;top:640px;width:440px"><b>SPEEDING FINE</b>Vehicle W-4821 · 58 in a 50<div class="amt">€80.00</div>21.09.2026</div>
+<div class="abs q" id="q2" style="left:900px;top:590px">?</div>
+<div class="abs" id="hand">AHMED <i>→</i> MIKE</div>
+<div class="abs card" id="c1"><div class="k">FUEL · PHOTO AT THE PUMP</div><div class="a">€62.40</div><div class="w">9 Sep · held by <span>AHMED</span><b class="ok">✓</b></div></div>
+<div class="abs card" id="c2"><div class="k">SPEED FINE · VEHICLE W-4821</div><div class="a">€80.00</div><div class="w">21 Sep · held by <span>MIKE</span><b class="ok">✓</b></div></div>
+<div class="abs" id="cam"></div>
+<div class="abs" id="hud"><div id="hudT"></div></div>
+<div id="flash"></div>
+<div id="end"><img id="logo" src="logo.svg"><div class="wm">HBCField</div><div class="tl">Every euro has a name.</div><div class="cta">Try it free for 14 days</div><div class="url">hbcfield.com</div></div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const $=id=>document.getElementById(id);
+const DE=TL.lang==='de',WIDE=innerWidth>innerHeight;
+if(WIDE)document.documentElement.classList.add('wide');
+if(DE){
+  $('p1').innerHTML='<b>TANKQUITTUNG</b>Tankstelle 24 · Säule 3<div class="amt">62,40 €</div>09.09.2026';
+  $('p2').innerHTML='<b>STRAFZETTEL</b>Fahrzeug W-4821 · 58 statt 50<div class="amt">80,00 €</div>21.09.2026';
+  $('c1').innerHTML='<div class="k">TANKEN · FOTO AN DER ZAPFSÄULE</div><div class="a">62,40 €</div><div class="w">9. Sept. · gefahren von <span>AHMED</span><b class="ok">✓</b></div>';
+  $('c2').innerHTML='<div class="k">STRAFZETTEL · FAHRZEUG W-4821</div><div class="a">80,00 €</div><div class="w">21. Sept. · gefahren von <span>MIKE</span><b class="ok">✓</b></div>';
+  document.querySelector('#end .tl').textContent='Jeder Euro hat einen Namen.';
+  document.querySelector('#end .cta').textContent='Jetzt 14 Tage kostenlos testen';
+}
+if(WIDE){ // papers and question marks, spread across the width
+  const pos={p1:[330,300],q1:[690,250],p2:[1090,420],q2:[1460,370]};
+  for(const k in pos){$(k).style.left=pos[k][0]+'px';$(k).style.top=pos[k][1]+'px'}
+}
+// screen point the camera focuses on, resting scale and resting focus
+const SX=WIDE?960:540,SY=WIDE?560:700,S0=WIDE?1.15:1,FX0=540,FY0=WIDE?740:700,ZM=WIDE?2.1:1.75;
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-clamp(k),3),eio=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const spring=k=>{k=Math.max(0,k);return 1-Math.exp(-7*k)*Math.cos(11*k)};
+const st=i=>P[i].start,en=i=>P[i].end,ws=(i,w)=>P[i].wordStarts[w];
+function tf(el,x,y,s=1,r=0,o=1){el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;el.style.opacity=o}
+
+/* ---------- the map ---------- */
+const ROAD=(WIDE?'M -620 1030 L -120 1030 C':'M -120 1030 C')+' 120 1030 170 850 330 840 S 560 950 720 880 S 900 650 700 590 S 380 650 300 520 S 520 430 700 470 S 960 520 1200 450'+(WIDE?' L 1700 390':'');
+const svg=$('map');let rs=1;const rnd=()=>{rs=(rs*9301+49297)%233280;return rs/233280};
+let h='';
+// field patches
+const greens=['#bccf9b','#d4e0bb','#b3c790','#c7d6a8','#a9bf85'];
+for(let i=0;i<34;i++){const x=rnd()*1200-80,y=rnd()*1900,w=160+rnd()*260,hh=120+rnd()*220;h+=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="22" fill="${greens[i%5]}"/>`}
+// river
+h+=`<path d="M 1100 1250 C 800 1180 700 1400 420 1330 S 60 1450 -40 1400" stroke="#7dd3fc" stroke-width="46" fill="none" stroke-linecap="round"/>`;
+// side road
+h+=`<path d="M 700 830 C 760 980 640 1100 660 1300" stroke="#64748b" stroke-width="40" fill="none"/>`;
+h+=`<path id="road" d="${ROAD}" stroke="#475569" stroke-width="64" fill="none" stroke-linecap="round"/>`;
+h+=`<path d="${ROAD}" stroke="#fff" stroke-width="5" stroke-dasharray="26 22" fill="none"/>`;
+svg.innerHTML=h;
+const road=$('road'),RL=road.getTotalLength();
+const near=(x,y,d)=>{for(let l=0;l<=RL;l+=20){const p=road.getPointAtLength(l);if((p.x-x)**2+(p.y-y)**2<d*d)return true}return false};
+// houses + trees, kept off the road
+let dec='';
+for(let i=0,n=0;i<400&&n<26;i++){const x=40+rnd()*1000,y=420+rnd()*1400;if(near(x,y,110)||(y>1200&&y<1480))continue;n++;
+  const w=60+rnd()*40,c=['#f87171','#fb923c','#a78bfa','#f472b6','#94a3b8'][n%5];
+  dec+=`<g transform="translate(${x},${y}) rotate(${(rnd()-.5)*30})"><rect x="${-w/2+6}" y="-30" width="${w}" height="64" rx="6" fill="rgba(0,0,0,.15)"/><rect x="${-w/2}" y="-36" width="${w}" height="64" rx="6" fill="#fff"/><rect x="${-w/2}" y="-36" width="${w}" height="30" rx="6" fill="${c}"/></g>`}
+for(let i=0,n=0;i<500&&n<44;i++){const x=rnd()*1080,y=380+rnd()*1500;if(near(x,y,70))continue;n++;const r=18+rnd()*18;
+  dec+=`<circle cx="${x+5}" cy="${y+7}" r="${r}" fill="rgba(0,0,0,.14)"/><circle cx="${x}" cy="${y}" r="${r}" fill="${['#4d7c0f','#65a30d','#3f6212'][n%3]}"/>`}
+if(WIDE){let r2=7;const rn=()=>{r2=(r2*9301+49297)%233280;return r2/233280};let ex='';
+  for(const [x0,x1] of [[-620,-60],[1080,1700]]){
+    for(let i=0;i<12;i++)ex+=`<rect x="${x0+rn()*(x1-x0)-100}" y="${250+rn()*1000}" width="${160+rn()*240}" height="${120+rn()*200}" rx="22" fill="${greens[i%5]}"/>`;
+    for(let i=0,n=0;i<300&&n<9;i++){const x=x0+rn()*(x1-x0),y=380+rn()*800;if(near(x,y,110))continue;n++;const w=60+rn()*40,c=['#f87171','#fb923c','#a78bfa','#f472b6','#94a3b8'][n%5];
+      ex+=`<g transform="translate(${x},${y}) rotate(${(rn()-.5)*30})"><rect x="${-w/2+6}" y="-30" width="${w}" height="64" rx="6" fill="rgba(0,0,0,.15)"/><rect x="${-w/2}" y="-36" width="${w}" height="64" rx="6" fill="#fff"/><rect x="${-w/2}" y="-36" width="${w}" height="30" rx="6" fill="${c}"/></g>`}
+    for(let i=0,n=0;i<400&&n<16;i++){const x=x0+rn()*(x1-x0),y=330+rn()*900;if(near(x,y,70))continue;n++;const r=18+rn()*18;
+      ex+=`<circle cx="${x+5}" cy="${y+7}" r="${r}" fill="rgba(0,0,0,.14)"/><circle cx="${x}" cy="${y}" r="${r}" fill="${['#4d7c0f','#65a30d','#3f6212'][n%3]}"/>`}}
+  svg.insertAdjacentHTML('afterbegin',ex);
+  svg.setAttribute('viewBox','-700 0 2480 1920');svg.setAttribute('width','2480');svg.style.left='-700px';
+}
+svg.insertAdjacentHTML('beforeend',dec);
+
+// drive: p=0 start … 1 end.  Fuel on day 9 (p .08), handover day 15 (p .5), fine day 21 (p .87)
+const P_START=.1,P_FUEL=.17,P_HAND=.5,P_CAM=.86;
+const L0=WIDE?500:0,LO=WIDE?RL-500-Math.hypot(500,60):RL;
+const at=p=>road.getPointAtLength(L0+clamp(p)*LO);
+const angle=p=>{const a=at(p),b=at(Math.min(1,p+.004));return Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI};
+// station and speed camera sit beside the road
+(function(){const f=at(P_FUEL),c=at(P_CAM);
+  $('station').style.cssText+=`left:${f.x-70}px;top:${f.y-170}px;width:140px;height:110px;background:#ef4444;border:6px solid #111;border-radius:16px;box-shadow:0 8px 0 rgba(0,0,0,.2);display:grid;place-items:center;font:900 30px/1 Rubik;color:#fff`;
+  $('station').innerHTML=DE?'TANKEN':'FUEL';
+  $('speedcam').style.cssText+=`left:${c.x+40}px;top:${c.y-110}px;width:74px;height:74px;background:#facc15;border:6px solid #111;border-radius:50%;display:grid;place-items:center;font:900 26px/1 Rubik`;
+  $('speedcam').innerHTML='50';})();
+
+// calendar 8–23 Sep; day index for the drive position
+const DAYS=[8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23];
+$('cal').innerHTML=DAYS.map(d=>`<div class="d">${d}<small>${(DE?['MO','DI','MI','DO','FR','SA','SO']:['MO','TU','WE','TH','FR','SA','SU'])[(d+0)%7]}</small></div>`).join('');
+const dIdx=p=>Math.round(p*(DAYS.length-1));
+
+/* ---------- timing ---------- */
+const T_LIGHT=st(4)-.05;             // "HBCField does."
+const D0=st(5)-.1,D1=D0+1.7,D2=D1+.55,D3=en(5)+.25; // drive, pause at the handover, drive on
+function driveP(t){if(t<D0)return P_START;if(t<D1)return lerp(P_START,P_HAND,eio((t-D0)/(D1-D0)));if(t<D2)return P_HAND;return lerp(P_HAND,.95,eio((t-D2)/(D3-D2)))}
+// camera keyframes: [time, focus x, focus y, scale]; focus lands at screen (540,700)
+const F=at(P_FUEL),C=at(P_CAM);
+const CAM=[[0,FX0,FY0,S0],[st(6)-.35,FX0,FY0,S0],[st(6)+.35,F.x,F.y-40,ZM],[st(7)-.35,F.x,F.y-40,ZM],[st(7)+.3,C.x,C.y-20,ZM],[st(8)-.35,C.x,C.y-20,ZM],[st(8)+.3,FX0,FY0,S0]];
+function cam(t){let a=CAM[0],b=CAM[0];for(let i=0;i<CAM.length-1;i++){if(t>=CAM[i][0]){a=CAM[i];b=CAM[i+1]}}if(t>=CAM[CAM.length-1][0])a=b=CAM[CAM.length-1];
+  const k=a===b?1:eio((t-a[0])/(b[0]-a[0]));return [lerp(a[1],b[1],k),lerp(a[2],b[2],k),lerp(a[3],b[3],k)]}
+const toScreen=(x,y,c)=>[SX+(x-c[0])*c[2],SY+(y-c[1])*c[2]];
+
+const HT=DE?['Wer hatte <em>den Transporter</em>?','Keiner weiß es.','<em>HBCField</em> weiß es.','<em>Jedes Fahrzeug</em>, jeder Tag','Foto an <em>der Zapfsäule</em>','Der Strafzettel findet <em>seinen Fahrer</em>','Jeder Euro hat einen <em>Namen</em>.']
+  :['Who had <em>the van</em>?','Nobody knows.','<em>HBCField</em> does.','<em>Every van</em>, every day','Photo at <em>the pump</em>','The fine finds <em>its driver</em>','Every euro has a <em>name</em>.'];
+const HUD=[[st(2)-.1,HT[0]],[st(3)-.05,HT[1]],[T_LIGHT,HT[2]],[st(5)-.1,HT[3]],[st(6)-.1,HT[4]],[st(7)-.1,HT[5]],[st(8)-.1,HT[6]]];
+const W_PHOTO=DE?P[6].wordStarts.length-1:3,T_FLASH=ws(6,W_PHOTO)-.05;   // "photographed"
+const T_C1=st(6)+.45,T_C1OK=T_C1+.9,T_C2=st(7)+.35,T_C2OK=T_C2+.75,T_PIN=st(8)-.3;
+const T_END=st(9)-.25;
+
+window.SFX=[
+ {t:.25,s:'s1492',v:.35},{t:.72,s:'s2357',v:.55},
+ {t:st(1)-.1,s:'s1492',v:.35},{t:st(1)+.35,s:'s2357',v:.55},
+ {t:T_LIGHT-.05,s:'s1492',v:.5},{t:T_LIGHT+.1,s:'s2357',v:.45},
+ {t:D1,s:'s2357',v:.5},
+ {t:st(6)-.35,s:'s1492',v:.3},{t:T_FLASH,s:'s1133',v:.9},{t:T_C1,s:'s2357',v:.55},{t:T_C1OK,s:'s2870',v:.4,d:1.2},
+ {t:st(7)-.35,s:'s1492',v:.3},{t:T_C2,s:'s2357',v:.55},{t:T_C2OK,s:'s2870',v:.4,d:1.2},
+ {t:T_END,s:'s1492',v:.5},
+];
+
+function render(t){
+  const c=cam(t);
+  $('world').style.transform=`translate(${SX-c[0]*c[2]}px,${SY-c[1]*c[2]}px) scale(${c[2]})`;
+  // colour: grey and dim until HBCField arrives
+  const light=eo((t-T_LIGHT)/.6);
+  $('grey').style.opacity=1-light;$('dim').style.opacity=.28*(1-light);
+  // van + tag
+  const p=driveP(t),v=at(p),a=angle(p);
+  $('van').style.left=v.x+'px';$('van').style.top=v.y+'px';$('van').style.transform=`rotate(${a}deg)`;
+  const tag=$('tag');tag.style.left=v.x+'px';tag.style.top=v.y+'px';
+  const name=t<T_LIGHT+.6?'?':p<P_HAND||t<D1+.25?'AHMED':'MIKE';tag.textContent=name;
+  const pulse=name==='?'?1+.08*Math.sin(t*6):1;
+  const sw=t>D1+.2&&t<D1+.6?lerp(1.4,1,spring((t-D1-.2)/.4)):t>T_LIGHT+.6&&t<T_LIGHT+1?lerp(1.4,1,spring((t-T_LIGHT-.6)/.4)):1;
+  tag.style.transform=`translate(-50%,-150%) scale(${pulse*sw})`;
+  // handover moment
+  const hk=(t-D1)/.35,ho=t>D1&&t<D2+.6?1:clamp(1-(t-D2-.6)*4);const hs=toScreen(v.x,v.y,c);
+  tf($('hand'),hs[0]-150,hs[1]+60,lerp(.5,1,spring(hk)),-3,t>D1?ho:0);
+  // calendar: past days coloured by who held the van
+  const di=t<D0?-1:dIdx((p-P_START)/(1-P_START)),hi=dIdx((P_HAND-P_START)/(1-P_START));
+  [...$('cal').children].forEach((e,i)=>{const on=i<=di;e.style.background=on?(i<hi?'#facc15':'#111'):'rgba(255,255,255,.8)';e.style.color=on?(i<hi?'#111':'#facc15'):'#334155';
+    e.style.transform=i===di&&t<D3+.1&&t>D0?'translateY(-8px)':'none';});
+  // falling papers
+  const fall=(el,q,t0,r)=>{const k=(t-t0)/.55,out=eio((t-T_LIGHT)/.5);tf(el,out*(r<0?-900:900),lerp(-900,0,eo(k))+(k>1&&k<1.25?Math.sin((k-1)*40)*6:0),1,r+out*30*Math.sign(r),k>0?1:0);
+    const qk=(t-t0-.55)/.35;tf(q,out*(r<0?-900:900),0,(qk>0?lerp(.3,1,spring(qk)):0)*(1+.06*Math.sin(t*5)),0,qk>0?1:0)};
+  fall($('p1'),$('q1'),.2,-8);fall($('p2'),$('q2'),st(1)-.15,6);
+  // shrug on "Nobody knows."
+  if(t>st(3)-.05&&t<st(3)+.6){const s=Math.sin((t-st(3))*30)*8;$('p1').style.transform+=` translateX(${s}px)`;$('p2').style.transform+=` translateX(${-s}px)`}
+  // HUD
+  let cur=null,t0=0;for(const [tt,txt] of HUD)if(t>=tt){cur=txt;t0=tt}
+  const hud=$('hud');if(cur&&t<T_END+.3){const ht=$('hudT');if(ht.dataset.v!==cur){ht.dataset.v=cur;ht.innerHTML=cur;let f=70;ht.style.fontSize=f+'px';while(ht.scrollWidth>(WIDE?1130:870)&&f>40){f-=3;ht.style.fontSize=f+'px'}}tf(hud,0,0,lerp(.85,1,spring((t-t0)/.4)),0,1)}else hud.style.opacity=0;
+  // camera viewfinder + flash
+  const vf=(t-(ws(6,W_PHOTO)-.5))/.25;tf($('cam'),0,0,lerp(1.3,1,eo(vf)),0,t>ws(6,W_PHOTO)-.5&&t<T_FLASH+.25?1:0);
+  $('flash').style.opacity=Math.max(t>=T_FLASH?.85*clamp(1-(t-T_FLASH)/.35):0,t>=T_LIGHT&&t<T_LIGHT+.3?.5*(1-(t-T_LIGHT)/.3):0);
+  // evidence cards: big under the focus, then pinned small beside their place
+  const pin=eio((t-T_PIN)/.6);
+  const card=(el,ok,tIn,tOk,wx,wy,fromLeft)=>{const k=(tIn>t)?-1:(t-tIn)/.45;const sp=toScreen(wx,wy,[FX0,FY0,S0]);
+    const x=lerp(WIDE?1190:230,clamp(sp[0]-120,WIDE?100:70,(WIDE?1820:1010)-620*.5),pin),y=lerp(WIDE?330:790,sp[1]+50,pin),s=lerp(1,.5,pin);
+    tf(el,x+(k<1?lerp(fromLeft?-700:700,0,eo(k)):0),y,s*lerp(.8,1,spring(k)),lerp(fromLeft?-6:6,-2,clamp(k)),k>0&&t<T_END+.3?1:0);
+    ok.style.opacity=t>tOk?1:0;ok.style.transform=`scale(${t>tOk?lerp(2,1,spring((t-tOk)/.35)):1})`;
+    el.querySelector('span').style.background=t>tOk?'#facc15':'#e2e8f0'};
+  card($('c1'),$('c1').querySelector('.ok'),T_C1,T_C1OK,F.x,F.y,true);
+  card($('c2'),$('c2').querySelector('.ok'),T_C2,T_C2OK,C.x,C.y,false);
+  // end card: a yellow circle grows out of the van
+  const ek=eio((t-T_END)/.7),vs=toScreen(v.x,v.y,c);const e=$('end');
+  e.style.clipPath=`circle(${ek*2300}px at ${vs[0]}px ${vs[1]}px)`;e.style.opacity=t>T_END?1:0;
+  [...e.children].forEach((ch,i)=>{const k=(t-T_END-.35-i*.12)/.45;tf(ch,0,lerp(60,0,eo(k)),lerp(.8,1,spring(k)),0,clamp(k*2))});
+}
+async function preload(){await document.fonts.ready;await $('logo').decode().catch(()=>{});}
+window.__ready=preload();window.render=render;
+</script></body></html>

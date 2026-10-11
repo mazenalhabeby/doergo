@@ -1,0 +1,138 @@
+{
+ "phrases": [
+  {
+   "text": "Minus eins.",
+   "start": 0.3,
+   "end": 1.31,
+   "wordStarts": [
+    0.3,
+    0.764
+   ]
+  },
+  {
+   "text": "Minus zwei.",
+   "start": 1.641,
+   "end": 2.64,
+   "wordStarts": [
+    1.641,
+    2.164
+   ]
+  },
+  {
+   "text": "Minus drei.",
+   "start": 3.006,
+   "end": 4.086,
+   "wordStarts": [
+    3.006,
+    3.517
+   ]
+  },
+  {
+   "text": "Kein Netz.",
+   "start": 4.815,
+   "end": 5.628,
+   "wordStarts": [
+    4.815,
+    5.175
+   ]
+  },
+  {
+   "text": "Die meisten Apps h\u00f6ren hier auf.",
+   "start": 6.067,
+   "end": 7.681,
+   "wordStarts": [
+    6.067,
+    6.265,
+    6.694,
+    6.915,
+    7.159,
+    7.321
+   ]
+  },
+  {
+   "text": "HBCField arbeitet weiter.",
+   "start": 8.016,
+   "end": 9.966,
+   "wordStarts": [
+    8.016,
+    8.991,
+    9.444
+   ]
+  },
+  {
+   "text": "Foto, gespeichert.",
+   "start": 10.479,
+   "end": 11.884,
+   "wordStarts": [
+    10.479,
+    11.048
+   ]
+  },
+  {
+   "text": "Notiz, gespeichert.",
+   "start": 12.15,
+   "end": 13.508,
+   "wordStarts": [
+    12.15,
+    12.753
+   ]
+  },
+  {
+   "text": "Unterschrift, gespeichert.",
+   "start": 13.728,
+   "end": 15.376,
+   "wordStarts": [
+    13.728,
+    14.517
+   ]
+  },
+  {
+   "text": "Wieder oben,",
+   "start": 16.009,
+   "end": 16.705,
+   "wordStarts": [
+    16.009,
+    16.403
+   ]
+  },
+  {
+   "text": "kommt alles von selbst an.",
+   "start": 16.74,
+   "end": 18.54,
+   "wordStarts": [
+    16.74,
+    17.112,
+    17.576,
+    17.797,
+    18.214
+   ]
+  },
+  {
+   "text": "Nichts verloren. Nichts doppelt getippt.",
+   "start": 19.079,
+   "end": 22.353,
+   "wordStarts": [
+    19.079,
+    19.59,
+    20.658,
+    21.215,
+    21.633
+   ]
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "start": 23.085,
+   "end": 27.66,
+   "wordStarts": [
+    23.085,
+    24.572,
+    25.117,
+    25.663,
+    26.104,
+    26.801
+   ]
+  }
+ ],
+ "duration": 29.66,
+ "lang": "de"
+}

@@ -1,0 +1,53 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Wann kommt er denn?",
+   "pause": 0.1
+  },
+  {
+   "text": "Ist es schon erledigt?",
+   "pause": 0.1
+  },
+  {
+   "text": "Haben Sie meine E-Mail bekommen?",
+   "pause": 0.25
+  },
+  {
+   "text": "Dreißig Anrufe am Tag,",
+   "pause": 0
+  },
+  {
+   "text": "und keiner davon ist Arbeit.",
+   "pause": 0.5
+  },
+  {
+   "text": "Oder.",
+   "pause": 0.6
+  },
+  {
+   "text": "Ihr Kunde sieht es selbst.",
+   "pause": 0.3
+  },
+  {
+   "text": "Unterwegs. Ankunft in vierzehn Minuten.",
+   "pause": 0.4
+  },
+  {
+   "text": "Erledigt. Bericht im Anhang.",
+   "pause": 0.4
+  },
+  {
+   "text": "Ihr Telefon bleibt still.",
+   "pause": 0.1
+  },
+  {
+   "text": "Ihr Team kann arbeiten.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

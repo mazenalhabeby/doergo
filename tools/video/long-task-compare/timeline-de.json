@@ -1,0 +1,620 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 12.57,
+   "phrases": [
+    {
+     "text": "Ein Einsatz \u00fcber f\u00fcnf Tage, sechs Stunden von zu Hause.",
+     "start": 0.4,
+     "end": 3.604,
+     "wordStarts": [
+      0.4,
+      0.655,
+      1.166,
+      1.41,
+      1.712,
+      2.06,
+      2.339,
+      2.78,
+      2.977,
+      3.128
+     ]
+    },
+    {
+     "text": "Zwei Wege, ihn abzuwickeln.",
+     "start": 4.587,
+     "end": 6.422,
+     "wordStarts": [
+      4.587,
+      5.052,
+      5.377,
+      5.54
+     ]
+    },
+    {
+     "text": "Der Ablauf aus diesem Video, und wie HBCField heute arbeitet.",
+     "start": 7.147,
+     "end": 11.57,
+     "wordStarts": [
+      7.147,
+      7.402,
+      7.89,
+      8.064,
+      8.343,
+      8.83,
+      8.981,
+      9.19,
+      10.154,
+      10.467
+     ]
+    }
+   ]
+  },
+  {
+   "id": "theirs",
+   "start": 12.57,
+   "end": 39.476,
+   "phrases": [
+    {
+     "text": "Dort tippt der Techniker auf Start, und ein Timer z\u00e4hlt die Fahrt.",
+     "start": 12.57,
+     "end": 17.202,
+     "wordStarts": [
+      12.57,
+      12.976,
+      13.255,
+      13.452,
+      14.079,
+      14.277,
+      15.171,
+      15.438,
+      15.681,
+      16.157,
+      16.448,
+      16.61
+     ]
+    },
+    {
+     "text": "Vor Ort stempelt er sich jeden Tag direkt auf dem Auftrag ein und aus.",
+     "start": 17.881,
+     "end": 22.641,
+     "wordStarts": [
+      17.881,
+      18.171,
+      18.508,
+      18.996,
+      19.088,
+      19.367,
+      19.739,
+      20.099,
+      20.598,
+      20.749,
+      20.946,
+      21.561,
+      21.91,
+      22.13
+     ]
+    },
+    {
+     "text": "Nach jedem Ausstempeln ist ein Tagesbericht Pflicht, bevor er wieder einstempeln kann.",
+     "start": 23.482,
+     "end": 28.939,
+     "wordStarts": [
+      23.482,
+      23.819,
+      24.19,
+      24.934,
+      25.143,
+      25.282,
+      26.118,
+      26.942,
+      27.372,
+      27.511,
+      27.802,
+      28.487
+     ]
+    },
+    {
+     "text": "Am Freitag schlie\u00dft er ab, tr\u00e4gt die Heimfahrt aus dem Ged\u00e4chtnis ein, und der Kunde unterschreibt am Ende die ganze Woche.",
+     "start": 29.722,
+     "end": 38.476,
+     "wordStarts": [
+      29.722,
+      29.989,
+      30.616,
+      31.046,
+      31.243,
+      31.894,
+      32.253,
+      32.393,
+      32.927,
+      33.066,
+      33.24,
+      33.937,
+      34.692,
+      34.877,
+      35.063,
+      35.516,
+      36.305,
+      36.526,
+      36.886,
+      37.118,
+      37.652
+     ]
+    }
+   ]
+  },
+  {
+   "id": "breaks",
+   "start": 39.476,
+   "end": 72.409,
+   "phrases": [
+    {
+     "text": "Das klingt gut. Aber in einer echten Woche bricht es an vier Stellen.",
+     "start": 39.476,
+     "end": 44.097,
+     "wordStarts": [
+      39.476,
+      39.882,
+      40.242,
+      41.067,
+      41.392,
+      41.519,
+      41.833,
+      42.309,
+      42.611,
+      42.913,
+      43.04,
+      43.214,
+      43.493
+     ]
+    },
+    {
+     "text": "Erstens. Die Uhr h\u00e4ngt am Auftrag, also brauchen zwei Auftr\u00e4ge an einem Tag eine Sonderregel.",
+     "start": 45.038,
+     "end": 51.354,
+     "wordStarts": [
+      45.038,
+      46.211,
+      46.454,
+      46.71,
+      46.977,
+      47.151,
+      47.766,
+      48.068,
+      48.463,
+      48.788,
+      49.368,
+      49.543,
+      49.868,
+      50.204,
+      50.46
+     ]
+    },
+    {
+     "text": "Zweitens. Die Heimfahrt wird von Hand eingetippt, sie ist also gesch\u00e4tzt.",
+     "start": 52.357,
+     "end": 57.349,
+     "wordStarts": [
+      52.357,
+      53.6,
+      53.797,
+      54.331,
+      54.505,
+      54.679,
+      54.969,
+      55.921,
+      56.095,
+      56.293,
+      56.548
+     ]
+    },
+    {
+     "text": "Drittens. Ein fehlender Bericht blockiert das n\u00e4chste Einstempeln, und die Arbeit steht.",
+     "start": 58.074,
+     "end": 64.019,
+     "wordStarts": [
+      58.074,
+      59.119,
+      59.456,
+      59.944,
+      60.304,
+      60.722,
+      60.942,
+      61.383,
+      62.173,
+      62.359,
+      62.649,
+      63.276
+     ]
+    },
+    {
+     "text": "Viertens. Ein einzelner Techniker. Ein Team von drei Leuten hat keinen Platz.",
+     "start": 65.115,
+     "end": 71.408,
+     "wordStarts": [
+      65.115,
+      66.3,
+      66.636,
+      67.24,
+      68.378,
+      68.656,
+      68.958,
+      69.144,
+      69.423,
+      69.806,
+      70.003,
+      70.386
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ours",
+   "start": 72.409,
+   "end": 107.431,
+   "phrases": [
+    {
+     "text": "HBCField geht vom Menschen aus, nicht vom Auftrag.",
+     "start": 72.409,
+     "end": 76.02,
+     "wordStarts": [
+      72.409,
+      73.291,
+      73.524,
+      73.733,
+      74.185,
+      74.719,
+      75.068,
+      75.3
+     ]
+    },
+    {
+     "text": "Sie stempeln einmal ein, f\u00fcr Ihren Tag. Jeder Auftrag, den Sie bearbeiten, z\u00e4hlt innerhalb dieser Schicht.",
+     "start": 76.845,
+     "end": 83.532,
+     "wordStarts": [
+      76.845,
+      77.019,
+      77.495,
+      77.855,
+      78.331,
+      78.644,
+      78.981,
+      79.863,
+      80.305,
+      80.885,
+      81.059,
+      81.199,
+      81.895,
+      82.255,
+      82.708,
+      83.033
+     ]
+    },
+    {
+     "text": "Unterwegs zeichnet die echte Route auf der Karte auf, Kilometer f\u00fcr Kilometer, nicht nur einen Timer.",
+     "start": 84.443,
+     "end": 92.07,
+     "wordStarts": [
+      84.443,
+      85.209,
+      85.65,
+      85.824,
+      86.23,
+      86.59,
+      86.765,
+      86.927,
+      87.333,
+      87.972,
+      88.761,
+      88.924,
+      90.039,
+      90.456,
+      90.735,
+      91.304
+     ]
+    },
+    {
+     "text": "Beim Ausstempeln pausiert der Auftrag von selbst, mit einer \u00dcbergabenotiz f\u00fcr den N\u00e4chsten.",
+     "start": 93.074,
+     "end": 99.03,
+     "wordStarts": [
+      93.074,
+      93.364,
+      94.049,
+      94.479,
+      94.641,
+      95.106,
+      95.326,
+      96.151,
+      96.36,
+      96.731,
+      97.915,
+      98.089,
+      98.264
+     ]
+    },
+    {
+     "text": "Und ein Team teilt sich einen Auftrag, jeder mit seiner eigenen Zeit, und mit einem Leiter.",
+     "start": 99.941,
+     "end": 106.431,
+     "wordStarts": [
+      99.941,
+      100.277,
+      100.51,
+      100.846,
+      101.148,
+      101.346,
+      101.613,
+      102.611,
+      103.006,
+      103.168,
+      103.47,
+      103.9,
+      104.677,
+      105.003,
+      105.177,
+      105.479
+     ]
+    }
+   ]
+  },
+  {
+   "id": "score",
+   "start": 107.431,
+   "end": 132.579,
+   "phrases": [
+    {
+     "text": "Im direkten Vergleich.",
+     "start": 107.431,
+     "end": 108.813,
+     "wordStarts": [
+      107.431,
+      107.675,
+      108.128
+     ]
+    },
+    {
+     "text": "Fahrt: ein Timer, gegen eine echte GPS-Route.",
+     "start": 109.7,
+     "end": 113.729,
+     "wordStarts": [
+      109.7,
+      110.432,
+      110.722,
+      111.662,
+      111.976,
+      112.243,
+      112.649
+     ]
+    },
+    {
+     "text": "Die Uhr: an einen Auftrag gebunden, gegen eine Schicht f\u00fcr beliebig viele Auftr\u00e4ge.",
+     "start": 114.226,
+     "end": 120.124,
+     "wordStarts": [
+      114.226,
+      114.482,
+      115.271,
+      115.55,
+      115.84,
+      116.304,
+      117.233,
+      117.57,
+      117.825,
+      118.313,
+      118.51,
+      119.056,
+      119.369
+     ]
+    },
+    {
+     "text": "Teams: eine Person, gegen ein Team mit Leiter.",
+     "start": 120.738,
+     "end": 124.662,
+     "wordStarts": [
+      120.738,
+      121.701,
+      121.991,
+      122.769,
+      123.164,
+      123.408,
+      123.838,
+      124.058
+     ]
+    },
+    {
+     "text": "Dasselbe Ziel. HBCField misst einfach mehr, und verlangt vom Mitarbeiter weniger.",
+     "start": 125.369,
+     "end": 131.58,
+     "wordStarts": [
+      125.369,
+      126.019,
+      126.773,
+      127.841,
+      128.109,
+      128.503,
+      128.979,
+      129.177,
+      129.664,
+      129.838,
+      130.512
+     ]
+    }
+   ]
+  },
+  {
+   "id": "plan",
+   "start": 132.579,
+   "end": 181.469,
+   "phrases": [
+    {
+     "text": "Der Ablauf hat aber gute Ideen. Also \u00fcbernehmen wir sie, und machen sie kl\u00fcger.",
+     "start": 132.579,
+     "end": 138.082,
+     "wordStarts": [
+      132.579,
+      132.892,
+      133.392,
+      133.612,
+      133.868,
+      134.193,
+      135.18,
+      135.69,
+      136.259,
+      136.445,
+      136.689,
+      136.944,
+      137.269,
+      137.444
+     ]
+    },
+    {
+     "text": "Erstens zeigt der Auftrag seine Tage. Tag eins bis Tag f\u00fcnf, mit Stunden und einer Notiz zu jedem.",
+     "start": 139.128,
+     "end": 147.441,
+     "wordStarts": [
+      139.128,
+      140.126,
+      140.475,
+      140.625,
+      141.252,
+      141.566,
+      142.402,
+      142.855,
+      143.412,
+      143.702,
+      144.12,
+      144.863,
+      145.107,
+      145.699,
+      145.873,
+      146.117,
+      146.686,
+      146.883
+     ]
+    },
+    {
+     "text": "Zweitens wandert der Tagesbericht in das Ausstempeln: Erledigtes, M\u00e4ngel, Teile, Fotos. Erbeten, nie blockierend.",
+     "start": 148.305,
+     "end": 157.43,
+     "wordStarts": [
+      148.305,
+      149.327,
+      149.779,
+      149.965,
+      150.789,
+      150.882,
+      151.138,
+      152.276,
+      153.309,
+      153.762,
+      154.284,
+      155.317,
+      156.177,
+      156.502
+     ]
+    },
+    {
+     "text": "Drittens: Heimfahrt. Ein Tippen, und die R\u00fcckfahrt wird per GPS gemessen, wie die Hinfahrt.",
+     "start": 158.016,
+     "end": 164.204,
+     "wordStarts": [
+      158.016,
+      158.817,
+      159.943,
+      160.234,
+      160.861,
+      161.081,
+      161.209,
+      161.696,
+      161.882,
+      162.068,
+      162.718,
+      163.206,
+      163.403,
+      163.531
+     ]
+    },
+    {
+     "text": "Viertens: eine \u00dcbersicht. Hinfahrt, Arbeit, R\u00fcckfahrt, und die Summe.",
+     "start": 164.906,
+     "end": 170.792,
+     "wordStarts": [
+      164.906,
+      165.788,
+      166.195,
+      167.147,
+      168.099,
+      168.958,
+      169.829,
+      170.107,
+      170.293
+     ]
+    },
+    {
+     "text": "Und zuletzt: Der Kunde unterschreibt jeden Tag oder am Ende, und der unterschriebene Bericht geht automatisch per E-Mail hinaus.",
+     "start": 171.517,
+     "end": 180.469,
+     "wordStarts": [
+      171.517,
+      171.819,
+      172.62,
+      172.852,
+      173.247,
+      173.99,
+      174.455,
+      174.884,
+      175.198,
+      175.407,
+      175.859,
+      175.999,
+      176.173,
+      176.951,
+      177.427,
+      177.763,
+      178.704,
+      178.936,
+      179.331
+     ]
+    }
+   ]
+  },
+  {
+   "id": "outro",
+   "start": 181.469,
+   "end": 188.949,
+   "phrases": [
+    {
+     "text": "Ein langer Einsatz, so gemessen, wie er wirklich war.",
+     "start": 181.469,
+     "end": 184.975,
+     "wordStarts": [
+      181.469,
+      181.817,
+      182.166,
+      182.943,
+      183.292,
+      183.814,
+      183.988,
+      184.128,
+      184.592
+     ]
+    },
+    {
+     "text": "HBCField.",
+     "start": 185.8,
+     "end": 187.449,
+     "wordStarts": [
+      185.8
+     ]
+    }
+   ]
+  }
+ ],
+ "duration": 191.45,
+ "lang": "de"
+}

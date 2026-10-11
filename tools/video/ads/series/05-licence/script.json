@@ -1,0 +1,52 @@
+{
+ "phrases": [
+  {
+   "text": "Thirty days.",
+   "pause": 0.25
+  },
+  {
+   "text": "Seven.",
+   "pause": 0.25
+  },
+  {
+   "text": "One.",
+   "pause": 0.4
+  },
+  {
+   "text": "The driving licence expired, and nobody noticed.",
+   "pause": 0.3
+  },
+  {
+   "text": "The audit failed.",
+   "pause": 0.2
+  },
+  {
+   "text": "The contract is gone.",
+   "pause": 0.6
+  },
+  {
+   "text": "Rewind.",
+   "pause": 0.6
+  },
+  {
+   "text": "Thirty days out, HBCField read the date from the document,",
+   "pause": 0
+  },
+  {
+   "text": "and sent the reminder.",
+   "pause": 0.3
+  },
+  {
+   "text": "Renewed. On time.",
+   "pause": 0.2
+  },
+  {
+   "text": "Nothing lost.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "pause": 0
+  }
+ ]
+}

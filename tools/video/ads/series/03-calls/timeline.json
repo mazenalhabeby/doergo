@@ -1,0 +1,146 @@
+{
+ "phrases": [
+  {
+   "text": "When is he coming?",
+   "start": 0.3,
+   "end": 1.206,
+   "wordStarts": [
+    0.3,
+    0.567,
+    0.683,
+    0.799
+   ]
+  },
+  {
+   "text": "Is it done yet?",
+   "start": 1.352,
+   "end": 2.153,
+   "wordStarts": [
+    1.352,
+    1.549,
+    1.654,
+    1.863
+   ]
+  },
+  {
+   "text": "Did you get my email?",
+   "start": 2.323,
+   "end": 3.519,
+   "wordStarts": [
+    2.323,
+    2.52,
+    2.648,
+    2.81,
+    2.973
+   ]
+  },
+  {
+   "text": "Thirty calls a day,",
+   "start": 4.14,
+   "end": 5.382,
+   "wordStarts": [
+    4.14,
+    4.57,
+    4.941,
+    5.046
+   ]
+  },
+  {
+   "text": "and not one of them is work.",
+   "start": 5.429,
+   "end": 7.159,
+   "wordStarts": [
+    5.429,
+    5.638,
+    5.94,
+    6.149,
+    6.253,
+    6.427,
+    6.59
+   ]
+  },
+  {
+   "text": "Or.",
+   "start": 8.146,
+   "end": 8.541,
+   "wordStarts": [
+    8.146
+   ]
+  },
+  {
+   "text": "Your client sees it for themselves.",
+   "start": 9.304,
+   "end": 11.324,
+   "wordStarts": [
+    9.304,
+    9.594,
+    10.047,
+    10.279,
+    10.395,
+    10.534
+   ]
+  },
+  {
+   "text": "On the way. Arriving in fourteen minutes.",
+   "start": 11.937,
+   "end": 14.782,
+   "wordStarts": [
+    11.937,
+    12.158,
+    12.286,
+    12.808,
+    13.423,
+    13.632,
+    14.213
+   ]
+  },
+  {
+   "text": "Done. Report attached.",
+   "start": 15.553,
+   "end": 17.631,
+   "wordStarts": [
+    15.553,
+    16.54,
+    16.981
+   ]
+  },
+  {
+   "text": "Your phone stays quiet.",
+   "start": 18.194,
+   "end": 19.611,
+   "wordStarts": [
+    18.194,
+    18.403,
+    18.705,
+    19.018
+   ]
+  },
+  {
+   "text": "Your team gets to work.",
+   "start": 19.908,
+   "end": 21.568,
+   "wordStarts": [
+    19.908,
+    20.187,
+    20.639,
+    20.953,
+    21.115
+   ]
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "start": 22.3,
+   "end": 25.656,
+   "wordStarts": [
+    22.3,
+    23.403,
+    23.798,
+    23.961,
+    24.239,
+    24.413,
+    24.936
+   ]
+  }
+ ],
+ "duration": 27.89
+}

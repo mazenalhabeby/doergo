@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--g:#05080f;--ink:#e8eef8;--muted:#93a1b8;--dim:#5c6b82;--brand:#2563eb;--brand2:#60a5fa;--ok:#22c55e;--sug:#f59e0b;--red:#f87171;--card:#0e1524;--line:#24324a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--g);color:var(--ink);font-family:'IBM Plex Sans Arabic',Inter,system-ui,sans-serif}
+#stage{position:absolute;inset:0;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.45}
+.scene{position:absolute;inset:0;opacity:0}
+.abs{position:absolute}
+.disp{font-weight:700;line-height:1.15}
+.lat{font-family:Archivo,Inter,sans-serif;direction:ltr;unicode-bidi:isolate}
+.card{position:absolute;border-radius:24px;background:var(--card);border:2px solid var(--line);box-shadow:0 40px 90px #000b;overflow:hidden}
+.card .hd{padding:18px 26px;border-bottom:2px solid var(--line);font-weight:700;font-size:28px;color:var(--muted);display:flex;gap:12px;align-items:center}
+.card .bd{padding:24px 26px;font-size:28px;line-height:1.55}
+.chip{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:10px 24px;font-weight:700;font-size:28px}
+.ok{background:#22c55e22;color:#86efac;border:2px solid #22c55e66}
+.sug{background:#f59e0b22;color:#fcd34d;border:2px solid #f59e0b77}
+.no{background:#f8717122;color:#fca5a5;border:2px solid #f8717166}
+.blue{background:#2563eb33;color:#bfdbfe;border:2px solid #60a5fa66}
+.field{display:flex;justify-content:space-between;gap:20px;padding:14px 0;border-bottom:1px solid #1f2b40;font-size:28px}
+.field .k{color:var(--muted)}
+.field .v{font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:68px;padding:0 40px;border-radius:16px;background:var(--brand);color:#fff;font-weight:700;font-size:30px}
+.arrow{font-size:90px;color:var(--brand2);font-weight:700}
+#sub{position:absolute;left:180px;right:180px;bottom:44px;text-align:center;font-weight:600;font-size:40px;line-height:1.45;color:#fff;text-shadow:0 2px 10px #000,0 0 3px #000}
+#chap{position:absolute;right:96px;top:64px;display:flex;align-items:baseline;gap:18px;opacity:0}
+#chap .n{font-family:Archivo;font-weight:900;font-size:28px;color:var(--brand2)}
+#chap .tt{font-weight:700;font-size:28px;color:var(--muted)}
+</style></head>
+<body><div id="stage">
+<div class="blob" id="b1" style="width:900px;height:900px;background:#1d4ed8;right:-200px;top:-300px"></div>
+<div class="blob" id="b2" style="width:800px;height:800px;background:#0f766e;left:-220px;bottom:-320px"></div>
+<div class="blob" id="b3" style="width:600px;height:600px;background:#4338ca;left:700px;top:520px;opacity:.25"></div>
+<div id="scenes"></div>
+<div id="chap"><span class="n"></span><span class="tt"></span></div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:230px;background:linear-gradient(transparent,#05080fe6 55%)"></div>
+<div id="sub"></div>
+</div>
+<script>
+const TL = __TIMELINE__;
+const CH = Object.fromEntries(TL.chapters.map(c => [c.id, c]));
+const P = (c, i) => CH[c].phrases[Math.min(i, CH[c].phrases.length - 1)].start;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const fade = (t, a, d = .45) => clamp((t - a) / d);
+const spring = x => x <= 0 ? 0 : x >= 1.6 ? 1 : 1 - Math.exp(-7 * x) * Math.cos(11 * x);
+const sp = (t, a, d = 1) => spring((t - a) / d);
+function el(tag, cls, html, st) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (st) Object.assign(e.style, st); return e; }
+/** Show from phrase start: fade + rise (spring). */
+function enter(n, t, a, { dy = 40, dur = .9, out = Infinity } = {}) {
+  n.style.opacity = fade(t, a) * (1 - fade(t, out, .35));
+  n.style.transform = `translateY(${dy * (1 - sp(t, a, dur))}px)`;
+}
+const SCENES = [];
+const scene = (c, i, build) => SCENES.push({ c, i, build });
+const TITLES = { intro: '', today: 'اليوم', report: 'تقرير الخدمة', job: 'مهمة من رسالة', documents: 'المستندات والإيصالات', office: 'في المكتب', never: 'أين لا يقرّر', decision: 'القرار', start: 'من أين نبدأ' };
+
+// 1 · intro
+scene('intro', 0, root => {
+  const h = el('div', 'abs disp', 'الذكاء الاصطناعي في <span class="lat" style="color:var(--brand2)">HBCField</span>', { left: 0, right: 0, top: '300px', textAlign: 'center', fontSize: '110px' });
+  const chips = ['أين نحن اليوم', 'أين يفيدنا فعلاً', 'أين لا يقرّر أبداً'].map((x, i) =>
+    el('div', 'abs chip ' + ['blue', 'ok', 'no'][i], x, { top: '540px', right: (420 + i * 380) + 'px' }));
+  root.append(h, ...chips);
+  return t => { enter(h, t, P('intro', 0) - .3, { dy: 60 }); chips.forEach((c, i) => enter(c, t, P('intro', 1) + i * .7)); };
+});
+
+// 2 · today
+scene('today', 0, root => {
+  const zero = el('div', 'abs', '<div class="disp" style="font-size:66px">لا ذكاء اصطناعي في البرنامج اليوم</div><div style="font-size:30px;color:var(--muted);margin-top:14px">صفر نماذج · صفر خدمات خارجية</div>', { right: '140px', top: '150px' });
+  const steps = ['📷 صورة', 'قراءة النص', 'قواعد كتبناها', 'النتيجة'].map((x, i) =>
+    el('div', 'abs card', `<div class="bd" style="font-size:32px;font-weight:700;text-align:center">${x.replace('📷 ', '')}</div>`, { right: (140 + i * 410) + 'px', top: '360px', width: '330px' }));
+  const arr = [0, 1, 2].map(i => el('div', 'abs arrow', '←', { right: (480 + i * 410) + 'px', top: '360px' }));
+  const kinds = ['بطاقة عمل', 'إيصال وقود', 'عقد', 'جواز سفر'].map((x, i) => el('div', 'abs chip blue', x, { right: (140 + i * 300) + 'px', top: '560px' }));
+  const lock = el('div', 'abs chip ok', 'على الهاتف أو على خادمنا · لا يخرج شيء', { right: '140px', top: '660px' });
+  const slot = el('div', 'abs', '<div style="border:3px dashed #60a5fa;border-radius:24px;padding:26px 34px;font-size:30px;font-weight:700;color:#bfdbfe">مكان جاهز لقارئ ذكي · يقترح بجانب القواعد</div>', { right: '960px', top: '650px' });
+  root.append(zero, ...steps, ...arr, ...kinds, lock, slot);
+  return t => {
+    enter(zero, t, P('today', 0) - .2);
+    steps.forEach((s, i) => enter(s, t, P('today', 1) + i * .45)); arr.forEach((a, i) => enter(a, t, P('today', 1) + i * .45 + .25, { dy: 0 }));
+    kinds.forEach((k, i) => enter(k, t, P('today', 2) + i * .4));
+    enter(lock, t, P('today', 3)); enter(slot, t, P('today', 4));
+  };
+});
+
+// 3 · service report
+scene('report', 0, root => {
+  const phone = el('div', 'abs card', `<div class="hd">ملاحظة الفنّي الصوتية</div><div class="bd lat" style="font-family:Inter;font-size:27px;color:#cbd5e1">boiler cleaned, filter changed,<br>pressure ok 1.5 bar,<br>customer not home</div>`, { right: '150px', top: '230px', width: '560px' });
+  const arr = el('div', 'abs arrow', '←', { right: '760px', top: '330px' });
+  const rep = el('div', 'abs card', `<div class="hd">تقرير الخدمة · <span class="lat" style="font-family:Inter">Deutsch</span> <span style="margin-right:auto" class="chip sug">مقترح</span></div>
+    <div class="bd lat" style="font-family:Inter;font-size:26px;direction:ltr;text-align:left">
+      <b>Kesselwartung – Müller GmbH</b><br>Brenner gereinigt, Filter gewechselt,<br>Betriebsdruck geprüft (1,5 bar).<br>Kunde nicht anwesend.<br>
+      <span style="color:#86efac">✓ Brenner ✓ Filter ✓ Druckprüfung</span></div>`, { right: '880px', top: '200px', width: '820px' });
+  const btn = el('div', 'abs btn', 'تأكيد وحفظ', { right: '880px', top: '640px' });
+  root.append(phone, arr, rep, btn);
+  return t => {
+    enter(phone, t, P('report', 1)); enter(arr, t, P('report', 2), { dy: 0 }); enter(rep, t, P('report', 2) + .3);
+    enter(btn, t, P('report', 3)); btn.style.boxShadow = `0 0 0 ${8 * fade(t, P('report', 3) + .5)}px #60a5fa55`;
+  };
+});
+
+// 4 · job from email
+scene('job', 0, root => {
+  const mail = el('div', 'abs card', `<div class="hd lat" style="font-family:Inter;font-size:24px">BILLA AG · Filiale Wien 10</div><div class="bd lat" style="font-family:Inter;font-size:25px;direction:ltr;text-align:left;color:#cbd5e1">Betreff: Kühlung defekt<br><br>Die Kühltheke in der Favoritenstraße 12<br>kühlt nicht mehr. Bitte dringend,<br>spätestens morgen früh!</div>`, { right: '150px', top: '200px', width: '640px' });
+  const arr = el('div', 'abs arrow', '←', { right: '830px', top: '330px' });
+  const form = el('div', 'abs card', '', { right: '960px', top: '180px', width: '760px' });
+  const rows = [['العميل', 'BILLA AG'], ['العنوان', 'Favoritenstraße 12, 1100 Wien'], ['الأولوية', 'عاجل'], ['نوع العمل', 'فنّي تبريد']];
+  form.innerHTML = `<div class="hd">مسودة مهمة <span style="margin-right:auto" class="chip sug">ما فهمه البرنامج</span></div><div class="bd" id="jf"></div>`;
+  const fields = rows.map(([k, v]) => el('div', 'field', `<span class="k">${k}</span><span class="v ${/[A-Za-z]/.test(v) ? 'lat' : ''}" style="${/[A-Za-z]/.test(v) ? 'font-family:Inter' : ''}">${v}</span>`));
+  fields.forEach(f => form.querySelector('#jf').append(f));
+  const btn = el('div', 'abs btn', 'إنشاء المهمة', { right: '960px', top: '650px' });
+  root.append(mail, arr, form, btn);
+  return t => {
+    enter(mail, t, P('job', 1)); enter(arr, t, P('job', 1) + .8, { dy: 0 }); enter(form, t, P('job', 1) + 1.1);
+    fields.forEach((f, i) => { f.style.opacity = fade(t, P('job', 2) + i * .6); });
+    enter(btn, t, P('job', 3));
+  };
+});
+
+// 5 · documents & receipts
+scene('documents', 0, root => {
+  const cert = el('div', 'abs card', `<div class="hd">شهادة سلامة · <span class="lat" style="font-family:Inter">Sicherheitsunterweisung</span></div><div class="bd"><div class="field"><span class="k">تاريخ الانتهاء</span><span class="v" id="exp">— لم تجده القواعد</span></div></div>`, { right: '140px', top: '210px', width: '760px' });
+  const rec = el('div', 'abs card', `<div class="hd">إيصال وقود ممزّق</div><div class="bd"><div class="field"><span class="k">المبلغ</span><span class="v lat" id="amt" style="font-family:Inter">€ 6?,40</span></div></div>`, { right: '980px', top: '210px', width: '640px' });
+  const pass = el('div', 'abs card', `<div class="hd">جواز سفر · رمز القراءة الآلية</div><div class="bd lat" style="font-family:monospace;font-size:24px;direction:ltr;text-align:left;color:#cbd5e1">P&lt;AUTMUSTERMANN&lt;&lt;ANNA&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br>U1234567&lt;8AUT9001011F3103285&lt;&lt;&lt;</div>`, { right: '140px', top: '560px', width: '900px' });
+  const proven = el('div', 'abs chip ok', 'مُثبت بالقواعد · لا يتغيّر', { right: '1080px', top: '640px' });
+  root.append(cert, rec, pass, proven);
+  return t => {
+    enter(cert, t, P('documents', 1)); enter(rec, t, P('documents', 1) + .5);
+    const s = t >= P('documents', 2);
+    cert.querySelector('#exp').innerHTML = s ? '<span class="lat" style="font-family:Inter">31.03.2028</span> <span class="chip sug" style="font-size:22px;padding:4px 14px">مقترح</span>' : '— لم تجده القواعد';
+    rec.querySelector('#amt').innerHTML = s ? '€ 68,40 <span class="chip sug" style="font-size:22px;padding:4px 14px;font-family:\'IBM Plex Sans Arabic\'">مقترح</span>' : '€ 6?,40';
+    enter(pass, t, P('documents', 3)); enter(proven, t, P('documents', 3) + .6);
+  };
+});
+
+// 6 · office
+scene('office', 0, root => {
+  const mk = (title, body, r, top) => el('div', 'abs card', `<div class="hd">${title}</div><div class="bd">${body}</div>`, { right: r + 'px', top: top + 'px', width: '780px' });
+  const a = mk('تقرير بجملة', '«ساعات العمل الإضافية لكل موقع في الربع الأخير»<div style="display:flex;gap:16px;align-items:flex-end;height:120px;margin-top:16px">' + [70, 110, 45, 90].map(h => `<span style="width:80px;height:${h}px;background:#60a5fa;border-radius:8px;display:block"></span>`).join('') + '</div>', 140, 160);
+  const b = mk('بحث بالمعنى', '«مهمة السخّان الذي يسرّب عند بيلا في الربيع»<div class="field" style="margin-top:8px"><span class="v lat" style="font-family:Inter">Boiler leak · BILLA Wien 10</span><span class="k">أبريل</span></div>', 1000, 160);
+  const c = mk('ترجمة وتلخيص', '<span class="lat" style="font-family:Inter;color:#cbd5e1">„Bin 15 Min später, Stau A1"</span><br>← «سأتأخر ١٥ دقيقة، ازدحام على الطريق A1»', 140, 560);
+  const d = mk('طلبات الدعم', '«لا أستطيع تسجيل الحضور في الموقع» <div style="margin-top:12px"><span class="chip blue">الحضور</span> <span class="chip sug">عاجل</span></div>', 1000, 560);
+  root.append(a, b, c, d);
+  return t => { enter(a, t, P('office', 1)); enter(b, t, P('office', 2)); enter(c, t, P('office', 3)); enter(d, t, P('office', 3) + 1.2); };
+});
+
+// 7 · never
+scene('never', 0, root => {
+  const items = ['مبالغ الفواتير', 'ساعات الرواتب', 'من يرى ماذا', 'الموقع وتسجيل الحضور'].map((x, i) =>
+    el('div', 'abs card', `<div class="bd" style="text-align:center;font-size:34px;font-weight:700;padding:40px 20px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#93a1b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><br>${x}</div>`, { right: (140 + i * 420) + 'px', top: '200px', width: '380px' }));
+  const rules = el('div', 'abs chip blue', 'قواعد ثابتة · تُشرح وتُراجع', { right: '140px', top: '500px' });
+  const rule = el('div', 'abs disp', 'الذكاء الاصطناعي <span style="color:#fcd34d">يقترح</span> ← الإنسان <span style="color:#86efac">يقرّر</span>', { left: 0, right: 0, top: '620px', textAlign: 'center', fontSize: '80px' });
+  root.append(...items, rules, rule);
+  return t => { items.forEach((n, i) => enter(n, t, P('never', 1) + i * .55)); enter(rules, t, P('never', 2)); enter(rule, t, P('never', 3), { dy: 60 }); };
+});
+
+// 8 · decision
+scene('decision', 0, root => {
+  const own = el('div', 'abs card', `<div class="hd">خادم خاص بنا</div><div class="bd"><div style="color:#86efac">✓ لا تخرج الجوازات والعقود أبداً</div><div style="color:#86efac">✓ لا تكلفة لكل استخدام</div><div style="color:#fca5a5">✗ شراء أجهزة وصيانتها</div></div>`, { right: '160px', top: '230px', width: '760px' });
+  const cloud = el('div', 'abs card', `<div class="hd">سحابة أوروبية بلا احتفاظ بالبيانات</div><div class="bd"><div style="color:#86efac">✓ أسرع في البداية</div><div style="color:#86efac">✓ ندفع حسب الاستخدام</div><div style="color:#fca5a5">✗ البيانات تخرج بعقد</div></div>`, { right: '1000px', top: '230px', width: '760px' });
+  const both = el('div', 'abs chip blue', 'في الحالتين: تفعيل لكل شركة · سجلّ لكل ما أُرسل', { right: '160px', top: '640px' });
+  const q = el('div', 'abs disp', 'قرار واحد قبل البدء', { right: '160px', top: '120px', fontSize: '56px' });
+  root.append(q, own, cloud, both);
+  return t => { enter(q, t, P('decision', 0)); enter(own, t, P('decision', 1)); enter(cloud, t, P('decision', 2)); enter(both, t, P('decision', 3)); };
+});
+
+// 9 · start
+scene('start', 0, root => {
+  const steps = [['الآن', 'تقرير الخدمة · المهمة من الرسالة', 'ok'], ['بعد القرار', 'المستندات · الإيصالات', 'sug'], ['لاحقاً', 'التقارير · البحث · الترجمة · الدعم', 'blue']].map(([w, x, c], i) =>
+    el('div', 'abs card', `<div class="bd"><span class="chip ${c}">${w}</span><div style="font-size:34px;font-weight:700;margin-top:18px">${x}</div></div>`, { right: (140 + i * 560) + 'px', top: '200px', width: '520px' }));
+  const end = el('div', 'abs', '<div class="disp" style="font-size:96px"><span class="lat" style="color:var(--brand2)">HBCField</span></div><div class="disp" style="font-size:64px;margin-top:20px">الذكاء يساعد، وأنت تقرّر</div>', { left: 0, right: 0, top: '540px', textAlign: 'center' });
+  root.append(...steps, end);
+  return t => {
+    steps[0].style.opacity = fade(t, P('start', 0)); steps[1].style.opacity = fade(t, P('start', 2)); steps[2].style.opacity = fade(t, P('start', 2) + .8);
+    steps.forEach(s => s.style.transform = `translateY(${30 * (1 - clamp(+s.style.opacity))}px)`);
+    enter(end, t, P('start', 3), { dy: 50 });
+  };
+});
+
+/* ── assemble ── */
+const root = document.getElementById('scenes');
+SCENES.forEach(s => { s.root = el('div', 'scene'); root.appendChild(s.root); s.upd = s.build(s.root); s.start = Math.max(0, P(s.c, s.i) - .5); });
+SCENES.forEach((s, i) => { s.end = i + 1 < SCENES.length ? SCENES[i + 1].start : TL.duration; });
+const chap = document.getElementById('chap'), sub = document.getElementById('sub');
+const allPhr = TL.chapters.flatMap(c => c.phrases.map(p => ({ ...p, c: c.id })));
+function render(t) {
+  const b = Math.sin(t / 9), c = Math.cos(t / 11);
+  document.getElementById('b1').style.transform = `translate(${80 * b}px,${60 * c}px)`;
+  document.getElementById('b2').style.transform = `translate(${-70 * c}px,${-50 * b}px)`;
+  document.getElementById('b3').style.transform = `translate(${120 * c}px,${-80 * b}px)`;
+  for (const s of SCENES) {
+    const vis = t >= s.start - .01 && t < s.end + .4;
+    if (!vis) { s.root.style.opacity = 0; continue; }
+    s.root.style.opacity = Math.min(fade(t, s.start, .45), 1 - fade(t, s.end, .4)); s.upd(t);
+  }
+  const ch = TL.chapters.findIndex(c => t >= c.start - .3 && t < c.end + .2);
+  if (ch > 0) {
+    const cc = TL.chapters[ch];
+    chap.querySelector('.n').textContent = String(ch).padStart(2, '0');
+    chap.querySelector('.tt').textContent = TITLES[cc.id];
+    chap.style.opacity = Math.min(fade(t, cc.start - .3, .5), 1 - fade(t, cc.end - .3, .4));
+  } else chap.style.opacity = 0;
+  let cur = null;
+  for (const p of allPhr) if (t >= p.start - .15 && t <= p.end + .6) cur = p;
+  if (cur) {
+    if (sub._t !== cur.text) { sub.textContent = cur.text; sub._t = cur.text; }
+    sub.style.opacity = Math.min(fade(t, cur.start - .15, .2), 1 - fade(t, cur.end + .4, .2));
+  } else sub.style.opacity = 0;
+}
+window.__ready = document.fonts.ready;
+</script></body></html>

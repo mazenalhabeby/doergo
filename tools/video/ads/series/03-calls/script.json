@@ -1,0 +1,52 @@
+{
+ "phrases": [
+  {
+   "text": "When is he coming?",
+   "pause": 0.1
+  },
+  {
+   "text": "Is it done yet?",
+   "pause": 0.1
+  },
+  {
+   "text": "Did you get my email?",
+   "pause": 0.25
+  },
+  {
+   "text": "Thirty calls a day,",
+   "pause": 0
+  },
+  {
+   "text": "and not one of them is work.",
+   "pause": 0.5
+  },
+  {
+   "text": "Or.",
+   "pause": 0.6
+  },
+  {
+   "text": "Your client sees it for themselves.",
+   "pause": 0.3
+  },
+  {
+   "text": "On the way. Arriving in fourteen minutes.",
+   "pause": 0.4
+  },
+  {
+   "text": "Done. Report attached.",
+   "pause": 0.4
+  },
+  {
+   "text": "Your phone stays quiet.",
+   "pause": 0.1
+  },
+  {
+   "text": "Your team gets to work.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "pause": 0
+  }
+ ]
+}

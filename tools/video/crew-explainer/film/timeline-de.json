@@ -1,0 +1,934 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 21.365,
+   "phrases": [
+    {
+     "text": "Ein Auftrag. Drei Personen. Eine Leitung.",
+     "start": 0.4,
+     "end": 3.291,
+     "wordStarts": [
+      0.4,
+      0.679,
+      1.352,
+      1.758,
+      2.362,
+      2.652
+     ]
+    },
+    {
+     "text": "Wenn ein Team einen Auftrag teilt, z\u00e4hlt HBCField jede Person f\u00fcr sich.",
+     "start": 4.602,
+     "end": 9.826,
+     "wordStarts": [
+      4.602,
+      4.846,
+      5.043,
+      5.403,
+      5.681,
+      6.146,
+      6.9,
+      7.353,
+      8.387,
+      8.723,
+      9.176,
+      9.373
+     ]
+    },
+    {
+     "text": "Ab dem Moment, in dem sie dem Auftrag beitritt, bis zu dem Moment, in dem sie ihn verl\u00e4sst.",
+     "start": 10.605,
+     "end": 16.166,
+     "wordStarts": [
+      10.605,
+      10.883,
+      11.092,
+      11.627,
+      11.754,
+      11.975,
+      12.126,
+      12.358,
+      12.857,
+      13.751,
+      14.041,
+      14.181,
+      14.32,
+      14.726,
+      14.877,
+      15.121,
+      15.284,
+      15.446
+     ]
+    },
+    {
+     "text": "Und nur, solange sie eingestempelt ist.",
+     "start": 17.107,
+     "end": 20.265,
+     "wordStarts": [
+      17.107,
+      17.351,
+      17.723,
+      18.199,
+      18.442,
+      19.336
+     ]
+    }
+   ]
+  },
+  {
+   "id": "crew",
+   "start": 21.365,
+   "end": 40.694,
+   "phrases": [
+    {
+     "text": "Das B\u00fcro stellt das Team f\u00fcr den Auftrag zusammen und bestimmt die Leitung.",
+     "start": 21.365,
+     "end": 25.951,
+     "wordStarts": [
+      21.365,
+      21.678,
+      22.085,
+      22.398,
+      22.63,
+      22.932,
+      23.095,
+      23.304,
+      23.826,
+      24.546,
+      24.755,
+      25.196,
+      25.324
+     ]
+    },
+    {
+     "text": "Hier leitet Tobias. Priya und Conor arbeiten mit ihm.",
+     "start": 26.892,
+     "end": 31.339,
+     "wordStarts": [
+      26.892,
+      27.229,
+      27.612,
+      29.017,
+      29.551,
+      29.748,
+      30.271,
+      30.77,
+      30.956
+     ]
+    },
+    {
+     "text": "Alle sehen die Team-Karte am Auftrag: wer gerade dabei ist, seit wann, und wer leitet.",
+     "start": 32.28,
+     "end": 39.594,
+     "wordStarts": [
+      32.28,
+      32.675,
+      32.953,
+      33.127,
+      33.812,
+      33.998,
+      35.09,
+      35.345,
+      35.786,
+      36.227,
+      36.622,
+      37.017,
+      37.621,
+      38.004,
+      38.341
+     ]
+    }
+   ]
+  },
+  {
+   "id": "start",
+   "start": 40.694,
+   "end": 73.68,
+   "phrases": [
+    {
+     "text": "Am Morgen tippt Tobias auf Unterwegs.",
+     "start": 40.694,
+     "end": 43.295,
+     "wordStarts": [
+      40.694,
+      40.926,
+      41.414,
+      41.681,
+      42.18,
+      42.401
+     ]
+    },
+    {
+     "text": "Sein Team bekommt eine Benachrichtigung: Tobias hat begonnen. Ein Tipp auf Ich bin dabei, und sie sind ebenfalls am Auftrag.",
+     "start": 44.12,
+     "end": 52.34,
+     "wordStarts": [
+      44.12,
+      44.375,
+      44.619,
+      45.002,
+      45.199,
+      46.372,
+      47.092,
+      47.301,
+      48.427,
+      48.729,
+      49.019,
+      49.379,
+      49.739,
+      49.925,
+      50.436,
+      50.598,
+      50.737,
+      50.958,
+      51.48,
+      51.631
+     ]
+    },
+    {
+     "text": "Dr\u00fccken alle drei im selben Moment denselben Schritt, z\u00e4hlen alle drei. Niemand verliert Minuten, weil jemand anderes schneller war.",
+     "start": 53.381,
+     "end": 62.39,
+     "wordStarts": [
+      53.381,
+      53.868,
+      54.17,
+      54.542,
+      54.704,
+      55.041,
+      55.424,
+      56.051,
+      56.771,
+      57.34,
+      57.584,
+      58.791,
+      59.372,
+      59.778,
+      60.347,
+      60.568,
+      60.939,
+      61.438,
+      61.891
+     ]
+    },
+    {
+     "text": "Ein Beitritt z\u00e4hlt ab dem Start der Leitung, wenn er innerhalb einer halben Stunde kommt, und nie vor dem eigenen Einstempeln.",
+     "start": 63.501,
+     "end": 72.58,
+     "wordStarts": [
+      63.501,
+      63.803,
+      64.465,
+      64.836,
+      65.022,
+      65.231,
+      65.672,
+      65.858,
+      66.787,
+      67.031,
+      67.135,
+      67.611,
+      67.866,
+      68.203,
+      68.621,
+      69.341,
+      69.654,
+      70.13,
+      70.363,
+      70.606,
+      71.106
+     ]
+    }
+   ]
+  },
+  {
+   "id": "leader",
+   "start": 73.68,
+   "end": 95.61,
+   "phrases": [
+    {
+     "text": "Bei Teamauftr\u00e4gen bewegt die Leitung den Auftrag von Schritt zu Schritt.",
+     "start": 73.68,
+     "end": 78.347,
+     "wordStarts": [
+      73.68,
+      73.947,
+      74.945,
+      75.363,
+      75.538,
+      76.048,
+      76.315,
+      76.908,
+      77.128,
+      77.569,
+      77.825
+     ]
+    },
+    {
+     "text": "Die anderen sehen, wer es tut, so bewegt niemand den Auftrag aus Versehen.",
+     "start": 79.288,
+     "end": 84.432,
+     "wordStarts": [
+      79.288,
+      79.579,
+      80.194,
+      80.542,
+      80.774,
+      80.96,
+      81.39,
+      81.622,
+      82.086,
+      82.504,
+      82.795,
+      83.433,
+      83.7
+     ]
+    },
+    {
+     "text": "Das B\u00fcro kann jederzeit eingreifen. Und ist die Einstellung aus, bewegt jeder im Team die Schritte, wie bisher.",
+     "start": 85.315,
+     "end": 94.51,
+     "wordStarts": [
+      85.315,
+      85.675,
+      86.197,
+      86.545,
+      87.381,
+      88.577,
+      88.983,
+      89.204,
+      89.517,
+      90.411,
+      90.911,
+      91.491,
+      91.863,
+      92.06,
+      92.315,
+      92.466,
+      93.082,
+      93.395
+     ]
+    }
+   ]
+  },
+  {
+   "id": "issue",
+   "start": 95.61,
+   "end": 123.441,
+   "phrases": [
+    {
+     "text": "Um neun kommt der Kran zu sp\u00e4t. Priya tippt auf Mein Problem und schreibt, warum.",
+     "start": 95.61,
+     "end": 101.601,
+     "wordStarts": [
+      95.61,
+      95.877,
+      96.19,
+      96.423,
+      96.574,
+      96.91,
+      97.073,
+      98.129,
+      98.559,
+      98.907,
+      99.105,
+      99.36,
+      99.882,
+      100.022,
+      100.718
+     ]
+    },
+    {
+     "text": "Nur ihre Zeit h\u00e4lt an. Sie z\u00e4hlt als blockiert, nur f\u00fcr sie.",
+     "start": 102.619,
+     "end": 107.797,
+     "wordStarts": [
+      102.619,
+      103.025,
+      103.315,
+      103.687,
+      103.989,
+      104.767,
+      104.999,
+      105.417,
+      105.614,
+      106.485,
+      106.984,
+      107.309
+     ]
+    },
+    {
+     "text": "Der Auftrag und der Rest des Teams machen weiter. Und Tobias erf\u00e4hrt, was sie aufh\u00e4lt.",
+     "start": 108.959,
+     "end": 114.752,
+     "wordStarts": [
+      108.959,
+      109.237,
+      109.783,
+      109.887,
+      110.061,
+      110.328,
+      110.537,
+      110.909,
+      111.234,
+      112.14,
+      112.43,
+      113.103,
+      113.603,
+      113.835,
+      114.067
+     ]
+    },
+    {
+     "text": "Als der Kran ankommt, tippt sie auf Zur\u00fcck zur Arbeit, und ihre Arbeitszeit l\u00e4uft wieder.",
+     "start": 115.677,
+     "end": 122.341,
+     "wordStarts": [
+      115.677,
+      115.979,
+      116.153,
+      116.525,
+      117.291,
+      117.662,
+      117.848,
+      118.127,
+      118.707,
+      119.009,
+      119.578,
+      119.775,
+      120.054,
+      120.89,
+      121.32
+     ]
+    }
+   ]
+  },
+  {
+   "id": "leave",
+   "start": 123.441,
+   "end": 141.981,
+   "phrases": [
+    {
+     "text": "Conor wird auf einem anderen Auftrag gebraucht. Er tippt auf Auftrag verlassen.",
+     "start": 123.441,
+     "end": 128.909,
+     "wordStarts": [
+      123.441,
+      124.068,
+      124.312,
+      124.486,
+      124.846,
+      125.299,
+      125.751,
+      126.773,
+      127.04,
+      127.388,
+      127.609,
+      128.213
+     ]
+    },
+    {
+     "text": "Seine Zeit auf diesem Auftrag h\u00e4lt an. Die anderen machen weiter.",
+     "start": 129.85,
+     "end": 134.669,
+     "wordStarts": [
+      129.85,
+      130.28,
+      130.675,
+      130.861,
+      131.209,
+      131.789,
+      132.103,
+      132.904,
+      133.159,
+      133.659,
+      133.984
+     ]
+    },
+    {
+     "text": "Wenn er zur\u00fcckkommt, ein Tipp, und er z\u00e4hlt wieder ab diesem Moment.",
+     "start": 135.61,
+     "end": 140.881,
+     "wordStarts": [
+      135.61,
+      135.854,
+      136.016,
+      136.922,
+      137.258,
+      137.909,
+      138.234,
+      138.431,
+      138.826,
+      139.151,
+      139.406,
+      139.685
+     ]
+    }
+   ]
+  },
+  {
+   "id": "clockout",
+   "start": 141.981,
+   "end": 160.056,
+   "phrases": [
+    {
+     "text": "Ausstempeln ist dasselbe wie Verlassen.",
+     "start": 141.981,
+     "end": 144.384,
+     "wordStarts": [
+      141.981,
+      142.817,
+      142.956,
+      143.502,
+      143.664
+     ]
+    },
+    {
+     "text": "Stempelt jemand aus dem Team aus, l\u00e4uft der Auftrag mit den anderen weiter.",
+     "start": 145.209,
+     "end": 150.132,
+     "wordStarts": [
+      145.209,
+      145.778,
+      146.068,
+      146.231,
+      146.428,
+      146.742,
+      147.555,
+      147.914,
+      148.089,
+      148.611,
+      148.739,
+      148.936,
+      149.401
+     ]
+    },
+    {
+     "text": "Erst wenn die letzte Person am Auftrag ausstempelt, wird der Auftrag pausiert, und \u00fcber Nacht z\u00e4hlt nichts.",
+     "start": 151.143,
+     "end": 158.956,
+     "wordStarts": [
+      151.143,
+      151.607,
+      151.793,
+      151.944,
+      152.385,
+      152.873,
+      153.047,
+      153.558,
+      154.614,
+      154.812,
+      154.962,
+      155.438,
+      156.367,
+      156.738,
+      157.087,
+      157.621,
+      158.05
+     ]
+    }
+   ]
+  },
+  {
+   "id": "absent",
+   "start": 160.056,
+   "end": 189.524,
+   "phrases": [
+    {
+     "text": "Und wenn die Leitung krank ist oder einfach nicht eingestempelt hat? Der Auftrag wartet nie auf sie.",
+     "start": 160.056,
+     "end": 166.418,
+     "wordStarts": [
+      160.056,
+      160.265,
+      160.428,
+      160.555,
+      160.973,
+      161.345,
+      161.612,
+      161.902,
+      162.308,
+      162.622,
+      163.353,
+      164.119,
+      164.34,
+      164.967,
+      165.443,
+      165.698,
+      165.977
+     ]
+    },
+    {
+     "text": "Die erste Person, die beigetreten und eingestempelt ist, \u00fcbernimmt automatisch die Vertretung. Die Karte zeigt, wer vertritt.",
+     "start": 167.262,
+     "end": 176.747,
+     "wordStarts": [
+      167.262,
+      167.564,
+      168.017,
+      168.562,
+      168.713,
+      169.503,
+      169.712,
+      170.443,
+      170.989,
+      171.662,
+      172.672,
+      172.823,
+      174.112,
+      174.332,
+      174.82,
+      175.505,
+      175.888
+     ]
+    },
+    {
+     "text": "Hat die Leitung genehmigten Urlaub, bekommt das B\u00fcro am Morgen eine einzige Nachricht mit dem Namen der Vertretung. Sie behalten sie, oder w\u00e4hlen jemand anderen.",
+     "start": 177.788,
+     "end": 188.423,
+     "wordStarts": [
+      177.788,
+      178.009,
+      178.172,
+      178.636,
+      179.309,
+      179.867,
+      180.343,
+      180.586,
+      181.039,
+      181.179,
+      181.643,
+      181.956,
+      182.641,
+      183.175,
+      183.303,
+      183.501,
+      183.779,
+      183.942,
+      185.184,
+      185.37,
+      185.857,
+      186.38,
+      186.717,
+      187.03,
+      187.355
+     ]
+    }
+   ]
+  },
+  {
+   "id": "handover",
+   "start": 189.524,
+   "end": 210.903,
+   "phrases": [
+    {
+     "text": "Die Leitung kann sie auch selbst \u00fcbergeben. F\u00fcr heute, oder dauerhaft.",
+     "start": 189.524,
+     "end": 194.621,
+     "wordStarts": [
+      189.524,
+      189.768,
+      190.29,
+      190.581,
+      190.755,
+      190.952,
+      191.324,
+      192.461,
+      192.763,
+      193.413,
+      193.796
+     ]
+    },
+    {
+     "text": "Nur f\u00fcr diesen einen Auftrag. Die anderen Auftr\u00e4ge bleiben, wie sie sind.",
+     "start": 195.399,
+     "end": 200.485,
+     "wordStarts": [
+      195.399,
+      195.759,
+      196.003,
+      196.421,
+      196.746,
+      197.687,
+      197.988,
+      198.569,
+      199.138,
+      199.614,
+      199.788,
+      199.951
+     ]
+    },
+    {
+     "text": "Und das B\u00fcro kann die Leitung \u00e4ndern oder jemanden hinzuf\u00fcgen oder abziehen, mit einem Grund, der im Verlauf steht.",
+     "start": 201.526,
+     "end": 209.803,
+     "wordStarts": [
+      201.526,
+      201.723,
+      201.967,
+      202.443,
+      202.675,
+      202.826,
+      203.279,
+      204.15,
+      204.544,
+      205.031,
+      206.088,
+      206.448,
+      207.423,
+      207.679,
+      208.108,
+      208.561,
+      208.758,
+      208.909,
+      209.42
+     ]
+    }
+   ]
+  },
+  {
+   "id": "numbers",
+   "start": 210.903,
+   "end": 253.373,
+   "phrases": [
+    {
+     "text": "Am Ende des Tages hat jede Person ihre eigene Zeile.",
+     "start": 210.903,
+     "end": 214.583,
+     "wordStarts": [
+      210.903,
+      211.17,
+      211.46,
+      211.692,
+      212.134,
+      212.366,
+      212.703,
+      213.202,
+      213.446,
+      213.898
+     ]
+    },
+    {
+     "text": "Tobias: acht Stunden Arbeit am Auftrag.",
+     "start": 215.443,
+     "end": 218.694,
+     "wordStarts": [
+      215.443,
+      216.442,
+      216.778,
+      217.278,
+      217.696,
+      217.881
+     ]
+    },
+    {
+     "text": "Priya: sieben Stunden und zwanzig Minuten, und vierzig Minuten blockiert, weil sie auf den Kran gewartet hat.",
+     "start": 219.582,
+     "end": 226.676,
+     "wordStarts": [
+      219.582,
+      220.325,
+      220.719,
+      221.207,
+      221.335,
+      221.869,
+      222.415,
+      222.6,
+      223.181,
+      223.634,
+      224.435,
+      224.655,
+      224.795,
+      224.945,
+      225.143,
+      225.561,
+      226.153
+     ]
+    },
+    {
+     "text": "Conor: f\u00fcnfeinhalb Stunden. Die Zeit auf dem anderen Auftrag z\u00e4hlt hier nicht.",
+     "start": 227.563,
+     "end": 233.554,
+     "wordStarts": [
+      227.563,
+      228.422,
+      229.409,
+      230.443,
+      230.71,
+      231.127,
+      231.278,
+      231.487,
+      231.975,
+      232.474,
+      232.846,
+      233.043
+     ]
+    },
+    {
+     "text": "Zusammen zwanzig Stunden und f\u00fcnfzig Minuten Arbeit. Einmal pro Person gez\u00e4hlt, nie doppelt, und nie mehr, als jemand eingestempelt war.",
+     "start": 234.502,
+     "end": 244.893,
+     "wordStarts": [
+      234.502,
+      235.129,
+      235.756,
+      236.279,
+      236.488,
+      237.149,
+      237.765,
+      238.647,
+      239.378,
+      239.611,
+      240.04,
+      240.841,
+      241.282,
+      241.886,
+      242.13,
+      242.374,
+      242.989,
+      243.326,
+      243.674,
+      244.463
+     ]
+    },
+    {
+     "text": "Dieselben Zahlen gehen in den Stundenzettel, den Bericht und die Rechnung.",
+     "start": 246.108,
+     "end": 252.273,
+     "wordStarts": [
+      246.108,
+      246.793,
+      247.281,
+      247.536,
+      247.629,
+      247.884,
+      249.289,
+      249.545,
+      250.299,
+      250.648,
+      250.845
+     ]
+    }
+   ]
+  },
+  {
+   "id": "rules",
+   "start": 253.373,
+   "end": 284.133,
+   "phrases": [
+    {
+     "text": "Sechs Regeln.",
+     "start": 253.373,
+     "end": 254.662,
+     "wordStarts": [
+      253.373,
+      253.965
+     ]
+    },
+    {
+     "text": "Jede Person z\u00e4hlt vom Beitritt bis zum Verlassen.",
+     "start": 255.765,
+     "end": 258.889,
+     "wordStarts": [
+      255.765,
+      256.149,
+      256.671,
+      257.008,
+      257.205,
+      257.716,
+      257.936,
+      258.157
+     ]
+    },
+    {
+     "text": "Nur innerhalb der eigenen Schicht.",
+     "start": 259.567,
+     "end": 261.912,
+     "wordStarts": [
+      259.567,
+      259.95,
+      260.519,
+      260.775,
+      261.32
+     ]
+    },
+    {
+     "text": "Denselben Schritt gemeinsam gedr\u00fcckt: Alle z\u00e4hlen.",
+     "start": 262.695,
+     "end": 266.329,
+     "wordStarts": [
+      262.695,
+      263.346,
+      263.694,
+      264.263,
+      265.226,
+      265.61
+     ]
+    },
+    {
+     "text": "Mein Problem h\u00e4lt nur Sie an.",
+     "start": 267.542,
+     "end": 269.597,
+     "wordStarts": [
+      267.542,
+      267.856,
+      268.401,
+      268.657,
+      268.866,
+      269.121
+     ]
+    },
+    {
+     "text": "Die Leitung bewegt die Schritte, und jemand vertritt, wenn sie fehlt.",
+     "start": 270.322,
+     "end": 273.991,
+     "wordStarts": [
+      270.322,
+      270.52,
+      270.996,
+      271.39,
+      271.541,
+      272.064,
+      272.25,
+      272.575,
+      273.039,
+      273.236,
+      273.434
+     ]
+    },
+    {
+     "text": "Wer als Letzter geht, pausiert den Auftrag.",
+     "start": 274.832,
+     "end": 277.526,
+     "wordStarts": [
+      274.832,
+      275.099,
+      275.308,
+      275.749,
+      276.063,
+      276.539,
+      276.76
+     ]
+    },
+    {
+     "text": "Ein Team auf einem Auftrag. In HBCField.",
+     "start": 278.442,
+     "end": 282.633,
+     "wordStarts": [
+      278.442,
+      278.813,
+      279.22,
+      279.417,
+      279.731,
+      280.636,
+      280.973
+     ]
+    }
+   ]
+  }
+ ],
+ "duration": 286.63,
+ "lang": "de"
+}

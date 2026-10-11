@@ -1,0 +1,262 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap">
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#3e4146}
+body{font-family:"Barlow Condensed","Arial Narrow",sans-serif;color:#fff}
+.abs{position:absolute}
+#world{left:0;top:0;width:1080px;height:7600px}
+.floor{position:absolute;left:0;width:1080px;height:1400px}
+.slab{position:absolute;left:0;right:0;top:0;height:70px;background:repeating-linear-gradient(-45deg,#f97316 0 40px,#1a1a1a 40px 80px);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.slab::after{content:"";position:absolute;left:0;right:0;bottom:-24px;height:24px;background:#2a2c30}
+.lvl{position:absolute;right:60px;top:170px;font:900 520px/1 "Barlow Condensed",sans-serif;color:rgba(255,255,255,.07);letter-spacing:-10px}
+.lvlTag{position:absolute;left:170px;top:120px;font:800 34px/1 "Barlow Condensed";letter-spacing:.2em;color:rgba(249,115,22,.55)}
+.pipe{position:absolute;top:0;width:46px;height:7600px;border-radius:6px}
+.joint{position:absolute;left:-8px;width:62px;height:26px;border-radius:4px}
+.conduit{position:absolute;height:22px;border-radius:11px;background:#5b5f66}
+.lamp{position:absolute;width:120px;height:26px;border-radius:13px;background:#fff7d6;box-shadow:0 0 60px 20px rgba(255,220,150,.35)}
+#dust{inset:0;pointer-events:none}
+#dust i{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.35)}
+#light{inset:0;background:linear-gradient(180deg,rgba(255,236,200,.35),transparent 55%);opacity:0}
+#shade{inset:0;background:radial-gradient(60% 40% at 50% 50%,rgba(0,0,0,.55),transparent 80%)}
+.door{top:0;bottom:0;width:46px;background:linear-gradient(90deg,#1b1c1f,#34363b);z-index:5}
+.door i{position:absolute;left:17px;width:12px;height:12px;border-radius:50%;background:#55585e}
+#disp{left:70px;top:290px;width:940px;height:260px;background:#101113;border:6px solid #2a2c31;border-radius:26px;box-shadow:0 30px 60px rgba(0,0,0,.55),inset 0 0 40px rgba(0,0,0,.8);z-index:6}
+#disp .lab{position:absolute;left:44px;top:26px;font:700 30px/1 "Barlow Condensed";letter-spacing:.24em;color:#6b7076}
+#num{position:absolute;left:40px;top:58px;font:800 180px/1 "JetBrains Mono",monospace;color:#f97316;text-shadow:0 0 30px rgba(249,115,22,.7);display:flex;align-items:center;gap:22px;white-space:nowrap}
+#arr{font-size:90px}
+#bars{position:absolute;right:60px;bottom:52px;display:flex;gap:16px;align-items:flex-end}
+#bars i{width:40px;border-radius:6px;background:#f5f5f5}
+#barX{position:absolute;right:62px;top:24px;font:800 42px/1 "JetBrains Mono";color:#ef4444;opacity:0}
+#sigLab{position:absolute;right:60px;bottom:18px;font:700 26px/1 "Barlow Condensed";letter-spacing:.24em;color:#6b7076}
+.big{left:70px;width:940px;text-align:center;font:900 200px/.86 "Barlow Condensed",sans-serif;text-transform:uppercase;z-index:4;text-shadow:0 12px 40px rgba(0,0,0,.6)}
+.big em{font-style:normal;color:#f97316}
+#ns{top:760px}
+#ns span{position:absolute;left:0;right:0;top:0}
+#ns .c1{color:#f97316;mix-blend-mode:screen}
+#ns .c2{color:#22d3ee;mix-blend-mode:screen}
+#noise{left:0;top:0;width:1080px;height:1920px;z-index:3;mix-blend-mode:overlay;opacity:0}
+#stop{top:630px;font-size:170px}
+#phone{left:190px;top:960px;width:700px;height:300px;background:#18191c;border:5px solid #2e3035;border-radius:44px;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;box-shadow:0 30px 60px rgba(0,0,0,.5)}
+#spin{width:92px;height:92px;border-radius:50%;border:12px solid #33363c;border-top-color:#9ca3af}
+#phone b{font:600 44px/1 "Barlow Condensed";color:#9ca3af;letter-spacing:.02em}
+#keep{top:700px}
+#hdr{left:70px;top:600px;width:940px;font:800 48px/1 "Barlow Condensed";letter-spacing:.2em;color:#d7d9dc;text-align:center;z-index:4}
+.item{left:70px;width:940px;height:150px;background:#1c1e22;border-radius:22px;border-left:16px solid #f97316;z-index:4;display:flex;align-items:center;justify-content:space-between;padding:0 44px 0 36px;box-sizing:border-box;box-shadow:0 20px 40px rgba(0,0,0,.45)}
+.item .nm{font:800 64px/1 "Barlow Condensed";letter-spacing:.01em;display:flex;align-items:center;gap:26px;white-space:nowrap}
+.item .nm small{font-size:64px;color:#8b9097}
+.item .ic{width:64px;height:64px;border-radius:14px;background:#2b2e34;display:grid;place-items:center}
+.tag{font:800 28px/1 "JetBrains Mono";letter-spacing:.06em;padding:14px 20px;border-radius:12px;border:3px solid #f97316;color:#f97316;white-space:nowrap}
+#cnt{left:70px;width:940px;top:1180px;text-align:center;font:800 58px/1 "Barlow Condensed";letter-spacing:.08em;z-index:4}
+#l1{top:640px;font-size:160px;white-space:nowrap}
+#l2{top:840px;font-size:150px}
+#end{inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:430px;box-sizing:border-box;background:radial-gradient(70% 45% at 50% 38%,#4a4e55,#232529);opacity:0}
+#end img{width:250px;height:250px}
+#end .wm{font:900 150px/1 "Barlow Condensed";letter-spacing:.06em;margin-top:26px}
+#end .wm span{color:#f97316}
+#end .tl{font:700 64px/1.1 "Barlow Condensed";color:#e5e7eb;margin-top:22px;text-align:center}
+#end .pill{margin-top:48px;background:#f97316;color:#111;font:800 58px/1 "Barlow Condensed";padding:26px 48px;border-radius:999px;letter-spacing:.02em}
+#end .url{margin-top:34px;font:700 50px/1 "JetBrains Mono";color:#cbd5e1}
+#end .stripe{position:absolute;left:0;right:0;bottom:560px;height:40px;background:repeating-linear-gradient(-45deg,#f97316 0 30px,#1a1a1a 30px 60px);opacity:.9}
+/* ---- 16:9: the shaft and its display on the left, the words on the right ---- */
+html.wide,html.wide body{width:1920px;height:1080px}
+.wide #world,.wide .floor{width:1920px}
+.wide .lvl{right:auto;left:150px;top:560px;font-size:420px}
+.wide #noise{width:1920px;height:1080px}
+.wide #disp{left:110px;top:400px;width:760px;height:260px}
+.wide .big{left:960px;width:860px}
+.wide #ns{top:420px;font-size:180px}
+.wide #stop{top:170px;font-size:140px}
+.wide #phone{left:1040px;top:520px;width:700px;height:270px}
+.wide #keep{top:330px;font-size:170px}
+.wide #hdr{left:960px;width:860px;top:170px;font-size:44px}
+.wide .item{left:960px;width:860px;height:130px}
+.wide .item .nm,.wide .item .nm small{font-size:58px}
+.wide #cnt{left:960px;width:860px;top:790px}
+.wide #l1{top:330px;font-size:140px}
+.wide #l2{top:500px;font-size:130px}
+.wide #end{padding-top:130px}
+.wide #end img{width:190px;height:190px}
+.wide #end .wm{font-size:120px;margin-top:18px}
+.wide #end .tl{font-size:54px;margin-top:18px}
+.wide #end .pill{margin-top:34px;font-size:48px;padding:22px 42px}
+.wide #end .url{margin-top:26px;font-size:42px}
+.wide #end .stripe{bottom:70px}
+</style></head><body>
+<div id="world" class="abs"></div>
+<div id="dust" class="abs"></div>
+<div id="light" class="abs"></div>
+<div id="shade" class="abs"></div>
+<canvas id="noise" class="abs" width="270" height="480"></canvas>
+<div class="abs door" style="left:0"></div><div class="abs door" style="right:0"></div>
+
+<div id="disp" class="abs"><div class="lab">LEVEL</div><div id="num"><span id="arr">▼</span><span id="fl">0</span></div>
+  <div id="bars"><i style="height:44px"></i><i style="height:78px"></i><i style="height:112px"></i><i style="height:146px"></i></div><div id="barX">✕</div><div id="sigLab">SIGNAL</div></div>
+
+<div id="ns" class="abs big"><span class="c1">NO SIGNAL</span><span class="c2">NO SIGNAL</span><span class="c0">NO SIGNAL</span></div>
+<div id="stop" class="abs big">MOST APPS<br><em>STOP HERE.</em></div>
+<div id="phone" class="abs"><div id="spin"></div><b>Waiting for network…</b></div>
+<div id="keep" class="abs big">HBCFIELD<br><em>KEEPS GOING.</em></div>
+
+<div id="hdr" class="abs">SAVED ON THE PHONE</div>
+<div class="abs item" id="it0"><div class="nm"><span class="ic"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.4"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M9 6l1.5-2h3L15 6"/></svg></span>PHOTO <small>·</small> SAVED</div><div class="tag">OFFLINE</div></div>
+<div class="abs item" id="it1"><div class="nm"><span class="ic"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.4"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/></svg></span>NOTE <small>·</small> SAVED</div><div class="tag">OFFLINE</div></div>
+<div class="abs item" id="it2"><div class="nm"><span class="ic"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2.4"><path d="M3 17c3-6 5 4 8-2s4 2 6-1 3 1 4 0"/><path d="M3 21h18"/></svg></span>SIGNATURE <small>·</small> SAVED</div><div class="tag">OFFLINE</div></div>
+<div id="cnt" class="abs"></div>
+
+<div id="l1" class="abs big">NOTHING <em>LOST.</em></div>
+<div id="l2" class="abs big">NOTHING TYPED<br>TWICE.</div>
+
+<div id="end" class="abs"><div class="stripe"></div><img id="logo" src="logo.svg"><div class="wm">HBC <span>FIELD</span></div>
+  <div class="tl">Signal or not,<br>nothing is lost.</div><div class="pill">Try it free for 14 days</div><div class="url">hbcfield.com</div></div>
+
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const $=id=>document.getElementById(id);
+const WIDE=innerWidth>innerHeight;if(WIDE)document.documentElement.classList.add('wide');
+const VW=WIDE?1920:1080,VH=WIDE?1080:1920;
+const LANG=TL.lang==='de'?'de':'en';
+const STR={
+ en:{ground:'GROUND FLOOR',lvlTag:f=>'LEVEL −'+f,offline:'OFFLINE',sent:'SENT ✓',nSent:n=>`${n} OF 3 SENT ✓`,nSaved:n=>`${n} SAVED OFFLINE`},
+ de:{ground:'ERDGESCHOSS',lvlTag:f=>'EBENE −'+f,offline:'OFFLINE',sent:'GESENDET ✓',nSent:n=>`${n} VON 3 GESENDET ✓`,nSaved:n=>`${n} OFFLINE GESPEICHERT`,
+   level:'EBENE',signal:'NETZ',ns:'KEIN NETZ',stop:'DIE MEISTEN APPS<br><em>HÖREN HIER AUF.</em>',wait:'Warte auf Netzwerk…',
+   keep:'HBCFIELD<br><em>ARBEITET WEITER.</em>',hdr:'AUF DEM HANDY GESPEICHERT',items:['FOTO','NOTIZ','UNTERSCHRIFT'],saved:'GESPEICHERT',
+   l1:'NICHTS <em>VERLOREN.</em>',l2:'NICHTS DOPPELT<br>GETIPPT.',tl:'Mit Netz oder ohne –<br>nichts geht verloren.',pill:'14 Tage kostenlos testen'}}[LANG];
+if(LANG==='de'){
+  document.documentElement.lang='de';
+  document.querySelector('#disp .lab').textContent=STR.level;$('sigLab').textContent=STR.signal;
+  $('ns').querySelectorAll('span').forEach(x=>x.textContent=STR.ns);
+  $('stop').innerHTML=STR.stop;$('phone').querySelector('b').textContent=STR.wait;$('keep').innerHTML=STR.keep;$('hdr').textContent=STR.hdr;
+  document.querySelectorAll('.item').forEach((it,i)=>{const nm=it.querySelector('.nm');nm.childNodes[1].textContent=STR.items[i]+' ';nm.childNodes[3].textContent=' '+STR.saved;});
+  $('l1').innerHTML=STR.l1;$('l2').innerHTML=STR.l2;
+  document.querySelector('#end .tl').innerHTML=STR.tl;document.querySelector('#end .pill').textContent=STR.pill;
+}
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-clamp(k),3),eio=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const spring=k=>{k=Math.max(0,k);return 1-Math.exp(-7*k)*Math.cos(11*k)};
+const rnd=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const st=i=>P[i].start,en=i=>P[i].end,ws=(i,j)=>P[i].wordStarts[j];
+function tf(el,x,y,s=1,r=0,o=1){el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;el.style.opacity=o}
+const vis=(t,a,b,fi=.18,fo=.22)=>clamp((t-a)/fi)*clamp((b-t)/fo);
+
+/* ---- build the shaft ---- */
+const FH=1400;
+(function build(){const w=$('world');let h='';
+  const shades=['#50545a','#474b51','#3f4247','#383b40','#33363a'];
+  for(let f=0;f<5;f++){h+=`<div class="floor" style="top:${f*FH}px;background:${shades[f]} repeating-linear-gradient(0deg,rgba(0,0,0,.07) 0 2px,transparent 2px 180px),radial-gradient(circle at 30% 40%,rgba(255,255,255,.05),transparent 60%)"><div class="slab"></div>
+    <div class="lvl">${f==0?'0':f<4?'-'+f:''}</div><div class="lvlTag">${f==0?STR.ground:f<4?STR.lvlTag(f):''}</div>
+    <div class="conduit" style="left:180px;right:0;top:${360+f*40}px"></div>
+    <div class="lamp" style="left:${f%2?760:330}px;top:${220}px"></div>${WIDE?`<div class="lamp" style="left:${f%2?1350:1620}px;top:220px"></div>`:''}
+    <div class="conduit" style="left:0;width:520px;top:${1050-f*30}px;background:#6b4a2e"></div></div>`;}
+  const pipe=(x,c)=>{let j='';for(let y=120;y<7600;y+=350)j+=`<div class="joint" style="top:${y}px;background:${c}"></div>`;return `<div class="pipe" style="left:${x}px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(255,255,255,.15) 40%,rgba(0,0,0,.35)),${c}">${j}</div>`};
+  h+=pipe(88,'#b45309')+pipe(150,'#6b7280')+pipe(VW-128,'#6b7280');
+  w.innerHTML=h;
+  let d='';for(let i=0;i<46;i++)d+=`<i style="left:${Math.round(rnd(i)*VW)}px;opacity:${(.3+rnd(i+50)*.7).toFixed(2)}"></i>`;$('dust').innerHTML=d;
+  const door=[...document.querySelectorAll('.door')];door.forEach(dr=>{let r='';for(let y=40;y<VH;y+=160)r+=`<i style="top:${y}px"></i>`;dr.innerHTML=r});
+})();
+
+/* ---- where the lift is: 0 = ground, 3 = level −3 ---- */
+const MOVES=[[st(0)-.05,st(0)+.8,0,1],[st(1)-.05,st(1)+.8,1,2],[st(2)-.05,st(2)+.8,2,3],[st(9)-.1,st(9)+1.6,3,0]];
+function liftPos(t){let p=0;for(const [a,b,f,g] of MOVES){if(t>=a)p=lerp(f,g,eio((t-a)/(b-a)))}return p}
+function moving(t){return MOVES.some(([a,b])=>t>a&&t<b)}
+
+if(WIDE){$('noise').width=480;$('noise').height=270;}
+const gctx=$('noise').getContext('2d'),gimg=gctx.createImageData($('noise').width,$('noise').height);
+function noise(seed){let s=seed*9301+49297;for(let i=0;i<gimg.data.length;i+=4){s=(s*9301+49297)%233280;const v=s/233280*255;gimg.data[i]=gimg.data[i+1]=gimg.data[i+2]=v;gimg.data[i+3]=255}gctx.putImageData(gimg,0,0)}
+
+const ITEM_Y=WIDE?[290,450,610]:[660,840,1020];const SAY=[6,7,8];
+const SENT_AT=i=>st(10)+.1+i*.42;
+
+function render(t,frame){
+  const pos=liftPos(t),mv=moving(t);
+  const shake=mv?Math.sin(frame*2.3)*5+Math.sin(frame*5.1)*3:0;
+  $('world').style.transform=`translate(0,${-pos*FH+shake}px)`;
+  document.querySelectorAll('#dust i').forEach((d,i)=>{const y=((rnd(i+9)*VH-pos*FH*.55-t*(18+rnd(i+3)*30))%VH+VH)%VH;d.style.transform=`translate(0,${y}px)`});
+  const top=t>st(9)+1.4;$('light').style.opacity=top?clamp((t-(st(9)+1.2))/.8)*.9:clamp(1-pos*2)*.9;
+
+  // display
+  const fl=Math.round(pos);$('fl').textContent=fl===0?'0':'-'+fl;
+  const up=t>=st(9)-.1;$('arr').textContent=up?'▲':'▼';$('arr').style.opacity=mv||t<st(0)?(Math.floor(t*4)%2?1:.35):.35;
+  let bars;if(t>=st(3)&&t<st(9)-.1)bars=0;else bars=4-fl;
+  if(t>=st(2)+.8&&t<st(3))bars=1;
+  document.querySelectorAll('#bars i').forEach((b,i)=>{const on=i<bars;b.style.background=on?'#f5f5f5':'#2d3036';b.style.boxShadow=on&&top?'0 0 18px rgba(74,222,128,.7)':'none';if(on&&top)b.style.background='#4ade80'});
+  $('barX').style.opacity=bars===0?(Math.floor(t*3)%2?1:.5):0;
+  const dispOut=clamp((t-(st(12)-.5))/.35);tf($('disp'),0,lerp(0,-60,eo(dispOut)),1,0,1-dispOut);
+
+  // NO SIGNAL glitch
+  const nsA=st(3),nsB=st(4)-.05,nsv=vis(t,nsA,nsB,.05,.2),g=t<nsA+.9?1:.35;
+  const ns=$('ns');ns.style.opacity=nsv;
+  const j=k=>(rnd(frame*7+k)-.5)*44*g;
+  tf(ns.querySelector('.c1'),j(1),j(2),1,0,.85);tf(ns.querySelector('.c2'),j(3),j(4),1,0,.85);tf(ns.querySelector('.c0'),j(5)*.3,0,1,0,1);
+  const sl=rnd(frame*3)*100,sh=8+rnd(frame*5)*18;ns.querySelector('.c0').style.transform=`translate(${j(5)*.3}px,0) skewX(${g>.5&&rnd(frame*11)>.6?j(8)*.5:0}deg)`;
+  $('noise').style.opacity=t>=nsA&&t<nsA+.7?.55*(1-(t-nsA)/.7):0;if(t>=nsA&&t<nsA+.7)noise(frame%9+1);
+  $('world').style.filter=t>=nsA&&t<nsA+.5?`brightness(${.7+rnd(frame)*.4})`:'none';
+
+  // MOST APPS STOP HERE + frozen spinner
+  const sa=st(4)-.1,sb=st(5)-.1,sv=vis(t,sa,sb,.2,.18);
+  tf($('stop'),0,lerp(40,0,eo((t-sa)/.3)),1,0,sv);
+  tf($('phone'),0,lerp(80,0,eo((t-sa-.15)/.35)),1,0,sv);
+  const frozenAt=sa+.9;const ang=t<frozenAt?(t-sa)*540:(frozenAt-sa)*540+(Math.floor(t*1.5)%3===0?6:0);
+  $('spin').style.transform=`rotate(${ang}deg)`;
+
+  // HBCFIELD KEEPS GOING
+  const ka=st(5)-.05,kb=st(6)-.2;const kk=(t-ka)/.35;
+  tf($('keep'),0,0,lerp(1.5,1,spring(kk)),0,t<ka?0:t<kb?1:clamp(1-(t-kb)/.2));
+
+  // items stack as the voice names them
+  const flyOut=clamp((t-(st(11)-.35))/.5);
+  tf($('hdr'),0,0,1,0,vis(t,st(6)-.15,st(11)-.2,.2,.3));
+  document.querySelectorAll('.item').forEach((it,i)=>{
+    const a=st(SAY[i])-.05,k=(t-a)/.35;const sent=t>=SENT_AT(i);
+    const hop=sent?Math.sin(clamp((t-SENT_AT(i))/.35)*Math.PI)*-40:0;
+    tf(it,lerp(WIDE?1100:-1100,0,eo(k)),ITEM_Y[i]+hop-flyOut*(900+i*120),lerp(.9,1,spring(k)),0,k>0?1-flyOut*.9:0);
+    const tag=it.querySelector('.tag');const fk=clamp((t-SENT_AT(i))/.25);
+    tag.textContent=fk>.5?STR.sent:STR.offline;const c=fk>.5?'#4ade80':'#f97316';tag.style.color=c;tag.style.borderColor=c;
+    tag.style.transform=`rotateX(${fk<.5?fk*180:(1-fk)*180}deg)`;it.style.borderLeftColor=c;
+    it.querySelectorAll('svg').forEach(s=>s.setAttribute('stroke',c));
+  });
+  const saved=[0,1,2].filter(i=>t>=st(SAY[i])).length,sentN=[0,1,2].filter(i=>t>=SENT_AT(i)+.12).length;
+  const cnt=$('cnt');cnt.textContent=sentN?STR.nSent(sentN):STR.nSaved(saved);cnt.style.color=sentN?'#4ade80':'#f97316';
+  cnt.style.opacity=vis(t,st(6)+.1,st(11)-.3,.2,.3);
+
+  // closing lines
+  const l1a=ws(11,0)-.05,l2a=ws(11,2)-.05,lb=st(12)-.35;
+  tf($('l1'),0,0,lerp(1.4,1,spring((t-l1a)/.35)),0,t<l1a?0:t<lb?1:clamp(1-(t-lb)/.25));
+  tf($('l2'),0,0,lerp(1.4,1,spring((t-l2a)/.35)),0,t<l2a?0:t<lb?1:clamp(1-(t-lb)/.25));
+
+  // end card
+  const ea=st(12)-.3,ek=clamp((t-ea)/.4);const end=$('end');end.style.opacity=ek;
+  tf($('logo'),0,0,lerp(.5,1,spring((t-ea)/.5)),lerp(-20,0,eo((t-ea)/.5)),1);
+  end.querySelector('.pill').style.transform=`scale(${lerp(.6,1,spring((t-ws(12,1))/.4))})`;
+  end.querySelector('.pill').style.opacity=clamp((t-ws(12,1)+.1)/.2);
+  end.querySelector('.url').style.opacity=clamp((t-ws(12,5))/.3);
+}
+
+window.SFX=[
+  ...[0,1,2].map(i=>({t:+(st(i)+.72).toFixed(2),s:'s2863',v:.32})),
+  {t:+(st(3)-.04).toFixed(2),s:'s1457',v:.55},
+  ...[6,7,8].map(i=>({t:+(st(i)-.03).toFixed(2),s:'s2354',v:.5})),
+  {t:+(st(9)-.15).toFixed(2),s:'s1492',v:.45},
+  {t:+(st(9)+1.45).toFixed(2),s:'s112',v:.32,d:2.2},
+  {t:+(SENT_AT(2)+.05).toFixed(2),s:'s951',v:.42},
+];
+function fitAll(){
+  if(LANG==='en'&&!WIDE)return;
+  const probe=document.createElement('span');probe.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;left:0;top:0';document.body.appendChild(probe);
+  const measure=(html,cs)=>{probe.style.font=cs.font;probe.style.letterSpacing=cs.letterSpacing;probe.style.textTransform=cs.textTransform;probe.innerHTML=html;return probe.offsetWidth};
+  const fit=(el,max,html)=>{el.style.fontSize='';const cs=getComputedStyle(el),w=measure(html??el.innerHTML,cs);if(w>max)el.style.fontSize=(parseFloat(cs.fontSize)*max/w*.98)+'px';};
+  const colW=WIDE?860:940;
+  ['stop','keep','l1','l2'].forEach(id=>fit($(id),colW-20));
+  fit($('ns'),colW-60,$('ns').querySelector('.c0').innerHTML);
+  fit($('hdr'),colW-20);fit($('cnt'),colW-20,[STR.nSaved(3),STR.nSent(3)].sort((x,y)=>y.length-x.length)[0]);
+  // an item row: icon + name on the left, the status tag on the right
+  // an item row: icon + name on the left, the status tag on the right — measured as laid out
+  document.querySelectorAll('.item').forEach(it=>{const nm=it.querySelector('.nm'),tag=it.querySelector('.tag'),sm=nm.querySelector('small');
+    nm.style.fontSize='';sm.style.fontSize='';nm.style.gap='16px';tag.textContent=STR.offline.length>STR.sent.length?STR.offline:STR.sent;
+    const limit=()=>it.getBoundingClientRect().right-44-tag.offsetWidth-28;let fs=parseFloat(getComputedStyle(nm).fontSize),k=0;
+    while(nm.getBoundingClientRect().right>limit()&&k++<40){fs*=.96;nm.style.fontSize=fs+'px';sm.style.fontSize=fs+'px';}
+    tag.textContent=STR.offline;});
+  probe.remove();
+}
+window.__ready=Promise.all([document.fonts.ready,$('logo').decode().catch(()=>{})]).then(()=>{fitAll();render(0,0)});
+window.render=render;
+</script></body></html>

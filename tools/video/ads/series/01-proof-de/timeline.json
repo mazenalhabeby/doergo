@@ -1,0 +1,143 @@
+{
+ "phrases": [
+  {
+   "text": "Der Kunde sagt, Sie waren nie da.",
+   "start": 0.3,
+   "end": 2.634,
+   "wordStarts": [
+    0.3,
+    0.579,
+    0.985,
+    1.357,
+    1.554,
+    1.949,
+    2.146
+   ]
+  },
+  {
+   "text": "Kein Beweis.",
+   "start": 3.413,
+   "end": 4.516,
+   "wordStarts": [
+    3.413,
+    3.831
+   ]
+  },
+  {
+   "text": "Nur Ihr Wort gegen seins,",
+   "start": 4.747,
+   "end": 6.199,
+   "wordStarts": [
+    4.747,
+    5.061,
+    5.212,
+    5.502,
+    5.757
+   ]
+  },
+  {
+   "text": "und eine Rechnung, die keiner zahlt.",
+   "start": 6.257,
+   "end": 8.184,
+   "wordStarts": [
+    6.257,
+    6.442,
+    6.651,
+    7.127,
+    7.267,
+    7.661
+   ]
+  },
+  {
+   "text": "Es sei denn, jeder Auftrag hinterl\u00e4sst Beweise.",
+   "start": 9.172,
+   "end": 12.074,
+   "wordStarts": [
+    9.172,
+    9.369,
+    9.613,
+    9.996,
+    10.356,
+    10.855,
+    11.389
+   ]
+  },
+  {
+   "text": "Ankunft, per GPS best\u00e4tigt.",
+   "start": 13.005,
+   "end": 15.338,
+   "wordStarts": [
+    13.005,
+    13.748,
+    13.968,
+    14.525
+   ]
+  },
+  {
+   "text": "Fotos, vorher und nachher.",
+   "start": 15.905,
+   "end": 18.459,
+   "wordStarts": [
+    15.905,
+    16.799,
+    17.496,
+    17.786
+   ]
+  },
+  {
+   "text": "Eine Unterschrift, direkt vor Ort.",
+   "start": 19.189,
+   "end": 21.65,
+   "wordStarts": [
+    19.189,
+    19.514,
+    20.42,
+    20.942,
+    21.116
+   ]
+  },
+  {
+   "text": "Fall abgeschlossen.",
+   "start": 22.538,
+   "end": 23.896,
+   "wordStarts": [
+    22.538,
+    22.956
+   ]
+  },
+  {
+   "text": "Rechnung bezahlt.",
+   "start": 24.41,
+   "end": 25.617,
+   "wordStarts": [
+    24.41,
+    24.897
+   ]
+  },
+  {
+   "text": "HBCField. Jeder Auftrag, bewiesen.",
+   "start": 26.315,
+   "end": 29.519,
+   "wordStarts": [
+    26.315,
+    27.859,
+    28.207,
+    28.857
+   ]
+  },
+  {
+   "text": "Jetzt vierzehn Tage kostenlos testen.",
+   "start": 30.032,
+   "end": 32.668,
+   "wordStarts": [
+    30.032,
+    30.416,
+    30.822,
+    31.193,
+    31.878
+   ]
+  }
+ ],
+ "duration": 34.67,
+ "lang": "de"
+}

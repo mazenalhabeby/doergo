@@ -1,0 +1,49 @@
+{
+ "lang": "de",
+ "chapters": [
+  {"id": "intro", "phrases": [
+   {"text": "Ein Einsatz über fünf Tage, sechs Stunden von zu Hause.", "pause": 0.6},
+   {"text": "Zwei Wege, ihn abzuwickeln.", "pause": 0.4},
+   {"text": "Der Ablauf aus diesem Video, und wie HBCField heute arbeitet.", "pause": 1.0}
+  ]},
+  {"id": "theirs", "phrases": [
+   {"text": "Dort tippt der Techniker auf Start, und ein Timer zählt die Fahrt.", "pause": 0.4},
+   {"text": "Vor Ort stempelt er sich jeden Tag direkt auf dem Auftrag ein und aus.", "pause": 0.4},
+   {"text": "Nach jedem Ausstempeln ist ein Tagesbericht Pflicht, bevor er wieder einstempeln kann.", "pause": 0.4},
+   {"text": "Am Freitag schließt er ab, trägt die Heimfahrt aus dem Gedächtnis ein, und der Kunde unterschreibt am Ende die ganze Woche.", "pause": 1.0}
+  ]},
+  {"id": "breaks", "phrases": [
+   {"text": "Das klingt gut. Aber in einer echten Woche bricht es an vier Stellen.", "pause": 0.5},
+   {"text": "Erstens. Die Uhr hängt am Auftrag, also brauchen zwei Aufträge an einem Tag eine Sonderregel.", "pause": 0.4},
+   {"text": "Zweitens. Die Heimfahrt wird von Hand eingetippt, sie ist also geschätzt.", "pause": 0.4},
+   {"text": "Drittens. Ein fehlender Bericht blockiert das nächste Einstempeln, und die Arbeit steht.", "pause": 0.4},
+   {"text": "Viertens. Ein einzelner Techniker. Ein Team von drei Leuten hat keinen Platz.", "pause": 1.0}
+  ]},
+  {"id": "ours", "phrases": [
+   {"text": "HBCField geht vom Menschen aus, nicht vom Auftrag.", "pause": 0.5},
+   {"text": "Sie stempeln einmal ein, für Ihren Tag. Jeder Auftrag, den Sie bearbeiten, zählt innerhalb dieser Schicht.", "pause": 0.4},
+   {"text": "Unterwegs zeichnet die echte Route auf der Karte auf, Kilometer für Kilometer, nicht nur einen Timer.", "pause": 0.4},
+   {"text": "Beim Ausstempeln pausiert der Auftrag von selbst, mit einer Übergabenotiz für den Nächsten.", "pause": 0.4},
+   {"text": "Und ein Team teilt sich einen Auftrag, jeder mit seiner eigenen Zeit, und mit einem Leiter.", "pause": 1.0}
+  ]},
+  {"id": "score", "phrases": [
+   {"text": "Im direkten Vergleich.", "pause": 0.4},
+   {"text": "Fahrt: ein Timer, gegen eine echte GPS-Route.", "pause": 0.3},
+   {"text": "Die Uhr: an einen Auftrag gebunden, gegen eine Schicht für beliebig viele Aufträge.", "pause": 0.3},
+   {"text": "Teams: eine Person, gegen ein Team mit Leiter.", "pause": 0.3},
+   {"text": "Dasselbe Ziel. HBCField misst einfach mehr, und verlangt vom Mitarbeiter weniger.", "pause": 1.0}
+  ]},
+  {"id": "plan", "phrases": [
+   {"text": "Der Ablauf hat aber gute Ideen. Also übernehmen wir sie, und machen sie klüger.", "pause": 0.5},
+   {"text": "Erstens zeigt der Auftrag seine Tage. Tag eins bis Tag fünf, mit Stunden und einer Notiz zu jedem.", "pause": 0.4},
+   {"text": "Zweitens wandert der Tagesbericht in das Ausstempeln: Erledigtes, Mängel, Teile, Fotos. Erbeten, nie blockierend.", "pause": 0.4},
+   {"text": "Drittens: Heimfahrt. Ein Tippen, und die Rückfahrt wird per GPS gemessen, wie die Hinfahrt.", "pause": 0.4},
+   {"text": "Viertens: eine Übersicht. Hinfahrt, Arbeit, Rückfahrt, und die Summe.", "pause": 0.4},
+   {"text": "Und zuletzt: Der Kunde unterschreibt jeden Tag oder am Ende, und der unterschriebene Bericht geht automatisch per E-Mail hinaus.", "pause": 1.0}
+  ]},
+  {"id": "outro", "phrases": [
+   {"text": "Ein langer Einsatz, so gemessen, wie er wirklich war.", "pause": 0.5},
+   {"text": "HBCField.", "pause": 1.5}
+  ]}
+ ]
+}

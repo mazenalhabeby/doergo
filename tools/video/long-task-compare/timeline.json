@@ -1,0 +1,637 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 10.852,
+   "phrases": [
+    {
+     "text": "A five-day job, six hours from home.",
+     "start": 0.4,
+     "end": 3.012,
+     "wordStarts": [
+      0.4,
+      0.597,
+      1.201,
+      1.77,
+      2.06,
+      2.409,
+      2.618
+     ]
+    },
+    {
+     "text": "Two ways to run it.",
+     "start": 3.995,
+     "end": 5.18,
+     "wordStarts": [
+      3.995,
+      4.262,
+      4.529,
+      4.68,
+      4.901
+     ]
+    },
+    {
+     "text": "The flow in this video, and the way HBCField works today.",
+     "start": 5.963,
+     "end": 9.852,
+     "wordStarts": [
+      5.963,
+      6.16,
+      6.45,
+      6.543,
+      6.741,
+      7.135,
+      7.275,
+      7.402,
+      7.693,
+      8.633,
+      8.946
+     ]
+    }
+   ]
+  },
+  {
+   "id": "theirs",
+   "start": 10.852,
+   "end": 36.226,
+   "phrases": [
+    {
+     "text": "In their flow, the technician taps Start, and a timer counts the drive.",
+     "start": 10.852,
+     "end": 16.262,
+     "wordStarts": [
+      10.852,
+      11.061,
+      11.305,
+      11.804,
+      11.99,
+      12.768,
+      13.662,
+      14.3,
+      14.521,
+      14.602,
+      15.09,
+      15.508,
+      15.635
+     ]
+    },
+    {
+     "text": "On site, he clocks in and out on the task itself, every day.",
+     "start": 16.987,
+     "end": 21.364,
+     "wordStarts": [
+      16.987,
+      17.312,
+      17.742,
+      17.893,
+      18.346,
+      18.59,
+      18.787,
+      19.1,
+      19.251,
+      19.367,
+      19.832,
+      20.459,
+      20.853
+     ]
+    },
+    {
+     "text": "After each clock-out, a daily report is required before he can clock in again.",
+     "start": 22.043,
+     "end": 26.838,
+     "wordStarts": [
+      22.043,
+      22.449,
+      22.716,
+      23.378,
+      23.564,
+      23.993,
+      24.435,
+      24.597,
+      25.166,
+      25.503,
+      25.607,
+      25.793,
+      26.118,
+      26.258
+     ]
+    },
+    {
+     "text": "On Friday he finishes, types the drive home from memory, and the customer signs the whole week at the end.",
+     "start": 27.679,
+     "end": 35.226,
+     "wordStarts": [
+      27.679,
+      27.946,
+      28.422,
+      28.597,
+      29.723,
+      30.175,
+      30.303,
+      30.675,
+      30.942,
+      31.151,
+      31.592,
+      31.754,
+      31.871,
+      32.486,
+      32.997,
+      33.148,
+      33.438,
+      33.728,
+      33.902,
+      34.088
+     ]
+    }
+   ]
+  },
+  {
+   "id": "breaks",
+   "start": 36.226,
+   "end": 66.093,
+   "phrases": [
+    {
+     "text": "It reads well. But on a real week it breaks in four places.",
+     "start": 36.226,
+     "end": 40.835,
+     "wordStarts": [
+      36.226,
+      36.47,
+      36.911,
+      37.642,
+      37.956,
+      38.165,
+      38.281,
+      38.536,
+      38.85,
+      39.012,
+      39.407,
+      39.651,
+      40.034
+     ]
+    },
+    {
+     "text": "One. The clock lives on the task, so two jobs in one day need a special rule.",
+     "start": 41.776,
+     "end": 47.825,
+     "wordStarts": [
+      41.776,
+      42.682,
+      42.879,
+      43.286,
+      43.564,
+      43.715,
+      43.831,
+      44.4,
+      44.702,
+      45.074,
+      45.538,
+      45.77,
+      46.049,
+      46.362,
+      46.571,
+      46.676,
+      47.245
+     ]
+    },
+    {
+     "text": "Two. The drive home is typed by hand, so it is a guess.",
+     "start": 48.608,
+     "end": 53.217,
+     "wordStarts": [
+      48.608,
+      49.583,
+      49.769,
+      50.141,
+      50.408,
+      50.605,
+      51.0,
+      51.22,
+      51.871,
+      52.207,
+      52.347,
+      52.486,
+      52.567
+     ]
+    },
+    {
+     "text": "Three. A missing report blocks the next clock-in, and the work stops.",
+     "start": 54.047,
+     "end": 58.946,
+     "wordStarts": [
+      54.047,
+      54.941,
+      55.15,
+      55.556,
+      56.009,
+      56.427,
+      56.555,
+      56.81,
+      57.356,
+      57.542,
+      57.669,
+      58.087
+     ]
+    },
+    {
+     "text": "Four. One technician. A crew of three has no place in it.",
+     "start": 59.788,
+     "end": 65.093,
+     "wordStarts": [
+      59.788,
+      60.763,
+      61.065,
+      62.261,
+      62.458,
+      62.737,
+      62.864,
+      63.224,
+      63.514,
+      63.747,
+      64.106,
+      64.246
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ours",
+   "start": 66.093,
+   "end": 98.84,
+   "phrases": [
+    {
+     "text": "HBCField starts from the person, not the task.",
+     "start": 66.093,
+     "end": 70.598,
+     "wordStarts": [
+      66.093,
+      67.277,
+      67.73,
+      67.939,
+      68.125,
+      69.007,
+      69.611,
+      69.831
+     ]
+    },
+    {
+     "text": "You clock in once, for your day. Every job you touch counts inside that shift.",
+     "start": 71.539,
+     "end": 77.286,
+     "wordStarts": [
+      71.539,
+      71.725,
+      72.05,
+      72.201,
+      72.595,
+      72.781,
+      72.967,
+      73.907,
+      74.418,
+      74.778,
+      74.952,
+      75.335,
+      75.846,
+      76.438,
+      76.694
+     ]
+    },
+    {
+     "text": "On the way records the real route on the map, kilometre by kilometre, not just a timer.",
+     "start": 78.197,
+     "end": 84.245,
+     "wordStarts": [
+      78.197,
+      78.417,
+      78.545,
+      78.893,
+      79.358,
+      79.555,
+      79.892,
+      80.228,
+      80.403,
+      80.53,
+      81.099,
+      81.784,
+      81.981,
+      82.991,
+      83.258,
+      83.537,
+      83.618
+     ]
+    },
+    {
+     "text": "Clock out, and the job pauses by itself, with a handover note for whoever comes next.",
+     "start": 85.156,
+     "end": 91.182,
+     "wordStarts": [
+      85.156,
+      85.574,
+      85.922,
+      86.131,
+      86.259,
+      86.619,
+      87.141,
+      87.432,
+      88.477,
+      88.732,
+      88.848,
+      89.487,
+      89.73,
+      89.881,
+      90.264,
+      90.601
+     ]
+    },
+    {
+     "text": "And a crew shares one job, each person with their own time, and one leader.",
+     "start": 91.907,
+     "end": 97.839,
+     "wordStarts": [
+      91.907,
+      92.162,
+      92.243,
+      92.627,
+      93.045,
+      93.323,
+      93.904,
+      94.206,
+      94.693,
+      94.879,
+      95.111,
+      95.378,
+      96.202,
+      96.528,
+      96.829
+     ]
+    }
+   ]
+  },
+  {
+   "id": "score",
+   "start": 98.84,
+   "end": 122.27,
+   "phrases": [
+    {
+     "text": "Side by side.",
+     "start": 98.84,
+     "end": 100.164,
+     "wordStarts": [
+      98.84,
+      99.258,
+      99.583
+     ]
+    },
+    {
+     "text": "Travel: a timer, against a real GPS route.",
+     "start": 100.981,
+     "end": 104.917,
+     "wordStarts": [
+      100.981,
+      101.817,
+      102.015,
+      102.607,
+      103.129,
+      103.385,
+      103.814,
+      104.43
+     ]
+    },
+    {
+     "text": "The clock: tied to one task, against one shift for any number of jobs.",
+     "start": 105.519,
+     "end": 110.883,
+     "wordStarts": [
+      105.519,
+      105.717,
+      106.401,
+      106.785,
+      106.97,
+      107.237,
+      108.039,
+      108.561,
+      108.863,
+      109.269,
+      109.513,
+      109.873,
+      110.198,
+      110.314
+     ]
+    },
+    {
+     "text": "Teams: one person, against a crew with a leader.",
+     "start": 111.589,
+     "end": 114.956,
+     "wordStarts": [
+      111.589,
+      112.356,
+      112.692,
+      113.308,
+      113.784,
+      113.853,
+      114.143,
+      114.329,
+      114.422
+     ]
+    },
+    {
+     "text": "Same goal. HBCField simply measures more, and asks the worker for less.",
+     "start": 115.616,
+     "end": 121.27,
+     "wordStarts": [
+      115.616,
+      115.999,
+      116.754,
+      117.799,
+      118.147,
+      118.554,
+      118.879,
+      119.053,
+      119.448,
+      119.575,
+      119.935,
+      120.133
+     ]
+    }
+   ]
+  },
+  {
+   "id": "plan",
+   "start": 122.27,
+   "end": 166.423,
+   "phrases": [
+    {
+     "text": "Their flow does have good ideas. So we take them, and make them smarter.",
+     "start": 122.27,
+     "end": 127.541,
+     "wordStarts": [
+      122.27,
+      122.618,
+      123.083,
+      123.547,
+      123.93,
+      124.197,
+      125.196,
+      125.416,
+      125.625,
+      125.892,
+      126.148,
+      126.438,
+      126.693,
+      126.902
+     ]
+    },
+    {
+     "text": "First, the job shows its days. Day one to day five, with hours and a note on each.",
+     "start": 128.436,
+     "end": 135.042,
+     "wordStarts": [
+      128.436,
+      128.981,
+      129.248,
+      129.748,
+      130.224,
+      130.456,
+      131.361,
+      131.663,
+      131.942,
+      132.128,
+      132.429,
+      132.917,
+      133.184,
+      133.73,
+      133.916,
+      134.032,
+      134.345,
+      134.589
+     ]
+    },
+    {
+     "text": "Second, the daily report moves into the clock-out sheet: work done, faults, parts, photos. Asked for, never blocking.",
+     "start": 135.836,
+     "end": 145.182,
+     "wordStarts": [
+      135.836,
+      136.556,
+      136.789,
+      137.183,
+      137.613,
+      137.973,
+      138.216,
+      138.333,
+      138.843,
+      139.575,
+      139.877,
+      140.55,
+      141.351,
+      142.257,
+      143.116,
+      143.522,
+      144.091,
+      144.463
+     ]
+    },
+    {
+     "text": "Third, Heading home. One tap, and the drive back is measured by GPS, like the drive out.",
+     "start": 146.5,
+     "end": 152.502,
+     "wordStarts": [
+      146.5,
+      147.219,
+      147.603,
+      148.497,
+      148.787,
+      149.158,
+      149.309,
+      149.437,
+      149.774,
+      150.041,
+      150.215,
+      150.575,
+      150.772,
+      151.434,
+      151.654,
+      151.771,
+      152.119
+     ]
+    },
+    {
+     "text": "Fourth, one summary. Out, work, back, and the total.",
+     "start": 153.273,
+     "end": 157.766,
+     "wordStarts": [
+      153.273,
+      154.109,
+      154.4,
+      155.073,
+      155.677,
+      156.373,
+      156.849,
+      157.093,
+      157.22
+     ]
+    },
+    {
+     "text": "And last, the customer can sign each day or at the end, and the signed report is emailed automatically.",
+     "start": 158.398,
+     "end": 165.422,
+     "wordStarts": [
+      158.398,
+      158.654,
+      159.025,
+      159.141,
+      159.606,
+      159.803,
+      160.175,
+      160.488,
+      160.906,
+      161.162,
+      161.301,
+      161.498,
+      162.172,
+      162.381,
+      162.508,
+      162.891,
+      163.344,
+      163.553,
+      164.076
+     ]
+    }
+   ]
+  },
+  {
+   "id": "outro",
+   "start": 166.423,
+   "end": 173.577,
+   "phrases": [
+    {
+     "text": "A long job, measured the way it really happened.",
+     "start": 166.423,
+     "end": 169.697,
+     "wordStarts": [
+      166.423,
+      166.678,
+      167.108,
+      167.793,
+      168.315,
+      168.443,
+      168.652,
+      168.768,
+      169.082
+     ]
+    },
+    {
+     "text": "HBCField.",
+     "start": 170.522,
+     "end": 172.078,
+     "wordStarts": [
+      170.522
+     ]
+    }
+   ]
+  }
+ ],
+ "duration": 176.08,
+ "lang": "en"
+}

@@ -1,0 +1,141 @@
+{
+ "phrases": [
+  {
+   "text": "Clocked in at five twenty-five.",
+   "start": 0.3,
+   "end": 2.796,
+   "wordStarts": [
+    0.3,
+    0.927,
+    1.171,
+    1.403,
+    1.809
+   ]
+  },
+  {
+   "text": "The shift starts at six.",
+   "start": 3.31,
+   "end": 5.179,
+   "wordStarts": [
+    3.31,
+    3.507,
+    3.925,
+    4.413,
+    4.668
+   ]
+  },
+  {
+   "text": "So who pays for the thirty-five minutes?",
+   "start": 5.641,
+   "end": 8.021,
+   "wordStarts": [
+    5.641,
+    5.874,
+    6.164,
+    6.721,
+    6.918,
+    7.035,
+    7.65
+   ]
+  },
+  {
+   "text": "Every day. For every person.",
+   "start": 8.368,
+   "end": 11.259,
+   "wordStarts": [
+    8.368,
+    8.832,
+    9.448,
+    9.889,
+    10.609
+   ]
+  },
+  {
+   "text": "HBCField counts the shift,",
+   "start": 12.026,
+   "end": 14.139,
+   "wordStarts": [
+    12.026,
+    13.094,
+    13.535,
+    13.686
+   ]
+  },
+  {
+   "text": "not the car park.",
+   "start": 14.208,
+   "end": 15.427,
+   "wordStarts": [
+    14.208,
+    14.51,
+    14.65,
+    14.951
+   ]
+  },
+  {
+   "text": "Early is noted, not counted.",
+   "start": 16.199,
+   "end": 18.405,
+   "wordStarts": [
+    16.199,
+    16.721,
+    16.988,
+    17.488,
+    17.813
+   ]
+  },
+  {
+   "text": "Overtime counts when you approve it.",
+   "start": 18.751,
+   "end": 20.76,
+   "wordStarts": [
+    18.751,
+    19.39,
+    19.773,
+    19.947,
+    20.087,
+    20.47
+   ]
+  },
+  {
+   "text": "And the timesheet is ready before you ask.",
+   "start": 21.374,
+   "end": 24.067,
+   "wordStarts": [
+    21.374,
+    21.583,
+    21.699,
+    22.407,
+    22.628,
+    22.941,
+    23.336,
+    23.545
+   ]
+  },
+  {
+   "text": "HBCField. Count what counts.",
+   "start": 24.765,
+   "end": 27.632,
+   "wordStarts": [
+    24.765,
+    26.39,
+    26.762,
+    27.029
+   ]
+  },
+  {
+   "text": "Try it free for fourteen days.",
+   "start": 27.995,
+   "end": 30.328,
+   "wordStarts": [
+    27.995,
+    28.343,
+    28.482,
+    28.761,
+    28.958,
+    29.539
+   ]
+  }
+ ],
+ "duration": 32.33
+}

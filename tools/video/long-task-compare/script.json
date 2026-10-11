@@ -1,0 +1,49 @@
+{
+ "lang": "en",
+ "chapters": [
+  {"id": "intro", "phrases": [
+   {"text": "A five-day job, six hours from home.", "pause": 0.6},
+   {"text": "Two ways to run it.", "pause": 0.4},
+   {"text": "The flow in this video, and the way HBCField works today.", "pause": 1.0}
+  ]},
+  {"id": "theirs", "phrases": [
+   {"text": "In their flow, the technician taps Start, and a timer counts the drive.", "pause": 0.4},
+   {"text": "On site, he clocks in and out on the task itself, every day.", "pause": 0.4},
+   {"text": "After each clock-out, a daily report is required before he can clock in again.", "pause": 0.4},
+   {"text": "On Friday he finishes, types the drive home from memory, and the customer signs the whole week at the end.", "pause": 1.0}
+  ]},
+  {"id": "breaks", "phrases": [
+   {"text": "It reads well. But on a real week it breaks in four places.", "pause": 0.5},
+   {"text": "One. The clock lives on the task, so two jobs in one day need a special rule.", "pause": 0.4},
+   {"text": "Two. The drive home is typed by hand, so it is a guess.", "pause": 0.4},
+   {"text": "Three. A missing report blocks the next clock-in, and the work stops.", "pause": 0.4},
+   {"text": "Four. One technician. A crew of three has no place in it.", "pause": 1.0}
+  ]},
+  {"id": "ours", "phrases": [
+   {"text": "HBCField starts from the person, not the task.", "pause": 0.5},
+   {"text": "You clock in once, for your day. Every job you touch counts inside that shift.", "pause": 0.4},
+   {"text": "On the way records the real route on the map, kilometre by kilometre, not just a timer.", "pause": 0.4},
+   {"text": "Clock out, and the job pauses by itself, with a handover note for whoever comes next.", "pause": 0.4},
+   {"text": "And a crew shares one job, each person with their own time, and one leader.", "pause": 1.0}
+  ]},
+  {"id": "score", "phrases": [
+   {"text": "Side by side.", "pause": 0.4},
+   {"text": "Travel: a timer, against a real GPS route.", "pause": 0.3},
+   {"text": "The clock: tied to one task, against one shift for any number of jobs.", "pause": 0.3},
+   {"text": "Teams: one person, against a crew with a leader.", "pause": 0.3},
+   {"text": "Same goal. HBCField simply measures more, and asks the worker for less.", "pause": 1.0}
+  ]},
+  {"id": "plan", "phrases": [
+   {"text": "Their flow does have good ideas. So we take them, and make them smarter.", "pause": 0.5},
+   {"text": "First, the job shows its days. Day one to day five, with hours and a note on each.", "pause": 0.4},
+   {"text": "Second, the daily report moves into the clock-out sheet: work done, faults, parts, photos. Asked for, never blocking.", "pause": 0.4},
+   {"text": "Third, Heading home. One tap, and the drive back is measured by GPS, like the drive out.", "pause": 0.4},
+   {"text": "Fourth, one summary. Out, work, back, and the total.", "pause": 0.4},
+   {"text": "And last, the customer can sign each day or at the end, and the signed report is emailed automatically.", "pause": 1.0}
+  ]},
+  {"id": "outro", "phrases": [
+   {"text": "A long job, measured the way it really happened.", "pause": 0.5},
+   {"text": "HBCField.", "pause": 1.5}
+  ]}
+ ]
+}

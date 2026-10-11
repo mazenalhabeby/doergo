@@ -1,0 +1,218 @@
+{
+ "phrases": [
+  {
+   "text": "Sie verlieren jeden Tag Geld,",
+   "key": "geld",
+   "start": 0.3,
+   "end": 1.786,
+   "wordStarts": [
+    0.3,
+    0.509,
+    0.985,
+    1.24,
+    1.473
+   ]
+  },
+  {
+   "text": "und merken es nicht einmal.",
+   "key": "merken",
+   "start": 1.833,
+   "end": 3.307,
+   "wordStarts": [
+    1.833,
+    2.03,
+    2.471,
+    2.599,
+    2.808
+   ]
+  },
+  {
+   "text": "Anrufe, um Ihr Team zu finden.",
+   "key": "anrufe",
+   "start": 3.423,
+   "end": 5.292,
+   "wordStarts": [
+    3.423,
+    4.073,
+    4.213,
+    4.352,
+    4.619,
+    4.77
+   ]
+  },
+  {
+   "text": "Stunden auf Papier.",
+   "key": "papier",
+   "start": 5.606,
+   "end": 7.324,
+   "wordStarts": [
+    5.606,
+    6.384,
+    6.639
+   ]
+  },
+  {
+   "text": "Vergessene Auftr\u00e4ge.",
+   "key": "vergessene",
+   "start": 7.754,
+   "end": 9.263,
+   "wordStarts": [
+    7.754,
+    8.508
+   ]
+  },
+  {
+   "text": "Rechnungen, Wochen zu sp\u00e4t.",
+   "key": "sp\u00e4t",
+   "start": 9.576,
+   "end": 11.875,
+   "wordStarts": [
+    9.576,
+    10.436,
+    11.039,
+    11.283
+   ]
+  },
+  {
+   "text": "Zeit ist Geld,",
+   "key": "geld",
+   "start": 12.351,
+   "end": 13.454,
+   "wordStarts": [
+    12.351,
+    12.769,
+    12.955
+   ]
+  },
+  {
+   "text": "und HBCField gibt Ihnen beides zur\u00fcck.",
+   "key": "beides",
+   "start": 13.651,
+   "end": 16.775,
+   "wordStarts": [
+    13.651,
+    14.023,
+    15.138,
+    15.393,
+    15.683,
+    16.229
+   ]
+  },
+  {
+   "text": "Sie wissen, wo alle sind, ohne einen einzigen Anruf.",
+   "key": "einzigen",
+   "start": 17.288,
+   "end": 20.899,
+   "wordStarts": [
+    17.288,
+    17.485,
+    17.845,
+    18.055,
+    18.368,
+    18.832,
+    19.216,
+    19.575,
+    20.26
+   ]
+  },
+  {
+   "text": "Jeder Auftrag erledigt, mit Fotobeweis.",
+   "key": "fotobeweis",
+   "start": 21.621,
+   "end": 24.268,
+   "wordStarts": [
+    21.621,
+    22.027,
+    22.538,
+    23.072,
+    23.258
+   ]
+  },
+  {
+   "text": "Stunden automatisch erfasst. Lohnabrechnung in Minuten.",
+   "key": "minuten",
+   "start": 24.83,
+   "end": 28.789,
+   "wordStarts": [
+    24.83,
+    25.399,
+    26.142,
+    27.013,
+    27.988,
+    28.116
+   ]
+  },
+  {
+   "text": "Rechnung am selben Tag, und das Geld ist schneller da.",
+   "key": "schneller",
+   "start": 29.453,
+   "end": 32.901,
+   "wordStarts": [
+    29.453,
+    29.952,
+    30.149,
+    30.602,
+    31.032,
+    31.171,
+    31.45,
+    31.821,
+    32.042,
+    32.494
+   ]
+  },
+  {
+   "text": "Weniger Chaos.",
+   "key": "chaos",
+   "start": 33.63,
+   "end": 34.977,
+   "wordStarts": [
+    33.63,
+    34.292
+   ]
+  },
+  {
+   "text": "Mehr Auftr\u00e4ge.",
+   "key": "auftr\u00e4ge",
+   "start": 35.174,
+   "end": 36.289,
+   "wordStarts": [
+    35.174,
+    35.476
+   ]
+  },
+  {
+   "text": "Mehr Geld.",
+   "key": "geld",
+   "start": 36.602,
+   "end": 37.613,
+   "wordStarts": [
+    36.602,
+    36.997
+   ]
+  },
+  {
+   "text": "HBCField.",
+   "key": "hbcfield",
+   "start": 38.1,
+   "end": 39.25,
+   "wordStarts": [
+    38.1
+   ]
+  },
+  {
+   "text": "Jetzt vierzehn Tage kostenlos testen.",
+   "key": "kostenlos",
+   "start": 39.563,
+   "end": 42.628,
+   "wordStarts": [
+    39.563,
+    39.911,
+    40.48,
+    40.956,
+    41.792
+   ]
+  }
+ ],
+ "duration": 45.23,
+ "lang": "de"
+}

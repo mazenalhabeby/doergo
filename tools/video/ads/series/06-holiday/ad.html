@@ -1,0 +1,206 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&display=swap">
+<style>
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#f2f5ff}
+body{font-family:Rubik,system-ui,sans-serif;color:#111827}
+.abs{position:absolute}
+#stage{position:absolute;inset:0;overflow:hidden}
+#dots{position:absolute;inset:0;background:radial-gradient(circle,#d8def0 2.5px,transparent 3px) 0 0/44px 44px;opacity:.7}
+#hd{left:0;right:0;top:250px;text-align:center;font:900 76px/1 Rubik;letter-spacing:-1px;text-transform:uppercase}
+#hd span{color:#4f46e5}
+#grid{left:0;top:0;width:1080px;height:1920px;transform-origin:540px 780px}
+.colh{position:absolute;top:410px;width:188px;text-align:center;font:800 26px/1 Rubik;color:#64748b;letter-spacing:1px}
+.wk{position:absolute;left:60px;width:122px;text-align:right;font:800 24px/1 Rubik;color:#64748b}
+.cell{position:absolute;width:188px;height:150px;border-radius:22px;background:#e2e8f7}
+.fig{position:absolute;left:50%;top:26px;width:60px;margin-left:-30px}
+.fig i{display:block;width:34px;height:34px;border-radius:50%;margin:0 auto 5px;background:#64748b}
+.fig b{display:block;width:60px;height:40px;border-radius:26px 26px 8px 8px;background:#64748b}
+.fig::before{content:"";position:absolute;left:10px;top:-8px;width:40px;height:14px;border-radius:14px 14px 3px 3px;background:#fbbf24}
+.cell small{position:absolute;bottom:14px;left:0;right:0;text-align:center;font:800 17px/1 Rubik;color:#64748b;letter-spacing:1.5px}
+.band{position:absolute;left:186px;width:828px;height:170px;border-radius:30px}
+.blk{position:absolute;width:188px;height:150px;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font:900 24px/1 Rubik;color:#fff;letter-spacing:1px;box-shadow:0 10px 0 rgba(0,0,0,.18)}
+.blk .sun{width:46px;height:46px;border-radius:50%;background:#fde047;box-shadow:0 0 0 7px rgba(253,224,71,.35)}
+.blk.grey{background:repeating-linear-gradient(45deg,#94a3b8 0 14px,#a3b1c6 14px 28px);color:#fff;font-size:21px;box-shadow:none;text-align:center;line-height:1.1}
+#ghost{position:absolute;width:188px;height:150px;border-radius:22px;border:5px dashed #ef4444}
+#pill{left:0;right:0;top:1150px;text-align:center}
+#pill span{display:inline-block;font:900 50px/1 Rubik;padding:22px 40px;border-radius:999px;color:#fff;letter-spacing:.5px}
+#dlg{left:120px;width:840px;top:1135px;background:#fff;border-radius:30px;padding:26px 30px;box-shadow:0 20px 50px -15px rgba(30,41,59,.35);display:flex;align-items:center;gap:24px}
+#dlg .t{flex:1;font:700 30px/1.25 Rubik}
+#dlg .t b{display:block;color:#dc2626;font-weight:900;font-size:26px;letter-spacing:.5px}
+#dlg .bt{font:900 28px/1 Rubik;padding:22px 26px;border-radius:18px;white-space:nowrap}
+#alarm{left:130px;width:820px;top:560px;height:600px;background:#fff;border-radius:44px;box-shadow:0 30px 80px -20px rgba(30,41,59,.5);text-align:center}
+#clock{position:absolute;left:50%;top:60px;width:230px;height:230px;margin-left:-115px}
+#clock .face{position:absolute;inset:0;border-radius:50%;background:#fff;border:16px solid #ef4444}
+#clock .bell{position:absolute;top:-22px;width:80px;height:50px;border-radius:40px 40px 0 0;background:#ef4444}
+#clock .h{position:absolute;left:50%;top:50%;width:10px;border-radius:5px;background:#111;transform-origin:5px 0}
+#mon{position:absolute;left:0;right:0;top:320px;font:900 96px/1 Rubik;letter-spacing:-1px}
+#cust{position:absolute;left:140px;top:450px;display:flex;align-items:center;gap:26px}
+#cust .fig{position:relative;left:auto;top:auto;margin:0}
+#cust .fig i,#cust .fig b{background:#3b82f6}
+#cust .fig::before{display:none}
+#cust .sp{background:#eef2ff;border-radius:26px 26px 26px 6px;padding:18px 26px;font:800 36px/1 Rubik;color:#1e293b}
+#dim{inset:0;background:rgba(30,41,59,.35)}
+#big{left:70px;right:70px;top:560px;text-align:center}
+#big div{font:900 110px/.98 Rubik;letter-spacing:-2px;text-transform:uppercase}
+#big .g{color:#16a34a}
+#sunbig{left:50%;top:330px;width:190px;height:190px;margin-left:-95px;border-radius:50%;background:#fde047;box-shadow:0 0 0 30px rgba(253,224,71,.3),0 0 0 60px rgba(253,224,71,.15)}
+#end{inset:0;background:#f2f5ff}
+#end img{position:absolute;left:50%;top:560px;width:220px;height:220px;margin-left:-110px}
+#end .wm{position:absolute;left:0;right:0;top:820px;text-align:center;font:900 120px/1 Rubik;letter-spacing:-2px}
+#end .wm span{color:#2563eb}
+#end .tag{position:absolute;left:0;right:0;top:980px;text-align:center;font:800 50px/1.2 Rubik}
+#end .cta{position:absolute;left:50%;top:1110px;transform:translateX(-50%);background:#2563eb;color:#fff;font:900 46px/1 Rubik;padding:30px 50px;border-radius:999px;white-space:nowrap}
+#end .url{position:absolute;left:0;right:0;top:1250px;text-align:center;font:800 38px/1 Rubik;color:#64748b}
+.cf{position:absolute;width:22px;height:34px;border-radius:5px}
+#hd,#pill span,#big div,#mon,#cust .sp,#end .wm,#end .tag{white-space:nowrap}
+/* German runs longer: the dialog puts its buttons under the sentence */
+.de .wk{font-size:21px}
+.de #dlg,.wide #dlg{flex-wrap:wrap;row-gap:20px}
+.de #dlg .t,.wide #dlg .t{flex:1 1 100%}
+/* 16:9 — the grid on the left, the headline and its chips on the right */
+html.wide,html.wide body{width:1920px;height:1080px}
+.wide #hd{left:1220px;right:auto;width:600px;top:200px;text-align:left;transform-origin:0 50%;white-space:normal;font-size:96px;line-height:1.02}
+.wide #pill{left:1220px;right:auto;width:620px;top:560px;text-align:left;transform-origin:0 50%}
+.wide #dlg{left:1220px;width:540px;top:620px}
+.wide #alarm{left:550px;top:240px}
+.wide #big{left:160px;right:160px;top:330px}
+.wide #sunbig{top:70px}
+.wide #end img{top:160px;width:200px;height:200px;margin-left:-100px}
+.wide #end .wm{top:400px}
+.wide #end .tag{top:555px}
+.wide #end .cta{top:665px}
+.wide #end .url{top:805px}
+</style></head><body>
+<div id="stage">
+  <div id="dots"></div>
+  <div class="abs" id="hd"></div>
+  <div class="abs" id="grid"></div>
+  <div class="abs" id="pill"><span></span></div>
+  <div class="abs" id="dlg"><div class="t"><b id="dlgB"></b><span id="dlgT"></span></div><div class="bt" id="bApprove" style="background:#e2e8f0;color:#94a3b8"></div><div class="bt" id="bMove" style="background:#2563eb;color:#fff"></div></div>
+  <div class="abs" id="dim"></div>
+  <div class="abs" id="alarm"><div id="clock"><div class="bell" style="left:-18px;transform:rotate(-30deg)"></div><div class="bell" style="right:-18px;transform:rotate(30deg)"></div><div class="face"></div><div class="h" id="hh" style="height:62px"></div><div class="h" id="mh" style="height:88px"></div></div>
+    <div id="mon"></div>
+    <div id="cust"><div class="fig"><i></i><b></b></div><div class="sp" id="hello"></div></div></div>
+  <div class="abs" id="sunbig"></div>
+  <div class="abs" id="big"><div id="b1"></div><div id="b2"></div><div id="b3" style="margin-top:50px"></div><div id="b4" class="g"></div></div>
+  <div class="abs" id="end"><img id="logo" src="logo.svg"><div class="wm">HBC<span>Field</span></div><div class="tag"></div><div class="cta"></div><div class="url">hbcfield.com</div></div>
+</div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;const st=i=>P[i].start,en=i=>P[i].end;
+const $=id=>document.getElementById(id);
+const L={
+ en:{who:"Who's <span>on site</span>?",gap:'See the <span>gap</span> first.',week:'WEEK',onsite:'ON SITE',other:'OTHER<br>SITE',training:'TRAINING',holiday:'HOLIDAY',
+  nobody:'NOBODY ON SITE',covered:'COVERED ✓',dlgB:'WEEK 2: BELOW COVER',dlgT:"Mike's holiday leaves nobody on site.",approve:'Approve',move:'Move a week',
+  mon:'MONDAY 07:00',hello:'"Hello? Anyone here?"',big:['Everyone gets','their holiday.','The work still','gets done.'],tag:'Plan leave. Keep the work covered.',cta:'Try it free for 14 days'},
+ de:{who:'Wer ist <span>vor Ort</span>?',gap:'Die <span>Lücke</span> vorher sehen.',week:'WOCHE',onsite:'VOR ORT',other:'ANDERER<br>STANDORT',training:'SCHULUNG',holiday:'URLAUB',
+  nobody:'NIEMAND VOR ORT',covered:'BESETZT ✓',dlgB:'WOCHE 2: UNTERBESETZT',dlgT:'Mikes Urlaub lässt niemanden vor Ort.',approve:'Genehmigen',move:'Eine Woche verschieben',
+  mon:'MONTAG 07:00',hello:'„Hallo? Ist jemand da?“',big:['Alle bekommen','ihren Urlaub.','Die Arbeit wird','trotzdem erledigt.'],tag:'Urlaub planen, Arbeit sichern.',cta:'14 Tage kostenlos testen'}};
+const S=L[TL.lang]||L.en;
+const WIDE=innerWidth>innerHeight;
+document.documentElement.classList.toggle('wide',WIDE);document.documentElement.classList.toggle('de',TL.lang==='de');
+$('dlgB').textContent=S.dlgB;$('dlgT').textContent=S.dlgT;$('bApprove').textContent=S.approve;$('bMove').textContent=S.move;
+$('mon').textContent=S.mon;$('hello').textContent=S.hello;['b1','b2','b3','b4'].forEach((id,i)=>$(id).textContent=S.big[i]);
+document.querySelector('#end .tag').textContent=S.tag;document.querySelector('#end .cta').textContent=S.cta;
+// Shrink a text to fit its column, measured once before anything is transformed.
+const textW=el=>{const r=document.createRange();r.selectNodeContents(el);return r.getBoundingClientRect().width};
+function fitPx(el,html,maxW){el.style.fontSize='';if(html!=null)el.innerHTML=html;let px=parseFloat(getComputedStyle(el).fontSize);while(textW(el)>maxW&&px>20){px-=2;el.style.fontSize=px+'px';}return px}
+const FIT={};
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=t=>1-Math.pow(1-clamp(t),3),eio=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const spring=t=>{t=Math.max(0,t);return 1-Math.exp(-7*t)*Math.cos(11*t)};
+const tf=(el,x,y,s=1,r=0,o=1)=>{el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;el.style.opacity=o};
+
+// grid geometry
+const PEOPLE=['ANNA','MIKE','SARAH','KARIM'],COLX=c=>200+c*200,ROWY=r=>460+r*162;
+const g=$('grid');let h='';
+PEOPLE.forEach((p,c)=>h+=`<div class="colh" style="left:${COLX(c)}px">${p}</div>`);
+for(let r=0;r<4;r++){h+=`<div class="wk" style="top:${ROWY(r)+62}px">${S.week} ${r+1}</div><div class="band" id="band${r}" style="top:${ROWY(r)-10}px"></div>`;
+  for(let c=0;c<4;c++)h+=`<div class="cell" style="left:${COLX(c)}px;top:${ROWY(r)}px"><div class="fig"><i></i><b></b></div><small>${S.onsite}</small></div>`;}
+h+=`<div class="blk grey" style="left:${COLX(2)}px;top:${ROWY(1)}px">${S.other}</div><div class="blk grey" style="left:${COLX(3)}px;top:${ROWY(1)}px">${S.training}</div>`;
+h+=`<div id="ghost" style="left:${COLX(1)}px;top:${ROWY(1)}px"></div>`;
+h+=`<div class="blk" id="bA" style="left:${COLX(0)}px;top:0;background:#8b5cf6"><div class="sun"></div>${S.holiday}</div>`;
+h+=`<div class="blk" id="bM" style="left:${COLX(1)}px;top:0;background:#f97316"><div class="sun"></div>${S.holiday}</div>`;
+const CF=['#8b5cf6','#f97316','#22c55e','#3b82f6','#fde047','#ec4899'];
+for(let i=0;i<34;i++)h+=`<div class="cf" id="cf${i}" style="background:${CF[i%6]}"></div>`;
+g.innerHTML=h;
+// ensure bands sit under cells
+document.querySelectorAll('.band').forEach(b=>g.prepend(b));
+
+// timing
+const T={aFall:st(0)+.9,mFall:st(1)+.25,red:st(2),alarm:st(3),alarmOut:st(4)-.05,replay:st(4),dlg:st(4)+1.1,move:st(5)+.1,green:st(6),big:st(7)-.25,end:st(9)-.3};
+const FALL=.45;
+window.SFX=[
+ {t:T.aFall+FALL,s:'s2357',v:.8},{t:T.mFall+FALL,s:'s2357',v:.8},
+ {t:T.red,s:'s1457',v:.25},{t:T.alarm+.1,s:'s1350',v:.35,d:1.0},
+ {t:T.move,s:'s1109',v:.7},{t:T.move+.85,s:'s2357',v:.8},
+ {t:T.green,s:'s2870',v:.6},{t:T.end+.3,s:'s951',v:.5}];
+
+function fallY(t0,row,t){const k=(t-t0)/FALL;if(k<0)return -260;const y=lerp(-260,ROWY(row),eo(k)*eo(k));const b=k>1?Math.sin((k-1)*18)*Math.exp(-(k-1)*6)*-22:0;return y+b}
+
+function render(t){
+  // headline
+  const hd=$('hd');
+  if(t<T.replay){hd.innerHTML=S.who;hd.style.fontSize=FIT.who+'px';tf(hd,0,lerp(-40,0,eo(t/.5)),1,0,clamp(t/.4));}
+  else{hd.innerHTML=S.gap;hd.style.fontSize=FIT.gap+'px';const k=(t-T.replay)/.35;tf(hd,0,0,lerp(1.25,1,spring(k)),0,clamp(k*3));}
+  // grid in, and out for the big text
+  const gin=spring(t/.6),gout=eio((t-T.big)/.6);
+  if(WIDE){g.style.transformOrigin='0 0';tf(g,1,-322,1.15*lerp(.96,1,gin),0,clamp(t/.3)*lerp(1,.12,gout));}
+  else tf(g,0,0,lerp(.92,1,gin)*lerp(1,.62,gout),0,clamp(t/.3)*lerp(1,.18,gout));
+  hd.style.opacity=parseFloat(hd.style.opacity)*(1-gout);
+  // Anna
+  const bA=$('bA');bA.style.top=fallY(T.aFall,1,t)+'px';bA.style.opacity=t>=T.aFall?1:0;
+  // Mike: falls, then after the replay hovers, then moves to week 4
+  const bM=$('bM');let my;
+  if(t<T.replay)my=fallY(T.mFall,1,t);
+  else if(t<T.move){const k=eio((t-T.replay)/.5);my=lerp(ROWY(1),ROWY(1)-120,k)+Math.sin((t-T.replay)*3)*8;}
+  else{const k=(t-T.move)/.85;const y0=ROWY(1)-120+Math.sin((T.move-T.replay)*3)*8;my=k<1?lerp(y0,ROWY(3),eio(k))-Math.sin(clamp(k)*Math.PI)*60:ROWY(3)+(k<1.5?Math.sin((k-1)*18)*Math.exp(-(k-1)*6)*-18:0);}
+  bM.style.top=my+'px';bM.style.opacity=t>=T.mFall?1:0;
+  const hov=t>=T.replay&&t<T.move+.85;bM.style.boxShadow=hov?'0 40px 30px -10px rgba(0,0,0,.25)':'0 10px 0 rgba(0,0,0,.18)';bM.style.transform=`scale(${hov?1.06:1})`;
+  $('ghost').style.opacity=t>=T.replay+.3&&t<T.move+.4?(.5+.5*Math.sin(t*10)):0;
+  // week-2 band
+  const b1=$('band1');
+  if(t>=T.red&&t<T.replay)b1.style.background=Math.floor((t-T.red)*4)%2?'rgba(239,68,68,.42)':'rgba(239,68,68,.18)';
+  else if(t>=T.replay&&t<T.green)b1.style.background='rgba(245,158,11,.22)';
+  else if(t>=T.green)b1.style.background=`rgba(34,197,94,${.32*clamp((t-T.green)*4)})`;
+  else b1.style.background='transparent';
+  // pill
+  const pill=$('pill'),ps=pill.querySelector('span');
+  if(t>=T.red&&t<T.alarm){ps.textContent=S.nobody;ps.style.fontSize=FIT.nobody+'px';ps.style.background='#dc2626';const k=(t-T.red)/.3;tf(pill,0,0,lerp(.5,1,spring(k)),0,1);}
+  else if(t>=T.green&&t<T.big){ps.textContent=S.covered;ps.style.fontSize=FIT.covered+'px';ps.style.background='#16a34a';const k=(t-T.green)/.3;tf(pill,0,0,lerp(.5,1,spring(k)),0,1);}
+  else pill.style.opacity=0;
+  // dialog
+  const dk=(t-T.dlg)/.4,dout=clamp((t-T.move-.35)/.3);const d=$('dlg');tf(d,0,lerp(80,0,eo(dk)),1,0,t<T.dlg?0:clamp(dk*2)*(1-dout));
+  const press=t>=T.move-.15&&t<T.move+.15;$('bMove').style.transform=`scale(${press?.9:1})`;
+  // alarm gag
+  const ak=(t-T.alarm)/.35,aout=clamp((t-T.alarmOut)/.25),al=$('alarm');
+  const on=t>=T.alarm&&t<T.alarmOut+.25;
+  tf(al,0,lerp(500,0,eo(ak))+aout*-700,1,on?Math.sin(t*60)*(t<T.alarm+1.4?1.4:.4):0,on?clamp(ak*3)*(1-aout):0);
+  $('clock').style.transform=`rotate(${on?Math.sin(t*70)*7:0}deg)`;
+  $('hh').style.transform='rotate(180deg)';$('mh').style.transform='rotate(0deg)';
+  $('dim').style.opacity=on?.9*clamp(ak*3)*(1-aout):0;
+  // confetti
+  for(let i=0;i<34;i++){const e=$('cf'+i),k=t-T.green-.05;if(k<0||k>2.2||t>T.big+.4){e.style.opacity=0;continue}
+    const a=(i*137.5)%360*Math.PI/180,v=380+(i*53)%320,x=540+Math.cos(a)*v*k,y=ROWY(1)+75+Math.sin(a)*v*k*.8+900*k*k*.5;
+    e.style.left=x+'px';e.style.top=y+'px';e.style.transform=`rotate(${k*(300+i*40)}deg)`;e.style.opacity=clamp(2.2-k);}
+  // big text
+  const bw=[['b1',st(7)],['b2',st(7)+.45],['b3',st(8)],['b4',st(8)+.5]];
+  const bout=clamp((t-T.end+.1)/.3);
+  bw.forEach(([id,a])=>{const k=(t-a)/.4;tf($(id),0,lerp(60,0,eo(k)),lerp(.6,1,spring(k)),0,t<a?0:clamp(k*3)*(1-bout))});
+  const sk=(t-st(7))/.6;tf($('sunbig'),0,lerp(200,0,eo(sk)),lerp(.3,1,spring(sk))*(1+.04*Math.sin(t*3)),0,t<st(7)?0:clamp(sk*2)*(1-bout));
+  // end card
+  const ek=(t-T.end)/.4,end=$('end');end.style.opacity=clamp(ek*2);
+  tf($('logo'),0,lerp(-80,0,eo(ek)),lerp(.4,1,spring(ek)),0,1);
+  const ck=(t-T.end-.6)/.4;end.querySelector('.cta').style.transform=`translateX(-50%) scale(${t<T.end+.6?0:lerp(.6,1,spring(ck))})`;
+}
+window.render=render;
+function fitAll(){
+  const colW=WIDE?620:940,hd=$('hd'),ps=$('pill').querySelector('span');
+  if(WIDE){FIT.who=FIT.gap=96;hd.style.fontSize='';}else{FIT.who=fitPx(hd,S.who,colW);FIT.gap=fitPx(hd,S.gap,colW);}
+  FIT.nobody=fitPx(ps,S.nobody,colW-80);FIT.covered=fitPx(ps,S.covered,colW-80);
+  const bigW=WIDE?1500:940;const bp=Math.min(...['b1','b2','b3','b4'].map(id=>fitPx($(id),null,bigW)));['b1','b2','b3','b4'].forEach(id=>$(id).style.fontSize=bp+'px');
+  fitPx($('mon'),null,760);fitPx($('hello'),null,560);fitPx(document.querySelector('#end .tag'),null,WIDE?1500:940);
+}
+window.__ready=Promise.all([document.fonts.ready,$('logo').decode().catch(()=>{})]).then(()=>{fitAll();render(0)});
+</script>
+</body></html>

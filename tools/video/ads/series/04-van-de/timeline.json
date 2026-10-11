@@ -1,0 +1,128 @@
+{
+ "phrases": [
+  {
+   "text": "Eine Tankquittung vom letzten Monat.",
+   "start": 0.3,
+   "end": 2.889,
+   "wordStarts": [
+    0.3,
+    0.683,
+    1.554,
+    1.774,
+    2.216
+   ]
+  },
+  {
+   "text": "Ein Strafzettel vom Einundzwanzigsten.",
+   "start": 3.452,
+   "end": 5.879,
+   "wordStarts": [
+    3.452,
+    3.778,
+    4.637,
+    4.822
+   ]
+  },
+  {
+   "text": "Wer hatte den Transporter?",
+   "start": 6.609,
+   "end": 8.338,
+   "wordStarts": [
+    6.609,
+    6.992,
+    7.259,
+    7.444
+   ]
+  },
+  {
+   "text": "Keiner wei\u00df es.",
+   "start": 8.805,
+   "end": 9.92,
+   "wordStarts": [
+    8.805,
+    9.281,
+    9.607
+   ]
+  },
+  {
+   "text": "HBCField wei\u00df es.",
+   "start": 10.652,
+   "end": 12.394,
+   "wordStarts": [
+    10.652,
+    11.802,
+    12.115
+   ]
+  },
+  {
+   "text": "Es wei\u00df, wer welches Fahrzeug an jedem Tag hatte.",
+   "start": 12.856,
+   "end": 16.188,
+   "wordStarts": [
+    12.856,
+    13.123,
+    13.506,
+    13.727,
+    14.191,
+    14.76,
+    14.992,
+    15.422,
+    15.77
+   ]
+  },
+  {
+   "text": "Die Quittung wird direkt an der Zapfs\u00e4ule fotografiert.",
+   "start": 16.805,
+   "end": 20.242,
+   "wordStarts": [
+    16.805,
+    17.072,
+    17.606,
+    17.827,
+    18.315,
+    18.431,
+    18.628,
+    19.383
+   ]
+  },
+  {
+   "text": "Der Strafzettel findet seinen Fahrer.",
+   "start": 20.774,
+   "end": 23.154,
+   "wordStarts": [
+    20.774,
+    21.03,
+    21.993,
+    22.353,
+    22.678
+   ]
+  },
+  {
+   "text": "Jeder Euro hat einen Namen.",
+   "start": 23.822,
+   "end": 25.54,
+   "wordStarts": [
+    23.822,
+    24.286,
+    24.646,
+    24.843,
+    25.122
+   ]
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "start": 26.098,
+   "end": 30.753,
+   "wordStarts": [
+    26.098,
+    27.596,
+    28.164,
+    28.78,
+    29.198,
+    29.929
+   ]
+  }
+ ],
+ "duration": 32.75,
+ "lang": "de"
+}

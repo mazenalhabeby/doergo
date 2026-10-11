@@ -1,0 +1,57 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Minus eins.",
+   "pause": 0.25
+  },
+  {
+   "text": "Minus zwei.",
+   "pause": 0.25
+  },
+  {
+   "text": "Minus drei.",
+   "pause": 0.3
+  },
+  {
+   "text": "Kein Netz.",
+   "pause": 0.3
+  },
+  {
+   "text": "Die meisten Apps hören hier auf.",
+   "pause": 0.3
+  },
+  {
+   "text": "HBCField arbeitet weiter.",
+   "pause": 0.35
+  },
+  {
+   "text": "Foto, gespeichert.",
+   "pause": 0.15
+  },
+  {
+   "text": "Notiz, gespeichert.",
+   "pause": 0.15
+  },
+  {
+   "text": "Unterschrift, gespeichert.",
+   "pause": 0.4
+  },
+  {
+   "text": "Wieder oben,",
+   "pause": 0
+  },
+  {
+   "text": "kommt alles von selbst an.",
+   "pause": 0.4
+  },
+  {
+   "text": "Nichts verloren. Nichts doppelt getippt.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

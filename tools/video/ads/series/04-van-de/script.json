@@ -1,0 +1,45 @@
+{
+ "lang": "de",
+ "phrases": [
+  {
+   "text": "Eine Tankquittung vom letzten Monat.",
+   "pause": 0.25
+  },
+  {
+   "text": "Ein Strafzettel vom Einundzwanzigsten.",
+   "pause": 0.3
+  },
+  {
+   "text": "Wer hatte den Transporter?",
+   "pause": 0.2
+  },
+  {
+   "text": "Keiner weiß es.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField weiß es.",
+   "pause": 0.3
+  },
+  {
+   "text": "Es weiß, wer welches Fahrzeug an jedem Tag hatte.",
+   "pause": 0.35
+  },
+  {
+   "text": "Die Quittung wird direkt an der Zapfsäule fotografiert.",
+   "pause": 0.3
+  },
+  {
+   "text": "Der Strafzettel findet seinen Fahrer.",
+   "pause": 0.4
+  },
+  {
+   "text": "Jeder Euro hat einen Namen.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Jetzt vierzehn Tage kostenlos testen.",
+   "pause": 0
+  }
+ ]
+}

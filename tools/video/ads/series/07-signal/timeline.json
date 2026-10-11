@@ -1,0 +1,137 @@
+{
+ "phrases": [
+  {
+   "text": "Minus one.",
+   "start": 0.3,
+   "end": 1.229,
+   "wordStarts": [
+    0.3,
+    0.811
+   ]
+  },
+  {
+   "text": "Minus two.",
+   "start": 1.641,
+   "end": 2.617,
+   "wordStarts": [
+    1.641,
+    2.141
+   ]
+  },
+  {
+   "text": "Minus three.",
+   "start": 3.029,
+   "end": 4.051,
+   "wordStarts": [
+    3.029,
+    3.563
+   ]
+  },
+  {
+   "text": "No signal.",
+   "start": 4.49,
+   "end": 5.581,
+   "wordStarts": [
+    4.49,
+    4.827
+   ]
+  },
+  {
+   "text": "Most apps stop here.",
+   "start": 6.195,
+   "end": 7.681,
+   "wordStarts": [
+    6.195,
+    6.601,
+    6.88,
+    7.251
+   ]
+  },
+  {
+   "text": "HBCField keeps going.",
+   "start": 8.178,
+   "end": 10.094,
+   "wordStarts": [
+    8.178,
+    9.212,
+    9.56
+   ]
+  },
+  {
+   "text": "Photo, saved.",
+   "start": 10.56,
+   "end": 11.756,
+   "wordStarts": [
+    10.56,
+    11.164
+   ]
+  },
+  {
+   "text": "Note, saved.",
+   "start": 12.022,
+   "end": 13.334,
+   "wordStarts": [
+    12.022,
+    12.591
+   ]
+  },
+  {
+   "text": "Signature, saved.",
+   "start": 13.797,
+   "end": 15.098,
+   "wordStarts": [
+    13.797,
+    14.448
+   ]
+  },
+  {
+   "text": "Back up top,",
+   "start": 15.695,
+   "end": 16.972,
+   "wordStarts": [
+    15.695,
+    16.136,
+    16.392
+   ]
+  },
+  {
+   "text": "it all arrives by itself.",
+   "start": 17.088,
+   "end": 19.143,
+   "wordStarts": [
+    17.088,
+    17.297,
+    17.576,
+    18.11,
+    18.365
+   ]
+  },
+  {
+   "text": "Nothing lost. Nothing typed twice.",
+   "start": 19.741,
+   "end": 22.852,
+   "wordStarts": [
+    19.741,
+    20.263,
+    21.041,
+    21.61,
+    22.121
+   ]
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "start": 23.666,
+   "end": 27.334,
+   "wordStarts": [
+    23.666,
+    25.047,
+    25.395,
+    25.558,
+    25.871,
+    26.092,
+    26.823
+   ]
+  }
+ ],
+ "duration": 29.33
+}

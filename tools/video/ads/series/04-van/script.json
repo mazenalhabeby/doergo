@@ -1,0 +1,44 @@
+{
+ "phrases": [
+  {
+   "text": "A fuel receipt from last month.",
+   "pause": 0.25
+  },
+  {
+   "text": "A speeding fine on the twenty-first.",
+   "pause": 0.3
+  },
+  {
+   "text": "Who had the van?",
+   "pause": 0.2
+  },
+  {
+   "text": "Nobody knows.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField does.",
+   "pause": 0.3
+  },
+  {
+   "text": "It knows who held every van, on every day.",
+   "pause": 0.35
+  },
+  {
+   "text": "The receipt is photographed at the pump.",
+   "pause": 0.3
+  },
+  {
+   "text": "The fine finds its driver.",
+   "pause": 0.4
+  },
+  {
+   "text": "Every euro has a name.",
+   "pause": 0.5
+  },
+  {
+   "text": "HBCField. Try it free for fourteen days.",
+   "pause": 0
+  }
+ ]
+}

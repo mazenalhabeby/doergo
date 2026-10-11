@@ -1,0 +1,224 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#f4f3ee}
+body{font-family:"Bricolage Grotesque",system-ui,sans-serif;color:#0b0b0b}
+.abs{position:absolute}
+#bg{inset:0;background:#f4f3ee}
+#scene{inset:0}
+/* counter */
+#cnt{left:90px;top:285px;display:flex;align-items:center;gap:18px;font-weight:800;font-size:38px;letter-spacing:.08em;color:#dc2626;text-transform:uppercase}
+#cnt i{width:22px;height:22px;border-radius:50%;background:#dc2626;display:block}
+#cnt b{font-size:64px;letter-spacing:0;font-variant-numeric:tabular-nums;min-width:90px}
+/* the questions */
+.q{left:90px;width:900px;font-weight:800;font-size:92px;line-height:1;letter-spacing:-2.5px;transform-origin:0 50%}
+#big{left:90px;width:900px;top:400px;font-weight:800;font-size:108px;line-height:.98;letter-spacing:-3.5px}
+#big em{font-style:normal;color:#dc2626}
+#big u{text-decoration:none;position:relative;display:inline-block}
+#big u svg{position:absolute;left:-6px;bottom:-22px;width:calc(100% + 12px);height:40px;overflow:visible}
+/* call cards */
+.card{left:110px;top:0;width:860px;height:196px;background:#1c1c1e;color:#fff;border-radius:52px;padding:0 34px;display:flex;align-items:center;gap:26px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45),0 4px 10px rgba(0,0,0,.15)}
+.card .av{width:112px;height:112px;border-radius:50%;background:#636366;display:grid;place-items:center;font-weight:700;font-size:44px;flex:none}
+.card .tx{flex:1;min-width:0}
+.card .tx small{display:block;font-size:28px;color:#a1a1a6;font-weight:500;margin-bottom:4px}
+.card .tx b{display:block;font-size:44px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .bt{display:flex;gap:22px;flex:none}
+.card .bt i{width:92px;height:92px;border-radius:50%;background:#ff3b30;display:grid;place-items:center}
+.card .bt i+i{background:#34c759}
+.card .bt svg{width:44px;height:44px}
+#or{left:0;right:0;top:560px;text-align:center;font-weight:800;font-size:430px;line-height:1;letter-spacing:-18px}
+/* phone */
+#phone{left:250px;top:560px;width:580px;height:1180px;border-radius:92px;background:#0b0b0b;padding:18px}
+#screen{position:absolute;inset:18px;border-radius:76px;overflow:hidden;background:linear-gradient(165deg,#c9d6ff 0%,#e4d9fb 45%,#fbe3e8 100%)}
+#island{left:50%;top:26px;width:170px;height:48px;margin-left:-85px;border-radius:26px;background:#0b0b0b}
+#lockdate{left:0;right:0;top:120px;text-align:center;font-weight:600;font-size:30px;color:#2b2b3a}
+#locktime{left:0;right:0;top:158px;text-align:center;font-weight:800;font-size:170px;line-height:1;letter-spacing:-6px;color:#1a1a2a}
+.nt{left:22px;right:22px;background:rgba(255,255,255,.78);border-radius:38px;padding:24px 26px;display:flex;gap:20px;align-items:flex-start;box-shadow:0 14px 34px -14px rgba(40,40,80,.35)}
+.nt img{width:64px;height:64px;border-radius:16px;background:#fff;padding:6px;flex:none}
+.nt .tx{flex:1;min-width:0}
+.nt .hd{display:flex;justify-content:space-between;font-size:22px;font-weight:600;color:#6b6b7a;letter-spacing:.02em;text-transform:uppercase}
+.nt b{display:block;font-size:31px;font-weight:800;margin-top:6px;line-height:1.15}
+.nt p{font-size:27px;color:#3a3a48;margin-top:4px;line-height:1.25}
+.nt .bar{height:10px;border-radius:5px;background:rgba(0,0,0,.08);margin-top:14px;overflow:hidden}
+.nt .bar i{display:block;height:100%;background:#2563eb;border-radius:5px}
+.nt .chip{display:inline-flex;align-items:center;gap:10px;margin-top:14px;background:#fff;border-radius:14px;padding:8px 14px;font-size:24px;font-weight:700}
+.nt .chip s{text-decoration:none;background:#dc2626;color:#fff;border-radius:6px;padding:2px 8px;font-size:18px}
+#quiet{left:50%;top:0;transform:translateX(-50%);background:rgba(255,255,255,.7);border-radius:40px;padding:14px 26px;font-size:26px;font-weight:700;color:#15803d;white-space:nowrap}
+#line{left:90px;width:900px;top:290px;font-weight:800;font-size:96px;line-height:1;letter-spacing:-3px}
+/* end card */
+#end{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding-bottom:280px}
+#end img{width:300px;height:300px}
+#end .wm{font-weight:800;font-size:112px;letter-spacing:.06em}
+#end .wm span{color:#2563eb}
+#end .sl{font-weight:700;font-size:62px;letter-spacing:-1px;text-align:center;line-height:1.1}
+#end .cta{background:#0b0b0b;color:#fff;border-radius:999px;padding:34px 64px;font-weight:800;font-size:56px}
+#end .url{font-weight:600;font-size:40px;color:#6b6b73}
+/* German runs longer */
+html.de .q{font-size:72px;letter-spacing:-2px}
+html.de:not(.wide) #or{font-size:300px;letter-spacing:-12px;top:620px}
+/* 16:9 — text column on the left, calls / phone on the right */
+html.wide,html.wide body{width:1920px;height:1080px}
+html.wide #cnt{left:120px;top:110px}
+html.wide .q{left:120px;width:880px;font-size:84px}
+html.wide.de .q{font-size:66px}
+html.wide #big{left:120px;width:880px;top:290px;font-size:100px}
+html.wide .card{left:1010px;width:800px;height:172px;border-radius:46px;gap:22px}
+html.wide .card .av{width:100px;height:100px;font-size:40px}
+html.wide .card .tx b{font-size:40px}
+html.wide .card .bt i{width:82px;height:82px}
+html.wide #or{top:300px}
+html.wide #phone{zoom:.78;left:1540px;top:103px}
+html.wide #line{left:120px;width:900px;top:360px;font-size:118px;letter-spacing:-4px}
+html.wide #end{padding-bottom:0;gap:24px}
+html.wide #end img{width:210px;height:210px}
+html.wide #end .wm{font-size:96px}
+html.wide #end .sl{font-size:54px}
+html.wide #end .cta{font-size:46px;padding:26px 54px}
+html.wide #end .url{font-size:34px}
+</style></head><body>
+<div class="abs" id="bg"></div>
+<div class="abs" id="scene">
+  <div class="abs" id="cnt"><i></i>Missed calls <b>0</b></div>
+  <div class="abs q" id="q0">“When is he coming?”</div>
+  <div class="abs q" id="q1">“Is it done yet?”</div>
+  <div class="abs q" id="q2">“Did you get my email?”</div>
+  <div class="abs" id="big"><em>30</em> calls a day.<br>Not one of them<br>is <u>work.<svg viewBox="0 0 300 40" preserveAspectRatio="none"><path id="scrib" d="M4 26 C60 10 120 34 180 18 S270 12 296 24" stroke="#dc2626" stroke-width="9" fill="none" stroke-linecap="round"/></svg></u></div>
+  <div id="cards"></div>
+  <div class="abs" id="or">OR.</div>
+  <div class="abs" id="line"></div>
+  <div class="abs" id="phone"><div id="screen">
+    <div class="abs" id="island"></div>
+    <div class="abs" id="lockdate">Tuesday, 30 September</div>
+    <div class="abs" id="locktime">9:41</div>
+    <div class="abs nt" id="n1"><img src="logo.svg"><div class="tx"><div class="hd"><span>HBCField</span><span>now</span></div><b>Mike is on the way</b><p>Heating check · arrives in 14 min</p><div class="bar"><i id="n1bar"></i></div></div></div>
+    <div class="abs nt" id="n2"><img src="logo.svg"><div class="tx"><div class="hd"><span>HBCField</span><span>11:05</span></div><b>Heating check done</b><p>Signed by the customer</p><div class="chip"><s>PDF</s>Service report</div></div></div>
+    <div class="abs" id="quiet">0 missed calls</div>
+  </div></div>
+  <div class="abs" id="end"><img id="elogo" src="logo.svg"><div class="wm">HBC <span>FIELD</span></div><div class="sl">Your phone stays quiet.<br>Your team gets to work.</div><div class="cta">Try it free for 14 days</div><div class="url">hbcfield.com</div></div>
+</div>
+<script>
+const TL=__TIMELINE__;const P=TL.phrases;
+const LANG=TL.lang==='de'?'de':'en',WIDE=innerWidth>innerHeight;
+document.documentElement.classList.toggle('de',LANG==='de');document.documentElement.classList.toggle('wide',WIDE);document.documentElement.lang=LANG;
+const STR={
+ en:{cnt:'Missed calls',q:['“When is he coming?”','“Is it done yet?”','“Did you get my email?”'],
+  big:'<em>30</em> calls a day.<br>Not one of them<br>is <u>work.#S</u>',incoming:'Incoming call',
+  names:{'Client · Müller':'Client · Müller','Unknown':'Unknown','Office':'Office','Client · Berger':'Client · Berger','Client · Adler':'Client · Adler'},
+  or:'OR.',date:'Tuesday, 30 September',now:'now',n1b:'Mike is on the way',n1p:'Heating check · arrives in 14 min',
+  n2b:'Heating check done',n2p:'Signed by the customer',chip:'Service report',quiet:'0 missed calls',
+  lines:['They see it<br>for themselves.','Your phone<br>stays quiet.','Your team<br>gets to work.'],
+  sl:'Your phone stays quiet.<br>Your team gets to work.',cta:'Try it free for 14 days'},
+ de:{cnt:'Verpasste Anrufe',q:['„Wann kommt er denn?“','„Ist es schon erledigt?“','„Haben Sie meine E-Mail bekommen?“'],
+  big:'<em>30</em> Anrufe am Tag.<br>Keiner davon<br>ist <u>Arbeit.#S</u>',incoming:'Eingehender Anruf',
+  names:{'Client · Müller':'Kunde · Müller','Unknown':'Unbekannt','Office':'Büro','Client · Berger':'Kunde · Berger','Client · Adler':'Kunde · Adler'},
+  or:'ODER.',date:'Dienstag, 30. September',now:'jetzt',n1b:'Mike ist unterwegs',n1p:'Heizungscheck · Ankunft in 14 Min.',
+  n2b:'Heizungscheck erledigt',n2p:'Vom Kunden unterschrieben',chip:'Servicebericht',quiet:'0 verpasste Anrufe',
+  lines:['Sie sehen es<br>selbst.','Ihr Telefon<br>bleibt still.','Ihr Team<br>kann arbeiten.'],
+  sl:'Ihr Telefon bleibt still.<br>Ihr Team kann arbeiten.',cta:'14 Tage kostenlos testen'}}[LANG];
+(()=>{const g=id=>document.getElementById(id);
+ g('cnt').firstChild.nextSibling.textContent=STR.cnt+' ';
+ STR.q.forEach((q,i)=>g('q'+i).textContent=q);
+ const svg=g('big').querySelector('u svg').outerHTML;g('big').innerHTML=STR.big.replace('#S',svg);
+ g('or').textContent=STR.or;g('lockdate').textContent=STR.date;
+ g('n1').querySelector('.hd span+span').textContent=STR.now;g('n1').querySelector('b').textContent=STR.n1b;g('n1').querySelector('p').textContent=STR.n1p;
+ g('n2').querySelector('b').textContent=STR.n2b;g('n2').querySelector('p').textContent=STR.n2p;g('n2').querySelector('.chip').lastChild.textContent=STR.chip;
+ g('quiet').textContent=STR.quiet;
+ const e=g('end');e.querySelector('.sl').innerHTML=STR.sl;e.querySelector('.cta').textContent=STR.cta;})();
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),lerp=(a,b,k)=>a+(b-a)*k;
+const eo=k=>1-Math.pow(1-clamp(k),3),ei=k=>Math.pow(clamp(k),3);
+const eio=k=>{k=clamp(k);return k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2};
+const spring=k=>{k=Math.max(0,k);return 1-Math.exp(-7*k)*Math.cos(11*k)};
+const st=i=>P[i].start,en=i=>P[i].end;
+function rnd(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function tf(el,x,y,s=1,r=0,o=1){el.style.transform=`translate(${x}px,${y}px) scale(${s}) rotate(${r}deg)`;el.style.opacity=o}
+
+/* ── the calls ── */
+const NAMES=[['Client · Müller','MÜ'],['Kaiser Bau GmbH','KB'],['Unknown','?'],['Lindner Facility','LF'],['Client · Müller','MÜ'],['Hausverwaltung Gruber','HG'],['Office','OF'],['Client · Berger','BE'],['Unknown','?'],['Schneider Bau','SB'],['Client · Müller','MÜ'],['Hotel Post','HP'],['Unknown','?'],['Kaiser Bau GmbH','KB'],['Client · Adler','AD'],['Hausverwaltung Gruber','HG']];
+const N=NAMES.length,OR=st(5),C0=st(0)-.05,C1=OR-.35;
+const PHONE='<svg viewBox="0 0 24 24" fill="#fff"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>';
+const DROP=NAMES.map((_,i)=>C0+(C1-C0)*Math.pow(i/(N-1),.62));
+const cardsEl=$('cards');
+NAMES.forEach(([n,a],i)=>{const c=document.createElement('div');c.className='abs card';
+  c.innerHTML=`<div class="av">${a}</div><div class="tx"><small>${STR.incoming}</small><b>${STR.names[n]||n}</b></div><div class="bt"><i>${PHONE.replace('<path','<path transform="rotate(135 12 12)"')}</i><i>${PHONE}</i></div>`;cardsEl.appendChild(c);});
+const CARDS=[...cardsEl.children];
+const POS=CARDS.map((_,i)=>({x:(rnd(i)-.5)*(WIDE?70:90),y:(WIDE?210+rnd(i+40)*560:900+rnd(i+40)*360),r:(rnd(i+80)-.5)*12}));
+
+/* sound: rings get denser, all cut before "Or." */
+window.SFX=[
+  ...DROP.map((t,i)=>({t:+t.toFixed(3),s:i%2?'s1359':'s1350',v:i%2?.22:.3,d:+Math.max(.2,Math.min(1,OR-.08-t)).toFixed(3)})),
+  {t:+(OR-.12).toFixed(3),s:'s1492',v:.6},
+  {t:+(st(7)+.05).toFixed(3),s:'s2354',v:.5},
+  {t:+(st(8)+.05).toFixed(3),s:'s2354',v:.5},
+  {t:+(st(9)+.1).toFixed(3),s:'s2354',v:.25},
+  {t:+(st(11)-.1).toFixed(3),s:'s951',v:.45},
+];
+
+function render(t){
+  const out=eio((t-OR+.08)/.35);             // cards fly away
+  const load=clamp((t-C0)/(C1-C0));          // how bad it has got
+  // background warms up under pressure, then goes calm and cool
+  const warm=load*(1-out);
+  $('bg').style.background=`rgb(${Math.round(lerp(244,248,warm))},${Math.round(lerp(243,226,warm))},${Math.round(lerp(238,222,warm))})`;
+  const shake=t<OR?Math.pow(load,1.6)*16:0;
+  $('scene').style.transform=`translate(${Math.sin(t*47)*shake*.35}px,${Math.cos(t*53)*shake*.25}px)`;
+
+  // counter
+  const dropped=DROP.filter(d=>t>=d).length;
+  const num=Math.min(30,Math.round(30*clamp((t-C0)/(C1-C0+.2))));
+  $('cnt').querySelector('b').textContent=num;
+  tf($('cnt'),0,0,1+(dropped&&t-DROP[dropped-1]<.15?.06:0),0,clamp((t-C0)*4)*(1-out));
+
+  // questions: each springs in, earlier ones go grey
+  [0,1,2].forEach(i=>{const e=$('q'+i),k=(t-st(i)+.05)/.4,gone=eio((t-st(3)+.35)/.35);
+    e.style.top=((WIDE?250:400)+i*(WIDE?(LANG==='de'?118:128):130))+'px';e.style.color=t>st(i+1<3?i+1:3)-.05&&i<2?'#a3a29a':'#0b0b0b';
+    if(i===2&&t>st(3)-.3)e.style.color='#a3a29a';
+    tf(e,lerp(-40,0,eo(k)),0,lerp(.7,1,spring(k)),0,t<st(i)-.05?0:1-gone);});
+  // "30 calls a day. Not one of them is work."
+  const kb=(t-st(3)+.05)/.4,k2=(t-st(4)-.2)/.4;
+  tf($('big'),0,lerp(40,0,eo(kb)),lerp(.85,1,spring(kb)),0,t<st(3)-.1?0:1-out);
+  const sc=$('scrib'),L=330;sc.style.strokeDasharray=L;sc.style.strokeDashoffset=L*(1-eo((t-(P[4].wordStarts.at(-1)))/.35));
+
+  // cards: drop in, pile up, jitter, then fly off on OR
+  CARDS.forEach((c,i)=>{const d=DROP[i],k=(t-d)/.35,p=POS[i];
+    const j=t<OR?Math.sin(t*61+i*3)*shake:0,jr=t<OR?Math.sin(t*37+i)*shake*.12:0;
+    const dir=i%2?1:-1,o2=eio((t-OR+.08-i*.008)/.32);
+    tf(c,p.x+j+dir*o2*(WIDE?2700:1500),p.y+lerp(-420,0,eo(k))-o2*200,lerp(1.25,1,spring(k)),p.r+jr+dir*o2*40,t<d?0:(WIDE?1-clamp((o2-.5)/.4):1));
+    c.style.zIndex=10+i;});
+
+  // OR.
+  const ko=(t-OR+.06)/.3,oOut=eio((t-st(6)+.15)/.35);
+  tf($('or'),0,-oOut*200,lerp(2.4,1,spring(ko))*lerp(1,.6,oOut),0,t<OR-.06?0:1-oOut);
+  $('or').style.zIndex=50;
+
+  // the phone, calm
+  const kp=(t-st(6)+.1)/.7,pe=eio((t-st(11)+.55)/.5);
+  tf($('phone'),0,lerp(900,0,eo(kp))+pe*1100,1,0,t<st(6)-.1?0:1-pe);
+  const lines=[[6,STR.lines[0]],[9,STR.lines[1]],[10,STR.lines[2]]];
+  let cur=null;for(const l of lines)if(t>=st(l[0])-.1)cur=l;
+  const ln=$('line');
+  if(cur&&t<st(11)-.5){if(ln.dataset.k!=cur[0]){ln.dataset.k=cur[0];ln.innerHTML=cur[1];}
+    const kl=(t-st(cur[0])+.1)/.4;tf(ln,lerp(-50,0,eo(kl)),0,1,0,clamp(kl*2.5)*(1-pe));}else tf(ln,0,0,1,0,0);
+  ln.style.color='#0b0b0b';
+  // notifications
+  const n1=$('n1'),n2=$('n2'),k1=(t-st(7)+.05)/.45,kk2=(t-st(8)+.05)/.45;
+  const push=eo(kk2)*246;
+  tf(n1,0,420+lerp(-120,0,eo(k1))+push,lerp(.92,1,spring(k1)),0,clamp(k1*3));
+  tf(n2,0,420+lerp(-120,0,eo(kk2)),lerp(.92,1,spring(kk2)),0,clamp(kk2*3));
+  $('n1bar').style.width=lerp(15,82,clamp((t-st(7))/5))+'%';
+  const kq=(t-st(9)+.05)/.4;tf($('quiet'),-290+290,930+lerp(30,0,eo(kq)),lerp(.7,1,spring(kq)),0,clamp(kq*3));
+  $('quiet').style.transform+=' translateX(-50%)';
+
+  // end card
+  const ke=(t-st(11)+.2)/.5,e=$('end');
+  e.style.opacity=clamp(ke*2);
+  tf($('elogo'),0,lerp(-60,0,eo(ke)),lerp(.4,1,spring(ke)),lerp(-30,0,eo(ke)),clamp(ke*3));
+  [...e.children].slice(1).forEach((c,i)=>{const kc=(t-st(11)-.1-i*.25)/.4;tf(c,0,lerp(40,0,eo(kc)),lerp(.85,1,spring(kc)),0,clamp(kc*3));});
+}
+async function preload(){await document.fonts.ready;await Promise.all(['500','700','800'].map(w=>document.fonts.load(`${w} 60px "Bricolage Grotesque"`)));
+  await Promise.all([...document.images].map(i=>i.decode().catch(()=>{})));render(0);}
+window.__ready=preload();window.render=render;
+</script>
+</body></html>
