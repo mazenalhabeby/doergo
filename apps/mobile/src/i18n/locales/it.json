@@ -4845,6 +4845,25 @@
       "endAt": "Fine alle"
     },
     "noRemoteSpace": "Non c’è nessuno spazio di lavoro per cui possa lavorare da remoto.",
-    "balance": "Saldo"
+    "balance": "Saldo",
+    "ledger": {
+      "line": {
+        "ALLOWANCE": "Spettanza annuale",
+        "OPENING_USED": "Usati prima di HBCField",
+        "CARRY_OVER": "Riportati",
+        "CARRY_EXPIRED": "Riporto scaduto",
+        "GRANT": "Giorni extra concessi",
+        "CORRECTION": "Correzione",
+        "TAKEN": "Goduti"
+      },
+      "remaining": "Rimanenti",
+      "pending": "In attesa di risposta",
+      "yearCalendar": "Anno di ferie {{year}}",
+      "yearWork": "Anno lavorativo {{from}} – {{to}}",
+      "carryExpires_one": "{{days}} giorno riportato utilizzabile fino al {{date}}",
+      "carryExpires_other": "{{days}} giorni riportati utilizzabili fino al {{date}}",
+      "thisRequest_one": "Questa richiesta · {{days}} giorno lavorativo",
+      "thisRequest_other": "Questa richiesta · {{days}} giorni lavorativi"
+    }
   }
 }

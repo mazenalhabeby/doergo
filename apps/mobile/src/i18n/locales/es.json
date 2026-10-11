@@ -4845,6 +4845,25 @@
       "endAt": "Terminar a las"
     },
     "noRemoteSpace": "No hay ningún espacio de trabajo para el que pueda trabajar en remoto.",
-    "balance": "Saldo"
+    "balance": "Saldo",
+    "ledger": {
+      "line": {
+        "ALLOWANCE": "Días anuales",
+        "OPENING_USED": "Usados antes de HBCField",
+        "CARRY_OVER": "Traspasados",
+        "CARRY_EXPIRED": "Traspaso caducado",
+        "GRANT": "Días extra concedidos",
+        "CORRECTION": "Corrección",
+        "TAKEN": "Disfrutados"
+      },
+      "remaining": "Quedan",
+      "pending": "Pendiente de respuesta",
+      "yearCalendar": "Año de vacaciones {{year}}",
+      "yearWork": "Año laboral {{from}} – {{to}}",
+      "carryExpires_one": "{{days}} día traspasado se puede usar hasta el {{date}}",
+      "carryExpires_other": "{{days}} días traspasados se pueden usar hasta el {{date}}",
+      "thisRequest_one": "Esta solicitud · {{days}} día laborable",
+      "thisRequest_other": "Esta solicitud · {{days}} días laborables"
+    }
   }
 }

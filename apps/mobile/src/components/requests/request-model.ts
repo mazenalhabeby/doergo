@@ -162,15 +162,20 @@ export function stepOvertime(minutes: number, dir: 1 | -1): number {
  * the allowance pays for). "Before" is what is left once requests already
  * waiting are counted — the number the member would actually draw on — and
  * "after" takes off what this request costs THIS year (a request over New Year
- * draws on next year's allowance for its January days).
+ * draws on next year's allowance for its January days). With a leave year
+ * from the server (a work year runs e.g. 15 Apr – 14 Apr), "this year" is the
+ * request's days inside THAT year, read from the count's own days.
  */
 export function balancePreview(
-  balance: { year: number; remaining: number; pending: number } | null | undefined,
-  cost: { counted: number; byYear?: Record<string, number> } | null | undefined,
+  balance: { year: number; remaining: number; pending: number; leaveYear?: { start: string; end: string } | null } | null | undefined,
+  cost: { counted: number; byYear?: Record<string, number>; days?: ReadonlyArray<{ day: string; cost: number }> } | null | undefined,
   type: LeaveType,
 ): { before: number; after: number } | null {
   if (!balance || !cost || type !== 'VACATION') return null;
-  const thisYear = cost.byYear ? cost.byYear[String(balance.year)] ?? 0 : cost.counted;
+  const ly = balance.leaveYear;
+  const thisYear = ly && cost.days
+    ? cost.days.reduce((s, d) => (d.day >= ly.start && d.day <= ly.end ? s + d.cost : s), 0)
+    : cost.byYear ? cost.byYear[String(balance.year)] ?? 0 : cost.counted;
   const before = balance.remaining - balance.pending;
   return { before, after: before - thisYear };
 }

@@ -8,14 +8,15 @@ import { JobField, QuietButton, ReceiptRow, SectionLabel } from '../job/job-ui';
 import { LeaveTypePicker, useRequestWords } from '../requests/request-parts';
 import { balancePreview } from '../requests/request-model';
 import { useLeaveBalance, useLeaveCost } from '../requests/use-leave-preview';
+import { LeaveBalanceCard } from '../requests/leave-balance-card';
 import { toDateString } from './helpers';
 
 /**
  * LEAVE FOR THE PICKED RANGE — which kind, what it costs, a note, Send.
  *
  * The cost is the server's count (weekend, holidays and the member's rota left
- * out); for VACATION the allowance is shown before and after, since only
- * vacation is paid from it. Offline, the calendar days stand in and the
+ * out); for VACATION the balance is shown line by line (LeaveBalanceCard)
+ * with before and after, since only vacation is taken from it. Offline, the calendar days stand in and the
  * balance is simply left out — never a guessed number.
  */
 export function TimeOffRequestForm({
@@ -52,6 +53,8 @@ export function TimeOffRequestForm({
   const balance = useLeaveBalance(user?.id, leaveType === 'VACATION');
   const preview = balancePreview(balance, cost, leaveType);
   const days = cost ? cost.counted : rangeDays;
+  // A current server sends the ledger lines: the card shows them and this request's before → after.
+  const ledger = leaveType === 'VACATION' && !!balance?.lines;
 
   return (
     <Well style={{ padding: amazen.space(4), gap: amazen.space(3) }}>
@@ -67,7 +70,7 @@ export function TimeOffRequestForm({
           label={cost ? t('time.off.workingDaysLabel', 'Working days') : t('time.off.daysLabel', 'Days')}
           value={String(days)}
         />
-        {preview ? (
+        {preview && !ledger ? (
           <ReceiptRow strong label={t('requests.balance', 'Balance')} value={`${preview.before} → ${preview.after}`} />
         ) : null}
         {cost && (cost.restDays > 0 || cost.holidays.length > 0) ? (
@@ -79,6 +82,8 @@ export function TimeOffRequestForm({
           </AText>
         ) : null}
       </Sunken>
+
+      {ledger ? <LeaveBalanceCard balance={balance} preview={preview} requestDays={days} /> : null}
 
       <JobField
         value={notes}

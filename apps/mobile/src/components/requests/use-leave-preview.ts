@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { calendarApi, type LeaveCount } from '../../lib/api';
 import { requestsApi } from '../../lib/api/technicians';
+import type { MemberLeaveBalance } from '../../lib/leave-balance';
 
 /**
  * What a leave range COSTS, asked of the server — the one count the request is
@@ -24,12 +25,13 @@ export function useLeaveCost(userId: string | null | undefined, from: string | n
   return cost;
 }
 
-export type LeaveBalance = { year: number; allowance: number; taken: number; pending: number; remaining: number };
+export type LeaveBalance = MemberLeaveBalance;
 
 /**
- * This year's allowance — asked only while a VACATION request is being made
- * (`enabled`), once per form, never on the screen's first paint. Null when it
- * cannot be read; the preview then simply leaves the balance out.
+ * This leave year's balance and the lines it is built from — asked only while
+ * a VACATION request is being made (`enabled`), once per form, never on the
+ * screen's first paint. Offline it is the last answer kept (the endpoint is
+ * `keep: true`). Null when it cannot be read; the preview then leaves it out.
  */
 export function useLeaveBalance(userId: string | null | undefined, enabled: boolean): LeaveBalance | null {
   const [balance, setBalance] = useState<LeaveBalance | null>(null);

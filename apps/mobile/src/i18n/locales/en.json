@@ -4845,6 +4845,25 @@
       "endAt": "Finish at"
     },
     "noRemoteSpace": "There is no workspace you may work remotely for.",
-    "balance": "Balance"
+    "balance": "Balance",
+    "ledger": {
+      "line": {
+        "ALLOWANCE": "Yearly allowance",
+        "OPENING_USED": "Used before HBCField",
+        "CARRY_OVER": "Carried over",
+        "CARRY_EXPIRED": "Carried days expired",
+        "GRANT": "Extra days granted",
+        "CORRECTION": "Correction",
+        "TAKEN": "Taken"
+      },
+      "remaining": "Remaining",
+      "pending": "Waiting for an answer",
+      "yearCalendar": "Leave year {{year}}",
+      "yearWork": "Work year {{from}} – {{to}}",
+      "carryExpires_one": "{{days}} carried day can be used until {{date}}",
+      "carryExpires_other": "{{days}} carried days can be used until {{date}}",
+      "thisRequest_one": "This request · {{days}} working day",
+      "thisRequest_other": "This request · {{days}} working days"
+    }
   }
 }

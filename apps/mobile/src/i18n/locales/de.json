@@ -4845,6 +4845,25 @@
       "endAt": "Ende um"
     },
     "noRemoteSpace": "Es gibt keinen Arbeitsbereich, für den Sie remote arbeiten dürfen.",
-    "balance": "Resturlaub"
+    "balance": "Resturlaub",
+    "ledger": {
+      "line": {
+        "ALLOWANCE": "Jahresanspruch",
+        "OPENING_USED": "Vor HBCField verbraucht",
+        "CARRY_OVER": "Übertragen",
+        "CARRY_EXPIRED": "Übertrag verfallen",
+        "GRANT": "Zusätzlich gewährt",
+        "CORRECTION": "Korrektur",
+        "TAKEN": "Genommen"
+      },
+      "remaining": "Verbleibend",
+      "pending": "Wartet auf Antwort",
+      "yearCalendar": "Urlaubsjahr {{year}}",
+      "yearWork": "Arbeitsjahr {{from}} – {{to}}",
+      "carryExpires_one": "{{days}} übertragener Tag ist bis {{date}} nutzbar",
+      "carryExpires_other": "{{days}} übertragene Tage sind bis {{date}} nutzbar",
+      "thisRequest_one": "Dieser Antrag · {{days}} Arbeitstag",
+      "thisRequest_other": "Dieser Antrag · {{days}} Arbeitstage"
+    }
   }
 }

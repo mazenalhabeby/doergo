@@ -4,6 +4,7 @@ import {
   type EmployeesQueryParams, type EndpointBody, type RequestKind,
 } from '@hbcfield/shared/client';
 import { call, E } from './client';
+import { readLeaveBalance, type MemberLeaveBalance } from '../leave-balance';
 import type { TechniciansListResponse, TechnicianListItem } from './types';
 import type { TimeOffRequest, AvailabilityResponse, ScheduleEntry } from './types';
 
@@ -74,11 +75,13 @@ export const requestsApi = {
       throw err;
     }
   },
-  /** This year's allowance: what is left, and what requests already waiting will take. */
-  leaveBalance: async (employeeId: string): Promise<{ year: number; allowance: number; taken: number; pending: number; remaining: number } | null> => {
-    const r = (await call(E.employees.leaveBalance, { id: employeeId })) as { year?: number; remaining?: number } | null;
-    return r && typeof r.remaining === 'number' ? (r as never) : null;
-  },
+  /**
+   * This leave year's balance: what is left, what requests already waiting will
+   * take, and — from a current server — the ledger lines it is built from
+   * (lib/leave-balance.ts). Kept offline by the endpoint's own `keep`.
+   */
+  leaveBalance: async (employeeId: string): Promise<MemberLeaveBalance | null> =>
+    readLeaveBalance(await call(E.employees.leaveBalance, { id: employeeId })),
 };
 
 // Availability API

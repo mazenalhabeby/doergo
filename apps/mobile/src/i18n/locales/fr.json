@@ -4845,6 +4845,25 @@
       "endAt": "Terminer à"
     },
     "noRemoteSpace": "Aucun espace de travail ne vous permet le télétravail.",
-    "balance": "Solde"
+    "balance": "Solde",
+    "ledger": {
+      "line": {
+        "ALLOWANCE": "Droit annuel",
+        "OPENING_USED": "Pris avant HBCField",
+        "CARRY_OVER": "Report",
+        "CARRY_EXPIRED": "Report expiré",
+        "GRANT": "Jours supplémentaires accordés",
+        "CORRECTION": "Correction",
+        "TAKEN": "Pris"
+      },
+      "remaining": "Restant",
+      "pending": "En attente de réponse",
+      "yearCalendar": "Année de congés {{year}}",
+      "yearWork": "Année de travail {{from}} – {{to}}",
+      "carryExpires_one": "{{days}} jour reporté utilisable jusqu’au {{date}}",
+      "carryExpires_other": "{{days}} jours reportés utilisables jusqu’au {{date}}",
+      "thisRequest_one": "Cette demande · {{days}} jour ouvré",
+      "thisRequest_other": "Cette demande · {{days}} jours ouvrés"
+    }
   }
 }
