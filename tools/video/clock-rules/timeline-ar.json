@@ -245,7 +245,79 @@
      "scene": "outro"
     }
    ]
+  },
+  {
+   "id": "auto",
+   "start": 296.153,
+   "end": 403.738,
+   "phrases": [
+    {
+     "start": 296.153,
+     "end": 302.655,
+     "scene": "auto-setup"
+    },
+    {
+     "start": 303.352,
+     "end": 310.272,
+     "scene": "auto-setup"
+    },
+    {
+     "start": 310.927,
+     "end": 317.533,
+     "scene": "auto-setup"
+    },
+    {
+     "start": 318.4,
+     "end": 325.853,
+     "scene": "auto-in"
+    },
+    {
+     "start": 326.52,
+     "end": 333.382,
+     "scene": "auto-in"
+    },
+    {
+     "start": 334.014,
+     "end": 338.797,
+     "scene": "auto-in"
+    },
+    {
+     "start": 339.688,
+     "end": 348.082,
+     "scene": "auto-out"
+    },
+    {
+     "start": 348.83,
+     "end": 360.324,
+     "scene": "auto-out"
+    },
+    {
+     "start": 361.307,
+     "end": 368.795,
+     "scene": "auto-rest"
+    },
+    {
+     "start": 369.254,
+     "end": 375.337,
+     "scene": "auto-rest"
+    },
+    {
+     "start": 376.073,
+     "end": 380.984,
+     "scene": "auto-rest"
+    },
+    {
+     "start": 381.968,
+     "end": 392.045,
+     "scene": "auto-safe"
+    },
+    {
+     "start": 392.91,
+     "end": 403.138,
+     "scene": "auto-safe"
+    }
+   ]
   }
  ],
- "duration": 297.65
+ "duration": 405.24
 }

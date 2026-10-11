@@ -99,6 +99,7 @@ h1{font-weight:500;font-size:clamp(26px,4vw,38px);line-height:1.3;margin:4px 0 6
 .flow{display:flex;flex-direction:column;gap:8px}
 .flow .step{display:flex;gap:10px;align-items:center;font-size:13px}
 .flow .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;background:var(--pTile)}
+.flow .n.t{width:auto;min-width:46px;padding:0 8px;border-radius:12px}
 .caption{width:min(100%,360px);min-height:84px;text-align:center;font-size:15px;line-height:1.7;color:var(--ink2);text-wrap:balance}
 .side{display:flex;flex-direction:column;gap:6px}
 .side h2{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
@@ -143,7 +144,7 @@ footer{margin-top:40px;color:var(--muted);font-size:12.5px}
         <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
       </button>
       <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
-      <div class="time num" id="time">0:00 / 4:58</div>
+      <div class="time num" id="time">0:00 / 6:45</div>
     </div>
   </header>
 
@@ -329,6 +330,53 @@ footer{margin-top:40px;color:var(--muted);font-size:12.5px}
           <div class="notif"><small>المدير</small>لا يُبلَّغ بكل شيء تلقائياً، لكن صلاحيته باقية</div>
         </div>
 
+
+        <div class="screen" data-scene="auto-setup">
+          <div class="sTitle">الحضور والانصراف التلقائي</div>
+          <div class="sSub">مصنع بندرهولتس · إعدادات المساحة</div>
+          <div class="card row"><span>مفعّل</span><span class="chip ok">تشغيل</span></div>
+          <div class="card"><div class="row"><span>الأعضاء</span><span class="num">12 / 18</span></div><div class="row" style="margin-top:6px"><span>الموافقة</span><span class="chip ok">مسجّلة</span></div></div>
+          <div class="card"><div class="row"><span>قبل الوردية</span><span class="num">30 min</span></div><div class="row" style="margin-top:6px"><span>البقاء داخل المنطقة</span><span class="num">3 min</span></div><div class="row" style="margin-top:6px"><span>الاستراحة التلقائية</span><span class="num">60 min</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="auto-in">
+          <div class="sTitle">وصلت إلى المصنع</div>
+          <div class="map" style="height:170px"><div class="ring"></div><div class="pin"></div><div class="me" style="left:46%;top:56%"></div><div class="scale num">07:31 → 07:34</div></div>
+          <div class="notif" style="background:rgba(102,219,186,.14)"><small class="num">07:34</small>سُجّل حضورك تلقائياً · المصنع</div>
+          <div class="btn ghost">تراجع · <span class="num">10 min</span></div>
+          <div class="card row"><span>الوقت المحتسب يبدأ</span><span class="num">08:00</span></div>
+        </div>
+
+        <div class="screen" data-scene="auto-out">
+          <div class="sTitle">نهاية الوردية</div>
+          <div class="flow card">
+            <div class="step"><span class="n t num">16:00</span><span>نهاية الوردية</span></div>
+            <div class="step"><span class="n t num">16:05</span><span>تذكير للعضو</span></div>
+            <div class="step"><span class="n t num">16:20</span><span>إبلاغ قائد الفريق</span></div>
+            <div class="step"><span class="n t num">16:40</span><span>لا ردّ: انصراف تلقائي</span></div>
+          </div>
+          <div class="card row"><span>الوقت المسجّل</span><span class="chip warn num">16:12 · خرج من المنطقة</span></div>
+          <div class="sSub">يُعلَّم للمراجعة</div>
+        </div>
+
+        <div class="screen" data-scene="auto-rest">
+          <div class="sTitle">استراحة الغداء</div>
+          <div class="notif" style="background:rgba(242,178,99,.14)"><small class="num">12:00 – 13:00</small>بدأت استراحتك تلقائياً</div>
+          <div class="btn ghost">ما زلت أعمل</div>
+          <div class="card row"><span>الحدّ الأدنى قانوناً</span><span class="num">30 min &gt; 6 h</span></div>
+          <div class="sSub">تُلغى بضغطة، ويرى المشرف ذلك</div>
+        </div>
+
+        <div class="screen" data-scene="auto-safe">
+          <div class="sTitle">ما يُرسل وما لا يُرسل</div>
+          <div class="card">
+            <div class="check"><span class="dot ok">✓</span><span>لحظة الدخول والخروج فقط</span></div>
+            <div class="check"><span class="dot ok">✓</span><span>واي فاي المصنع أو بطاقة البوابة</span></div>
+            <div class="check"><span class="dot bad">×</span><span>لا تتبّع مستمر للموقع</span></div>
+          </div>
+          <div class="card row"><span>تسجيل تلقائي سليم</span><span class="chip ok">يُعتمد</span></div>
+          <div class="card row"><span>عليه علامة</span><span class="chip warn">للمراجعة</span></div>
+        </div>
         <div class="screen" data-scene="outro">
           <div class="bigClock"><div><b class="num">80</b><span>قاعدة · 8 مجموعات</span></div></div>
           <div class="card row"><span>نقاط تحتاج مراجعة</span><span class="chip warn num">12</span></div>
@@ -348,6 +396,7 @@ footer{margin-top:40px;color:var(--muted);font-size:12.5px}
       <button class="chap" data-ch="out"><span class="k num">3:10</span><div><b>الانصراف</b><span>مبكر، وقت إضافي، نسيان</span></div></button>
       <button class="chap" data-ch="counted"><span class="k num">3:55</span><div><b>الوقت المحتسب</b><span>الفعلي مقابل المحتسب</span></div></button>
       <button class="chap" data-ch="office"><span class="k num">4:20</span><div><b>المكتب والإشعارات</b><span>المراجعة، التعديل، من يُبلَّغ</span></div></button>
+      <button class="chap" data-ch="auto"><span class="k num">4:56</span><div><b>فكرة: التسجيل التلقائي</b><span>حضور وانصراف واستراحة دون ضغط</span></div></button>
     </nav>
   </div>
 
@@ -417,6 +466,45 @@ footer{margin-top:40px;color:var(--muted);font-size:12.5px}
         <li>موافقة أو رفض مع سبب، أو تعديل مع سبب؛ تُحفظ الأوقات الأصلية.</li>
         <li>لا أحد يقرّر في حضوره بنفسه، إلا المدير العام.</li>
         <li>الإدخال اليدوي: حتى <span class="num">366</span> يوماً، يتخطّى الأيام المسجّلة، ويُعتمد مباشرة.</li>
+      </ul></div>
+    </div>
+  </section>
+
+
+  <section class="rules" id="auto">
+    <h2>فكرة: الحضور والانصراف التلقائي</h2>
+    <p class="sectionLede">مقترح للمصانع والفرق التي تنسى التسجيل، مثل بندرهولتس. لم يُبنَ بعد. كل رقم هنا إعداد لكل مساحة عمل.</p>
+    <div class="groups">
+      <div class="group"><h3><span class="num">A</span>التفعيل</h3><ul>
+        <li>من إعدادات مساحة العمل، لأعضاء تختارهم أنت، لا للجميع تلقائياً.</li>
+        <li>موافقة مسجّلة من كل عضو، أو اتفاق مع مجلس العمال (ArbVG §96).</li>
+        <li>يحتاج إذن الموقع «دائماً» على الهاتف، وإصداراً جديداً من التطبيق.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">B</span>الحضور التلقائي</h3><ul>
+        <li>داخل المنطقة، بعد بقاء <span class="num">3 min</span>، وضمن <span class="num">30 min</span> قبل الوردية.</li>
+        <li>بلا وردية اليوم: لا حضور تلقائي (أو ساعات عمل المساحة إن وُجدت).</li>
+        <li>إشعار مع «تراجع» لـ <span class="num">10 min</span>.</li>
+        <li>الوصول المبكر لا يُحتسب، فالمحتسب يبدأ من بداية الوردية.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">C</span>الانصراف التلقائي</h3><ul>
+        <li>الأدقّ: لحظة الخروج من المنطقة بعد نهاية الوردية، بعد مهلة قصيرة.</li>
+        <li>إن بقي: تذكير للعضو، ثم قائد الفريق، ثم انصراف تلقائي إن لم يردّ أحد.</li>
+        <li>الوقت المسجّل: لحظة الخروج إن عُرفت، وإلا نهاية الوردية. لا وقت الانتظار.</li>
+        <li>يُعلَّم «تلقائي» ويذهب للمراجعة.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">D</span>الاستراحة التلقائية</h3><ul>
+        <li>إن لم تُؤخذ استراحة: تبدأ تلقائياً في منتصف الوردية، مدّتها حسب المكان (مثلاً <span class="num">60 min</span>).</li>
+        <li>إشعار «بدأت استراحتك» مع زرّ «ما زلت أعمل» يلغيها.</li>
+        <li>القانون النمساوي: <span class="num">30 min</span> لمن يعمل أكثر من <span class="num">6 h</span>، تُقسَّم <span class="num">2×15</span> أو <span class="num">3×10</span>.</li>
+        <li>الخصم الصامت ضعيف قانونياً: لا يثبت أن الاستراحة أُخذت.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">E</span>داخل القاعات</h3><ul>
+        <li>الجي بي إس ينحرف داخل المباني، فيُضاف دليل ثانٍ: شبكة واي فاي المصنع، أو بطاقة NFC عند البوابة.</li>
+        <li>تطبيق الهاتف يستخدم مناطق النظام نفسه، خفيفة على البطارية (حتى <span class="num">20</span> منطقة على iOS).</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">F</span>المتابعة</h3><ul>
+        <li>كل تسجيل تلقائي يحمل علامة: سليم يُعتمد، وعليه علامة للمراجعة.</li>
+        <li>تقرير لكل عضو: كم تلقائياً وكم يدوياً، وكم مرة ضغط «تراجع».</li>
       </ul></div>
     </div>
   </section>
