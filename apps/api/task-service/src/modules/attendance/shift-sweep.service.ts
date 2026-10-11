@@ -10,7 +10,7 @@ import {
   UNSCHEDULED_SESSION_DEFAULTS,
   SERVICE_NAMES,
 } from '@hbcfield/shared';
-import { scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
+import { ABSENCE_WHERE, scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
 import { localPartsIn, toISODateString } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 
@@ -367,7 +367,8 @@ export class ShiftSweepService {
         select: { id: true, firstName: true, lastName: true },
       }),
       this.prisma.timeOff.findMany({
-        where: { technicianId: { in: userIds }, status: 'APPROVED', endDate: { gte: new Date(`${earliestDay}T00:00:00.000Z`) } },
+        // Only LEAVE excuses a shift — a remote day or changed hours is a day still owed.
+        where: { technicianId: { in: userIds }, status: 'APPROVED', ...ABSENCE_WHERE, endDate: { gte: new Date(`${earliestDay}T00:00:00.000Z`) } },
         select: { technicianId: true, startDate: true, endDate: true },
       }),
       this.prisma.shift.findMany({

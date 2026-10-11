@@ -5,7 +5,11 @@
 export const CALENDAR_LAYERS = ['jobs', 'events', 'crm', 'shifts', 'leave', 'holidays', 'documents'] as const;
 export type CalendarLayer = (typeof CALENDAR_LAYERS)[number];
 
-export type CalendarItemKind = 'job' | 'event' | 'reminder' | 'crm' | 'shift' | 'leave' | 'holiday' | 'document';
+/**
+ * `remote` = an approved/pending REMOTE request (requests/request-kinds.ts): a day WORKED away from
+ * the site, drawn in the leave layer beside leave but never as leave.
+ */
+export type CalendarItemKind = 'job' | 'event' | 'reminder' | 'crm' | 'shift' | 'leave' | 'remote' | 'holiday' | 'document';
 
 export type RsvpResponse = 'PENDING' | 'ACCEPTED' | 'MAYBE' | 'DECLINED';
 export const RSVP_RESPONSES: readonly RsvpResponse[] = ['PENDING', 'ACCEPTED', 'MAYBE', 'DECLINED'];

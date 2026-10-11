@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
+  ABSENCE_WHERE,
   EVENT_MAX_ATTENDEES,
   EVENT_MAX_DURATION_DAYS,
   EVENT_TEXT_MAX,
@@ -693,7 +694,7 @@ export class EventsService {
     const [events, leave, users] = await Promise.all([
       this.eventsFor(dto.organizationId, ids, from, to),
       this.prisma.timeOff.findMany({
-        where: { technicianId: { in: ids }, status: { in: ['APPROVED', 'PENDING'] }, startDate: { lte: to }, endDate: { gte: new Date(from.getTime() - DAY) } },
+        where: { technicianId: { in: ids }, status: { in: ['APPROVED', 'PENDING'] }, ...ABSENCE_WHERE, startDate: { lte: to }, endDate: { gte: new Date(from.getTime() - DAY) } },
         select: { technicianId: true, startDate: true, endDate: true, status: true },
       }),
       this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }),
@@ -757,7 +758,7 @@ export class EventsService {
     const [events, leave] = await Promise.all([
       this.eventsFor(dto.organizationId, ids, start, to),
       this.prisma.timeOff.findMany({
-        where: { technicianId: { in: ids }, status: 'APPROVED', startDate: { lte: to }, endDate: { gte: start } },
+        where: { technicianId: { in: ids }, status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: to }, endDate: { gte: start } },
         select: { technicianId: true, startDate: true, endDate: true },
       }),
     ]);

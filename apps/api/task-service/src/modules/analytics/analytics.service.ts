@@ -160,7 +160,7 @@ export class AnalyticsService {
         SELECT gd::date AS day, MIN(COALESCE(NULLIF(t.reason, ''), 'Time off')) AS reason
         FROM "time_off_requests" t
         CROSS JOIN LATERAL generate_series(t."startDate", t."endDate", interval '1 day') gd
-        WHERE t."technicianId" = $1 AND t.status = 'APPROVED'
+        WHERE t."technicianId" = $1 AND t.status = 'APPROVED' AND t.kind = 'LEAVE'
           AND t."endDate" >= $2::date AND t."startDate" <= $3::date
         GROUP BY 1
       ),

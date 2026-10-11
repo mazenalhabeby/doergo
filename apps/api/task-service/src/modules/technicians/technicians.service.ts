@@ -1,4 +1,4 @@
-import { assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
+import { ABSENCE_WHERE, REQUEST_KINDS, REQUEST_LIMITS, activeAssignmentWhere, assertFoundInOrg, isAbsence, parseRequestInput, requestKindOf, requestKindsOffered, resolveAwayAccess, type RequestInput, type RequestInputError, type RequestKind, assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
@@ -479,70 +479,176 @@ export class TechniciansService {
   // ========================================================================
 
   /**
-   * Request time off
+   * The workspaces a member could ask a request about, and what each offers.
+   *
+   * ONE read of their active assignments (with the space's ceiling, its request kinds and the
+   * per-assignment override) plus the member — the same facts the clock-in decides "away" from,
+   * read through the same `resolveAwayAccess`, so a remote day is only offered where the clock-in
+   * would honour it.
+   */
+  private async requestSpaces(organizationId: string, userId: string) {
+    const [member, assignments] = await Promise.all([
+      this.prisma.user.findFirst({
+        where: { id: userId, organizationId },
+        select: { id: true, allowRemote: true, role: true },
+      }),
+      this.prisma.spaceAssignment.findMany({
+        where: { ...activeAssignmentWhere(userId), space: { organizationId, isActive: true, isRemote: false } },
+        select: {
+          allowRemote: true,
+          space: { select: { id: true, name: true, lat: true, lng: true, geofencePolicy: true, requestKinds: true } },
+        },
+      }),
+    ]);
+    if (!member) throw new NotFoundException('Employee not found in organization');
+
+    const byId = new Map<string, { id: string; name: string; mayWorkRemotely: boolean; kinds: RequestKind[] }>();
+    for (const a of assignments) {
+      const s = a.space;
+      const spaceHasPin = s.lat != null && s.lng != null;
+      // Away means something only where there is a site to be away FROM (the clock-in list's rule).
+      const mayHere = spaceHasPin && resolveAwayAccess({
+        spaceHasPin,
+        policy: s.geofencePolicy,
+        userAllowRemote: member.allowRemote,
+        assignmentAllowRemote: a.allowRemote,
+        isAdmin: member.role === 'ADMIN',
+      }).allowed;
+      const may = mayHere || !!byId.get(s.id)?.mayWorkRemotely;
+      byId.set(s.id, { id: s.id, name: s.name, mayWorkRemotely: may, kinds: requestKindsOffered({ enabled: s.requestKinds, mayWorkRemotely: may }) });
+    }
+    const spaces = [...byId.values()];
+    // A kind tied to no workspace: offered when ANY of their workspaces offers it (none = every kind but REMOTE).
+    const kinds: RequestKind[] = spaces.length
+      ? REQUEST_KINDS.filter((k) => spaces.some((s) => s.kinds.includes(k)))
+      : requestKindsOffered({ enabled: [], mayWorkRemotely: false });
+    return { spaces, kinds };
+  }
+
+  /** What the CALLER may ask for, and where they may ask for a remote day. Only their own. */
+  async requestOptions(dto: { userId: string; organizationId: string }) {
+    const { spaces, kinds } = await this.requestSpaces(dto.organizationId, dto.userId);
+    return success({
+      kinds,
+      remoteSpaces: spaces.filter((s) => s.kinds.includes('REMOTE')).map((s) => ({ id: s.id, name: s.name })),
+    });
+  }
+
+  /**
+   * Validate a request against the member's workspaces: the workspace is theirs, the kind is
+   * offered there, and a remote day is something they may do there. Coded refusals.
+   */
+  private async assertRequestAllowed(organizationId: string, technicianId: string, value: RequestInput): Promise<void> {
+    const ctx = await this.requestSpaces(organizationId, technicianId);
+    if (value.spaceId) {
+      const mine = ctx.spaces.find((s) => s.id === value.spaceId);
+      if (!mine) {
+        // Another organization's workspace (or none) answers the same 404 as a missing one.
+        const space = await this.prisma.companyLocation.findFirst({ where: { id: value.spaceId }, select: { organizationId: true } });
+        assertFoundInOrg(space, organizationId, 'Workspace');
+        throw new BadRequestException({ code: 'REQUEST_SPACE_NOT_YOURS', message: 'You are not assigned to that workspace.' });
+      }
+      if (value.kind === 'REMOTE' && !mine.mayWorkRemotely) {
+        throw new BadRequestException({ code: 'REQUEST_REMOTE_NOT_ALLOWED', message: `You are not set up to work away from ${mine.name}.` });
+      }
+      if (!mine.kinds.includes(value.kind)) {
+        throw new BadRequestException({ code: 'REQUEST_KIND_NOT_OFFERED', message: `${mine.name} does not take this kind of request.` });
+      }
+    } else if (!ctx.kinds.includes(value.kind)) {
+      throw new BadRequestException({ code: 'REQUEST_KIND_NOT_OFFERED', message: 'Your workspaces do not take this kind of request.' });
+    }
+  }
+
+  /**
+   * Request something — leave, a remote day, changed hours, overtime agreed in advance, or
+   * anything else (shared requests/request-kinds.ts). One record, one approval flow.
    */
   async requestTimeOff(dto: RequestTimeOffDto) {
-    const { technicianId, organizationId, startDate, endDate, reason } = dto;
-    // Only VACATION is deducted from the allowance, so the kind has to be stored
-    // rather than inferred from the reason text at read time.
-    const type = (dto as any).type ?? 'VACATION';
-
-    // Verify technician belongs to organization
-    const technician = await this.prisma.user.findFirst({
-      where: { id: technicianId, organizationId },
-    });
-
-    if (!technician) {
-      throw new NotFoundException('Employee not found in organization');
-    }
+    const { technicianId, organizationId } = dto;
 
     // The same request sent again from the phone's queue: answered before the
     // overlap rule, which would otherwise refuse it as overlapping itself.
     const prior = await findPrior({
       id: dto.id,
-      find: (id) => this.prisma.timeOff.findUnique({ where: { id }, include: { technician: { select: { id: true, firstName: true, lastName: true } } } }),
+      find: (id) => this.prisma.timeOff.findUnique({ where: { id }, include: { technician: { select: { id: true, firstName: true, lastName: true } }, space: { select: SPACE_BRIEF } } }),
       isSame: (row) => row.technicianId === technicianId,
     });
     if (prior) return success(prior, 'Time-off request already recorded');
 
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // ONE reader of a request body, shared with the phone and the web.
+    const parsed = parseRequestInput(dto);
+    if (!parsed.ok) throw new BadRequestException({ code: parsed.code, message: REQUEST_REFUSALS[parsed.code] });
+    const value = parsed.value;
+    const leave = isAbsence(value.kind);
+    // Only VACATION is deducted from the allowance, so the leave type is stored
+    // rather than inferred from the reason text at read time.
+    const type = value.type ?? 'VACATION';
+    const reason = value.reason ?? undefined;
 
-    if (start > end) {
-      throw new BadRequestException('Start date must be before or equal to end date');
+    // The member is in this organization, the workspace is theirs, the kind is offered.
+    await this.assertRequestAllowed(organizationId, technicianId, value);
+
+    const start = new Date(value.startDate);
+    const end = new Date(value.endDate);
+
+    /*
+      Not in the past. Leave keeps its rule (from tomorrow — the day itself is gone by the time
+      anybody decides it); a working-day request may be about TODAY: "may I finish at 18:00".
+    */
+    if (leave ? start < new Date() : value.startDate < toISODateString(new Date())) {
+      throw new BadRequestException({ code: 'REQUEST_IN_PAST', message: 'Cannot request time off in the past' });
     }
 
-    if (start < new Date()) {
-      throw new BadRequestException('Cannot request time off in the past');
-    }
-
-    // Check for overlapping time-off requests
-    const existingTimeOff = await this.prisma.timeOff.findFirst({
+    /*
+      Overlap. Leave collides only with leave. Any other kind collides with the same kind on
+      the same day (two answers to one question) — and with leave: a remote day, changed hours
+      or overtime on a day off asks to work on a day the person will not be working.
+    */
+    const clashes = await this.prisma.timeOff.findMany({
       where: {
         technicianId,
         status: { in: ['PENDING', 'APPROVED'] },
-        OR: [
-          { startDate: { lte: end }, endDate: { gte: start } },
-        ],
+        kind: { in: leave ? ['LEAVE'] : [value.kind as never, 'LEAVE'] },
+        startDate: { lte: end },
+        endDate: { gte: start },
       },
+      select: { kind: true, startDate: true, endDate: true, status: true },
+      take: 5,
     });
-
-    if (existingTimeOff) {
-      throw new BadRequestException('Time-off request overlaps with an existing request');
+    const sameKind = clashes.find((c) => c.kind === value.kind);
+    if (sameKind) {
+      throw new BadRequestException({
+        code: 'TIMEOFF_OVERLAP',
+        params: { from: toISODateString(sameKind.startDate), to: toISODateString(sameKind.endDate), status: sameKind.status },
+        message: 'Time-off request overlaps with an existing request',
+      });
+    }
+    const onLeave = clashes.find((c) => c.kind === 'LEAVE');
+    if (onLeave) {
+      throw new BadRequestException({
+        code: 'REQUEST_OVERLAPS_LEAVE',
+        params: { from: toISODateString(onLeave.startDate), to: toISODateString(onLeave.endDate), status: onLeave.status },
+        message: 'That day falls in leave already asked for or approved.',
+      });
     }
 
     // Only a vacation request is refused for falling on days off; sickness is recorded as it came.
-    const workingDays = await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION');
+    // A request that is not leave costs no allowance at all.
+    const workingDays = leave ? await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION') : null;
 
     const timeOff = await this.prisma.timeOff.create({
       data: {
         ...(dto.id ? { id: dto.id } : {}),
         technicianId,
+        kind: value.kind as never,
         startDate: start,
         endDate: end,
         reason,
-        type: type as any,
+        type: type as never,
+        spaceId: value.spaceId ?? null,
+        startTime: value.startTime ?? null,
+        endTime: value.endTime ?? null,
+        minutes: value.minutes ?? null,
         status: 'PENDING',
         workingDays,
       },
@@ -550,6 +656,7 @@ export class TechniciansService {
         technician: {
           select: { id: true, firstName: true, lastName: true },
         },
+        space: { select: SPACE_BRIEF },
       },
     });
 
@@ -563,11 +670,12 @@ export class TechniciansService {
       anyway; and it was told to the one person who cannot act on it. It is now
       the same verdict the approver will see, computed by the same service.
     */
-    const verdict = (
-      await this.cover.assessMany(organizationId, [
-        { id: timeOff.id, technicianId, startDate: start, endDate: end },
-      ])
-    ).get(timeOff.id) ?? null;
+    // Only leave thins cover; a remote day or changed hours is a day worked.
+    const verdict = leave
+      ? (await this.cover.assessMany(organizationId, [
+          { id: timeOff.id, technicianId, startDate: start, endDate: end },
+        ])).get(timeOff.id) ?? null
+      : null;
 
     /*
       Tell whoever is meant to hear about this person.
@@ -595,6 +703,7 @@ export class TechniciansService {
         organizationId,
         memberId: technicianId,
         memberName: `${timeOff.technician.firstName} ${timeOff.technician.lastName}`,
+        ...requestFacts(timeOff),
         type,
         startDate: toISODateString(start),
         endDate: toISODateString(end),
@@ -655,6 +764,8 @@ export class TechniciansService {
       where: {
         technicianId: data.technicianId,
         status: { in: ['PENDING', 'APPROVED'] },
+        // The office records LEAVE here; it collides with leave only.
+        ...ABSENCE_WHERE,
         startDate: { lte: end },
         endDate: { gte: start },
       },
@@ -729,6 +840,7 @@ export class TechniciansService {
         approvedBy: {
           select: { id: true, firstName: true, lastName: true },
         },
+        space: { select: SPACE_BRIEF },
       },
     });
 
@@ -789,7 +901,9 @@ export class TechniciansService {
     if (!technician) throw new NotFoundException('Employee not found in organization');
 
     const rows = await this.prisma.timeOff.findMany({
-      where: { technicianId: dto.technicianId, type: 'VACATION' as any },
+      // Leave only: every request row carries a `type` column (default VACATION), so without the
+      // kind a remote day would be deducted from the allowance.
+      where: { technicianId: dto.technicianId, ...ABSENCE_WHERE, type: 'VACATION' as any },
       select: { type: true, status: true, startDate: true, endDate: true },
     });
     return success(await this.leaveBalance(technician, rows as any));
@@ -953,6 +1067,7 @@ export class TechniciansService {
         approvedBy: {
           select: { id: true, firstName: true, lastName: true },
         },
+        space: { select: SPACE_BRIEF },
       },
       // Bound the payload — the approvals view shows recent/pending, not all-time
       // history (P6). Newest 500 by the order above.
@@ -974,7 +1089,8 @@ export class TechniciansService {
       March is arithmetic nobody reads, and it would double the window this has
       to fetch leave for.
     */
-    const open = withCover ? timeOffs.filter((t) => t.status === 'PENDING') : [];
+    // Only pending LEAVE thins cover — a remote day or changed hours is a day worked.
+    const open = withCover ? timeOffs.filter((t) => t.status === 'PENDING' && isAbsence(t.kind)) : [];
     const verdicts = await this.cover.assessMany(
       organizationId,
       open.map((t) => ({
@@ -1053,7 +1169,7 @@ export class TechniciansService {
     });
 
     // Recounted at the decision: a holiday confirmed since the request moves the number once, here.
-    const workingDays = approved
+    const workingDays = approved && isAbsence(timeOff.kind)
       ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
       : undefined;
     const updated = await this.prisma.timeOff.update({
@@ -1072,6 +1188,7 @@ export class TechniciansService {
         approvedBy: {
           select: { id: true, firstName: true, lastName: true },
         },
+        space: { select: SPACE_BRIEF },
       },
     });
 
@@ -1087,6 +1204,7 @@ export class TechniciansService {
       timeOffId: updated.id,
       organizationId,
       memberId: updated.technicianId,
+      ...requestFacts(updated),
       approved,
       rejectionReason: approved ? null : (rejectionReason ?? null),
       startDate: toISODateString(updated.startDate),
@@ -1167,6 +1285,8 @@ export class TechniciansService {
         id: { not: data.timeOffId },
         technicianId: timeOff.technicianId,
         status: { in: ['PENDING', 'APPROVED'] },
+        // Two answers to the same question: the same kind on the same day.
+        kind: timeOff.kind,
         startDate: { lte: end },
         endDate: { gte: start },
       },
@@ -1176,7 +1296,7 @@ export class TechniciansService {
       throw new BadRequestException('This overlaps an existing time-off entry for the employee');
     }
 
-    const workingDays = data.startDate || data.endDate
+    const workingDays = (data.startDate || data.endDate) && isAbsence(timeOff.kind)
       ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end, true)
       : undefined;
     const updated = await this.prisma.timeOff.update({
@@ -1246,6 +1366,7 @@ export class TechniciansService {
         timeOffRequests: {
           where: {
             status: 'APPROVED',
+            ...ABSENCE_WHERE,
             startDate: { lte: rangeEnd },
             endDate: { gte: rangeStart },
           },
@@ -1356,4 +1477,37 @@ export function availabilityDays(q: { date?: string; startDate?: string; endDate
   }
   // Single day: the one asked for, else today — the same UTC date this endpoint always used.
   return [q.date ? dateKeyOf(q.date) : toISODateString(now)];
+}
+
+/** The workspace on a request, as every response carries it. */
+const SPACE_BRIEF = { id: true, name: true } as const;
+
+/** English fallbacks for the shared parser's coded refusals; clients translate by `code`. */
+const REQUEST_REFUSALS: Record<RequestInputError, string> = {
+  REQUEST_KIND_INVALID: 'That is not a kind of request.',
+  REQUEST_DATES_INVALID: 'Choose a start day on or before the end day.',
+  REQUEST_TYPE_INVALID: 'That is not a kind of leave.',
+  REQUEST_SPACE_REQUIRED: 'Choose the workspace.',
+  REQUEST_TIME_INVALID: 'Give a start and/or end time (HH:MM), the end after the start.',
+  REQUEST_MINUTES_INVALID: `Overtime is between ${REQUEST_LIMITS.OVERTIME_MIN_MINUTES} and ${REQUEST_LIMITS.OVERTIME_MAX_MINUTES} minutes.`,
+  REQUEST_REASON_REQUIRED: 'Say what you are asking for.',
+  REQUEST_REASON_TOO_LONG: `Keep the reason under ${REQUEST_LIMITS.REASON_MAX} characters.`,
+  REQUEST_TOO_MANY_DAYS: `A remote request covers at most ${REQUEST_LIMITS.REMOTE_MAX_DAYS} days.`,
+};
+
+/** What a notification needs to name the request (the kind, where, the hours, the minutes). */
+function requestFacts(r: {
+  kind?: string | null;
+  space?: { name: string } | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  minutes?: number | null;
+}) {
+  return {
+    kind: requestKindOf(r.kind),
+    spaceName: r.space?.name ?? null,
+    startTime: r.startTime ?? null,
+    endTime: r.endTime ?? null,
+    minutes: r.minutes ?? null,
+  };
 }

@@ -35,6 +35,7 @@ describe('clock-in list: where may this member work away', () => {
           SPACES.map((s) => ({ spaceId: s.id, allowRemote: overrides[s.id] ?? null })),
         ),
       },
+      timeOff: { findMany: jest.fn().mockResolvedValue([]) },
       companyLocation: { findMany: jest.fn().mockResolvedValue(SPACES.map((sp) => ({ ...sp, enabledModules: ['time_tracking'] }))) },
       user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE', ...member }) },
     };

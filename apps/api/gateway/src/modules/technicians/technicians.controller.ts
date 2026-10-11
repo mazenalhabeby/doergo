@@ -134,6 +134,18 @@ export class EmployeesController {
   // ORG-WIDE TIME-OFF (must be before /:id routes to avoid conflict)
   // ============================================================================
 
+  @Get('me/request-options')
+  // The same tab as making a request — an external member holds no time_off.
+  @RequireAccessModule('time_off')
+  @ApiOperation({ summary: 'What the caller may request (kinds), and at which workspaces a remote day' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  async getRequestOptions(@CurrentUser() user: CurrentUserData) {
+    // Only the caller's own options: the ids come from the token, never the request.
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'get_request_options' }, { userId: user.id, organizationId: user.organizationId }),
+    );
+  }
+
   @Get('floor-now')
   @ApiOperation({ summary: 'Who is on the floor right now, per workspace' })
   @ApiResponse({ status: 200, description: 'Live floor state retrieved' })
@@ -862,12 +874,17 @@ export class EmployeesController {
           id: body.id,
           technicianId: id,
           organizationId: user.organizationId,
+          // The request itself, as sent: task-service reads it with the shared
+          // `parseRequestInput` (defaults: LEAVE, VACATION — what older clients send).
+          kind: body.kind,
           startDate: body.startDate,
           endDate: body.endDate,
           reason: body.reason,
-          // Only VACATION is deducted from the allowance. Defaulted in the
-          // service, so an older client that sends nothing keeps working.
           type: body.type,
+          spaceId: body.spaceId,
+          startTime: body.startTime,
+          endTime: body.endTime,
+          minutes: body.minutes,
         },
       ),
     );

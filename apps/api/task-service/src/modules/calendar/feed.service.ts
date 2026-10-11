@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import {
+  ABSENCE_WHERE,
   PrismaService,
   addDaysStr,
   buildIcs,
@@ -94,7 +95,7 @@ export class FeedService {
         take: 1000,
       }),
       this.prisma.timeOff.findMany({
-        where: { technicianId: u.id, status: 'APPROVED', endDate: { gte: new Date(`${from}T00:00:00Z`) } },
+        where: { technicianId: u.id, status: 'APPROVED', ...ABSENCE_WHERE, endDate: { gte: new Date(`${from}T00:00:00Z`) } },
         select: { id: true, startDate: true, endDate: true, type: true, updatedAt: true },
         take: 200,
       }),

@@ -11,6 +11,8 @@ export const KIND_COLOR: Record<CalendarItemKind, string> = {
   crm: "#d946ef",
   shift: "#10b981",
   leave: "#f59e0b",
+  // An approved/pending remote day — a day WORKED, drawn beside leave but never as leave.
+  remote: "#0ea5e9",
   holiday: "#f43f5e",
   document: "#64748b",
 }

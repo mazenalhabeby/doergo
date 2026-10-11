@@ -240,6 +240,16 @@ enum TimeOffType {
   OTHER // Does not
 }
 
+/// What a request asks for (shared requests/request-kinds.ts). ⚠️ Only LEAVE is an absence —
+/// every "is this person off" reader filters with ABSENCE_WHERE.
+enum RequestKind {
+  LEAVE // An absence: vacation, sickness, family, other (TimeOff.type)
+  REMOTE // Work remotely / away from a site on these day(s) at TimeOff.spaceId
+  HOURS // One day: start later and/or end earlier/later (startTime/endTime, HH:MM local)
+  OVERTIME // One day: TimeOff.minutes of overtime agreed in advance
+  OTHER // Free text — the reason IS the request
+}
+
 enum TimeOffStatus {
   PENDING // Awaiting manager approval
   APPROVED // Manager approved
@@ -2438,6 +2448,9 @@ model CompanyLocation {
   /// A String rather than an enum so a value this server has not heard of falls
   /// back to STRICT instead of failing to deserialise — see resolveAwayAccess.
   geofencePolicy    String    @default("STRICT")
+  /// The request kinds members may ask for here (shared requests/request-kinds.ts).
+  /// ⚠️ EMPTY MEANS EVERY KIND — the opposite would remove leave requests everywhere.
+  requestKinds      String[]  @default([])
   /// Clocking in with NO shift here: ALLOW | LIMIT (up to noShiftDailyMinutes a
   /// day, counted at every workspace) | SHIFT_ONLY. The limit becomes the
   /// session's planned end, so counted time, reminders and overtime follow it.
@@ -2513,6 +2526,9 @@ model CompanyLocation {
 
   // Tasks linked to this space
   tasks Task[]
+
+  // Requests (remote days, changed hours, overtime) about this workspace
+  requests TimeOff[] @relation("SpaceRequests")
 
   // Recurring task templates that generate into this space
   recurringTemplates RecurringTaskTemplate[]
@@ -3444,7 +3460,17 @@ model TimeOff {
 
   startDate DateTime    @db.Date // First day of time off
   endDate   DateTime    @db.Date // Last day of time off (inclusive)
-  type      TimeOffType @default(VACATION) // Only VACATION is deducted from the allowance
+  /// What is asked. Rows from before requests are LEAVE. ⚠️ Only LEAVE is an absence.
+  kind      RequestKind @default(LEAVE)
+  type      TimeOffType @default(VACATION) // LEAVE only: only VACATION is deducted from the allowance
+  /// REMOTE (required) / HOURS / OVERTIME / OTHER: the workspace the request is about.
+  spaceId   String?
+  space     CompanyLocation? @relation("SpaceRequests", fields: [spaceId], references: [id], onDelete: SetNull)
+  /// HOURS: the day's new start / end, HH:MM in the workspace's local time.
+  startTime String?
+  endTime   String?
+  /// OVERTIME: minutes agreed in advance.
+  minutes   Int?
   reason    String? // Free-text note; the KIND is `type`, not this
   /// What this request costs the allowance — weekends, rota rest days and holidays left out
   /// (shared calendar/days.ts countLeave). Frozen when asked, recounted when decided, so a holiday
@@ -3467,6 +3493,7 @@ model TimeOff {
   @@index([startDate, endDate])
   @@index([approvedById])
   @@index([technicianId, status, startDate]) // no-show sweep: approved leave per worker (P8)
+  @@index([spaceId])
   @@map("time_off_requests")
 }
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
 import {
+  ABSENCE_WHERE,
   PrismaService,
   assessLeave,
   coverOn,
@@ -174,6 +175,8 @@ export class CoverService {
       where: {
         technicianId: { in: personIds },
         status: 'APPROVED',
+        // Only leave thins cover — somebody working remotely is still working.
+        ...ABSENCE_WHERE,
         startDate: { lte: new Date(`${to}T23:59:59.999Z`) },
         endDate: { gte: new Date(`${from}T00:00:00.000Z`) },
       },

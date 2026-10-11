@@ -27,8 +27,10 @@ import {
   type NoShiftTag,
   spaceRunsClock,
   ATTENDANCE_FLAG_REASONS,
+  APPROVED_REMOTE_FLAG,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
+import { approvedRequestsAround, dayRequestEffect, remoteApprovedAt, type DayRequestRow } from './approved-requests';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { alreadyClockedIn, approvalFor, sameRecordOrRefuse } from './attendance-occurrence';
@@ -270,7 +272,7 @@ export class ClockInService {
    * offers a workspace the clock-in rejects, and a stricter one hides an option
    * nobody can then find.
    */
-  async tagAwayAllowed<T extends { id: string; lat?: number | null; lng?: number | null; geofencePolicy?: string | null }>(
+  async tagAwayAllowed<T extends { id: string; lat?: number | null; lng?: number | null; geofencePolicy?: string | null; timezone?: string | null }>(
     spaces: T[],
     userId: string,
     organizationId: string,
@@ -287,7 +289,8 @@ export class ClockInService {
     const rows = spaces.filter(Boolean);
     if (rows.length === 0) return [];
 
-    const [member, overrides] = await Promise.all([
+    const now = new Date();
+    const [member, overrides, remoteDays] = await Promise.all([
       this.prisma.user.findFirst({
         where: { id: userId, organizationId },
         select: { allowRemote: true, role: true },
@@ -300,10 +303,15 @@ export class ClockInService {
               select: { spaceId: true, allowRemote: true },
             })
             .then((rows) => new Map(rows.map((r) => [r.spaceId, r.allowRemote]))),
+      // An approved remote day authorises away HERE, today, whatever the grant and the ceiling say —
+      // the approver decided that day. Read in parallel, so the list costs no extra round trip.
+      approvedRequestsAround(this.prisma, userId, now, ['REMOTE']),
     ]);
 
     return rows.map((s) => {
       const spaceHasPin = s.lat != null && s.lng != null;
+      const tz = s.timezone || 'UTC';
+      if (spaceHasPin && remoteApprovedAt(remoteDays, s.id, now, tz)) return { ...s, awayAllowed: true };
       const allowed = resolveAwayAccess({
         spaceHasPin,
         policy: s.geofencePolicy,
@@ -488,6 +496,28 @@ export class ClockInService {
     // each used to restate this and each left out the admin half.
     const mayClockInRemotely = canClockInRemotely(user);
 
+    /*
+      ── The day's approved requests ──
+      A remote day, changed hours, overtime agreed in advance (requests/request-kinds.ts). One
+      indexed read; the rows answer "today" in whichever zone the workspace is in.
+    */
+    const dayRequests: DayRequestRow[] = await approvedRequestsAround(this.prisma, data.userId, occurrence.at);
+
+    /*
+      ⚠️ An approved REMOTE day at one of their workspaces: the member pressed "Clock in remotely"
+      (or an old phone sent `isRemote`), and the approver already said yes to exactly that. It is
+      clocked in AWAY at that workspace — keeping its rota, rests and expected hours — never refused
+      as REMOTE_NOT_FOR_ASSIGNED and never filed in the bucket.
+    */
+    if (data.isRemote && dayRequests.some((r) => r.kind === 'REMOTE' && r.spaceId)) {
+      const { locations: workspaces } = await this.clockableWorkspaces(data.userId, data.organizationId, occurrence.at);
+      const approvedHere = workspaces.find((w) => remoteApprovedAt(dayRequests, w.id, occurrence.at, w.timezone || orgTz));
+      if (approvedHere) {
+        data.locationId = approvedHere.id;
+        data.isRemote = false;
+      }
+    }
+
     // ---- Remote clock-in (WFH/anywhere): geofence-exempt, coarse place captured ----
     if (data.isRemote) {
       if (!mayClockInRemotely) {
@@ -541,6 +571,12 @@ export class ClockInService {
         remoteClockInAt,
         this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? undefined,
       );
+      // Changed hours / agreed overtime not tied to a workspace apply here too.
+      this.applyDayRequests(remoteStamp, dayRequests, {
+        spaceId: null,
+        at: remoteClockInAt,
+        tz: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
+      });
       /*
         Rests apply to a day worked from home or a car exactly as they do to one
         worked on site — the obligation is about hours worked, not about where.
@@ -688,7 +724,10 @@ export class ClockInService {
       site never allows it" send somebody to different people to get it fixed,
       and they are standing outside a client's office while they read it.
     */
-    const away = !withinGeofence
+    // The approver said yes to working away from HERE today: that is the authorisation, above the
+    // grant and the ceiling. It covers only where — lateness is still judged below.
+    const remoteApproved = remoteApprovedAt(dayRequests, location.id, occurrence.at, location.timezone || orgTz);
+    const away = !withinGeofence && !remoteApproved
       ? resolveAwayAccess({
           spaceHasPin,
           policy: location.geofencePolicy,
@@ -741,7 +780,8 @@ export class ClockInService {
     */
     const clockedInAway = !withinGeofence;
     if (clockedInAway) {
-      flagReasons.push('OUTSIDE_GEOFENCE_IN');
+      // Approved in advance: said on the entry, already decided — never sent to review for it.
+      flagReasons.push(remoteApproved ? APPROVED_REMOTE_FLAG : 'OUTSIDE_GEOFENCE_IN');
     }
 
     // No-GPS fallback: a PHYSICAL space falls back to its own (site) timezone; a
@@ -787,6 +827,21 @@ export class ClockInService {
       }
     }
 
+    /*
+      ── Approved changed hours / overtime ──
+      They MOVE the expected start/end before anything is judged, so lateness, early departure,
+      rests and counted time all follow the agreed day through the existing rules — and agreed
+      overtime is counted exactly as an approved extra-time round is: the planned end moved.
+    */
+    const requestShaped = this.applyDayRequests(stampCols, dayRequests, {
+      spaceId: location.id,
+      at: clockInTime,
+      tz: location.timezone || workerTz || orgTz,
+    });
+    if (requestShaped.endMoved) endIsDailyLimit = false;
+    // An agreed start on a day with no shift IS the plan for that day.
+    const agreedPlan = !scheduled && requestShaped.startMoved;
+
     // Smart flags: matched shift/rota → LATE_ARRIVAL if past the start beyond the
     // shift's tolerance; no matched shift → UNSCHEDULED_DAY. Late detection is the
     // shared computeScheduleFlags (same logic as clock-out + edit).
@@ -794,7 +849,7 @@ export class ClockInService {
     // ⚠️ UNSCHEDULED_DAY means "this workspace schedules shifts and you had none
     // today". At a workspace that schedules nothing (workModel NONE, the default)
     // every clock-in was flagged, sent to review and pushed as pending approval.
-    if (!scheduled) {
+    if (!scheduled && !agreedPlan) {
       if (workspaceSchedulesShifts(location.workModel)) flagReasons.push('UNSCHEDULED_DAY');
     } else {
       flagReasons.push(
@@ -886,6 +941,32 @@ export class ClockInService {
     });
 
     return success(entry, `Clocked in at ${location.name}`);
+  }
+
+  /**
+   * Apply the day's approved changed hours / agreed overtime to a stamp, in place. The rule is
+   * the shared `applyApprovedRequests`; a moved end re-arms the clock-out reminder from it.
+   */
+  private applyDayRequests(
+    stamp: { expectedClockInAt?: Date; expectedClockOutAt?: Date; nextRemindAt?: Date },
+    rows: readonly DayRequestRow[],
+    at: { spaceId: string | null; at: Date; tz: string },
+  ): { startMoved: boolean; endMoved: boolean } {
+    if (!rows.length) return { startMoved: false, endMoved: false };
+    const effect = dayRequestEffect(rows, {
+      ...at,
+      expectedClockInAt: stamp.expectedClockInAt ?? null,
+      expectedClockOutAt: stamp.expectedClockOutAt ?? null,
+    });
+    if (effect.expectedClockInAt) stamp.expectedClockInAt = effect.expectedClockInAt;
+    if (effect.expectedClockOutAt) {
+      stamp.expectedClockOutAt = effect.expectedClockOutAt;
+      stamp.nextRemindAt = new Date(Math.max(effect.expectedClockOutAt.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000);
+    }
+    if (effect.requestIds.length) {
+      this.logger.log(`Approved requests applied at clock-in: [${effect.requestIds.join(',')}]`);
+    }
+    return { startMoved: !!effect.expectedClockInAt, endMoved: !!effect.expectedClockOutAt };
   }
 
   /**

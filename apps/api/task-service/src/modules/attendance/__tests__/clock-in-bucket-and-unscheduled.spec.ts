@@ -45,6 +45,7 @@ async function build(opts: { role?: string; allowRemote?: boolean; assigned?: bo
       findUnique: jest.fn().mockResolvedValue({ firstName: 'Mike', lastName: 'Weber' }),
       findMany: jest.fn().mockResolvedValue([]),
     },
+    timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     companyLocation: {
       // On-site path reads the workspace; the bucket path reads the bucket.
       findFirst: jest.fn(async ({ where }: any) => (where?.isRemote ? BUCKET : space)),

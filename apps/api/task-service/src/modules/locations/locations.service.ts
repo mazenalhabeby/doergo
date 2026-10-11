@@ -14,7 +14,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   type GeofencePolygonError,
   COST_ON_PROFILE_MESSAGE,
   stripWorkspaceTerms, assertFoundInOrg } from '@hbcfield/shared';
-import { isGeofencePolicy,
+import { isGeofencePolicy, isRequestKind, REQUEST_KINDS,
   isNoShiftPolicy,
   noShiftPolicyConflict,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
@@ -469,6 +469,7 @@ export class LocationsService {
     workflowId?: string;
     workModel?: string;
     geofencePolicy?: string;
+    requestKinds?: string[];
     noShiftPolicy?: string;
     noShiftDailyMinutes?: number;
     minCover?: number;
@@ -538,6 +539,16 @@ export class LocationsService {
         throw new BadRequestException('Unknown clock-in policy for this workspace');
       }
       updateData.geofencePolicy = data.geofencePolicy;
+    }
+    /*
+      The request kinds members may ask for here — validated, not trusted, for the same reason.
+      ⚠️ EMPTY MEANS EVERY KIND (requestKindsOffered); kept in the shared order, without repeats.
+    */
+    if (data.requestKinds !== undefined) {
+      if (!Array.isArray(data.requestKinds) || !data.requestKinds.every(isRequestKind)) {
+        throw new BadRequestException({ code: 'REQUEST_KIND_INVALID', message: 'Unknown request kind for this workspace' });
+      }
+      updateData.requestKinds = REQUEST_KINDS.filter((k) => (data.requestKinds as string[]).includes(k));
     }
     // Clocking in with no shift — validated for the same reason as the policy above.
     if (data.noShiftPolicy !== undefined) {

@@ -53,6 +53,7 @@ function prismaDouble() {
       findMany: jest.fn().mockResolvedValue([]),
     },
     companyLocation: { findFirst: jest.fn().mockResolvedValue(location) },
+    timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),

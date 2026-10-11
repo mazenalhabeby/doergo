@@ -66,6 +66,12 @@ export class TechniciansController {
     return this.techniciansService.requestTimeOff(data);
   }
 
+  /** What the caller may request, and at which workspaces a remote day (requests/request-kinds.ts). */
+  @MessagePattern({ cmd: 'get_request_options' })
+  async getRequestOptions(@Payload() data: { userId: string; organizationId: string }) {
+    return this.techniciansService.requestOptions(data);
+  }
+
   @MessagePattern({ cmd: 'get_time_off' })
   async getTimeOff(@Payload() data: GetTimeOffDto) {
     return this.techniciansService.getTimeOff(data);

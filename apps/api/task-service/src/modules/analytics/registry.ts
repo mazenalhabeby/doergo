@@ -153,7 +153,8 @@ export const DATASETS: Record<string, Dataset> = {
   leave: {
     key: 'leave',
     labelKey: 'dataset.leave',
-    from: `"time_off_requests" t JOIN "users" u ON u.id = t."technicianId"`,
+    // Leave only (requests/request-kinds.ts ABSENCE_WHERE) — a remote day or changed hours is not a day off.
+    from: `"time_off_requests" t JOIN "users" u ON u.id = t."technicianId" AND t.kind = 'LEAVE'`,
     orgColumn: 'u."organizationId"', // time_off has no org column; scope via the user
     dateColumn: 't."startDate"',
     spaceFilter: (p) =>

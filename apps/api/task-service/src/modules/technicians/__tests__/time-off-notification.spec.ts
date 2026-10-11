@@ -41,6 +41,7 @@ describe('who is told about a leave request', () => {
     cover = { assessMany: jest.fn().mockResolvedValue(new Map()) };
     prisma = {
       user: { findFirst: jest.fn().mockResolvedValue({ id: 'mike', organizationId: 'org1' }) },
+      spaceAssignment: { findMany: jest.fn().mockResolvedValue([]) },
       timeOff: {
         findFirst: jest.fn().mockResolvedValue(null),
         findMany: jest.fn().mockResolvedValue([]),

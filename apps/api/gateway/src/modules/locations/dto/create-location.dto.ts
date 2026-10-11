@@ -16,7 +16,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
-import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX, NO_SHIFT_POLICIES, NO_SHIFT_LIMIT } from '@hbcfield/shared';
+import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX, NO_SHIFT_POLICIES, NO_SHIFT_LIMIT, REQUEST_KINDS } from '@hbcfield/shared';
 
 /** One corner of a drawn site boundary. */
 class GeoPointDto {
@@ -147,6 +147,17 @@ export class CreateLocationDto {
   @IsIn(GEOFENCE_POLICIES as unknown as string[])
   @IsOptional()
   geofencePolicy?: string;
+
+  /**
+   * The request kinds members may ask for here (shared requests/request-kinds.ts).
+   * ⚠️ EMPTY MEANS EVERY KIND — never "nothing may be requested".
+   */
+  @ApiPropertyOptional({ isArray: true, enum: REQUEST_KINDS, description: 'Empty = every kind' })
+  @IsArray()
+  @ArrayMaxSize(REQUEST_KINDS.length)
+  @IsIn(REQUEST_KINDS as unknown as string[], { each: true })
+  @IsOptional()
+  requestKinds?: string[];
 
   /**
    * The staffing floor: how many people must be on the floor here on a working
