@@ -274,7 +274,7 @@
     "createTask": "Create Task",
     "manage": "Manage",
     "attendance": "Time",
-    "timeOff": "Time Off",
+    "timeOff": "Requests",
     "team": "Team",
     "profile": "Profile",
     "more": "More",
@@ -938,13 +938,13 @@
       "alsoOnTimeOff": "Also on time off:"
     },
     "requestForm": {
-      "title": "Request Time Off",
+      "title": "Ask for leave",
       "reasonLabel": "Reason",
       "notesLabel": "Notes (optional)",
       "notesPlaceholder": "Additional details...",
       "clearSelection": "Clear Selection",
       "submitRequest": "Submit Request",
-      "successMessage": "Time off request submitted.",
+      "successMessage": "Request sent.",
       "failedToSubmit": "Failed to submit request"
     },
     "reasonTypes": {
@@ -960,10 +960,10 @@
       "all": "All"
     },
     "empty": {
-      "upcoming": "No upcoming time off requests",
-      "past": "No past time off requests",
-      "all": "No time off requests yet",
-      "hint": "Tap dates on the calendar above to request time off"
+      "upcoming": "No upcoming requests",
+      "past": "No past requests",
+      "all": "No requests yet",
+      "hint": "Pick days on the calendar for leave, or tap New request."
     },
     "approvedBy": "Approved by {{firstName}} {{lastName}}",
     "cancelRequest": "Cancel Request",
@@ -1070,7 +1070,7 @@
       "tasksDescription": "New assignments, status changes, comments",
       "attendance": "Attendance",
       "attendanceDescription": "Clock-in/out reminders",
-      "timeOff": "Time Off",
+      "timeOff": "Requests",
       "timeOffDescription": "Request approvals and updates",
       "footerNote": "Categories are stored on this device; email choices are saved to your account. Push notification permissions are managed in your device settings.",
       "emails": "Email",
@@ -1103,7 +1103,7 @@
   },
   "manage": {
     "timeOff": {
-      "label": "Time Off",
+      "label": "Requests",
       "desc": "Approve requests"
     },
     "members": {
@@ -1191,15 +1191,15 @@
       },
       "rejectReasonPrompt": "Reason (optional):",
       "rejectConfirmTitle": "Reject Request",
-      "rejectConfirmMessage": "Reject this time-off request?",
-      "failedToLoad": "Failed to load time-off requests",
+      "rejectConfirmMessage": "Reject this request?",
+      "failedToLoad": "Failed to load requests",
       "failedToApprove": "Failed to approve",
       "failedToReject": "Failed to reject",
       "noRequests": "No {{filter}} requests",
       "noRequestsAll": "No requests"
     },
     "titles": {
-      "timeOffRequests": "Time Off Requests",
+      "timeOffRequests": "Requests",
       "attendance": "Attendance"
     },
     "customers": {
@@ -1537,8 +1537,8 @@
           "body": "Clock in and out, take a rest, and see your hours for today and this week."
         },
         "tabsTimeOff": {
-          "title": "Time off",
-          "body": "Request days off and track your requests here."
+          "title": "Requests",
+          "body": "Ask for leave, remote work and more, and track your requests here."
         },
         "profile": {
           "title": "Your profile",
@@ -1562,7 +1562,7 @@
         },
         "tabsMore": {
           "title": "More",
-          "body": "Everything else lives here: time off, documents, clients and the pages you manage."
+          "body": "Everything else lives here: requests, documents, clients and the pages you manage."
         }
       }
     },
@@ -1694,15 +1694,15 @@
       }
     },
     "timeOff": {
-      "title": "Time off",
+      "title": "Requests",
       "steps": {
         "intro": {
           "title": "Your year so far",
-          "body": "Days used, time off coming up, requests waiting for an answer and requests declined."
+          "body": "Leave days used and coming up, requests waiting for an answer and requests declined."
         },
         "request": {
-          "title": "Pick your days",
-          "body": "Choose the days on the calendar to ask for time off. Your manager gets it for approval."
+          "title": "Ask for something",
+          "body": "Pick days on the calendar for leave, or tap New request to work remotely, change a day’s hours or agree overtime in advance. Your manager gets it for approval."
         },
         "list": {
           "title": "Your requests",
@@ -3155,7 +3155,7 @@
       "worklog_note": "Work log note",
       "worklog_attachment": "Work log photo",
       "shiftIssue_message": "Issue message",
-      "timeOff_request": "Time off request",
+      "timeOff_request": "Request",
       "expense_submit": "Expense",
       "chat_send": "Message",
       "log_create": "Equipment log entry",
@@ -3217,7 +3217,19 @@
       "ROLE_TASK_NOT_ROLE": "This job was not opened to a role.",
       "ROLE_TASK_FINISHED": "This job is finished.",
       "LEAVE_NO_WORKING_DAYS": "Those days are all weekends or holidays — there is nothing to take off.",
-      "REMOTE_NOT_FOR_ASSIGNED": "You are assigned to a workspace. Clock in there, on site or away if your workspace allows it."
+      "REMOTE_NOT_FOR_ASSIGNED": "You are assigned to a workspace. Clock in there, on site or away if your workspace allows it.",
+      "REQUEST_KIND_INVALID": "That kind of request is not known.",
+      "REQUEST_DATES_INVALID": "Check the dates — the last day cannot come before the first.",
+      "REQUEST_TYPE_INVALID": "Choose the kind of leave.",
+      "REQUEST_SPACE_REQUIRED": "Choose the workspace.",
+      "REQUEST_TIME_INVALID": "Choose a new start or end — and the end after the start.",
+      "REQUEST_MINUTES_INVALID": "Choose between 15 minutes and 12 hours.",
+      "REQUEST_REASON_REQUIRED": "Say what you are asking for.",
+      "REQUEST_REASON_TOO_LONG": "The reason is too long — 500 characters at most.",
+      "REQUEST_TOO_MANY_DAYS": "Too many days in one request — 31 at most.",
+      "REQUEST_REMOTE_NOT_ALLOWED": "You are not allowed to work remotely.",
+      "REQUEST_SPACE_NOT_YOURS": "You do not work in that workspace.",
+      "REQUEST_KIND_NOT_OFFERED": "This kind of request is not offered in your workspace."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",
@@ -4389,7 +4401,7 @@
       "jobsSub": "Assigned to you, changed, a comment on yours",
       "clock": "Clock and shifts",
       "clockSub": "Time to clock in, a rest, overtime answers",
-      "timeOff": "Time off",
+      "timeOff": "Requests",
       "timeOffSub": "Your requests answered",
       "allowed": "This phone can notify you",
       "allowedSub": "Allowed in the phone's settings",
@@ -4636,7 +4648,7 @@
     "declineReason": "Reason (optional)",
     "declineLeave": "Decline",
     "approveLeave": "Approve",
-    "openTimeOff": "My time off",
+    "openTimeOff": "My requests",
     "openSchedule": "Open in Schedule",
     "view": {
       "day": "Day",
@@ -4779,5 +4791,60 @@
       "shiftTitle": "HBCField — Clocked in",
       "shiftBody": "Checking that you are at your work location during your shift."
     }
+  },
+  "requests": {
+    "title": "Requests",
+    "new": "New request",
+    "chooseTitle": "What are you asking for?",
+    "chooseNote": "What you can ask for depends on your workspace and your permissions.",
+    "leaveSection": "Leave",
+    "kind": {
+      "LEAVE": "Leave",
+      "REMOTE": "Remote work",
+      "HOURS": "Changed hours",
+      "OVERTIME": "Overtime in advance",
+      "OTHER": "Other request"
+    },
+    "kindHint": {
+      "LEAVE": "Vacation, sick, family",
+      "REMOTE": "Work away from the site",
+      "HOURS": "A different start or end",
+      "OVERTIME": "Extra hours agreed beforehand",
+      "OTHER": "Anything else, in your words"
+    },
+    "effect": {
+      "REMOTE": "If approved, that day's clock-in won't go to review.",
+      "HOURS": "If approved: no late or left-early flag.",
+      "OVERTIME": "If approved: counted automatically."
+    },
+    "facts": {
+      "between": "{{start}}–{{end}}",
+      "startsAt": "Start {{time}}",
+      "endsAt": "End {{time}}",
+      "overtime": "+{{duration}}"
+    },
+    "form": {
+      "day": "Day",
+      "days": "Days",
+      "workspace": "Workspace",
+      "hours": "Hours",
+      "howLong": "How long",
+      "sameDay": "Same day",
+      "newHours": "New hours",
+      "start": "Start",
+      "end": "End",
+      "unchanged": "Unchanged",
+      "less": "15 minutes less",
+      "more": "15 minutes more",
+      "overtimeRange": "Between {{min}} and {{max}}",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "otherPlaceholder": "What are you asking for?",
+      "reasonPlaceholder": "A short reason",
+      "startAt": "Start at",
+      "endAt": "Finish at"
+    },
+    "noRemoteSpace": "There is no workspace you may work remotely for.",
+    "balance": "Balance"
   }
 }

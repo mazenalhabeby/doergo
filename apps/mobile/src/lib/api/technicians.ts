@@ -1,4 +1,7 @@
-import type { EmployeesQueryParams } from '@hbcfield/shared/client';
+import {
+  ApiError, defineEndpoints, endpoint, requestKindsOffered,
+  type EmployeesQueryParams, type EndpointBody, type RequestKind,
+} from '@hbcfield/shared/client';
 import { call, E } from './client';
 import type { TechniciansListResponse, TechnicianListItem } from './types';
 import type { TimeOffRequest, AvailabilityResponse, ScheduleEntry } from './types';
@@ -36,7 +39,8 @@ export const timeOffApi = {
     return call(E.timeOff.listFor, { employeeId: technicianId, status });
   },
 
-  request: async (technicianId: string, data: { startDate: string; endDate: string; reason?: string }): Promise<TimeOffRequest> => {
+  /** Any request — leave, remote, hours, overtime, other (shared requests/request-kinds.ts). */
+  request: async (technicianId: string, data: EndpointBody<typeof E.timeOff.request>): Promise<TimeOffRequest> => {
     return call(E.timeOff.request, { employeeId: technicianId }, { body: data });
   },
 
@@ -46,6 +50,47 @@ export const timeOffApi = {
 
   approve: async (timeOffId: string, data: { approved: boolean; rejectionReason?: string }): Promise<TimeOffRequest> => {
     return call(E.timeOff.approve, { timeOffId }, { body: data });
+  },
+};
+
+/** What the member may ask for, and where they may work remotely. */
+export interface RequestOptions {
+  kinds: RequestKind[];
+  remoteSpaces: Array<{ id: string; name: string }>;
+}
+
+/*
+  ⚠️ ONE LINE TO MERGE. The server adds `GET /employees/me/request-options` to
+  the shared endpoint table in the same release; until that lands here it is
+  named locally with the same path and the same offline verdict (`keep`: the
+  member's own options, harmless to hold). When the shared table carries it,
+  this block becomes `call(E.timeOff.myOptions)`.
+*/
+const requestEndpoints = defineEndpoints('phoneRequests', {
+  myOptions: endpoint<void, RequestOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
+});
+
+/** A server from before requests: it still takes leave, and the phone offers no more than the contract's default. */
+export const OPTIONS_BEFORE_REQUESTS: RequestOptions = {
+  kinds: requestKindsOffered({ enabled: [], mayWorkRemotely: false }),
+  remoteSpaces: [],
+};
+
+export const requestsApi = {
+  myOptions: async (): Promise<RequestOptions> => {
+    try {
+      const r = await call(requestEndpoints.myOptions);
+      const kinds = Array.isArray(r?.kinds) ? r.kinds : OPTIONS_BEFORE_REQUESTS.kinds;
+      return { kinds, remoteSpaces: Array.isArray(r?.remoteSpaces) ? r.remoteSpaces : [] };
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) return OPTIONS_BEFORE_REQUESTS;
+      throw err;
+    }
+  },
+  /** This year's allowance: what is left, and what requests already waiting will take. */
+  leaveBalance: async (employeeId: string): Promise<{ year: number; allowance: number; taken: number; pending: number; remaining: number } | null> => {
+    const r = (await call(E.employees.leaveBalance, { id: employeeId })) as { year?: number; remaining?: number } | null;
+    return r && typeof r.remaining === 'number' ? (r as never) : null;
   },
 };
 

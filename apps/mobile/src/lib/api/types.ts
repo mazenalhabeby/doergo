@@ -460,6 +460,20 @@ export interface TimeOffRequest {
   approvedBy?: { id: string; firstName: string; lastName: string };
   approvedAt?: string;
   rejectionReason?: string;
+  /** What is asked (shared requests/request-kinds.ts). Absent on old rows = LEAVE. */
+  kind?: import('@hbcfield/shared/client').RequestKind;
+  /** LEAVE: VACATION | SICK | FAMILY | OTHER. */
+  type?: string | null;
+  /** REMOTE (required) / HOURS / OVERTIME / OTHER: the workspace it is about. */
+  spaceId?: string | null;
+  space?: { id: string; name: string } | null;
+  /** HOURS: the day's new start / end, HH:MM local. */
+  startTime?: string | null;
+  endTime?: string | null;
+  /** OVERTIME: minutes agreed in advance. */
+  minutes?: number | null;
+  /** The org list brings the member with each row. */
+  technician?: { id: string; firstName?: string | null; lastName?: string | null } | null;
   createdAt: string;
   updatedAt: string;
 }

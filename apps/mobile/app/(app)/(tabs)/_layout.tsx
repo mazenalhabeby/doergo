@@ -383,12 +383,14 @@ export default function TabsLayout() {
             headerShown: false,
           }}
         />
-        {/* Time Off tab - module-driven */}
+        {/* Requests tab (route `time-off`, kept so push taps and links still land) - module-driven */}
         <Tabs.Screen
           name="time-off"
           options={{
             title: t('tabs.timeOff'),
             href: showTimeOff ? '/time-off' : null,
+            // The page draws the shared ScreenHeader itself — no navigator band.
+            headerShown: false,
           }}
         />
         {/* Team tab - when the user can contact colleagues */}

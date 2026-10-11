@@ -1,143 +1,58 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { COLORS } from '../../lib/constants';
-import { getTimeOffStatusStyle } from '../../lib/styles';
-import { formatShortDate } from '../../lib/utils';
-import type { TimeOffRequest } from '../../lib/api/types';
-import { SyncChip } from '../../offline/components/sync-chip';
-import { FilterChip } from '../filter-chip';
+import { AText, FilterPill, FilterRow, Well, WellDivider } from '../amazen';
+import { SectionLabel } from '../job/job-ui';
 import { TourTarget } from '../tour';
-import { getDayCount, getTypeIcon, getTypeLabelKey, type RequestFilter } from './helpers';
-import { styles } from './styles';
+import { RequestRow, type RequestRowData } from '../requests/request-parts';
+import type { RequestFilter } from './helpers';
 
-/** My requests: Upcoming / Past / All, each card with its status and — while pending — Cancel. */
+const FILTERS: RequestFilter[] = ['upcoming', 'past', 'all'];
+
+/** My requests: Upcoming / Past / All — every kind, each row opens its detail. */
 export function TimeOffRequestsList({
   requests,
   filter,
   onFilter,
-  locale,
-  onCancel,
+  onOpen,
+  spaceName,
 }: {
   /** Already filtered by `filter`. */
-  requests: TimeOffRequest[];
+  requests: RequestRowData[];
   filter: RequestFilter;
   onFilter: (f: RequestFilter) => void;
-  locale: string;
-  onCancel: (request: TimeOffRequest) => void;
+  onOpen: (request: RequestRowData) => void;
+  /** A workspace's name by id — for a request still on the phone, which carries only the id. */
+  spaceName: (id: string | null | undefined) => string | null;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
 
   return (
-    <TourTarget name="timeoff-list" style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('timeOff.myRequests')}</Text>
+    <TourTarget name="timeoff-list" style={{ gap: amazen.space(2) }}>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{t('timeOff.myRequests')}</SectionLabel>
+      <FilterRow>
+        {FILTERS.map((f) => <FilterPill key={f} label={t(`timeOff.filters.${f}`)} on={filter === f} onPress={() => onFilter(f)} />)}
+      </FilterRow>
 
-      {/* Segmented filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-        <View style={styles.filterRow}>
-          <FilterChip
-            label={t('timeOff.filters.upcoming')}
-            active={filter === 'upcoming'}
-            onPress={() => onFilter('upcoming')}
-          />
-          <FilterChip
-            label={t('timeOff.filters.past')}
-            active={filter === 'past'}
-            onPress={() => onFilter('past')}
-          />
-          <FilterChip
-            label={t('timeOff.filters.all')}
-            active={filter === 'all'}
-            onPress={() => onFilter('all')}
-          />
-        </View>
-      </ScrollView>
-
-      {requests.length === 0 ? (
-        <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-          <Ionicons name="calendar-outline" size={48} color={colors.textMuted} />
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            {t(`timeOff.empty.${filter}`)}
-          </Text>
-          {filter === 'upcoming' && (
-            <Text style={[styles.emptySubtext, { color: colors.textMuted }]}>
-              {t('timeOff.empty.hint')}
-            </Text>
-          )}
-        </View>
-      ) : (
-        requests.map(request => {
-          const statusStyle = getTimeOffStatusStyle(request.status, colors);
-          const days = getDayCount(request.startDate, request.endDate);
-          const typeLabel = t(getTypeLabelKey(request.reason));
-          const typeIcon = getTypeIcon(request.reason);
-
-          return (
-            <View key={request.id} style={[styles.requestCard, { backgroundColor: colors.card }]}>
-              <View style={styles.requestHeader}>
-                <View style={styles.requestType}>
-                  <Ionicons name={typeIcon} size={20} color={COLORS.primary} />
-                  <Text style={[styles.requestTypeText, { color: colors.textPrimary }]}>{typeLabel}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <SyncChip entityId={request.id} />
-                  <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
-                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                      {t(`timeOffStatus.${request.status}`)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.requestDetails}>
-                <View style={styles.detailRow}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.textMuted} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                    {formatShortDate(request.startDate, locale)}
-                    {request.startDate !== request.endDate && ` – ${formatShortDate(request.endDate, locale)}`}
-                  </Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                  <Text style={[styles.detailText, { color: colors.textSecondary }]}>{days} {days > 1 ? t('common.days') : t('common.day')}</Text>
-                </View>
-              </View>
-
-              {request.reason && (
-                <Text style={[styles.reasonText, { color: colors.textSecondary }]} numberOfLines={2}>{request.reason}</Text>
-              )}
-
-              {request.status === 'APPROVED' && request.approvedBy && (
-                <View style={[styles.approvedRow, { borderTopColor: colors.border }]}>
-                  <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
-                  <Text style={styles.approvedText}>
-                    {t('timeOff.approvedBy', { firstName: request.approvedBy.firstName, lastName: request.approvedBy.lastName })}
-                  </Text>
-                </View>
-              )}
-
-              {request.rejectionReason && (
-                <View style={[styles.rejectionRow, { borderTopColor: colors.border }]}>
-                  <Ionicons name="information-circle-outline" size={14} color={COLORS.error} />
-                  <Text style={styles.rejectionText}>{request.rejectionReason}</Text>
-                </View>
-              )}
-
-              {request.status === 'PENDING' && (
-                <TouchableOpacity
-                  style={[styles.cancelButton, { borderTopColor: colors.border }]}
-                  onPress={() => onCancel(request)}
-                >
-                  <Ionicons name="close-circle-outline" size={16} color={COLORS.error} />
-                  <Text style={styles.cancelButtonText}>{t('timeOff.cancelRequest')}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          );
-        })
-      )}
+      <Well style={{ paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1.5) }}>
+        {requests.length === 0 ? (
+          <View style={{ paddingVertical: amazen.space(5), alignItems: 'center', gap: amazen.space(1) }}>
+            <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>{t(`timeOff.empty.${filter}`)}</AText>
+            {filter === 'upcoming' ? (
+              <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('timeOff.empty.hint')}</AText>
+            ) : null}
+          </View>
+        ) : (
+          requests.map((r, i) => (
+            <React.Fragment key={r.id}>
+              {i > 0 ? <WellDivider /> : null}
+              <RequestRow request={r} spaceName={spaceName(r.spaceId)} onPress={() => onOpen(r)} />
+            </React.Fragment>
+          ))
+        )}
+      </Well>
     </TourTarget>
   );
 }

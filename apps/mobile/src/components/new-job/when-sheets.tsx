@@ -91,8 +91,10 @@ export function DaySheet({ visible, value, onPick, onClear, onClose }: {
 }
 
 /** The hour to be there — hours and five-minute steps, both as grids so nothing scrolls inside the sheet. */
-export function TimeSheet({ visible, value, onPick, onClear, onClose }: {
+export function TimeSheet({ visible, value, onPick, onClear, onClose, title }: {
   visible: boolean;
+  /** The question the sheet asks — "Be there at" unless the caller asks another. */
+  title?: string;
   /** "HH:mm", or "" for no fixed hour. */
   value: string;
   onPick: (hhmm: string) => void;
@@ -112,7 +114,7 @@ export function TimeSheet({ visible, value, onPick, onClear, onClose }: {
   const rows = <T,>(xs: readonly T[], per: number) => Array.from({ length: Math.ceil(xs.length / per) }, (_, i) => xs.slice(i * per, i * per + per));
 
   return (
-    <JobSheet visible={visible} onClose={onClose} title={t('createTask.beThereAt')}>
+    <JobSheet visible={visible} onClose={onClose} title={title ?? t('createTask.beThereAt')}>
       <AText numeric style={{ fontSize: 34, lineHeight: 40, textAlign: 'center', color: amazen.color.inkStrong }}>{`${two(h)}:${two(m)}`}</AText>
       <View style={{ gap: 4 }}>
         {rows(HOURS, 6).map((r, i) => (

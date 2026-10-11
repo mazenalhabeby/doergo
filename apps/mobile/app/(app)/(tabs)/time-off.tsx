@@ -2,18 +2,20 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import type { LeaveType, RequestKind } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { mayReadTeamAvailability } from '../../../src/lib/permissions';
 import { useToast } from '../../../src/island/island-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { useMyTimeOff } from '../../../src/components/time/use-my-time-off';
 import { LoadingState, ErrorState } from '../../../src/components/screen-states';
-import { ConfirmSheet, ScreenContainer } from '../../../src/components';
-import { useTourScroll } from '../../../src/components/tour';
-import { availabilityApi, type TimeOffRequest, type AvailabilityResponse } from '../../../src/lib/api';
-import { COLORS, SPACING } from '../../../src/lib/constants';
+import { useTourScroll, TourTarget } from '../../../src/components/tour';
+import { availabilityApi, type AvailabilityResponse } from '../../../src/lib/api';
+import type { ActionOutcome } from '../../../src/offline/actions/outcome';
 import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
-import { useTabSafe } from '../../../src/components/amazen';
+import { useResponsive } from '../../../src/lib/responsive';
+import { centeredContent } from '../../../src/components/screen-container';
+import { Ground, PrimaryButton, ScreenHeader, useTabSafe } from '../../../src/components/amazen';
 import {
   availabilityInsights as insightsFor, datesWithStatus, filterRequests, getDayCount, mondayDow,
   scheduleDayMap, timeOffStats, toDateString, type RequestFilter,
@@ -24,34 +26,48 @@ import { TimeOffCalendarCard } from '../../../src/components/time-off/calendar-c
 import { TeamAvailabilityPanel } from '../../../src/components/time-off/availability-panel';
 import { TimeOffRequestForm } from '../../../src/components/time-off/request-form';
 import { TimeOffRequestsList } from '../../../src/components/time-off/requests-list';
-import { styles } from '../../../src/components/time-off/styles';
+import { KindChooserSheet, RequestDetailSheet, type RequestRowData } from '../../../src/components/requests/request-parts';
+import { RequestFormCard } from '../../../src/components/requests/request-form-card';
+import { draftToBody, type RequestBody } from '../../../src/components/requests/request-model';
+import { useRequestOptions } from '../../../src/components/requests/use-request-options';
 
 /**
- * TIME OFF — the member's leave: four tiles, the month to pick a range on,
- * the team's availability over it (for somebody who may read it), the request
- * form, and the list of requests.
+ * REQUESTS — everything a member asks the person responsible for them: leave
+ * (on the month, as always), working remotely, a changed day, overtime agreed
+ * in advance, or anything else in words. Four figures, New request, the month,
+ * and the list of requests of every kind.
  *
- * The pieces live in `src/components/time-off/`; this route keeps the state and
- * the decisions. Their rules are plain functions there (`helpers.ts`,
- * `availability-plan.ts`) and tested on their own.
+ * The route keeps its old file name (`time-off`) so every push tap, deep link
+ * and the calendar's "New › Time off" still land here; only the words changed.
+ *
+ * The pieces live in `src/components/time-off/` (leave) and
+ * `src/components/requests/` (every kind); their rules are plain functions
+ * there and tested on their own.
  */
-export default function TimeOffScreen() {
+export default function RequestsScreen() {
   const { user } = useAuth();
-  const { colors } = useTheme();
+  const { amazen } = useTheme();
+  const c = amazen.color;
   const tabSafe = useTabSafe();
   const toast = useToast();
   const { t } = useTranslation();
-  // Dates follow the active language rather than a hardcoded en-US locale.
   const { locale } = useTimeFormat();
+  const r = useResponsive();
+  const wide = r.isTablet ? centeredContent(720) : null;
 
   /*
-    ⚠️ ONE COPY OF A MEMBER'S LEAVE — `useMyTimeOff`, shared with the Time tab's
-    request sheet: the server's requests with those still on the phone laid on
-    top, a withdrawal on the phone already read as withdrawn.
+    ⚠️ ONE COPY OF A MEMBER'S REQUESTS — `useMyTimeOff`, shared with the Time
+    tab's request sheet: the server's requests with those still on the phone
+    laid on top, a withdrawal on the phone already read as withdrawn.
   */
   const leave = useMyTimeOff();
-  const { requests, schedule, isLoading, isRefreshing, error, fetchData } = leave;
+  const { requests, absences, schedule, isLoading, isRefreshing, error, fetchData } = leave;
   const refreshData = leave.refresh;
+  // What this member may ask for — read after the first paint, cached for the session.
+  const { options } = useRequestOptions();
+  const offered = options?.kinds ?? null;
+  const leaveOffered = !offered || offered.includes('LEAVE');
+  const otherKinds = (offered ?? []).filter((k) => k !== 'LEAVE');
 
   // Calendar
   const today = useMemo(() => new Date(), []);
@@ -85,30 +101,33 @@ export default function TimeOffScreen() {
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [availabilityError, setAvailabilityError] = useState(false);
 
-  // Request form
-  const [reasonType, setReasonType] = useState<string>('vacation');
-  const [reasonNotes, setReasonNotes] = useState('');
+  // The leave form
+  const [leaveType, setLeaveType] = useState<LeaveType>('VACATION');
+  const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Request list filter
-  const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');
+  // Any other kind: chosen in the sheet, filled in on the page.
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [formKind, setFormKind] = useState<Exclude<RequestKind, 'LEAVE'> | null>(null);
 
-  // Confirm sheet state
-  const [cancelTarget, setCancelTarget] = useState<TimeOffRequest | null>(null);
+  // The list
+  const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');
+  const [detail, setDetail] = useState<RequestRowData | null>(null);
   const lastFetchTimeRef = useRef(0);
 
-  // Schedule day lookup: dayOfWeek (0=Mon..6=Sun) → isActive
   const scheduleDays = useMemo(() => scheduleDayMap(schedule), [schedule]);
-
-  // The member's own time off on the calendar
-  const approvedDates = useMemo(() => datesWithStatus(requests, 'APPROVED'), [requests]);
-  const pendingDates = useMemo(() => datesWithStatus(requests, 'PENDING'), [requests]);
+  // Only LEAVE marks the month — a remote day is a day worked.
+  const approvedDates = useMemo(() => datesWithStatus(absences, 'APPROVED'), [absences]);
+  const pendingDates = useMemo(() => datesWithStatus(absences, 'PENDING'), [absences]);
+  const spaceName = useCallback(
+    (id: string | null | undefined) => (id ? options?.remoteSpaces.find((s) => s.id === id)?.name ?? null : null),
+    [options],
+  );
 
   // =========================================================================
   // DATA FETCHING
   // =========================================================================
 
-  // Fetch on mount & tab focus
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - lastFetchTimeRef.current < 30000) return;
@@ -180,52 +199,28 @@ export default function TimeOffScreen() {
   }, [rangeStart, rangeEnd, canSeeTeamAvailability]);
 
   // =========================================================================
-  // CALENDAR NAVIGATION
+  // CALENDAR
   // =========================================================================
 
   const goToPrevMonth = () => {
-    if (viewMonth === 0) {
-      setViewMonth(11);
-      setViewYear(viewYear - 1);
-    } else {
-      setViewMonth(viewMonth - 1);
-    }
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1);
   };
-
   const goToNextMonth = () => {
-    if (viewMonth === 11) {
-      setViewMonth(0);
-      setViewYear(viewYear + 1);
-    } else {
-      setViewMonth(viewMonth + 1);
-    }
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1);
   };
-
-  const goToToday = () => {
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
-  };
-
-  // =========================================================================
-  // CALENDAR TAP HANDLING
-  // =========================================================================
+  const goToToday = () => { setViewYear(today.getFullYear()); setViewMonth(today.getMonth()); };
 
   const handleDayPress = (date: Date) => {
-    // Don't allow past dates
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     if (date < todayStart) return;
-
-    // Don't allow non-scheduled days
     const isScheduled = schedule.length === 0 || scheduleDays[mondayDow(date)] === true;
     if (!isScheduled) return;
-
+    setFormKind(null);
     if (!isSelecting || !rangeStart) {
-      // First tap - set start
       setRangeStart(date);
       setRangeEnd(null);
       setIsSelecting(true);
     } else {
-      // Second tap - set end (auto-order)
       const start = date < rangeStart ? date : rangeStart;
       const end = date < rangeStart ? rangeStart : date;
       setRangeStart(start);
@@ -238,13 +233,9 @@ export default function TimeOffScreen() {
     setRangeStart(null);
     setRangeEnd(null);
     setIsSelecting(false);
-    setReasonType('vacation');
-    setReasonNotes('');
+    setLeaveType('VACATION');
+    setNotes('');
   };
-
-  // =========================================================================
-  // AVAILABILITY INSIGHTS
-  // =========================================================================
 
   const availabilityInsights = useMemo(() => {
     if (!rangeStart || !rangeEnd) return null;
@@ -252,27 +243,19 @@ export default function TimeOffScreen() {
   }, [rangeStart, rangeEnd, availabilityCache, scheduleDays, schedule.length, user?.id]);
 
   // =========================================================================
-  // SUBMIT REQUEST
+  // SENDING
   // =========================================================================
 
-  const handleSubmitRequest = async () => {
-    if (!user?.id || !rangeStart || !rangeEnd) return;
-
-    const startStr = toDateString(rangeStart);
-    const endStr = toDateString(rangeEnd);
-    const reasonLabel = t(`timeOff.reasonTypes.${reasonType}`);
-    const fullReason = reasonNotes.trim()
-      ? `${reasonLabel}: ${reasonNotes.trim()}`
-      : reasonLabel;
-
+  /** One path for every kind: the outbox carries the body unchanged, with or without signal. */
+  const send = async (body: RequestBody, after: () => void) => {
     try {
       setIsSubmitting(true);
-      const outcome = await leave.request({ startDate: startStr, endDate: endStr, reason: fullReason });
+      const outcome: ActionOutcome = await leave.request(body);
       if (outcome.kind === 'refused') {
         toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
         return;
       }
-      clearSelection();
+      after();
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
       else toast.success(t('common.success'), t('timeOff.requestForm.successMessage'));
     } catch (err) {
@@ -282,23 +265,26 @@ export default function TimeOffScreen() {
     }
   };
 
-  const confirmCancelTimeOff = async () => {
-    if (!cancelTarget) return;
-    const request = cancelTarget;
-    setCancelTarget(null);
-    try {
-      const outcome = await leave.cancel(request.id);
-      if (outcome.kind === 'refused') {
-        toast.error(
-          t('common.error'),
-          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'),
-        );
-        return;
-      }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.failedToCancel'));
+  const submitLeave = () => {
+    if (!user?.id || !rangeStart || !rangeEnd) return;
+    const built = draftToBody({ kind: 'LEAVE', startDate: toDateString(rangeStart), endDate: toDateString(rangeEnd), type: leaveType, reason: notes });
+    if (!built.ok) { toast.error(t('common.error'), t(`offline.errors.${built.code}`)); return; }
+    void send(built.body, clearSelection);
+  };
+
+  const pickKind = (kind: RequestKind) => {
+    setChooserOpen(false);
+    if (kind === 'LEAVE') { setFormKind(null); return; }
+    clearSelection();
+    setFormKind(kind);
+  };
+
+  const withdraw = async (request: RequestRowData) => {
+    const outcome = await leave.cancel(request.id);
+    if (outcome.kind === 'refused') {
+      throw new Error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'));
     }
+    if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
   };
 
   // =========================================================================
@@ -307,104 +293,92 @@ export default function TimeOffScreen() {
 
   const stats = useMemo(() => timeOffStats(requests, today), [requests, today]);
   const filteredRequests = useMemo(() => filterRequests(requests, requestFilter, today), [requests, requestFilter, today]);
-
   const hasRangeSelected = rangeStart !== null && rangeEnd !== null;
   const rangeDays = hasRangeSelected ? getDayCount(toDateString(rangeStart!), toDateString(rangeEnd!)) : 0;
-
-  // =========================================================================
-  // RENDER
-  // =========================================================================
 
   if (isLoading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={fetchData} />;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <ScreenContainer width="content">
+    <Ground style={{ flex: 1 }}>
+      <ScreenHeader title={t('requests.title', 'Requests')} style={wide ?? undefined} />
       <ScrollView
         {...tourScroll}
-        style={styles.scrollView}
-        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
-        contentContainerStyle={{ paddingBottom: tabSafe }}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
-          />
-        }
+        // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
+        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe + amazen.space(6), gap: amazen.space(3) }, wide]}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.accent]} tintColor={c.accent} />}
       >
         <TimeOffStatsRow stats={stats} />
 
-        {schedule.length === 0 && <ScheduleNotSetBanner />}
+        {schedule.length === 0 && leaveOffered ? <ScheduleNotSetBanner /> : null}
 
-        <TimeOffCalendarCard
-          today={today}
-          viewYear={viewYear}
-          viewMonth={viewMonth}
-          onPrevMonth={goToPrevMonth}
-          onNextMonth={goToNextMonth}
-          onToday={goToToday}
-          scheduleLength={schedule.length}
-          scheduleDays={scheduleDays}
-          approvedDates={approvedDates}
-          pendingDates={pendingDates}
-          rangeStart={rangeStart}
-          rangeEnd={rangeEnd}
-          isSelecting={isSelecting}
-          onDayPress={handleDayPress}
-        />
+        <TourTarget name="timeoff-request" style={{ gap: amazen.space(3) }}>
+          {otherKinds.length > 0 && !formKind ? (
+            <PrimaryButton label={t('requests.new', 'New request')} onPress={() => setChooserOpen(true)} />
+          ) : null}
 
-        {hasRangeSelected && canSeeTeamAvailability && (
-          <TeamAvailabilityPanel
-            loading={isLoadingAvailability}
-            failed={availabilityError}
-            insights={availabilityInsights}
-            locale={locale}
-          />
-        )}
+          {formKind ? (
+            <RequestFormCard
+              kind={formKind}
+              options={options}
+              busy={isSubmitting}
+              onClose={() => setFormKind(null)}
+              onSubmit={(body) => void send(body, () => setFormKind(null))}
+            />
+          ) : leaveOffered ? (
+            <TimeOffCalendarCard
+              today={today}
+              viewYear={viewYear}
+              viewMonth={viewMonth}
+              onPrevMonth={goToPrevMonth}
+              onNextMonth={goToNextMonth}
+              onToday={goToToday}
+              scheduleLength={schedule.length}
+              scheduleDays={scheduleDays}
+              approvedDates={approvedDates}
+              pendingDates={pendingDates}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              isSelecting={isSelecting}
+              onDayPress={handleDayPress}
+            />
+          ) : null}
+        </TourTarget>
 
-        {hasRangeSelected && (
+        {!formKind && hasRangeSelected && canSeeTeamAvailability ? (
+          <TeamAvailabilityPanel loading={isLoadingAvailability} failed={availabilityError} insights={availabilityInsights} locale={locale} />
+        ) : null}
+
+        {!formKind && hasRangeSelected ? (
           <TimeOffRequestForm
             rangeStart={rangeStart!}
             rangeEnd={rangeEnd!}
             rangeDays={rangeDays}
-            locale={locale}
-            reasonType={reasonType}
-            onReasonType={setReasonType}
-            reasonNotes={reasonNotes}
-            onReasonNotes={setReasonNotes}
+            leaveType={leaveType}
+            onLeaveType={setLeaveType}
+            notes={notes}
+            onNotes={setNotes}
             isSubmitting={isSubmitting}
             onClear={clearSelection}
-            onSubmit={handleSubmitRequest}
+            onSubmit={submitLeave}
           />
-        )}
+        ) : null}
+
+        <View style={{ height: amazen.space(1) }} />
 
         <TimeOffRequestsList
           requests={filteredRequests}
           filter={requestFilter}
           onFilter={setRequestFilter}
-          locale={locale}
-          onCancel={setCancelTarget}
+          onOpen={setDetail}
+          spaceName={spaceName}
         />
-
-        {/* Bottom spacing */}
-        <View style={{ height: SPACING.xxxl }} />
       </ScrollView>
-      </ScreenContainer>
 
-      <ConfirmSheet
-        visible={!!cancelTarget}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={confirmCancelTimeOff}
-        title={t('timeOff.cancelConfirmTitle')}
-        message={t('timeOff.cancelConfirmMessage')}
-        confirmLabel={t('timeOff.cancelRequest')}
-        cancelLabel={t('common.no')}
-        variant="warning"
-      />
-    </View>
+      <KindChooserSheet visible={chooserOpen} kinds={offered} onPick={pickKind} onClose={() => setChooserOpen(false)} />
+      <RequestDetailSheet request={detail} spaceName={spaceName(detail?.spaceId)} onClose={() => setDetail(null)} onWithdraw={withdraw} />
+    </Ground>
   );
 }

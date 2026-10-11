@@ -1,14 +1,16 @@
-import type { Ionicons } from '@expo/vector-icons';
 import type { AvailabilityResponse, ScheduleEntry, TimeOffRequest } from '../../lib/api/types';
-import { personName, localDateKey } from '@hbcfield/shared/client';
+import { personName, localDateKey, isAbsence } from '@hbcfield/shared/client';
 
 /*
-  The Time off screen's RULES — plain functions, no React, so they are tested
+  The Requests screen's RULES — plain functions, no React, so they are tested
   on their own (`time-off-availability-plan.spec.ts`). Moved out of the
-  1,400-line route unchanged in behaviour.
+  1,400-line route unchanged in behaviour; the one change since is that only
+  LEAVE marks the calendar and counts as days off (`isAbsence`) — a remote day
+  or agreed overtime is a day worked.
 */
 
-export const REASON_TYPE_KEYS = ['vacation', 'sickLeave', 'family', 'other'] as const;
+/** A row as these rules read it: the server's, or one still on the phone. Old rows have no kind (= leave). */
+type Row = Pick<TimeOffRequest, 'startDate' | 'endDate' | 'status'> & { kind?: string | null };
 
 export type RequestFilter = 'upcoming' | 'past' | 'all';
 
@@ -20,30 +22,9 @@ export function getDayCount(startDate: string, endDate: string): number {
   return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)) + 1);
 }
 
-export function getTypeIcon(reason?: string): keyof typeof Ionicons.glyphMap {
-  if (!reason) return 'calendar-outline';
-  const lower = reason.toLowerCase();
-  if (lower.includes('sick') || lower.includes('medical')) return 'medkit-outline';
-  if (lower.includes('personal') || lower.includes('family')) return 'people-outline';
-  return 'sunny-outline';
-}
-
-export function getTypeLabelKey(reason?: string): string {
-  if (!reason) return 'timeOff.typeLabels.timeOff';
-  const lower = reason.toLowerCase();
-  if (lower.includes('sick') || lower.includes('medical')) return 'timeOff.typeLabels.sickLeave';
-  if (lower.includes('personal') || lower.includes('family')) return 'timeOff.typeLabels.family';
-  if (lower.includes('vacation') || lower.includes('holiday')) return 'timeOff.typeLabels.vacation';
-  return 'timeOff.typeLabels.timeOff';
-}
-
 /** YYYY-MM-DD in the phone's own zone. */
 export function toDateString(d: Date): string {
   return localDateKey(d);
-}
-
-export function formatLongDate(d: Date, locale: string): string {
-  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 /** Build a grid of 6 rows x 7 columns for a month calendar (Mon-start). */
@@ -97,11 +78,11 @@ export function scheduleDayMap(schedule: readonly ScheduleEntry[]): Record<numbe
   return map;
 }
 
-/** Every day covered by the member's requests in one status — the calendar's dots. */
-export function datesWithStatus(requests: readonly TimeOffRequest[], status: TimeOffRequest['status']): Record<string, true> {
+/** Every day of the member's LEAVE in one status — the calendar's dots. */
+export function datesWithStatus(requests: readonly Row[], status: TimeOffRequest['status']): Record<string, true> {
   const dateSet: Record<string, true> = {};
   requests.forEach(r => {
-    if (r.status !== status) return;
+    if (r.status !== status || !isAbsence(r.kind)) return;
     const start = new Date(r.startDate);
     const end = new Date(r.endDate);
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -113,9 +94,10 @@ export function datesWithStatus(requests: readonly TimeOffRequest[], status: Tim
 
 export interface TimeOffStats { daysUsed: number; upcoming: number; pending: number; rejected: number }
 
-export function timeOffStats(requests: readonly TimeOffRequest[], today: Date): TimeOffStats {
+/** Days are LEAVE days; waiting and declined count requests of every kind. */
+export function timeOffStats(requests: readonly Row[], today: Date): TimeOffStats {
   const todayStr = toDateString(today);
-  const approved = requests.filter(r => r.status === 'APPROVED');
+  const approved = requests.filter(r => r.status === 'APPROVED' && isAbsence(r.kind));
   return {
     daysUsed: approved
       .filter(r => r.endDate < todayStr)
@@ -128,7 +110,7 @@ export function timeOffStats(requests: readonly TimeOffRequest[], today: Date): 
   };
 }
 
-export function filterRequests<T extends TimeOffRequest>(requests: readonly T[], filter: RequestFilter, today: Date): T[] {
+export function filterRequests<T extends Row>(requests: readonly T[], filter: RequestFilter, today: Date): T[] {
   const todayStr = toDateString(today);
   switch (filter) {
     case 'upcoming':
