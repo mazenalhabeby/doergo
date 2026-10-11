@@ -19,8 +19,6 @@
 !/pnpm-workspace.yaml
 !/tsconfig.json
 !/tsconfig.base.json
-!/eas.json
-!/app.json
 !/.npmrc
 !/.nvmrc
 

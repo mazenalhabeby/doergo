@@ -1,7 +1,0 @@
-export { TasksTab } from "./tasks-tab"
-export { AttendanceTab } from "./attendance-tab"
-export { LocationsTab } from "./locations-tab"
-export { PerformanceTab } from "./performance-tab"
-export { ScheduleTab } from "./schedule-tab"
-export { TimeOffTab } from "./time-off-tab"
-export { HoldingsTab } from "./holdings-tab"

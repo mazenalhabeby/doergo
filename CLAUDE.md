@@ -1912,7 +1912,7 @@ The pricing model changed shape. `bill = seats × €9.99 + Σ spaces(modules + 
 
 ### Security Audit (2026-01-15) - 17 Vulnerabilities Found
 
-**Full report:** `SECURITY_AUDIT_REPORT.md`
+**Full report:** `docs/archive/root-plans/SECURITY_AUDIT_REPORT.md`
 
 | Severity | Count | Status |
 |----------|-------|--------|

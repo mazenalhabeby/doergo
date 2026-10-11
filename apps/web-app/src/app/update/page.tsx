@@ -9,7 +9,7 @@ import UpdateClient from './update-client';
  * phone. Asking for a login here would defeat the only channel that still works.
  *
  * ⚠️ NOT under `/downloads/` — nginx answers `410 Gone` for everything there
- * except an `.apk`, which it 301s to Play (`infra/docker/nginx/default.conf`).
+ * except an `.apk`, which it 301s to Play (`infra/nginx/hbcfield.com.conf`).
  * A page filed there would be unreachable.
  *
  * ⚠️ `noindex`. This is an operational link with a shelf life, not a marketing

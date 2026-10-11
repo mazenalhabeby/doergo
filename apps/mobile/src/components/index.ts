@@ -12,7 +12,6 @@ export { SheetPanel } from './sheet-panel';
 export { DocumentScanner } from './document-scanner';
 export { SupplyDocumentSheet } from './supply-document-sheet';
 export { FingerprintIcon, FaceIcon, BiometricIcon } from './biometric-icon';
-export { TechnicianPicker } from './technician-picker';
 export { LoadingState, ErrorState } from './screen-states';
 export { LocationPickerSheet } from './location-picker-sheet';
 export { Skeleton } from './skeleton';

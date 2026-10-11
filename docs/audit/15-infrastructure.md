@@ -112,7 +112,7 @@ rejected it. That is the exact silent failure recorded from an earlier incident.
    OCSP stapling.
 5. **Single point of failure.** One box runs Postgres, Redis, PgBouncer, five services, two
    web apps and Photon. `runWithCronLock` and the Redis throttler make horizontal scaling
-   *possible*; nothing is scaled. See `hbcfield-azure-plan.md`, where the decision was "stay
+   *possible*; nothing is scaled. See `docs/archive/root-plans/hbcfield-azure-plan.md`, where the decision was "stay
    on Hetzner, finish the features".
 6. **Postgres has a 1 GB memory limit** in compose — low for a production database.
 7. **Secrets rotation.** They live in one file on one box. No rotation procedure, no record of

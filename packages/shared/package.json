@@ -25,11 +25,6 @@
       "import": "./dist-esm/constants/index.js",
       "require": "./dist/constants/index.js"
     },
-    "./design": {
-      "types": "./dist/design/index.d.ts",
-      "import": "./dist-esm/design/index.js",
-      "require": "./dist/design/index.js"
-    },
     "./design/tailwind-preset": {
       "types": "./dist/design/tailwind-preset.d.ts",
       "import": "./dist-esm/design/tailwind-preset.js",
@@ -81,9 +76,6 @@
       ],
       "constants": [
         "./dist/constants/index.d.ts"
-      ],
-      "design": [
-        "./dist/design/index.d.ts"
       ],
       "design/tailwind-preset": [
         "./dist/design/tailwind-preset.d.ts"

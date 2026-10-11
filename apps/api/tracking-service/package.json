@@ -7,9 +7,7 @@
     "dev": "nest start --watch",
     "start": "nest start",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@hbcfield/shared": "workspace:*",
