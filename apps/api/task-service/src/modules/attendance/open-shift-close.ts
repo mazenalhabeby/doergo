@@ -1,4 +1,4 @@
-import { OPEN_SHIFT_CLOSE } from '@hbcfield/shared';
+import { OPEN_SHIFT_CLOSE, computeScheduleFlags } from '@hbcfield/shared';
 
 /**
  * The temporary clock-out for a shift left open — pure, so every rule is a test.
@@ -46,3 +46,79 @@ export function isAbandoned(entry: { clockInAt: Date; expectedClockOutAt: Date |
 export const PROVISIONAL_FLAGS: ReadonlySet<string> = new Set(['MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL']);
 /** Flags that depend on the clock-out time, and are worked out again when it changes. */
 export const CLOCK_OUT_TIME_FLAGS: ReadonlySet<string> = new Set(['OVERTIME', 'EARLY_DEPARTURE', 'OUTSIDE_GEOFENCE_OUT', 'PAST_DAILY_LIMIT']);
+
+/**
+ * Excursion states that are still "out" — the ones a closed shift must not
+ * leave behind, or the excursion sweep goes on escalating about a shift that is
+ * over (and the approver queue lists somebody who has gone home).
+ */
+export const OPEN_EXCURSION_STATUSES = ['OUT_UNREPORTED', 'PENDING', 'APPROVED'] as const;
+
+/** A rest as the close reads it: every row of the shift, open or finished. */
+export interface RestRow {
+  id: string;
+  startedAt: Date;
+  endedAt?: Date | null;
+  durationMinutes?: number | null;
+  isPaid?: boolean | null;
+}
+
+/**
+ * The rests of a shift being closed: which running ones end, when, and the
+ * totals afterwards — pure, so every way a shift ends agrees on it.
+ *
+ * A rest still running ends at the close — never after now (a self-reported
+ * time may sit a few seconds ahead of the server) and never before it began
+ * (a temporary close at the shift end, with the rest taken after it, is zero
+ * minutes, not negative).
+ *
+ * ⚠️ Totals are RECOMPUTED FROM THE ROWS, never added to the stored figure —
+ * the same rule the break service follows. Incrementing would double-count a
+ * rest whenever the stored total was already right, and carry forward any
+ * drift whenever it was not.
+ */
+export function endRunningRests(
+  rests: RestRow[],
+  closeAt: Date,
+  now: Date,
+): { ends: { id: string; endedAt: Date; minutes: number }[]; breakMinutes: number; unpaidBreakMinutes: number } {
+  const cap = Math.min(closeAt.getTime(), now.getTime());
+  let breakMinutes = 0;
+  let unpaidBreakMinutes = 0;
+  const ends: { id: string; endedAt: Date; minutes: number }[] = [];
+  for (const r of rests) {
+    let minutes: number;
+    if (r.endedAt) {
+      minutes = r.durationMinutes ?? Math.round((r.endedAt.getTime() - r.startedAt.getTime()) / 60_000);
+    } else {
+      const endedAt = new Date(Math.max(r.startedAt.getTime(), cap));
+      minutes = Math.round((endedAt.getTime() - r.startedAt.getTime()) / 60_000);
+      ends.push({ id: r.id, endedAt, minutes });
+    }
+    breakMinutes += minutes;
+    if (!r.isPaid) unpaidBreakMinutes += minutes;
+  }
+  return { ends, breakMinutes, unpaidBreakMinutes };
+}
+
+/**
+ * The flags that depend on WHEN a shift was closed (EARLY_DEPARTURE /
+ * OVERTIME, or PAST_DAILY_LIMIT on an allowance) — one answer for every close.
+ *
+ * Built on `computeScheduleFlags`, the shared tolerance rule clock-in and the
+ * edit dialog use. ⚠️ Only against a concrete expected end: with none the
+ * session is genuinely unscheduled and cannot be early or late against
+ * anything. A daily limit is an allowance, not a shift: leaving before it is
+ * not early, and staying past it reads as past the limit.
+ */
+export function clockOutTimeFlags(
+  entry: { expectedClockOutAt?: Date | null; endIsDailyLimit?: boolean | null },
+  clockOutAt: Date,
+  toleranceMin: number,
+): string[] {
+  if (!entry.expectedClockOutAt) return [];
+  const flags = computeScheduleFlags({ clockOutAt, expectedClockOutAt: entry.expectedClockOutAt, toleranceMin });
+  return entry.endIsDailyLimit
+    ? flags.filter((f) => f !== 'EARLY_DEPARTURE').map((f) => (f === 'OVERTIME' ? 'PAST_DAILY_LIMIT' : f))
+    : flags;
+}

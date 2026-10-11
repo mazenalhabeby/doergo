@@ -101,7 +101,11 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
     spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),
-      findUnique: jest.fn().mockResolvedValue(null),
+      // A close claims with every column in one write, then reads the row back.
+      findUnique: jest.fn(async () => {
+        const claim = prisma.timeEntry.updateMany.mock.calls.at(-1);
+        return claim ? { id: 'e1', ...claim[0].data, location } : null;
+      }),
       findMany: jest.fn().mockResolvedValue(opts.worked ?? []),
       create: jest.fn(async ({ data }: any) => ({ id: 'e-new', ...data, location })),
       update: jest.fn(async ({ data }: any) => ({ id: 'e1', ...data, location })),
@@ -219,14 +223,14 @@ describe('clocking out of a limited session', () => {
     const { service, prisma } = await build();
     prisma.timeEntry.findFirst.mockResolvedValue(open(new Date(NOW.getTime() + 3 * 60 * MIN)));
     await service.clockOut({ userId: 'u1', organizationId: 'org-1', entryId: 'e1', ...SITE } as any);
-    expect(prisma.timeEntry.update.mock.calls[0][0].data.flagReasons).not.toContain('EARLY_DEPARTURE');
+    expect(prisma.timeEntry.updateMany.mock.calls[0][0].data.flagReasons).not.toContain('EARLY_DEPARTURE');
   });
 
   it('staying past it reads as past today’s limit', async () => {
     const { service, prisma } = await build();
     prisma.timeEntry.findFirst.mockResolvedValue(open(new Date(NOW.getTime() - 90 * MIN)));
     await service.clockOut({ userId: 'u1', organizationId: 'org-1', entryId: 'e1', ...SITE } as any);
-    const flags = prisma.timeEntry.update.mock.calls[0][0].data.flagReasons;
+    const flags = prisma.timeEntry.updateMany.mock.calls[0][0].data.flagReasons;
     expect(flags).toContain('PAST_DAILY_LIMIT');
     expect(flags).not.toContain('OVERTIME');
   });

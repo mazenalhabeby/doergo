@@ -295,12 +295,13 @@ describe('AttendanceService', () => {
         totalMinutes: 480,
       };
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
-      mockPrismaService.timeEntry.update.mockResolvedValue(updatedEntry);
+      // The close claims with every column in one write, then reads the row back.
+      mockPrismaService.timeEntry.findUnique.mockResolvedValue(updatedEntry);
 
       const result = await service.clockOut(clockOutData) as any;
 
       expect(result.success).toBe(true);
-      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.timeEntry.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             status: TimeEntryStatus.CLOCKED_OUT,
@@ -323,7 +324,7 @@ describe('AttendanceService', () => {
       };
 
       mockPrismaService.timeEntry.findFirst.mockResolvedValue(mockTimeEntry);
-      mockPrismaService.timeEntry.update.mockResolvedValue({
+      mockPrismaService.timeEntry.findUnique.mockResolvedValue({
         ...mockTimeEntry,
         status: TimeEntryStatus.CLOCKED_OUT,
         clockOutWithinGeofence: false,
@@ -333,7 +334,7 @@ describe('AttendanceService', () => {
 
       await service.clockOut(farClockOutData);
 
-      expect(mockPrismaService.timeEntry.update).toHaveBeenCalledWith(
+      expect(mockPrismaService.timeEntry.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             clockOutWithinGeofence: false,
@@ -553,8 +554,8 @@ describe('AttendanceService', () => {
     describe('resolveForgotClockOut', () => {
       it('closes at the self-reported time within the shift (no overtime flag)', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
-        mockPrismaService.timeEntry.update.mockImplementation(({ data }: any) =>
-          Promise.resolve({ id: 'entry-123', ...data, location: { name: 'Main Office' }, user: {} }),
+        mockPrismaService.timeEntry.findUnique.mockImplementation(() =>
+          Promise.resolve({ id: 'entry-123', ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data, location: { name: 'Main Office' }, user: {} }),
         );
 
         const result = (await service.resolveForgotClockOut({
@@ -565,7 +566,7 @@ describe('AttendanceService', () => {
         })) as any;
 
         expect(result.success).toBe(true);
-        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        const data = mockPrismaService.timeEntry.updateMany.mock.calls[0][0].data;
         expect(data.status).toBe(TimeEntryStatus.CLOCKED_OUT);
         expect(data.reminderState).toBe('RESOLVED');
         expect(data.nextRemindAt).toBeNull();
@@ -575,8 +576,8 @@ describe('AttendanceService', () => {
 
       it('flags OVERTIME when the reported time is past the expected end', async () => {
         mockPrismaService.timeEntry.findFirst.mockResolvedValue(openEntry());
-        mockPrismaService.timeEntry.update.mockImplementation(({ data }: any) =>
-          Promise.resolve({ id: 'entry-123', ...data, location: { name: 'Main Office' }, user: {} }),
+        mockPrismaService.timeEntry.findUnique.mockImplementation(() =>
+          Promise.resolve({ id: 'entry-123', ...mockPrismaService.timeEntry.updateMany.mock.calls.at(-1)[0].data, location: { name: 'Main Office' }, user: {} }),
         );
 
         await service.resolveForgotClockOut({
@@ -586,7 +587,7 @@ describe('AttendanceService', () => {
           organizationId: 'org-123',
         });
 
-        const data = mockPrismaService.timeEntry.update.mock.calls[0][0].data;
+        const data = mockPrismaService.timeEntry.updateMany.mock.calls[0][0].data;
         expect(data.flagReasons).toContain('OVERTIME');
         expect(data.approvalStatus).toBe('PENDING');
       });

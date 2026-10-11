@@ -1,8 +1,13 @@
+import type { Prisma } from '@prisma/client';
 import {
   CLOCK_OUT_TIME_FLAGS,
+  OPEN_EXCURSION_STATUSES,
   PROVISIONAL_FLAGS,
+  clockOutTimeFlags,
+  endRunningRests,
   isAbandoned,
   provisionalClockOut,
+  type RestRow,
 } from './open-shift-close';
 import { Injectable, Inject, BadRequestException, ConflictException, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -15,7 +20,6 @@ import {
   isAtSite,
   parseGeofencePolygon,
   ATTENDANCE_CONSTANTS,
-  computeScheduleFlags,
   OPEN_SHIFT_CLOSE,
   shortfallMinutes,
   SERVICE_NAMES,
@@ -28,6 +32,66 @@ import { approvalFor, SAME_TAP_MS } from './attendance-occurrence';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
+
+/**
+ * What every close reads in the SAME query as the entry: all its rests (the
+ * totals are recomputed from the rows) and the excursions still open on it.
+ * One include, so a sweep closing a hundred shifts asks once, not per row.
+ */
+export const CLOSE_ENTRY_INCLUDE = {
+  breaks: { select: { id: true, startedAt: true, endedAt: true, durationMinutes: true, isPaid: true } },
+  geofenceExcursions: {
+    where: { status: { in: [...OPEN_EXCURSION_STATUSES] } },
+    orderBy: { leftRingAt: 'asc' },
+    select: { id: true, leftRingAt: true },
+  },
+} satisfies Prisma.TimeEntryInclude;
+
+/** The entry as a close needs it — any caller's row with CLOSE_ENTRY_INCLUDE. */
+interface ClosableEntry {
+  id: string;
+  userId: string;
+  organizationId: string;
+  clockInAt: Date;
+  expectedClockInAt?: Date | null;
+  expectedClockOutAt?: Date | null;
+  shiftId?: string | null;
+  breakMinutes?: number | null;
+  unpaidBreakMinutes?: number | null;
+  breaks?: RestRow[];
+  geofenceExcursions?: { id: string }[];
+}
+
+/** How a shift is being closed. Everything the close itself works out is NOT here. */
+interface CloseSpec {
+  /** The clock-out instant recorded on the entry. */
+  at: Date;
+  /** What the claim requires: an open shift, or one the sweep closed temporarily. */
+  from: 'OPEN' | 'PROVISIONAL';
+  /** CLOCKED_OUT, or AUTO_OUT for a close the system made on somebody's behalf. */
+  status?: TimeEntryStatus.CLOCKED_OUT | TimeEntryStatus.AUTO_OUT;
+  /** What only this caller knows: flags, approval, notes, position, provisional basis. */
+  fields: Prisma.TimeEntryUpdateManyMutationInput;
+  /** Pass it when already looked up (the clock-out needs it for its flags). */
+  toleranceMin?: number;
+  pause: {
+    reason: 'CLOCK_OUT' | 'AUTO_CLOSE' | 'FORGOT' | 'OFFICE_CLOSE';
+    handovers?: ClockOutHandover[];
+    /** Move pauses this shift already made to the close (a real time replacing a guess). */
+    sinceClockIn: boolean;
+  };
+  /** Emit `attendance_clock_out`. The sweep announces its own, different event. */
+  announce: boolean;
+  /** Read the closed row back (with location + user) for the caller's reply. */
+  readBack: boolean;
+  now?: Date;
+}
+
+const CLOSED_ROW_INCLUDE = {
+  location: true,
+  user: { select: { firstName: true, lastName: true } },
+} satisfies Prisma.TimeEntryInclude;
+type ClosedRow = Prisma.TimeEntryGetPayload<{ include: typeof CLOSED_ROW_INCLUDE }>;
 
 /**
  * Ending a shift: the clock-out, a forgotten clock-out resolved after the
@@ -89,14 +153,15 @@ export class ClockOutService {
   }) {
     this.logger.log(`Clock out attempt: user=${data.userId}${data.entryId ? `, entry=${data.entryId}` : ''}`);
 
+    const include = { location: true, ...CLOSE_ENTRY_INCLUDE } as const;
     const entry = data.entryId
       ? await this.prisma.timeEntry.findFirst({
           where: { id: data.entryId, userId: data.userId, organizationId: data.organizationId },
-          include: { location: true, breaks: { select: { endedAt: true } } },
+          include,
         })
       : await this.prisma.timeEntry.findFirst({
           where: { userId: data.userId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_IN },
-          include: { location: true, breaks: { select: { endedAt: true } } },
+          include,
         });
 
     if (!entry) {
@@ -163,8 +228,17 @@ export class ClockOutService {
       : null;
     const distance = atOut?.distanceToCentre ?? 0;
     const withinGeofence = atOut ? atOut.inside : true;
+    /*
+      Clocking out from outside the ring is a violation — unless the whole day
+      was worked away from the site, where it is the expected place to be.
 
-    // Calculate total minutes worked
+      ⚠️ ONE verdict for the flag AND the alert. They used to be decided apart,
+      so an away day carried no flag yet still pushed "clocked out outside the
+      site" to the member's watchers — a rule reported broken on a day worked
+      exactly as agreed.
+    */
+    const outsideAtOut = !withinGeofence && !entry.isRemote;
+
     const clockOutTime = occurrence.at;
     const totalMinutes = Math.round(
       (clockOutTime.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
@@ -177,15 +251,9 @@ export class ClockOutService {
       : entry.flagReasons || [];
     const flagReasons: string[] = [...priorFlags, ...occurrence.flags];
 
-    /*
-      Clocking out from outside the ring is a violation — unless the whole day
-      was worked away from the site, where it is the expected place to be.
-
-      Flagging it there would put a second amber badge on an entry that already
-      carries OUTSIDE_GEOFENCE_IN and is already waiting for review, and it would
-      read as a rule broken rather than a day worked as agreed.
-    */
-    if (!withinGeofence && !entry.isRemote) {
+    // Flagging it on an away day would put a second amber badge on an entry that
+    // already carries OUTSIDE_GEOFENCE_IN and is already waiting for review.
+    if (outsideAtOut) {
       flagReasons.push('OUTSIDE_GEOFENCE_OUT');
     }
 
@@ -194,31 +262,13 @@ export class ClockOutService {
     // resolver (rota OR the legacy weekly schedule) as an absolute UTC instant —
     // timezone-correct and cross-midnight-safe. When it's null the session is
     // genuinely UNSCHEDULED (no shift/rota/schedule matched), so it can't be
-    // "early" or "overtime" against anything — leave those flags off. (The old
-    // else-branch re-derived the weekday from the CLOCK-OUT time in server-local
-    // time, which for a cross-midnight or cross-timezone session matched the
-    // wrong day's schedule and produced a false "Early Departure" alongside the
-    // "Unscheduled" tag.)
+    // "early" or "overtime" against anything — `clockOutTimeFlags` leaves those
+    // flags off. (The old else-branch re-derived the weekday from the CLOCK-OUT
+    // time in server-local time, which for a cross-midnight or cross-timezone
+    // session matched the wrong day's schedule and produced a false "Early
+    // Departure" alongside the "Unscheduled" tag.)
     const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
-    if (entry.expectedClockOutAt) {
-      const scheduleFlags = computeScheduleFlags({
-        clockOutAt: clockOutTime,
-        expectedClockOutAt: entry.expectedClockOutAt,
-        toleranceMin,
-      });
-      /*
-        A daily limit is an allowance, not a shift: leaving before it is not
-        early, and staying past it reads as past the limit.
-      */
-      flagReasons.push(
-        ...(entry.endIsDailyLimit
-          ? scheduleFlags.filter((f) => f !== 'EARLY_DEPARTURE').map((f) => (f === 'OVERTIME' ? 'PAST_DAILY_LIMIT' : f))
-          : scheduleFlags),
-      );
-    }
-
-    // What the timesheet will read. The real times above are untouched.
-    const counted = await this.countedTime.columnsFor(entry, clockOutTime, toleranceMin);
+    flagReasons.push(...clockOutTimeFlags(entry, clockOutTime, toleranceMin));
 
     /*
       How far short of the shift this falls.
@@ -249,30 +299,21 @@ export class ClockOutService {
 
     /*
       Claimed, not overwritten: two clock-outs racing (the queue and a manager's
-      edit) must not both close the shift with different times.
+      edit) must not both close the shift with different times. The close also
+      ends a rest still running, recounts, closes open excursions and pauses the
+      jobs — the same close every other way a shift ends goes through.
     */
-    const claimed = await this.prisma.timeEntry.updateMany({
-      where: replacingProvisional
-        ? { id: entry.id, status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true }
-        : { id: entry.id, status: TimeEntryStatus.CLOCKED_IN },
-      data: { status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: clockOutTime, clockOutProvisional: false, clockOutBasis: null },
-    });
-    if (claimed.count === 0) {
-      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
-    }
-    const updatedEntry = await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: {
-        status: TimeEntryStatus.CLOCKED_OUT,
-        clockOutAt: clockOutTime,
+    const updatedEntry = await this.closeEntry(entry, {
+      at: clockOutTime,
+      from: replacingProvisional ? 'PROVISIONAL' : 'OPEN',
+      toleranceMin,
+      fields: {
         clockOutLat: data.lat ?? null,
         clockOutLng: data.lng ?? null,
         clockOutAccuracy: data.accuracy,
         // null (not false) when the geofence couldn't be evaluated — records
         // "unknown", not "outside".
         clockOutWithinGeofence: geofenceEvaluable ? withinGeofence : null,
-        totalMinutes,
-        ...counted,
         // The reason rides with the entry, where the approvals queue reads it.
         // Prefixed rather than put in a column of its own: it IS a note about
         // the shift, and a manager reading the row wants it in the same place as
@@ -283,18 +324,14 @@ export class ClockOutService {
         flagReasons: uniqueFlags,
         approvalStatus,
         clockOutPlace,
-        // Close out any shift-reminder lifecycle so a completed entry never
-        // lingers in a reminder state and its nextRemindAt index key is cleared.
-        reminderState: 'RESOLVED',
-        nextRemindAt: null,
-        clockOutProvisional: false,
-        clockOutBasis: null,
       },
-      include: {
-        location: true,
-        user: { select: { firstName: true, lastName: true } },
-      },
+      pause: { reason: 'CLOCK_OUT', handovers: data.handovers, sinceClockIn: true },
+      announce: true,
+      readBack: true,
     });
+    if (!updatedEntry) {
+      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
+    }
 
     const overtimeReason = (data.overtimeReason ?? '').trim().slice(0, 500);
     if (overtimeReason && entry.expectedClockOutAt && clockOutTime.getTime() > entry.expectedClockOutAt.getTime() + toleranceMin * 60_000) {
@@ -351,8 +388,8 @@ export class ClockOutService {
       `Clock out successful: entry=${entry.id}, user=${data.userId}, duration=${hours}h ${minutes}m, flags=[${uniqueFlags.join(',')}], approval=${approvalStatus}`,
     );
 
-    // Send geofence alert if clock-out is outside geofence
-    if (!withinGeofence && ATTENDANCE_CONSTANTS.ALERT_ON_GEOFENCE_VIOLATION) {
+    // Send geofence alert if clock-out is outside geofence (never on an away day).
+    if (outsideAtOut && ATTENDANCE_CONSTANTS.ALERT_ON_GEOFENCE_VIOLATION) {
       await this.sendGeofenceAlert({
         userId: data.userId,
         organizationId: data.organizationId,
@@ -362,23 +399,6 @@ export class ClockOutService {
         action: 'clock_out',
       });
     }
-
-    // Jobs left in work stop with the shift — at its minute, not when the phone found signal.
-    await this.jobPause?.pauseAtClockOut({
-      userId: data.userId,
-      organizationId: data.organizationId,
-      at: clockOutTime,
-      since: entry.clockInAt,
-      reason: 'CLOCK_OUT',
-      handovers: data.handovers,
-    });
-
-    // Emit real-time event for dashboard/team updates
-    this.notificationClient.emit('attendance_clock_out', {
-      userId: data.userId,
-      organizationId: data.organizationId,
-      timeEntry: clockEventEntry({ ...entry, ...updatedEntry }, 'out'),
-    });
 
     // Entry landed in the approvals queue → nudge managers (bell + push).
     if (approvalStatus === 'PENDING') {
@@ -399,7 +419,7 @@ export class ClockOutService {
       starts the argument at the end of the month. The counted figure is the one
       that matters to the person reading it, so it is the one on the screen.
     */
-    const paid = counted.paidMinutes ?? Math.max(0, totalMinutes - (entry.breakMinutes ?? 0));
+    const paid = updatedEntry.paidMinutes ?? Math.max(0, totalMinutes - (updatedEntry.breakMinutes ?? 0));
     const ph = Math.floor(paid / 60);
     const pm = paid % 60;
 
@@ -438,7 +458,7 @@ export class ClockOutService {
         // what "when did you leave?" is asking the member to correct.
         OR: [{ status: TimeEntryStatus.CLOCKED_IN }, { status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true }],
       },
-      include: { location: true, breaks: { select: { endedAt: true } } },
+      include: { location: true, ...CLOSE_ENTRY_INCLUDE },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
     const wasProvisional = entry.status === TimeEntryStatus.CLOCKED_OUT;
@@ -467,57 +487,36 @@ export class ClockOutService {
     const base = wasProvisional
       ? (entry.flagReasons || []).filter((f) => f !== 'CLOCK_OUT_PROVISIONAL' && !CLOCK_OUT_TIME_FLAGS.has(f))
       : entry.flagReasons || [];
-    const flags = new Set<string>([...base, 'MISSED_CLOCK_OUT']);
-    const isOvertime =
-      !!entry.expectedClockOutAt && clockOutTime.getTime() > entry.expectedClockOutAt.getTime();
-    if (isOvertime) flags.add(entry.endIsDailyLimit ? 'PAST_DAILY_LIMIT' : 'OVERTIME');
-    const uniqueFlags = [...flags];
-
-    // Counted the same way as any other close — a forgotten clock-out is a late
-    // clock-out, not a different kind of day.
-    const counted = await this.countedTime.columnsFor(entry, clockOutTime);
+    /*
+      ⚠️ The SAME time flags as a tapped clock-out, tolerance included. This
+      path used to flag OVERTIME a single minute past the end and never
+      EARLY_DEPARTURE — a forgotten clock-out is a late clock-out, not a
+      different kind of day, so it is judged by the same rule.
+    */
+    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+    const timeFlags = clockOutTimeFlags(entry, clockOutTime, toleranceMin);
+    const uniqueFlags = [...new Set<string>([...base, 'MISSED_CLOCK_OUT', ...timeFlags])];
+    const isOvertime = timeFlags.includes('OVERTIME') || timeFlags.includes('PAST_DAILY_LIMIT');
 
     // Claimed: the answer and a real clock-out arriving together must not both write.
-    const claimed = await this.prisma.timeEntry.updateMany({
-      where: wasProvisional
-        ? { id: entry.id, status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true }
-        : { id: entry.id, status: TimeEntryStatus.CLOCKED_IN },
-      data: { status: TimeEntryStatus.CLOCKED_OUT, clockOutAt: clockOutTime, clockOutProvisional: false, clockOutBasis: null },
-    });
-    if (claimed.count === 0) {
-      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
-    }
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: {
-        status: TimeEntryStatus.CLOCKED_OUT,
-        clockOutAt: clockOutTime,
-        clockOutProvisional: false,
-        clockOutBasis: null,
-        totalMinutes,
-        ...counted,
+    const updated = await this.closeEntry(entry, {
+      at: clockOutTime,
+      from: wasProvisional ? 'PROVISIONAL' : 'OPEN',
+      toleranceMin,
+      fields: {
         notes: 'Self-reported clock-out (forgot to clock out)',
         flagReasons: uniqueFlags,
         approvalStatus: 'PENDING', // a forgotten clock-out is always worth a glance
-        reminderState: 'RESOLVED',
-        nextRemindAt: null,
       },
-      include: { location: true, user: { select: { firstName: true, lastName: true } } },
+      pause: { reason: 'FORGOT', sinceClockIn: true },
+      announce: true,
+      readBack: true,
+      now,
     });
+    if (!updated) {
+      throw new ConflictException({ message: 'This shift was closed at the same moment', code: 'ENTRY_ALREADY_CLOSED' });
+    }
 
-    await this.jobPause?.pauseAtClockOut({
-      userId: data.userId,
-      organizationId: data.organizationId,
-      at: clockOutTime,
-      since: entry.clockInAt,
-      reason: 'FORGOT',
-    });
-
-    this.notificationClient.emit('attendance_clock_out', {
-      userId: data.userId,
-      organizationId: data.organizationId,
-      timeEntry: clockEventEntry({ ...entry, ...updated }, 'out'),
-    });
     await this.sendPendingApprovalAlert({
       entryId: updated.id,
       userId: data.userId,
@@ -547,7 +546,7 @@ export class ClockOutService {
    * Cheap on purpose: two partial indexes over OPEN shifts answer the query,
    * a tick takes at most OPEN_SHIFT_CLOSE.BATCH, and each close is claimed
    * (status = CLOCKED_IN) so a racing clock-out or a second replica cannot
-   * both win.
+   * both win. The rests and excursions ride in the same read (no query per row).
    */
   async closeAbandonedShifts(now: Date = new Date()) {
     const due = await this.prisma.timeEntry.findMany({
@@ -561,12 +560,7 @@ export class ClockOutService {
       orderBy: { clockInAt: 'asc' },
       take: OPEN_SHIFT_CLOSE.BATCH,
       include: {
-        breaks: { where: { endedAt: null }, select: { id: true, startedAt: true, isPaid: true } },
-        geofenceExcursions: {
-          where: { status: { in: ['OUT_UNREPORTED', 'PENDING', 'APPROVED'] } },
-          orderBy: { leftRingAt: 'asc' },
-          select: { id: true, leftRingAt: true },
-        },
+        ...CLOSE_ENTRY_INCLUDE,
         // Named in the member's email, so they can tell which shift is meant.
         location: { select: { name: true } },
       },
@@ -582,57 +576,20 @@ export class ClockOutService {
         now,
       });
 
-      // A rest still running when the member forgot ends with the temporary time.
-      let breakMinutes = entry.breakMinutes ?? 0;
-      let unpaidBreakMinutes = entry.unpaidBreakMinutes ?? 0;
-      const breakEnds = entry.breaks.map((b) => {
-        const endedAt = b.startedAt > at ? b.startedAt : at;
-        const minutes = Math.round((endedAt.getTime() - b.startedAt.getTime()) / 60_000);
-        breakMinutes += minutes;
-        if (!b.isPaid) unpaidBreakMinutes += minutes;
-        return { id: b.id, endedAt, minutes };
-      });
-
       const flags = [...new Set([...(entry.flagReasons ?? []), 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'])];
-      const counted = await this.countedTime.columnsFor({ ...entry, breakMinutes, unpaidBreakMinutes }, at);
-
-      const outcome = await this.prisma.$transaction(async (tx) => {
-        const claim = await tx.timeEntry.updateMany({
-          where: { id: entry.id, status: TimeEntryStatus.CLOCKED_IN },
-          data: {
-            status: TimeEntryStatus.CLOCKED_OUT,
-            clockOutAt: at,
-            clockOutProvisional: true,
-            clockOutBasis: basis,
-            totalMinutes: Math.round((at.getTime() - entry.clockInAt.getTime()) / 60_000),
-            breakMinutes,
-            unpaidBreakMinutes,
-            ...counted,
-            flagReasons: flags,
-            approvalStatus: 'PENDING',
-            reminderState: 'RESOLVED',
-            nextRemindAt: null,
-            nextBreakRemindAt: null,
-          },
-        });
-        if (claim.count === 0) return false;
-        for (const b of breakEnds) {
-          await tx.break.update({ where: { id: b.id }, data: { endedAt: b.endedAt, durationMinutes: b.minutes } });
-        }
-        if (entry.geofenceExcursions.length) {
-          // The shift is over; an excursion must not go on escalating about it.
-          await tx.geofenceExcursion.updateMany({
-            where: { id: { in: entry.geofenceExcursions.map((x) => x.id) } },
-            data: { status: 'EXPIRED', resolvedAt: now },
-          });
-        }
-        return true;
+      // A rest still running when the member forgot ends with the temporary time.
+      const outcome = await this.closeEntry(entry, {
+        at,
+        from: 'OPEN',
+        fields: { clockOutProvisional: true, clockOutBasis: basis, flagReasons: flags, approvalStatus: 'PENDING' },
+        // The jobs stop at the same guess; the member's real clock-out moves them.
+        pause: { reason: 'AUTO_CLOSE', sinceClockIn: false },
+        announce: false,
+        readBack: false,
+        now,
       });
       if (!outcome) continue;
       closed++;
-
-      // The jobs stop at the same guess; the member's real clock-out moves them.
-      await this.jobPause?.pauseAtClockOut({ userId: entry.userId, organizationId: entry.organizationId, at, reason: 'AUTO_CLOSE' });
 
       this.notificationClient.emit('attendance_shift_closed_provisionally', {
         entryId: entry.id,
@@ -647,6 +604,161 @@ export class ClockOutService {
     }
     if (closed) this.logger.log(`Closed ${closed} abandoned shift(s) with a temporary clock-out`);
     return success({ closed });
+  }
+
+  /**
+   * End a shift because somebody DECIDED it ends — the legacy overtime flow's
+   * "rejected" and "the approval window ran out" (overtime.service.ts).
+   *
+   * That product's rule is kept: the decision ends the shift, at the moment it
+   * is made, as a system close (AUTO_OUT) the approvals queue reviews. What
+   * changes is HOW: it used to write the status, the time and the gross minutes
+   * and nothing else — no counted columns (so the unapproved overtime counted
+   * through the gross-minus-rests fallback), a rest left running, excursions
+   * left escalating, reminders still armed, jobs still in work and no event.
+   * It goes through `closeEntry` like every other close now.
+   *
+   * The time recorded is the decision time — evidence of how long they were
+   * there. What COUNTS still stops at the planned end (`computeCountedTime`'s
+   * min with `expectedClockOutAt`), which a refused or lapsed request never
+   * moved: unapproved overtime counts for nothing.
+   *
+   * Quiet when the shift is no longer open (closed meanwhile, or never this
+   * organization's): there is nothing left to end.
+   */
+  async closeByDecision(input: {
+    entryId: string;
+    organizationId: string;
+    /** What the entry's note says about why it ended. */
+    note: string;
+    reason: 'CLOCK_OUT' | 'OFFICE_CLOSE' | 'AUTO_CLOSE';
+    at?: Date;
+  }): Promise<boolean> {
+    const entry = await this.prisma.timeEntry.findFirst({
+      where: { id: input.entryId, organizationId: input.organizationId, status: TimeEntryStatus.CLOCKED_IN },
+      // The two display labels the clock-out event carries ride in the same read.
+      include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true } }, user: { select: { firstName: true, lastName: true } } },
+    });
+    if (!entry) return false;
+    const now = new Date();
+    const at = input.at ?? now;
+    const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
+    const flags = [
+      ...new Set([...(entry.flagReasons ?? []), 'MISSED_CLOCK_OUT', ...clockOutTimeFlags(entry, at, toleranceMin)]),
+    ];
+    const closed = await this.closeEntry(entry, {
+      at,
+      from: 'OPEN',
+      status: TimeEntryStatus.AUTO_OUT,
+      toleranceMin,
+      fields: {
+        // Added to what is already written about the day, never replacing it.
+        notes: [entry.notes, input.note].filter(Boolean).join(' · '),
+        flagReasons: flags,
+        approvalStatus: 'PENDING',
+      },
+      pause: { reason: input.reason, sinceClockIn: true },
+      announce: true,
+      readBack: false,
+      now,
+    });
+    return !!closed;
+  }
+
+  /**
+   * ⚠️ THE ONE WAY A SHIFT GETS CLOSED. Every closer — the clock-out, the
+   * forgotten clock-out, the temporary close of an abandoned shift and a close
+   * by decision — comes through here, so none of them can forget a step:
+   *
+   *  1. a rest still running ends at the close (never after now), and the rest
+   *     totals are recomputed from the rows (`endRunningRests`);
+   *  2. counted time is computed from those totals (`CountedTimeService`);
+   *  3. ONE transaction: the claim — a conditional update that only an open
+   *     (or temporarily closed) shift satisfies, so two closers racing cannot
+   *     both win — carrying every column, then the rests ended and the open
+   *     excursions EXPIRED (a shift that is over must not go on escalating);
+   *  4. reminder state cleared (shift and rest reminders alike);
+   *  5. after the commit, jobs in work paused and the clock-out announced.
+   *
+   * Returns null when the claim lost: somebody else closed it first.
+   */
+  private async closeEntry(entry: ClosableEntry, spec: CloseSpec & { readBack: true }): Promise<ClosedRow | null>;
+  private async closeEntry(entry: ClosableEntry, spec: CloseSpec): Promise<ClosedRow | true | null>;
+  private async closeEntry(entry: ClosableEntry, spec: CloseSpec): Promise<ClosedRow | true | null> {
+    const now = spec.now ?? new Date();
+    const at = spec.at;
+    const status = spec.status ?? TimeEntryStatus.CLOCKED_OUT;
+    const rests = endRunningRests(entry.breaks ?? [], at, now);
+    const counted = await this.countedTime.columnsFor(
+      { ...entry, breakMinutes: rests.breakMinutes, unpaidBreakMinutes: rests.unpaidBreakMinutes },
+      at,
+      spec.toleranceMin,
+    );
+    const excursionIds = (entry.geofenceExcursions ?? []).map((x) => x.id);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const claim = await tx.timeEntry.updateMany({
+        where:
+          spec.from === 'PROVISIONAL'
+            ? { id: entry.id, status: TimeEntryStatus.CLOCKED_OUT, clockOutProvisional: true }
+            : { id: entry.id, status: TimeEntryStatus.CLOCKED_IN },
+        data: {
+          status,
+          clockOutAt: at,
+          clockOutProvisional: false,
+          clockOutBasis: null,
+          totalMinutes: Math.round((at.getTime() - entry.clockInAt.getTime()) / 60_000),
+          breakMinutes: rests.breakMinutes,
+          unpaidBreakMinutes: rests.unpaidBreakMinutes,
+          ...counted,
+          // Close out any reminder lifecycle so a completed entry never lingers
+          // in a reminder state and the sweeps' index keys are cleared.
+          reminderState: 'RESOLVED',
+          nextRemindAt: null,
+          nextBreakRemindAt: null,
+          ...spec.fields,
+        },
+      });
+      if (claim.count === 0) return null;
+      for (const r of rests.ends) {
+        await tx.break.update({ where: { id: r.id }, data: { endedAt: r.endedAt, durationMinutes: r.minutes } });
+      }
+      if (excursionIds.length) {
+        // The shift is over; an excursion must not go on escalating about it.
+        await tx.geofenceExcursion.updateMany({
+          where: { id: { in: excursionIds } },
+          data: { status: 'EXPIRED', resolvedAt: now },
+        });
+      }
+      return spec.readBack
+        ? ((await tx.timeEntry.findUnique({ where: { id: entry.id }, include: CLOSED_ROW_INCLUDE })) as ClosedRow)
+        : (true as const);
+    });
+    if (!result) return null;
+
+    // Jobs left in work stop with the shift — at its minute, not when the phone found signal.
+    await this.jobPause?.pauseAtClockOut({
+      userId: entry.userId,
+      organizationId: entry.organizationId,
+      at,
+      ...(spec.pause.sinceClockIn ? { since: entry.clockInAt } : {}),
+      reason: spec.pause.reason,
+      ...(spec.pause.handovers ? { handovers: spec.pause.handovers } : {}),
+    });
+
+    if (spec.announce) {
+      // Real-time event for dashboard/team updates — names only (clock-event.ts).
+      const row = result === true ? null : result;
+      this.notificationClient.emit('attendance_clock_out', {
+        userId: entry.userId,
+        organizationId: entry.organizationId,
+        timeEntry: clockEventEntry(
+          { ...(entry as ClosableEntry & { status: string }), ...(row ?? {}), status, clockOutAt: at },
+          'out',
+        ),
+      });
+    }
+    return result;
   }
 
   /**
