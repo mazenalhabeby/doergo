@@ -15,6 +15,7 @@ import type {
   UpdateEmployeeInput,
 } from '../../types';
 import type { LeaveCount } from '../../calendar/days';
+import type { RequestInput, RequestKind } from '../../requests/request-kinds';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 
@@ -75,7 +76,7 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
     path: ({ employeeId, ...q }) => withQuery(path`/employees/${employeeId}/time-off`, q),
     keep: true,
   }),
-  request: endpoint<{ employeeId: string }, TimeOffRequest, { startDate: string; endDate: string; reason?: string; type?: string; [k: string]: unknown }>({
+  request: endpoint<{ employeeId: string }, TimeOffRequest, Omit<RequestInput, 'kind'> & { kind?: RequestKind; [k: string]: unknown }>({
     method: 'POST',
     path: (a) => path`/employees/${a.employeeId}/time-off`,
   }),

@@ -169,7 +169,8 @@ export function assessFix(
  * which costs the entries that genuinely need a look (a moved clock, a mock
  * location). Those are NOT in this set.
  */
-export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED']);
+// APPROVED_REMOTE: away/remote work approved in advance (requests) — said on the entry, decided already.
+export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED', 'APPROVED_REMOTE']);
 
 /** The flags on an entry that should put it in front of a person. */
 export function flagsForReview(flags: readonly string[]): string[] {
