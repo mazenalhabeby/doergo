@@ -36,7 +36,9 @@ import {
   AddBreakForMemberDto, BreakRuleDto, SnoozeBreakDto,
   ApproveExtraTimeDto, RejectExtraTimeDto, AddOvertimeDto,
   AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
+  AutoClockConsentDto, AutoClockActionDto,
 } from './dto';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
 
@@ -162,6 +164,63 @@ export class AttendanceController {
     return this.attendanceService.listClockInLocations({
       userId: req.user.id,
       organizationId: req.user.organizationId,
+    });
+  }
+
+  // ── The automatic clock (shared attendance/auto-clock.ts) ─────────────────
+  // Every route is the CALLER's own: no userId parameter, ownership in the
+  // service (another member's entry is 404). External members hold no clock.
+
+  /**
+   * Where the phone arms geofences for the caller, today and tomorrow, with the
+   * planned shifts. Nothing without the member's own consent.
+   */
+  @Get('auto-clock/plan')
+  @DenyExternal()
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Workspaces the automatic clock arms for the caller' })
+  async autoClockPlan(@Request() req: any) {
+    return this.attendanceService.autoClockPlan({ userId: req.user.id, organizationId: req.user.organizationId });
+  }
+
+  /** The member's own consent to location-based clocking; false withdraws it. */
+  @Post('auto-clock/consent')
+  @DenyExternal()
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Give or withdraw consent to the automatic clock' })
+  async autoClockConsent(@Body() dto: AutoClockConsentDto, @Request() req: any) {
+    return this.attendanceService.autoClockConsent({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      consent: dto.consent,
+    });
+  }
+
+  /** Undo an automatic clock-in — a drive-past. Idempotent for an offline replay. */
+  @Post('entries/:id/auto-undo')
+  @DenyExternal()
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Undo an automatic clock-in (own, within minutes, nothing recorded on it)' })
+  async autoClockUndo(@Param('id') entryId: string, @Body() dto: AutoClockActionDto, @Request() req: any) {
+    return this.attendanceService.autoClockUndo({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      entryId,
+      evidence: dto?.evidence,
+    });
+  }
+
+  /** "Still working": no automatic rest on this shift. Idempotent. */
+  @Post('entries/:id/auto-rest/skip')
+  @DenyExternal()
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  @ApiOperation({ summary: 'Skip the automatic rest on the running shift' })
+  async autoClockSkipRest(@Param('id') entryId: string, @Body() dto: AutoClockActionDto, @Request() req: any) {
+    return this.attendanceService.autoClockSkipRest({
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      entryId,
+      evidence: dto?.evidence,
     });
   }
 

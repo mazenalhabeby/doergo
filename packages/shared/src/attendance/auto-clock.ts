@@ -93,6 +93,12 @@ export function parseAutoClockSettings(
   return { ok: true, value: out };
 }
 
+/** Stored settings as every reader takes them: never fails, defaults filled in, an out-of-range value ignored. */
+export function readAutoClockSettings(raw: unknown): AutoClockSettings {
+  const parsed = parseAutoClockSettings(raw);
+  return parsed.ok ? parsed.value : { ...AUTO_CLOCK_DEFAULTS };
+}
+
 /* ------------------------------------------------------------------ arrival */
 
 export type AutoClockInDecision =
@@ -236,4 +242,78 @@ export interface AutoClockPlan {
 export type AutoClockErrorCode =
   | 'AUTO_CLOCK_SETTING_INVALID'
   /** Undo refused: not an automatic clock-in, too late, or work already recorded on it. */
-  | 'AUTO_CLOCK_UNDO_NOT_ALLOWED';
+  | 'AUTO_CLOCK_UNDO_NOT_ALLOWED'
+  /** A clock-in resent with the id of an automatic clock-in its owner already undid. */
+  | 'AUTO_CLOCK_UNDONE';
+
+/* ------------------------------------------------------------------ server re-check */
+
+/**
+ * Is the automatic clock ON for this member at this workspace? All three — the
+ * workspace switched it on, the member is chosen there, the member consented —
+ * and never for an external member (they hold no clock).
+ */
+export function autoClockActive(input: {
+  consentAt: Date | string | null | undefined;
+  settings: unknown;
+  assignmentAutoClock: boolean | null | undefined;
+  isExternal?: boolean | null;
+}): AutoClockSettings | null {
+  if (!input.consentAt || input.assignmentAutoClock !== true || input.isExternal === true) return null;
+  if (input.settings == null) return null;
+  const parsed = parseAutoClockSettings(input.settings);
+  return parsed.ok && parsed.value.enabled ? parsed.value : null;
+}
+
+/**
+ * SERVER: does a clock-in the phone says was automatic, at `at`, fall inside the
+ * window the phone was allowed to clock in? The same rule as `decideAutoClockIn`
+ * asked of the moment it claims — the dwell is the phone's to see, so `now` is
+ * the earliest the phone could have decided. A claim before the window opens
+ * (the arrival moved back) or once the shift is over is not automatic.
+ */
+export function autoClockInWithinWindow(
+  settings: AutoClockSettings,
+  at: Date,
+  shiftStart: Date | null,
+  shiftEnd: Date | null,
+): boolean {
+  const d = decideAutoClockIn({
+    settings,
+    now: new Date(at.getTime() + settings.dwellMinutes * 60_000),
+    enteredAt: at,
+    stillInside: true,
+    shiftStart,
+    shiftEnd,
+    alreadyClockedIn: false,
+  });
+  return d.action === 'CLOCK_IN' && d.at.getTime() === at.getTime();
+}
+
+/** SERVER: is an automatic clock-out at `at` a departure the phone was allowed to make (at or after the planned end)? */
+export function autoClockOutAfterEnd(settings: AutoClockSettings, at: Date, plannedEnd: Date | null): boolean {
+  return (
+    decideAutoClockOut({
+      settings,
+      now: new Date(at.getTime() + settings.exitGraceMinutes * 60_000),
+      exitedAt: at,
+      stillOutside: true,
+      plannedEnd,
+      clockedIn: true,
+    }).action === 'CLOCK_OUT'
+  );
+}
+
+/** Clock skew and transport, on top of the undo window. */
+export const AUTO_CLOCK_UNDO_SLACK_MINUTES = 2;
+
+/**
+ * Until when the owner may undo an automatic clock-in. The phone clocks in only
+ * after the dwell and tells them then, so the window runs from that moment:
+ * clock-in + dwell + AUTO_CLOCK_UNDO_MINUTES, plus AUTO_CLOCK_UNDO_SLACK_MINUTES.
+ * Judged at the moment of the undo TAP (its evidence), so an undo made offline
+ * and sent later is judged when it was made.
+ */
+export function autoClockUndoDeadline(clockInAt: Date, settings: Pick<AutoClockSettings, 'dwellMinutes'>): Date {
+  return new Date(clockInAt.getTime() + (settings.dwellMinutes + AUTO_CLOCK_UNDO_MINUTES + AUTO_CLOCK_UNDO_SLACK_MINUTES) * 60_000);
+}

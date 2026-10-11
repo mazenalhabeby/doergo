@@ -6,6 +6,7 @@ import { ClockOutService } from './clock-out.service';
 import { ClockInService } from './clock-in.service';
 import { HeartbeatService } from './heartbeat.service';
 import { AttendanceReadService } from './attendance-read.service';
+import { AutoClockService } from './auto-clock.service';
 
 /**
  * The collaborators behind the AttendanceService facade. One list, read by the
@@ -20,4 +21,6 @@ export const ATTENDANCE_SERVICE_PARTS = [
   ClockInService,
   HeartbeatService,
   AttendanceReadService,
+  // The automatic clock: plan, consent, undo, and "is this member automatic" for the closers and sweeps.
+  AutoClockService,
 ];

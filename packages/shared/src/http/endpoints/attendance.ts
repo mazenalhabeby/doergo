@@ -19,6 +19,7 @@ import type {
 } from '../../types';
 import type { BreakType } from '../../types';
 import type { AutoClockPlan } from '../../attendance/auto-clock';
+import type { OccurrenceEvidence } from '../../sync/occurrence';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 import type { OvertimeRequest, PresignedUpload, ShiftIssue, ShiftIssueEvent, WorkLogAttachment, WorkLogNote } from '../types';
@@ -76,9 +77,9 @@ export const attendanceEndpoints = defineEndpoints('attendance', {
   /** The member's own consent (ArbVG §96); `consent: false` withdraws it and the phone disarms. */
   autoClockConsent: endpoint<void, { consentAt: string | null }, { consent: boolean }>({ method: 'POST', path: () => '/attendance/auto-clock/consent' }),
   /** Undo an automatic clock-in (a drive-past) — own entry, AUTO_CLOCK_IN, within AUTO_CLOCK_UNDO_MINUTES, nothing recorded on it. */
-  autoClockUndo: endpoint<Id, { undone: true }>({ method: 'POST', path: (a) => path`/attendance/entries/${a.id}/auto-undo` }),
+  autoClockUndo: endpoint<Id, { undone: true }, { evidence?: OccurrenceEvidence }>({ method: 'POST', path: (a) => path`/attendance/entries/${a.id}/auto-undo` }),
   /** "Still working" on the planned automatic rest — the server then applies no automatic rest to this shift. */
-  autoClockSkipRest: endpoint<Id, { skipped: true }>({ method: 'POST', path: (a) => path`/attendance/entries/${a.id}/auto-rest/skip` }),
+  autoClockSkipRest: endpoint<Id, { skipped: true }, { evidence?: OccurrenceEvidence }>({ method: 'POST', path: (a) => path`/attendance/entries/${a.id}/auto-rest/skip` }),
   heartbeat: endpoint<void, HeartbeatResult, { lat: number; lng: number; accuracy?: number }>({ method: 'POST', path: () => '/attendance/heartbeat' }),
   /** Check-ins kept while the phone had no signal, each with the moment it was taken. */
   heartbeatBatch: endpoint<void, { recorded: number; opened: boolean; returned: boolean }, { points: Array<{ lat: number; lng: number; accuracy?: number; recordedAt: string }> }>({

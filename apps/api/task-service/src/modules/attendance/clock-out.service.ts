@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   CLOCK_OUT_TIME_FLAGS,
   OPEN_EXCURSION_STATUSES,
@@ -23,15 +23,21 @@ import {
   OPEN_SHIFT_CLOSE,
   shortfallMinutes,
   SERVICE_NAMES,
+  AUTO_CLOCK_LIMITS,
+  AUTO_CLOCK_OUT_FLAG,
+  AUTO_REST_FLAG,
+  autoClockOutAfterEnd,
+  type ClockTrigger,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import { CountedTimeService } from './counted-time.service';
-import { flagsWithMissedRest, parseBreakPlan, type OccurrenceEvidence } from '@hbcfield/shared';
+import { MISSED_REST_FLAG, flagsWithMissedRest, parseBreakPlan, type OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { approvalFor, SAME_TAP_MS } from './attendance-occurrence';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ExtraTimeService } from './extra-time.service';
+import { AutoClockService } from './auto-clock.service';
 
 /**
  * What every close reads in the SAME query as the entry: all its rests (the
@@ -52,7 +58,11 @@ interface ClosableEntry {
   id: string;
   userId: string;
   organizationId: string;
+  /** The workspace — asked only when an automatic rest may be owed. */
+  locationId?: string;
   clockInAt: Date;
+  /** "Still working" on the automatic rest: none is inserted at the close. */
+  autoRestSkippedAt?: Date | null;
   expectedClockInAt?: Date | null;
   expectedClockOutAt?: Date | null;
   shiftId?: string | null;
@@ -117,6 +127,9 @@ export class ClockOutService {
     private readonly extraTime: ExtraTimeService,
     // Jobs left in work are paused at every way a shift ends (packages/shared/src/tasks/handover.ts).
     @Optional() private readonly jobPause?: JobPauseService,
+    // The automatic clock (attendance/auto-clock.ts): its re-check, its rest, its thresholds.
+    // Optional, like the job pause: a shift always closes; absent, nothing is automatic.
+    @Optional() private readonly autoClock?: AutoClockService,
   ) {}
 
   /**
@@ -153,6 +166,8 @@ export class ClockOutService {
     evidence?: OccurrenceEvidence;
     /** "What I did and what is left", per job, written in the clock-out sheet. */
     handovers?: ClockOutHandover[];
+    /** AUTO = the automatic clock, on leaving the area. Re-checked; not allowed → an ordinary clock-out. */
+    trigger?: ClockTrigger;
   }) {
     this.logger.log(`Clock out attempt: user=${data.userId}${data.entryId ? `, entry=${data.entryId}` : ''}`);
 
@@ -272,6 +287,18 @@ export class ClockOutService {
     // Departure" alongside the "Unscheduled" tag.)
     const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
     flagReasons.push(...clockOutTimeFlags(entry, clockOutTime, toleranceMin));
+
+    /*
+      ── The automatic clock ──
+      Marked only when it holds: the automatic clock is on for this member here
+      (asked of the shift's own clock-in) and they left at or after the planned
+      end. Anything else is an ordinary clock-out with the ordinary rules
+      (early departure included) — never refused.
+    */
+    if (data.trigger === 'AUTO' && this.autoClock) {
+      const auto = await this.autoClock.settingsFor(entry.userId, entry.locationId, entry.clockInAt);
+      if (auto && autoClockOutAfterEnd(auto, clockOutTime, entry.expectedClockOutAt)) flagReasons.push(AUTO_CLOCK_OUT_FLAG);
+    }
 
     /*
       How far short of the shift this falls.
@@ -404,13 +431,14 @@ export class ClockOutService {
     }
 
     // Entry landed in the approvals queue → nudge managers (bell + push).
-    if (approvalStatus === 'PENDING') {
+    // What the close SAVED — it may have settled a missed rest with the automatic one.
+    if (updatedEntry.approvalStatus === 'PENDING') {
       await this.sendPendingApprovalAlert({
         entryId: updatedEntry.id,
         userId: data.userId,
         organizationId: data.organizationId,
         locationName: entry.location.name,
-        flagReasons: uniqueFlags,
+        flagReasons: updatedEntry.flagReasons ?? uniqueFlags,
         totalMinutes,
       });
     }
@@ -552,6 +580,7 @@ export class ClockOutService {
    * both win. The rests and excursions ride in the same read (no query per row).
    */
   async closeAbandonedShifts(now: Date = new Date()) {
+    const autoClosed = await this.closeAutoShiftsPastEnd(now);
     const due = await this.prisma.timeEntry.findMany({
       where: {
         status: TimeEntryStatus.CLOCKED_IN,
@@ -569,44 +598,99 @@ export class ClockOutService {
       },
     });
 
-    let closed = 0;
+    let closed = autoClosed;
     for (const entry of due) {
       if (!isAbandoned(entry, now)) continue;
-      const { at, basis } = provisionalClockOut({
-        clockInAt: entry.clockInAt,
-        expectedClockOutAt: entry.expectedClockOutAt,
-        leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
-        now,
-      });
-
-      const flags = [...new Set([...(entry.flagReasons ?? []), 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'])];
-      // A rest still running when the member forgot ends with the temporary time.
-      const outcome = await this.closeEntry(entry, {
-        at,
-        from: 'OPEN',
-        fields: { clockOutProvisional: true, clockOutBasis: basis, flagReasons: flags, approvalStatus: 'PENDING' },
-        // The jobs stop at the same guess; the member's real clock-out moves them.
-        pause: { reason: 'AUTO_CLOSE', sinceClockIn: false },
-        announce: false,
-        readBack: false,
-        now,
-      });
-      if (!outcome) continue;
-      closed++;
-
-      this.notificationClient.emit('attendance_shift_closed_provisionally', {
-        entryId: entry.id,
-        userId: entry.userId,
-        clockInAt: entry.clockInAt.toISOString(),
-        clockOutAt: at.toISOString(),
-        basis,
-        timezone: entry.timezone ?? 'UTC',
-        locationName: entry.location?.name ?? null,
-        organizationId: entry.organizationId,
-      });
+      if (await this.closeProvisionally(entry, now)) closed++;
     }
     if (closed) this.logger.log(`Closed ${closed} abandoned shift(s) with a temporary clock-out`);
     return success({ closed });
+  }
+
+  /**
+   * The automatic clock's "nobody answered": a member it is on for, still
+   * clocked in `closeAfterMinutes` past the planned end, is closed with the
+   * SAME temporary clock-out as an abandoned shift (`closeProvisionally`) — so
+   * the phone's own automatic clock-out, arriving later with the moment they
+   * really left, replaces it exactly as any real clock-out does.
+   *
+   * Two cheap reads: the open shifts at workspaces that have settings at all,
+   * past the SHORTEST threshold the settings allow (narrow columns), then the
+   * full rows of only those actually due — never a full row per candidate.
+   */
+  private async closeAutoShiftsPastEnd(now: Date): Promise<number> {
+    if (!this.autoClock) return 0;
+    const candidates = await this.prisma.timeEntry.findMany({
+      where: {
+        status: TimeEntryStatus.CLOCKED_IN,
+        expectedClockOutAt: { lte: new Date(now.getTime() - AUTO_CLOCK_LIMITS.closeAfterMinutes[0] * 60_000) },
+        location: { autoClock: { not: Prisma.DbNull } },
+      },
+      orderBy: { expectedClockOutAt: 'asc' },
+      take: OPEN_SHIFT_CLOSE.BATCH * 5,
+      select: { id: true, userId: true, locationId: true, clockInAt: true, expectedClockOutAt: true },
+    });
+    if (!candidates.length) return 0;
+    const settings = await this.autoClock.settingsForEntries(candidates, now);
+    const dueIds = candidates
+      .filter((c) => {
+        const s = settings.get(c.id);
+        return !!s && !!c.expectedClockOutAt && now.getTime() - c.expectedClockOutAt.getTime() >= s.closeAfterMinutes * 60_000;
+      })
+      .slice(0, OPEN_SHIFT_CLOSE.BATCH)
+      .map((c) => c.id);
+    if (!dueIds.length) return 0;
+    const due = await this.prisma.timeEntry.findMany({
+      where: { id: { in: dueIds }, status: TimeEntryStatus.CLOCKED_IN },
+      include: { ...CLOSE_ENTRY_INCLUDE, location: { select: { name: true } } },
+    });
+    let closed = 0;
+    for (const entry of due) if (await this.closeProvisionally(entry, now)) closed++;
+    return closed;
+  }
+
+  /** One temporary close — the abandoned-shift sweep's, and the automatic clock's. False when somebody closed it first. */
+  private async closeProvisionally(
+    entry: ClosableEntry & {
+      expectedClockOutAt: Date | null;
+      timezone?: string | null;
+      geofenceExcursions: { id: string; leftRingAt: Date }[];
+      location?: { name: string } | null;
+    },
+    now: Date,
+  ): Promise<boolean> {
+    const { at, basis } = provisionalClockOut({
+      clockInAt: entry.clockInAt,
+      expectedClockOutAt: entry.expectedClockOutAt,
+      leftSiteAt: entry.geofenceExcursions[0]?.leftRingAt ?? null,
+      now,
+    });
+
+    const flags = [...new Set([...(entry.flagReasons ?? []), 'MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL'])];
+    // A rest still running when the member forgot ends with the temporary time.
+    const outcome = await this.closeEntry(entry, {
+      at,
+      from: 'OPEN',
+      fields: { clockOutProvisional: true, clockOutBasis: basis, flagReasons: flags, approvalStatus: 'PENDING' },
+      // The jobs stop at the same guess; the member's real clock-out moves them.
+      pause: { reason: 'AUTO_CLOSE', sinceClockIn: false },
+      announce: false,
+      readBack: false,
+      now,
+    });
+    if (!outcome) return false;
+
+    this.notificationClient.emit('attendance_shift_closed_provisionally', {
+      entryId: entry.id,
+      userId: entry.userId,
+      clockInAt: entry.clockInAt.toISOString(),
+      clockOutAt: at.toISOString(),
+      basis,
+      timezone: entry.timezone ?? 'UTC',
+      locationName: entry.location?.name ?? null,
+      organizationId: entry.organizationId,
+    });
+    return true;
   }
 
   /**
@@ -691,7 +775,20 @@ export class ClockOutService {
     const now = spec.now ?? new Date();
     const at = spec.at;
     const status = spec.status ?? TimeEntryStatus.CLOCKED_OUT;
-    const rests = endRunningRests(entry.breaks ?? [], at, now);
+    /*
+      The automatic rest (attendance/auto-clock.ts): an automatic member who took
+      no rest and did not answer "Still working" gets the planned one, as a REST
+      ROW like any other, BEFORE counted time is worked out — so it counts the
+      same way everywhere a rest counts. Skipped → nothing here; the missed-rest
+      rule below flags it as for anybody.
+    */
+    const autoRest = this.autoClock && entry.locationId
+      ? await this.autoClock.autoRestAtClose({ ...entry, locationId: entry.locationId }, at)
+      : null;
+    const restRows: RestRow[] = autoRest
+      ? [...(entry.breaks ?? []), { id: '', startedAt: autoRest.startedAt, endedAt: autoRest.endedAt, durationMinutes: autoRest.minutes, isPaid: false }]
+      : entry.breaks ?? [];
+    const rests = endRunningRests(restRows, at, now);
     const counted = await this.countedTime.columnsFor(
       { ...entry, breakMinutes: rests.breakMinutes, unpaidBreakMinutes: rests.unpaidBreakMinutes },
       at,
@@ -705,8 +802,20 @@ export class ClockOutService {
       its own approval and alert; asking again is a no-op (deduplicated).
     */
     const baseFlags = ((spec.fields.flagReasons as string[] | undefined) ?? entry.flagReasons ?? []) as string[];
-    const closeFlags = flagsWithMissedRest(baseFlags, parseBreakPlan(entry.breakPlan), at);
-    const missedAtClose = closeFlags.length !== baseFlags.length;
+    let closeFlags = flagsWithMissedRest(baseFlags, parseBreakPlan(entry.breakPlan), at);
+    let flagsChanged = closeFlags.length !== baseFlags.length;
+    let closeApproval: 'AUTO' | 'PENDING' = 'PENDING';
+    if (autoRest || baseFlags.includes(AUTO_REST_FLAG)) {
+      /*
+        The rest WAS taken — automatically. It is not missed, and saying so is
+        informational: the entry goes to review only for what else it carries
+        (a close the caller forced to review stays there).
+      */
+      const forcedReview = spec.fields.approvalStatus === 'PENDING' && approvalFor(baseFlags) !== 'PENDING';
+      closeFlags = [...new Set([...closeFlags.filter((f) => f !== MISSED_REST_FLAG), AUTO_REST_FLAG])];
+      closeApproval = forcedReview ? 'PENDING' : approvalFor(closeFlags);
+      flagsChanged = true;
+    }
 
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({
@@ -729,10 +838,24 @@ export class ClockOutService {
           nextRemindAt: null,
           nextBreakRemindAt: null,
           ...spec.fields,
-          ...(missedAtClose ? { flagReasons: closeFlags, approvalStatus: 'PENDING' } : {}),
+          ...(flagsChanged ? { flagReasons: closeFlags, approvalStatus: closeApproval } : {}),
         },
       });
       if (claim.count === 0) return null;
+      if (autoRest) {
+        // Recognisable as the automatic one: no person added it, and the reason says what it is.
+        await tx.break.create({
+          data: {
+            timeEntryId: entry.id,
+            type: 'LUNCH',
+            isPaid: false,
+            startedAt: autoRest.startedAt,
+            endedAt: autoRest.endedAt,
+            durationMinutes: autoRest.minutes,
+            reason: AUTO_REST_FLAG,
+          },
+        });
+      }
       for (const r of rests.ends) {
         await tx.break.update({ where: { id: r.id }, data: { endedAt: r.endedAt, durationMinutes: r.minutes } });
       }
