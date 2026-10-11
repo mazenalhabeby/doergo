@@ -55,13 +55,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       1.0.7 — the store release carrying v2 (haptics, the drag-to-arrange
       home) and the Play hardening (R8, edge-to-edge, large screens).
 
+      1.0.8 — import clients from the phone's address book (expo-contacts,
+      read-only) and the iOS text reader on Apple Vision.
+
       ⚠️ `runtimeVersion` follows this, so bumping it opens a NEW OTA train.
       Updates published from here reach 1.0.5 installs only; anyone still on
       1.0.4 keeps the JS they have and stops receiving updates, which is correct
       — their binary has different native code. Never publish current JS to an
       older train: the older native side crashes on it.
     */
-    version: '1.0.7',
+    version: '1.0.8',
     // 'default' allows landscape on tablets. Phones are kept portrait so their
     // phone-first UI is never shown rotated: iPhone via the idiom-specific
     // infoPlist keys below, Android phones via a runtime lock in the root layout.
