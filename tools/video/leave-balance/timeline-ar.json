@@ -1,0 +1,124 @@
+{
+ "chapters": [
+  {
+   "id": "problem",
+   "start": 0.4,
+   "end": 21.283,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 8.573,
+     "scene": "problem"
+    },
+    {
+     "start": 9.345,
+     "end": 20.583,
+     "scene": "problem"
+    }
+   ]
+  },
+  {
+   "id": "start",
+   "start": 21.283,
+   "end": 46.932,
+   "phrases": [
+    {
+     "start": 21.283,
+     "end": 27.564,
+     "scene": "start"
+    },
+    {
+     "start": 28.266,
+     "end": 38.018,
+     "scene": "start"
+    },
+    {
+     "start": 38.824,
+     "end": 46.231,
+     "scene": "start"
+    }
+   ]
+  },
+  {
+   "id": "ledger",
+   "start": 46.932,
+   "end": 67.63,
+   "phrases": [
+    {
+     "start": 46.932,
+     "end": 55.547,
+     "scene": "ledger"
+    },
+    {
+     "start": 56.225,
+     "end": 66.929,
+     "scene": "ledger"
+    }
+   ]
+  },
+  {
+   "id": "member",
+   "start": 67.63,
+   "end": 85.262,
+   "phrases": [
+    {
+     "start": 67.63,
+     "end": 79.426,
+     "scene": "member"
+    },
+    {
+     "start": 80.104,
+     "end": 84.563,
+     "scene": "member"
+    }
+   ]
+  },
+  {
+   "id": "carry",
+   "start": 85.262,
+   "end": 104.567,
+   "phrases": [
+    {
+     "start": 85.262,
+     "end": 97.174,
+     "scene": "carry"
+    },
+    {
+     "start": 97.76,
+     "end": 103.867,
+     "scene": "carry"
+    }
+   ]
+  },
+  {
+   "id": "year",
+   "start": 104.567,
+   "end": 122.524,
+   "phrases": [
+    {
+     "start": 104.567,
+     "end": 113.263,
+     "scene": "year"
+    },
+    {
+     "start": 113.93,
+     "end": 121.825,
+     "scene": "year"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "start": 122.524,
+   "end": 142.018,
+   "phrases": [
+    {
+     "start": 122.524,
+     "end": 141.518,
+     "scene": "build"
+    }
+   ]
+  }
+ ],
+ "duration": 143.52
+}

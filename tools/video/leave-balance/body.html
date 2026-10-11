@@ -1,0 +1,181 @@
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · رصيد الإجازات</div>
+      <h1>الرصيد الافتتاحي للإجازات</h1>
+      <p class="lede">شركة تبدأ في منتصف السنة، وموظفوها أخذوا جزءاً من إجازاتهم في نظام قديم. هكذا يعرف النظام الرصيد الصحيح، ويشرحه، ويرحّله في نهاية السنة.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / __DUR__</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="problem">
+          <div class="sTitle">مارك فيبر</div>
+          <div class="sSub">بدأت الشركة في إتش بي سي فيلد · <span class="num">1 Aug</span></div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي</span><span class="num">25</span></div><div class="ln"><span>أُخذ في النظام القديم</span><span class="num">10</span></div></div>
+          <div class="card row"><span>المتبقي اليوم</span><span class="chip bad num">25 ✗</span></div>
+          <div class="card row"><span>الصحيح</span><span class="chip ok num">15</span></div>
+        </div>
+
+        <div class="screen" data-scene="start">
+          <div class="sTitle">الأرصدة الافتتاحية</div>
+          <div class="sSub"><span class="num">2026</span> · مرة واحدة عند البدء</div>
+          <div class="card">
+            <div class="ln"><span style="color:var(--phoneMuted)">الموظف</span><span style="color:var(--phoneMuted)">أُخذ · مرحّل</span></div>
+            <div class="ln"><span>مارك فيبر</span><span class="num">10 · 0</span></div>
+            <div class="ln"><span>سارة فاغنر</span><span class="num">6 · 2</span></div>
+            <div class="ln"><span>كريم أحمد</span><span class="num">14 · 0</span></div>
+            <div class="ln"><span>ليزا أدلر</span><span class="num">3 · 4</span></div>
+          </div>
+          <div class="opts"><span class="opt">لصق من ملف</span><span class="opt sel">حفظ</span></div>
+          <div class="card row"><span>مارك</span><span class="chip ok num">25 − 10 = 15</span></div>
+        </div>
+
+        <div class="screen" data-scene="ledger">
+          <div class="sTitle">حركات رصيد مارك</div>
+          <div class="sSub"><span class="num">2026</span></div>
+          <div class="card">
+            <div class="ln"><span>الرصيد السنوي</span><span class="num">+25</span></div>
+            <div class="ln"><span>أُخذ قبل البدء · آنا · <span class="num">1 Aug</span></span><span class="num">−10</span></div>
+            <div class="ln"><span>إجازة · <span class="num">14–16 Oct</span></span><span class="num">−3</span></div>
+            <div class="ln"><span>رُحّل من <span class="num">2025</span></span><span class="num">+2</span></div>
+            <div class="ln"><span>المتبقي</span><span class="chip ok num">14</span></div>
+          </div>
+          <div class="sSub">كل سطر: الأيام، السبب، من، ومتى</div>
+        </div>
+
+        <div class="screen" data-scene="member">
+          <div class="sTitle">إجازة سنوية</div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي</span><span class="num">25</span></div><div class="ln"><span>قبل البدء</span><span class="num">−10</span></div><div class="ln"><span>أُخذ</span><span class="num">−3</span></div><div class="ln"><span>مرحّل</span><span class="num">+2</span></div><div class="ln"><span>المتبقي</span><span class="chip ok num">14</span></div></div>
+          <div class="card row"><span>هذا الطلب · <span class="num">3</span> أيام عمل</span><span class="num">14 → 11</span></div>
+          <div class="btn">إرسال</div>
+        </div>
+
+        <div class="screen" data-scene="carry">
+          <div class="sTitle">الترحيل</div>
+          <div class="sSub">إعداد الشركة</div>
+          <div class="opts"><span class="opt">لا ترحيل</span><span class="opt sel">حتى <span class="num">5</span> أيام</span><span class="opt">كل الأيام</span></div>
+          <div class="card row"><span>تنتهي الأيام المرحّلة</span><span class="num">31 Mar</span></div>
+          <div class="notif"><small class="num">1 Jan 2027</small>رُحّل <span class="num">5</span> من <span class="num">9</span> متبقية · يمكن التراجع</div>
+        </div>
+
+        <div class="screen" data-scene="year">
+          <div class="sTitle">سنة الإجازة</div>
+          <div class="opts"><span class="opt">السنة الميلادية</span><span class="opt sel">سنة العمل</span></div>
+          <div class="card row"><span>مارك بدأ العمل</span><span class="num">15 Apr 2019</span></div>
+          <div class="card row"><span>سنة إجازته</span><span class="num">15 Apr – 14 Apr</span></div>
+          <div class="notif"><small>النمسا</small>سنة العمل هي الافتراضية، إلا باتفاق على السنة الميلادية</div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">على ماذا يُبنى</div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي والخاص</span><span class="chip ok">موجود</span></div><div class="ln"><span>الحساب النسبي</span><span class="chip ok">موجود</span></div><div class="ln"><span>أيام العمل</span><span class="chip ok">موجود</span></div><div class="ln"><span>سجلّ الحركات</span><span class="chip warn">جديد</span></div><div class="ln"><span>الأرصدة الافتتاحية</span><span class="chip warn">جديد</span></div><div class="ln"><span>الترحيل · سنة الإجازة</span><span class="chip warn">جديد</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      __CHAPTERS__
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>كيف يُحسب الرصيد</h2>
+    <p class="sectionLede">الرصيد ليس رقماً يُعدَّل، بل مجموع حركات ظاهرة. كل حركة لها سبب وصاحب وتاريخ.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>الحركة</th><th>مثال مارك</th><th>من يسجّلها</th><th>متى</th></tr></thead>
+      <tbody>
+        <tr><td>الرصيد السنوي</td><td class="num">+25</td><td>تلقائياً، من رصيد الشركة أو الخاص به</td><td>بداية سنة الإجازة</td></tr>
+        <tr><td>أُخذ قبل إتش بي سي فيلد</td><td class="num">−10</td><td>المدير، في شاشة الأرصدة الافتتاحية</td><td>مرة واحدة عند البدء</td></tr>
+        <tr><td>إجازة مقبولة</td><td class="num">−3</td><td>تلقائياً عند الموافقة، بأيام العمل فقط</td><td>عند الموافقة</td></tr>
+        <tr><td>مرحّل من السنة الماضية</td><td class="num">+2</td><td>تلقائياً، حسب قاعدة الترحيل</td><td>أول سنة الإجازة</td></tr>
+        <tr><td>تصحيح أو يوم إضافي</td><td>±</td><td>المدير، مع سبب</td><td>في أي وقت</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules">
+    <h2>على ماذا يُبنى</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">✓</span>موجود اليوم</h3><ul>
+        <li>رصيد الشركة الافتراضي، ورصيد خاص لكل موظف.</li>
+        <li>الحساب النسبي للسنة الأولى من تاريخ بدء العمل الحقيقي.</li>
+        <li>حساب أيام العمل فقط: عطلة نهاية الأسبوع والعطل لا تُخصم.</li>
+        <li>الإجازة السنوية وحدها تُخصم؛ المرضية والعائلية لا.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">+</span>يجب إضافته</h3><ul>
+        <li>سجلّ حركات الرصيد، لكل موظف ولكل سنة، مع سجلّ النشاط.</li>
+        <li>شاشة الأرصدة الافتتاحية، مع اللصق من ملف.</li>
+        <li>قاعدة الترحيل وتاريخ انتهائه، تُطبَّق تلقائياً.</li>
+        <li>إعداد سنة الإجازة: ميلادية أو سنة عمل.</li>
+        <li>شرح الرصيد للموظف في صفحة الطلبات.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">§</span>النمسا</h3><ul>
+        <li><span class="num">25</span> يوم عمل في السنة (خمسة أسابيع).</li>
+        <li>سنة الإجازة افتراضياً سنة العمل، إلا باتفاق على السنة الميلادية.</li>
+        <li>الإجازة تسقط بعد سنتين من نهاية السنة التي استُحقّت فيها (UrlG §4).</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __TIMELINE__;
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = {};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>

@@ -1,0 +1,320 @@
+<title>الرصيد الافتتاحي للإجازات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f2f5f6; --surface:#ffffff; --surface2:#e9eef0; --line:rgba(11,20,22,.10);
+  --ink:#0b1416; --ink2:#3f4f57; --muted:#6b7a82;
+  --accent:#0d8f72; --accentTint:rgba(13,143,114,.10);
+  --warn:#a8650f; --warnTint:rgba(168,101,15,.12);
+  --bad:#bf4336; --badTint:rgba(191,67,54,.10);
+  --phone:#05080a; --phoneInk:#f1f6fa; --phoneMuted:#8b979e; --phoneLine:rgba(241,246,250,.09);
+  --pAccent:#66dbba; --pWarn:#f2b263; --pBad:#fd978c; --pTile:rgba(241,246,250,.06);
+  --sans:"Readex Pro",system-ui,"Segoe UI",Tahoma,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#040507; --surface:#0b1113; --surface2:#111a1d; --line:rgba(241,246,250,.08);
+  --ink:#f1f6fa; --ink2:#c3ccd2; --muted:#7c8a92;
+  --accent:#66dbba; --accentTint:rgba(102,219,186,.10);
+  --warn:#f2b263; --warnTint:rgba(242,178,99,.10);
+  --bad:#fd978c; --badTint:rgba(253,151,140,.10);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.75;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
+.eyebrow{font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+h1{font-weight:500;font-size:clamp(26px,4vw,38px);line-height:1.3;margin:4px 0 6px;text-wrap:balance}
+.lede{color:var(--ink2);max-width:60ch;margin:0}
+.player{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 16px;min-width:min(100%,340px)}
+.play{appearance:none;border:0;cursor:pointer;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--bg);display:grid;place-items:center;flex:none}
+.play:focus-visible,.chap:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.play svg{width:18px;height:18px}
+.bar{position:relative;flex:1;height:6px;border-radius:3px;background:var(--surface2);cursor:pointer}
+.bar i{position:absolute;inset-block:0;right:0;width:0;border-radius:3px;background:var(--accent)}
+.time{font-size:12.5px;color:var(--muted);min-width:84px;text-align:center}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px;align-items:start}
+@media (max-width:860px){.stage{grid-template-columns:1fr}}
+.phoneCol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;align-items:center;gap:14px}
+@media (max-width:860px){.phoneCol{position:static}}
+.phone{position:relative;width:min(100%,320px);aspect-ratio:9/19;border-radius:44px;background:var(--phone);border:10px solid #1a2226;box-shadow:0 30px 60px -30px rgba(0,0,0,.55);overflow:hidden;color:var(--phoneInk)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:14px;background:#000;z-index:5}
+.status{position:absolute;top:12px;inset-inline:22px;display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);z-index:4}
+.screen{position:absolute;inset:0;padding:54px 16px 18px;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .45s ease;pointer-events:none}
+.screen.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.screen{transition:none}}
+.sTitle{font-size:16px;font-weight:500}
+.sSub{font-size:12px;color:var(--phoneMuted);margin-top:-6px}
+.card{background:var(--pTile);border:1px solid var(--phoneLine);border-radius:18px;padding:12px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;border-radius:999px;padding:3px 10px;background:var(--pTile);color:var(--phoneInk)}
+.chip.ok{background:rgba(102,219,186,.14);color:var(--pAccent)}
+.chip.warn{background:rgba(242,178,99,.14);color:var(--pWarn)}
+.chip.bad{background:rgba(253,151,140,.14);color:var(--pBad)}
+.btn{border-radius:999px;padding:11px;text-align:center;font-size:14px;font-weight:500;background:var(--pAccent);color:#04120d}
+.btn.ghost{background:var(--pTile);color:var(--phoneInk)}
+.btn.off{background:var(--pTile);color:var(--phoneMuted)}
+.bigClock{margin:22px auto 8px;width:178px;height:178px;border-radius:50%;display:grid;place-items:center;text-align:center;background:radial-gradient(circle at 50% 40%,rgba(102,219,186,.28),rgba(102,219,186,.06) 70%);border:1.5px solid rgba(102,219,186,.6)}
+.bigClock b{display:block;font-size:30px;font-weight:400}
+.bigClock span{font-size:12.5px;color:var(--pAccent)}
+.map{position:relative;height:210px;border-radius:18px;overflow:hidden;background:
+  linear-gradient(90deg,rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,
+  linear-gradient(rgba(241,246,250,.04) 1px,transparent 1px) 0 0/28px 28px,#0a1214}
+.ring{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px;border-radius:50%;border:1.5px dashed rgba(102,219,186,.7);background:rgba(102,219,186,.07)}
+.pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--pAccent)}
+.me{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;background:#7fb2ff;box-shadow:0 0 0 4px rgba(127,178,255,.22)}
+.halo{position:absolute;border-radius:50%;background:rgba(127,178,255,.13);border:1px solid rgba(127,178,255,.35)}
+.scale{position:absolute;bottom:8px;left:10px;font-size:10.5px;color:var(--phoneMuted)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0;border-bottom:1px solid var(--phoneLine)}
+.check:last-child{border-bottom:0}
+.dot{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;margin-top:2px}
+.dot.ok{background:rgba(102,219,186,.16);color:var(--pAccent)}
+.dot.bad{background:rgba(253,151,140,.16);color:var(--pBad)}
+.tl{position:relative;height:56px;margin:8px 4px}
+.tl .track{position:absolute;inset-inline:0;top:24px;height:8px;border-radius:4px;background:var(--pTile)}
+.tl .seg{position:absolute;top:24px;height:8px;border-radius:4px}
+.tl .lbl{position:absolute;top:0;font-size:10.5px;color:var(--phoneMuted);transform:translateX(50%)}
+.tl .lbl.b{top:38px}
+.notif{background:rgba(241,246,250,.08);border-radius:16px;padding:9px 12px;font-size:12.5px}
+.notif small{display:block;color:var(--phoneMuted);font-size:10.5px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1px solid var(--phoneLine);border-radius:12px;padding:7px 10px;font-size:12px}
+.opt.sel{border-color:var(--pAccent);color:var(--pAccent);background:rgba(102,219,186,.08)}
+.bars{display:flex;flex-direction:column;gap:12px}
+.bars .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--phoneMuted);margin-bottom:4px}
+.bars .b{height:14px;border-radius:7px;background:var(--pTile);position:relative;overflow:hidden}
+.bars .b i{position:absolute;inset-block:0;border-radius:7px}
+.flow{display:flex;flex-direction:column;gap:8px}
+.flow .step{display:flex;gap:10px;align-items:center;font-size:13px}
+.ln{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:6px 0;border-bottom:1px solid var(--phoneLine)}
+.ln:last-child{border-bottom:0}
+table.map2{width:100%;border-collapse:collapse;font-size:14px}table.map2 th,table.map2 td{text-align:start;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}table.map2 th{font-weight:500;color:var(--muted);font-size:12.5px}.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.flow .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;background:var(--pTile)}
+.caption{width:min(100%,360px);min-height:84px;text-align:center;font-size:15px;line-height:1.7;color:var(--ink2);text-wrap:balance}
+.side{display:flex;flex-direction:column;gap:6px}
+.side h2{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+.chap{appearance:none;border:1px solid transparent;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:start;display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-radius:14px}
+.chap:hover{background:var(--surface)}
+.chap.on{background:var(--surface);border-color:var(--line)}
+.chap .k{font-size:12px;color:var(--muted);min-width:42px}
+.chap b{font-weight:500;font-size:14.5px;display:block}
+.chap span{font-size:12.5px;color:var(--muted)}
+.chap.on b{color:var(--accent)}
+section.rules{margin-top:56px}
+section.rules > h2,section.issues > h2{font-weight:500;font-size:24px;margin:0 0 6px}
+.sectionLede{color:var(--ink2);margin:0 0 22px;max-width:62ch}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.group h3{font-size:16px;font-weight:500;margin:0 0 10px;display:flex;gap:10px;align-items:baseline}
+.group h3 .num{font-size:12px;color:var(--accent)}
+.group ul{margin:0;padding-inline-start:18px;display:flex;flex-direction:column;gap:7px;color:var(--ink2);font-size:14px}
+.group li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:12px;background:var(--surface2);border-radius:6px;padding:1px 6px;direction:ltr;unicode-bidi:isolate}
+section.issues{margin-top:48px}
+.issueList{display:flex;flex-direction:column;gap:10px}
+.issue{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.sev{font-size:11.5px;border-radius:999px;padding:2px 10px;height:fit-content;white-space:nowrap}
+.sev.h{background:var(--badTint);color:var(--bad)}
+.sev.m{background:var(--warnTint);color:var(--warn)}
+.issue b{font-weight:500}
+.issue p{grid-column:2;margin:0;color:var(--ink2);font-size:14px}
+footer{margin-top:40px;color:var(--muted);font-size:12.5px}
+</style>
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · رصيد الإجازات</div>
+      <h1>الرصيد الافتتاحي للإجازات</h1>
+      <p class="lede">شركة تبدأ في منتصف السنة، وموظفوها أخذوا جزءاً من إجازاتهم في نظام قديم. هكذا يعرف النظام الرصيد الصحيح، ويشرحه، ويرحّله في نهاية السنة.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / 2:23</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="problem">
+          <div class="sTitle">مارك فيبر</div>
+          <div class="sSub">بدأت الشركة في إتش بي سي فيلد · <span class="num">1 Aug</span></div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي</span><span class="num">25</span></div><div class="ln"><span>أُخذ في النظام القديم</span><span class="num">10</span></div></div>
+          <div class="card row"><span>المتبقي اليوم</span><span class="chip bad num">25 ✗</span></div>
+          <div class="card row"><span>الصحيح</span><span class="chip ok num">15</span></div>
+        </div>
+
+        <div class="screen" data-scene="start">
+          <div class="sTitle">الأرصدة الافتتاحية</div>
+          <div class="sSub"><span class="num">2026</span> · مرة واحدة عند البدء</div>
+          <div class="card">
+            <div class="ln"><span style="color:var(--phoneMuted)">الموظف</span><span style="color:var(--phoneMuted)">أُخذ · مرحّل</span></div>
+            <div class="ln"><span>مارك فيبر</span><span class="num">10 · 0</span></div>
+            <div class="ln"><span>سارة فاغنر</span><span class="num">6 · 2</span></div>
+            <div class="ln"><span>كريم أحمد</span><span class="num">14 · 0</span></div>
+            <div class="ln"><span>ليزا أدلر</span><span class="num">3 · 4</span></div>
+          </div>
+          <div class="opts"><span class="opt">لصق من ملف</span><span class="opt sel">حفظ</span></div>
+          <div class="card row"><span>مارك</span><span class="chip ok num">25 − 10 = 15</span></div>
+        </div>
+
+        <div class="screen" data-scene="ledger">
+          <div class="sTitle">حركات رصيد مارك</div>
+          <div class="sSub"><span class="num">2026</span></div>
+          <div class="card">
+            <div class="ln"><span>الرصيد السنوي</span><span class="num">+25</span></div>
+            <div class="ln"><span>أُخذ قبل البدء · آنا · <span class="num">1 Aug</span></span><span class="num">−10</span></div>
+            <div class="ln"><span>إجازة · <span class="num">14–16 Oct</span></span><span class="num">−3</span></div>
+            <div class="ln"><span>رُحّل من <span class="num">2025</span></span><span class="num">+2</span></div>
+            <div class="ln"><span>المتبقي</span><span class="chip ok num">14</span></div>
+          </div>
+          <div class="sSub">كل سطر: الأيام، السبب، من، ومتى</div>
+        </div>
+
+        <div class="screen" data-scene="member">
+          <div class="sTitle">إجازة سنوية</div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي</span><span class="num">25</span></div><div class="ln"><span>قبل البدء</span><span class="num">−10</span></div><div class="ln"><span>أُخذ</span><span class="num">−3</span></div><div class="ln"><span>مرحّل</span><span class="num">+2</span></div><div class="ln"><span>المتبقي</span><span class="chip ok num">14</span></div></div>
+          <div class="card row"><span>هذا الطلب · <span class="num">3</span> أيام عمل</span><span class="num">14 → 11</span></div>
+          <div class="btn">إرسال</div>
+        </div>
+
+        <div class="screen" data-scene="carry">
+          <div class="sTitle">الترحيل</div>
+          <div class="sSub">إعداد الشركة</div>
+          <div class="opts"><span class="opt">لا ترحيل</span><span class="opt sel">حتى <span class="num">5</span> أيام</span><span class="opt">كل الأيام</span></div>
+          <div class="card row"><span>تنتهي الأيام المرحّلة</span><span class="num">31 Mar</span></div>
+          <div class="notif"><small class="num">1 Jan 2027</small>رُحّل <span class="num">5</span> من <span class="num">9</span> متبقية · يمكن التراجع</div>
+        </div>
+
+        <div class="screen" data-scene="year">
+          <div class="sTitle">سنة الإجازة</div>
+          <div class="opts"><span class="opt">السنة الميلادية</span><span class="opt sel">سنة العمل</span></div>
+          <div class="card row"><span>مارك بدأ العمل</span><span class="num">15 Apr 2019</span></div>
+          <div class="card row"><span>سنة إجازته</span><span class="num">15 Apr – 14 Apr</span></div>
+          <div class="notif"><small>النمسا</small>سنة العمل هي الافتراضية، إلا باتفاق على السنة الميلادية</div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">على ماذا يُبنى</div>
+          <div class="card"><div class="ln"><span>الرصيد السنوي والخاص</span><span class="chip ok">موجود</span></div><div class="ln"><span>الحساب النسبي</span><span class="chip ok">موجود</span></div><div class="ln"><span>أيام العمل</span><span class="chip ok">موجود</span></div><div class="ln"><span>سجلّ الحركات</span><span class="chip warn">جديد</span></div><div class="ln"><span>الأرصدة الافتتاحية</span><span class="chip warn">جديد</span></div><div class="ln"><span>الترحيل · سنة الإجازة</span><span class="chip warn">جديد</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      <button class="chap on" data-ch="problem"><span class="k num">0:00</span><div><b>المشكلة</b><span>رصيد خاطئ بعد البدء</span></div></button>
+      <button class="chap" data-ch="start"><span class="k num">0:21</span><div><b>الأرصدة الافتتاحية</b><span>مرة واحدة عند البدء</span></div></button>
+      <button class="chap" data-ch="ledger"><span class="k num">0:46</span><div><b>سجلّ الحركات</b><span>الرصيد يشرح نفسه</span></div></button>
+      <button class="chap" data-ch="member"><span class="k num">1:07</span><div><b>ما يراه الموظف</b><span>الرقم الصحيح قبل الإرسال</span></div></button>
+      <button class="chap" data-ch="carry"><span class="k num">1:25</span><div><b>الترحيل</b><span>حسب قاعدة الشركة</span></div></button>
+      <button class="chap" data-ch="year"><span class="k num">1:44</span><div><b>سنة الإجازة</b><span>ميلادية أو سنة عمل</span></div></button>
+      <button class="chap" data-ch="build"><span class="k num">2:02</span><div><b>على ماذا يُبنى</b><span>الموجود والجديد</span></div></button>
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>كيف يُحسب الرصيد</h2>
+    <p class="sectionLede">الرصيد ليس رقماً يُعدَّل، بل مجموع حركات ظاهرة. كل حركة لها سبب وصاحب وتاريخ.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>الحركة</th><th>مثال مارك</th><th>من يسجّلها</th><th>متى</th></tr></thead>
+      <tbody>
+        <tr><td>الرصيد السنوي</td><td class="num">+25</td><td>تلقائياً، من رصيد الشركة أو الخاص به</td><td>بداية سنة الإجازة</td></tr>
+        <tr><td>أُخذ قبل إتش بي سي فيلد</td><td class="num">−10</td><td>المدير، في شاشة الأرصدة الافتتاحية</td><td>مرة واحدة عند البدء</td></tr>
+        <tr><td>إجازة مقبولة</td><td class="num">−3</td><td>تلقائياً عند الموافقة، بأيام العمل فقط</td><td>عند الموافقة</td></tr>
+        <tr><td>مرحّل من السنة الماضية</td><td class="num">+2</td><td>تلقائياً، حسب قاعدة الترحيل</td><td>أول سنة الإجازة</td></tr>
+        <tr><td>تصحيح أو يوم إضافي</td><td>±</td><td>المدير، مع سبب</td><td>في أي وقت</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules">
+    <h2>على ماذا يُبنى</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">✓</span>موجود اليوم</h3><ul>
+        <li>رصيد الشركة الافتراضي، ورصيد خاص لكل موظف.</li>
+        <li>الحساب النسبي للسنة الأولى من تاريخ بدء العمل الحقيقي.</li>
+        <li>حساب أيام العمل فقط: عطلة نهاية الأسبوع والعطل لا تُخصم.</li>
+        <li>الإجازة السنوية وحدها تُخصم؛ المرضية والعائلية لا.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">+</span>يجب إضافته</h3><ul>
+        <li>سجلّ حركات الرصيد، لكل موظف ولكل سنة، مع سجلّ النشاط.</li>
+        <li>شاشة الأرصدة الافتتاحية، مع اللصق من ملف.</li>
+        <li>قاعدة الترحيل وتاريخ انتهائه، تُطبَّق تلقائياً.</li>
+        <li>إعداد سنة الإجازة: ميلادية أو سنة عمل.</li>
+        <li>شرح الرصيد للموظف في صفحة الطلبات.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">§</span>النمسا</h3><ul>
+        <li><span class="num">25</span> يوم عمل في السنة (خمسة أسابيع).</li>
+        <li>سنة الإجازة افتراضياً سنة العمل، إلا باتفاق على السنة الميلادية.</li>
+        <li>الإجازة تسقط بعد سنتين من نهاية السنة التي استُحقّت فيها (UrlG §4).</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = {"caps": [[0.4, 8.573, "problem", "شركة تبدأ استخدام إتش بي سي فيلد في أغسطس. قبل ذلك كان لديها نظام آخر، والموظفون أخذوا جزءاً من إجازاتهم."], [9.345, 20.583, "problem", "مارك مثلاً لديه خمسة وعشرون يوماً في السنة، وأخذ منها عشرة أيام في النظام القديم. لكن النظام اليوم يعرض له خمسة وعشرين يوماً متبقية، وهذا خطأ."], [21.283, 27.564, "start", "الحل الأول: شاشة الأرصدة الافتتاحية. تظهر للمدير مرة واحدة عند البدء في منتصف السنة."], [28.266, 38.018, "start", "جدول بكل الموظفين: ما أخذه كل واحد هذه السنة قبل إتش بي سي فيلد، وما بقي له من السنة الماضية. يُكتب بسرعة، أو يُلصق من ملف النظام القديم."], [38.824, 46.231, "start", "مارك: خمسة وعشرون، ناقص عشرة أُخذت قبل البدء، يساوي خمسة عشر يوماً متبقية."], [46.932, 55.547, "ledger", "الحل الثاني: لا نعدّل الرقم مباشرة، بل نسجّل حركات. كل تغيير سطر: كم يوماً، والسبب، ومن سجّله، ومتى."], [56.225, 66.929, "ledger", "أُخذ قبل البدء، أو رُحّل من السنة الماضية، أو تصحيح، أو يوم إضافي منحته الشركة. فالرصيد يشرح نفسه دائماً، ومكتب الرواتب يستطيع مراجعته."], [67.63, 79.426, "member", "والموظف يرى نفس الشرح في صفحة الطلبات قبل أن يرسل: خمسة وعشرون، ناقص عشرة قبل البدء، ناقص ثلاثة أخذها، زائد يومين مرحّلين، يساوي أربعة عشر."], [80.104, 84.563, "member", "وعند طلب إجازة جديدة، يرى الرصيد قبل وبعد بالرقم الصحيح."], [85.262, 97.174, "carry", "الحل الثالث: الترحيل في نهاية السنة حسب قاعدة الشركة: لا ترحيل، أو حتى عدد معيّن من الأيام، أو كل الأيام، مع تاريخ انتهاء اختياري، مثلاً نهاية مارس."], [97.76, 103.867, "carry", "ويُطبَّق تلقائياً في أول يناير كسطر ظاهر في الحركات، ويمكن التراجع عنه."], [104.567, 113.263, "year", "وفي النمسا، سنة الإجازة افتراضياً هي سنة العمل، تبدأ من تاريخ بدء كل موظف، إلا إذا اتفقت الشركة على السنة الميلادية."], [113.93, 121.825, "year", "لذلك تكون سنة الإجازة إعداداً: ميلادية أو سنة عمل. والنظام يعرف تاريخ بدء كل موظف مسبقاً."], [122.524, 141.518, "build", "ونبني على الموجود: الرصيد السنوي، والرصيد الخاص بكل موظف، والحساب النسبي لمن بدأ في منتصف السنة، وحساب أيام العمل. والجديد: سجلّ الحركات، والأرصدة الافتتاحية، وقاعدة الترحيل، وإعداد سنة الإجازة."]], "chapters": [["problem", 0.4], ["start", 21.283], ["ledger", 46.932], ["member", 67.63], ["carry", 85.262], ["year", 104.567], ["build", 122.524]], "duration": 143.52};
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = {};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>
