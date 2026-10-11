@@ -75,6 +75,19 @@ describe('signing out removes this device from push', () => {
     expect(where.token).toBe('ExponentPushToken[abc]');
   });
 
+  /*
+    ⚠️ The real-world bug (2026-09-15 → 2026-10-11): the phone stored its
+    registration as `token|language` and sent THAT as the token. The server
+    stores the bare token, so the delete matched nothing and every signed-out
+    phone kept receiving the member's notifications.
+  */
+  it('removes the token when the phone sends `token|language` (apps before the fix)', async () => {
+    await service.logout('T1', 'ExponentPushToken[abc]|de');
+    expect(prisma.userPushToken.deleteMany).toHaveBeenCalledWith({
+      where: { token: 'ExponentPushToken[abc]', userId: 'user-1' },
+    });
+  });
+
   it('touches nothing when the phone sent no token (an older app)', async () => {
     await service.logout('T1');
     expect(prisma.userPushToken.deleteMany).not.toHaveBeenCalled();

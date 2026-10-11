@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_LOCALE, PrismaService, formatDistance, type SupportedLocale } from '@hbcfield/shared';
 import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
-import { pushRouting, pushCategory, memberWantsPush } from '@hbcfield/shared';
+import { pushRouting, pushCategory, memberWantsPush, barePushToken } from '@hbcfield/shared';
 import { RecipientLocales } from '../../i18n/recipient-locales.service';
 import { msg, render, renderText, type LocalizedText, type Msg } from '../../i18n/translate';
 
@@ -92,7 +92,10 @@ export class PushService {
    * else's phone. Scoped now; called without one (nothing does) it still falls
    * back to the old behaviour rather than silently doing nothing.
    */
-  async removePushToken(token: string, userId?: string) {
+  async removePushToken(rawToken: string, userId?: string) {
+    // The bare token: phones before the fix sent `token|language` and matched nothing.
+    const token = barePushToken(rawToken);
+    if (!token) return { success: false, error: 'Token not found' };
     try {
       const { count } = await this.prisma.userPushToken.deleteMany({
         where: userId ? { token, userId } : { token },

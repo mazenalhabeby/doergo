@@ -3088,7 +3088,9 @@
     "tapToUnlock": "Tippen, um mit {{method}} zu entsperren",
     "notYou": "Nicht {{name}}? Mit einem anderen Konto anmelden",
     "backTo": "Zurück zu {{method}} für {{name}}",
-    "unreachableBody": "Der Server war nicht erreichbar. Ihre Anmeldung auf diesem Telefon bleibt eingerichtet – bitte versuchen Sie es gleich noch einmal."
+    "unreachableBody": "Der Server war nicht erreichbar. Ihre Anmeldung auf diesem Telefon bleibt eingerichtet – bitte versuchen Sie es gleich noch einmal.",
+    "promptAs": "Als {{name}} anmelden",
+    "enableReplaces": "{{method}} öffnet auf diesem Telefon derzeit das Konto von {{name}}. Wenn Sie es für sich einschalten, wird es für {{name}} ausgeschaltet – ein Konto pro Telefon."
   },
   "offline": {
     "banner": {

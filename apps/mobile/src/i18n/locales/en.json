@@ -3088,7 +3088,9 @@
     "tapToUnlock": "Tap to unlock with {{method}}",
     "notYou": "Not {{name}}? Sign in with another account",
     "backTo": "Back to {{method}} for {{name}}",
-    "unreachableBody": "Could not reach the server. Your sign-in on this phone is still set up — try again in a moment."
+    "unreachableBody": "Could not reach the server. Your sign-in on this phone is still set up — try again in a moment.",
+    "promptAs": "Sign in as {{name}}",
+    "enableReplaces": "{{method}} on this phone currently opens {{name}}’s account. Turning it on for you switches it off for {{name}} — one account per phone."
   },
   "offline": {
     "banner": {

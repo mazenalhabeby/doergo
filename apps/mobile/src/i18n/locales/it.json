@@ -3088,7 +3088,9 @@
     "tapToUnlock": "Tocca per sbloccare con {{method}}",
     "notYou": "Non sei {{name}}? Accedi con un altro account",
     "backTo": "Torna a {{method}} per {{name}}",
-    "unreachableBody": "Impossibile raggiungere il server. L’accesso su questo telefono resta configurato: riprova tra un momento."
+    "unreachableBody": "Impossibile raggiungere il server. L’accesso su questo telefono resta configurato: riprova tra un momento.",
+    "promptAs": "Accedi come {{name}}",
+    "enableReplaces": "Su questo telefono {{method}} apre ora l’account di {{name}}. Attivandolo per lei, si disattiva per {{name}}: un account per telefono."
   },
   "offline": {
     "banner": {

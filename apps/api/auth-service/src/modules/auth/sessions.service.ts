@@ -9,6 +9,7 @@ import {
   ORG_SUSPENDED_CODE,
   maskEmail,
   memberAccessOf,
+  barePushToken,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -436,9 +437,11 @@ export class SessionsService {
           ⚠️ THIS DEVICE only, never every token the member has. Signing out of
           one phone must not silence the one still in their pocket.
         */
-        if (pushToken) {
+        // The bare token: phones before the fix sent `token|language` and matched nothing.
+        const token = barePushToken(pushToken);
+        if (token) {
           await this.prisma.userPushToken
-            .deleteMany({ where: { token: pushToken, userId: stored.userId } })
+            .deleteMany({ where: { token, userId: stored.userId } })
             .catch(() => undefined);
         }
       }

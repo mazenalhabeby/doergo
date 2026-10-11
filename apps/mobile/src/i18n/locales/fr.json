@@ -3088,7 +3088,9 @@
     "tapToUnlock": "Touchez pour déverrouiller avec {{method}}",
     "notYou": "Vous n'êtes pas {{name}} ? Connectez-vous avec un autre compte",
     "backTo": "Revenir à {{method}} pour {{name}}",
-    "unreachableBody": "Impossible de joindre le serveur. Votre connexion sur ce téléphone reste configurée — réessayez dans un instant."
+    "unreachableBody": "Impossible de joindre le serveur. Votre connexion sur ce téléphone reste configurée — réessayez dans un instant.",
+    "promptAs": "Se connecter en tant que {{name}}",
+    "enableReplaces": "Sur ce téléphone, {{method}} ouvre actuellement le compte de {{name}}. L’activer pour vous le désactive pour {{name}} : un compte par téléphone."
   },
   "offline": {
     "banner": {

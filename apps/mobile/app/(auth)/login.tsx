@@ -11,12 +11,23 @@ import { ROUTES } from '../../src/lib/constants';
 import { AText, PrimaryButton } from '../../src/components/amazen';
 import { JobSheet, SheetOption } from '../../src/components/job/job-ui';
 import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/components/auth/auth-ui';
+import { loadLastUser, shouldAutoPromptFor, type LastUser } from '../../src/lib/session/last-user';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, refreshUser, signedOutByUser } = useAuth();
   const bio = useBiometricUnlock();
   const [offerBiometric, setOfferBiometric] = useState(false);
+  /** Set when enabling here would take the fingerprint away from another account on this phone. */
+  const [offerReplaces, setOfferReplaces] = useState<string | null>(null);
+  /*
+    Who used this phone last. `undefined` until read, so nothing — not the
+    fingerprint card, not the auto-prompt — is decided on a guess.
+  */
+  const [lastUser, setLastUser] = useState<LastUser | null | undefined>(undefined);
+  useEffect(() => {
+    void loadLastUser().then(setLastUser);
+  }, []);
   const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
@@ -76,10 +87,24 @@ export default function LoginScreen() {
       signed straight back in. The button below stays; only the auto-prompt
       waits for a real launch.
     */
-    if (!bio.canUnlock || promptedRef.current || signedOutByUser) return;
+    if (!bio.canUnlock || promptedRef.current || lastUser === undefined) return;
     promptedRef.current = true;
+    /*
+      ⚠️ Only for the person who used this phone last. The key belongs to
+      whoever enrolled it; when a colleague has signed in here since, the OS
+      sheet would cover the card that names whose account it opens, and one
+      touch put them inside the FIRST person's account. They get the password
+      form instead, filled with their own email, and the fingerprint stays one
+      clearly labelled tap away.
+    */
+    if (!shouldAutoPromptFor(bio.owner?.userId, lastUser)) {
+      setUsePassword(true);
+      if (lastUser?.email) setEmail(lastUser.email);
+      return;
+    }
+    if (signedOutByUser) return;
     void unlockAndEnter();
-  }, [bio.canUnlock, signedOutByUser]);
+  }, [bio.canUnlock, signedOutByUser, lastUser, bio.owner?.userId]);
 
   const handleLogin = async () => {
     if (!validate()) return;
@@ -111,6 +136,8 @@ export default function LoginScreen() {
       */
       const alreadyMine = !!owner && owner.email.toLowerCase() === email.toLowerCase().trim();
       if (cap.kind === 'ready' && !alreadyMine) {
+        // One account per phone: say so when this would switch it off for somebody else.
+        setOfferReplaces(owner ? owner.name?.trim().split(/\s+/)[0] || owner.email : null);
         setOfferBiometric(true);
       } else {
         router.replace(ROUTES.home as Href);
@@ -130,7 +157,7 @@ export default function LoginScreen() {
     first frame otherwise shows the form and swaps it for the fingerprint a
     moment later, which reads as the screen changing its mind.
   */
-  const resolved = bio.capability !== null;
+  const resolved = bio.capability !== null && lastUser !== undefined;
   const showBiometric = bio.canUnlock && !usePassword;
   const ownerName = bio.owner?.name?.trim().split(/\s+/)[0] || bio.owner?.email || '';
   const bioNotice =
@@ -236,6 +263,11 @@ export default function LoginScreen() {
           <BiometricIcon method={bio.method} size={32} color={c.accent} />
         </View>
         <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('biometrics.enableBody')}</AText>
+        {offerReplaces ? (
+          <View style={{ borderRadius: 14, backgroundColor: c.warnTint, padding: amazen.space(3) }}>
+            <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>{t('biometrics.enableReplaces', { method: bio.label, name: offerReplaces })}</AText>
+          </View>
+        ) : null}
         <PrimaryButton label={t('biometrics.enable', { method: bio.label })} disabled={bio.busy} onPress={async () => { await bio.enroll(); goHome(); }} />
         <SheetOption label={t('biometrics.notNow')} onPress={goHome} />
       </JobSheet>

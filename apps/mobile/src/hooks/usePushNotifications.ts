@@ -3,8 +3,8 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { forgetPushToken, rememberPushToken, storedPushToken } from '../lib/push-token-store';
-import { pushApi } from '../lib/api';
+import { forgetPushToken, rememberPushToken, storedPushToken, storedRegistration } from '../lib/push-token-store';
+import { pushApi, getAccessToken } from '../lib/api';
 import i18n, { getPreferredLanguage } from '../i18n';
 import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
@@ -21,7 +21,9 @@ export const CREW_JOIN_ACTION = 'crew_join';
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     // Already answered on this phone (a clock-in waiting to send, say): show nothing.
-    const show = !isNotificationSuppressed(
+    // Nobody signed in: show nothing either — a signed-out phone is not anyone's inbox.
+    const signedIn = !!(await getAccessToken().catch(() => null));
+    const show = signedIn && !isNotificationSuppressed(
       notification.request.content.data as Record<string, unknown> | undefined,
       Date.now(),
     );
@@ -144,7 +146,7 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       // offline is re-registered on the next launch instead of staying English.
       const locale = await getPreferredLanguage();
       const registration = `${token}|${locale}`;
-      const cachedToken = await storedPushToken();
+      const cachedToken = await storedRegistration();
       if (cachedToken === registration && currentTokenRef.current === token) {
         setState((prev) => ({
           ...prev,

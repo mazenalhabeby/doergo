@@ -30,6 +30,11 @@ describe('sign-out keeps the device key', () => {
   });
 
   it('the login screen does not auto-prompt straight after a sign-out', () => {
-    expect(read('app/(auth)/login.tsx')).toMatch(/promptedRef\.current \|\| signedOutByUser/);
+    // The sign-out check must come before the only place the prompt is opened.
+    expect(read('app/(auth)/login.tsx')).toMatch(/if \(signedOutByUser\) return;\s*void unlockAndEnter\(\);/);
+  });
+
+  it('the login screen auto-prompts only for the person who used the phone last', () => {
+    expect(read('app/(auth)/login.tsx')).toMatch(/if \(!shouldAutoPromptFor\(bio\.owner\?\.userId, lastUser\)\)/);
   });
 });

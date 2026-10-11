@@ -3088,7 +3088,9 @@
     "tapToUnlock": "Toca para desbloquear con {{method}}",
     "notYou": "¿No eres {{name}}? Inicia sesión con otra cuenta",
     "backTo": "Volver a {{method}} para {{name}}",
-    "unreachableBody": "No se pudo conectar con el servidor. Su acceso en este teléfono sigue configurado; inténtelo de nuevo en un momento."
+    "unreachableBody": "No se pudo conectar con el servidor. Su acceso en este teléfono sigue configurado; inténtelo de nuevo en un momento.",
+    "promptAs": "Iniciar sesión como {{name}}",
+    "enableReplaces": "En este teléfono, {{method}} abre ahora la cuenta de {{name}}. Si lo activa para usted, se desactiva para {{name}}: una cuenta por teléfono."
   },
   "offline": {
     "banner": {

@@ -11,6 +11,7 @@ import {
 } from '../lib/api';
 import { endSession, type SessionEndReason } from '../lib/session/end-session';
 import { loadStoredUser, saveStoredUser } from '../lib/session/stored-user';
+import { saveLastUser } from '../lib/session/last-user';
 import { sealLeftovers } from '../lib/sealed-stores';
 
 /** How a sign-out was asked for — see `endSession`. */
@@ -195,6 +196,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (userId) void sealLeftovers(userId);
   }, [userId]);
+  // Remember who is using the phone now, however they signed in (lib/session/last-user.ts).
+  const userEmail = user?.email;
+  useEffect(() => {
+    if (userId && userEmail) void saveLastUser({ userId, email: userEmail });
+  }, [userId, userEmail]);
   const logout = useCallback(async (opts?: LogoutOptions) => {
     try {
       await endSession({ reason: opts?.reason ?? 'signed-out', keepUnsent: opts?.keepUnsent ?? true, userId });

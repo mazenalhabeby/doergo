@@ -248,6 +248,13 @@ export class DeviceKeyCredential implements BiometricCredential {
     if (!challenge) throw new BiometricError('unreachable');
 
     // 2 — the only prompt in the whole flow.
+    /*
+      ⚠️ The OS sheet NAMES the account. It covers the card that says whose
+      account this opens, so "Unlock HBCField" let somebody touch the sensor
+      without knowing they were about to enter a colleague's account.
+    */
+    const owner = await getKeyOwner();
+    const ownerName = owner?.name?.trim().split(/\s+/)[0] || owner?.email;
     let signature: string | undefined;
     let failure: SignFailure | null = null;
     try {
@@ -263,7 +270,7 @@ export class DeviceKeyCredential implements BiometricCredential {
           apparently correct. Server and client must agree on what was signed.
         */
         inputEncoding: InputEncoding.Base64,
-        promptTitle: i18n.t('biometrics.prompt'),
+        promptTitle: ownerName ? i18n.t('biometrics.promptAs', { name: ownerName }) : i18n.t('biometrics.prompt'),
         cancelButtonText: i18n.t('common.cancel'),
         // Class 3 at signing time too, not only at binding time.
         biometricStrength: BiometricStrength.Strong,
