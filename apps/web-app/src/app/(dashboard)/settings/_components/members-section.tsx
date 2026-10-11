@@ -10,11 +10,11 @@ import {
   Shield,
   Key,
   Loader2,
-  CalendarDays,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
 import { useTranslation } from "react-i18next"
 import { SettingCard } from "./setting-card"
+import { LeaveSettingsCard } from "./leave-settings-card"
 import { useRouteAccess } from "@/hooks/use-route-access"
 import { organizationsApi, JoinPolicy } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -67,24 +67,6 @@ export function MembersSection() {
     queryKey: keys.organization.profile(),
     queryFn: () => organizationsApi.getProfile(),
     enabled: isOrgAdmin,
-  })
-  const [leaveDays, setLeaveDays] = useState<string | null>(null)
-  const storedLeave = (orgProfile as { defaultLeaveAllowance?: number } | undefined)?.defaultLeaveAllowance
-  const leaveValue = leaveDays ?? (storedLeave !== undefined ? String(storedLeave) : "")
-  const leaveDirty = leaveDays !== null && leaveDays !== String(storedLeave ?? "")
-
-  const updateLeaveMutation = useMutation({
-    mutationFn: (days: number) => organizationsApi.updateLeavePolicy(days),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.organization.profile() })
-      // The balance is measured against this number and is cached separately,
-      // so without this the vacation ring keeps showing the old allowance
-      // until something else happens to refetch it.
-      queryClient.invalidateQueries({ queryKey: keys.timeOff.myBalance() })
-      setLeaveDays(null)
-      notify.success(t("settings.leave.saved"))
-    },
-    onError: (e: Error) => notify.error(e.message || t("common.error")),
   })
 
   const updatePolicyMutation = useMutation({
@@ -157,44 +139,8 @@ export function MembersSection() {
         </div>
       </SettingCard>
 
-      {/* Annual vacation days — PATCH /organizations/leave-policy is @Roles(ADMIN). */}
-      {isOrgAdmin && (<>
-      <SettingCard
-        icon={CalendarDays}
-        iconColor="text-emerald-600"
-        iconBg="bg-emerald-50"
-        title={t("settings.leave.title")}
-        description={t("settings.leave.description")}
-      >
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label htmlFor="leave-days" className="mb-1.5 block text-xs font-medium text-muted-foreground">
-              {t("settings.leave.label")}
-            </label>
-            <input
-              id="leave-days"
-              type="number"
-              min={0}
-              max={100}
-              value={leaveValue}
-              onChange={(e) => setLeaveDays(e.target.value)}
-              className="w-28 rounded-xl border border-border bg-background px-3 py-2 text-sm tabular-nums outline-none transition-colors focus:border-primary"
-            />
-          </div>
-          <Button
-            size="sm"
-            disabled={!leaveDirty || updateLeaveMutation.isPending}
-            onClick={() => updateLeaveMutation.mutate(Number(leaveValue))}
-          >
-            {t("common.save")}
-          </Button>
-        </div>
-        {/* Says what the number does NOT override, because the per-member field
-            is on a different screen and an admin changing this one would
-            otherwise expect it to apply to everybody. */}
-        <p className="mt-3 text-xs text-muted-foreground">{t("settings.leave.hint")}</p>
-      </SettingCard>
-      </>)}
+      {/* Leave rules — PATCH /organizations/leave-policy is @Roles(ADMIN). */}
+      {isOrgAdmin && <LeaveSettingsCard profile={orgProfile} />}
 
       {/* Join Policy */}
       <SettingCard

@@ -136,6 +136,8 @@ export default function ScheduleAndTimeOffPage() {
   // The wallchart draws them; pending rows carry their cover verdict, computed server-side.
   // floor-now / cover-range are @RequirePermissionInSpace('canViewSpaceAttendance').
   const readsFloor = useRouteAccess().holds("any:canViewSpaceAttendance")
+  // The starting balances page, offered only to who may open it (the route table decides).
+  const opensOpening = useRouteAccess().may("/employees/leave-opening")
   const leaveQuery = useQuery({
     queryKey: keys.timeOff.orgWindow(window.start, window.end),
     queryFn: () => employeesApi.getOrgTimeOff(undefined, { from: window.start, to: window.end }),
@@ -251,6 +253,15 @@ export default function ScheduleAndTimeOffPage() {
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("cover.page.subtitle", "Who is on the floor now, and who is asking to be off later.")}
+                {/* A quiet way in to the starting balances — inline, so the header keeps its shape. */}
+                {opensOpening && (
+                  <>
+                    {" · "}
+                    <Link href="/employees/leave-opening" className="underline-offset-2 hover:text-foreground hover:underline">
+                      {t("leaveLedger.opening.link")}
+                    </Link>
+                  </>
+                )}
               </p>
             </div>
 

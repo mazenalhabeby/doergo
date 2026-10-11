@@ -680,7 +680,7 @@ export default function MemberProfilePage({
                   )}
                   {!isExternalMember && (
                     <TabsContent value="time-off" className="mt-6">
-                      <TimeOffTab employeeId={memberId} canManage={canManage} />
+                      <TimeOffTab employeeId={memberId} employeeName={personName(member)} canManage={canManage} />
                     </TabsContent>
                   )}
                   {!isExternalMember && (

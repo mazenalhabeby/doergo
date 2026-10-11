@@ -9333,7 +9333,26 @@
     "REQUEST_TOO_MANY_DAYS": "Ein Remote-Antrag kann höchstens 31 Tage auf einmal umfassen.",
     "REQUEST_REMOTE_NOT_ALLOWED": "Sie dürfen nicht außerhalb des Standorts arbeiten, daher kann kein Remote-Tag beantragt werden.",
     "REQUEST_SPACE_NOT_YOURS": "Dieser Arbeitsbereich gehört nicht zu Ihren.",
-    "REQUEST_KIND_NOT_OFFERED": "Diese Antragsart wird in Ihrem Arbeitsbereich nicht angeboten."
+    "REQUEST_KIND_NOT_OFFERED": "Diese Antragsart wird in Ihrem Arbeitsbereich nicht angeboten.",
+    "ADJUSTMENT_KIND_INVALID": "Wählen Sie die Art des Eintrags.",
+    "ADJUSTMENT_DAYS_INVALID": "Geben Sie die Tage als Zahl in halben Tagen ein (z. B. 1 oder 2,5), nicht null, höchstens 366.",
+    "ADJUSTMENT_REASON_REQUIRED": "Eine Korrektur oder zusätzliche Tage brauchen eine Begründung.",
+    "ADJUSTMENT_REASON_TOO_LONG": "Die Begründung ist zu lang — höchstens 500 Zeichen.",
+    "ADJUSTMENT_DATE_INVALID": "Wählen Sie ein gültiges Datum.",
+    "ADJUSTMENT_ALREADY_VOIDED": "Dieser Eintrag wurde bereits rückgängig gemacht.",
+    "LEAVE_DAY_INVALID": "Wählen Sie einen gültigen Tag.",
+    "MEMBER_NOT_FOUND": "Diese Person wurde nicht gefunden.",
+    "OPENING_ROW_INVALID": "Jede Person nur einmal, mit Tagen in halben Tagen von 0 bis 366.",
+    "OPENING_ROWS_EMPTY": "Nichts zu speichern.",
+    "OPENING_TEXT_EMPTY": "Fügen Sie zuerst die Tabelle ein.",
+    "OPENING_TOO_MANY_ROWS": "Höchstens 500 Personen auf einmal.",
+    "LEAVE_ALLOWANCE_INVALID": "Die Urlaubstage pro Jahr müssen eine ganze Zahl von 0 bis 100 sein.",
+    "LEAVE_YEAR_MODE_INVALID": "Wählen Sie Kalenderjahr oder Arbeitsjahr.",
+    "CARRY_OVER_MODE_INVALID": "Wählen Sie, was mit Resttagen am Jahresende geschieht.",
+    "CARRY_OVER_MAX_INVALID": "Geben Sie an, wie viele Tage übertragen werden dürfen — eine ganze Zahl von 1 bis 100.",
+    "CARRY_EXPIRY_INVALID": "Übertragene Tage verfallen nach 1 bis 24 Monaten; lassen Sie das Feld leer für nie.",
+    "LEAVE_TRACKING_DATE_INVALID": "Wählen Sie ein gültiges Startdatum.",
+    "LEAVE_POLICY_EMPTY": "Nichts zu speichern."
   },
   "signLink": {
     "tabs": {
@@ -10304,16 +10323,139 @@
       "noUsualHours": "Keine Arbeitswoche festgelegt",
       "overtime": "Zusätzliche Zeit",
       "kind": "Art",
-      "balance": "Urlaubsanspruch",
-      "balanceNow": "Jetzt übrig",
-      "balanceAfter": "Übrig bei Genehmigung",
-      "daysLeft_one": "{{count}} von {{total}} Tag",
-      "daysLeft_other": "{{count}} von {{total}} Tagen"
+      "balance": "Urlaubsanspruch"
     },
     "settings": {
       "title": "Anträge, die Mitglieder hier senden können",
       "subtitle": "Schalten Sie Antragsarten aus, die dieser Arbeitsbereich nicht nutzt. Wird sofort gespeichert.",
       "note": "Mindestens eine Art bleibt aktiv. Remote-Tage werden nur Mitgliedern angeboten, die außerhalb des Standorts arbeiten dürfen."
+    }
+  },
+  "leaveLedger": {
+    "balanceTitle": "Urlaubskonto",
+    "yearCalendar": "Urlaubsjahr {{year}}",
+    "yearWork": "Arbeitsjahr {{from}} – {{to}}",
+    "remaining": "Verbleibend",
+    "carryExpires": "Übertragene Tage können bis {{date}} genommen werden.",
+    "thisRequest_one": "Dieser Antrag · {{count}} Arbeitstag",
+    "thisRequest_other": "Dieser Antrag · {{count}} Arbeitstage",
+    "allowanceTitleWork": "Resturlaub · {{from}} – {{to}}",
+    "showLines": "Wie wird das berechnet?",
+    "hideLines": "Aufstellung ausblenden",
+    "lines": {
+      "ALLOWANCE": "Jahresanspruch",
+      "OPENING_USED": "Vor HBCField genommen",
+      "CARRY_OVER": "Aus dem Vorjahr übertragen",
+      "CARRY_EXPIRED": "Übertragene Tage verfallen",
+      "GRANT": "Zusätzliche Tage gewährt",
+      "CORRECTION": "Korrektur",
+      "TAKEN": "Genommener Urlaub"
+    },
+    "kinds": {
+      "OPENING_USED": {
+        "label": "Vor HBCField genommen",
+        "hint": "Tage, die in diesem Urlaubsjahr bereits im bisherigen System genommen wurden.",
+        "daysHint": "Geben Sie die genommenen Tage ein, z. B. 10 — sie werden abgezogen."
+      },
+      "CORRECTION": {
+        "label": "Korrektur",
+        "hint": "Einen Wert in beide Richtungen richtigstellen. Immer mit Begründung.",
+        "daysHint": "Positiv fügt Tage hinzu, negativ zieht sie ab (z. B. -1,5). Halbe Tage sind möglich."
+      },
+      "GRANT": {
+        "label": "Zusätzliche Tage gewährt",
+        "hint": "Tage, die das Unternehmen zusätzlich zum Anspruch gewährt. Immer mit Begründung.",
+        "daysHint": "Geben Sie die gewährten Tage ein, z. B. 1 oder 0,5."
+      }
+    },
+    "adjust": {
+      "title": "Eintrag zum Urlaubskonto hinzufügen",
+      "description": "Das Urlaubskonto von {{name}} ist der Anspruch plus alle Einträge, abzüglich des genommenen Urlaubs. Jeder Eintrag hält fest, wer ihn warum angelegt hat.",
+      "kind": "Welche Art von Eintrag?",
+      "days": "Tage",
+      "date": "Im Urlaubsjahr von",
+      "reason": "Begründung",
+      "optional": "(optional)",
+      "reasonPlaceholder": "z. B. im Jahresgespräch vereinbart",
+      "submit": "Eintrag hinzufügen",
+      "saved": "Eintrag zum Urlaubskonto hinzugefügt"
+    },
+    "ledger": {
+      "title": "Urlaubskonto",
+      "description": "Der Anspruch, jeder Eintrag dazu und der in diesem Urlaubsjahr genommene Urlaub.",
+      "add": "Eintrag hinzufügen",
+      "linesTitle": "Einträge in diesem Urlaubsjahr",
+      "empty": "Noch keine Einträge — das Konto ist der Anspruch abzüglich des genommenen Urlaubs.",
+      "byRule": "die Übertragungsregel",
+      "byWhen": "{{name}} · {{date}}",
+      "voidedOn": "Rückgängig gemacht am {{date}}",
+      "undo": "Rückgängig",
+      "undoConfirm": "Diesen Eintrag rückgängig machen? Er bleibt durchgestrichen sichtbar, und das Konto ändert sich zurück.",
+      "undoYes": "Eintrag rückgängig machen",
+      "keep": "Behalten",
+      "undone": "Eintrag rückgängig gemacht",
+      "voidedByOn": "Rückgängig gemacht von {{name}} am {{date}}"
+    },
+    "opening": {
+      "title": "Anfangsbestände",
+      "subtitle": "Was jede Person in diesem Urlaubsjahr vor HBCField bereits genommen hat und was aus dem Vorjahr übertragen wurde. Einmal erfasst — jeder Wert wird als sichtbarer Eintrag auf dem Konto geführt.",
+      "link": "Anfangsbestände",
+      "paste": "Aus Datei einfügen",
+      "noAccess": "Nur wer über Urlaub entscheidet, kann Anfangsbestände erfassen.",
+      "unavailable": "Anfangsbestände sind auf diesem Server noch nicht verfügbar.",
+      "yearNote": "Diese Werte gehören zu dem Urlaubsjahr, das den {{date}} enthält — das Kalenderjahr oder, wenn das Unternehmen in Arbeitsjahren rechnet, das Arbeitsjahr jeder Person.",
+      "search": "Personen suchen",
+      "count_one": "{{count}} Person",
+      "count_other": "{{count}} Personen",
+      "colMember": "Person",
+      "colUsed": "Vor HBCField genommen",
+      "colCarried": "Aus dem Vorjahr übertragen",
+      "none": "Keine Treffer.",
+      "halfDays": "Halbe Tage sind möglich (z. B. 2,5). Ein leeres Feld zählt als 0.",
+      "fixCells_one": "{{count}} Zeile enthält eine Zahl, die nicht gelesen werden kann",
+      "fixCells_other": "{{count}} Zeilen enthalten Zahlen, die nicht gelesen werden können",
+      "saved": "Anfangsbestände gespeichert",
+      "pasteTitle": "Aus dem bisherigen System einfügen",
+      "pasteHint": "Eine Person pro Zeile: E-Mail oder vollständiger Name; genommene Tage; übertragene Tage. Getrennt durch Tabulator, Semikolon oder Komma; eine Kopfzeile wird übersprungen.",
+      "match": "Personen zuordnen",
+      "filled_one": "{{count}} Zeile ausgefüllt",
+      "filled_other": "{{count}} Zeilen ausgefüllt",
+      "notPlaced_one": "{{count}} Zeile konnte nicht zugeordnet werden",
+      "notPlaced_other": "{{count}} Zeilen konnten nicht zugeordnet werden",
+      "line": "Zeile {{line}}",
+      "unmatched": "niemand mit diesem Namen oder dieser E-Mail",
+      "unreadable": "Zahlen nicht lesbar",
+      "startedOn": "Urlaub in HBCField erfasst seit",
+      "ambiguous": "mehrere Personen passen",
+      "duplicate": "diese Person steht auch in einer anderen Zeile"
+    },
+    "banner": {
+      "title": "Anfangsbestände erfassen",
+      "body": "Unterjährig gestartet? Erfassen Sie, was alle vor HBCField bereits genommen haben, damit niemand ein volles Jahr Resturlaub angezeigt bekommt."
+    },
+    "settings": {
+      "yearLabel": "Urlaubsjahr",
+      "year": {
+        "CALENDAR": {
+          "label": "Kalenderjahr",
+          "hint": "1. Jänner – 31. Dezember für alle."
+        },
+        "WORK_YEAR": {
+          "label": "Arbeitsjahr",
+          "hint": "Ab dem Eintrittsdatum jeder Person, z. B. 15. April – 14. April."
+        }
+      },
+      "austriaNote": "In Österreich ist das Arbeitsjahr gesetzlicher Standard, sofern nicht das Kalenderjahr vereinbart wurde.",
+      "carryLabel": "Resttage am Jahresende",
+      "carry": {
+        "NONE": "Keine Übertragung",
+        "UP_TO": "Bis zu einer Grenze",
+        "ALL": "Alle Tage übertragen"
+      },
+      "maxDays": "Höchstens übertragene Tage",
+      "expiry": "Übertragene Tage verfallen nach (Monaten)",
+      "never": "Nie",
+      "carryHint": "Übertragene Tage werden am ersten Tag des neuen Urlaubsjahres als sichtbarer Eintrag hinzugefügt und können rückgängig gemacht werden."
     }
   }
 }

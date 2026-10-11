@@ -23,7 +23,7 @@ import {
   type TimeOffRequest,
   type TimeOffStatus,
 } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -61,6 +61,7 @@ import { keys, invalidateTimeOff } from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { isAbsence, requestDetail } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
+import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
 
 const STATUS_PILLS: Record<
   TimeOffStatus,
@@ -79,14 +80,17 @@ function getDurationDays(start: string, end: string, workingDays?: number | null
 
 interface TimeOffTabProps {
   employeeId: string
+  employeeName: string
   canManage: boolean
 }
 
-export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
+export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabProps) {
   const { t } = useTranslation()
   const { formatDate } = useTimeFormat()
   const queryClient = useQueryClient()
-  const { user } = useAuth()
+  // Adjusting a balance is deciding leave: the gate the server puts on approving it
+  // (@RequirePermissionInSpace('canManageRota')); the ledger's own `canEdit` narrows it per person.
+  const canAdjust = useRouteAccess().holds("any:canManageRota")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [createOpen, setCreateOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<TimeOffRequest | null>(null)
@@ -213,6 +217,9 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
 
   return (
     <>
+      <div className="mb-6">
+        <LeaveLedgerPanel memberId={employeeId} memberName={employeeName} canAdjust={canAdjust} />
+      </div>
       <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">

@@ -9342,7 +9342,26 @@
     "REQUEST_TOO_MANY_DAYS": "Une demande de télétravail couvre au plus 31 jours à la fois.",
     "REQUEST_REMOTE_NOT_ALLOWED": "Vous n’êtes pas autorisé à travailler hors du site : le télétravail ne peut pas être demandé.",
     "REQUEST_SPACE_NOT_YOURS": "Cet espace de travail ne fait pas partie des vôtres.",
-    "REQUEST_KIND_NOT_OFFERED": "Ce type de demande n’est pas proposé dans votre espace de travail."
+    "REQUEST_KIND_NOT_OFFERED": "Ce type de demande n’est pas proposé dans votre espace de travail.",
+    "ADJUSTMENT_KIND_INVALID": "Choisissez le type de ligne.",
+    "ADJUSTMENT_DAYS_INVALID": "Saisissez les jours en demi-journées (p. ex. 1 ou 2,5), différent de zéro, 366 au maximum.",
+    "ADJUSTMENT_REASON_REQUIRED": "Une correction ou des jours supplémentaires nécessitent un motif.",
+    "ADJUSTMENT_REASON_TOO_LONG": "Le motif est trop long — 500 caractères au maximum.",
+    "ADJUSTMENT_DATE_INVALID": "Choisissez une date valide.",
+    "ADJUSTMENT_ALREADY_VOIDED": "Cette ligne a déjà été annulée.",
+    "LEAVE_DAY_INVALID": "Choisissez un jour valide.",
+    "MEMBER_NOT_FOUND": "Cette personne est introuvable.",
+    "OPENING_ROW_INVALID": "Chaque personne une seule fois, avec des jours en demi-journées de 0 à 366.",
+    "OPENING_ROWS_EMPTY": "Rien à enregistrer.",
+    "OPENING_TEXT_EMPTY": "Collez d’abord le tableau.",
+    "OPENING_TOO_MANY_ROWS": "500 personnes au maximum à la fois.",
+    "LEAVE_ALLOWANCE_INVALID": "Les jours de congé annuels doivent être un nombre entier de 0 à 100.",
+    "LEAVE_YEAR_MODE_INVALID": "Choisissez l’année civile ou l’année de travail.",
+    "CARRY_OVER_MODE_INVALID": "Choisissez ce qu’il advient des jours restants en fin d’année.",
+    "CARRY_OVER_MAX_INVALID": "Indiquez combien de jours peuvent être reportés — un nombre entier de 1 à 100.",
+    "CARRY_EXPIRY_INVALID": "Les jours reportés expirent après 1 à 24 mois ; laissez le champ vide pour jamais.",
+    "LEAVE_TRACKING_DATE_INVALID": "Choisissez une date de début valide.",
+    "LEAVE_POLICY_EMPTY": "Rien à enregistrer."
   },
   "signLink": {
     "tabs": {
@@ -10313,16 +10332,139 @@
       "noUsualHours": "Aucune semaine de travail définie",
       "overtime": "Temps en plus",
       "kind": "Type",
-      "balance": "Droit à congés",
-      "balanceNow": "Restant maintenant",
-      "balanceAfter": "Restant si validée",
-      "daysLeft_one": "{{count}} sur {{total}} jour",
-      "daysLeft_other": "{{count}} sur {{total}} jours"
+      "balance": "Droit à congés"
     },
     "settings": {
       "title": "Demandes que les membres peuvent envoyer ici",
       "subtitle": "Désactivez les types de demande que cet espace n’utilise pas. Enregistré immédiatement.",
       "note": "Au moins un type reste actif. Le télétravail n’est proposé qu’aux membres autorisés à travailler hors du site."
+    }
+  },
+  "leaveLedger": {
+    "balanceTitle": "Solde de congés",
+    "yearCalendar": "Année de congés {{year}}",
+    "yearWork": "Année de travail {{from}} – {{to}}",
+    "remaining": "Restant",
+    "carryExpires": "Les jours reportés peuvent être pris jusqu'au {{date}}.",
+    "thisRequest_one": "Cette demande · {{count}} jour ouvré",
+    "thisRequest_other": "Cette demande · {{count}} jours ouvrés",
+    "allowanceTitleWork": "Jours de congé restants · {{from}} – {{to}}",
+    "showLines": "Comment est-ce calculé ?",
+    "hideLines": "Masquer le détail",
+    "lines": {
+      "ALLOWANCE": "Droit annuel",
+      "OPENING_USED": "Pris avant HBCField",
+      "CARRY_OVER": "Reportés de l'année précédente",
+      "CARRY_EXPIRED": "Jours reportés expirés",
+      "GRANT": "Jours supplémentaires accordés",
+      "CORRECTION": "Correction",
+      "TAKEN": "Congés pris"
+    },
+    "kinds": {
+      "OPENING_USED": {
+        "label": "Pris avant HBCField",
+        "hint": "Jours déjà pris cette année de congés dans votre ancien système.",
+        "daysHint": "Saisissez les jours pris, p. ex. 10 — ils sont déduits."
+      },
+      "CORRECTION": {
+        "label": "Correction",
+        "hint": "Rectifier un chiffre, dans un sens ou dans l'autre. Toujours avec un motif.",
+        "daysHint": "Positif ajoute des jours, négatif en retire (p. ex. -1,5). Les demi-journées sont admises."
+      },
+      "GRANT": {
+        "label": "Jours supplémentaires accordés",
+        "hint": "Jours que l'entreprise accorde en plus du droit annuel. Toujours avec un motif.",
+        "daysHint": "Saisissez les jours accordés, p. ex. 1 ou 0,5."
+      }
+    },
+    "adjust": {
+      "title": "Ajouter une ligne au solde",
+      "description": "Le solde de {{name}} est le droit annuel plus chaque ligne, moins les congés pris. Chaque ligne garde qui l'a ajoutée et pourquoi.",
+      "kind": "Quel type de ligne ?",
+      "days": "Jours",
+      "date": "Dans l'année de congés du",
+      "reason": "Motif",
+      "optional": "(facultatif)",
+      "reasonPlaceholder": "p. ex. convenu lors de l'entretien annuel",
+      "submit": "Ajouter la ligne",
+      "saved": "Ligne ajoutée au solde"
+    },
+    "ledger": {
+      "title": "Solde de congés",
+      "description": "Le droit annuel, chaque ligne ajoutée et les congés pris cette année de congés.",
+      "add": "Ajouter une ligne",
+      "linesTitle": "Lignes de cette année de congés",
+      "empty": "Aucune ligne pour l'instant — le solde est le droit annuel moins les congés pris.",
+      "byRule": "la règle de report",
+      "byWhen": "{{name}} · {{date}}",
+      "voidedOn": "Annulée le {{date}}",
+      "undo": "Annuler",
+      "undoConfirm": "Annuler cette ligne ? Elle reste ici, barrée, et le solde revient en arrière.",
+      "undoYes": "Annuler la ligne",
+      "keep": "Conserver",
+      "undone": "Ligne annulée",
+      "voidedByOn": "Annulée par {{name}} le {{date}}"
+    },
+    "opening": {
+      "title": "Soldes d'ouverture",
+      "subtitle": "Ce que chaque personne avait déjà pris cette année de congés avant HBCField, et ce qu'elle a reporté de l'année précédente. Rempli une fois — chaque chiffre devient une ligne visible sur son solde.",
+      "link": "Soldes d'ouverture",
+      "paste": "Coller depuis un fichier",
+      "noAccess": "Seules les personnes qui décident des congés peuvent saisir les soldes d'ouverture.",
+      "unavailable": "Les soldes d'ouverture ne sont pas encore disponibles sur ce serveur.",
+      "yearNote": "Ces chiffres appartiennent à l'année de congés qui contient le {{date}} — l'année civile, ou l'année de travail de chaque personne si l'entreprise compte en années de travail.",
+      "search": "Rechercher des personnes",
+      "count_one": "{{count}} personne",
+      "count_other": "{{count}} personnes",
+      "colMember": "Personne",
+      "colUsed": "Pris avant HBCField",
+      "colCarried": "Reportés de l'année précédente",
+      "none": "Aucun résultat.",
+      "halfDays": "Les demi-journées sont admises (p. ex. 2,5). Une case vide compte pour 0.",
+      "fixCells_one": "{{count}} ligne contient un nombre illisible",
+      "fixCells_other": "{{count}} lignes contiennent des nombres illisibles",
+      "saved": "Soldes d'ouverture enregistrés",
+      "pasteTitle": "Coller depuis votre ancien système",
+      "pasteHint": "Une personne par ligne : e-mail ou nom complet ; jours pris ; jours reportés. Séparés par tabulation, point-virgule ou virgule ; une ligne d'en-tête est ignorée.",
+      "match": "Associer les personnes",
+      "filled_one": "{{count}} ligne remplie",
+      "filled_other": "{{count}} lignes remplies",
+      "notPlaced_one": "{{count}} ligne n'a pas pu être associée",
+      "notPlaced_other": "{{count}} lignes n'ont pas pu être associées",
+      "line": "Ligne {{line}}",
+      "unmatched": "personne avec ce nom ou cet e-mail",
+      "unreadable": "nombres illisibles",
+      "startedOn": "Congés suivis dans HBCField depuis le",
+      "ambiguous": "plusieurs personnes correspondent",
+      "duplicate": "cette personne figure aussi sur une autre ligne"
+    },
+    "banner": {
+      "title": "Saisir les soldes d'ouverture",
+      "body": "Démarré en cours d'année ? Indiquez ce que chacun a déjà pris avant HBCField, pour que personne n'affiche une année complète restante."
+    },
+    "settings": {
+      "yearLabel": "Année de congés",
+      "year": {
+        "CALENDAR": {
+          "label": "Année civile",
+          "hint": "Du 1er janvier au 31 décembre pour tous."
+        },
+        "WORK_YEAR": {
+          "label": "Année de travail",
+          "hint": "À partir de la date d'entrée de chaque personne, p. ex. 15 avril – 14 avril."
+        }
+      },
+      "austriaNote": "En Autriche, l'année de travail est la règle légale par défaut, sauf si l'entreprise a convenu de l'année civile.",
+      "carryLabel": "Jours restants en fin d'année",
+      "carry": {
+        "NONE": "Pas de report",
+        "UP_TO": "Report plafonné",
+        "ALL": "Reporter tous les jours"
+      },
+      "maxDays": "Jours reportés au maximum",
+      "expiry": "Les jours reportés expirent après (mois)",
+      "never": "Jamais",
+      "carryHint": "Les jours reportés sont ajoutés le premier jour de la nouvelle année de congés sous forme de ligne visible, et peuvent être annulés."
     }
   }
 }

@@ -9333,7 +9333,26 @@
     "REQUEST_TOO_MANY_DAYS": "Una solicitud en remoto puede cubrir como máximo 31 días.",
     "REQUEST_REMOTE_NOT_ALLOWED": "No tienes permiso para trabajar fuera del lugar, así que no puedes pedir un día en remoto.",
     "REQUEST_SPACE_NOT_YOURS": "Ese espacio de trabajo no es uno de los tuyos.",
-    "REQUEST_KIND_NOT_OFFERED": "Este tipo de solicitud no está disponible en tu espacio de trabajo."
+    "REQUEST_KIND_NOT_OFFERED": "Este tipo de solicitud no está disponible en tu espacio de trabajo.",
+    "ADJUSTMENT_KIND_INVALID": "Elija qué tipo de línea es.",
+    "ADJUSTMENT_DAYS_INVALID": "Introduzca los días como número en medios días (p. ej. 1 o 2,5), distinto de cero, como máximo 366.",
+    "ADJUSTMENT_REASON_REQUIRED": "Una corrección o unos días extra necesitan un motivo.",
+    "ADJUSTMENT_REASON_TOO_LONG": "El motivo es demasiado largo: 500 caracteres como máximo.",
+    "ADJUSTMENT_DATE_INVALID": "Elija una fecha válida.",
+    "ADJUSTMENT_ALREADY_VOIDED": "Esta línea ya se había deshecho.",
+    "LEAVE_DAY_INVALID": "Elija un día válido.",
+    "MEMBER_NOT_FOUND": "No se encontró a esta persona.",
+    "OPENING_ROW_INVALID": "Cada persona una sola vez, con días en medios días de 0 a 366.",
+    "OPENING_ROWS_EMPTY": "No hay nada que guardar.",
+    "OPENING_TEXT_EMPTY": "Pegue primero la tabla.",
+    "OPENING_TOO_MANY_ROWS": "Como máximo 500 personas a la vez.",
+    "LEAVE_ALLOWANCE_INVALID": "Los días de vacaciones anuales deben ser un número entero de 0 a 100.",
+    "LEAVE_YEAR_MODE_INVALID": "Elija el año natural o el año laboral.",
+    "CARRY_OVER_MODE_INVALID": "Elija qué ocurre con los días restantes al final del año.",
+    "CARRY_OVER_MAX_INVALID": "Indique cuántos días se pueden traspasar: un número entero de 1 a 100.",
+    "CARRY_EXPIRY_INVALID": "Los días traspasados caducan tras 1 a 24 meses; deje el campo vacío para nunca.",
+    "LEAVE_TRACKING_DATE_INVALID": "Elija una fecha de inicio válida.",
+    "LEAVE_POLICY_EMPTY": "No hay nada que guardar."
   },
   "signLink": {
     "tabs": {
@@ -10304,16 +10323,139 @@
       "noUsualHours": "Sin semana laboral definida",
       "overtime": "Tiempo extra",
       "kind": "Tipo",
-      "balance": "Días de vacaciones",
-      "balanceNow": "Quedan ahora",
-      "balanceAfter": "Quedarían si se aprueba",
-      "daysLeft_one": "{{count}} de {{total}} día",
-      "daysLeft_other": "{{count}} de {{total}} días"
+      "balance": "Días de vacaciones"
     },
     "settings": {
       "title": "Solicitudes que los miembros pueden enviar aquí",
       "subtitle": "Desactiva los tipos de solicitud que este espacio no usa. Se guarda al momento.",
       "note": "Al menos un tipo queda activo. Los días en remoto solo se ofrecen a quienes pueden trabajar fuera del lugar."
+    }
+  },
+  "leaveLedger": {
+    "balanceTitle": "Saldo de vacaciones",
+    "yearCalendar": "Año de vacaciones {{year}}",
+    "yearWork": "Año laboral {{from}} – {{to}}",
+    "remaining": "Restantes",
+    "carryExpires": "Los días traspasados se pueden usar hasta el {{date}}.",
+    "thisRequest_one": "Esta solicitud · {{count}} día laborable",
+    "thisRequest_other": "Esta solicitud · {{count}} días laborables",
+    "allowanceTitleWork": "Días de vacaciones restantes · {{from}} – {{to}}",
+    "showLines": "¿Cómo se calcula?",
+    "hideLines": "Ocultar el desglose",
+    "lines": {
+      "ALLOWANCE": "Derecho anual",
+      "OPENING_USED": "Usados antes de HBCField",
+      "CARRY_OVER": "Traspasados del año anterior",
+      "CARRY_EXPIRED": "Días traspasados caducados",
+      "GRANT": "Días extra concedidos",
+      "CORRECTION": "Corrección",
+      "TAKEN": "Vacaciones disfrutadas"
+    },
+    "kinds": {
+      "OPENING_USED": {
+        "label": "Usados antes de HBCField",
+        "hint": "Días ya usados este año de vacaciones en el sistema anterior.",
+        "daysHint": "Introduzca los días usados, p. ej. 10: se restan."
+      },
+      "CORRECTION": {
+        "label": "Corrección",
+        "hint": "Corregir una cifra en cualquier sentido. Siempre con motivo.",
+        "daysHint": "Positivo suma días, negativo los resta (p. ej. -1,5). Se admiten medios días."
+      },
+      "GRANT": {
+        "label": "Días extra concedidos",
+        "hint": "Días que la empresa concede además del derecho anual. Siempre con motivo.",
+        "daysHint": "Introduzca los días concedidos, p. ej. 1 o 0,5."
+      }
+    },
+    "adjust": {
+      "title": "Añadir una línea al saldo",
+      "description": "El saldo de {{name}} es el derecho anual más cada línea, menos las vacaciones disfrutadas. Cada línea guarda quién la añadió y por qué.",
+      "kind": "¿Qué tipo de línea?",
+      "days": "Días",
+      "date": "En el año de vacaciones de",
+      "reason": "Motivo",
+      "optional": "(opcional)",
+      "reasonPlaceholder": "p. ej. acordado en la revisión anual",
+      "submit": "Añadir línea",
+      "saved": "Línea añadida al saldo"
+    },
+    "ledger": {
+      "title": "Saldo de vacaciones",
+      "description": "El derecho anual, cada línea añadida y las vacaciones disfrutadas este año de vacaciones.",
+      "add": "Añadir línea",
+      "linesTitle": "Líneas de este año de vacaciones",
+      "empty": "Aún no hay líneas: el saldo es el derecho anual menos las vacaciones disfrutadas.",
+      "byRule": "la regla de traspaso",
+      "byWhen": "{{name}} · {{date}}",
+      "voidedOn": "Deshecha el {{date}}",
+      "undo": "Deshacer",
+      "undoConfirm": "¿Deshacer esta línea? Queda aquí tachada y el saldo vuelve a cambiar.",
+      "undoYes": "Deshacer línea",
+      "keep": "Mantener",
+      "undone": "Línea deshecha",
+      "voidedByOn": "Deshecha por {{name}} el {{date}}"
+    },
+    "opening": {
+      "title": "Saldos iniciales",
+      "subtitle": "Lo que cada persona ya había usado este año de vacaciones antes de HBCField y lo que traspasó del año anterior. Se rellena una vez: cada cifra pasa a ser una línea visible en su saldo.",
+      "link": "Saldos iniciales",
+      "paste": "Pegar desde archivo",
+      "noAccess": "Solo quien decide las vacaciones puede fijar los saldos iniciales.",
+      "unavailable": "Los saldos iniciales aún no están disponibles en este servidor.",
+      "yearNote": "Estas cifras pertenecen al año de vacaciones que contiene el {{date}}: el año natural o, si la empresa cuenta por años laborales, el año laboral de cada persona.",
+      "search": "Buscar personas",
+      "count_one": "{{count}} persona",
+      "count_other": "{{count}} personas",
+      "colMember": "Persona",
+      "colUsed": "Usados antes de HBCField",
+      "colCarried": "Traspasados del año anterior",
+      "none": "Ninguna coincidencia.",
+      "halfDays": "Se admiten medios días (p. ej. 2,5). Una celda vacía cuenta como 0.",
+      "fixCells_one": "{{count}} fila tiene un número que no se puede leer",
+      "fixCells_other": "{{count}} filas tienen números que no se pueden leer",
+      "saved": "Saldos iniciales guardados",
+      "pasteTitle": "Pegar desde su sistema anterior",
+      "pasteHint": "Una persona por línea: correo o nombre completo; días usados; días traspasados. Separados por tabulador, punto y coma o coma; se omite una fila de encabezado.",
+      "match": "Asignar personas",
+      "filled_one": "{{count}} fila rellenada",
+      "filled_other": "{{count}} filas rellenadas",
+      "notPlaced_one": "{{count}} línea no se pudo asignar",
+      "notPlaced_other": "{{count}} líneas no se pudieron asignar",
+      "line": "Línea {{line}}",
+      "unmatched": "nadie con ese nombre o correo",
+      "unreadable": "números ilegibles",
+      "startedOn": "Vacaciones registradas en HBCField desde",
+      "ambiguous": "coincide más de una persona",
+      "duplicate": "esta persona aparece también en otra línea"
+    },
+    "banner": {
+      "title": "Fijar los saldos iniciales",
+      "body": "¿Empezó a mitad de año? Indique lo que cada persona ya usó antes de HBCField, para que nadie muestre un año completo por delante."
+    },
+    "settings": {
+      "yearLabel": "Año de vacaciones",
+      "year": {
+        "CALENDAR": {
+          "label": "Año natural",
+          "hint": "Del 1 de enero al 31 de diciembre para todos."
+        },
+        "WORK_YEAR": {
+          "label": "Año laboral",
+          "hint": "Desde la fecha de incorporación de cada persona, p. ej. 15 de abril – 14 de abril."
+        }
+      },
+      "austriaNote": "En Austria, el año laboral es el estándar legal, salvo que la empresa haya acordado el año natural.",
+      "carryLabel": "Días restantes al final del año",
+      "carry": {
+        "NONE": "Sin traspaso",
+        "UP_TO": "Hasta un límite",
+        "ALL": "Traspasar todos"
+      },
+      "maxDays": "Máximo de días traspasados",
+      "expiry": "Los días traspasados caducan tras (meses)",
+      "never": "Nunca",
+      "carryHint": "Los días traspasados se añaden el primer día del nuevo año de vacaciones como una línea visible, y se pueden deshacer."
     }
   }
 }

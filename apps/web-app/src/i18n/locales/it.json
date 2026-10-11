@@ -9342,7 +9342,26 @@
     "REQUEST_TOO_MANY_DAYS": "Una richiesta da remoto può coprire al massimo 31 giorni.",
     "REQUEST_REMOTE_NOT_ALLOWED": "Non puoi lavorare fuori sede, quindi non puoi chiedere un giorno da remoto.",
     "REQUEST_SPACE_NOT_YOURS": "Quello spazio di lavoro non è uno dei tuoi.",
-    "REQUEST_KIND_NOT_OFFERED": "Questo tipo di richiesta non è disponibile nel tuo spazio di lavoro."
+    "REQUEST_KIND_NOT_OFFERED": "Questo tipo di richiesta non è disponibile nel tuo spazio di lavoro.",
+    "ADJUSTMENT_KIND_INVALID": "Scelga il tipo di riga.",
+    "ADJUSTMENT_DAYS_INVALID": "Inserisca i giorni come numero in mezze giornate (ad es. 1 o 2,5), diverso da zero, al massimo 366.",
+    "ADJUSTMENT_REASON_REQUIRED": "Una correzione o dei giorni extra richiedono un motivo.",
+    "ADJUSTMENT_REASON_TOO_LONG": "Il motivo è troppo lungo: al massimo 500 caratteri.",
+    "ADJUSTMENT_DATE_INVALID": "Scelga una data valida.",
+    "ADJUSTMENT_ALREADY_VOIDED": "Questa riga era già stata annullata.",
+    "LEAVE_DAY_INVALID": "Scelga un giorno valido.",
+    "MEMBER_NOT_FOUND": "Questa persona non è stata trovata.",
+    "OPENING_ROW_INVALID": "Ogni persona una sola volta, con giorni in mezze giornate da 0 a 366.",
+    "OPENING_ROWS_EMPTY": "Niente da salvare.",
+    "OPENING_TEXT_EMPTY": "Incolli prima la tabella.",
+    "OPENING_TOO_MANY_ROWS": "Al massimo 500 persone alla volta.",
+    "LEAVE_ALLOWANCE_INVALID": "I giorni di ferie annuali devono essere un numero intero da 0 a 100.",
+    "LEAVE_YEAR_MODE_INVALID": "Scelga l'anno solare o l'anno lavorativo.",
+    "CARRY_OVER_MODE_INVALID": "Scelga cosa succede ai giorni rimasti a fine anno.",
+    "CARRY_OVER_MAX_INVALID": "Indichi quanti giorni si possono riportare: un numero intero da 1 a 100.",
+    "CARRY_EXPIRY_INVALID": "I giorni riportati scadono dopo 1-24 mesi; lasci il campo vuoto per mai.",
+    "LEAVE_TRACKING_DATE_INVALID": "Scelga una data di inizio valida.",
+    "LEAVE_POLICY_EMPTY": "Niente da salvare."
   },
   "signLink": {
     "tabs": {
@@ -10313,16 +10332,139 @@
       "noUsualHours": "Nessuna settimana lavorativa impostata",
       "overtime": "Tempo in più",
       "kind": "Tipo",
-      "balance": "Ferie spettanti",
-      "balanceNow": "Rimasti ora",
-      "balanceAfter": "Rimasti se approvata",
-      "daysLeft_one": "{{count}} di {{total}} giorno",
-      "daysLeft_other": "{{count}} di {{total}} giorni"
+      "balance": "Ferie spettanti"
     },
     "settings": {
       "title": "Richieste che i membri possono inviare qui",
       "subtitle": "Disattiva i tipi di richiesta che questo spazio non usa. Salvato subito.",
       "note": "Almeno un tipo resta attivo. I giorni da remoto sono offerti solo a chi può lavorare fuori sede."
+    }
+  },
+  "leaveLedger": {
+    "balanceTitle": "Saldo ferie",
+    "yearCalendar": "Anno di ferie {{year}}",
+    "yearWork": "Anno lavorativo {{from}} – {{to}}",
+    "remaining": "Rimanenti",
+    "carryExpires": "I giorni riportati si possono usare fino al {{date}}.",
+    "thisRequest_one": "Questa richiesta · {{count}} giorno lavorativo",
+    "thisRequest_other": "Questa richiesta · {{count}} giorni lavorativi",
+    "allowanceTitleWork": "Giorni di ferie rimanenti · {{from}} – {{to}}",
+    "showLines": "Come viene calcolato?",
+    "hideLines": "Nascondi il dettaglio",
+    "lines": {
+      "ALLOWANCE": "Spettanza annuale",
+      "OPENING_USED": "Usati prima di HBCField",
+      "CARRY_OVER": "Riportati dall'anno precedente",
+      "CARRY_EXPIRED": "Giorni riportati scaduti",
+      "GRANT": "Giorni extra concessi",
+      "CORRECTION": "Correzione",
+      "TAKEN": "Ferie godute"
+    },
+    "kinds": {
+      "OPENING_USED": {
+        "label": "Usati prima di HBCField",
+        "hint": "Giorni già usati in questo anno di ferie nel sistema precedente.",
+        "daysHint": "Inserisca i giorni usati, ad es. 10: vengono sottratti."
+      },
+      "CORRECTION": {
+        "label": "Correzione",
+        "hint": "Correggere un valore in un senso o nell'altro. Sempre con un motivo.",
+        "daysHint": "Positivo aggiunge giorni, negativo li toglie (ad es. -1,5). Sono ammesse mezze giornate."
+      },
+      "GRANT": {
+        "label": "Giorni extra concessi",
+        "hint": "Giorni che l'azienda concede oltre alla spettanza. Sempre con un motivo.",
+        "daysHint": "Inserisca i giorni concessi, ad es. 1 o 0,5."
+      }
+    },
+    "adjust": {
+      "title": "Aggiungi una riga al saldo",
+      "description": "Il saldo di {{name}} è la spettanza più ogni riga, meno le ferie godute. Ogni riga conserva chi l'ha aggiunta e perché.",
+      "kind": "Che tipo di riga?",
+      "days": "Giorni",
+      "date": "Nell'anno di ferie del",
+      "reason": "Motivo",
+      "optional": "(facoltativo)",
+      "reasonPlaceholder": "ad es. concordato al colloquio annuale",
+      "submit": "Aggiungi riga",
+      "saved": "Riga aggiunta al saldo"
+    },
+    "ledger": {
+      "title": "Saldo ferie",
+      "description": "La spettanza, ogni riga aggiunta e le ferie godute in questo anno di ferie.",
+      "add": "Aggiungi riga",
+      "linesTitle": "Righe di questo anno di ferie",
+      "empty": "Ancora nessuna riga: il saldo è la spettanza meno le ferie godute.",
+      "byRule": "la regola di riporto",
+      "byWhen": "{{name}} · {{date}}",
+      "voidedOn": "Annullata il {{date}}",
+      "undo": "Annulla",
+      "undoConfirm": "Annullare questa riga? Resta qui barrata e il saldo torna indietro.",
+      "undoYes": "Annulla riga",
+      "keep": "Mantieni",
+      "undone": "Riga annullata",
+      "voidedByOn": "Annullata da {{name}} il {{date}}"
+    },
+    "opening": {
+      "title": "Saldi iniziali",
+      "subtitle": "Quanto ciascuno aveva già usato in questo anno di ferie prima di HBCField e quanto ha riportato dall'anno precedente. Si compila una volta: ogni valore diventa una riga visibile sul suo saldo.",
+      "link": "Saldi iniziali",
+      "paste": "Incolla da file",
+      "noAccess": "Solo chi decide le ferie può impostare i saldi iniziali.",
+      "unavailable": "I saldi iniziali non sono ancora disponibili su questo server.",
+      "yearNote": "Questi valori appartengono all'anno di ferie che contiene il {{date}}: l'anno solare o, se l'azienda conta per anni lavorativi, l'anno lavorativo di ciascuno.",
+      "search": "Cerca persone",
+      "count_one": "{{count}} persona",
+      "count_other": "{{count}} persone",
+      "colMember": "Persona",
+      "colUsed": "Usati prima di HBCField",
+      "colCarried": "Riportati dall'anno precedente",
+      "none": "Nessun risultato.",
+      "halfDays": "Sono ammesse mezze giornate (ad es. 2,5). Una cella vuota vale 0.",
+      "fixCells_one": "{{count}} riga contiene un numero illeggibile",
+      "fixCells_other": "{{count}} righe contengono numeri illeggibili",
+      "saved": "Saldi iniziali salvati",
+      "pasteTitle": "Incolla dal sistema precedente",
+      "pasteHint": "Una persona per riga: e-mail o nome completo; giorni usati; giorni riportati. Separati da tabulazione, punto e virgola o virgola; una riga di intestazione viene saltata.",
+      "match": "Abbina persone",
+      "filled_one": "{{count}} riga compilata",
+      "filled_other": "{{count}} righe compilate",
+      "notPlaced_one": "{{count}} riga non abbinata",
+      "notPlaced_other": "{{count}} righe non abbinate",
+      "line": "Riga {{line}}",
+      "unmatched": "nessuno con questo nome o e-mail",
+      "unreadable": "numeri illeggibili",
+      "startedOn": "Ferie registrate in HBCField dal",
+      "ambiguous": "corrisponde più di una persona",
+      "duplicate": "questa persona è anche in un'altra riga"
+    },
+    "banner": {
+      "title": "Imposta i saldi iniziali",
+      "body": "Avviato a metà anno? Inserisca quanto ciascuno ha già usato prima di HBCField, così nessuno mostra un anno intero ancora disponibile."
+    },
+    "settings": {
+      "yearLabel": "Anno di ferie",
+      "year": {
+        "CALENDAR": {
+          "label": "Anno solare",
+          "hint": "Dal 1° gennaio al 31 dicembre per tutti."
+        },
+        "WORK_YEAR": {
+          "label": "Anno lavorativo",
+          "hint": "Dalla data di assunzione di ciascuno, ad es. 15 aprile – 14 aprile."
+        }
+      },
+      "austriaNote": "In Austria l'anno lavorativo è lo standard di legge, salvo che l'azienda abbia concordato l'anno solare.",
+      "carryLabel": "Giorni rimasti a fine anno",
+      "carry": {
+        "NONE": "Nessun riporto",
+        "UP_TO": "Fino a un limite",
+        "ALL": "Riporta tutti i giorni"
+      },
+      "maxDays": "Giorni riportati al massimo",
+      "expiry": "I giorni riportati scadono dopo (mesi)",
+      "never": "Mai",
+      "carryHint": "I giorni riportati vengono aggiunti il primo giorno del nuovo anno di ferie come riga visibile, e si possono annullare."
     }
   }
 }

@@ -3,6 +3,7 @@ import { apiError } from '../server-error';
 import { fetchAllPages } from '../paginate';
 import { MEMBER_DIRECTORY_PAGE_SIZE } from '../query-keys';
 import type { AccessRole, MemberStatement, MemberWatcher, OrgMember, OrganizationProfile, UpdateMemberInput } from './types/organizations';
+import type { LeavePolicyFields } from './types/leave-ledger';
 import { organizationsEndpoints } from '@hbcfield/shared/client';
 
 export const organizationsApi = {
@@ -33,9 +34,17 @@ export const organizationsApi = {
     return response.data?.data;
   },
 
-  /** The organization's annual vacation days (ADMIN only). */
-  updateLeavePolicy: async (defaultLeaveAllowance: number) => {
-    const response = await call(organizationsEndpoints.updateLeavePolicy, undefined, { body: { defaultLeaveAllowance } }) as ApiResponse<unknown>;
+  /**
+   * The organization's leave rules (ADMIN only): annual vacation days, and with
+   * the leave ledger the leave year and the carry-over rule. Only the fields
+   * passed are sent — an older server that knows only the allowance is never
+   * handed a field it would refuse.
+   */
+  updateLeavePolicy: async (input: Omit<LeavePolicyFields, 'leaveTrackingStartedOn'>) => {
+    const body = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
+    // The shared entry still types only the allowance; the route takes the ledger's rules beside it.
+    const response = await call(organizationsEndpoints.updateLeavePolicy, undefined, { body: body as { defaultLeaveAllowance: number } }) as ApiResponse<unknown>;
+    if (response.error) throw apiError(response);
     return response.data;
   },
 

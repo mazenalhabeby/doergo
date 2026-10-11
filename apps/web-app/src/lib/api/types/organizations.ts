@@ -1,5 +1,7 @@
 
 
+import type { LeavePolicyFields } from './leave-ledger';
+
 // ============================================================================
 // ORGANIZATIONS API
 // ============================================================================
@@ -117,7 +119,7 @@ export interface MemberWatcher {
  * `Record<string, any>` calls into something a rename can break at build time
  * rather than at the customer.
  */
-export interface OrganizationProfile {
+export interface OrganizationProfile extends LeavePolicyFields {
   id?: string;
   name?: string | null;
   description?: string | null;

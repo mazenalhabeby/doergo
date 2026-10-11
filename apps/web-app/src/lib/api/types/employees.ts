@@ -1,8 +1,10 @@
 
 
+import type { LeaveBalanceLedgerFields } from './leave-ledger';
+
 // Task types
-/** This year's vacation allowance for one person. */
-export interface LeaveBalance {
+/** This year's vacation allowance for one person — now with the ledger's lines when the server has them. */
+export interface LeaveBalance extends LeaveBalanceLedgerFields {
   year: number;
   allowance: number;
   taken: number;

@@ -1,0 +1,145 @@
+import { call, type ApiResponse } from '../http-client';
+import { apiError } from '../server-error';
+import { defineEndpoints, endpoint, path, withQuery, type LeaveAdjustmentInput } from '@hbcfield/shared/client';
+import type { LeaveAdjustmentDto, LeaveLedger, LeaveOpening, OpeningBalanceMatch, OpeningBalanceRowDto } from './types/leave-ledger';
+
+/**
+ * The leave ledger's routes — a member's adjustment lines and the starting
+ * balances screen.
+ *
+ * Defined HERE, beside their one caller, until the shared endpoint table carries
+ * them (the server half of the ledger lands in parallel as
+ * `employeesEndpoints.leaveAdjustments` / `addLeaveAdjustment` /
+ * `voidLeaveAdjustment` / `leaveOpening` / `saveLeaveOpening` /
+ * `matchLeaveOpening`): when it is on main, each method below swaps its line for
+ * the shared entry and nothing else moves. One line to swap per route.
+ */
+const leaveLedgerEndpoints = defineEndpoints('webLeaveLedger', {
+  adjustments: endpoint<{ id: string; on?: string }, unknown>({
+    method: 'GET',
+    path: ({ id, ...q }) => withQuery(path`/employees/${id}/leave-adjustments`, q),
+    keep: true,
+  }),
+  addAdjustment: endpoint<{ id: string }, unknown, LeaveAdjustmentInput>({ method: 'POST', path: (a) => path`/employees/${a.id}/leave-adjustments` }),
+  voidAdjustment: endpoint<{ adjustmentId: string }, unknown>({
+    method: 'POST',
+    path: (a) => path`/employees/leave-adjustments/${a.adjustmentId}/void`,
+  }),
+  opening: endpoint<{ on?: string }, unknown>({ method: 'GET', path: (q) => withQuery('/employees/leave-opening', q), keep: true }),
+  saveOpening: endpoint<void, unknown, { on: string; rows: Array<{ userId: string; used: number; carried: number }> }>({
+    method: 'POST',
+    path: () => '/employees/leave-opening',
+  }),
+  matchOpening: endpoint<void, unknown, { text: string }>({ method: 'POST', path: () => '/employees/leave-opening/match' }),
+});
+
+/* ------------------------------------------------------------------ normalizing */
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
+
+/** `{ data: T }`, `{ success, data }` or a bare `T` — the body the screen wants. */
+export function unwrapBody(body: unknown): unknown {
+  return isObj(body) && 'data' in body ? body.data : body;
+}
+
+/** The ledger response: `{ leaveYear, items, canEdit }`; a bare array (an early server) reads as not editable. */
+export function toLeaveLedger(body: unknown): LeaveLedger {
+  const b = unwrapBody(body);
+  if (Array.isArray(b)) return { leaveYear: null, items: b as LeaveAdjustmentDto[], canEdit: false };
+  const o = isObj(b) ? b : {};
+  return {
+    leaveYear: (o.leaveYear as LeaveLedger['leaveYear']) ?? null,
+    items: Array.isArray(o.items) ? (o.items as LeaveAdjustmentDto[]) : [],
+    canEdit: o.canEdit === true,
+  };
+}
+
+/** The starting balances: `{ rows, trackingStartedOn, mode }`, or a bare array of rows. */
+export function toLeaveOpening(body: unknown): LeaveOpening {
+  const b = unwrapBody(body);
+  if (Array.isArray(b)) return { rows: b as OpeningBalanceRowDto[] };
+  const o = isObj(b) ? b : {};
+  return {
+    rows: Array.isArray(o.rows) ? (o.rows as OpeningBalanceRowDto[]) : [],
+    ...('trackingStartedOn' in o ? { trackingStartedOn: (o.trackingStartedOn as string | null) ?? null } : {}),
+    ...(typeof o.mode === 'string' ? { mode: o.mode as LeaveOpening['mode'] } : {}),
+  };
+}
+
+/** The server's match (`matched` with names) as rows the table can fill, and lines it could not place. */
+export function toOpeningMatch(body: unknown): OpeningBalanceMatch {
+  const o = (isObj(unwrapBody(body)) ? unwrapBody(body) : {}) as Obj;
+  const matched = (Array.isArray(o.matched) ? o.matched : Array.isArray(o.rows) ? o.rows : []) as Obj[];
+  const unmatched = (Array.isArray(o.unmatched) ? o.unmatched : []) as Obj[];
+  const errors = (Array.isArray(o.errors) ? o.errors : []) as Obj[];
+  return {
+    rows: matched.map((m) => ({
+      line: Number(m.line) || 0,
+      userId: String(m.userId ?? ''),
+      name: typeof m.name === 'string' ? m.name : `${m.firstName ?? ''} ${m.lastName ?? ''}`.trim(),
+      used: Number(m.used) || 0,
+      carried: Number(m.carried) || 0,
+    })).filter((m) => m.userId),
+    unmatched: unmatched.map((u) => ({
+      line: Number(u.line) || 0,
+      text: String(u.person ?? u.text ?? ''),
+      ...(typeof u.reason === 'string' ? { reason: u.reason as OpeningBalanceMatch['unmatched'][number]['reason'] } : {}),
+    })),
+    errors: errors.map((e) => ({ line: Number(e.line) || 0, text: String(e.text ?? '') })),
+  };
+}
+
+function fail(response: ApiResponse<unknown>): never {
+  throw apiError(response);
+}
+
+export const leaveLedgerApi = {
+  /**
+   * A member's lines for the leave year containing `on` (YYYY-MM-DD).
+   * `null` = the server does not have the ledger yet (404) — the screen then
+   * shows today's simple balance and no ledger at all.
+   */
+  getAdjustments: async (memberId: string, on?: string): Promise<LeaveLedger | null> => {
+    const response = await call(leaveLedgerEndpoints.adjustments, { id: memberId, on });
+    if (response.status === 404) return null;
+    if (response.error) fail(response);
+    return toLeaveLedger(response.data);
+  },
+
+  /** A hand-entered line — always shaped by `parseLeaveAdjustment` first. */
+  addAdjustment: async (memberId: string, input: LeaveAdjustmentInput) => {
+    const response = await call(leaveLedgerEndpoints.addAdjustment, { id: memberId }, { body: input });
+    if (response.error) fail(response);
+    return unwrapBody(response.data);
+  },
+
+  /** Undo a line. It stays in the ledger, struck through, with who undid it. */
+  voidAdjustment: async (adjustmentId: string) => {
+    const response = await call(leaveLedgerEndpoints.voidAdjustment, { adjustmentId });
+    if (response.error) fail(response);
+    return unwrapBody(response.data);
+  },
+
+  /** Everybody in scope and what is already saved as their starting balance. `null` = no ledger on this server. */
+  getOpening: async (on: string): Promise<LeaveOpening | null> => {
+    const response = await call(leaveLedgerEndpoints.opening, { on });
+    if (response.status === 404) return null;
+    if (response.error) fail(response);
+    return toLeaveOpening(response.data);
+  },
+
+  /** The whole table in one request. */
+  saveOpening: async (on: string, rows: Array<{ userId: string; used: number; carried: number }>) => {
+    const response = await call(leaveLedgerEndpoints.saveOpening, undefined, { body: { on, rows } });
+    if (response.error) fail(response);
+    return unwrapBody(response.data);
+  },
+
+  /** Pasted text from the old system → people the SERVER matched; ids are never taken from the text. */
+  matchOpening: async (text: string): Promise<OpeningBalanceMatch> => {
+    const response = await call(leaveLedgerEndpoints.matchOpening, undefined, { body: { text } });
+    if (response.error) fail(response);
+    return toOpeningMatch(response.data);
+  },
+};

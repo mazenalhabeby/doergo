@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { hasAccessModule, localDateKey, type LeaveType } from "@hbcfield/shared/client"
 import type { TimeOffRequest } from "@hbcfield/shared"
 import { keys } from "@/lib/query-keys"
-import { formatMediumDate, formatMonthYear } from "@/lib/format-date"
+import { formatDayMonth, formatMediumDate, formatMonthYear } from "@/lib/format-date"
 import { serverErrorMessage } from "@/lib/server-error"
 import { useRequestOptions } from "@/hooks/use-request-options"
 import {
@@ -25,6 +25,8 @@ import {
 } from "@/lib/requests"
 import { RequestKindChip, RequestKindPicker } from "@/components/requests/request-kind"
 import { RequestFields, type RequestFieldsValue } from "@/components/requests/request-fields"
+import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
+import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
 
 /*
   Leave products lead with three things: allowance remaining, who else is away,
@@ -198,6 +200,8 @@ export default function MyTimeOffPage() {
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null)
   const [hovered, setHovered] = useState<Date | null>(null)
   const [cursor, setCursor] = useState(() => startOfDay(new Date()))
+  /* "How is this counted?" — the balance's lines, opened on demand beside the ring. */
+  const [showLines, setShowLines] = useState(false)
   /*
     Opened from the calendar's New › Time off (`?from=YYYY-MM-DD`): the request starts on that
     day and the month opens on it. Read once after mount (the server has no address bar);
@@ -233,6 +237,9 @@ export default function MyTimeOffPage() {
     queryFn: () => employeesApi.getLeaveBalance(user!.id),
     enabled: canSee && !!user?.id,
   })
+
+  const balanceLines = balanceView(balance)
+  const yearLabel = balanceLines ? leaveYearLabel(balanceLines, (d) => formatDayMonth(`${d}T12:00:00`, false)) : null
 
   const refetch = () => {
     qc.invalidateQueries({ queryKey: keys.timeOff.mine(user?.id) })
@@ -388,7 +395,9 @@ export default function MyTimeOffPage() {
           />
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t("timeOff.my.allowanceTitle", { year: balance?.year ?? new Date().getFullYear() })}
+              {yearLabel?.kind === "work"
+                ? t("leaveLedger.allowanceTitleWork", { from: yearLabel.from, to: yearLabel.to })
+                : t("timeOff.my.allowanceTitle", { year: yearLabel?.year ?? new Date().getFullYear() })}
             </p>
             <p className="mt-1 text-sm text-foreground">
               {t("timeOff.my.allowanceOf", { taken: balance?.taken ?? 0, total: balance?.allowance ?? 0 })}
@@ -399,6 +408,16 @@ export default function MyTimeOffPage() {
               <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
                 {t("timeOff.my.allowancePending", { count: balance.pending })}
               </p>
+            )}
+            {balance && (
+              <button
+                type="button"
+                aria-expanded={showLines}
+                onClick={() => setShowLines((v) => !v)}
+                className="mt-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+              >
+                {showLines ? t("leaveLedger.hideLines") : t("leaveLedger.showLines")}
+              </button>
             )}
             {balance?.prorated && (
               /* A joiner sees a number nobody else has. Unexplained, that reads
@@ -422,6 +441,9 @@ export default function MyTimeOffPage() {
                 label={t("timeOff.my.statNext")} />
         </div>
       </div>
+      {showLines && balance && (
+        <LeaveBalanceBreakdown balance={balance} className="mb-5 bg-card sm:max-w-md" />
+      )}
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* ── Calendar ─────────────────────────────────────────────── */}
@@ -588,6 +610,10 @@ export default function MyTimeOffPage() {
                   </p>
                 )}
               </div>
+              {kind === "LEAVE" && reasonType === "vacation" && balance && (
+                /* Only vacation is deducted: the balance before and after, line by line — the drawer shows the same. */
+                <LeaveBalanceBreakdown balance={balance} requestDays={cost?.counted ?? dayCount} compact />
+              )}
               {kind !== "LEAVE" && (
                 /* What approving it will do — said BEFORE sending, the same words the manager reads. */
                 <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
