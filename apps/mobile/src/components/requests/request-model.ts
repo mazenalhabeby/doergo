@@ -1,3 +1,4 @@
+import { leaveCostInBalanceYear } from '@hbcfield/shared/client';
 import {
   REQUEST_LIMITS,
   isLeaveType,
@@ -168,14 +169,16 @@ export function stepOvertime(minutes: number, dir: 1 | -1): number {
  */
 export function balancePreview(
   balance: { year: number; remaining: number; pending: number; leaveYear?: { start: string; end: string } | null } | null | undefined,
-  cost: { counted: number; byYear?: Record<string, number>; days?: ReadonlyArray<{ day: string; cost: number }> } | null | undefined,
+  cost: { counted: number; byYear?: Record<string, number>; byLeaveYear?: Record<string, number>; days?: ReadonlyArray<{ day: string; cost: number }> } | null | undefined,
   type: LeaveType,
 ): { before: number; after: number } | null {
   if (!balance || !cost || type !== 'VACATION') return null;
+  // Only the days inside THIS balance's leave year — the shared rule (leave/leave-api.ts).
   const ly = balance.leaveYear;
-  const thisYear = ly && cost.days
-    ? cost.days.reduce((s, d) => (d.day >= ly.start && d.day <= ly.end ? s + d.cost : s), 0)
-    : cost.byYear ? cost.byYear[String(balance.year)] ?? 0 : cost.counted;
+  const thisYear = cost.byLeaveYear || !ly || !cost.days
+    ? leaveCostInBalanceYear(balance, cost)
+    // A server before byLeaveYear: the per-day costs still say which year each day is in.
+    : cost.days.reduce((s, d) => (d.day >= ly.start && d.day <= ly.end ? s + d.cost : s), 0);
   const before = balance.remaining - balance.pending;
   return { before, after: before - thisYear };
 }

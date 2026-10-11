@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { ProgressRing } from "@/components/progress-ring"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { hasAccessModule, localDateKey, type LeaveType } from "@hbcfield/shared/client"
+import { hasAccessModule, localDateKey, type LeaveType, leaveCostInBalanceYear } from "@hbcfield/shared/client"
 import type { TimeOffRequest } from "@hbcfield/shared"
 import { keys } from "@/lib/query-keys"
 import { formatDayMonth, formatMediumDate, formatMonthYear } from "@/lib/format-date"
@@ -612,7 +612,7 @@ export default function MyTimeOffPage() {
               </div>
               {kind === "LEAVE" && reasonType === "vacation" && balance && (
                 /* Only vacation is deducted: the balance before and after, line by line — the drawer shows the same. */
-                <LeaveBalanceBreakdown balance={balance} requestDays={cost?.counted ?? dayCount} compact />
+                <LeaveBalanceBreakdown balance={balance} requestDays={cost && balance ? leaveCostInBalanceYear(balance, cost) : (cost?.counted ?? dayCount)} compact />
               )}
               {kind !== "LEAVE" && (
                 /* What approving it will do — said BEFORE sending, the same words the manager reads. */

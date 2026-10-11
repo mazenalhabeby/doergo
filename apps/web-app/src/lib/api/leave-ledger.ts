@@ -1,37 +1,9 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import { defineEndpoints, endpoint, path, withQuery, type LeaveAdjustmentInput } from '@hbcfield/shared/client';
+import { employeesEndpoints, type LeaveAdjustmentInput } from '@hbcfield/shared/client';
 import type { LeaveAdjustmentDto, LeaveLedger, LeaveOpening, OpeningBalanceMatch, OpeningBalanceRowDto } from './types/leave-ledger';
 
-/**
- * The leave ledger's routes — a member's adjustment lines and the starting
- * balances screen.
- *
- * Defined HERE, beside their one caller, until the shared endpoint table carries
- * them (the server half of the ledger lands in parallel as
- * `employeesEndpoints.leaveAdjustments` / `addLeaveAdjustment` /
- * `voidLeaveAdjustment` / `leaveOpening` / `saveLeaveOpening` /
- * `matchLeaveOpening`): when it is on main, each method below swaps its line for
- * the shared entry and nothing else moves. One line to swap per route.
- */
-const leaveLedgerEndpoints = defineEndpoints('webLeaveLedger', {
-  adjustments: endpoint<{ id: string; on?: string }, unknown>({
-    method: 'GET',
-    path: ({ id, ...q }) => withQuery(path`/employees/${id}/leave-adjustments`, q),
-    keep: true,
-  }),
-  addAdjustment: endpoint<{ id: string }, unknown, LeaveAdjustmentInput>({ method: 'POST', path: (a) => path`/employees/${a.id}/leave-adjustments` }),
-  voidAdjustment: endpoint<{ adjustmentId: string }, unknown>({
-    method: 'POST',
-    path: (a) => path`/employees/leave-adjustments/${a.adjustmentId}/void`,
-  }),
-  opening: endpoint<{ on?: string }, unknown>({ method: 'GET', path: (q) => withQuery('/employees/leave-opening', q), keep: true }),
-  saveOpening: endpoint<void, unknown, { on: string; rows: Array<{ userId: string; used: number; carried: number }> }>({
-    method: 'POST',
-    path: () => '/employees/leave-opening',
-  }),
-  matchOpening: endpoint<void, unknown, { text: string }>({ method: 'POST', path: () => '/employees/leave-opening/match' }),
-});
+/** The leave ledger's routes — one place for every path: the shared endpoint table (employeesEndpoints). */
 
 /* ------------------------------------------------------------------ normalizing */
 
@@ -101,7 +73,7 @@ export const leaveLedgerApi = {
    * shows today's simple balance and no ledger at all.
    */
   getAdjustments: async (memberId: string, on?: string): Promise<LeaveLedger | null> => {
-    const response = await call(leaveLedgerEndpoints.adjustments, { id: memberId, on });
+    const response = await call(employeesEndpoints.leaveAdjustments, { id: memberId, on });
     if (response.status === 404) return null;
     if (response.error) fail(response);
     return toLeaveLedger(response.data);
@@ -109,21 +81,21 @@ export const leaveLedgerApi = {
 
   /** A hand-entered line — always shaped by `parseLeaveAdjustment` first. */
   addAdjustment: async (memberId: string, input: LeaveAdjustmentInput) => {
-    const response = await call(leaveLedgerEndpoints.addAdjustment, { id: memberId }, { body: input });
+    const response = await call(employeesEndpoints.addLeaveAdjustment, { id: memberId }, { body: input });
     if (response.error) fail(response);
     return unwrapBody(response.data);
   },
 
   /** Undo a line. It stays in the ledger, struck through, with who undid it. */
   voidAdjustment: async (adjustmentId: string) => {
-    const response = await call(leaveLedgerEndpoints.voidAdjustment, { adjustmentId });
+    const response = await call(employeesEndpoints.voidLeaveAdjustment, { adjustmentId });
     if (response.error) fail(response);
     return unwrapBody(response.data);
   },
 
   /** Everybody in scope and what is already saved as their starting balance. `null` = no ledger on this server. */
   getOpening: async (on: string): Promise<LeaveOpening | null> => {
-    const response = await call(leaveLedgerEndpoints.opening, { on });
+    const response = await call(employeesEndpoints.leaveOpening, { on });
     if (response.status === 404) return null;
     if (response.error) fail(response);
     return toLeaveOpening(response.data);
@@ -131,14 +103,14 @@ export const leaveLedgerApi = {
 
   /** The whole table in one request. */
   saveOpening: async (on: string, rows: Array<{ userId: string; used: number; carried: number }>) => {
-    const response = await call(leaveLedgerEndpoints.saveOpening, undefined, { body: { on, rows } });
+    const response = await call(employeesEndpoints.saveLeaveOpening, undefined, { body: { on, rows } });
     if (response.error) fail(response);
     return unwrapBody(response.data);
   },
 
   /** Pasted text from the old system → people the SERVER matched; ids are never taken from the text. */
   matchOpening: async (text: string): Promise<OpeningBalanceMatch> => {
-    const response = await call(leaveLedgerEndpoints.matchOpening, undefined, { body: { text } });
+    const response = await call(employeesEndpoints.matchLeaveOpening, undefined, { body: { text } });
     if (response.error) fail(response);
     return toOpeningMatch(response.data);
   },
