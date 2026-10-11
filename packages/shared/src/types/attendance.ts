@@ -12,6 +12,8 @@ import type { NoShiftTag } from '../attendance/no-shift-limit';
 // ============================================================================
 
 export interface CompanyLocation {
+  /** Request kinds members may send here (requests/request-kinds.ts). Empty = every kind. */
+  requestKinds?: string[] | null;
   id: string;
   name: string;
   address: string;
