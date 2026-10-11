@@ -21,7 +21,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import { Role, CurrentUser, CurrentUserData, addOnDef, assertServiceOk } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, addOnDef, assertServiceOk, type LeavePolicyInput } from '@hbcfield/shared';
 import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
@@ -71,15 +71,23 @@ export class OrganizationsController {
 
   @Patch('leave-policy')
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: "Set the organization's annual vacation days (ADMIN only)" })
+  @ApiOperation({ summary: "The organization's leave policy: annual days, leave year, carry-over, when HBCField started counting (ADMIN only)" })
   async updateLeavePolicy(
-    @Body() dto: { defaultLeaveAllowance: number },
+    @Body() dto: LeavePolicyInput,
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
       this.authClient.send({ cmd: 'onboarding_update_leave_policy' }, {
         organizationId: user.organizationId,
-        defaultLeaveAllowance: dto.defaultLeaveAllowance,
+        // Read in auth-service with the shared parseLeavePolicy; only the known fields travel.
+        policy: {
+          defaultLeaveAllowance: dto?.defaultLeaveAllowance,
+          leaveYearMode: dto?.leaveYearMode,
+          carryOverMode: dto?.carryOverMode,
+          carryOverMaxDays: dto?.carryOverMaxDays,
+          carryExpiresAfterMonths: dto?.carryExpiresAfterMonths,
+          leaveTrackingStartedOn: dto?.leaveTrackingStartedOn,
+        },
       }),
     );
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);

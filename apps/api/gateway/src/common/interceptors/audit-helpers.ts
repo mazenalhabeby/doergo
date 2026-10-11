@@ -19,6 +19,16 @@ export const BODY_SUMMARY: Record<string, (body: any) => unknown> = {
     spaceId: typeof b?.spaceId === 'string' ? b.spaceId : null,
     contacts: Array.isArray(b?.items) ? b.items.length : 0,
   }),
+  // Starting balances: up to 500 people's numbers. Each line is in the ledger itself with who
+  // wrote it and when — the log keeps the day and the count, not a second copy of the table.
+  'POST /employees/leave-opening': (b) => ({
+    on: typeof b?.on === 'string' ? b.on.slice(0, 10) : null,
+    rows: Array.isArray(b?.rows) ? b.rows.length : 0,
+  }),
+  // A pasted table from the old system: names and emails in bulk. Only its size is kept.
+  'POST /employees/leave-opening/match': (b) => ({
+    characters: typeof b?.text === 'string' ? b.text.length : 0,
+  }),
 };
 
 // Redact anything that looks secret from the logged body.
@@ -46,6 +56,12 @@ export const ROUTE_ACTIONS: Record<string, string> = {
   'POST /legal-entities/:id/main': 'COMPANY_MADE_MAIN',
   'POST /legal-entities/:id/deactivate': 'COMPANY_DEACTIVATED',
   'POST /legal-entities/:id/reactivate': 'COMPANY_REACTIVATED',
+  // The leave ledger (shared leave/leave-ledger.ts) — each write is also a line in the ledger.
+  'POST /employees/:id/leave-adjustments': 'LEAVE_ADJUSTMENT_ADDED',
+  'POST /employees/leave-adjustments/:id/void': 'LEAVE_ADJUSTMENT_VOIDED',
+  'POST /employees/leave-opening': 'LEAVE_OPENING_BALANCES_SAVED',
+  'POST /employees/leave-opening/match': 'LEAVE_OPENING_TABLE_MATCHED',
+  'PATCH /organizations/leave-policy': 'LEAVE_POLICY_UPDATED',
   // Clients from a phone's address book — body summarised, see BODY_SUMMARY.
   'POST /customers/import': 'CLIENTS_IMPORTED_FROM_PHONE',
   'POST /tasks': 'TASK_CREATED',

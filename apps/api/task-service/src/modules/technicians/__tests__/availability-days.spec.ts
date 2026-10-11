@@ -95,7 +95,7 @@ describe('availability days', () => {
 
     const service = () => {
       const prisma = { user: { findMany: jest.fn().mockResolvedValue([tech]) } };
-      return { prisma, svc: new TechniciansService(prisma as any, {} as any, {} as any, {} as any, {} as any) };
+      return { prisma, svc: new TechniciansService(prisma as any, {} as any, {} as any, {} as any, {} as any, {} as any) };
     };
 
     it('answers 13→26 Oct once per day, with the right weekday and the leave on the 26th', async () => {

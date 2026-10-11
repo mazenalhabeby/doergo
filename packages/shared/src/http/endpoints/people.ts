@@ -16,6 +16,14 @@ import type {
 } from '../../types';
 import type { LeaveCount } from '../../calendar/days';
 import type { RequestInput, RequestKind, RequestKindOptions } from '../../requests/request-kinds';
+import type {
+  LeaveAdjustmentWriteResponse,
+  LeaveBalanceResponse,
+  LeaveLedgerResponse,
+  LeaveOpeningMatchResponse,
+  LeaveOpeningResponse,
+  LeaveOpeningSaveResponse,
+} from '../../leave/leave-api';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 
@@ -48,10 +56,42 @@ export const employeesEndpoints = defineEndpoints('employees', {
     method: 'POST',
     path: (a) => path`/employees/${a.id}/schedule`,
   }),
-  leaveBalance: endpoint<Id & { year?: number }, unknown>({
+  /** The leave year containing `on` (default today); `year` = the leave year starting in that year. */
+  leaveBalance: endpoint<Id & { year?: number; on?: string }, LeaveBalanceResponse>({
     method: 'GET',
     path: ({ id, ...q }) => withQuery(path`/employees/${id}/leave-balance`, q),
     keep: true,
+  }),
+  /** The ledger lines of one leave year (who, when, why; voided ones included). The member reads their own. */
+  leaveAdjustments: endpoint<Id & { year?: number; on?: string }, LeaveLedgerResponse>({
+    method: 'GET',
+    path: ({ id, ...q }) => withQuery(path`/employees/${id}/leave-adjustments`, q),
+    keep: true,
+  }),
+  /** A hand-entered line (OPENING_USED / CORRECTION / GRANT — shared parseLeaveAdjustment). */
+  addLeaveAdjustment: endpoint<Id, LeaveAdjustmentWriteResponse, { kind: string; days: number; on: string; reason?: string | null }>({
+    method: 'POST',
+    path: (a) => path`/employees/${a.id}/leave-adjustments`,
+  }),
+  /** Undo a line: it stays in the ledger, struck through, and counts for nothing. */
+  voidLeaveAdjustment: endpoint<{ adjustmentId: string }, LeaveAdjustmentWriteResponse>({
+    method: 'POST',
+    path: (a) => path`/employees/leave-adjustments/${a.adjustmentId}/void`,
+  }),
+  /** Starting balances: everybody in the caller's scope with what is saved for the leave year containing `on`. */
+  leaveOpening: endpoint<{ on?: string } | void, LeaveOpeningResponse>({
+    method: 'GET',
+    path: (q) => withQuery('/employees/leave-opening', q || undefined),
+    keep: false,
+  }),
+  saveLeaveOpening: endpoint<void, LeaveOpeningSaveResponse, { on: string; rows: Array<{ userId: string; used: number; carried: number }> }>({
+    method: 'POST',
+    path: () => '/employees/leave-opening',
+  }),
+  /** Read a pasted table and match each line to a person (email, then full name). Writes nothing. */
+  matchLeaveOpening: endpoint<void, LeaveOpeningMatchResponse, { text: string }>({
+    method: 'POST',
+    path: () => '/employees/leave-opening/match',
   }),
   /** Availability for one day (`date`) or a range (`startDate`/`endDate`). */
   availability: endpoint<{ date?: string; startDate?: string; endDate?: string }, unknown>({
@@ -82,8 +122,8 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
   }),
   /** What the caller may request (kinds) and at which workspaces a remote day. Only their own. */
   requestOptions: endpoint<void, RequestKindOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
-  /** What a leave range COSTS in working days (≤ 1 year). */
-  count: endpoint<{ employeeId: string; from: string; to: string }, LeaveCount>({
+  /** What a leave range COSTS in working days (≤ 1 year); `byLeaveYear` is keyed by leave-year start. */
+  count: endpoint<{ employeeId: string; from: string; to: string }, LeaveCount & { byLeaveYear?: Record<string, number> }>({
     method: 'GET',
     path: ({ employeeId, ...q }) => withQuery(path`/employees/${employeeId}/time-off/count`, q),
     keep: true,

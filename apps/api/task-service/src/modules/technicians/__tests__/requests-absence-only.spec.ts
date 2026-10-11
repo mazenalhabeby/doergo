@@ -9,6 +9,7 @@
 import { ShiftSweepService } from '../../attendance/shift-sweep.service';
 import { CoverService } from '../cover.service';
 import { TechniciansService } from '../technicians.service';
+import { LeaveLedgerService } from '../leave-ledger.service';
 
 const day = (d: string) => new Date(`${d}T00:00:00.000Z`);
 const ROWS = [
@@ -55,10 +56,12 @@ describe('only leave is an absence', () => {
 
   it('the allowance is never drawn down by a remote day (its row still carries type VACATION)', async () => {
     const prisma: any = {
-      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', leaveAllowance: 25, organizationId: 'org-1', employmentStartDate: null }) },
+      user: { findFirst: jest.fn().mockResolvedValue({ id: 'u1', leaveAllowance: 25, organizationId: 'org-1', employmentStartDate: null, organization: { id: 'org-1', defaultLeaveAllowance: 25, leaveYearMode: 'CALENDAR', carryOverMode: 'NONE', timezone: 'UTC' } }) },
       timeOff: { findMany: byKind(ROWS) },
+      leaveAdjustment: { findMany: jest.fn().mockResolvedValue([]) },
     };
-    const service = new TechniciansService(prisma, {} as any, {} as any, { personRules: jest.fn() } as any, {} as any);
+    const calendarRules = { personRules: jest.fn(), personRulesMany: jest.fn().mockResolvedValue(new Map()) } as any;
+    const service = new TechniciansService(prisma, {} as any, {} as any, calendarRules, {} as any, new LeaveLedgerService(prisma, calendarRules));
     const res: any = await service.getLeaveBalance({ technicianId: 'u1', organizationId: 'org-1' });
     expect(res.data).toMatchObject({ taken: 0, pending: 0, remaining: 25 });
     expect(prisma.timeOff.findMany.mock.calls[0][0].where.kind).toBe('LEAVE');

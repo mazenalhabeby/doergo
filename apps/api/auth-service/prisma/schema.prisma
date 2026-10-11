@@ -233,6 +233,28 @@ enum GeofenceExcursionStatus {
 /// is not an allowance — it is a penalty for being ill. Only VACATION counts
 /// against it. Until now the kind lived in a free-text `reason`, so nothing
 /// could tell the two apart.
+/// The leave ledger (shared leave/leave-ledger.ts LEAVE_ADJUSTMENT_KINDS).
+enum LeaveAdjustmentKind {
+  OPENING_USED // used before the organization started HBCField (negative)
+  CARRY_OVER // brought over from the previous leave year (positive)
+  CARRY_EXPIRED // carried days not used by the expiry (negative)
+  CORRECTION // an office correction, either sign, with a reason
+  GRANT // extra days granted, with a reason
+}
+
+/// CALENDAR = 1 Jan - 31 Dec; WORK_YEAR = from each person's employment anniversary.
+enum LeaveYearMode {
+  CALENDAR
+  WORK_YEAR
+}
+
+/// What happens to unused vacation at the end of a leave year.
+enum CarryOverMode {
+  NONE
+  UP_TO
+  ALL
+}
+
 enum TimeOffType {
   VACATION // Counts against the annual allowance
   SICK // Does not
@@ -455,6 +477,16 @@ model Organization {
   holidayRegion         String?
   /// Members may switch on a private one-way feed of their own calendar (Google, Outlook, iPhone).
   calendarFeedsEnabled  Boolean @default(true)
+  /// The leave ledger (shared leave/leave-ledger.ts). CALENDAR keeps the behaviour from before it.
+  leaveYearMode           LeaveYearMode @default(CALENDAR)
+  carryOverMode           CarryOverMode @default(NONE)
+  /// UP_TO: the most days carried into the next leave year.
+  carryOverMaxDays        Int?
+  /// Carried days expire this many months into the new leave year. NULL = never.
+  carryExpiresAfterMonths Int?
+  /// The day this organization started counting leave in HBCField (the starting-balances screen).
+  leaveTrackingStartedOn  DateTime? @db.Date
+  leaveAdjustments        LeaveAdjustment[]
   logoUrl               String? // Organization logo
 
   // Join system
@@ -968,6 +1000,9 @@ model User {
   schedules        TechnicianSchedule[] // Weekly recurring schedule
   timeOffRequests  TimeOff[]            @relation("TechnicianTimeOff") // Time-off requests submitted
   approvedTimeOffs TimeOff[]            @relation("TimeOffApprover") // Time-off requests approved by this user
+  leaveAdjustments       LeaveAdjustment[] @relation("LeaveAdjustmentSubject")
+  leaveAdjustmentsMade   LeaveAdjustment[] @relation("LeaveAdjustmentCreator")
+  leaveAdjustmentsVoided LeaveAdjustment[] @relation("LeaveAdjustmentVoider")
   calendarEventsCreated CalendarEvent[]    @relation("CalendarEventCreator")
   calendarInvites       CalendarAttendee[]
   calendarFeedToken     CalendarFeedToken?
@@ -3495,6 +3530,36 @@ model TimeOff {
   @@index([technicianId, status, startDate]) // no-show sweep: approved leave per worker (P8)
   @@index([spaceId])
   @@map("time_off_requests")
+}
+
+/// One line of a person's leave ledger (shared leave/leave-ledger.ts). Only ADJUSTMENTS are stored:
+/// the allowance and the taken days are computed from their own sources. Rows are never deleted or
+/// edited - a correction is a new row, an undo sets voidedAt (a voided row counts for nothing).
+model LeaveAdjustment {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                @relation("LeaveAdjustmentSubject", fields: [userId], references: [id], onDelete: Cascade)
+  kind           LeaveAdjustmentKind
+  /// Signed, in half days.
+  days           Float
+  /// The first day of the leave year this line belongs to.
+  leaveYearStart DateTime            @db.Date
+  reason         String?
+  /// NULL = written by the carry-over rule.
+  createdById    String?
+  createdBy      User?               @relation("LeaveAdjustmentCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime            @default(now())
+  voidedAt       DateTime?
+  voidedById     String?
+  voidedBy       User?               @relation("LeaveAdjustmentVoider", fields: [voidedById], references: [id], onDelete: SetNull)
+  /// Idempotency for rows written by a rule or a bulk save ("carry:{userId}:{yearStart}").
+  /// A voided row gives its key up (renamed "{key}#void:{id}") so a replacement can take it.
+  sourceKey      String?             @unique
+
+  @@index([organizationId, userId, leaveYearStart])
+  @@map("leave_adjustments")
 }
 
 // ==================== INVITATION SYSTEM ====================

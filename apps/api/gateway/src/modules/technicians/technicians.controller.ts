@@ -39,6 +39,25 @@ import {
   RequestTimeOffDto,
 } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
+
+/**
+ * Whose LEAVE this caller decides — approving a request, adjusting a balance, starting balances:
+ * the rota permission. Undefined = org-wide (an administrator, or the permission held org-wide),
+ * [ids] = the people of those workspaces (narrowed in task-service), [] = nobody.
+ */
+function leaveWriteScope(user: CurrentUserData | undefined): string[] | undefined {
+  if (user && isAdmin(user as never)) return undefined;
+  return spacesGranting(user?.access as never, 'canManageRota') ?? undefined;
+}
+
+/** Whose leave this caller may READ besides their own: the rota permission or the view permission. */
+function leaveReadScope(user: CurrentUserData | undefined): string[] | undefined {
+  const rota = spacesGranting(user?.access as never, 'canManageRota');
+  const view = spacesGranting(user?.access as never, 'canViewAllTasks');
+  if (user?.role === Role.ADMIN || rota === null || view === null) return undefined;
+  return [...new Set([...(rota ?? []), ...(view ?? [])])];
+}
 
 @ApiTags('employees')
 @ApiBearerAuth()
@@ -285,7 +304,7 @@ export class EmployeesController {
           timeOffId,
           organizationId: user.organizationId,
           approverId: user.id,
-          scopeSpaceIds: isAdmin(user as never) ? undefined : spacesGranting(user?.access as never, 'canManageRota') ?? undefined,
+          scopeSpaceIds: leaveWriteScope(user),
           approved: body.approved,
           rejectionReason: body.rejectionReason,
         },
@@ -411,6 +430,127 @@ export class EmployeesController {
           technicianId: user.id,
         },
       ),
+    );
+  }
+
+  // ============================================================================
+  // THE LEAVE LEDGER (shared leave/leave-ledger.ts) — before /:id routes
+  //
+  // Writing somebody's balance is deciding their leave: the same permission and scope as
+  // approving it (`canManageRota`, narrowed to the person's workspaces in task-service), and
+  // nobody adjusts their own (an organization administrator excepted). Every write is also a
+  // line in the ledger itself, with who and when — and in the audit log (audit-helpers.ts).
+  // ============================================================================
+
+  @Get('leave-opening')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Starting balances: members in scope with what is saved for the leave year containing `on`' })
+  @RequirePermissionInSpace('canManageRota')
+  async getLeaveOpening(@Query('on') on: string | undefined, @CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'get_leave_opening' }, {
+        organizationId: user.organizationId,
+        scopeSpaceIds: leaveWriteScope(user),
+        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+      }),
+    );
+  }
+
+  @Post('leave-opening/match')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Read a pasted table and match each line to a member (email, then full name). Writes nothing.' })
+  @RequirePermissionInSpace('canManageRota')
+  async matchLeaveOpening(@Body() body: { text?: string }, @CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'match_leave_opening' }, {
+        organizationId: user.organizationId,
+        scopeSpaceIds: leaveWriteScope(user),
+        text: body?.text,
+      }),
+    );
+  }
+
+  @Post('leave-opening')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Save starting balances (used before HBCField, carried) — one transaction, ≤ 500 people' })
+  @RequirePermissionInSpace('canManageRota')
+  async saveLeaveOpening(
+    @Body() body: { on?: string; rows?: Array<{ userId: string; used: number; carried: number }> },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'save_leave_opening' }, {
+        organizationId: user.organizationId,
+        callerId: user.id,
+        scopeSpaceIds: leaveWriteScope(user),
+        on: body?.on,
+        rows: body?.rows,
+      }),
+    );
+  }
+
+  @Post('leave-adjustments/:adjustmentId/void')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Undo a ledger line — it stays visible and counts for nothing' })
+  @ApiParam({ name: 'adjustmentId', description: 'Ledger line ID' })
+  @RequirePermissionInSpace('canManageRota')
+  async voidLeaveAdjustment(@Param('adjustmentId') adjustmentId: string, @CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'void_leave_adjustment' }, {
+        adjustmentId,
+        organizationId: user.organizationId,
+        callerId: user.id,
+        scopeSpaceIds: leaveWriteScope(user),
+      }),
+    );
+  }
+
+  @Get(':id/leave-adjustments')
+  @ApiOperation({ summary: "One leave year's ledger lines (who, when, why). A member reads their own." })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  async listLeaveAdjustments(
+    @Param('id') id: string,
+    @Query('on') on: string | undefined,
+    @Query('year') year: string | undefined,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    const scope = leaveReadScope(user);
+    if (user.id !== id && scope !== undefined && scope.length === 0) throw new ForbiddenException('You can only view your own leave balance');
+    const write = (user as { isExternal?: boolean }).isExternal ? [] : leaveWriteScope(user);
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'list_leave_adjustments' }, {
+        technicianId: id,
+        organizationId: user.organizationId,
+        callerId: user.id,
+        scopeSpaceIds: scope,
+        // Only to answer `canEdit` — 'ORG' because an undefined key does not survive the transport.
+        editScope: write === undefined ? 'ORG' : write.length ? write : null,
+        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+        year,
+      }),
+    );
+  }
+
+  @Post(':id/leave-adjustments')
+  @DenyExternal()
+  @ApiOperation({ summary: 'Add a ledger line: used before HBCField, a correction, or extra days granted' })
+  @ApiParam({ name: 'id', description: 'Employee ID' })
+  @RequirePermissionInSpace('canManageRota')
+  async addLeaveAdjustment(
+    @Param('id') id: string,
+    @Body() body: { kind?: string; days?: number; on?: string; reason?: string | null },
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'add_leave_adjustment' }, {
+        technicianId: id,
+        organizationId: user.organizationId,
+        callerId: user.id,
+        scopeSpaceIds: leaveWriteScope(user),
+        // Read in task-service with the shared parseLeaveAdjustment — never trusted here.
+        body: { kind: body?.kind, days: body?.days, on: body?.on, reason: body?.reason },
+      }),
     );
   }
 
@@ -812,7 +952,12 @@ export class EmployeesController {
   @ApiOperation({ summary: "This year's vacation allowance, taken and remaining" })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async getLeaveBalance(@Param('id') id: string, @CurrentUser() user?: CurrentUserData) {
+  async getLeaveBalance(
+    @Param('id') id: string,
+    @Query('on') on?: string,
+    @Query('year') year?: string,
+    @CurrentUser() user?: CurrentUserData,
+  ) {
     // Same rule as the list above: a manager may read anyone's, a member only
     // their own. An allowance says what someone is entitled to and how much
     // they have used, which is theirs, not the team's.
@@ -824,6 +969,9 @@ export class EmployeesController {
       this.taskClient.send({ cmd: 'get_leave_balance' }, {
         technicianId: id,
         organizationId: user?.organizationId,
+        // The leave year containing `on` (default today); `year` = the one starting in that year.
+        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+        year,
       }),
     );
   }
@@ -839,11 +987,7 @@ export class EmployeesController {
   ) {
     // Your own, or somebody you manage: an admin or org-wide view reaches everyone, the rota
     // permission held in a workspace reaches that workspace's people (narrowed in the service).
-    const admin = user?.role === Role.ADMIN;
-    const rota = spacesGranting(user?.access as any, 'canManageRota');
-    const view = spacesGranting(user?.access as any, 'canViewAllTasks');
-    const orgWide = admin || rota === null || view === null;
-    const scope = orgWide ? undefined : [...new Set([...(rota ?? []), ...(view ?? [])])];
+    const scope = leaveReadScope(user);
     if (user?.id !== id && scope !== undefined && scope.length === 0) throw new ForbiddenException('You can only count your own leave');
     return firstValueFrom(
       this.taskClient.send({ cmd: 'count_leave' }, { technicianId: id, organizationId: user.organizationId, from: q.from, to: q.to, callerId: user.id, scopeSpaceIds: scope }),

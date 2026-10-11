@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { LeaveLedgerService } from '../leave-ledger.service';
 import { TechniciansService } from '../technicians.service';
 import { NotificationRoutingService } from '../../../common/notification-routing.service';
 import { CoverService } from '../cover.service';
@@ -72,6 +73,7 @@ describe('who is told about a leave request', () => {
         { provide: CalendarRulesService, useValue: { countLeaveFor: jest.fn().mockResolvedValue({ counted: 3 }) } },
         { provide: PrismaService, useValue: prisma },
         { provide: SERVICE_NAMES.NOTIFICATION, useValue: { emit } },
+        { provide: LeaveLedgerService, useValue: {} },
       ],
     }).compile();
     service = mod.get(TechniciansService);
