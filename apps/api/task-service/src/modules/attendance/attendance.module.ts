@@ -16,6 +16,7 @@ import { BreakRulesService } from './break-rules.service';
 import { BreakReminderService } from './break-reminder.service';
 import { PresenceModule } from './presence/presence.module';
 import { ShiftRematchService } from './shift-rematch.service';
+import { ClockOutService } from './clock-out.service';
 import { HandoverModule } from '../tasks/handover/handover.module';
 
 @Module({
@@ -46,6 +47,7 @@ import { HandoverModule } from '../tasks/handover/handover.module';
     AttendanceProcessor,
     AttendanceScheduler,
   ],
-  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService],
+  // ClockOutService: the one way a shift closes — the legacy overtime module closes through it too.
+  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService, ClockOutService],
 })
 export class AttendanceModule {}

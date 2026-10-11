@@ -1,4 +1,5 @@
 import { lastReadingIsFresh, replayRing, type RingReading } from './heartbeat-replay';
+import { OPEN_EXCURSION_STATUSES } from './open-shift-close';
 import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -349,7 +350,7 @@ export class HeartbeatService {
   /** Latest active excursion for a session (OUT_UNREPORTED / PENDING / APPROVED). */
   async getActiveExcursion(timeEntryId: string) {
     return this.prisma.geofenceExcursion.findFirst({
-      where: { timeEntryId, status: { in: ['OUT_UNREPORTED', 'PENDING', 'APPROVED'] } },
+      where: { timeEntryId, status: { in: [...OPEN_EXCURSION_STATUSES] } },
       orderBy: { createdAt: 'desc' },
     });
   }

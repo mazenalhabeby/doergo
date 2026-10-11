@@ -18,6 +18,7 @@ import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
 import { NoShiftSection } from "./no-shift-section"
+import { workspaceSchedulesShifts } from "@hbcfield/shared/client"
 import { MinCoverSection } from "./min-cover-section"
 
 /**
@@ -36,8 +37,7 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
   const formatDistance = useFormatDistance()
   const queryClient = useQueryClient()
 
-  const initialScheduled = (space.workModel as WorkModel | undefined) != null &&
-    space.workModel !== WorkModel.NONE
+  const initialScheduled = workspaceSchedulesShifts(space.workModel)
   const [scheduled, setScheduled] = useState(initialScheduled)
 
   const mutation = useMutation({
@@ -151,7 +151,7 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
 
       {/* Clocking in with no shift — every attendance model, like the geofence. */}
       <div className="border-t border-border/60 pt-6">
-        <NoShiftSection space={space} />
+        <NoShiftSection space={space} schedulesShifts={scheduled} />
       </div>
 
       {/*

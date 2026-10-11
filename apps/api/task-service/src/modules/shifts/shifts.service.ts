@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, NotFoundException, Logger, Optional } 
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay, toISODateString } from '@hbcfield/shared';
+import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay, toISODateString, workspaceSchedulesShifts } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -409,7 +409,7 @@ export class ShiftsService {
     for (const a of assignments) if (a.user?.isActive !== false && a.user) people.set(a.user.id, a.user);
     const ids = [...people.keys()];
 
-    const tracks = (space.workModel ?? 'NONE') !== 'NONE';
+    const tracks = workspaceSchedulesShifts(space.workModel);
     const [weekly, leave] = await Promise.all([
       tracks && ids.length
         ? this.prisma.technicianSchedule.findMany({ where: { technicianId: { in: ids }, isActive: true }, select: { technicianId: true, dayOfWeek: true, startTime: true, endTime: true } })

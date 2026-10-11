@@ -141,6 +141,14 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
     },
   },
   {
+    reason: "MISSED_BREAK",
+    chip: {
+      tone: "amber",
+      labelKey: "technicians.attendanceTab.flag.missedRest",
+      fallback: "Missed rest",
+    },
+  },
+  {
     reason: "EARLY_DEPARTURE",
     chip: {
       tone: "amber",

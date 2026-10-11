@@ -2733,7 +2733,8 @@
       "OUTSIDE_GEOFENCE_IN": "Entrada fuera",
       "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
       "OVERTIME": "Horas extra",
-      "UNSCHEDULED_DAY": "Sin programar"
+      "UNSCHEDULED_DAY": "Sin programar",
+      "MISSED_BREAK": "Descanso perdido"
     },
     "period": {
       "month": "30 días",
@@ -3214,7 +3215,8 @@
       "ROLE_TASK_STARTED": "El trabajo ya empezó: sal del equipo en su lugar.",
       "ROLE_TASK_NOT_ROLE": "Este trabajo no se abrió a un rol.",
       "ROLE_TASK_FINISHED": "Este trabajo está terminado.",
-      "LEAVE_NO_WORKING_DAYS": "Esos días son todos fines de semana o festivos: no hay nada que pedir."
+      "LEAVE_NO_WORKING_DAYS": "Esos días son todos fines de semana o festivos: no hay nada que pedir.",
+      "REMOTE_NOT_FOR_ASSIGNED": "Está asignado a un espacio de trabajo. Fiche allí, en el sitio o fuera si su espacio lo permite."
     },
     "signOut": {
       "title_one": "{{count}} cambio no se ha enviado",

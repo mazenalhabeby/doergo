@@ -1,4 +1,4 @@
-import { OPEN_SHIFT_CLOSE, computeScheduleFlags } from '@hbcfield/shared';
+import { OPEN_SHIFT_CLOSE, breakTotals, computeScheduleFlags, endRunningBreaks, flagsAgainstDailyLimit } from '@hbcfield/shared';
 
 /**
  * The temporary clock-out for a shift left open — pure, so every rule is a test.
@@ -82,23 +82,12 @@ export function endRunningRests(
   closeAt: Date,
   now: Date,
 ): { ends: { id: string; endedAt: Date; minutes: number }[]; breakMinutes: number; unpaidBreakMinutes: number } {
-  const cap = Math.min(closeAt.getTime(), now.getTime());
-  let breakMinutes = 0;
-  let unpaidBreakMinutes = 0;
-  const ends: { id: string; endedAt: Date; minutes: number }[] = [];
-  for (const r of rests) {
-    let minutes: number;
-    if (r.endedAt) {
-      minutes = r.durationMinutes ?? Math.round((r.endedAt.getTime() - r.startedAt.getTime()) / 60_000);
-    } else {
-      const endedAt = new Date(Math.max(r.startedAt.getTime(), cap));
-      minutes = Math.round((endedAt.getTime() - r.startedAt.getTime()) / 60_000);
-      ends.push({ id: r.id, endedAt, minutes });
-    }
-    breakMinutes += minutes;
-    if (!r.isPaid) unpaidBreakMinutes += minutes;
-  }
-  return { ends, breakMinutes, unpaidBreakMinutes };
+  // The shared rest rules (break-totals.ts): end what is still running, recount from the rows.
+  const { rows, ended } = endRunningBreaks(rests, new Date(Math.min(closeAt.getTime(), now.getTime())));
+  return {
+    ends: ended.map((r) => ({ id: r.id, endedAt: r.endedAt, minutes: r.durationMinutes })),
+    ...breakTotals(rows),
+  };
 }
 
 /**
@@ -118,7 +107,5 @@ export function clockOutTimeFlags(
 ): string[] {
   if (!entry.expectedClockOutAt) return [];
   const flags = computeScheduleFlags({ clockOutAt, expectedClockOutAt: entry.expectedClockOutAt, toleranceMin });
-  return entry.endIsDailyLimit
-    ? flags.filter((f) => f !== 'EARLY_DEPARTURE').map((f) => (f === 'OVERTIME' ? 'PAST_DAILY_LIMIT' : f))
-    : flags;
+  return flagsAgainstDailyLimit(flags, entry.endIsDailyLimit);
 }

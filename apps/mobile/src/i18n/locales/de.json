@@ -2733,7 +2733,8 @@
       "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
       "OVERTIME": "Überstunden",
-      "UNSCHEDULED_DAY": "Nicht geplant"
+      "UNSCHEDULED_DAY": "Nicht geplant",
+      "MISSED_BREAK": "Pause verpasst"
     },
     "period": {
       "month": "30 Tage",
@@ -3214,7 +3215,8 @@
       "ROLE_TASK_STARTED": "Die Arbeit hat begonnen — verlassen Sie stattdessen das Team.",
       "ROLE_TASK_NOT_ROLE": "Dieser Auftrag wurde nicht für eine Rolle geöffnet.",
       "ROLE_TASK_FINISHED": "Dieser Auftrag ist abgeschlossen.",
-      "LEAVE_NO_WORKING_DAYS": "Diese Tage sind alle Wochenenden oder Feiertage – es gibt nichts freizunehmen."
+      "LEAVE_NO_WORKING_DAYS": "Diese Tage sind alle Wochenenden oder Feiertage – es gibt nichts freizunehmen.",
+      "REMOTE_NOT_FOR_ASSIGNED": "Sie sind einem Arbeitsbereich zugeordnet. Stempeln Sie dort ein – vor Ort oder auswärts, wenn Ihr Arbeitsbereich es erlaubt."
     },
     "signOut": {
       "title_one": "{{count}} Änderung wurde nicht gesendet",

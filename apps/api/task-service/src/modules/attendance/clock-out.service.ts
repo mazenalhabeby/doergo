@@ -26,7 +26,7 @@ import {
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import { CountedTimeService } from './counted-time.service';
-import type { OccurrenceEvidence } from '@hbcfield/shared';
+import { flagsWithMissedRest, parseBreakPlan, type OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { approvalFor, SAME_TAP_MS } from './attendance-occurrence';
 import { AttendanceRoutingService } from './attendance-routing.service';
@@ -60,6 +60,9 @@ interface ClosableEntry {
   unpaidBreakMinutes?: number | null;
   breaks?: RestRow[];
   geofenceExcursions?: { id: string }[];
+  /** The rests planned at clock-in — a required one still not taken at the close is missed. */
+  breakPlan?: Prisma.JsonValue | null;
+  flagReasons?: string[] | null;
 }
 
 /** How a shift is being closed. Everything the close itself works out is NOT here. */
@@ -286,8 +289,8 @@ export class ClockOutService {
         });
     const earlyReason = shortBy > 0 ? (data.earlyReason ?? '').trim().slice(0, 500) : '';
 
-    // Deduplicate flags
-    const uniqueFlags = [...new Set(flagReasons)];
+    // Deduplicate flags; a required rest that fell due and was never taken is missed now.
+    const uniqueFlags = flagsWithMissedRest([...new Set(flagReasons)], parseBreakPlan(entry.breakPlan), clockOutTime);
     const approvalStatus = approvalFor(uniqueFlags);
 
     // Remote shifts capture a coarse place on clock-out too — only when we have
@@ -695,6 +698,15 @@ export class ClockOutService {
       spec.toleranceMin,
     );
     const excursionIds = (entry.geofenceExcursions ?? []).map((x) => x.id);
+    /*
+      A required rest that fell due and was never taken is MISSED at the close
+      (break-plan.ts). Asked here so every closer flags it the same way — it
+      flags for review and never deducts. The clock-out has already asked, for
+      its own approval and alert; asking again is a no-op (deduplicated).
+    */
+    const baseFlags = ((spec.fields.flagReasons as string[] | undefined) ?? entry.flagReasons ?? []) as string[];
+    const closeFlags = flagsWithMissedRest(baseFlags, parseBreakPlan(entry.breakPlan), at);
+    const missedAtClose = closeFlags.length !== baseFlags.length;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const claim = await tx.timeEntry.updateMany({
@@ -717,6 +729,7 @@ export class ClockOutService {
           nextRemindAt: null,
           nextBreakRemindAt: null,
           ...spec.fields,
+          ...(missedAtClose ? { flagReasons: closeFlags, approvalStatus: 'PENDING' } : {}),
         },
       });
       if (claim.count === 0) return null;

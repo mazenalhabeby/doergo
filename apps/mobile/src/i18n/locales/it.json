@@ -2733,7 +2733,8 @@
       "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
       "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
       "OVERTIME": "Straordinario",
-      "UNSCHEDULED_DAY": "Non pianificato"
+      "UNSCHEDULED_DAY": "Non pianificato",
+      "MISSED_BREAK": "Pausa saltata"
     },
     "period": {
       "month": "30 giorni",
@@ -3214,7 +3215,8 @@
       "ROLE_TASK_STARTED": "Il lavoro è iniziato: esci invece dalla squadra.",
       "ROLE_TASK_NOT_ROLE": "Questo lavoro non è stato aperto a un ruolo.",
       "ROLE_TASK_FINISHED": "Questo lavoro è concluso.",
-      "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere."
+      "LEAVE_NO_WORKING_DAYS": "Quei giorni sono tutti weekend o festività: non c’è nulla da chiedere.",
+      "REMOTE_NOT_FOR_ASSIGNED": "Lei è assegnato a uno spazio di lavoro. Timbri lì, in sede o fuori se il suo spazio lo consente."
     },
     "signOut": {
       "title_one": "{{count}} modifica non è stata inviata",

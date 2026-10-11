@@ -2733,7 +2733,8 @@
       "OUTSIDE_GEOFENCE_IN": "Off-site in",
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
       "OVERTIME": "Overtime",
-      "UNSCHEDULED_DAY": "Unscheduled"
+      "UNSCHEDULED_DAY": "Unscheduled",
+      "MISSED_BREAK": "Missed rest"
     },
     "period": {
       "month": "30 days",
@@ -3214,7 +3215,8 @@
       "ROLE_TASK_STARTED": "The work has started — leave the crew instead.",
       "ROLE_TASK_NOT_ROLE": "This job was not opened to a role.",
       "ROLE_TASK_FINISHED": "This job is finished.",
-      "LEAVE_NO_WORKING_DAYS": "Those days are all weekends or holidays — there is nothing to take off."
+      "LEAVE_NO_WORKING_DAYS": "Those days are all weekends or holidays — there is nothing to take off.",
+      "REMOTE_NOT_FOR_ASSIGNED": "You are assigned to a workspace. Clock in there, on site or away if your workspace allows it."
     },
     "signOut": {
       "title_one": "{{count}} change hasn't been sent",

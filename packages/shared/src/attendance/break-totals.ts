@@ -29,7 +29,8 @@ export function breakTotals(rows: readonly BreakRowLike[]): BreakTotals {
   let unpaidBreakMinutes = 0;
   for (const b of rows) {
     if (!b.endedAt) continue;
-    const m = b.durationMinutes || 0;
+    // Older rows may carry no duration; their two times still say how long the rest was.
+    const m = b.durationMinutes ?? Math.max(0, Math.round((b.endedAt.getTime() - b.startedAt.getTime()) / 60_000));
     breakMinutes += m;
     if (!b.isPaid) unpaidBreakMinutes += m;
   }

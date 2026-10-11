@@ -2328,7 +2328,8 @@
         "fixMocked": "Posizione simulata",
         "boundaryChanged": "Confine della sede modificato da allora",
         "clockOutProvisional": "Uscita non confermata",
-        "pastDailyLimit": "Oltre il limite di oggi"
+        "pastDailyLimit": "Oltre il limite di oggi",
+        "missedRest": "Pausa saltata"
       }
     },
     "locationsTab": {
@@ -9323,7 +9324,11 @@
     "COMPANY_BIC_INVALID": "Questo codice BIC / SWIFT non è valido.",
     "COMPANY_ROUTING_INVALID": "Questo routing number non è valido (9 cifre).",
     "COMPANY_BANK_ACCOUNT_EMPTY": "Un conto bancario richiede un IBAN o un numero di conto.",
-    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "Al massimo cinque conti bancari per società."
+    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "Al massimo cinque conti bancari per società.",
+    "REMOTE_NOT_FOR_ASSIGNED": "Lei è assegnato a uno spazio di lavoro. Timbri lì, in sede o fuori se il suo spazio lo consente.",
+    "SHIFT_ONLY_WITHOUT_SHIFTS": "«Solo con turno» richiede uno spazio che pianifica i turni. Scelga prima un modello di turni.",
+    "CLOCK_OUT_BEFORE_CLOCK_IN": "L’uscita deve essere dopo l’entrata.",
+    "ENTRY_TIME_INVALID": "Inserisca orari validi."
   },
   "signLink": {
     "tabs": {
@@ -9385,7 +9390,8 @@
       "EARLY_DEPARTURE": "Uscito prima",
       "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
       "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
-      "UNSCHEDULED_DAY": "Non pianificato"
+      "UNSCHEDULED_DAY": "Non pianificato",
+      "MISSED_BREAK": "Pausa saltata"
     }
   },
   "explainerButton": {

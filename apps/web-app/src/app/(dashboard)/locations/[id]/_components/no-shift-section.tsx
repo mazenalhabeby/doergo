@@ -30,8 +30,11 @@ import { SectionHeader } from "./section-header"
  */
 export function NoShiftSection({
   space,
+  schedulesShifts,
 }: {
   space: { id: string; noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null }
+  /** Does this workspace plan shifts? "Only with a shift" means nothing where none are planned. */
+  schedulesShifts: boolean
 }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -70,7 +73,7 @@ export function NoShiftSection({
   const step = (delta: number) => setHours((h) => clampDailyMinutes(Math.round((h + delta) * 60)) / 60)
   const formatHours = (m: number) => t("attendance.noShift.hours", { count: m / 60, defaultValue: `${m / 60} h` })
 
-  const OPTIONS: { value: NoShiftPolicy; title: string; body: string }[] = [
+  const ALL_OPTIONS: { value: NoShiftPolicy; title: string; body: string }[] = [
     {
       value: "ALLOW",
       title: t("attendance.noShift.allow", "Allow"),
@@ -87,6 +90,9 @@ export function NoShiftSection({
       body: t("attendance.noShift.shiftOnlyHint", "Members without a shift today cannot clock in here."),
     },
   ]
+  // ⚠️ Where no shifts are planned it would refuse everybody, so the server refuses
+  // to save it (SHIFT_ONLY_WITHOUT_SHIFTS) — and the choice is not offered.
+  const OPTIONS = ALL_OPTIONS.filter((o) => o.value !== "SHIFT_ONLY" || schedulesShifts)
 
   return (
     <div>

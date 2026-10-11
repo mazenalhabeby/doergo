@@ -2328,7 +2328,8 @@
         "fixMocked": "Mock location",
         "boundaryChanged": "Site boundary changed since",
         "clockOutProvisional": "Clock-out not confirmed",
-        "pastDailyLimit": "Past today's limit"
+        "pastDailyLimit": "Past today's limit",
+        "missedRest": "Missed rest"
       }
     },
     "locationsTab": {
@@ -9314,7 +9315,11 @@
     "COMPANY_BIC_INVALID": "That BIC / SWIFT code is not valid.",
     "COMPANY_ROUTING_INVALID": "That routing number is not valid (9 digits).",
     "COMPANY_BANK_ACCOUNT_EMPTY": "A bank account needs an IBAN or an account number.",
-    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "At most five bank accounts per company."
+    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "At most five bank accounts per company.",
+    "REMOTE_NOT_FOR_ASSIGNED": "You are assigned to a workspace. Clock in there, on site or away if your workspace allows it.",
+    "SHIFT_ONLY_WITHOUT_SHIFTS": "\"Only with a shift\" needs a workspace that plans shifts. Choose a shift model first.",
+    "CLOCK_OUT_BEFORE_CLOCK_IN": "The clock-out must be after the clock-in.",
+    "ENTRY_TIME_INVALID": "Enter valid clock times."
   },
   "signLink": {
     "tabs": {
@@ -9376,7 +9381,8 @@
       "EARLY_DEPARTURE": "Left early",
       "OUTSIDE_GEOFENCE_IN": "Off-site in",
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
-      "UNSCHEDULED_DAY": "Unscheduled"
+      "UNSCHEDULED_DAY": "Unscheduled",
+      "MISSED_BREAK": "Missed rest"
     }
   },
   "explainerButton": {

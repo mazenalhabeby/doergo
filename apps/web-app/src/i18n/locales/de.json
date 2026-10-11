@@ -2328,7 +2328,8 @@
         "fixMocked": "Standort vorgetäuscht",
         "boundaryChanged": "Standortgrenze seitdem geändert",
         "clockOutProvisional": "Ausstempeln nicht bestätigt",
-        "pastDailyLimit": "Über dem Tageslimit"
+        "pastDailyLimit": "Über dem Tageslimit",
+        "missedRest": "Pause verpasst"
       }
     },
     "locationsTab": {
@@ -9314,7 +9315,11 @@
     "COMPANY_BIC_INVALID": "Dieser BIC / SWIFT-Code ist ungültig.",
     "COMPANY_ROUTING_INVALID": "Diese Routing-Nummer ist ungültig (9 Ziffern).",
     "COMPANY_BANK_ACCOUNT_EMPTY": "Ein Bankkonto braucht eine IBAN oder eine Kontonummer.",
-    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "Höchstens fünf Bankkonten je Firma."
+    "COMPANY_TOO_MANY_BANK_ACCOUNTS": "Höchstens fünf Bankkonten je Firma.",
+    "REMOTE_NOT_FOR_ASSIGNED": "Sie sind einem Arbeitsbereich zugeordnet. Stempeln Sie dort ein – vor Ort oder auswärts, wenn Ihr Arbeitsbereich es erlaubt.",
+    "SHIFT_ONLY_WITHOUT_SHIFTS": "„Nur mit Schicht“ setzt einen Arbeitsbereich mit Schichtplanung voraus. Wählen Sie zuerst ein Schichtmodell.",
+    "CLOCK_OUT_BEFORE_CLOCK_IN": "Das Ausstempeln muss nach dem Einstempeln liegen.",
+    "ENTRY_TIME_INVALID": "Geben Sie gültige Zeiten ein."
   },
   "signLink": {
     "tabs": {
@@ -9376,7 +9381,8 @@
       "EARLY_DEPARTURE": "Früher gegangen",
       "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
-      "UNSCHEDULED_DAY": "Nicht geplant"
+      "UNSCHEDULED_DAY": "Nicht geplant",
+      "MISSED_BREAK": "Pause verpasst"
     }
   },
   "explainerButton": {
