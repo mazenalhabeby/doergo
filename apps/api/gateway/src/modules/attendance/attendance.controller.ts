@@ -38,6 +38,7 @@ import {
   AddWorklogNoteDto, AddWorklogNotesBatchDto, PresignWorklogAttachmentDto, ConfirmWorklogAttachmentDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
+import { AllowWhenLocked } from '../../common/guards/subscription.guard';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -94,6 +95,8 @@ export class AttendanceController {
   }
 
   @Post('clock-out')
+  // Ends the caller's own running work — never stranded by a lapsed subscription.
+  @AllowWhenLocked()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock out from current shift' })
   async clockOut(@Body() dto: ClockOutDto, @Request() req: any) {
@@ -602,6 +605,8 @@ export class AttendanceController {
   }
 
   @Post('breaks/end')
+  // Ends the caller's own running work — never stranded by a lapsed subscription.
+  @AllowWhenLocked()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'End current break' })
   async endBreak(@Body() dto: EndBreakDto, @Request() req: any) {
@@ -890,6 +895,8 @@ export class AttendanceController {
   // ── Shift reminder responses ──────────────────────────────────────────────
 
   @Post('entries/:id/forgot-clock-out')
+  // Ends the caller's own running work — never stranded by a lapsed subscription.
+  @AllowWhenLocked()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Resolve a forgotten clock-out with a self-reported leave time' })
   async resolveForgotClockOut(
