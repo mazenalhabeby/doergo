@@ -16,6 +16,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   stripWorkspaceTerms, assertFoundInOrg } from '@hbcfield/shared';
 import { isGeofencePolicy,
   isNoShiftPolicy,
+  noShiftPolicyConflict,
   clampDailyMinutes, validateMinCover, writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE,
   currencyOrNull, workspaceCurrency, DEFAULT_CURRENCY, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE, clampListLimit, clampListPage, WORKING_NOW_STATUSES, effectiveSpaceModules } from '@hbcfield/shared';
 
@@ -547,6 +548,25 @@ export class LocationsService {
     }
     if (data.noShiftDailyMinutes !== undefined) {
       updateData.noShiftDailyMinutes = clampDailyMinutes(data.noShiftDailyMinutes);
+    }
+    /*
+      ⚠️ "Only with a shift" where nothing schedules shifts refuses EVERYBODY —
+      no shift can ever match at a workspace with workModel NONE. Judged on the
+      pair as it will be saved (either half may be the one changing). Asked only
+      when one of them is in this PATCH, so a rename never trips over a row that
+      already holds the pair; the clock-in reads such a row as ALLOW.
+    */
+    if (data.noShiftPolicy !== undefined || data.workModel !== undefined) {
+      const conflict = noShiftPolicyConflict(
+        data.noShiftPolicy ?? existing.noShiftPolicy,
+        data.workModel ?? existing.workModel,
+      );
+      if (conflict) {
+        throw new BadRequestException({
+          message: 'Clocking in only with a shift needs a workspace that schedules shifts. Choose a work model with shifts first, or allow clocking in without one.',
+          code: conflict,
+        });
+      }
     }
     /*
       The staffing floor. Validated through the shared rule rather than trusted,

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn } from '@hbcfield/shared';
+import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn, workspaceSchedulesShifts } from '@hbcfield/shared';
 // Wall time ↔ UTC comes from ONE place. This service used to carry a verbatim
 // private copy of all of it; two copies of "what time is 06:00 in Vienna" are
 // two chances to be an hour wrong twice a year.
@@ -65,15 +65,15 @@ export class ShiftResolverService {
     clockInTz?: string;
   }): Promise<ResolvedShift | null> {
     const { userId, space, clockInAt } = params;
-    const workModel = (space.workModel ?? WorkModel.NONE) as WorkModel;
-
     // Attendance is per-member: when the space tracks attendance (anything but
     // NONE), resolve each member individually — a member WITH a shift/rota (or
     // legacy schedule) gets an expected end + reminders; a member WITHOUT one
     // resolves to null and is task-based (free clock-out, no reminders). So
     // scheduled and task-based workers coexist in the same space. NONE opts the
     // whole space out (free clock in/out, no expectations).
-    if (workModel === WorkModel.NONE) {
+    // ONE rule (shared) for "does this workspace schedule shifts" — the clock-in's
+    // UNSCHEDULED_DAY flag and the SHIFT_ONLY policy read the same answer.
+    if (!workspaceSchedulesShifts(space.workModel)) {
       return null;
     }
 
@@ -121,24 +121,35 @@ export class ShiftResolverService {
 
     for (const a of assignments) {
       if (!a.shift?.isActive) continue;
-      if (!this.recurrenceMatches(a, local)) continue;
-
       const shift = a.shift;
-      const [startH, startM] = parseHm(shift.startLocal);
-      const [endH, endM] = parseHm(shift.endLocal);
-      const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, shift.crossesMidnight, local.minutesOfDay);
-      const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, shift.crossesMidnight, clockInAt, local.minutesOfDay);
+      const toleranceMin = shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
+      /*
+        ⚠️ The recurrence is asked of the day the instance STARTED. The 01:00
+        tail of a 22:00–06:00 night belongs to yesterday's instance, so a Friday
+        night on a Mon–Fri rota keeps its Saturday-morning tail, and a Monday
+        01:00 clock-in is not bound to a "Sunday 22:00" start nobody rostered.
+      */
+      const startDay = instanceStartDay(shift, local);
+      if (!this.recurrenceMatches(a, { ...local, dateStr: startDay })) continue;
+      const window = shiftWindowOn(shift, tz, startDay);
+      /*
+        ⚠️ A clock-in after that instance has ENDED (past its tolerance) is not
+        for it. Binding it anyway counted ≈ 0, flagged it late and fired the
+        "you should have left" reminder the moment the member arrived.
+      */
+      if (endedBefore(window.expectedClockOutAt, clockInAt, toleranceMin)) continue;
+
       const graceMin = shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
       return {
         shiftId: shift.id,
-        expectedClockInAt,
-        expectedClockOutAt,
-        nextRemindAt: new Date(expectedClockOutAt.getTime() + graceMin * 60_000),
+        expectedClockInAt: window.expectedClockInAt,
+        expectedClockOutAt: window.expectedClockOutAt,
+        nextRemindAt: new Date(window.expectedClockOutAt.getTime() + graceMin * 60_000),
         graceMin,
         reminderIntervalMin: shift.reminderIntervalMin ?? SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
         maxReminders: shift.maxReminders ?? SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS,
-        flagToleranceMin: shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+        flagToleranceMin: toleranceMin,
         source: 'assignment',
       };
     }
@@ -156,11 +167,14 @@ export class ShiftResolverService {
     });
     if (!schedule?.endTime) return null;
 
-    const [startH, startM] = parseHm(schedule.startTime);
-    const [endH, endM] = parseHm(schedule.endTime);
     // Legacy schedules never cross midnight → start & end are on the clock-in's local day.
-    const expectedClockInAt = this.computeStart(local.dateStr, startH, startM, endH, endM, tz, false, local.minutesOfDay);
-    const expectedClockOutAt = this.computeEnd(local.dateStr, endH, endM, tz, false, clockInAt, local.minutesOfDay);
+    const { expectedClockInAt, expectedClockOutAt } = shiftWindowOn(
+      { startLocal: schedule.startTime, endLocal: schedule.endTime, crossesMidnight: false },
+      tz,
+      local.dateStr,
+    );
+    // The same rule as a rota shift: today's hours already over are not this clock-in's.
+    if (endedBefore(expectedClockOutAt, clockInAt, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN)) return null;
     const graceMin = SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;
 
     return {
@@ -210,86 +224,48 @@ export class ShiftResolverService {
     const local: LocalDate = { dateStr, dow, dom: d!, minutesOfDay: 0 };
     if (!this.recurrenceMatches(assignment, local)) return null;
 
-    const [sH, sM] = parseHm(assignment.shift.startLocal);
-    const [eH, eM] = parseHm(assignment.shift.endLocal);
-    const expectedClockInAt = zonedWallTimeToUtc(dateStr, sH, sM, tz);
-    const endDateStr = assignment.shift.crossesMidnight ? addDaysStr(dateStr, 1) : dateStr;
-    const expectedClockOutAt = zonedWallTimeToUtc(endDateStr, eH, eM, tz);
-    return { expectedClockInAt, expectedClockOutAt };
+    return shiftWindowOn(assignment.shift, tz, dateStr);
   }
+}
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Timezone-aware date math (dependency-free, DST-safe)
-  // ────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────
+// Which instance of a shift a moment belongs to (dependency-free, DST-safe)
+// ──────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Compute the absolute UTC instant a shift ends, given its local end time and
-   * the clock-in's local minutes-of-day.
-   *
-   * A cross-midnight shift (e.g. 22:00→06:00) spans [start today] → [end
-   * tomorrow]. Which calendar day the end falls on depends on WHERE in the shift
-   * the worker clocked in:
-   *   • Evening portion (local time ≥ end, e.g. 22:00, or slightly early like
-   *     21:55) → the end is TOMORROW's endLocal.
-   *   • Early-morning tail (local time < end, e.g. clocked in at 00:30 while the
-   *     night shift is still running) → the end is TODAY's endLocal. Without this
-   *     the end would be pushed ~24h too late and no reminder would fire on time.
-   * A guard keeps the result strictly after clock-in as a final safety net.
-   */
-  private computeEnd(
-    startDateStr: string,
-    endH: number,
-    endM: number,
-    tz: string,
-    crossesMidnight: boolean,
-    clockInAt: Date,
-    clockInLocalMinutes: number,
-  ): Date {
-    const endMinutes = endH * 60 + endM;
-    let endDateStr = startDateStr;
-    if (crossesMidnight) {
-      endDateStr = clockInLocalMinutes < endMinutes ? startDateStr : addDaysStr(startDateStr, 1);
-    }
-    let end = zonedWallTimeToUtc(endDateStr, endH, endM, tz);
+type ShiftHours = { startLocal: string; endLocal: string; crossesMidnight: boolean };
 
-    // Safety: for cross-midnight shifts the end must be strictly after clock-in
-    // (pathological inputs only — the branch above already picks the right day).
-    let guard = 0;
-    while (crossesMidnight && end.getTime() <= clockInAt.getTime() && guard < 2) {
-      endDateStr = addDaysStr(endDateStr, 1);
-      end = zonedWallTimeToUtc(endDateStr, endH, endM, tz);
-      guard++;
-    }
-    return end;
-  }
+/**
+ * The local day the shift instance a clock-in belongs to STARTED on.
+ *
+ * For a cross-midnight shift (e.g. 18:00→06:00) only the early-morning TAIL —
+ * local time before the shift END — belongs to YESTERDAY's instance. Any other
+ * time is today's: in particular, clocking in a little BEFORE the evening start
+ * (17:35 before 18:00) is simply EARLY for today's shift and must NOT roll back a
+ * day — doing so mislabels an early arrival as roughly a full day late.
+ */
+function instanceStartDay(shift: ShiftHours, local: LocalDate): string {
+  if (!shift.crossesMidnight) return local.dateStr;
+  const [endH, endM] = parseHm(shift.endLocal);
+  return local.minutesOfDay < endH * 60 + endM ? addDaysStr(local.dateStr, -1) : local.dateStr;
+}
 
-  /**
-   * Compute the absolute UTC instant a shift STARTS. For a cross-midnight shift
-   * (e.g. 18:00→06:00), only the early-morning TAIL — local time before the shift
-   * END (e.g. before 06:00) — belongs to YESTERDAY's shift, so the start rolls
-   * back a day. Any other time is today's startLocal: in particular, clocking in
-   * a little BEFORE the evening start (e.g. 17:35 before an 18:00 start) is simply
-   * EARLY for today's shift and must NOT roll back a day — doing so mislabels an
-   * early arrival as roughly a full day late. Mirrors computeEnd's endMinutes
-   * boundary so start/end resolve to the same shift instance.
-   */
-  private computeStart(
-    startDateStr: string,
-    startH: number,
-    startM: number,
-    endH: number,
-    endM: number,
-    tz: string,
-    crossesMidnight: boolean,
-    clockInLocalMinutes: number,
-  ): Date {
-    const endMinutes = endH * 60 + endM;
-    let dateStr = startDateStr;
-    if (crossesMidnight && clockInLocalMinutes < endMinutes) {
-      dateStr = addDaysStr(startDateStr, -1);
-    }
-    return zonedWallTimeToUtc(dateStr, startH, startM, tz);
-  }
+/**
+ * The absolute start and end of the instance that starts on `startDay`. A
+ * cross-midnight shift ends on the NEXT local day — as a real instant, so DST
+ * and midnight need no special handling downstream.
+ */
+function shiftWindowOn(shift: ShiftHours, tz: string, startDay: string): { expectedClockInAt: Date; expectedClockOutAt: Date } {
+  const [sH, sM] = parseHm(shift.startLocal);
+  const [eH, eM] = parseHm(shift.endLocal);
+  return {
+    expectedClockInAt: zonedWallTimeToUtc(startDay, sH, sM, tz),
+    expectedClockOutAt: zonedWallTimeToUtc(shift.crossesMidnight ? addDaysStr(startDay, 1) : startDay, eH, eM, tz),
+  };
+}
+
+/** Had this instance already ended — beyond the shift's own tolerance — when they clocked in? */
+function endedBefore(end: Date, clockInAt: Date, toleranceMin: number): boolean {
+  return clockInAt.getTime() > end.getTime() + Math.max(0, toleranceMin) * 60_000;
 }
 
 /**

@@ -18,6 +18,8 @@ import {
   SERVICE_NAMES,
   mayClockInRemotely as canClockInRemotely,
   noShiftAllowance,
+  effectiveNoShiftPolicy,
+  workspaceSchedulesShifts,
   countedMinutesBetween,
   startOfDayIn,
   endOfDayIn,
@@ -91,11 +93,12 @@ export class ClockInService {
    */
   async noShiftAllowanceFor(
     userId: string,
-    space: { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null },
+    /** `workModel` is required on purpose: without it SHIFT_ONLY cannot be judged (see `effectiveNoShiftPolicy`). */
+    space: { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null; workModel: string | null | undefined },
     at: Date,
     tz: string,
   ): Promise<NoShiftAllowance & { workedTodayMinutes: number }> {
-    const policy = space.noShiftPolicy ?? 'ALLOW';
+    const policy = effectiveNoShiftPolicy(space.noShiftPolicy, space.workModel);
     if (policy !== 'LIMIT') {
       return { ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes: 0, at }), workedTodayMinutes: 0 };
     }
@@ -136,7 +139,8 @@ export class ClockInService {
     return Promise.all(
       spaces.map(async (space) => {
         const tz = space.timezone || 'UTC';
-        const policy = space.noShiftPolicy ?? 'ALLOW';
+        // The rule that APPLIES here: SHIFT_ONLY where nothing is scheduled is no rule at all.
+        const policy = effectiveNoShiftPolicy(space.noShiftPolicy, space.workModel);
         const limited = policy === 'LIMIT' || policy === 'SHIFT_ONLY';
         /*
           A shift is only worth resolving where it changes something: ordering a
@@ -156,7 +160,7 @@ export class ClockInService {
         let workedTodayMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {
           if (!worked.has(tz)) {
-            worked.set(tz, this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes }, now, tz).then((a) => a.workedTodayMinutes));
+            worked.set(tz, this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel }, now, tz).then((a) => a.workedTodayMinutes));
           }
           workedTodayMinutes = await worked.get(tz)!;
         }
@@ -321,19 +325,41 @@ export class ClockInService {
   }
 
   async listClockInLocations(data: { userId: string; organizationId: string }) {
+    const { assignments, locations: clockable } = await this.clockableWorkspaces(data.userId, data.organizationId, new Date());
+    if (!clockable.length) return success([]);
+
+    // The overrides are already on the assignment rows read above, so tagging
+    // costs one lookup for the member and no second query for them.
+    const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
+    const tagged = await this.tagAwayAllowed(clockable, data.userId, data.organizationId, overrideBySpace);
+    const primary = new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId));
+    return success(await this.tagClockInContext(tagged, data.userId, new Date(), primary));
+  }
+
+  /**
+   * The workspaces this member may clock in at, at `at`: assigned then, active,
+   * not the Remote bucket, and running Time Tracking.
+   *
+   * ONE query pair for two questions that must agree — what the clock-in list
+   * OFFERS, and whether the Remote bucket is open to them (only when this is
+   * empty). A bucket rule looser than the list let a member assigned to a
+   * strict site walk around it with `isRemote`; a stricter one would refuse
+   * somebody the list shows no workspace at all.
+   */
+  private async clockableWorkspaces(userId: string, organizationId: string, at: Date) {
     const assignments = await this.prisma.spaceAssignment.findMany({
-      where: activeAssignmentWhere(data.userId),
+      where: activeAssignmentWhere(userId, at),
       // The per-workspace override rides along: it is half of the answer to
       // "may they work away from HERE", and it is on the row we already read.
       select: { spaceId: true, allowRemote: true, isPrimary: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
-    if (!spaceIds.length) return success([]);
+    if (!spaceIds.length) return { assignments, locations: [] };
 
     const locations = await this.prisma.companyLocation.findMany({
         where: {
           id: { in: spaceIds },
-          organizationId: data.organizationId,
+          organizationId,
           isActive: true,
           isRemote: false,
         },
@@ -360,13 +386,7 @@ export class ClockInService {
       // The same answer the job-start gate uses (shared clock-gate.ts).
       spaceRunsClock(l.enabledModules as string[] | null, l.organization?.enabledModules as string[] | null),
     ).map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
-
-    // The overrides are already on the assignment rows read above, so tagging
-    // costs one lookup for the member and no second query for them.
-    const overrideBySpace = new Map(assignments.map((a) => [a.spaceId, a.allowRemote]));
-    const tagged = await this.tagAwayAllowed(clockable as typeof locations, data.userId, data.organizationId, overrideBySpace);
-    const primary = new Set(assignments.filter((a) => a.isPrimary).map((a) => a.spaceId));
-    return success(await this.tagClockInContext(tagged, data.userId, new Date(), primary));
+    return { assignments, locations: clockable };
   }
 
   /**
@@ -473,6 +493,26 @@ export class ClockInService {
         throw new BadRequestException(
           'You are not permitted to clock in remotely. Ask your administrator to enable remote clock-in for your account.',
         );
+      }
+      /*
+        ⚠️ THE BUCKET IS ONLY FOR SOMEBODY WITH NO WORKSPACE — admins included.
+
+        A member who has workspaces clocks in AT one of them: on site, or away
+        when that workspace's ceiling and their grant allow it. Accepting
+        `isRemote` from them walked around a STRICT site, and the entry it made
+        carried no flags (so it was approved on arrival), never matched their
+        rota (so they were chased as a no-show) and was never re-matched.
+
+        The same answer as the list the phone and web choose from, asked of the
+        moment of the tap: they only send `isRemote` when that list is empty.
+      */
+      const { locations: workspaces } = await this.clockableWorkspaces(data.userId, data.organizationId, occurrence.at);
+      if (workspaces.length > 0) {
+        throw new BadRequestException({
+          message: 'You are assigned to a workspace, so clock in there — away from the site if your workspace allows it.',
+          code: 'REMOTE_NOT_FOR_ASSIGNED',
+          params: { workspaces: workspaces.length },
+        });
       }
       const already = await this.prisma.timeEntry.findFirst({
         where: { userId: data.userId, status: TimeEntryStatus.CLOCKED_IN },
@@ -737,8 +777,12 @@ export class ClockInService {
     // Smart flags: matched shift/rota → LATE_ARRIVAL if past the start beyond the
     // shift's tolerance; no matched shift → UNSCHEDULED_DAY. Late detection is the
     // shared computeScheduleFlags (same logic as clock-out + edit).
+    //
+    // ⚠️ UNSCHEDULED_DAY means "this workspace schedules shifts and you had none
+    // today". At a workspace that schedules nothing (workModel NONE, the default)
+    // every clock-in was flagged, sent to review and pushed as pending approval.
     if (!scheduled) {
-      flagReasons.push('UNSCHEDULED_DAY');
+      if (workspaceSchedulesShifts(location.workModel)) flagReasons.push('UNSCHEDULED_DAY');
     } else {
       flagReasons.push(
         ...computeScheduleFlags({

@@ -160,7 +160,8 @@ describe('clocking in with no shift', () => {
   });
 
   it('refuses when the workspace only allows clocking in with a shift', async () => {
-    const { service, prisma } = await build({ space: { noShiftPolicy: 'SHIFT_ONLY' } });
+    // A workspace that schedules shifts: at workModel NONE, SHIFT_ONLY reads as ALLOW.
+    const { service, prisma } = await build({ space: { noShiftPolicy: 'SHIFT_ONLY', workModel: 'SHIFT' } });
     await expect(service.clockIn(clockIn())).rejects.toMatchObject({ response: expect.objectContaining({ code: 'NO_SHIFT_TODAY' }) });
     expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
   });
