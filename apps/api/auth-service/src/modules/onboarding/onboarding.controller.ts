@@ -67,8 +67,9 @@ export class OnboardingController {
   }
 
   @MessagePattern({ cmd: 'onboarding_update_leave_policy' })
-  async updateLeavePolicy(@Payload() data: { organizationId: string; defaultLeaveAllowance: number }) {
-    return this.onboardingService.updateLeavePolicy(data.organizationId, data.defaultLeaveAllowance);
+  async updateLeavePolicy(@Payload() data: { organizationId: string; policy?: Record<string, unknown>; defaultLeaveAllowance?: number }) {
+    // `policy` from the current gateway; the flat allowance from one deployed before it.
+    return this.onboardingService.updateLeavePolicy(data.organizationId, data.policy ?? { defaultLeaveAllowance: data.defaultLeaveAllowance });
   }
 
   @MessagePattern({ cmd: 'update_profile_badges' })

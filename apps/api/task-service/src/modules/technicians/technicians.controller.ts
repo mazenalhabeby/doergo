@@ -3,6 +3,7 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { success } from '@hbcfield/shared';
 import { TechniciansService } from './technicians.service';
 import { CoverService } from './cover.service';
+import { LeaveLedgerService } from './leave-ledger.service';
 import {
   GetEmployeeStatsDto,
   GetEmployeePerformanceDto,
@@ -22,7 +23,42 @@ export class TechniciansController {
   constructor(
     private readonly techniciansService: TechniciansService,
     private readonly coverService: CoverService,
+    private readonly leaveLedger: LeaveLedgerService,
   ) {}
+
+  // ========================================================================
+  // THE LEAVE LEDGER (leave-ledger.service.ts) — scope and caller come from the gateway
+  // ========================================================================
+
+  @MessagePattern({ cmd: 'list_leave_adjustments' })
+  async listLeaveAdjustments(@Payload() dto: Parameters<LeaveLedgerService['listAdjustments']>[0]) {
+    return success(await this.leaveLedger.listAdjustments(dto));
+  }
+
+  @MessagePattern({ cmd: 'add_leave_adjustment' })
+  async addLeaveAdjustment(@Payload() dto: Parameters<LeaveLedgerService['addAdjustment']>[0]) {
+    return success(await this.leaveLedger.addAdjustment(dto));
+  }
+
+  @MessagePattern({ cmd: 'void_leave_adjustment' })
+  async voidLeaveAdjustment(@Payload() dto: Parameters<LeaveLedgerService['voidAdjustment']>[0]) {
+    return success(await this.leaveLedger.voidAdjustment(dto));
+  }
+
+  @MessagePattern({ cmd: 'get_leave_opening' })
+  async getLeaveOpening(@Payload() dto: Parameters<LeaveLedgerService['getOpening']>[0]) {
+    return success(await this.leaveLedger.getOpening(dto));
+  }
+
+  @MessagePattern({ cmd: 'save_leave_opening' })
+  async saveLeaveOpening(@Payload() dto: Parameters<LeaveLedgerService['saveOpening']>[0]) {
+    return success(await this.leaveLedger.saveOpening(dto));
+  }
+
+  @MessagePattern({ cmd: 'match_leave_opening' })
+  async matchLeaveOpening(@Payload() dto: Parameters<LeaveLedgerService['matchOpening']>[0]) {
+    return success(await this.leaveLedger.matchOpening(dto));
+  }
 
   // ========================================================================
   // PERFORMANCE & STATS
@@ -84,7 +120,7 @@ export class TechniciansController {
   }
 
   @MessagePattern({ cmd: 'get_leave_balance' })
-  async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string }) {
+  async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string; on?: string; year?: number | string }) {
     return this.techniciansService.getLeaveBalance(dto);
   }
 

@@ -1,4 +1,4 @@
-import { ABSENCE_WHERE, REQUEST_KINDS, REQUEST_LIMITS, activeAssignmentWhere, assertFoundInOrg, isAbsence, parseRequestInput, requestKindOf, requestKindsOffered, resolveAwayAccess, type RequestInput, type RequestInputError, type RequestKind, assertMemberInScope, memberScopeFilter, countLeave as countLeaveDays, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
+import { ABSENCE_WHERE, REQUEST_KINDS, REQUEST_LIMITS, activeAssignmentWhere, assertFoundInOrg, isAbsence, parseRequestInput, requestKindOf, requestKindsOffered, resolveAwayAccess, type RequestInput, type RequestInputError, type RequestKind, assertMemberInScope, memberScopeFilter, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
@@ -6,6 +6,7 @@ import { NotificationRoutingService } from '../../common/notification-routing.se
 import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
+import { LeaveLedgerService, leaveYearFor } from './leave-ledger.service';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
 import { assertNotSelfDecision } from '../attendance/self-decision';
 import {
@@ -49,6 +50,8 @@ export class TechniciansService {
     // What a range of leave COSTS — weekends, rota rest days and holidays left out (shared calendar/days.ts).
     private readonly calendarRules: CalendarRulesService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
+    // The ONE vacation balance (allowance + adjustments − taken, in the leave year).
+    private readonly leaveLedger: LeaveLedgerService,
     // A weekly schedule set after the clock-in reaches the entries it now covers.
     @Optional() private readonly rematch?: ShiftRematchService,
   ) {}
@@ -874,7 +877,10 @@ export class TechniciansService {
     }
     // A year at most — a longer range would be counted short, not refused, further down.
     if ((Date.parse(dto.to) - Date.parse(dto.from)) / 86400000 > 366) throw new BadRequestException('Count at most a year at a time');
-    const exists = await this.prisma.user.findFirst({ where: { id: dto.technicianId, organizationId: dto.organizationId }, select: { id: true } });
+    const exists = await this.prisma.user.findFirst({
+      where: { id: dto.technicianId, organizationId: dto.organizationId },
+      select: { id: true, employmentStartDate: true, organization: { select: { leaveYearMode: true } } },
+    });
     if (!exists) throw new NotFoundException('Employee not found in organization');
     /*
       Somebody else's count shows their rota and days off: only for whoever manages that person —
@@ -884,116 +890,28 @@ export class TechniciansService {
       await assertMemberInScope(this.prisma as any, { userId: dto.technicianId, organizationId: dto.organizationId, scopeSpaceIds: dto.scopeSpaceIds });
     }
     const c = await this.calendarRules.countLeaveFor(dto.organizationId, dto.technicianId, dto.from, dto.to);
+    // The same days split by LEAVE year (calendar or work year — leave ledger): a request over
+    // the turn of a leave year draws on each, and the preview keys it on the balance's year.
+    const byLeaveYear: Record<string, number> = {};
+    for (const d of c.days) {
+      if (!d.cost) continue;
+      const start = leaveYearFor(exists.organization ?? { leaveYearMode: 'CALENDAR' }, exists, d.day).start;
+      byLeaveYear[start] = (byLeaveYear[start] ?? 0) + d.cost;
+    }
     return success({
       from: dto.from, to: dto.to,
       calendarDays: c.calendarDays, counted: c.counted, restDays: c.restDays,
-      holidays: c.holidays, byYear: c.byYear,
+      holidays: c.holidays, byYear: c.byYear, byLeaveYear,
       days: c.days.map((d) => ({ day: d.day, kind: d.kind, cost: d.cost, holiday: d.holiday ?? null })),
     });
   }
 
-  /** This year's allowance for one person, with what is taken and pending. */
-  async getLeaveBalance(dto: { technicianId: string; organizationId: string }) {
-    const technician = await this.prisma.user.findFirst({
-      where: { id: dto.technicianId, organizationId: dto.organizationId },
-      select: { id: true, leaveAllowance: true, organizationId: true, employmentStartDate: true },
-    });
-    if (!technician) throw new NotFoundException('Employee not found in organization');
-
-    const rows = await this.prisma.timeOff.findMany({
-      // Leave only: every request row carries a `type` column (default VACATION), so without the
-      // kind a remote day would be deducted from the allowance.
-      where: { technicianId: dto.technicianId, ...ABSENCE_WHERE, type: 'VACATION' as any },
-      select: { type: true, status: true, startDate: true, endDate: true },
-    });
-    return success(await this.leaveBalance(technician, rows as any));
-  }
-
   /**
-   * This year's vacation allowance and what is left of it.
-   *
-   * Deducts APPROVED vacation only. Pending days are reported separately rather
-   * than subtracted: a request a manager has not looked at yet is not time the
-   * person has taken, and quietly counting it makes the number drop for a
-   * booking that may never happen. Showing both lets someone see the optimistic
-   * and the committed figure without the page choosing for them.
-   *
-   * Sick, personal and other absence never touch the allowance — an allowance
-   * that deducts sick days is a penalty for being ill.
+   * The vacation balance — computed in ONE place, the leave ledger (leave-ledger.service.ts):
+   * allowance + the leave year's adjustments − approved vacation in the leave year.
    */
-  private async leaveBalance(
-    technician: { id: string; leaveAllowance?: number | null; organizationId?: string | null },
-    timeOffs: Array<{ type?: string; status: string; startDate: Date; endDate: Date }>,
-  ) {
-    // Per-person override, else the organization's default. Null is "use the
-    // default"; 0 is a real answer meaning no paid leave, so `??` not `||`.
-    let allowance = technician.leaveAllowance ?? null;
-    if (allowance === null && technician.organizationId) {
-      const org = await this.prisma.organization.findUnique({
-        where: { id: technician.organizationId },
-        select: { defaultLeaveAllowance: true },
-      });
-      allowance = org?.defaultLeaveAllowance ?? 25;
-    }
-
-    const year = new Date().getFullYear();
-    const fullAllowance = allowance ?? 0;
-
-    /*
-      Someone who started in July did not earn a full year of vacation, so the
-      first year is pro-rated by the months they are actually here — including
-      the month they started, because a day worked in a month is a month
-      started.
-
-      Only ever from an explicitly recorded start date. createdAt would be the
-      tempting fallback and it is the wrong date: an organization importing its
-      existing staff makes every account on one afternoon, and pro-rating from
-      that would quietly cut months off everyone's allowance for a start date
-      none of them had. No date recorded means the full allowance.
-    */
-    let prorated = false;
-    const start = (technician as any).employmentStartDate as Date | null | undefined;
-    if (start && new Date(start).getFullYear() === year) {
-      const monthsHere = 12 - new Date(start).getMonth();
-      // Half days, because a twelfth of 25 is not a whole number and rounding
-      // down every time quietly costs people days they are owed.
-      allowance = Math.round(((fullAllowance * monthsHere) / 12) * 2) / 2;
-      prorated = true;
-    }
-    /*
-      WORKING days, counted inside THIS year only: weekends, rota rest days and holidays cost nothing,
-      and a request over New Year draws on each year for its own days (shared calendar/days.ts).
-      One rule set for the whole year, then pure arithmetic per request — two or three queries, not
-      one per row.
-    */
-    const yearStart = `${year}-01-01`, yearEnd = `${year}-12-31`;
-    const relevant = timeOffs.filter((r) =>
-      (r.type ?? 'VACATION') === 'VACATION' && (r.status === 'APPROVED' || r.status === 'PENDING')
-      && toISODateString(r.startDate) <= yearEnd && toISODateString(r.endDate) >= yearStart);
-    let taken = 0;
-    let pending = 0;
-    if (relevant.length && technician.organizationId) {
-      const { rules, roster } = await this.calendarRules.personRules(technician.organizationId, technician.id, yearStart, yearEnd);
-      for (const r of relevant) {
-        const from = toISODateString(r.startDate), to = toISODateString(r.endDate);
-        const cost = countLeaveDays(from < yearStart ? yearStart : from, to > yearEnd ? yearEnd : to, rules, roster).counted;
-        if (r.status === 'APPROVED') taken += cost;
-        else pending += cost;
-      }
-    }
-
-    return {
-      year,
-      allowance: allowance ?? 0,
-      taken,
-      pending,
-      remaining: (allowance ?? 0) - taken,
-      // The screen has to be able to explain a number that is not the round
-      // one everybody else has.
-      prorated,
-      fullAllowance,
-      startedOn: prorated && start ? toISODateString(new Date(start)) : null,
-    };
+  async getLeaveBalance(dto: { technicianId: string; organizationId: string; on?: string; year?: number | string }) {
+    return success(await this.leaveLedger.getBalance(dto));
   }
 
   /**

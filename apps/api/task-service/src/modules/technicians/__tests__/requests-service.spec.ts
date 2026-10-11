@@ -32,7 +32,7 @@ function build(opts: {
   const cover = { assessMany: jest.fn().mockResolvedValue(new Map()) };
   const calendarRules = { countLeaveFor: jest.fn().mockResolvedValue({ counted: 3 }) };
   const notify = { emit: jest.fn() };
-  const service = new TechniciansService(prisma, routing as any, cover as any, calendarRules as any, notify as any);
+  const service = new TechniciansService(prisma, routing as any, cover as any, calendarRules as any, notify as any, {} as any);
   return { service, prisma, cover, calendarRules, notify };
 }
 

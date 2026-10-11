@@ -4,6 +4,8 @@ import { PrismaModule, SERVICE_NAMES, createClientOptions } from '@hbcfield/shar
 import { TechniciansController } from './technicians.controller';
 import { TechniciansService } from './technicians.service';
 import { CoverService } from './cover.service';
+import { LeaveLedgerService } from './leave-ledger.service';
+import { LeaveCarryOverService } from './leave-carry-over.service';
 import { AttendanceModule } from '../attendance/attendance.module';
 import { CalendarRulesModule } from '../calendar/calendar-rules.module';
 
@@ -17,7 +19,7 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [TechniciansController],
-  providers: [TechniciansService, CoverService],
-  exports: [TechniciansService, CoverService],
+  providers: [TechniciansService, CoverService, LeaveLedgerService, LeaveCarryOverService],
+  exports: [TechniciansService, CoverService, LeaveLedgerService],
 })
 export class TechniciansModule {}

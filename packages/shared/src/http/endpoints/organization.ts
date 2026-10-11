@@ -8,6 +8,7 @@ import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 import type { Colleague, LocationAssignment, OrgMember } from '../types';
 import type { SessionTokens } from './platform';
+import type { LeavePolicyInput } from '../../leave/leave-api';
 
 type Id = { id: string };
 
@@ -83,7 +84,7 @@ export const organizationsEndpoints = defineEndpoints('organizations', {
   joinCode: endpoint<void, { hasJoinCode: boolean; joinPolicy: string; joinCode?: string | null }>({ method: 'GET', path: () => '/organizations/join-code', keep: true }),
   regenerateJoinCode: endpoint<void, { code: string }>({ method: 'POST', path: () => '/organizations/regenerate-join-code' }),
   updateSettings: endpoint<void, unknown, { joinPolicy: string }>({ method: 'PATCH', path: () => '/organizations/settings' }),
-  updateLeavePolicy: endpoint<void, unknown, { defaultLeaveAllowance: number }>({ method: 'PATCH', path: () => '/organizations/leave-policy' }),
+  updateLeavePolicy: endpoint<void, unknown, LeavePolicyInput>({ method: 'PATCH', path: () => '/organizations/leave-policy' }),
   profile: endpoint<void, unknown>({ method: 'GET', path: () => '/organizations/profile' }),
   updateProfile: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/profile' }),
   updateNotificationPrefs: endpoint<void, unknown, Record<string, unknown>>({ method: 'PATCH', path: () => '/organizations/notification-prefs' }),

@@ -1,4 +1,4 @@
-import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseCurrency, CURRENCY_INVALID_MESSAGE, clampListLimit } from '@hbcfield/shared';
+import { writeRateChange, RateChangeError, ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseCurrency, CURRENCY_INVALID_MESSAGE, clampListLimit, parseLeavePolicy, toISODateString, type LeavePolicyError } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -24,6 +24,38 @@ import {
   permissionsFromUserFlags,
 } from '@hbcfield/shared';
 import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from '../invitations/invitation-apply';
+
+/* The organization's leave policy as the API carries it (shared leave/leave-api.ts). */
+const LEAVE_POLICY_SELECT = {
+  defaultLeaveAllowance: true,
+  leaveYearMode: true,
+  carryOverMode: true,
+  carryOverMaxDays: true,
+  carryExpiresAfterMonths: true,
+  leaveTrackingStartedOn: true,
+} as const;
+
+/** A DATE column read back as its day, never an instant a browser would move a day west. */
+function leavePolicyOf(org: { defaultLeaveAllowance: number; leaveYearMode: string; carryOverMode: string; carryOverMaxDays: number | null; carryExpiresAfterMonths: number | null; leaveTrackingStartedOn: Date | null }) {
+  return {
+    defaultLeaveAllowance: org.defaultLeaveAllowance,
+    leaveYearMode: org.leaveYearMode,
+    carryOverMode: org.carryOverMode,
+    carryOverMaxDays: org.carryOverMaxDays,
+    carryExpiresAfterMonths: org.carryExpiresAfterMonths,
+    leaveTrackingStartedOn: org.leaveTrackingStartedOn ? toISODateString(org.leaveTrackingStartedOn) : null,
+  };
+}
+
+const LEAVE_POLICY_REFUSALS: Record<LeavePolicyError, string> = {
+  LEAVE_ALLOWANCE_INVALID: 'Annual vacation days must be a whole number between 0 and 100',
+  LEAVE_YEAR_MODE_INVALID: 'The leave year is the calendar year or the work year',
+  CARRY_OVER_MODE_INVALID: 'Carry-over is none, up to a number of days, or all days',
+  CARRY_OVER_MAX_INVALID: 'Carrying "up to" needs a whole number of days between 1 and 100',
+  CARRY_EXPIRY_INVALID: 'Carried days expire after 1 to 24 months, or never',
+  LEAVE_TRACKING_DATE_INVALID: 'Choose a valid day (YYYY-MM-DD)',
+  LEAVE_POLICY_EMPTY: 'Nothing to change',
+};
 
 @Injectable()
 export class OnboardingService {
@@ -865,28 +897,41 @@ export class OnboardingService {
     return { success: true, data: { joinPolicy } };
   }
 
-  /** The organization's annual vacation days, for members with no override. */
-  async updateLeavePolicy(organizationId: string, defaultLeaveAllowance: number) {
-    // Bounded rather than merely non-negative: 0 is legitimate (an
-    // organization of contractors), but a typed 250 is a slip that would show
-    // everybody an allowance they do not have, and nothing downstream would
-    // question it.
-    const days = Number(defaultLeaveAllowance);
-    if (!Number.isInteger(days) || days < 0 || days > 100) {
+  /**
+   * The organization's leave policy (shared leave/leave-api.ts parseLeavePolicy): the annual
+   * days for members with no override (0 is legitimate — contractors; a typed 250 is a slip, so
+   * bounded), the leave year (calendar or work year), the carry-over rule, and the day HBCField
+   * started counting leave. Every field optional; what is not sent is left as it is.
+   */
+  async updateLeavePolicy(organizationId: string, raw: unknown) {
+    const parsed = parseLeavePolicy(raw);
+    if (!parsed.ok) {
       return {
         success: false,
         statusCode: HttpStatus.BAD_REQUEST,
-        message: 'Annual vacation days must be a whole number between 0 and 100',
+        code: parsed.code,
+        message: LEAVE_POLICY_REFUSALS[parsed.code],
       };
     }
-
-    await this.prisma.organization.update({
+    const v = parsed.value;
+    const data = {
+      ...(v.defaultLeaveAllowance !== undefined ? { defaultLeaveAllowance: v.defaultLeaveAllowance } : {}),
+      ...(v.leaveYearMode !== undefined ? { leaveYearMode: v.leaveYearMode as never } : {}),
+      ...(v.carryOverMode !== undefined ? { carryOverMode: v.carryOverMode as never } : {}),
+      ...(v.carryOverMaxDays !== undefined ? { carryOverMaxDays: v.carryOverMaxDays } : {}),
+      ...(v.carryExpiresAfterMonths !== undefined ? { carryExpiresAfterMonths: v.carryExpiresAfterMonths } : {}),
+      ...(v.leaveTrackingStartedOn !== undefined
+        ? { leaveTrackingStartedOn: v.leaveTrackingStartedOn ? new Date(`${v.leaveTrackingStartedOn}T00:00:00Z`) : null }
+        : {}),
+    };
+    const org = await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { defaultLeaveAllowance: days },
+      data,
+      select: LEAVE_POLICY_SELECT,
     });
 
-    this.logger.log(`Leave allowance set to ${days} for org ${organizationId}`);
-    return { success: true, data: { defaultLeaveAllowance: days } };
+    this.logger.log(`Leave policy updated for org ${organizationId}: ${Object.keys(data).join(', ')}`);
+    return { success: true, data: leavePolicyOf(org) };
   }
 
   async updateProfileBadges(organizationId: string, profileBadges: any) {
@@ -932,6 +977,12 @@ export class OnboardingService {
         // Shown on the Settings screen, so an admin can see and change the
         // number every member's vacation balance is measured against.
         defaultLeaveAllowance: true,
+        // The leave ledger's policy (Settings → Leave): leave year, carry-over, tracking start.
+        leaveYearMode: true,
+        carryOverMode: true,
+        carryOverMaxDays: true,
+        carryExpiresAfterMonths: true,
+        leaveTrackingStartedOn: true,
         address: true,
         addressLine1: true,
         addressLine2: true,
@@ -961,7 +1012,7 @@ export class OnboardingService {
       return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
     }
 
-    return { success: true, data: { ...org, memberCount: org._count.users } };
+    return { success: true, data: { ...org, ...leavePolicyOf(org), memberCount: org._count.users } };
   }
 
   async updateOrgProfile(organizationId: string, updates: any) {
