@@ -170,7 +170,8 @@ export function assessFix(
  * location). Those are NOT in this set.
  */
 // APPROVED_REMOTE: away/remote work approved in advance (requests) — said on the entry, decided already.
-export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED', 'APPROVED_REMOTE']);
+// AUTO_*: made by the automatic clock (attendance/auto-clock.ts) — marked, not suspected.
+export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED', 'APPROVED_REMOTE', 'AUTO_CLOCK_IN', 'AUTO_CLOCK_OUT', 'AUTO_REST']);
 
 /** The flags on an entry that should put it in front of a person. */
 export function flagsForReview(flags: readonly string[]): string[] {
