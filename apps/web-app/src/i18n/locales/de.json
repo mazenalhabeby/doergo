@@ -2329,7 +2329,8 @@
         "boundaryChanged": "Standortgrenze seitdem geändert",
         "clockOutProvisional": "Ausstempeln nicht bestätigt",
         "pastDailyLimit": "Über dem Tageslimit",
-        "missedRest": "Pause verpasst"
+        "missedRest": "Pause verpasst",
+        "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich"
       }
     },
     "locationsTab": {
@@ -9382,7 +9383,8 @@
       "OUTSIDE_GEOFENCE_IN": "Einstempeln außerhalb",
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
       "UNSCHEDULED_DAY": "Nicht geplant",
-      "MISSED_BREAK": "Pause verpasst"
+      "MISSED_BREAK": "Pause verpasst",
+      "REMOTE_WITH_WORKSPACE": "Auswärts trotz Arbeitsbereich"
     }
   },
   "explainerButton": {

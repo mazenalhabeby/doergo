@@ -2734,7 +2734,8 @@
       "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
       "OVERTIME": "Horas extra",
       "UNSCHEDULED_DAY": "Sin programar",
-      "MISSED_BREAK": "Descanso perdido"
+      "MISSED_BREAK": "Descanso perdido",
+      "REMOTE_WITH_WORKSPACE": "Remoto con espacio asignado"
     },
     "period": {
       "month": "30 días",

@@ -2734,7 +2734,8 @@
       "OUTSIDE_GEOFENCE_OUT": "Ausstempeln außerhalb",
       "OVERTIME": "Überstunden",
       "UNSCHEDULED_DAY": "Nicht geplant",
-      "MISSED_BREAK": "Pause verpasst"
+      "MISSED_BREAK": "Pause verpasst",
+      "REMOTE_WITH_WORKSPACE": "Auswärts trotz Arbeitsbereich"
     },
     "period": {
       "month": "30 Tage",

@@ -2329,7 +2329,8 @@
         "boundaryChanged": "Limite du site modifiée depuis",
         "clockOutProvisional": "Sortie non confirmée",
         "pastDailyLimit": "Au-delà de la limite du jour",
-        "missedRest": "Pause manquée"
+        "missedRest": "Pause manquée",
+        "remoteWithWorkspace": "À distance, a un espace"
       }
     },
     "locationsTab": {
@@ -9391,7 +9392,8 @@
       "OUTSIDE_GEOFENCE_IN": "Entrée hors zone",
       "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
       "UNSCHEDULED_DAY": "Non planifié",
-      "MISSED_BREAK": "Pause manquée"
+      "MISSED_BREAK": "Pause manquée",
+      "REMOTE_WITH_WORKSPACE": "À distance, a un espace"
     }
   },
   "explainerButton": {

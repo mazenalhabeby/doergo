@@ -2329,7 +2329,8 @@
         "boundaryChanged": "Límite del sitio cambiado desde entonces",
         "clockOutProvisional": "Salida sin confirmar",
         "pastDailyLimit": "Por encima del límite diario",
-        "missedRest": "Descanso perdido"
+        "missedRest": "Descanso perdido",
+        "remoteWithWorkspace": "Remoto con espacio asignado"
       }
     },
     "locationsTab": {
@@ -9382,7 +9383,8 @@
       "OUTSIDE_GEOFENCE_IN": "Entrada fuera",
       "OUTSIDE_GEOFENCE_OUT": "Salida fuera",
       "UNSCHEDULED_DAY": "Sin programar",
-      "MISSED_BREAK": "Descanso perdido"
+      "MISSED_BREAK": "Descanso perdido",
+      "REMOTE_WITH_WORKSPACE": "Remoto con espacio asignado"
     }
   },
   "explainerButton": {

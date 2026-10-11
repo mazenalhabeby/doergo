@@ -26,6 +26,7 @@ import {
   type NoShiftAllowance,
   type NoShiftTag,
   spaceRunsClock,
+  ATTENDANCE_FLAG_REASONS,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
@@ -507,7 +508,16 @@ export class ClockInService {
         moment of the tap: they only send `isRemote` when that list is empty.
       */
       const { locations: workspaces } = await this.clockableWorkspaces(data.userId, data.organizationId, occurrence.at);
-      if (workspaces.length > 0) {
+      /*
+        ⚠️ Recorded OFFLINE, it is kept — never refused. The phone chose from the
+        list it had saved; when that list was out of date, refusing at sync would
+        throw away a day somebody actually worked, which no offline rule does (the
+        daily limit flags instead of refusing, for the same reason). It arrives
+        flagged REMOTE_WITH_WORKSPACE, so a person decides. Online, the member
+        sees the refusal while still able to clock in at the workspace.
+      */
+      const remoteDespiteWorkspace = workspaces.length > 0 && occurrence.flags.includes('RECORDED_OFFLINE');
+      if (workspaces.length > 0 && !remoteDespiteWorkspace) {
         throw new BadRequestException({
           message: 'You are assigned to a workspace, so clock in there — away from the site if your workspace allows it.',
           code: 'REMOTE_NOT_FOR_ASSIGNED',
@@ -548,7 +558,10 @@ export class ClockInService {
         timezone: this.resolveEntryTimezone(data.lat, data.lng, orgTz) ?? orgTz,
       });
 
-      const remoteFlags = [...occurrence.flags];
+      const remoteFlags = [
+        ...occurrence.flags,
+        ...(remoteDespiteWorkspace ? [ATTENDANCE_FLAG_REASONS.REMOTE_WITH_WORKSPACE] : []),
+      ];
       const remotePresence = await this.presence.atClockIn({
         userId: data.userId,
         organizationId: data.organizationId,

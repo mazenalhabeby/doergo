@@ -110,6 +110,41 @@ describe('the Remote bucket is only for somebody with no workspace', () => {
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 
+  /*
+    ⚠️ Recorded offline from an out-of-date list, the day is KEPT — refusing at
+    sync would throw away hours actually worked. A person decides.
+  */
+  it('keeps an OFFLINE remote clock-in from a member with a workspace, flagged for review', async () => {
+    const TAP = new Date(NOW.getTime() - 20 * 60_000);
+    const anchorAt = new Date(TAP.getTime() - 5 * 60_000);
+    const { service, prisma } = await build({ allowRemote: true });
+    await service.clockIn(tap({
+      isRemote: true, ...FAR,
+      evidence: {
+        occurredAt: TAP.toISOString(), uptimeMs: 1_000_000 + 5 * 60_000,
+        anchor: { serverTime: anchorAt.toISOString(), uptimeMs: 1_000_000 },
+        fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
+      },
+    }));
+    const data = prisma.timeEntry.create.mock.calls[0][0].data;
+    expect(data).toMatchObject({ locationId: 'remote-1', isRemote: true, clockInAt: TAP, approvalStatus: 'PENDING' });
+    expect(data.flagReasons).toEqual(expect.arrayContaining(['RECORDED_OFFLINE', 'REMOTE_WITH_WORKSPACE']));
+  });
+
+  it('a member with NO workspace offline gets no REMOTE_WITH_WORKSPACE flag', async () => {
+    const TAP = new Date(NOW.getTime() - 20 * 60_000);
+    const { service, prisma } = await build({ allowRemote: true, assigned: false });
+    await service.clockIn(tap({
+      isRemote: true, ...FAR,
+      evidence: {
+        occurredAt: TAP.toISOString(), uptimeMs: 1_000_000 + 5 * 60_000,
+        anchor: { serverTime: new Date(TAP.getTime() - 5 * 60_000).toISOString(), uptimeMs: 1_000_000 },
+        fix: { ...FAR, accuracy: 12, fixAt: TAP.toISOString() },
+      },
+    }));
+    expect(prisma.timeEntry.create.mock.calls[0][0].data.flagReasons).not.toContain('REMOTE_WITH_WORKSPACE');
+  });
+
   it('asks about the moment of the tap, with the same window rule as the list', async () => {
     const { service, prisma } = await build({ allowRemote: true });
     await service.clockIn(tap({ isRemote: true, ...FAR })).catch(() => undefined);
@@ -153,6 +188,12 @@ describe('a workspace that schedules nothing', () => {
     expect(data.approvalStatus).toBe('AUTO');
   });
 
+  it('does not flag UNSCHEDULED_DAY at a TASK workspace either — task-based work plans no shifts', async () => {
+    const { service, prisma } = await build({ space: { workModel: 'TASK' } as never });
+    await service.clockIn(tap({ locationId: 'yard-1' }));
+    expect(prisma.timeEntry.create.mock.calls[0][0].data.flagReasons).not.toContain('UNSCHEDULED_DAY');
+  });
+
   it('still flags it where shifts ARE scheduled and none matched', async () => {
     const { service, prisma } = await build({ space: { workModel: 'SHIFT' } });
     await service.clockIn(tap({ locationId: 'loc-1' }));
@@ -184,7 +225,7 @@ describe('a workspace that schedules nothing', () => {
 
 describe('the shared rule', () => {
   it.each([
-    [null, false], [undefined, false], ['NONE', false], ['SHIFT', true], ['FIXED', true], ['TASK', true],
+    [null, false], [undefined, false], ['NONE', false], ['SHIFT', true], ['FIXED', true], ['TASK', false],
   ])('workModel %s schedules shifts: %s', (wm, expected) => {
     expect(workspaceSchedulesShifts(wm as string | null | undefined)).toBe(expected);
   });

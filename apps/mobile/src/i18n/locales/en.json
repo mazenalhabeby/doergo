@@ -2734,7 +2734,8 @@
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
       "OVERTIME": "Overtime",
       "UNSCHEDULED_DAY": "Unscheduled",
-      "MISSED_BREAK": "Missed rest"
+      "MISSED_BREAK": "Missed rest",
+      "REMOTE_WITH_WORKSPACE": "Remote, has a workspace"
     },
     "period": {
       "month": "30 days",

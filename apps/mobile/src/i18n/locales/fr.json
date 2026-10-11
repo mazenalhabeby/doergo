@@ -2734,7 +2734,8 @@
       "OUTSIDE_GEOFENCE_OUT": "Sortie hors zone",
       "OVERTIME": "Heures sup.",
       "UNSCHEDULED_DAY": "Non planifié",
-      "MISSED_BREAK": "Pause manquée"
+      "MISSED_BREAK": "Pause manquée",
+      "REMOTE_WITH_WORKSPACE": "À distance, a un espace"
     },
     "period": {
       "month": "30 jours",

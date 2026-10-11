@@ -141,6 +141,14 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
     },
   },
   {
+    reason: "REMOTE_WITH_WORKSPACE",
+    chip: {
+      tone: "amber",
+      labelKey: "technicians.attendanceTab.flag.remoteWithWorkspace",
+      fallback: "Remote, has a workspace",
+    },
+  },
+  {
     reason: "MISSED_BREAK",
     chip: {
       tone: "amber",

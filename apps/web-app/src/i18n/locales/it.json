@@ -2329,7 +2329,8 @@
         "boundaryChanged": "Confine della sede modificato da allora",
         "clockOutProvisional": "Uscita non confermata",
         "pastDailyLimit": "Oltre il limite di oggi",
-        "missedRest": "Pausa saltata"
+        "missedRest": "Pausa saltata",
+        "remoteWithWorkspace": "Da remoto con spazio assegnato"
       }
     },
     "locationsTab": {
@@ -9391,7 +9392,8 @@
       "OUTSIDE_GEOFENCE_IN": "Entrata fuori sede",
       "OUTSIDE_GEOFENCE_OUT": "Uscita fuori sede",
       "UNSCHEDULED_DAY": "Non pianificato",
-      "MISSED_BREAK": "Pausa saltata"
+      "MISSED_BREAK": "Pausa saltata",
+      "REMOTE_WITH_WORKSPACE": "Da remoto con spazio assegnato"
     }
   },
   "explainerButton": {

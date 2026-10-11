@@ -44,7 +44,10 @@ export function isNoShiftPolicy(v: unknown): v is NoShiftPolicy {
  * pending-approval notice, for a shift nobody was ever meant to have.
  */
 export function workspaceSchedulesShifts(workModel: string | null | undefined): boolean {
-  return (workModel ?? 'NONE') !== 'NONE';
+  // ⚠️ Only SHIFT (rota) and FIXED (weekly schedule) plan shifts. NONE plans nothing, and
+  // TASK is task-based work with no scheduled end — flagging their days "unscheduled"
+  // would send every clock-in to review for nothing.
+  return workModel === 'SHIFT' || workModel === 'FIXED';
 }
 
 /**

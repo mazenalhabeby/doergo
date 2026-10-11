@@ -2329,7 +2329,8 @@
         "boundaryChanged": "Site boundary changed since",
         "clockOutProvisional": "Clock-out not confirmed",
         "pastDailyLimit": "Past today's limit",
-        "missedRest": "Missed rest"
+        "missedRest": "Missed rest",
+        "remoteWithWorkspace": "Remote, has a workspace"
       }
     },
     "locationsTab": {
@@ -9382,7 +9383,8 @@
       "OUTSIDE_GEOFENCE_IN": "Off-site in",
       "OUTSIDE_GEOFENCE_OUT": "Off-site out",
       "UNSCHEDULED_DAY": "Unscheduled",
-      "MISSED_BREAK": "Missed rest"
+      "MISSED_BREAK": "Missed rest",
+      "REMOTE_WITH_WORKSPACE": "Remote, has a workspace"
     }
   },
   "explainerButton": {

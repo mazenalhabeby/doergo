@@ -148,6 +148,9 @@ export const ATTENDANCE_FLAG_REASONS = {
   // A required planned rest was not taken (window closed, "Later" ran out, or
   // the shift ended). It FLAGS for a person and never deducts — see break-plan.ts.
   MISSED_BREAK: 'MISSED_BREAK',
+  // Clocked in "remote" while assigned to a workspace — only kept when recorded
+  // offline from an out-of-date list (a day worked is never thrown away); a person decides.
+  REMOTE_WITH_WORKSPACE: 'REMOTE_WITH_WORKSPACE',
 } as const;
 
 export type AttendanceFlagReason = typeof ATTENDANCE_FLAG_REASONS[keyof typeof ATTENDANCE_FLAG_REASONS];
@@ -170,4 +173,5 @@ export const FLAG_REASON_LABELS: Record<string, string> = {
   FIX_MOCKED: 'Mock location',
   BOUNDARY_CHANGED: 'Site boundary changed since',
   MISSED_BREAK: 'Required rest not taken',
+  REMOTE_WITH_WORKSPACE: 'Remote while assigned to a workspace',
 };
