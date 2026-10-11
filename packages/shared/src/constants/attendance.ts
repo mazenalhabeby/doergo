@@ -145,6 +145,9 @@ export const ATTENDANCE_FLAG_REASONS = {
   STALE: 'STALE',
   FIX_MOCKED: 'FIX_MOCKED',
   BOUNDARY_CHANGED: 'BOUNDARY_CHANGED',
+  // A required planned rest was not taken (window closed, "Later" ran out, or
+  // the shift ended). It FLAGS for a person and never deducts — see break-plan.ts.
+  MISSED_BREAK: 'MISSED_BREAK',
 } as const;
 
 export type AttendanceFlagReason = typeof ATTENDANCE_FLAG_REASONS[keyof typeof ATTENDANCE_FLAG_REASONS];
@@ -166,4 +169,5 @@ export const FLAG_REASON_LABELS: Record<string, string> = {
   STALE: 'Sent over a week late',
   FIX_MOCKED: 'Mock location',
   BOUNDARY_CHANGED: 'Site boundary changed since',
+  MISSED_BREAK: 'Required rest not taken',
 };

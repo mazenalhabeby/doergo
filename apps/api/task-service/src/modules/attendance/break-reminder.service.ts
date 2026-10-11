@@ -5,10 +5,12 @@ import {
   SERVICE_NAMES,
   parseBreakPlan,
   nextBreakRemindAt,
-  outstandingBreaks,
+  breakNeedingAttention,
+  isRemindable,
   isExpired,
   markMissed,
   snooze,
+  flagsWithMissedRest,
   type BreakPlanItem,
 } from '@hbcfield/shared';
 
@@ -54,6 +56,8 @@ export class BreakReminderService {
         organizationId: true,
         locationId: true,
         breakPlan: true,
+        // A required rest recorded missed is flagged in the same write.
+        flagReasons: true,
         timezone: true,
         location: { select: { id: true, name: true, timezone: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
@@ -83,7 +87,8 @@ export class BreakReminderService {
       const openBreak = entry.breaks[0];
       if (openBreak) {
         // ── They are resting. Is it over?
-        const item = plan.find((i) => i.ruleId === openBreak.ruleId && i.state === 'TAKEN');
+        // Only a rest whose rule asks to be reminded gets "your rest is over".
+        const item = plan.find((i) => i.ruleId === openBreak.ruleId && i.state === 'TAKEN' && isRemindable(i));
         const overAt = item
           ? new Date(openBreak.startedAt.getTime() + item.durationMinutes * 60_000)
           : null;
@@ -103,10 +108,16 @@ export class BreakReminderService {
         continue;
       }
 
-      // ── Nothing open: the next outstanding rest is due, or its window closed.
-      const nextUp = outstandingBreaks(plan)[0];
+      /*
+        ── Nothing open: the rest that needs attention now — due to be asked, or
+        its window closed. ⚠️ Through `breakNeedingAttention`, never "the next
+        outstanding one": a rule with reminders switched off is never asked
+        about; it surfaces only when its window closes, to be recorded missed.
+      */
+      const nextUp = breakNeedingAttention(plan, now);
       if (!nextUp) {
-        await this.clear(entry.id);
+        // Woken early or for nothing: point the index at the real next moment.
+        await this.rearm(entry.id, plan, now);
         continue;
       }
 
@@ -114,7 +125,7 @@ export class BreakReminderService {
         const updated = markMissed(plan, nextUp.ruleId);
         missed += 1;
         this.logger.log(`Rest window closed unmet: entry=${entry.id} rest=${nextUp.name}`);
-        await this.write(entry.id, updated, nextBreakRemindAt(updated, now));
+        await this.write(entry.id, updated, nextBreakRemindAt(updated, now), entry.flagReasons);
         continue;
       }
 
@@ -153,7 +164,7 @@ export class BreakReminderService {
         missed += 1;
         this.logger.log(`Rest unanswered and recorded missed: entry=${entry.id} rest=${nextUp.name}`);
       }
-      await this.write(entry.id, after, nextBreakRemindAt(after, now));
+      await this.write(entry.id, after, nextBreakRemindAt(after, now), entry.flagReasons);
     }
 
     if (asked || ended || missed) {
@@ -164,13 +175,22 @@ export class BreakReminderService {
 
   // ── writes ──────────────────────────────────────────────────────────────
 
-  private write(id: string, plan: BreakPlanItem[], deadline: Date | null) {
-    // The plan and the indexed deadline move in ONE statement. Two writes could
-    // leave a row whose JSON says a rest is pending and whose index says nothing
-    // is due — invisible, and permanent.
+  private write(id: string, plan: BreakPlanItem[], deadline: Date | null, priorFlags?: string[] | null) {
+    /*
+      The plan and the indexed deadline move in ONE statement. Two writes could
+      leave a row whose JSON says a rest is pending and whose index says nothing
+      is due — invisible, and permanent.
+
+      And the review flag with them: a REQUIRED rest that has just become MISSED
+      ("Later" ran out, or its window closed) puts the entry in front of a person
+      (`flagsWithMissedRest`) — and deducts nothing. Unchanged flags are not
+      rewritten.
+    */
+    const flags = flagsWithMissedRest(priorFlags, plan);
+    const flagged = flags.length !== (priorFlags ?? []).length;
     return this.prisma.timeEntry.update({
       where: { id },
-      data: { breakPlan: plan as never, nextBreakRemindAt: deadline },
+      data: { breakPlan: plan as never, nextBreakRemindAt: deadline, ...(flagged ? { flagReasons: flags } : {}) },
     });
   }
 

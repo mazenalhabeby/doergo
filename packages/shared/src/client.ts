@@ -127,6 +127,7 @@ export * from './attendance/zoned-time';
 
 // Planned rests: rules → one shift's plan, and the state it moves through.
 export * from './attendance/break-plan';
+export * from './attendance/break-totals';
 
 // Working away from a site: a ceiling on the workspace, a grant on the person.
 export * from './attendance/away-policy';

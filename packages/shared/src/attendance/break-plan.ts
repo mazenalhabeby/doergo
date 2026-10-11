@@ -1,4 +1,5 @@
 import { localPartsIn, parseHm, zonedWallTimeToUtc } from './zoned-time';
+import { ATTENDANCE_FLAG_REASONS } from '../constants/attendance';
 
 /**
  * A rest is planned, not merely permitted.
@@ -60,6 +61,15 @@ export interface BreakPlanItem {
    */
   snoozeMin: number;
   maxSnoozes: number | null;
+  /**
+   * Whether the rule asks to be reminded, frozen like everything else.
+   *
+   * Optional because plans frozen before it existed carry no such field — and
+   * every one of those was resolved from rules that were reminded, so absent
+   * reads as true. ⚠️ Read it through `isRemindable`, never `item.remind`: a
+   * bare truthiness check turns every old plan silent.
+   */
+  remind?: boolean;
   /** Set when the member actually took it, linking plan to evidence. */
   breakId?: string;
   /** ISO instant the rest was started, for the "your rest is over" nudge. */
@@ -155,6 +165,7 @@ export function resolveBreakPlan(
       snoozeCount: 0,
       snoozeMin: Math.max(MIN_SNOOZE_MINUTES, Math.round(rule.snoozeMin || 0)),
       maxSnoozes: rule.maxSnoozes ?? null,
+      remind: rule.remind !== false,
     });
   }
 
@@ -168,18 +179,108 @@ export function outstandingBreaks(plan: BreakPlanItem[]): BreakPlanItem[] {
     .sort((a, b) => a.dueAt.localeCompare(b.dueAt));
 }
 
+/** Does this rest's rule want the member asked about it? Absent = yes (older plans). */
+export function isRemindable(item: BreakPlanItem): boolean {
+  return item.remind !== false;
+}
+
+/**
+ * When the sweep must next look at ONE outstanding rest, or null for never.
+ *
+ * A remindable rest wants attention when it falls due — that is the ask. A rest
+ * whose rule said "do not remind" is never asked about; the only moment it still
+ * matters is when its window closes, because a REQUIRED rest that was not taken
+ * by then is flagged for a person. Without a deadline there is no such moment.
+ */
+export function breakAttentionAt(item: BreakPlanItem): Date | null {
+  if (item.state !== 'PENDING' && item.state !== 'SNOOZED') return null;
+  if (isRemindable(item)) return new Date(item.dueAt);
+  return item.expiresAt ? new Date(item.expiresAt) : null;
+}
+
 /**
  * The next instant this entry needs the sweep's attention, or null.
  *
  * This is the value that goes in an indexed column. The plan itself is JSON and
  * cannot be indexed — put the deadline only in there and the sweep degrades into
  * a full scan of every open shift on the day the product gets busy.
+ *
+ * ⚠️ Every writer of the column re-arms through this — clock-in, end of a rest,
+ * "Later", the sweep — so a rule with reminders switched off stays switched off
+ * after the first rest of the day. It used to read the FULL plan here, and the
+ * first re-arm after any rest started asking about the silent ones.
  */
 export function nextBreakRemindAt(plan: BreakPlanItem[], now: Date = new Date()): Date | null {
-  const next = outstandingBreaks(plan)[0];
-  if (!next) return null;
-  const due = new Date(next.dueAt);
-  return due.getTime() > now.getTime() ? due : now;
+  let next: number | null = null;
+  for (const item of plan) {
+    const at = breakAttentionAt(item);
+    if (at && (next === null || at.getTime() < next)) next = at.getTime();
+  }
+  if (next === null) return null;
+  return next > now.getTime() ? new Date(next) : now;
+}
+
+/**
+ * The outstanding rest the sweep must deal with right now, or null.
+ *
+ * Earliest attention first: a remindable rest due at 12:00 comes before a silent
+ * one whose window closes at 13:30, and a silent one is only ever returned once
+ * its window has closed — it is there to be recorded missed, never to be asked.
+ */
+export function breakNeedingAttention(plan: BreakPlanItem[], now: Date): BreakPlanItem | null {
+  let best: { item: BreakPlanItem; at: number } | null = null;
+  for (const item of plan) {
+    const at = breakAttentionAt(item);
+    if (!at || at.getTime() > now.getTime()) continue;
+    if (!best || at.getTime() < best.at) best = { item, at: at.getTime() };
+  }
+  return best?.item ?? null;
+}
+
+/**
+ * Does a rest tapped at `at` satisfy this planned rest?
+ *
+ * ⚠️ Not simply "the next one". A 09:00 coffee used to be filed as lunch — lunch
+ * went TAKEN, the midday prompt never came, the coffee inherited lunch's
+ * paid/unpaid setting, and at 12:30 the member was on the floor with their
+ * required rest recorded as done.
+ *
+ * So a tap counts only while the rest is actually due: from its due time, less a
+ * small lead (its own "Later" interval — the member who goes five minutes before
+ * the prompt is taking that rest, not another one), until its window closes. A
+ * SNOOZED rest has already fallen due, so any tap before the window closes is
+ * it. A rest with no deadline stays satisfiable for the rest of the shift once
+ * due. Outside that, the tap is an unplanned break: allowed, recorded, and never
+ * counted as work.
+ *
+ * Pure, so the phone can ask the same question before it sends the tap.
+ */
+export function tapSatisfiesPlannedRest(item: BreakPlanItem, at: Date): boolean {
+  if (item.state !== 'PENDING' && item.state !== 'SNOOZED') return false;
+  const t = at.getTime();
+  if (item.expiresAt && t > new Date(item.expiresAt).getTime()) return false;
+  if (item.state === 'SNOOZED') return true;
+  const leadMin = Math.max(MIN_SNOOZE_MINUTES, Math.round(item.snoozeMin || 0));
+  return t >= new Date(item.dueAt).getTime() - leadMin * 60_000;
+}
+
+/**
+ * Which planned rest a rest started at `at` is, or null for an unplanned break.
+ *
+ * Named (the member answered a prompt, which carries the rule) wins — but only
+ * while that rest is still outstanding; naming one already taken is a second
+ * rest, not the same one twice. Unnamed, the earliest outstanding rest the tap
+ * falls inside the window of (`tapSatisfiesPlannedRest`).
+ */
+export function plannedRestForTap(
+  plan: BreakPlanItem[],
+  opts: { ruleId?: string | null; at: Date },
+): BreakPlanItem | null {
+  if (opts.ruleId) {
+    const named = plan.find((i) => i.ruleId === opts.ruleId);
+    return named && (named.state === 'PENDING' || named.state === 'SNOOZED') ? named : null;
+  }
+  return outstandingBreaks(plan).find((i) => tapSatisfiesPlannedRest(i, opts.at)) ?? null;
 }
 
 /** A rest that was never taken and can no longer be. */
@@ -246,6 +347,45 @@ export function markMissed(plan: BreakPlanItem[], ruleId: string): BreakPlanItem
  */
 export function missedRequired(plan: BreakPlanItem[]): BreakPlanItem[] {
   return plan.filter((i) => i.required && (i.state === 'MISSED' || i.state === 'PENDING' || i.state === 'SNOOZED'));
+}
+
+/** The review flag a required rest not taken puts on the entry. Never a deduction. */
+export const MISSED_REST_FLAG = ATTENDANCE_FLAG_REASONS.MISSED_BREAK;
+
+/**
+ * The required rests this shift has missed.
+ *
+ * Mid-shift (no `closedAt`) only those already recorded MISSED — the window
+ * closed, or "Later" ran out. At the close (`closedAt` = the clock-out) also
+ * every required rest still outstanding that had fallen due by then: it can no
+ * longer be taken. One that was not yet due when the member left is not missed —
+ * they did not work long enough for it.
+ */
+export function requiredRestsMissed(plan: BreakPlanItem[], closedAt?: Date | null): BreakPlanItem[] {
+  return plan.filter((i) => {
+    if (!i.required) return false;
+    if (i.state === 'MISSED') return true;
+    if (!closedAt || (i.state !== 'PENDING' && i.state !== 'SNOOZED')) return false;
+    return new Date(i.dueAt).getTime() <= closedAt.getTime();
+  });
+}
+
+/**
+ * `flags` with the missed-rest flag added when the plan has missed a required
+ * rest (see `requiredRestsMissed`), deduplicated; unchanged otherwise.
+ *
+ * ⚠️ Adds, never removes: whether a person has already looked is the approval's
+ * business, not this function's. Every path that marks a rest missed — the
+ * sweep, "Later", the close — calls this, so the flag means one thing.
+ */
+export function flagsWithMissedRest(
+  flags: readonly string[] | null | undefined,
+  plan: BreakPlanItem[],
+  closedAt?: Date | null,
+): string[] {
+  const list = [...(flags ?? [])];
+  if (list.includes(MISSED_REST_FLAG) || requiredRestsMissed(plan, closedAt).length === 0) return list;
+  return [...list, MISSED_REST_FLAG];
 }
 
 /** Safe read of whatever the JSON column holds — a bad shape is no plan. */

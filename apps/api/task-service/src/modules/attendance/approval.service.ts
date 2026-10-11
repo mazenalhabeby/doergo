@@ -9,7 +9,22 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { JobPauseService } from '../tasks/handover/job-pause.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, paginated, ApprovalStatus, computeScheduleFlags, computeCountedTime, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, SERVICE_NAMES, toISODateString } from '@hbcfield/shared';
+import {
+  success,
+  paginated,
+  ApprovalStatus,
+  computeScheduleFlags,
+  computeCountedTime,
+  SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+  SCHEDULE_TIME_FLAGS,
+  flagsAgainstDailyLimit,
+  SERVICE_NAMES,
+  toISODateString,
+  parseBreakPlan,
+  flagsWithMissedRest,
+  breakTotals,
+  endRunningBreaks,
+} from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
@@ -17,11 +32,7 @@ import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared'
 import { CountedTimeService } from './counted-time.service';
 import { ShiftRematchService } from './shift-rematch.service';
 import { MEMBER_SELECT } from './attendance-selects';
-
-// Flags that depend on the clock TIMES vs the shift expectation — these must be
-// re-evaluated when an admin edits an entry's clock-in/out. Everything else
-// (geofence, unscheduled, missed clock-out) is preserved as-is.
-const TIME_BASED_FLAGS = new Set(['LATE_ARRIVAL', 'EARLY_DEPARTURE', 'OVERTIME']);
+import { approvalFor } from './attendance-occurrence';
 
 @Injectable()
 export class ApprovalService {
@@ -245,9 +256,6 @@ export class ApprovalService {
     return success(updated, 'Time entry rejected');
   }
 
-  /**
-   * Edit a time entry (manager correction)
-   */
   /** Duration of a shift window in minutes from its "HH:MM" start/end strings. */
   private shiftDurationMinutes(startTime: string, endTime: string, crossesMidnight: boolean): number {
     const [sh, sm] = startTime.split(':').map(Number);
@@ -257,6 +265,74 @@ export class ApprovalService {
     return dur;
   }
 
+  /**
+   * The expected start and the tolerance an edit re-reads the flags against.
+   *
+   * ⚠️ The start is the PERSISTED `expectedClockInAt` — stamped at clock-in by
+   * the shift resolver for a rota shift AND for the legacy weekly schedule. This
+   * used to be derived from the bound shift's length, which needs a `shiftId`,
+   * so every legacy-schedule entry lost its LATE_ARRIVAL on its first edit. The
+   * derivation survives only for rows older than the persisted column.
+   *
+   * One shift read at most: the tolerance rides on the same row.
+   */
+  private async expectationFor(entry: {
+    shiftId: string | null;
+    expectedClockInAt: Date | null;
+    expectedClockOutAt: Date | null;
+  }): Promise<{ expectedStart: Date | null; toleranceMin: number }> {
+    if (entry.expectedClockInAt || !entry.shiftId || !entry.expectedClockOutAt) {
+      return {
+        expectedStart: entry.expectedClockInAt ?? null,
+        toleranceMin: await this.countedTime.toleranceFor(entry.shiftId),
+      };
+    }
+    const shift = await this.prisma.shift.findUnique({
+      where: { id: entry.shiftId },
+      select: { startLocal: true, endLocal: true, crossesMidnight: true, flagToleranceMin: true },
+    });
+    if (!shift) return { expectedStart: null, toleranceMin: SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN };
+    const dur = this.shiftDurationMinutes(shift.startLocal, shift.endLocal, shift.crossesMidnight);
+    return {
+      expectedStart: new Date(entry.expectedClockOutAt.getTime() - dur * 60_000),
+      toleranceMin: shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN,
+    };
+  }
+
+  /**
+   * One row in the shared activity log per office change to an entry — the
+   * indexed per-entity audit trail ([resourceId, createdAt]); no dedicated
+   * table. Edits feed the entry's edit-history table; a deletion leaves the only
+   * trace there is once the row is gone. Never fails the change it records.
+   */
+  private async auditEntry(params: {
+    eventType: 'TIME_ENTRY_EDITED' | 'TIME_ENTRY_DELETED';
+    entryId: string;
+    actorId: string;
+    organizationId: string;
+    targetUserId?: string;
+    metadata: Record<string, unknown>;
+  }) {
+    try {
+      await this.prisma.activityLog.create({
+        data: {
+          eventType: params.eventType,
+          userId: params.actorId,
+          ...(params.targetUserId ? { targetUserId: params.targetUserId } : {}),
+          resourceType: 'timeEntry',
+          resourceId: params.entryId,
+          organizationId: params.organizationId,
+          metadata: params.metadata as never,
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Audit-log write failed (${params.eventType}) for entry=${params.entryId}: ${e}`);
+    }
+  }
+
+  /**
+   * Edit a time entry (manager correction)
+   */
   async editEntry(data: {
     /** Spaces the caller may act in; null = org-wide, [] = none. */
     scopeSpaceIds?: AttendanceScope;
@@ -281,6 +357,9 @@ export class ApprovalService {
         // 'not found', which is also the right thing to tell them.
         ...scopeWhere(data.scopeSpaceIds),
       },
+      // The rows ride along: closing an open entry ends its running rest, and
+      // the totals are recomputed from these — no second read.
+      include: { breaks: true },
     });
 
     if (!entry) {
@@ -296,6 +375,36 @@ export class ApprovalService {
       message: 'You cannot edit your own time entry. Ask a manager or an administrator.',
     });
 
+    const parseTime = (v: string | undefined): Date | undefined => {
+      if (!v) return undefined;
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) {
+        throw new BadRequestException({ code: 'ENTRY_TIME_INVALID', message: 'Clock times must be valid times.' });
+      }
+      return d;
+    };
+    const editedIn = parseTime(data.clockInAt);
+    const editedOut = parseTime(data.clockOutAt);
+    const newClockIn: Date = editedIn ?? entry.clockInAt;
+    const newClockOut: Date | null = editedOut ?? entry.clockOutAt ?? null;
+    const timesChanged = !!(editedIn || editedOut);
+
+    /*
+      A clock-out at or before the clock-in is refused, not stored.
+
+      It used to be written: a negative `totalMinutes`, a counted window ending
+      before it began (clamped to zero by the counted-time rule, so the shift
+      silently counted nothing), and a row no later edit could reason about.
+      Checked on the RESULTING pair, so moving only the clock-in past an existing
+      clock-out is caught too.
+    */
+    if (timesChanged && newClockOut && newClockOut.getTime() <= newClockIn.getTime()) {
+      throw new BadRequestException({
+        code: 'CLOCK_OUT_BEFORE_CLOCK_IN',
+        message: 'The clock-out must be after the clock-in.',
+      });
+    }
+
     const updateData: any = {
       isEdited: true,
       editedById: data.editorId,
@@ -309,13 +418,8 @@ export class ApprovalService {
       updateData.originalClockOut = entry.clockOutAt;
     }
 
-    if (data.clockInAt) {
-      updateData.clockInAt = new Date(data.clockInAt);
-    }
-
-    if (data.clockOutAt) {
-      updateData.clockOutAt = new Date(data.clockOutAt);
-    }
+    if (editedIn) updateData.clockInAt = editedIn;
+    if (editedOut) updateData.clockOutAt = editedOut;
 
     if (data.notes !== undefined) {
       updateData.notes = data.notes;
@@ -327,108 +431,139 @@ export class ApprovalService {
       updateData.timezone = data.timezone;
     }
 
-    // Recalculate total minutes if times changed
-    const newClockIn = updateData.clockInAt || entry.clockInAt;
-    const newClockOut = updateData.clockOutAt || entry.clockOutAt;
+    let flags: string[] = [...(entry.flagReasons ?? [])];
+    const closingOpen = entry.status === 'CLOCKED_IN' && !!newClockOut;
 
-    // Re-evaluate the schedule-relative flags when the times change — otherwise a
-    // corrected clock-in keeps a stale LATE_ARRIVAL (e.g. a "forgot to clock in"
-    // fix from 1:39 AM back to the 6 PM shift start still showed Late Arrival).
-    // The shift START isn't persisted, so derive it from the stored shift END
-    // (expectedClockOutAt) minus the bound shift's duration; non-time flags stay.
-    if (data.clockInAt || data.clockOutAt) {
-      const preserved = (entry.flagReasons || []).filter((f) => !TIME_BASED_FLAGS.has(f));
-      let recomputed: string[] = [];
-
-      if (entry.expectedClockOutAt) {
-        const expEnd = new Date(entry.expectedClockOutAt);
-        let expStart: Date | null = null;
-        let toleranceMin = SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
-        if (entry.shiftId) {
-          const shift = await this.prisma.shift.findUnique({
-            where: { id: entry.shiftId },
-            select: { startLocal: true, endLocal: true, crossesMidnight: true, flagToleranceMin: true },
-          });
-          if (shift) {
-            const dur = this.shiftDurationMinutes(shift.startLocal, shift.endLocal, shift.crossesMidnight);
-            expStart = new Date(expEnd.getTime() - dur * 60_000);
-            toleranceMin = shift.flagToleranceMin ?? SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN;
-          }
-        }
-        // Same shared logic as clock-in / clock-out — no duplicated thresholds.
-        recomputed = computeScheduleFlags({
-          clockInAt: new Date(newClockIn),
-          clockOutAt: newClockOut ? new Date(newClockOut) : null,
-          expectedClockInAt: expStart,
-          expectedClockOutAt: expEnd,
+    /*
+      Re-evaluate the schedule-relative flags when the times change — otherwise
+      a corrected clock-in keeps a stale LATE_ARRIVAL (e.g. a "forgot to clock
+      in" fix from 1:39 AM back to the 6 PM shift start still showed Late
+      Arrival). Same shared rule as clock-in / clock-out, the same set of
+      time-dependent flags (SCHEDULE_TIME_FLAGS, the daily limit included), and a
+      daily allowance read as an allowance rather than a shift.
+    */
+    let toleranceMin: number | undefined;
+    if (timesChanged) {
+      const expectation = await this.expectationFor(entry);
+      toleranceMin = expectation.toleranceMin;
+      const recomputed = flagsAgainstDailyLimit(
+        computeScheduleFlags({
+          clockInAt: newClockIn,
+          clockOutAt: newClockOut,
+          expectedClockInAt: expectation.expectedStart,
+          expectedClockOutAt: entry.expectedClockOutAt ?? null,
           toleranceMin,
-        });
+        }),
+        entry.endIsDailyLimit,
+      );
+      flags = [...flags.filter((f) => !SCHEDULE_TIME_FLAGS.has(f)), ...recomputed];
+
+      /*
+        ⚠️ A temporarily closed entry the office has corrected is no longer
+        temporary. The member's real clock-out replaces a provisional one — its
+        claim matches `clockOutProvisional: true` — so leaving the mark set let a
+        late-arriving phone tap silently overwrite the manager's correction, with
+        nothing on screen to say so. The office's times are now the record;
+        MISSED_CLOCK_OUT stays, because that is still what happened.
+      */
+      if (entry.clockOutProvisional) {
+        updateData.clockOutProvisional = false;
+        updateData.clockOutBasis = null;
+        flags = flags.filter((f) => f !== 'CLOCK_OUT_PROVISIONAL');
       }
-      updateData.flagReasons = [...preserved, ...recomputed];
+    }
+
+    // A rest still running when the office closes the shift ends at the new
+    // clock-out — what the open-shift close does with a forgotten one.
+    let totals = { breakMinutes: entry.breakMinutes ?? 0, unpaidBreakMinutes: entry.unpaidBreakMinutes ?? 0 };
+    let endedBreaks: Array<{ id: string; endedAt: Date; durationMinutes: number }> = [];
+    if (closingOpen && entry.breaks.some((b) => !b.endedAt)) {
+      const closed = endRunningBreaks(entry.breaks, newClockOut!);
+      endedBreaks = closed.ended;
+      totals = breakTotals(closed.rows);
+      updateData.breakMinutes = totals.breakMinutes;
+      updateData.unpaidBreakMinutes = totals.unpaidBreakMinutes;
+    }
+
+    if (closingOpen) {
+      // A required rest that had fallen due and was never taken is flagged for a
+      // person at the close — and never deducted (break-plan.ts).
+      flags = flagsWithMissedRest(flags, parseBreakPlan(entry.breakPlan), newClockOut);
+    }
+
+    if (timesChanged || closingOpen) {
+      flags = [...new Set(flags)];
+      updateData.flagReasons = flags;
     }
 
     if (newClockOut) {
-      updateData.totalMinutes = Math.round(
-        (new Date(newClockOut).getTime() - new Date(newClockIn).getTime()) /
-          (1000 * 60),
-      );
+      updateData.totalMinutes = Math.round((newClockOut.getTime() - newClockIn.getTime()) / 60_000);
 
       /*
-        …and the counted window moves with it.
+        …and the counted window moves with it, through the SAME seam every other
+        close path uses (`CountedTimeService.columnsFor`).
 
-        An edit is the one path where the times change AFTER the shift was
-        resolved, so the expectation stamped at clock-in still applies and the
-        clamp is the same one the clock-out used. Computed inline from the values
-        being written rather than re-read afterwards: `updateData` is the truth
-        about this row a moment before it exists.
+        ⚠️ This used to call the arithmetic inline with `breakMinutes` as the
+        rest to subtract, so an office edit took EVERY rest off — paid ones too —
+        while the clock-out, the break paths and the reports subtract only the
+        rests that do not count as work. Correcting a clock-in by one minute took
+        a paid fifteen-minute rest off the shift.
       */
-      const editCounted = computeCountedTime({
-        clockInAt: new Date(newClockIn),
-        clockOutAt: new Date(newClockOut),
-        expectedStartAt: entry.expectedClockInAt ?? null,
-        expectedEndAt: entry.expectedClockOutAt ?? null,
-        toleranceMin: await this.countedTime.toleranceFor(entry.shiftId),
-        unpaidBreakMinutes: entry.breakMinutes ?? 0,
-      });
-      updateData.countedStartAt = editCounted.countedStartAt;
-      updateData.countedEndAt = editCounted.countedEndAt;
-      updateData.paidMinutes = editCounted.paidMinutes;
+      const counted = await this.countedTime.columnsFor(
+        { ...entry, clockInAt: newClockIn, ...totals },
+        newClockOut,
+        toleranceMin,
+      );
+      updateData.countedStartAt = counted.countedStartAt;
+      updateData.countedEndAt = counted.countedEndAt;
+      updateData.paidMinutes = counted.paidMinutes;
 
       // Adding a clock-out to a still-open entry closes it. Without this the row
       // keeps status CLOCKED_IN and shows "Active" despite having a clock-out
       // time + duration (the manual clock-out bug). A system AUTO_OUT stays as-is.
-      if (entry.status === 'CLOCKED_IN') {
+      if (closingOpen) {
         updateData.status = 'CLOCKED_OUT';
         updateData.reminderState = 'RESOLVED';
         updateData.nextRemindAt = null;
-        // An admin manually clocking someone out IS the review, so approve it —
-        // otherwise it lingers as "Pending" yet never shows in the Approvals tab
-        // (that queue excludes CLOCKED_IN rows). Mirrors addManualEntries. A row
-        // an admin already approved/rejected keeps its decision.
-        if (entry.approvalStatus === 'PENDING') {
-          updateData.approvalStatus = 'APPROVED';
-          updateData.approvedById = data.editorId;
-          updateData.approvedAt = new Date();
-          updateData.approvalNotes = 'Auto-approved: manual clock-out by admin';
+        // The shift is over: the rest alarm must not go on asking about it.
+        updateData.nextBreakRemindAt = null;
+        /*
+          An admin clocking somebody out reviews the CLOSE — not the rest of the
+          day. ⚠️ This approved unconditionally, so an entry flagged for a
+          geofence breach, a moved phone clock or a rest not taken left the queue
+          because somebody typed a clock-out. Approved only when nothing on it
+          still needs a person (the clock-out's own rule, `approvalFor`);
+          otherwise it stays PENDING, which is the Approvals tab. A row an admin
+          already approved/rejected keeps its decision.
+        */
+        if (entry.approvalStatus === 'PENDING' || entry.approvalStatus === 'AUTO') {
+          if (approvalFor(flags) === 'AUTO') {
+            updateData.approvalStatus = 'APPROVED';
+            updateData.approvedById = data.editorId;
+            updateData.approvedAt = new Date();
+            updateData.approvalNotes = 'Auto-approved: manual clock-out by admin';
+          } else {
+            updateData.approvalStatus = 'PENDING';
+          }
         }
       }
     }
 
-    const updated = await this.prisma.timeEntry.update({
-      where: { id: data.entryId },
-      data: updateData,
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-        location: {
-          select: { name: true, timezone: true },
-        },
-        editedBy: {
-          select: { id: true, firstName: true, lastName: true },
-        },
-      },
-    });
+    const include = {
+      user: { select: { id: true, firstName: true, lastName: true } },
+      location: { select: { name: true, timezone: true } },
+      editedBy: { select: { id: true, firstName: true, lastName: true } },
+    } as const;
+    // One transaction when rests end with it: the entry and its rests move
+    // together, or a crash between them leaves a closed shift with a rest running.
+    const updated = endedBreaks.length
+      ? await this.prisma.$transaction(async (tx) => {
+          for (const b of endedBreaks) {
+            await tx.break.update({ where: { id: b.id }, data: { endedAt: b.endedAt, durationMinutes: b.durationMinutes } });
+          }
+          return tx.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
+        })
+      : await this.prisma.timeEntry.update({ where: { id: data.entryId }, data: updateData, include });
 
     if (entry.status === 'CLOCKED_IN' && updated.status === 'CLOCKED_OUT' && updated.clockOutAt) {
       await this.jobPause?.pauseAtClockOut({
@@ -439,9 +574,8 @@ export class ApprovalService {
       });
     }
 
-    // Append a per-edit row to the shared activity log — reuses the indexed
-    // per-entity audit trail ([resourceId, createdAt]); no dedicated table. This
-    // is what powers the entry's full edit-history table (every edit, from → to).
+    // A per-edit row in the shared activity log — what powers the entry's full
+    // edit-history table (every edit, from → to).
     const changes: Array<{ field: string; from: string | null; to: string | null }> = [];
     const cmp = (field: string, from?: Date | string | null, to?: Date | string | null) => {
       const f = from instanceof Date ? from.toISOString() : (from ?? null);
@@ -452,20 +586,13 @@ export class ApprovalService {
     cmp('clockOutAt', entry.clockOutAt, updated.clockOutAt);
     cmp('notes', entry.notes, updated.notes);
     cmp('timezone', entry.timezone, updated.timezone);
-    try {
-      await this.prisma.activityLog.create({
-        data: {
-          eventType: 'TIME_ENTRY_EDITED',
-          userId: data.editorId,
-          resourceType: 'timeEntry',
-          resourceId: data.entryId,
-          organizationId: data.organizationId,
-          metadata: { reason: data.reason, changes },
-        },
-      });
-    } catch (e) {
-      this.logger.warn(`Edit audit-log write failed for entry=${data.entryId}: ${e}`);
-    }
+    await this.auditEntry({
+      eventType: 'TIME_ENTRY_EDITED',
+      entryId: data.entryId,
+      actorId: data.editorId,
+      organizationId: data.organizationId,
+      metadata: { reason: data.reason, changes },
+    });
 
     this.logger.log(
       `Entry edited: entry=${data.entryId}, editor=${data.editorId}, reason=${data.reason}`,
@@ -490,13 +617,23 @@ export class ApprovalService {
    * index). Drives the "Edit history" table in the UI.
    */
   async getEntryHistory(data: { entryId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+    /*
+      Only the caller's granted spaces — an entry outside them reads as 'not
+      found'. ⚠️ Asked of the ENTRY: an activity-log row has no space column, and
+      spreading `scopeWhere` onto it made every scoped caller's history request
+      fail in Prisma on an unknown argument.
+    */
+    if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
+      const inScope = await this.prisma.timeEntry.findFirst({
+        where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
+        select: { id: true },
+      });
+      if (!inScope) throw new NotFoundException('Time entry not found');
+    }
     const logs = await this.prisma.activityLog.findMany({
       where: {
         resourceId: data.entryId,
         organizationId: data.organizationId,
-        // Only the caller's granted spaces — an entry outside them reads as
-        // 'not found', which is also the right thing to tell them.
-        ...scopeWhere(data.scopeSpaceIds),
         eventType: 'TIME_ENTRY_EDITED',
       },
       orderBy: { createdAt: 'desc' },
@@ -518,18 +655,65 @@ export class ApprovalService {
   }
 
   /** Admin: delete a time entry (its breaks cascade), scoped to the org. */
-  async deleteEntry(data: { entryId: string; editorId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+  async deleteEntry(data: {
+    entryId: string;
+    editorId: string;
+    organizationId: string;
+    scopeSpaceIds?: AttendanceScope;
+    reason?: string;
+  }) {
     const entry = await this.prisma.timeEntry.findFirst({
       // Scoped: an entry in a space the caller was not granted reads as 'not
       // found', which is both the right refusal and the right disclosure.
       where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
-      select: { id: true },
+      select: {
+        id: true,
+        userId: true,
+        locationId: true,
+        clockInAt: true,
+        clockOutAt: true,
+        paidMinutes: true,
+        approvalStatus: true,
+        flagReasons: true,
+      },
     });
     if (!entry) {
       throw new NotFoundException('Time entry not found');
     }
+    /*
+      ⚠️ Deleting is deciding too. A shift leader holding the reconcile grant
+      could delete their own flagged or rejected entry — the same move on their
+      own record that edit and approve already refuse. Somebody else does it
+      (self-decision.ts).
+    */
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: entry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot delete your own time entry. Ask a manager or an administrator.',
+    });
     // Break has onDelete: Cascade, so removing the entry removes its breaks.
     await this.prisma.timeEntry.delete({ where: { id: data.entryId } });
+    // The row is gone, so this is the record that it existed and who removed it.
+    await this.auditEntry({
+      eventType: 'TIME_ENTRY_DELETED',
+      entryId: data.entryId,
+      actorId: data.editorId,
+      organizationId: data.organizationId,
+      targetUserId: entry.userId,
+      metadata: {
+        reason: data.reason?.trim() || null,
+        entry: {
+          userId: entry.userId,
+          locationId: entry.locationId,
+          clockInAt: entry.clockInAt.toISOString(),
+          clockOutAt: entry.clockOutAt ? entry.clockOutAt.toISOString() : null,
+          paidMinutes: entry.paidMinutes ?? null,
+          approvalStatus: entry.approvalStatus,
+          flagReasons: entry.flagReasons ?? [],
+        },
+      },
+    });
     this.logger.log(`Entry deleted: entry=${data.entryId}, editor=${data.editorId}`);
     this.emitChanged(data.organizationId, 'delete', data.entryId);
     return success({ id: data.entryId }, 'Time entry removed');

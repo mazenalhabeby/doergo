@@ -24,7 +24,18 @@ import { CountedTimeService } from './counted-time.service';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../common/occurrence.util';
 import { SAME_TAP_MS } from './attendance-occurrence';
-import { parseBreakPlan, outstandingBreaks, markTaken, nextBreakRemindAt as nextRestAt, snooze as snoozePlan } from '@hbcfield/shared';
+import {
+  parseBreakPlan,
+  outstandingBreaks,
+  markTaken,
+  nextBreakRemindAt as nextRestAt,
+  snooze as snoozePlan,
+  plannedRestForTap,
+  isRemindable,
+  flagsWithMissedRest,
+  breakTotals,
+} from '@hbcfield/shared';
+import { assertNotSelfDecision } from './self-decision';
 
 @Injectable()
 export class BreakService {
@@ -108,16 +119,19 @@ export class BreakService {
       editing a rule next month must not silently re-price a shift that has
       already been worked and paid.
     */
-    const plan = parseBreakPlan(entry.breakPlan);
-    const planned =
-      (data.ruleId && plan.find((i) => i.ruleId === data.ruleId)) ||
-      // No id given: the member tapped "take my rest now", so satisfy the one
-      // that is next. Guessing beats refusing — the alternative is a prompt they
-      // cannot answer from the screen they are on.
-      outstandingBreaks(plan)[0] ||
-      null;
-
     const startedAt = occurrence.at;
+    const plan = parseBreakPlan(entry.breakPlan);
+    /*
+      ⚠️ Named, or inside its window — never simply "the next one".
+
+      With no rule named this used to satisfy whichever planned rest came next,
+      so a 09:00 coffee was filed as lunch: lunch went TAKEN, the midday prompt
+      never came, and the coffee inherited lunch's counts-as-work setting. A tap
+      now satisfies a planned rest only when it names it or falls inside its due
+      window (`plannedRestForTap`, shared with the phone); anything else is an
+      unplanned break — allowed, recorded, never counted as work.
+    */
+    const planned = plannedRestForTap(plan, { ruleId: data.ruleId, at: startedAt });
 
     // Create break record
     const breakRecord = await this.prisma.break.create({
@@ -145,7 +159,11 @@ export class BreakService {
         where: { id: entry.id },
         data: {
           breakPlan: updated as never,
-          nextBreakRemindAt: new Date(startedAt.getTime() + planned.durationMinutes * 60_000),
+          // A rule that asked not to be reminded gets no "back to work" nudge
+          // either; the sweep looks at whatever else is due instead.
+          nextBreakRemindAt: isRemindable(planned)
+            ? new Date(startedAt.getTime() + planned.durationMinutes * 60_000)
+            : nextRestAt(updated, startedAt),
         },
       });
     }
@@ -225,6 +243,15 @@ export class BreakService {
     });
     if (!entry) return refuse(HttpStatus.NOT_FOUND, 'Time entry not found.');
 
+    // ⚠️ A rest added to your OWN shift changes your own counted time — the
+    // second-party rule, as for editing the entry (self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: entry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot change the rests on your own time entry. Ask a manager or an administrator.',
+    });
+
     if (start < entry.clockInAt) {
       return refuse(HttpStatus.BAD_REQUEST, 'The break starts before the shift does.');
     }
@@ -267,13 +294,9 @@ export class BreakService {
         moment anything is edited or deleted — which is exactly what this feature
         makes possible.
       */
-      const closed = [...entry.breaks, br].filter((b) => b.endedAt);
-      const totalBreakMinutes = closed.reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
       // Paid and unpaid are tracked apart: the screen shows the total, the
       // counted-time rule subtracts only what does not count as work.
-      const unpaidBreakMinutes = closed
-        .filter((b) => !b.isPaid)
-        .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+      const { breakMinutes: totalBreakMinutes, unpaidBreakMinutes } = breakTotals([...entry.breaks, br]);
 
       await tx.timeEntry.update({
         where: { id: entry.id },
@@ -334,6 +357,7 @@ export class BreakService {
           // again afterwards would be a second query for data we had.
           select: {
             id: true,
+            userId: true,
             approvalStatus: true,
             clockInAt: true,
             clockOutAt: true,
@@ -345,6 +369,14 @@ export class BreakService {
       },
     });
     if (!br) return refuse(HttpStatus.NOT_FOUND, 'Break not found.');
+
+    // ⚠️ Removing a rest from your OWN shift raises your own counted time.
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.editorId,
+      subjectId: br.timeEntry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot change the rests on your own time entry. Ask a manager or an administrator.',
+    });
 
     if (!br.endedAt) {
       // An open break is the member's current state, not a record of the past.
@@ -359,12 +391,9 @@ export class BreakService {
       // add path recomputes: a running total drifts the moment anything changes.
       const remaining = await tx.break.findMany({
         where: { timeEntryId: br.timeEntryId, endedAt: { not: null } },
-        select: { durationMinutes: true, isPaid: true },
+        select: { startedAt: true, endedAt: true, durationMinutes: true, isPaid: true },
       });
-      const remainingMinutes = remaining.reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
-      const remainingUnpaid = remaining
-        .filter((b) => !b.isPaid)
-        .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+      const { breakMinutes: remainingMinutes, unpaidBreakMinutes: remainingUnpaid } = breakTotals(remaining);
       await tx.timeEntry.update({
         where: { id: br.timeEntryId },
         data: {
@@ -467,16 +496,6 @@ export class BreakService {
       },
     });
 
-    const totalBreakMinutes = allBreaks.reduce(
-      (sum, b) => sum + (b.durationMinutes || 0),
-      0,
-    );
-
-    await this.prisma.timeEntry.update({
-      where: { id: entry.id },
-      data: { breakMinutes: totalBreakMinutes },
-    });
-
     /*
       Unpaid minutes, tracked apart from the total.
 
@@ -484,15 +503,15 @@ export class BreakService {
       reads only the unpaid figure, and the screen shows the total — so the two
       are stored separately rather than one being inferred from the other.
     */
-    const unpaidBreakMinutes = allBreaks
-      .filter((b) => !b.isPaid)
-      .reduce((sum, b) => sum + (b.durationMinutes || 0), 0);
+    const { breakMinutes: totalBreakMinutes, unpaidBreakMinutes } = breakTotals(allBreaks);
 
-    // The rest is over: point the sweep at whatever is next, or at nothing.
+    // The rest is over: point the sweep at whatever is next, or at nothing —
+    // only rests whose rule asks to be reminded (`nextRestAt` reads that).
     const plan = parseBreakPlan(entry.breakPlan);
     await this.prisma.timeEntry.update({
       where: { id: entry.id },
       data: {
+        breakMinutes: totalBreakMinutes,
         unpaidBreakMinutes,
         nextBreakRemindAt: plan.length ? nextRestAt(plan, now) : null,
       },
@@ -553,14 +572,15 @@ export class BreakService {
         organizationId: data.organizationId,
         status: TimeEntryStatus.CLOCKED_IN,
       },
-      select: { id: true, breakPlan: true, locationId: true, shiftId: true },
+      select: { id: true, breakPlan: true, locationId: true, shiftId: true, flagReasons: true },
     });
     if (!entry) throw new BadRequestException('You must be clocked in');
 
     const plan = parseBreakPlan(entry.breakPlan);
+    // Unnamed, "Later" answers the rest being asked about — never a silent one.
     const target = data.ruleId
       ? plan.find((i) => i.ruleId === data.ruleId)
-      : outstandingBreaks(plan)[0];
+      : outstandingBreaks(plan).find(isRemindable);
     if (!target) return { success: true, data: { snoozed: false }, message: 'Nothing to postpone' };
 
     /*
@@ -577,9 +597,20 @@ export class BreakService {
     });
     const item = updated.find((i) => i.ruleId === target.ruleId)!;
 
+    /*
+      Past the cap a REQUIRED rest is missed, and that is flagged for a person in
+      the same statement — never deducted (break-plan.ts). `flagsWithMissedRest`
+      only adds, so an ordinary "Later" leaves the flags exactly as they were.
+    */
+    const flags = flagsWithMissedRest(entry.flagReasons, updated);
+    const flagged = flags.length !== (entry.flagReasons ?? []).length;
     await this.prisma.timeEntry.update({
       where: { id: entry.id },
-      data: { breakPlan: updated as never, nextBreakRemindAt: nextRestAt(updated, new Date()) },
+      data: {
+        breakPlan: updated as never,
+        nextBreakRemindAt: nextRestAt(updated, new Date()),
+        ...(flagged ? { flagReasons: flags } : {}),
+      },
     });
 
     this.logger.log(
@@ -843,6 +874,8 @@ export class BreakService {
                 lastName: true,
               },
             },
+            // Every rest on the shift: the totals are recomputed from these rows.
+            breaks: true,
           },
         },
       },
@@ -852,38 +885,53 @@ export class BreakService {
       throw new NotFoundException('Active break not found');
     }
 
+    // ⚠️ Ending your OWN rest from the office side sets your own rest length —
+    // and so your own counted time. Somebody else does it (self-decision.ts).
+    await assertNotSelfDecision(this.prisma as never, {
+      deciderId: data.adminId,
+      subjectId: breakRecord.timeEntry.userId,
+      organizationId: data.organizationId,
+      message: 'You cannot change the rests on your own time entry. Ask a manager or an administrator.',
+    });
+
     const endedAt = new Date();
     const durationMinutes = Math.floor(
       (endedAt.getTime() - new Date(breakRecord.startedAt).getTime()) / 60000,
     );
 
-    const updatedBreak = await this.prisma.break.update({
-      where: { id: data.breakId },
-      data: {
-        endedAt,
-        durationMinutes,
-        notes: data.notes
-          ? `[Admin ended] ${data.notes}`
-          : `[Admin ended by ${data.adminId}]`,
-      },
-    });
-
-    // Update time entry break minutes
-    const totalBreakMinutes = await this.prisma.break.aggregate({
-      where: {
-        timeEntryId: breakRecord.timeEntryId,
-        durationMinutes: { not: null },
-      },
-      _sum: {
-        durationMinutes: true,
-      },
-    });
-
-    await this.prisma.timeEntry.update({
-      where: { id: breakRecord.timeEntryId },
-      data: {
-        breakMinutes: totalBreakMinutes._sum.durationMinutes || 0,
-      },
+    /*
+      The same consequences as the member ending it, in one transaction: both
+      totals recomputed from the rows (⚠️ this used to write `breakMinutes` only,
+      leaving `unpaidBreakMinutes` — what the counted time reads — at the old
+      figure), the counted time moved on a closed shift, and the rest alarm
+      pointed at whatever is next.
+    */
+    const { timeEntry } = breakRecord;
+    const rows = timeEntry.breaks.map((b) => (b.id === breakRecord.id ? { ...b, endedAt, durationMinutes } : b));
+    const totals = breakTotals(rows);
+    const plan = parseBreakPlan(timeEntry.breakPlan);
+    const updatedBreak = await this.prisma.$transaction(async (tx) => {
+      const ended = await tx.break.update({
+        where: { id: data.breakId },
+        data: {
+          endedAt,
+          durationMinutes,
+          notes: data.notes
+            ? `[Admin ended] ${data.notes}`
+            : `[Admin ended by ${data.adminId}]`,
+        },
+      });
+      await tx.timeEntry.update({
+        where: { id: breakRecord.timeEntryId },
+        data: {
+          ...totals,
+          ...(timeEntry.status === TimeEntryStatus.CLOCKED_IN
+            ? { nextBreakRemindAt: plan.length ? nextRestAt(plan, endedAt) : null }
+            : {}),
+        },
+      });
+      await this.countedTime.recomputeClosed({ ...timeEntry, ...totals }, tx);
+      return ended;
     });
 
     this.logger.log(
