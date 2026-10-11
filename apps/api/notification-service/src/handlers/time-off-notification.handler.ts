@@ -3,7 +3,9 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { PushService } from '../modules/push/push.service';
 import { WebsocketGateway } from '../modules/websocket/websocket.gateway';
 import { NotificationStore } from '../common/notification-store.service';
-import { msg, type LocalizedText, type Msg } from '../i18n/translate';
+import { msg, verbatim, type LocalizedText, type Msg } from '../i18n/translate';
+import { duration } from '../modules/push/push.service';
+import { isAbsence, requestKindOf } from '@hbcfield/shared';
 
 /** How a leave kind reads in a sentence — a phrase of its own in each language. */
 const LEAVE_KINDS = new Set(['VACATION', 'SICK', 'FAMILY', 'OTHER']);
@@ -12,8 +14,39 @@ function leaveKind(type: string | undefined): Msg {
   return msg(`timeOff.kind.${kind}` as 'timeOff.kind.OTHER');
 }
 
+/** What a request that is not leave asks for, as a phrase in the reader's language. */
+interface RequestFacts {
+  kind?: string | null;
+  spaceName?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  minutes?: number | null;
+}
+function requestWhat(f: RequestFacts, range: string): Msg {
+  switch (requestKindOf(f.kind)) {
+    case 'REMOTE':
+      return f.spaceName
+        ? msg('request.what.REMOTE', { space: f.spaceName, range })
+        : msg('request.what.REMOTE_NO_SPACE', { range });
+    case 'HOURS': {
+      const hours = f.startTime && f.endTime
+        ? msg('request.hours.both', { start: f.startTime, end: f.endTime })
+        : f.startTime
+          ? msg('request.hours.start', { start: f.startTime })
+          : msg('request.hours.end', { end: f.endTime ?? '' });
+      return msg('request.what.HOURS', { range, hours });
+    }
+    case 'OVERTIME':
+      return msg('request.what.OVERTIME', { range, duration: duration(f.minutes ?? 0) });
+    default:
+      return msg('request.what.OTHER', { range });
+  }
+}
+
 /**
  * Leave: somebody asked for days, and somebody answered.
+ * Every other kind of request (a remote day, changed hours, overtime agreed in advance) rides the
+ * same two events and the same routing; only the words name what was asked.
  *
  * Two events, two audiences, and they are deliberately not symmetric. The
  * REQUEST goes to whoever is routed to hear about that member — resolved in
@@ -46,7 +79,7 @@ export class TimeOffNotificationHandler {
       endDate: string;
       reason?: string | null;
       recipientIds: string[];
-    },
+    } & RequestFacts,
   ) {
     // Never back to the person who asked, and never twice to the same watcher
     // who is also on the space's routing.
@@ -59,16 +92,25 @@ export class TimeOffNotificationHandler {
     if (recipients.length === 0) return;
 
     const range = data.startDate === data.endDate ? data.startDate : `${data.startDate} → ${data.endDate}`;
-    const text: LocalizedText = {
-      title: msg('timeOff.requested.title'),
-      body: msg('timeOff.requested.body', { name: data.memberName, kind: leaveKind(data.type), range }),
-    };
+    const leave = isAbsence(data.kind);
+    const text: LocalizedText = leave
+      ? {
+          title: msg('timeOff.requested.title'),
+          body: msg('timeOff.requested.body', { name: data.memberName, kind: leaveKind(data.type), range }),
+        }
+      : {
+          title: msg('request.requested.title'),
+          body: requestKindOf(data.kind) === 'OTHER'
+            ? msg('request.requested.bodyOther', { name: data.memberName, reason: verbatim(data.reason, 120), range })
+            : msg('request.requested.body', { name: data.memberName, what: requestWhat(data, range) }),
+        };
     const link = '/employees/availability';
 
     const payload = {
       timeOffId: data.timeOffId,
       memberId: data.memberId,
       memberName: data.memberName,
+      kind: requestKindOf(data.kind),
       type: data.type ?? 'VACATION',
       startDate: data.startDate,
       endDate: data.endDate,
@@ -116,7 +158,7 @@ export class TimeOffNotificationHandler {
       rejectionReason?: string | null;
       startDate: string;
       endDate: string;
-    },
+    } & RequestFacts,
   ) {
     this.logger.log(
       `Time-off ${data.approved ? 'approved' : 'rejected'}: ${data.timeOffId} → ${data.memberId}`,
@@ -125,17 +167,28 @@ export class TimeOffNotificationHandler {
     const range = data.startDate === data.endDate ? data.startDate : `${data.startDate} → ${data.endDate}`;
     // The reason travels IN the message when it was refused. A refusal that
     // only says "no" sends somebody to ask their manager what happened.
-    const text: LocalizedText = {
-      title: msg(data.approved ? 'timeOff.decided.titleApproved' : 'timeOff.decided.titleRejected'),
-      body: data.approved
-        ? msg('timeOff.decided.bodyApproved', { range })
-        : data.rejectionReason
-          ? msg('timeOff.decided.bodyRejectedReason', { range, reason: data.rejectionReason })
-          : msg('timeOff.decided.bodyRejected', { range }),
-    };
+    const what = requestWhat(data, range);
+    const text: LocalizedText = isAbsence(data.kind)
+      ? {
+          title: msg(data.approved ? 'timeOff.decided.titleApproved' : 'timeOff.decided.titleRejected'),
+          body: data.approved
+            ? msg('timeOff.decided.bodyApproved', { range })
+            : data.rejectionReason
+              ? msg('timeOff.decided.bodyRejectedReason', { range, reason: data.rejectionReason })
+              : msg('timeOff.decided.bodyRejected', { range }),
+        }
+      : {
+          title: msg(data.approved ? 'request.decided.titleApproved' : 'request.decided.titleRejected'),
+          body: data.approved
+            ? msg('request.decided.bodyApproved', { what })
+            : data.rejectionReason
+              ? msg('request.decided.bodyRejectedReason', { what, reason: data.rejectionReason })
+              : msg('request.decided.bodyRejected', { what }),
+        };
 
     this.websocketGateway.emitToUser(data.memberId, 'time_off_decided', {
       timeOffId: data.timeOffId,
+      kind: requestKindOf(data.kind),
       approved: data.approved,
       rejectionReason: data.rejectionReason ?? null,
       startDate: data.startDate,

@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import {
+  isAbsence,
   CALENDAR_LAYERS,
   CALENDAR_MAX_RANGE_DAYS,
   PrismaService,
@@ -163,6 +164,9 @@ export class CalendarService {
     const rows = await this.prisma.timeOff.findMany({
       where: {
         status: { in: ['PENDING', 'APPROVED'] },
+        // Leave, and remote days drawn as their OWN kind (a day worked, not a day off). Changed
+        // hours / overtime / other requests are not calendar items.
+        kind: { in: ['LEAVE', 'REMOTE'] },
         startDate: { lte: new Date(`${q.to}T00:00:00Z`) },
         endDate: { gte: new Date(`${q.from}T00:00:00Z`) },
         technician: { organizationId: q.organizationId },
@@ -171,15 +175,18 @@ export class CalendarService {
           ...(team ? [{ technician: { spaceAssignments: { some: { spaceId: spaceId!, OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] } } } }] : []),
         ],
       },
-      select: { id: true, technicianId: true, startDate: true, endDate: true, status: true, type: true, workingDays: true, technician: { select: { firstName: true, lastName: true } } },
+      select: { id: true, technicianId: true, startDate: true, endDate: true, status: true, type: true, kind: true, spaceId: true, workingDays: true, technician: { select: { firstName: true, lastName: true } } },
       take: 500,
     });
     return rows.map((r) => ({
-      id: `leave:${r.id}`, kind: 'leave' as const, layer: 'leave' as const,
+      ...(isAbsence(r.kind)
+        ? { id: `leave:${r.id}`, kind: 'leave' as const, note: r.type as string | null }
+        : { id: `remote:${r.id}`, kind: 'remote' as const, note: null, spaceId: r.spaceId }),
+      layer: 'leave' as const,
       title: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
       start: toISODateString(r.startDate), end: toISODateString(r.endDate), allDay: true,
       personId: r.technicianId, personName: `${r.technician.firstName} ${r.technician.lastName}`.trim(),
-      status: r.status, note: r.type, ref: { type: 'timeOff' as const, id: r.id },
+      status: r.status, ref: { type: 'timeOff' as const, id: r.id },
     }));
   }
 

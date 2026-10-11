@@ -63,9 +63,16 @@ export class RequestTimeOffDto {
   organizationId: string;
   /** Spaces the caller may read; undefined = org-wide, [] = none. */
   scopeSpaceIds?: string[];
+  /** The request as sent — read ONLY through the shared `parseRequestInput` (requests/request-kinds.ts). */
+  kind?: string;
   startDate: string; // ISO date string
-  endDate: string; // ISO date string
+  endDate?: string; // ISO date string; absent = the start day
   reason?: string;
+  type?: string;
+  spaceId?: string;
+  startTime?: string;
+  endTime?: string;
+  minutes?: number;
 }
 
 export class GetTimeOffDto {

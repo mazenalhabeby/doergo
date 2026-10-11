@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ClientProxy } from '@nestjs/microservices';
-import { runWithCronLock, TaskStatus, localPartsIn, toISODateString } from '@hbcfield/shared';
+import { ABSENCE_WHERE, runWithCronLock, TaskStatus, localPartsIn, toISODateString } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { CrewService } from './handover/crew.service';
@@ -48,7 +48,7 @@ export class LeaderAbsentService {
     // Who is off around today, in any zone: one indexed query on approved leave.
     const dayMs = 86_400_000;
     const leave = await this.prisma.timeOff.findMany({
-      where: { status: 'APPROVED', startDate: { lte: new Date(now.getTime() + dayMs) }, endDate: { gte: new Date(now.getTime() - dayMs) } },
+      where: { status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: new Date(now.getTime() + dayMs) }, endDate: { gte: new Date(now.getTime() - dayMs) } },
       select: { technicianId: true, startDate: true, endDate: true },
       take: 2000,
     });

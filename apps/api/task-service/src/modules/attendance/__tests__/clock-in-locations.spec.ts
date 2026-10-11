@@ -46,6 +46,7 @@ describe('listClockInLocations', () => {
   const prisma = {
     // The member's account-level away grant, read when tagging workspaces.
     user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) }, spaceAssignment,
+    timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     // Every fixture workspace runs Time Tracking unless it says otherwise — the list only offers those.
     companyLocation: {
       findMany: (...a: unknown[]) => companyLocation.findMany(...a).then((rows: Array<Record<string, unknown>>) =>
@@ -147,6 +148,7 @@ describe('listClockInLocations — only where Time Tracking runs', () => {
     const service = Object.create(ClockInService.prototype);
     service.prisma = {
       user: { findFirst: jest.fn().mockResolvedValue({ allowRemote: false, role: 'EMPLOYEE' }) },
+      timeOff: { findMany: jest.fn().mockResolvedValue([]) },
       spaceAssignment: { findMany: jest.fn().mockResolvedValue([{ spaceId: 'on' }, { spaceId: 'off' }, { spaceId: 'inherit' }]) },
       companyLocation: { findMany: jest.fn().mockResolvedValue(rows) },
     };

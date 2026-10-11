@@ -244,5 +244,13 @@ export function applyApprovedRequests(input: {
   };
 }
 
+/** `GET /employees/me/request-options` — what the CALLER may ask for, and where a remote day. */
+export interface RequestKindOptions {
+  /** The kinds offered to this member (any of their workspaces offers it; no workspace = every kind but REMOTE). */
+  kinds: RequestKind[];
+  /** The workspaces where they may ask to work remotely (a site to be away from, and allowed away there). */
+  remoteSpaces: Array<{ id: string; name: string }>;
+}
+
 /** Informational flag on an entry whose away/remote work was approved in advance (never sends it to review). */
 export const APPROVED_REMOTE_FLAG = 'APPROVED_REMOTE';

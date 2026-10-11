@@ -15,7 +15,7 @@ import type {
   UpdateEmployeeInput,
 } from '../../types';
 import type { LeaveCount } from '../../calendar/days';
-import type { RequestInput, RequestKind } from '../../requests/request-kinds';
+import type { RequestInput, RequestKind, RequestKindOptions } from '../../requests/request-kinds';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 
@@ -80,6 +80,8 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
     method: 'POST',
     path: (a) => path`/employees/${a.employeeId}/time-off`,
   }),
+  /** What the caller may request (kinds) and at which workspaces a remote day. Only their own. */
+  requestOptions: endpoint<void, RequestKindOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
   /** What a leave range COSTS in working days (≤ 1 year). */
   count: endpoint<{ employeeId: string; from: string; to: string }, LeaveCount>({
     method: 'GET',

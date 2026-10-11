@@ -98,6 +98,7 @@ async function build(opts: { worked?: any[]; shift?: any; space?: Partial<typeof
       findMany: jest.fn().mockResolvedValue([]),
     },
     companyLocation: { findFirst: jest.fn().mockResolvedValue({ ...location, ...opts.space }) },
+    timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     spaceAssignment: { findFirst: jest.fn().mockResolvedValue({ id: 'a1', allowRemote: null }), findMany: jest.fn().mockResolvedValue([]) },
     timeEntry: {
       findFirst: jest.fn().mockResolvedValue(null),

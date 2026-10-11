@@ -87,6 +87,7 @@ describe('AttendanceService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
     },
+    timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     companyLocation: {
       findFirst: jest.fn(),
     },

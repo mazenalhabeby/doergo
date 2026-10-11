@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, NotFoundException, Logger, Optional } 
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.util';
 import { ShiftRematchService } from '../attendance/shift-rematch.service';
-import { success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay, toISODateString, workspaceSchedulesShifts } from '@hbcfield/shared';
+import { ABSENCE_WHERE, success, shiftCrossesMidnight, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN , scopeWhereOn, scopeAllows, type SpaceScopeIds, rotaFor, planRotaDay, RotaDayRefused, dowOfDay, toISODateString, workspaceSchedulesShifts } from '@hbcfield/shared';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -416,7 +416,7 @@ export class ShiftsService {
         : Promise.resolve([] as Array<{ technicianId: string; dayOfWeek: number; startTime: string; endTime: string }>),
       ids.length
         ? this.prisma.timeOff.findMany({
-            where: { technicianId: { in: ids }, status: 'APPROVED', startDate: { lte: new Date(`${last}T00:00:00.000Z`) }, endDate: { gte: new Date(`${first}T00:00:00.000Z`) } },
+            where: { technicianId: { in: ids }, status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: new Date(`${last}T00:00:00.000Z`) }, endDate: { gte: new Date(`${first}T00:00:00.000Z`) } },
             select: { technicianId: true, startDate: true, endDate: true },
           })
         : Promise.resolve([] as Array<{ technicianId: string; startDate: Date; endDate: Date }>),
