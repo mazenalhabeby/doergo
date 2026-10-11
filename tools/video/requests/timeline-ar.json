@@ -1,0 +1,146 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 20.262,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 12.045,
+     "scene": "intro"
+    },
+    {
+     "start": 12.828,
+     "end": 19.562,
+     "scene": "intro"
+    }
+   ]
+  },
+  {
+   "id": "kinds",
+   "start": 20.262,
+   "end": 37.43,
+   "phrases": [
+    {
+     "start": 20.262,
+     "end": 27.518,
+     "scene": "kinds"
+    },
+    {
+     "start": 28.104,
+     "end": 36.73,
+     "scene": "kinds"
+    }
+   ]
+  },
+  {
+   "id": "remote",
+   "start": 37.43,
+   "end": 77.593,
+   "phrases": [
+    {
+     "start": 37.43,
+     "end": 43.641,
+     "scene": "remote-form"
+    },
+    {
+     "start": 44.32,
+     "end": 50.647,
+     "scene": "remote-form"
+    },
+    {
+     "start": 51.426,
+     "end": 60.899,
+     "scene": "approver"
+    },
+    {
+     "start": 61.573,
+     "end": 70.13,
+     "scene": "remote-day"
+    },
+    {
+     "start": 70.751,
+     "end": 76.893,
+     "scene": "remote-day"
+    }
+   ]
+  },
+  {
+   "id": "leave",
+   "start": 77.593,
+   "end": 95.039,
+   "phrases": [
+    {
+     "start": 77.593,
+     "end": 85.151,
+     "scene": "leave-form"
+    },
+    {
+     "start": 85.795,
+     "end": 94.34,
+     "scene": "leave-form"
+    }
+   ]
+  },
+  {
+   "id": "hours",
+   "start": 95.039,
+   "end": 113.926,
+   "phrases": [
+    {
+     "start": 95.039,
+     "end": 103.642,
+     "scene": "hours"
+    },
+    {
+     "start": 104.332,
+     "end": 113.226,
+     "scene": "hours"
+    }
+   ]
+  },
+  {
+   "id": "web",
+   "start": 113.926,
+   "end": 132.487,
+   "phrases": [
+    {
+     "start": 113.926,
+     "end": 124.828,
+     "scene": "web"
+    },
+    {
+     "start": 125.506,
+     "end": 131.788,
+     "scene": "web"
+    }
+   ]
+  },
+  {
+   "id": "offline",
+   "start": 132.487,
+   "end": 142.615,
+   "phrases": [
+    {
+     "start": 132.487,
+     "end": 141.914,
+     "scene": "offline"
+    }
+   ]
+  },
+  {
+   "id": "build",
+   "start": 142.615,
+   "end": 160.53,
+   "phrases": [
+    {
+     "start": 142.615,
+     "end": 160.03,
+     "scene": "build"
+    }
+   ]
+  }
+ ],
+ "duration": 162.03
+}

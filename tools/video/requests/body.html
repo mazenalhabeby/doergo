@@ -1,0 +1,180 @@
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · مقترح · الهاتف والويب</div>
+      <h1>صفحة الطلبات</h1>
+      <p class="lede">صفحة الإجازات تصبح مكاناً لكل طلب: إجازة، عمل عن بُعد، تغيير الساعات، وقت إضافي مسبق. والطلب المقبول مسبقاً لا يذهب إلى المراجعة يوم العمل.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / __DUR__</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="intro">
+          <div class="sTitle">الطلبات</div>
+          <div class="sSub">كانت: الإجازات</div>
+          <div class="card"><div class="ln"><span>إجازة · <span class="num">14–16 Nov</span></span><span class="chip warn">بانتظار</span></div><div class="ln"><span>عن بُعد · غداً</span><span class="chip ok">مقبول</span></div><div class="ln"><span>أبدأ <span class="num">10:00</span> · الإثنين</span><span class="chip ok">مقبول</span></div></div>
+          <div class="btn">طلب جديد</div>
+        </div>
+
+        <div class="screen" data-scene="kinds">
+          <div class="sTitle">ماذا تطلب؟</div>
+          <div class="card"><div class="ln"><span>إجازة</span><span class="chip">سنوية · مرضية · عائلية</span></div><div class="ln"><span>العمل عن بُعد</span><span class="chip ok">مسموح لك</span></div><div class="ln"><span>تغيير ساعات اليوم</span><span class="chip">بداية · نهاية</span></div><div class="ln"><span>وقت إضافي مسبق</span><span class="chip">ساعات</span></div><div class="ln"><span>طلب آخر</span><span class="chip">نص</span></div></div>
+          <div class="sSub">الأنواع حسب مساحة عملك وأذوناتك</div>
+        </div>
+
+        <div class="screen" data-scene="remote-form">
+          <div class="sTitle">العمل عن بُعد</div>
+          <div class="card"><div class="ln"><span>اليوم</span><span class="num">Tue 12 Nov</span></div><div class="ln"><span>مساحة العمل</span><span>المكتب الرئيسي</span></div><div class="ln"><span>السبب</span><span>تسليم من المنزل</span></div></div>
+          <div class="card"><div class="ln"><span>من سيقرّر</span><span>آنا مولر</span></div><div class="ln"><span>إن قُبل</span><span class="chip ok">حضور الغد بلا مراجعة</span></div></div>
+          <div class="btn">إرسال</div>
+        </div>
+
+        <div class="screen" data-scene="approver">
+          <div class="sTitle">طلب من كريم</div>
+          <div class="sSub">آنا · قائدة الفريق</div>
+          <div class="card"><div class="ln"><span>عن بُعد · <span class="num">Tue 12 Nov</span></span><span class="chip">المكتب الرئيسي</span></div><div class="ln"><span>إذن العمل عن بُعد</span><span class="chip ok">✓</span></div><div class="ln"><span>التغطية غداً</span><span class="chip ok">كافية</span></div></div>
+          <div class="opts"><span class="opt sel">موافقة</span><span class="opt">رفض مع سبب</span></div>
+        </div>
+
+        <div class="screen" data-scene="remote-day">
+          <div class="sTitle">صباح الثلاثاء</div>
+          <div class="card row"><span>حضور من المنزل · <span class="num">08:02</span></span><span class="chip ok">موافق مسبقاً</span></div>
+          <div class="card row"><span>الحالة</span><span class="chip ok">معتمد مباشرة</span></div>
+          <div class="notif"><small>علامات أخرى</small>التأخّر مثلاً يبقى للمراجعة: الموافقة تغطّي ما طُلب فقط</div>
+        </div>
+
+        <div class="screen" data-scene="leave-form">
+          <div class="sTitle">إجازة سنوية</div>
+          <div class="card"><div class="ln"><span>من</span><span class="num">Thu 14 Nov</span></div><div class="ln"><span>إلى</span><span class="num">Mon 18 Nov</span></div><div class="ln"><span>أيام العمل</span><span class="chip ok num">3</span></div></div>
+          <div class="card"><div class="ln"><span>الرصيد</span><span class="num">12 → 9</span></div><div class="ln"><span>عطلة نهاية الأسبوع</span><span class="chip">لا تُخصم</span></div></div>
+          <div class="notif" style="background:rgba(242,178,99,.14)"><small>الجمعة 15</small>أنت الوحيد في التكييف ذلك اليوم</div>
+        </div>
+
+        <div class="screen" data-scene="hours">
+          <div class="sTitle">تغيير الساعات</div>
+          <div class="card"><div class="ln"><span>الإثنين</span><span>أبدأ <span class="num">10:00</span></span></div><div class="ln"><span>إن قُبل</span><span class="chip ok">لا علامة تأخّر</span></div></div>
+          <div class="sTitle" style="margin-top:6px">وقت إضافي مسبق</div>
+          <div class="card"><div class="ln"><span>الخميس</span><span class="num">+2:00 h</span></div><div class="ln"><span>إن قُبل</span><span class="chip ok">يُحتسب تلقائياً</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="web">
+          <div class="sTitle">على الويب</div>
+          <div class="sSub">الجدول والإجازات · بلا تغيير في الصفحة</div>
+          <div class="card"><div class="ln"><span>درج القرار</span><span class="chip">أي نوع</span></div><div class="ln"><span>الرصيد · التغطية · الإذن</span><span class="chip ok">ظاهر</span></div></div>
+          <div class="card"><div class="ln"><span>تقويم الشركة</span><span class="chip">عن بُعد · إجازة</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="offline">
+          <div class="sTitle">بدون إنترنت</div>
+          <div class="card"><div class="ln"><span>طلب عمل عن بُعد</span><span class="chip warn">محفوظ</span></div><div class="ln"><span>يُرسل عند عودة الإشارة</span><span class="chip ok">تلقائياً</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="build">
+          <div class="sTitle">على ماذا يُبنى</div>
+          <div class="card"><div class="ln"><span>طلب الإجازة الحالي</span><span class="chip ok">+ نوع الطلب</span></div><div class="ln"><span>الموافقة والإشعارات</span><span class="chip ok">موجود</span></div><div class="ln"><span>حساب الأيام والتغطية</span><span class="chip ok">موجود</span></div><div class="ln"><span>تقويم الشركة</span><span class="chip ok">موجود</span></div><div class="ln"><span>الحضور يعرف الطلب المقبول</span><span class="chip warn">جديد</span></div></div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      __CHAPTERS__
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>أنواع الطلبات وما يفعله القبول</h2>
+    <p class="sectionLede">كل نوع يمكن تشغيله أو إيقافه لكل مساحة عمل. والقبول لا يغطّي إلا ما طُلب: أي علامة أخرى تبقى للمراجعة.</p>
+    <div class="tw"><table class="map2">
+      <thead><tr><th>النوع</th><th>من يراه</th><th>قبل الإرسال</th><th>إن قُبل</th></tr></thead>
+      <tbody>
+        <tr><td>إجازة (سنوية، مرضية، عائلية، أخرى)</td><td>الجميع</td><td>أيام العمل، الرصيد، التغطية</td><td>لا يُلاحَق كغائب، يظهر في التقويم</td></tr>
+        <tr><td>العمل عن بُعد</td><td>من لديه إذن العمل عن بُعد</td><td>من سيقرّر، المساحة</td><td>حضور ذلك اليوم عن بُعد يُعتمد بلا مراجعة</td></tr>
+        <tr><td>تغيير ساعات اليوم</td><td>الجميع</td><td>الوردية المتأثّرة</td><td>لا علامة تأخّر ولا تنبيه مغادرة مبكرة</td></tr>
+        <tr><td>وقت إضافي مسبق</td><td>الجميع</td><td>الساعات</td><td>يُحتسب تلقائياً، دون طلب في نهاية اليوم</td></tr>
+        <tr><td>طلب آخر</td><td>الجميع</td><td>نص حرّ</td><td>للعلم والقرار فقط</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="rules">
+    <h2>على ماذا يُبنى</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">✓</span>موجود اليوم</h3><ul>
+        <li>طلب الإجازة بأنواعه، وحالاته: بانتظار، مقبول، مرفوض، ملغى.</li>
+        <li>حساب أيام العمل من تقويم الشركة: عطلة نهاية الأسبوع والعطل لا تُخصم.</li>
+        <li>توجيه الإشعارات: من يتابع العضو، وأدوار المساحة.</li>
+        <li>حكم التغطية: التخصّص قبل العدد.</li>
+        <li>صفحة الجدول والإجازات ودرج القرار على الويب، وصفحة الإجازات على الهاتف.</li>
+        <li>إرسال الطلب بدون إنترنت عبر صندوق الإرسال.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">+</span>يجب إضافته</h3><ul>
+        <li>«نوع الطلب» على طلب الإجازة الحالي، لا جدول جديد.</li>
+        <li>الأنواع المسموحة لكل مساحة عمل.</li>
+        <li>تسجيل الحضور يقرأ الطلبات المقبولة لليوم: عن بُعد، تغيير الساعات، وقت إضافي.</li>
+        <li>درج القرار يعرض كل نوع بما يلزم له.</li>
+        <li>اسم الصفحة: «الطلبات» على الهاتف والويب.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>مقترح، لم يُبنَ بعد · الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __TIMELINE__;
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = { 'remote-day': '8:02', approver: '17:20' };
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>
