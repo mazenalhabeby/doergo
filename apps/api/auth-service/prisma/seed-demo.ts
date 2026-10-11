@@ -3,7 +3,7 @@
  * Run: npx tsx prisma/seed-demo.ts
  */
 import { PrismaClient, Role, TaskStatus, TaskPriority } from '@prisma/client'
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
@@ -109,10 +109,10 @@ async function main() {
   ]
 
   for (const a of assignments) {
-    await prisma.technicianAssignment.upsert({
-      where: { userId_locationId: { userId: a.userId, locationId: a.locationId } },
+    await prisma.spaceAssignment.upsert({
+      where: { userId_spaceId: { userId: a.userId, spaceId: a.locationId } },
       update: {},
-      create: { user: { connect: { id: a.userId } }, location: { connect: { id: a.locationId } } },
+      create: { organizationId: orgId, userId: a.userId, spaceId: a.locationId },
     })
   }
   console.log(`Created ${assignments.length} space assignments`)
@@ -196,7 +196,7 @@ async function main() {
     spaces: await prisma.companyLocation.count({ where: { organizationId: orgId } }),
     tasks: await prisma.task.count({ where: { organizationId: orgId } }),
     attendance: await prisma.timeEntry.count({ where: { organizationId: orgId } }),
-    assignments: await prisma.technicianAssignment.count(),
+    assignments: await prisma.spaceAssignment.count({ where: { organizationId: orgId } }),
   }
 
   console.log(`\nDone! Summary:`)

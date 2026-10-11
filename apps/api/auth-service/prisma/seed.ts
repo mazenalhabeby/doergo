@@ -1,46 +1,24 @@
 import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy, CustomFieldType, RecurrenceFrequency } from '@prisma/client';
 import { createHash } from 'crypto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
+import { BUILTIN_ROLES, builtInRoleCreateData } from '@hbcfield/shared';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
 
-  // Clean existing data to make seed idempotent (order matters for FK constraints)
+  // Empty every table so the seed can be re-run. One statement, read from the
+  // database itself: a hand-written list broke every time a table was renamed.
   console.log('Cleaning existing data...');
-  await prisma.$executeRawUnsafe('DELETE FROM "breaks"');
-  await prisma.$executeRawUnsafe('DELETE FROM "time_entries"');
-  await prisma.$executeRawUnsafe('DELETE FROM "technician_assignments"');
-  await prisma.locationHistory.deleteMany();
-  await prisma.workerLastLocation.deleteMany();
-  await prisma.partUsed.deleteMany();
-  await prisma.reportAttachment.deleteMany();
-  await prisma.serviceReport.deleteMany();
-  await prisma.attachment.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.taskEvent.deleteMany();
-  await prisma.customFieldValue.deleteMany();
-  await prisma.customFieldDefinition.deleteMany();
-  await prisma.recurringTaskTemplate.deleteMany();
-  await prisma.$executeRawUnsafe('DELETE FROM "workflow_statuses"');
-  await prisma.$executeRawUnsafe('DELETE FROM "status_workflows"');
-  await prisma.task.deleteMany();
-  await prisma.technicianSchedule.deleteMany();
-  await prisma.timeOff.deleteMany();
-  await prisma.userPushToken.deleteMany();
-  await prisma.refreshToken.deleteMany();
-  await prisma.passwordResetToken.deleteMany();
-  await prisma.invitation.deleteMany();
-  await prisma.joinRequest.deleteMany();
-  await prisma.companyLocation.deleteMany();
-  await prisma.$executeRawUnsafe('DELETE FROM "assets"');
-  await prisma.$executeRawUnsafe('DELETE FROM "asset_types"');
-  await prisma.$executeRawUnsafe('DELETE FROM "asset_categories"');
-  await prisma.user.deleteMany();
-  await prisma.$executeRawUnsafe('DELETE FROM "org_roles"');
-  await prisma.organizationAccess.deleteMany();
-  await prisma.organization.deleteMany();
+  const tables = await prisma.$queryRaw<{ tablename: string }[]>`
+    SELECT tablename FROM pg_tables
+    WHERE schemaname = current_schema() AND tablename NOT IN ('_prisma_migrations', 'spatial_ref_sys')`;
+  if (tables.length) {
+    await prisma.$executeRawUnsafe(
+      `TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY CASCADE`,
+    );
+  }
 
   // Helper to hash codes with SHA-256
   const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
@@ -167,109 +145,22 @@ async function main() {
   console.log('Created users:', clientUser.email, dispatcherUser.email, technician1.email, technician2.email, technician3.email);
 
   // ============================================
-  // Create Organization Roles (custom role system)
+  // Organization roles: the same built-ins every new organization gets
   // ============================================
 
-  const adminRole = await prisma.orgRole.create({
-    data: {
-      organizationId: organization.id,
-      name: 'Administrator',
-      slug: 'administrator',
-      description: 'Full access to all features',
-      color: '#2563eb',
-      isSystem: true,
-      legacyRole: 'ADMIN',
-      position: 0,
-      permissions: {
-        canCreateTasks: true,
-        canViewAllTasks: true,
-        canAssignTasks: true,
-        canDeleteTasks: true,
-        canEditAnyTask: true,
-        canManageUsers: true,
-        canInviteUsers: true,
-        canManageRoles: true,
-        canViewAttendance: true,
-        canApproveTimeOff: true,
-        canApproveOvertime: true,
-        canManageLocations: true,
-        canManageWorkflows: true,
-        canManageOrgSettings: true,
-        taskCreationScope: 'ORG',
-      },
-    },
-  });
+  for (const preset of BUILTIN_ROLES) {
+    await prisma.accessRole.create({ data: builtInRoleCreateData(organization.id, preset) as any });
+  }
+  const roleId = async (slug: string) =>
+    (await prisma.accessRole.findUniqueOrThrow({
+      where: { organizationId_slug: { organizationId: organization.id, slug } },
+    })).id;
 
-  const managerRole = await prisma.orgRole.create({
-    data: {
-      organizationId: organization.id,
-      name: 'Manager',
-      slug: 'manager',
-      description: 'Can manage tasks, team, and attendance',
-      color: '#8b5cf6',
-      isSystem: true,
-      legacyRole: 'DISPATCHER',
-      position: 1,
-      permissions: {
-        canCreateTasks: false,
-        canViewAllTasks: true,
-        canAssignTasks: true,
-        canDeleteTasks: false,
-        canEditAnyTask: true,
-        canManageUsers: false,
-        canInviteUsers: true,
-        canManageRoles: false,
-        canViewAttendance: true,
-        canApproveTimeOff: true,
-        canApproveOvertime: true,
-        canManageLocations: false,
-        canManageWorkflows: false,
-        canManageOrgSettings: false,
-        taskCreationScope: 'SPACE',
-      },
-    },
-  });
+  // Technicians hold no org role: their access comes from their legacy role defaults.
+  await prisma.user.update({ where: { id: clientUser.id }, data: { memberRoleId: await roleId('admin') } });
+  await prisma.user.update({ where: { id: dispatcherUser.id }, data: { memberRoleId: await roleId('manager') } });
 
-  const employeeRole = await prisma.orgRole.create({
-    data: {
-      organizationId: organization.id,
-      name: 'Employee',
-      slug: 'employee',
-      description: 'Can view and execute assigned tasks',
-      color: '#10b981',
-      isSystem: true,
-      legacyRole: 'TECHNICIAN',
-      position: 2,
-      permissions: {
-        canCreateTasks: false,
-        canViewAllTasks: false,
-        canAssignTasks: false,
-        canDeleteTasks: false,
-        canEditAnyTask: false,
-        canManageUsers: false,
-        canInviteUsers: false,
-        canManageRoles: false,
-        canViewAttendance: false,
-        canApproveTimeOff: false,
-        canApproveOvertime: false,
-        canManageLocations: false,
-        canManageWorkflows: false,
-        canManageOrgSettings: false,
-        taskCreationScope: 'SELF',
-      },
-    },
-  });
-
-  console.log('Created org roles:', adminRole.name, managerRole.name, employeeRole.name);
-
-  // Assign roles to users
-  await prisma.user.update({ where: { id: clientUser.id }, data: { orgRoleId: adminRole.id } });
-  await prisma.user.update({ where: { id: dispatcherUser.id }, data: { orgRoleId: managerRole.id } });
-  await prisma.user.update({ where: { id: technician1.id }, data: { orgRoleId: employeeRole.id } });
-  await prisma.user.update({ where: { id: technician2.id }, data: { orgRoleId: employeeRole.id } });
-  await prisma.user.update({ where: { id: technician3.id }, data: { orgRoleId: employeeRole.id } });
-
-  console.log('Assigned org roles to all users');
+  console.log(`Created ${BUILTIN_ROLES.length} built-in roles; admin and manager assigned`);
 
   // ============================================
   // Create Company Locations for attendance tracking
@@ -312,54 +203,59 @@ async function main() {
   console.log('Created company locations:', mainOffice.name, warehouse.name, serviceCenter.name);
 
   // ============================================
-  // Create Technician Assignments (FULL_TIME only)
+  // Assign technicians to workspaces (SpaceAssignment)
   // ============================================
 
   // Assign technician1 (FULL_TIME) to Main Office as primary location
-  const assignment1 = await prisma.technicianAssignment.create({
+  const assignment1 = await prisma.spaceAssignment.create({
     data: {
+      organizationId: organization.id,
       userId: technician1.id,
-      locationId: mainOffice.id,
+      spaceId: mainOffice.id,
       isPrimary: true,
       schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
     },
   });
 
   // Also assign technician1 to Warehouse for weekends
-  const assignment2 = await prisma.technicianAssignment.create({
+  const assignment2 = await prisma.spaceAssignment.create({
     data: {
+      organizationId: organization.id,
       userId: technician1.id,
-      locationId: warehouse.id,
+      spaceId: warehouse.id,
       isPrimary: false,
       schedule: ['SAT', 'SUN'],
     },
   });
 
   // Also assign technician1 to Service Center
-  const assignment3 = await prisma.technicianAssignment.create({
+  const assignment3 = await prisma.spaceAssignment.create({
     data: {
+      organizationId: organization.id,
       userId: technician1.id,
-      locationId: serviceCenter.id,
+      spaceId: serviceCenter.id,
       isPrimary: false,
       schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
     },
   });
 
   // Assign technician3 (HYBRID) to Main Office (needed for Clock tab)
-  const assignment4 = await prisma.technicianAssignment.create({
+  const assignment4 = await prisma.spaceAssignment.create({
     data: {
+      organizationId: organization.id,
       userId: technician3.id,
-      locationId: mainOffice.id,
+      spaceId: mainOffice.id,
       isPrimary: true,
       schedule: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
     },
   });
 
   // Also assign technician3 to Service Center for flexibility
-  const assignment5 = await prisma.technicianAssignment.create({
+  const assignment5 = await prisma.spaceAssignment.create({
     data: {
+      organizationId: organization.id,
       userId: technician3.id,
-      locationId: serviceCenter.id,
+      spaceId: serviceCenter.id,
       isPrimary: false,
       schedule: ['MON', 'WED', 'FRI'],
     },
