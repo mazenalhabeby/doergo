@@ -36,6 +36,13 @@ export function checkClockInLocally(input: {
   fix: OccurrenceFix | null;
   alreadyClockedIn: boolean;
   now?: Date;
+  /**
+   * When the fix is judged as evidence, if not `now`. The automatic clock asks
+   * about a clock-in dated when the member walked in (`now`), with the fix the
+   * phone took at that crossing — whose own age is measured against the
+   * crossing, not against the moment the window opened.
+   */
+  fixCheckedAt?: Date;
 }): LocalClockInVerdict {
   if (input.alreadyClockedIn) return { ok: false, code: 'ALREADY_CLOCKED_IN' };
 
@@ -47,7 +54,7 @@ export function checkClockInLocally(input: {
       : { ok: false, code: 'NO_HOURS_LEFT', hours: Math.round(((allowance.dailyMinutes ?? 0) / 60) * 10) / 10 };
   }
 
-  const checked = assessFix(input.fix, input.now ?? new Date());
+  const checked = assessFix(input.fix, input.fixCheckedAt ?? input.now ?? new Date());
   // A mock location is flagged by the server, not refused — mirror that.
   // `'code' in`, not `.ok`: the test compiler runs non-strict and does not narrow on a boolean.
   if ('code' in checked && checked.code !== 'FIX_MOCKED') return { ok: false, code: checked.code };

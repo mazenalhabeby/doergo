@@ -144,6 +144,21 @@ export async function getFix({ purpose, ask = false, orLastKnown = false }: FixO
   }
 }
 
+/**
+ * A fix as EVIDENCE — what a clock step carries for the server to judge: where,
+ * how sure, when the fix itself was taken, and whether Android called it mocked.
+ * The clock-in tap and the automatic clock read it the same way.
+ */
+export function evidenceFix(loc: Location.LocationObject): { lat: number; lng: number; accuracy: number; fixAt: string; mocked?: boolean } {
+  return {
+    lat: loc.coords.latitude,
+    lng: loc.coords.longitude,
+    accuracy: loc.coords.accuracy || 0,
+    fixAt: new Date(loc.timestamp).toISOString(),
+    mocked: loc.mocked,
+  };
+}
+
 /** The common shape — `{ lat, lng, accuracy }` — for callers that need no more. */
 export function fixPoint(loc: Location.LocationObject): { lat: number; lng: number; accuracy?: number } {
   return { lat: loc.coords.latitude, lng: loc.coords.longitude, accuracy: loc.coords.accuracy ?? undefined };

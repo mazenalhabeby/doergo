@@ -21,6 +21,7 @@ import { createPendingAvatar, type PendingAvatar } from './profile/pending-avata
 import { databaseFailureText } from './db/database';
 import { missingOfflineParts } from './native';
 import { connectivity, createOfflineRuntime } from './runtime';
+import { registerLiveEngine } from './live-engine';
 import { reportTelemetry } from './telemetry';
 import { newest } from './freshness';
 import { registerBackgroundSync } from './background-sync';
@@ -165,6 +166,8 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         return;
       }
       const live = engine;
+      // Background tasks firing in this JS context use this engine rather than open a second one.
+      unsubscribers.push(registerLiveEngine(user.id, live, records));
       // The end of a session asks this before deciding whether the phone's copy may go.
       unsubscribers.push(registerUnsentProbe(user.id, () => live.hasUnsent()));
       // …and stops the engine before the database under it is closed and deleted.

@@ -9,6 +9,7 @@ import i18n, { getPreferredLanguage } from '../i18n';
 import { isNotificationSuppressed } from '../lib/notification-suppression';
 import { PUSH_CHANNELS, RETIRED_PUSH_CHANNELS } from '@hbcfield/shared/client';
 import { CALENDAR_ACTIONS, CALENDAR_INVITE_CATEGORY, CALENDAR_REMINDER_CATEGORY } from '../lib/calendar-push-actions';
+import { registerAutoClockCategories } from '../services/auto-clock/notifications';
 
 /** The crew push's category and its one button (notification-service sends `category: 'crew_join'`). */
 export const CREW_JOIN_CATEGORY = 'crew_join';
@@ -307,6 +308,8 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       { identifier: CALENDAR_ACTIONS.maybe, buttonTitle: i18n.t('calendar.push.maybe'), options: open },
       { identifier: CALENDAR_ACTIONS.decline, buttonTitle: i18n.t('calendar.push.decline'), options: { ...open, isDestructive: true } },
     ]).catch(() => undefined);
+    // The automatic clock's buttons (src/services/auto-clock/notifications.ts): Undo, Still working, Clock out.
+    void registerAutoClockCategories();
   }, []);
 
   // Android notification channel setup

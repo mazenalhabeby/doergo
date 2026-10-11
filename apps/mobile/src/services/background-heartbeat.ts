@@ -2,7 +2,8 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { attendanceApi } from '../lib/api';
 import { getAccessToken } from '../lib/api/client';
-import { requestBackgroundLocationConsent } from './location-consent';
+import { ensureBackgroundLocation } from './background-permission';
+import { autoClockWake } from './auto-clock/context';
 import { keptCheckIns } from './kept-check-ins';
 import { isUnreachable } from '../offline/actions/unreachable';
 import i18n from '../i18n';
@@ -54,6 +55,9 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
     return;
   }
 
+  // The automatic clock's held departure goes once its exit grace has passed — this is the wake that sends it.
+  await autoClockWake();
+
   const location = newestFix<RawFix>(data.locations);
   if (!location) return;
   const point = {
@@ -101,21 +105,9 @@ export async function startBackgroundHeartbeat(): Promise<boolean> {
       return true;
     }
 
-    // Google Play: show the prominent in-app disclosure BEFORE requesting the OS
-    // background-location permission. Attendance heartbeat needs background
-    // location, so decline means we don't start.
-    const consented = await requestBackgroundLocationConsent();
-    if (!consented) {
-      console.log('[Heartbeat] Background location disclosure declined');
-      return false;
-    }
-
-    // Request background location permission
-    const { status } = await Location.requestBackgroundPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('[Heartbeat] Background location permission denied');
-      return false;
-    }
+    // Google Play: the prominent in-app disclosure BEFORE the OS background-location
+    // prompt. The heartbeat needs background location, so a decline means we don't start.
+    if (!(await ensureBackgroundLocation())) return false;
 
     // Native geofencing (background-geofence.ts) is now the PRIMARY out-of-ring
     // detector — the OS wakes us instantly on a ring crossing at ~zero battery.

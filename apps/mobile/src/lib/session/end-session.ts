@@ -6,7 +6,8 @@ import { forgetEverythingKept } from '../../home/remember/store';
 import { purgePushTokenRegistration } from '../../hooks/usePushNotifications';
 import { forgetRouteData, stopRouteTracking } from '../../services/background-route-tracking';
 import { stopBackgroundHeartbeat } from '../../services/background-heartbeat';
-import { stopGeofence } from '../../services/background-geofence';
+import { stopAllGeofences } from '../../services/background-geofence';
+import { forgetAutoClock } from '../../services/auto-clock/plan';
 import { keptCheckIns } from '../../services/kept-check-ins';
 import { unregisterBackgroundSync } from '../../offline/background-sync';
 import { destroyOfflineDatabase } from '../../offline/db/database';
@@ -108,7 +109,7 @@ async function run({ reason, keepUnsent = true, userId: given }: EndSessionOptio
 
   // 1 — nothing keeps tracking a person who is no longer signed in.
   // (Stopping the route also sends what it held — still with this member's own token.)
-  await Promise.all([quietly(stopRouteTracking()), quietly(stopBackgroundHeartbeat()), quietly(stopGeofence())]);
+  await Promise.all([quietly(stopRouteTracking()), quietly(stopBackgroundHeartbeat()), quietly(stopAllGeofences())]);
 
   // 2 — while the session still authenticates.
   if (serverStillListens) await quietly(purgePushTokenRegistration());
@@ -135,6 +136,8 @@ async function run({ reason, keepUnsent = true, userId: given }: EndSessionOptio
     // Route points held for upload, the active route and its destination.
     quietly(forgetRouteData()),
     quietly(keptCheckIns.forgetAll()),
+    // The automatic clock's plan, what it remembered of each visit, and its scheduled reminders.
+    quietly(forgetAutoClock(userId)),
     quietly(unregisterBackgroundSync()),
     quietly(runSessionEndCleaners()),
   ]);

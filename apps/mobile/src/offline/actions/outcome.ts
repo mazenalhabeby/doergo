@@ -27,4 +27,4 @@ export async function outcomeOf(engine: SyncEngine, op: OutboxOp): Promise<Actio
 }
 
 /** States in which a queued change still counts for what the member sees. */
-export const STILL_MINE: ReadonlySet<string> = new Set(['pending', 'inflight', 'retry', 'awaiting_auth']);
+export const STILL_MINE: ReadonlySet<string> = new Set(['pending', 'inflight', 'retry', 'awaiting_auth', 'held']);

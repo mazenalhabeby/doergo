@@ -2735,7 +2735,10 @@
       "OVERTIME": "Straordinario",
       "UNSCHEDULED_DAY": "Non pianificato",
       "MISSED_BREAK": "Pausa saltata",
-      "REMOTE_WITH_WORKSPACE": "Da remoto con spazio assegnato"
+      "REMOTE_WITH_WORKSPACE": "Da remoto con spazio assegnato",
+      "AUTO_CLOCK_IN": "Entrata auto",
+      "AUTO_CLOCK_OUT": "Uscita auto",
+      "AUTO_REST": "Pausa auto"
     },
     "period": {
       "month": "30 giorni",
@@ -3164,7 +3167,9 @@
       "task_leave": "Lavoro lasciato",
       "task_selfIssue": "Il mio problema",
       "task_selfResume": "Di nuovo al lavoro",
-      "task_lead": "Guida passata"
+      "task_lead": "Guida passata",
+      "attendance_autoUndo": "Annulla timbratura automatica",
+      "attendance_autoSkipRest": "Sto ancora lavorando (nessuna pausa automatica)"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Un passaggio precedente da cui dipende non è stato accettato.",
@@ -4471,7 +4476,8 @@
       "waitingRetry": "Il server non ha risposto. Riprova da solo.",
       "cantRemove": "Questo ha già raggiunto il server, quindi resta. Si completa da solo.",
       "tryNow": "Riprova ora",
-      "remove": "Rimuovi"
+      "remove": "Rimuovi",
+      "waitingHeld": "La timbratura automatica lo invia quando sarai rimasto abbastanza a lungo."
     },
     "about": {
       "version": "Versione",
@@ -4864,6 +4870,61 @@
       "carryExpires_other": "{{days}} giorni riportati utilizzabili fino al {{date}}",
       "thisRequest_one": "Questa richiesta · {{days}} giorno lavorativo",
       "thisRequest_other": "Questa richiesta · {{days}} giorni lavorativi"
+    }
+  },
+  "autoClock": {
+    "title": "Timbratura automatica",
+    "how": "Come funziona",
+    "toggle": "Timbra entrata e uscita automaticamente",
+    "subOff": "Timbra l’entrata quando arrivi sul posto di lavoro e l’uscita quando te ne vai. Solo se lo attivi.",
+    "subOn_one": "Attivo · {{count}} posto di lavoro monitorato",
+    "subOn_other": "Attivo · {{count}} posti di lavoro monitorati",
+    "subNotChosen": "Attivo · il tuo ufficio non l’ha ancora attivato per te",
+    "notOnThisPhone": "Non disponibile su questo telefono al momento.",
+    "needsAlways": "La posizione deve essere su «Sempre».",
+    "allowAlways": "Consenti posizione «Sempre»",
+    "turnedOn": "La timbratura automatica è attiva",
+    "turnedOff": "La timbratura automatica è disattivata",
+    "offline": "Per attivarla serve una connessione.",
+    "failed": "Impossibile modificare. Riprova.",
+    "chip": "Automatico",
+    "consent": {
+      "title": "Timbratura automatica di entrata e uscita",
+      "whatTitle": "Cosa viene registrato",
+      "what": "Solo il momento in cui entri ed esci dall’area di un posto di lavoro dove il tuo ufficio l’ha attivata. Mai un percorso, né dove ti trovi nel frattempo.",
+      "whoTitle": "Chi lo vede",
+      "who": "Le stesse persone che oggi vedono le tue timbrature. Ogni passo automatico è contrassegnato come «Automatico».",
+      "undoTitle": "Solo di passaggio",
+      "undo": "Ricevi una notifica con il pulsante Annulla e hai {{minutes}} minuti per annullarla.",
+      "withdrawTitle": "Disattivarla",
+      "withdraw": "Puoi disattivarla qui in qualsiasi momento. Si ferma subito su questo telefono, anche senza segnale.",
+      "agree": "Attiva",
+      "notNow": "Non ora"
+    },
+    "push": {
+      "clockedInTitle": "Entrata timbrata automaticamente",
+      "clockedInBody": "{{place}} · dalle {{time}}. Solo di passaggio? Annulla entro {{minutes}} minuti.",
+      "arrivedTitle": "Sei arrivato a {{place}}",
+      "arrivedBody": "Non è stato possibile timbrare automaticamente. Tocca per timbrare l’entrata.",
+      "restTitle": "La tua pausa inizia ora",
+      "restBody": "{{start}}–{{end}} è prevista come tua pausa. Stai ancora lavorando? Tocca «Sto ancora lavorando».",
+      "endTitle": "Il tuo turno è finito alle {{time}}",
+      "endBody": "Ancora a {{place}}? Timbra l’uscita o dicci che stai ancora lavorando.",
+      "undo": "Annulla",
+      "stillWorking": "Sto ancora lavorando",
+      "clockOut": "Timbra uscita"
+    },
+    "result": {
+      "undone": "Timbratura automatica annullata",
+      "undoQueued": "Annullamento salvato su questo telefono",
+      "tooLate": "Troppo tardi per annullare qui. Chiedi al tuo ufficio di correggere.",
+      "restSkipped": "Nessuna pausa automatica per questo turno",
+      "restSkipQueued": "Salvato su questo telefono: nessuna pausa automatica",
+      "extraSent": "Inviato: stai ancora lavorando",
+      "extraQueued": "Salvato su questo telefono: stai ancora lavorando",
+      "notYours": "Questo era per un’altra persona che ha usato questo telefono.",
+      "failed": "Non ha funzionato. Apri la schermata delle timbrature e fallo lì.",
+      "cannotUndo": "Questa timbratura non può più essere annullata qui: il turno è chiuso o c’è già lavoro registrato. Chiedi al tuo ufficio di correggere."
     }
   }
 }

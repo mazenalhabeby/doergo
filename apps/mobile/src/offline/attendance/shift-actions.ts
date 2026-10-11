@@ -2,7 +2,7 @@ import type { BreakType, OccurrenceFix } from '@hbcfield/shared/client';
 import { outcomeOf, type ActionOutcome } from '../actions/outcome';
 import { captureEvidence } from '../clock';
 import { uuidv7 } from '../ids';
-import type { SyncEngine } from '../sync-engine';
+import type { EnqueueInput, SyncEngine } from '../sync-engine';
 import { openOpFor } from '../outbox/open-ops';
 import { OPEN_STATES, type OutboxOp } from '../outbox/types';
 
@@ -19,12 +19,26 @@ function position(fix: OccurrenceFix | null | undefined) {
   return fix ? { lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy } : {};
 }
 
-export async function clockInFromPhone(
-  engine: SyncEngine,
-  input: { locationId?: string; isRemote?: boolean; awayReason?: string; fix: OccurrenceFix },
-): Promise<{ entryId: string; outcome: ActionOutcome }> {
-  const entryId = uuidv7();
-  const op = await engine.enqueueAndSettle({
+/**
+ * How a clock step was made, for the two the automatic clock also makes
+ * (services/auto-clock). `trigger` tells the server it was automatic;
+ * `occurredAt` is the moment it HAPPENED — when the member walked in or out —
+ * which for an automatic step is earlier than the moment the phone files it;
+ * `holdUntil` keeps it on the phone until then (the dwell, the exit grace),
+ * still the phone's to take back.
+ */
+interface StepOrigin {
+  trigger?: 'AUTO';
+  occurredAt?: Date;
+  holdUntil?: number;
+}
+
+type ClockInStep = { locationId?: string; isRemote?: boolean; awayReason?: string; fix: OccurrenceFix };
+type ClockOutStep = { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] };
+
+/** The one clock-in operation — a tap and the automatic clock file the same thing. */
+function clockInRequest(engine: SyncEngine, entryId: string, input: ClockInStep & StepOrigin): EnqueueInput {
+  return {
     op: 'attendance.clockIn',
     lane: laneOf(entryId),
     entityId: entryId,
@@ -35,29 +49,29 @@ export async function clockInFromPhone(
       clocked in", because to the server that shift is still open.
     */
     dependsOn: pendingShiftCloses(engine.operations()),
+    holdUntil: input.holdUntil,
     payload: {
       body: {
         id: entryId,
         ...(input.isRemote ? { isRemote: true } : { locationId: input.locationId }),
         ...position(input.fix),
         ...(input.awayReason ? { awayReason: input.awayReason } : {}),
-        evidence: captureEvidence(input.fix),
+        ...(input.trigger ? { trigger: input.trigger } : {}),
+        evidence: captureEvidence(input.fix, input.occurredAt),
       },
     },
-  });
-  return { entryId, outcome: await outcomeOf(engine, op) };
+  };
 }
 
-export async function clockOutFromPhone(
-  engine: SyncEngine,
-  input: { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] },
-): Promise<ActionOutcome> {
+/** The one clock-out operation. */
+function clockOutRequest(engine: SyncEngine, input: ClockOutStep & StepOrigin): EnqueueInput {
   const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
-  const op = await engine.enqueueAndSettle({
+  return {
     op: 'attendance.clockOut',
     lane: laneOf(input.entryId),
     entityId: input.entryId,
     dependsOn: clockIn ? [clockIn.id] : [],
+    holdUntil: input.holdUntil,
     payload: {
       body: {
         entryId: input.entryId,
@@ -67,9 +81,85 @@ export async function clockOutFromPhone(
         ...(input.overtimeReason ? { overtimeReason: input.overtimeReason } : {}),
         // Each note named on the phone, so a replay can never write it twice.
         ...(input.handovers?.length ? { handovers: input.handovers.map((h) => ({ id: uuidv7(), ...h })) } : {}),
-        evidence: captureEvidence(input.fix),
+        ...(input.trigger ? { trigger: input.trigger } : {}),
+        evidence: captureEvidence(input.fix, input.occurredAt),
       },
     },
+  };
+}
+
+export async function clockInFromPhone(
+  engine: SyncEngine,
+  input: ClockInStep,
+): Promise<{ entryId: string; outcome: ActionOutcome }> {
+  const entryId = uuidv7();
+  const op = await engine.enqueueAndSettle(clockInRequest(engine, entryId, input));
+  return { entryId, outcome: await outcomeOf(engine, op) };
+}
+
+export async function clockOutFromPhone(engine: SyncEngine, input: ClockOutStep): Promise<ActionOutcome> {
+  return outcomeOf(engine, await engine.enqueueAndSettle(clockOutRequest(engine, input)));
+}
+
+/**
+ * The automatic clock's arrival: the same clock-in, marked AUTO, dated when the
+ * member walked in, and held on the phone until they have stayed long enough.
+ * Not awaited for an answer — nobody is looking at a screen, and a held step
+ * has none to give yet.
+ */
+export async function autoClockInFromPhone(
+  engine: SyncEngine,
+  input: { locationId: string; fix: OccurrenceFix; at: Date; holdUntil: number },
+): Promise<{ entryId: string; opId: string }> {
+  const entryId = uuidv7();
+  const op = await engine.enqueue(
+    clockInRequest(engine, entryId, { locationId: input.locationId, fix: input.fix, trigger: 'AUTO', occurredAt: input.at, holdUntil: input.holdUntil }),
+  );
+  return { entryId, opId: op.id };
+}
+
+/** The automatic clock's departure: dated when the member LEFT, held until they have stayed out long enough. */
+export async function autoClockOutFromPhone(
+  engine: SyncEngine,
+  input: { entryId: string; fix?: OccurrenceFix | null; at: Date; holdUntil: number },
+): Promise<{ opId: string }> {
+  const op = await engine.enqueue(
+    clockOutRequest(engine, { entryId: input.entryId, fix: input.fix, trigger: 'AUTO', occurredAt: input.at, holdUntil: input.holdUntil }),
+  );
+  return { opId: op.id };
+}
+
+/**
+ * "Undo" on an automatic clock-in (a drive-past).
+ *
+ * Still on the phone — held for its dwell, or never answered — it is simply
+ * taken back: the server never hears of a shift that never was. Already sent,
+ * the undo is queued on the shift's own lane, so with no signal it still goes,
+ * after the clock-in, with the tap's own time for the server to judge the
+ * AUTO_CLOCK_UNDO_MINUTES window by.
+ */
+export async function undoAutoClockInFromPhone(engine: SyncEngine, input: { entryId: string }): Promise<ActionOutcome | { kind: 'withdrawn' }> {
+  const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
+  if (clockIn && (await engine.cancelPending(clockIn.id))) return { kind: 'withdrawn' };
+  const op = await engine.enqueueAndSettle({
+    op: 'attendance.autoUndo',
+    lane: laneOf(input.entryId),
+    entityId: input.entryId,
+    dependsOn: clockIn ? [clockIn.id] : [],
+    payload: { params: { entryId: input.entryId }, body: { evidence: captureEvidence() } },
+  });
+  return outcomeOf(engine, op);
+}
+
+/** "Still working" on the planned automatic rest — with or without signal. */
+export async function skipAutoRestFromPhone(engine: SyncEngine, input: { entryId: string }): Promise<ActionOutcome> {
+  const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
+  const op = await engine.enqueueAndSettle({
+    op: 'attendance.autoSkipRest',
+    lane: laneOf(input.entryId),
+    entityId: input.entryId,
+    dependsOn: clockIn ? [clockIn.id] : [],
+    payload: { params: { entryId: input.entryId }, body: { evidence: captureEvidence() } },
   });
   return outcomeOf(engine, op);
 }

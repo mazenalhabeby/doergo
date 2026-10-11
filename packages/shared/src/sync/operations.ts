@@ -49,6 +49,10 @@ export const SYNC_OPERATIONS = {
   'attendance.extraTime': { method: 'POST', path: '/attendance/entries/:entryId/request-extra-time' },
   // "When did you leave?" — for a forgotten clock-out, or one closed with a temporary time.
   'attendance.resolveClockOut': { method: 'POST', path: '/attendance/entries/:entryId/forgot-clock-out' },
+  // The automatic clock (attendance/auto-clock.ts): undo a drive-past, and "Still working" on the planned rest.
+  // Queued so a member in a hall with no signal can still say so; the server judges the tap's own time.
+  'attendance.autoUndo': { method: 'POST', path: '/attendance/entries/:entryId/auto-undo' },
+  'attendance.autoSkipRest': { method: 'POST', path: '/attendance/entries/:entryId/auto-rest/skip' },
   'overtime.respond': { method: 'POST', path: '/overtime/respond' },
   'overtime.approveSignature': { method: 'POST', path: '/overtime/:overtimeId/approve-signature' },
   'worklog.note': { method: 'POST', path: '/attendance/entries/:entryId/worklog' },

@@ -52,13 +52,19 @@ export interface OperationPreparer {
   release(ops: readonly OutboxOp[]): Promise<void>;
 }
 
-interface EnqueueInput {
+export interface EnqueueInput {
   op: SyncOperationName;
   lane: string;
   entityId?: string;
   dependsOn?: string[];
   payload: SyncOperationPayload;
   evidence?: OccurrenceEvidence;
+  /**
+   * Not to be sent before this moment (epoch ms) — and until then the phone may
+   * still take it back with `cancelPending`. The automatic clock's arrival
+   * waiting out its dwell; see `held` in outbox/types.ts.
+   */
+  holdUntil?: number;
 }
 
 export interface SyncSnapshot {
@@ -165,7 +171,9 @@ export class SyncEngine {
       dependsOn: input.dependsOn ?? [],
       payload: input.payload,
       evidence: input.evidence,
-      state: 'pending',
+      ...(input.holdUntil !== undefined && input.holdUntil > now
+        ? { state: 'held' as const, nextAttemptAt: input.holdUntil }
+        : { state: 'pending' as const }),
       attempts: 0,
       createdAt: now,
       updatedAt: now,
@@ -451,7 +459,7 @@ export class SyncEngine {
    */
   async cancelPending(id: string): Promise<boolean> {
     const op = await this.deps.store.get(id);
-    if (!op || (op.state !== 'pending' && op.state !== 'retry')) return false;
+    if (!op || (op.state !== 'pending' && op.state !== 'retry' && op.state !== 'held')) return false;
     if (op.attempts > 0 && !NEVER_REACHED_SERVER.has(op.lastError?.code ?? '')) return false;
     const cancelled: OutboxOp = { ...op, state: 'discarded', updatedAt: this.now() };
     await this.deps.store.save([cancelled]);

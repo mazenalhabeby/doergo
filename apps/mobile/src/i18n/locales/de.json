@@ -2735,7 +2735,10 @@
       "OVERTIME": "Überstunden",
       "UNSCHEDULED_DAY": "Nicht geplant",
       "MISSED_BREAK": "Pause verpasst",
-      "REMOTE_WITH_WORKSPACE": "Auswärts trotz Arbeitsbereich"
+      "REMOTE_WITH_WORKSPACE": "Auswärts trotz Arbeitsbereich",
+      "AUTO_CLOCK_IN": "Auto ein",
+      "AUTO_CLOCK_OUT": "Auto aus",
+      "AUTO_REST": "Auto-Pause"
     },
     "period": {
       "month": "30 Tage",
@@ -3164,7 +3167,9 @@
       "task_leave": "Auftrag verlassen",
       "task_selfIssue": "Mein Problem",
       "task_selfResume": "Weiterarbeiten",
-      "task_lead": "Leitung übergeben"
+      "task_lead": "Leitung übergeben",
+      "attendance_autoUndo": "Automatisches Einstempeln rückgängig",
+      "attendance_autoSkipRest": "Arbeite noch (keine automatische Pause)"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Ein vorheriger Schritt, von dem dies abhängt, wurde nicht übernommen.",
@@ -4471,7 +4476,8 @@
       "waitingRetry": "Der Server hat nicht geantwortet. Es wird automatisch erneut versucht.",
       "cantRemove": "Das hat den Server bereits erreicht und bleibt bestehen. Es wird von selbst abgeschlossen.",
       "tryNow": "Jetzt versuchen",
-      "remove": "Entfernen"
+      "remove": "Entfernen",
+      "waitingHeld": "Die automatische Stempeluhr sendet dies, sobald Sie lange genug geblieben sind."
     },
     "about": {
       "version": "Version",
@@ -4864,6 +4870,61 @@
       "carryExpires_other": "{{days}} übertragene Tage sind bis {{date}} nutzbar",
       "thisRequest_one": "Dieser Antrag · {{days}} Arbeitstag",
       "thisRequest_other": "Dieser Antrag · {{days}} Arbeitstage"
+    }
+  },
+  "autoClock": {
+    "title": "Automatische Stempeluhr",
+    "how": "So funktioniert es",
+    "toggle": "Automatisch ein- und ausstempeln",
+    "subOff": "Stempelt Sie ein, wenn Sie an Ihrem Arbeitsort ankommen, und aus, wenn Sie gehen. Nur wenn Sie es einschalten.",
+    "subOn_one": "An · {{count}} Arbeitsort wird beobachtet",
+    "subOn_other": "An · {{count}} Arbeitsorte werden beobachtet",
+    "subNotChosen": "An · Ihr Büro hat es für Sie noch nicht eingeschaltet",
+    "notOnThisPhone": "Auf diesem Telefon gerade nicht verfügbar.",
+    "needsAlways": "Standort muss auf „Immer“ stehen.",
+    "allowAlways": "Standort „Immer“ erlauben",
+    "turnedOn": "Automatische Stempeluhr ist an",
+    "turnedOff": "Automatische Stempeluhr ist aus",
+    "offline": "Zum Einschalten ist eine Verbindung nötig.",
+    "failed": "Konnte nicht geändert werden. Bitte versuchen Sie es erneut.",
+    "chip": "Automatisch",
+    "consent": {
+      "title": "Automatisch ein- und ausstempeln",
+      "whatTitle": "Was aufgezeichnet wird",
+      "what": "Nur der Moment, in dem Sie den Bereich eines Arbeitsortes betreten und verlassen, an dem Ihr Büro dies eingeschaltet hat. Nie eine Strecke und nie, wo Sie dazwischen sind.",
+      "whoTitle": "Wer es sieht",
+      "who": "Dieselben Personen, die heute Ihre Stempelungen sehen. Jeder automatische Schritt ist als „Automatisch“ gekennzeichnet.",
+      "undoTitle": "Nur vorbeigefahren",
+      "undo": "Sie erhalten eine Mitteilung mit „Rückgängig“ und haben {{minutes}} Minuten Zeit, es zurückzunehmen.",
+      "withdrawTitle": "Ausschalten",
+      "withdraw": "Sie können es hier jederzeit ausschalten. Es endet auf diesem Telefon sofort, auch ohne Empfang.",
+      "agree": "Einschalten",
+      "notNow": "Nicht jetzt"
+    },
+    "push": {
+      "clockedInTitle": "Automatisch eingestempelt",
+      "clockedInBody": "{{place}} · ab {{time}}. Nur vorbeigefahren? Innerhalb von {{minutes}} Minuten rückgängig machen.",
+      "arrivedTitle": "Sie sind bei {{place}} angekommen",
+      "arrivedBody": "Automatisches Einstempeln war nicht möglich. Tippen Sie, um einzustempeln.",
+      "restTitle": "Ihre Pause beginnt jetzt",
+      "restBody": "{{start}}–{{end}} ist als Ihre Pause geplant. Arbeiten Sie noch? Tippen Sie auf „Arbeite noch“.",
+      "endTitle": "Ihre Schicht endete um {{time}}",
+      "endBody": "Noch bei {{place}}? Stempeln Sie aus oder sagen Sie uns, dass Sie noch arbeiten.",
+      "undo": "Rückgängig",
+      "stillWorking": "Arbeite noch",
+      "clockOut": "Ausstempeln"
+    },
+    "result": {
+      "undone": "Automatisches Einstempeln rückgängig gemacht",
+      "undoQueued": "Rücknahme auf diesem Telefon gespeichert",
+      "tooLate": "Zu spät, um es hier rückgängig zu machen. Bitten Sie Ihr Büro um eine Korrektur.",
+      "restSkipped": "Keine automatische Pause für diese Schicht",
+      "restSkipQueued": "Auf diesem Telefon gespeichert: keine automatische Pause",
+      "extraSent": "Gesendet: Sie arbeiten noch",
+      "extraQueued": "Auf diesem Telefon gespeichert: Sie arbeiten noch",
+      "notYours": "Dies war für eine andere Person, die dieses Telefon benutzt hat.",
+      "failed": "Das hat nicht geklappt. Öffnen Sie die Stempeluhr und erledigen Sie es dort.",
+      "cannotUndo": "Diese Einstempelung kann hier nicht mehr rückgängig gemacht werden: Die Schicht ist abgeschlossen oder es ist bereits Arbeit erfasst. Bitten Sie Ihr Büro um eine Korrektur."
     }
   }
 }

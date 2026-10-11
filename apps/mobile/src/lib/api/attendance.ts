@@ -3,7 +3,7 @@ import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, Clo
 import type { BreakType } from './types';
 
 export type { NoShow } from '@hbcfield/shared/client';
-import type { NoShow } from '@hbcfield/shared/client';
+import type { AutoClockPlan, NoShow } from '@hbcfield/shared/client';
 
 // Attendance API - clock-in/clock-out
 export const attendanceApi = {
@@ -17,6 +17,16 @@ export const attendanceApi = {
 
   clockOut: async (input: ClockOutInput): Promise<TimeEntry> => {
     return call(E.attendance.clockOut, undefined, { body: input });
+  },
+
+  /** Where the automatic clock arms for the caller, today and tomorrow (services/auto-clock). 404 on an older server. */
+  autoClockPlan: async (): Promise<AutoClockPlan> => {
+    return call(E.attendance.autoClockPlan);
+  },
+
+  /** The member's own consent to the automatic clock; `false` withdraws it. */
+  autoClockConsent: async (consent: boolean): Promise<{ consentAt: string | null }> => {
+    return call(E.attendance.autoClockConsent, undefined, { body: { consent } });
   },
 
   heartbeat: async (input: { lat: number; lng: number; accuracy?: number }): Promise<{

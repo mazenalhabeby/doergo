@@ -2735,7 +2735,10 @@
       "OVERTIME": "Horas extra",
       "UNSCHEDULED_DAY": "Sin programar",
       "MISSED_BREAK": "Descanso perdido",
-      "REMOTE_WITH_WORKSPACE": "Remoto con espacio asignado"
+      "REMOTE_WITH_WORKSPACE": "Remoto con espacio asignado",
+      "AUTO_CLOCK_IN": "Entrada auto",
+      "AUTO_CLOCK_OUT": "Salida auto",
+      "AUTO_REST": "Descanso auto"
     },
     "period": {
       "month": "30 días",
@@ -3164,7 +3167,9 @@
       "task_leave": "Dejó un trabajo",
       "task_selfIssue": "Mi problema",
       "task_selfResume": "Volver al trabajo",
-      "task_lead": "Dirección pasada"
+      "task_lead": "Dirección pasada",
+      "attendance_autoUndo": "Deshacer fichaje automático",
+      "attendance_autoSkipRest": "Sigo trabajando (sin descanso automático)"
     },
     "errors": {
       "DEPENDENCY_FAILED": "No se aceptó un paso anterior del que depende.",
@@ -4471,7 +4476,8 @@
       "waitingRetry": "El servidor no respondió. Lo vuelve a intentar solo.",
       "cantRemove": "Esto ya llegó al servidor, así que se queda. Termina solo.",
       "tryNow": "Intentar ahora",
-      "remove": "Quitar"
+      "remove": "Quitar",
+      "waitingHeld": "El fichaje automático lo envía cuando te hayas quedado el tiempo suficiente."
     },
     "about": {
       "version": "Versión",
@@ -4864,6 +4870,61 @@
       "carryExpires_other": "{{days}} días traspasados se pueden usar hasta el {{date}}",
       "thisRequest_one": "Esta solicitud · {{days}} día laborable",
       "thisRequest_other": "Esta solicitud · {{days}} días laborables"
+    }
+  },
+  "autoClock": {
+    "title": "Fichaje automático",
+    "how": "Cómo funciona",
+    "toggle": "Fichar entrada y salida automáticamente",
+    "subOff": "Ficha tu entrada al llegar a tu lugar de trabajo y tu salida al irte. Solo si lo activas.",
+    "subOn_one": "Activado · vigilando {{count}} lugar de trabajo",
+    "subOn_other": "Activado · vigilando {{count}} lugares de trabajo",
+    "subNotChosen": "Activado · tu oficina aún no lo ha activado para ti",
+    "notOnThisPhone": "No disponible en este teléfono ahora mismo.",
+    "needsAlways": "La ubicación debe estar en «Siempre».",
+    "allowAlways": "Permitir ubicación «Siempre»",
+    "turnedOn": "El fichaje automático está activado",
+    "turnedOff": "El fichaje automático está desactivado",
+    "offline": "Para activarlo se necesita conexión.",
+    "failed": "No se pudo cambiar. Inténtalo de nuevo.",
+    "chip": "Automático",
+    "consent": {
+      "title": "Fichaje automático de entrada y salida",
+      "whatTitle": "Qué se registra",
+      "what": "Solo el momento en que entras y sales del área de un lugar de trabajo donde tu oficina lo ha activado. Nunca un recorrido ni dónde estás entre medias.",
+      "whoTitle": "Quién lo ve",
+      "who": "Las mismas personas que hoy ven tus fichajes. Cada paso automático aparece marcado como «Automático».",
+      "undoTitle": "Si solo pasabas por allí",
+      "undo": "Recibes una notificación con un botón Deshacer y tienes {{minutes}} minutos para anularlo.",
+      "withdrawTitle": "Desactivarlo",
+      "withdraw": "Puedes desactivarlo aquí en cualquier momento. Se detiene en este teléfono al instante, incluso sin cobertura.",
+      "agree": "Activar",
+      "notNow": "Ahora no"
+    },
+    "push": {
+      "clockedInTitle": "Entrada fichada automáticamente",
+      "clockedInBody": "{{place}} · desde las {{time}}. ¿Solo pasabas por allí? Deshazlo en {{minutes}} minutos.",
+      "arrivedTitle": "Has llegado a {{place}}",
+      "arrivedBody": "No se pudo fichar automáticamente. Toca para fichar la entrada.",
+      "restTitle": "Tu descanso empieza ahora",
+      "restBody": "{{start}}–{{end}} está previsto como tu descanso. ¿Sigues trabajando? Toca «Sigo trabajando».",
+      "endTitle": "Tu turno terminó a las {{time}}",
+      "endBody": "¿Sigues en {{place}}? Ficha la salida o dinos que sigues trabajando.",
+      "undo": "Deshacer",
+      "stillWorking": "Sigo trabajando",
+      "clockOut": "Fichar salida"
+    },
+    "result": {
+      "undone": "Fichaje automático de entrada anulado",
+      "undoQueued": "Anulación guardada en este teléfono",
+      "tooLate": "Demasiado tarde para deshacerlo aquí. Pide a tu oficina que lo corrija.",
+      "restSkipped": "Sin descanso automático en este turno",
+      "restSkipQueued": "Guardado en este teléfono: sin descanso automático",
+      "extraSent": "Enviado: sigues trabajando",
+      "extraQueued": "Guardado en este teléfono: sigues trabajando",
+      "notYours": "Esto era para otra persona que usó este teléfono.",
+      "failed": "No ha funcionado. Abre la pantalla de fichaje y hazlo allí.",
+      "cannotUndo": "Este fichaje ya no se puede deshacer aquí: el turno está cerrado o ya hay trabajo registrado. Pide a tu oficina que lo corrija."
     }
   }
 }

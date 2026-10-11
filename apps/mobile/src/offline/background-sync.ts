@@ -12,6 +12,7 @@ import { STUCK_AFTER_MS, stuckFor } from './outbox/stuck';
 import { connectivity, createOfflineRuntime } from './runtime';
 import { reportTelemetry } from './telemetry';
 import { notifyRefusedShifts } from './attendance/refused-shift-notify';
+import { autoClockWake } from '../services/auto-clock/context';
 
 /*
   Sending what waits, now and then, with the app closed.
@@ -96,6 +97,8 @@ export async function runOnce(): Promise<boolean> {
   if (!runtime) return true;
   try {
     await runtime.engine.flush();
+    // The automatic clock's held arrival or departure, once its dwell or grace has passed.
+    await autoClockWake({ using: { engine: runtime.engine, records: runtime.records } });
     await flushPendingRoute();
     await warnIfStuck(runtime.engine.operations());
     // A clock-in this run sent and the server refused: the member is told now, not when they next open the app.

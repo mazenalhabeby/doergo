@@ -5,12 +5,15 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { attendanceApi } from '../../lib/api/attendance';
-import { AText, Well, WellDivider } from '../amazen';
+import { AText, Chip, Well, WellDivider } from '../amazen';
 import { JobSheet, SectionLabel } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
 import { DateTileRow } from './date-tile-row';
 import { addDays, dayKey, statusOf } from './time-logic';
-import { formatDuration } from '@hbcfield/shared/client';
+import { AUTO_CLOCK_IN_FLAG, AUTO_CLOCK_OUT_FLAG, formatDuration } from '@hbcfield/shared/client';
+
+/** Made (in part) by the automatic clock — marked, never suspected (attendance/auto-clock.ts). */
+const isAutomatic = (e: TimeEntry) => (e.flagReasons ?? []).some((f) => f === AUTO_CLOCK_IN_FLAG || f === AUTO_CLOCK_OUT_FLAG);
 
 /** Counted minutes on one entry — the figure payroll reads, never called "paid". */
 const countedOf = (e: TimeEntry) => e.paidMinutes ?? e.totalMinutes ?? 0;
@@ -92,9 +95,12 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
       }
     >
       <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>{entry.location?.name ?? t('attendance.unknownLocation')}</AText>
-      <AText variant="caption" tone="muted" numeric numberOfLines={1}>
-        {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
-      </AText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
+        <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ flexShrink: 1 }}>
+          {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
+        </AText>
+        {isAutomatic(entry) ? <Chip label={t('autoClock.chip')} /> : null}
+      </View>
       <AText variant="caption" numberOfLines={1} style={{ color: notes ? c.accent : c.inkMuted, marginTop: 2 }}>
         {notes ? t('worklog.count', { count: notes, defaultValue: '{{count}} notes' }) : t('worklog.nothing', 'Nothing noted')}
       </AText>

@@ -23,6 +23,7 @@ jest.mock('../native', () => ({ loadBackgroundTask: () => null, loadNetInfo: () 
 const flush = jest.fn(async () => undefined);
 const createOfflineRuntime = jest.fn(async () => ({ engine: { flush, operations: () => [], stop: jest.fn() }, files: {} }));
 jest.mock('../runtime', () => ({ connectivity: { setUnmetered: jest.fn() }, createOfflineRuntime: (...a: unknown[]) => (createOfflineRuntime as jest.Mock)(...a) }));
+jest.mock('../../services/auto-clock/context', () => ({ autoClockWake: jest.fn(async () => undefined) }));
 jest.mock('../telemetry', () => ({ reportTelemetry: jest.fn(async () => undefined) }));
 jest.mock('../attendance/refused-shift-notify', () => ({ notifyRefusedShifts: jest.fn(async () => undefined) }));
 

@@ -203,7 +203,7 @@ describe('§1 — the eight states, and no ninth', () => {
     */
     const store = code('home/remember/store.ts');
     const hook = code('home/remember/use-remembered.ts');
-    const shift = code('offline/attendance/use-shift.ts');
+    const shift = code('offline/attendance/use-shift.ts') + code('offline/attendance/load-shift.ts');
     const totals = code('components/home/use-schedule-totals.ts');
 
     // A store that exists on every build — not the offline database.

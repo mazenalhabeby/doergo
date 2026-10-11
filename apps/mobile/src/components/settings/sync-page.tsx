@@ -10,7 +10,7 @@ import { useResponsive } from '../../lib/responsive';
 import { formatTimeOfDay } from '../../lib/utils';
 import { refusalInterpolation } from '../../lib/distance';
 import { useConnectivity, useOffline, useSyncStatus } from '../../offline/offline-context';
-import type { OutboxOp } from '../../offline/outbox/types';
+import { OPEN_STATES, type OutboxOp } from '../../offline/outbox/types';
 import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { Pill, SectionLabel } from '../job/job-ui';
@@ -57,7 +57,7 @@ export function SyncPage() {
     const since = Date.now() - DAY_MS;
     return {
       attention: operations.filter((o) => o.state === 'conflict' || o.state === 'failed'),
-      waiting: operations.filter((o) => ['pending', 'inflight', 'retry', 'awaiting_auth'].includes(o.state)),
+      waiting: operations.filter((o) => OPEN_STATES.has(o.state)),
       sent: operations.filter((o) => o.state === 'done' && o.updatedAt >= since).reverse(),
     };
   }, [operations]);
@@ -107,6 +107,7 @@ export function SyncPage() {
     if (code === 'WAITING_FOR_WIFI') return t('offline.errors.WAITING_FOR_WIFI');
     if (o.state === 'awaiting_auth') return t('settings.sync.waitingSignIn', 'Waiting for you to sign in again.');
     if (o.state === 'retry') return t('settings.sync.waitingRetry', "The server didn't answer. It tries again by itself.");
+    if (o.state === 'held') return t('settings.sync.waitingHeld', 'The automatic clock sends this once you have stayed long enough.');
     return null;
   };
   const removeWaiting = async (o: OutboxOp) => {
@@ -192,7 +193,7 @@ export function SyncPage() {
                 {groups.waiting.map((o, i) => {
                   const wifi = o.lastError?.code === 'WAITING_FOR_WIFI';
                   const why = waitingWhy(o);
-                  const removable = o.state === 'pending' || o.state === 'retry';
+                  const removable = o.state === 'pending' || o.state === 'retry' || o.state === 'held';
                   return (
                     <OpRow key={o.id} first={i === 0} centered title={label(o)} aside={<Pill label={wifi ? 'Wi-Fi' : t('offline.chip.waiting')} tone="warn" />}>
                       <AText variant="caption" tone="muted">{t('offline.sync.waitingSince', { time: time(o.createdAt) })}{why ? ` · ${why}` : ''}</AText>

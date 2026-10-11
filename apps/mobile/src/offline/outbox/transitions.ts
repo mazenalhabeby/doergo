@@ -6,6 +6,16 @@ import {
 } from '@hbcfield/shared/client';
 import type { OutboxOp, OutboxState } from './types';
 
+/**
+ * Answers that mean "nothing left to do" though they are not a success: the
+ * operation is dropped quietly instead of shown as refused.
+ *
+ * AUTO_CLOCK_UNDONE — a clock-in sent again after its owner undid it (the
+ * automatic clock, services/auto-clock). The member asked for it to be gone;
+ * telling them their clock-in was "not accepted" would be the opposite.
+ */
+const SETTLED_BY_SERVER: ReadonlySet<string> = new Set(['AUTO_CLOCK_UNDONE']);
+
 /** One outcome, applied. Pure: returns the new version of the operation. */
 function settle(op: OutboxOp, state: OutboxState, now: number, extra: Partial<OutboxOp> = {}): OutboxOp {
   return { ...op, ...extra, state, updatedAt: now };
@@ -30,6 +40,7 @@ export function applyPushResults(
     const error = result.code || result.message
       ? { code: result.code, message: result.message, ...(result.params ? { params: result.params } : {}) }
       : undefined;
+    if (result.code && SETTLED_BY_SERVER.has(result.code)) return settle(op, 'discarded', now, { response: result.body ?? result.current, lastError: error });
     switch (outboxOutcomeForResult(result)) {
       case 'done':
         return settle(op, 'done', now, { response: result.body, lastError: undefined });

@@ -8,6 +8,16 @@ import type { OccurrenceEvidence, SyncOperationName, SyncOperationPayload } from
  *                  │  ├──► conflict ──(member: Got it)──► discarded
  *                  │  ├──► failed ───(member: Discard)──► discarded
  *                  │  └──► awaiting_auth ──(same member signs in)──► pending
+ *
+ *   held ──(nextAttemptAt reached)──► sent like pending
+ *     └──(the phone changes its mind first: cancelPending)──► discarded
+ *
+ * ⚠️ `held` is a step the phone has DECIDED but may still take back — the
+ * automatic clock (services/auto-clock): an arrival is filed the moment the
+ * member walks in, with that moment as its time, and only sent once they have
+ * stayed long enough; walking out again first drops it, never sent. It is
+ * durable like everything else here, so a phone that is killed while it waits
+ * still sends it on the next wake.
  */
 export type OutboxState =
   | 'pending'
@@ -17,7 +27,9 @@ export type OutboxState =
   | 'conflict'
   | 'failed'
   | 'awaiting_auth'
-  | 'discarded';
+  | 'discarded'
+  /** Decided, not to be sent before `nextAttemptAt` — and still the phone's to take back. */
+  | 'held';
 
 export interface OutboxError {
   code?: string;
@@ -51,7 +63,7 @@ export interface OutboxOp {
 }
 
 /** States that still need the network. */
-export const OPEN_STATES: ReadonlySet<OutboxState> = new Set(['pending', 'inflight', 'retry', 'awaiting_auth']);
+export const OPEN_STATES: ReadonlySet<OutboxState> = new Set(['pending', 'inflight', 'retry', 'awaiting_auth', 'held']);
 /** States a member has to look at. */
 export const ATTENTION_STATES: ReadonlySet<OutboxState> = new Set(['conflict', 'failed']);
 

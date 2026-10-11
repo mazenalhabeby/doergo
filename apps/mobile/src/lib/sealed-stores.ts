@@ -24,6 +24,8 @@ export const WORKLOG_PREFIX = 'worklog_pending_';
 /** The route tracker's last point (jump check): `route_last_point:{owner}`. */
 export const LAST_POINT_KEY = 'route_last_point';
 export const lastPointKey = (owner: string) => `${LAST_POINT_KEY}:${owner}`;
+/** The automatic clock's plan and what it remembers of each visit: `auto_clock:{owner}`. */
+export const autoClockKey = (owner: string) => `auto_clock:${owner}`;
 
 const STORES = {
   /** Route points held from a dead zone, and the last point kept. */
@@ -37,6 +39,8 @@ const STORES = {
   worklog: (owner: string) => (all: readonly string[]) => all.filter((k) => k.startsWith(`${WORKLOG_PREFIX}${owner}:`)),
   /** The day's planned stops — clients' addresses and coordinates. */
   'route-plan': (owner: string) => (all: readonly string[]) => all.filter((k) => k === SAVED_ROUTE_KEY(owner)),
+  /** The automatic clock: where the member's workspaces are, when they walked in and out. */
+  'auto-clock': (owner: string) => (all: readonly string[]) => all.filter((k) => k === autoClockKey(owner)),
 } as const;
 
 export type SealedStoreName = keyof typeof STORES;

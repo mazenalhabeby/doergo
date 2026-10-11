@@ -59,7 +59,8 @@ export function selectBatch(
       if (batch.length >= max) break;
       if (op.state === 'conflict' || op.state === 'failed') continue; // does not hold the lane
       if (op.state === 'inflight' || op.state === 'awaiting_auth') break;
-      if (op.state === 'retry' && (op.nextAttemptAt ?? 0) > now) {
+      // A held step (the automatic clock) waits out its time like a retry waits out its backoff.
+      if ((op.state === 'retry' || op.state === 'held') && (op.nextAttemptAt ?? 0) > now) {
         wakeAt = Math.min(wakeAt ?? Infinity, op.nextAttemptAt!);
         break;
       }

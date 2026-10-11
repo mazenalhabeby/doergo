@@ -1,5 +1,8 @@
 import { OfflineProvider } from '../../src/offline/offline-context';
 import { RefusedShiftNotifier } from '../../src/offline/attendance/refused-shift-notifier';
+import { AutoClockHost } from '../../src/components/time/auto-clock-host';
+import { isAutoClockAction } from '../../src/services/auto-clock/notifications';
+import { runAutoClockAction } from '../../src/services/auto-clock/actions';
 import { OfflineSocketPoke } from '../../src/offline/components/offline-socket-poke';
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Stack, useRouter, useRootNavigationState, useSegments, Href } from 'expo-router';
@@ -189,6 +192,19 @@ export default function AppLayout() {
       });
       return;
     }
+    // An automatic-clock button (Undo, Still working, Clock out) — through the outbox, so it works without signal.
+    if (isAutoClockAction(response.actionIdentifier)) {
+      void runAutoClockAction(response.actionIdentifier, data, { userId: user?.id ?? null, deliveredAt }).then((r) => {
+        if (r === 'openClock') { setPendingTarget(notificationTarget(data, { managesIssues })); return; }
+        if (r === 'notYours') calendarToast.warning(t('autoClock.result.notYours'));
+        else if (r === 'failed') calendarToast.error(t('common.error', 'Error'), t('autoClock.result.failed'));
+        else if (r === 'tooLate') calendarToast.warning(t('autoClock.result.tooLate'));
+        else if (r === 'cannotUndo') calendarToast.warning(t('autoClock.result.cannotUndo'));
+        else if (r.endsWith('Queued')) calendarToast.info(t(`autoClock.result.${r}`), t('offline.savedForLater'));
+        else calendarToast.success(t(`autoClock.result.${r}`));
+      });
+      return;
+    }
     if (response.actionIdentifier === CREW_JOIN_ACTION) {
       /*
         "I'm with him": the job opens, and joins — the join is handed over in
@@ -257,6 +273,7 @@ export default function AppLayout() {
   return (
     <OfflineProvider>
     <RefusedShiftNotifier />
+    <AutoClockHost />
     <SocketProvider>
     <GlobalChatNotifier />
     <OfflineSocketPoke />

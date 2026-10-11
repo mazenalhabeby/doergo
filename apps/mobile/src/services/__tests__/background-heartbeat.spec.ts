@@ -16,6 +16,7 @@ jest.mock('../../lib/api', () => ({ attendanceApi: { heartbeat: jest.fn() } }));
 jest.mock('../../lib/api/client', () => ({ getAccessToken: jest.fn(async () => 't') }));
 jest.mock('../location-consent', () => ({ requestBackgroundLocationConsent: jest.fn(async () => true) }));
 jest.mock('../kept-check-ins', () => ({ keptCheckIns: { flush: jest.fn(async () => true), keep: jest.fn() } }));
+jest.mock('../auto-clock/context', () => ({ autoClockWake: jest.fn(async () => undefined) }));
 jest.mock('../../i18n', () => ({ __esModule: true, default: { t: (k: string) => `t:${k}` } }));
 
 import { newestFix, startBackgroundHeartbeat } from '../background-heartbeat';

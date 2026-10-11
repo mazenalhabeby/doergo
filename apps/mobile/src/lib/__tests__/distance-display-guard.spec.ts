@@ -38,7 +38,6 @@ const ALLOWED: { file: string; contains: string; why: string }[] = [
   { file: 'apps/api/notification-service/src/handlers/attendance-notification.handler.ts', contains: "${data.distanceM ?? '?'}m", why: 'log line for operators, not shown to anybody' },
   { file: 'apps/api/tracking-service/src/modules/location/location.service.ts', contains: 'distance=${Math.round(distance)}m', why: 'log line for operators' },
   { file: 'apps/api/task-service/src/modules/attendance/clock-out.service.ts', contains: 'distance=${data.distance}m, allowed=${data.allowedRadius}m', why: 'log line for operators' },
-  { file: 'apps/mobile/src/services/background-geofence.ts', contains: 'r=${radius}m', why: 'console diagnostic, never on screen' },
   { file: 'apps/web-app/src/app/(dashboard)/tasks/[id]/_components/route-tracking-section.tsx', contains: 'const km = distanceMeters / 1000', why: 'average SPEED (km/h), not a distance shown' },
   { file: 'apps/web-app/src/app/(dashboard)/locations/_components/space-form.tsx', contains: '{radius}m', why: 'the readout of the radius INPUT slider — the admin sets metres' },
 ];

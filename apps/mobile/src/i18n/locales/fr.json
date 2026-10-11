@@ -2735,7 +2735,10 @@
       "OVERTIME": "Heures sup.",
       "UNSCHEDULED_DAY": "Non planifié",
       "MISSED_BREAK": "Pause manquée",
-      "REMOTE_WITH_WORKSPACE": "À distance, a un espace"
+      "REMOTE_WITH_WORKSPACE": "À distance, a un espace",
+      "AUTO_CLOCK_IN": "Arrivée auto",
+      "AUTO_CLOCK_OUT": "Départ auto",
+      "AUTO_REST": "Pause auto"
     },
     "period": {
       "month": "30 jours",
@@ -3164,7 +3167,9 @@
       "task_leave": "Travail quitté",
       "task_selfIssue": "Mon problème",
       "task_selfResume": "Reprise",
-      "task_lead": "Direction passée"
+      "task_lead": "Direction passée",
+      "attendance_autoUndo": "Annuler le pointage automatique",
+      "attendance_autoSkipRest": "Je travaille encore (pas de pause automatique)"
     },
     "errors": {
       "DEPENDENCY_FAILED": "Une étape précédente dont cela dépend n'a pas été acceptée.",
@@ -4471,7 +4476,8 @@
       "waitingRetry": "Le serveur n'a pas répondu. Il réessaie tout seul.",
       "cantRemove": "Ceci a déjà atteint le serveur, il reste donc. Il se termine tout seul.",
       "tryNow": "Réessayer maintenant",
-      "remove": "Retirer"
+      "remove": "Retirer",
+      "waitingHeld": "Le pointage automatique l’envoie dès que vous êtes resté assez longtemps."
     },
     "about": {
       "version": "Version",
@@ -4864,6 +4870,61 @@
       "carryExpires_other": "{{days}} jours reportés utilisables jusqu’au {{date}}",
       "thisRequest_one": "Cette demande · {{days}} jour ouvré",
       "thisRequest_other": "Cette demande · {{days}} jours ouvrés"
+    }
+  },
+  "autoClock": {
+    "title": "Pointage automatique",
+    "how": "Comment ça marche",
+    "toggle": "Me pointer automatiquement à l’arrivée et au départ",
+    "subOff": "Vous pointe à votre arrivée sur votre lieu de travail et à votre départ. Seulement si vous l’activez.",
+    "subOn_one": "Activé · {{count}} lieu de travail surveillé",
+    "subOn_other": "Activé · {{count}} lieux de travail surveillés",
+    "subNotChosen": "Activé · votre bureau ne l’a pas encore activé pour vous",
+    "notOnThisPhone": "Pas disponible sur ce téléphone pour le moment.",
+    "needsAlways": "La localisation doit être réglée sur « Toujours ».",
+    "allowAlways": "Autoriser la localisation « Toujours »",
+    "turnedOn": "Le pointage automatique est activé",
+    "turnedOff": "Le pointage automatique est désactivé",
+    "offline": "L’activation nécessite une connexion.",
+    "failed": "Impossible de modifier. Veuillez réessayer.",
+    "chip": "Automatique",
+    "consent": {
+      "title": "Pointage automatique à l’arrivée et au départ",
+      "whatTitle": "Ce qui est enregistré",
+      "what": "Uniquement le moment où vous entrez dans la zone d’un lieu de travail où votre bureau l’a activé, et celui où vous en sortez. Jamais un trajet, ni l’endroit où vous êtes entre les deux.",
+      "whoTitle": "Qui le voit",
+      "who": "Les mêmes personnes qui voient vos pointages aujourd’hui. Chaque étape automatique est marquée « Automatique ».",
+      "undoTitle": "Simple passage",
+      "undo": "Vous recevez une notification avec un bouton Annuler et disposez de {{minutes}} minutes pour revenir dessus.",
+      "withdrawTitle": "Le désactiver",
+      "withdraw": "Vous pouvez le désactiver ici à tout moment. Il s’arrête aussitôt sur ce téléphone, même sans réseau.",
+      "agree": "Activer",
+      "notNow": "Pas maintenant"
+    },
+    "push": {
+      "clockedInTitle": "Pointé automatiquement",
+      "clockedInBody": "{{place}} · depuis {{time}}. Simple passage ? Annulez dans les {{minutes}} minutes.",
+      "arrivedTitle": "Vous êtes arrivé à {{place}}",
+      "arrivedBody": "Le pointage automatique n’a pas été possible. Touchez pour pointer.",
+      "restTitle": "Votre pause commence maintenant",
+      "restBody": "{{start}}–{{end}} est prévu comme votre pause. Vous travaillez encore ? Touchez « Je travaille encore ».",
+      "endTitle": "Votre service s’est terminé à {{time}}",
+      "endBody": "Toujours à {{place}} ? Pointez votre départ ou dites-nous que vous travaillez encore.",
+      "undo": "Annuler",
+      "stillWorking": "Je travaille encore",
+      "clockOut": "Pointer le départ"
+    },
+    "result": {
+      "undone": "Pointage automatique annulé",
+      "undoQueued": "Annulation enregistrée sur ce téléphone",
+      "tooLate": "Trop tard pour annuler ici. Demandez à votre bureau de corriger.",
+      "restSkipped": "Pas de pause automatique pour ce service",
+      "restSkipQueued": "Enregistré sur ce téléphone : pas de pause automatique",
+      "extraSent": "Envoyé : vous travaillez encore",
+      "extraQueued": "Enregistré sur ce téléphone : vous travaillez encore",
+      "notYours": "Ceci était destiné à une autre personne ayant utilisé ce téléphone.",
+      "failed": "Cela n’a pas fonctionné. Ouvrez l’écran de pointage pour le faire là.",
+      "cannotUndo": "Ce pointage ne peut plus être annulé ici : le service est clôturé ou du travail y est déjà enregistré. Demandez à votre bureau de corriger."
     }
   }
 }

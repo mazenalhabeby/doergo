@@ -31,6 +31,7 @@ import { TimeHistory } from './time-history';
 import { placesView } from './time-logic';
 import { TimeOffSection } from './time-off-section';
 import { TimePlaces } from './time-places';
+import { TimeAutoClock } from './time-auto-clock';
 import { TimeToday } from './time-today';
 import { TimeWeek } from './time-week';
 import { useMyTimeOff } from './use-my-time-off';
@@ -268,6 +269,8 @@ export function TimeScreen() {
         <TourTarget name="attendance-places">
           <TimePlaces tiles={tiles} />
         </TourTarget>
+
+        <TimeAutoClock />
 
         <TourTarget name="attendance-status">
           <TimeToday running={entry} finished={finishedToday} breaks={shift.breaks?.todayBreaks ?? []} />

@@ -2735,7 +2735,10 @@
       "OVERTIME": "Overtime",
       "UNSCHEDULED_DAY": "Unscheduled",
       "MISSED_BREAK": "Missed rest",
-      "REMOTE_WITH_WORKSPACE": "Remote, has a workspace"
+      "REMOTE_WITH_WORKSPACE": "Remote, has a workspace",
+      "AUTO_CLOCK_IN": "Auto in",
+      "AUTO_CLOCK_OUT": "Auto out",
+      "AUTO_REST": "Auto rest"
     },
     "period": {
       "month": "30 days",
@@ -3164,7 +3167,9 @@
       "task_leave": "Left a job",
       "task_selfIssue": "My issue",
       "task_selfResume": "Back to work",
-      "task_lead": "Lead handed over"
+      "task_lead": "Lead handed over",
+      "attendance_autoUndo": "Undo automatic clock-in",
+      "attendance_autoSkipRest": "Still working (no automatic rest)"
     },
     "errors": {
       "DEPENDENCY_FAILED": "An earlier step this depends on wasn't accepted.",
@@ -4471,7 +4476,8 @@
       "waitingRetry": "The server didn't answer. It tries again by itself.",
       "cantRemove": "This already reached the server, so it stays. It finishes by itself.",
       "tryNow": "Try now",
-      "remove": "Remove"
+      "remove": "Remove",
+      "waitingHeld": "The automatic clock sends this once you have stayed long enough."
     },
     "about": {
       "version": "Version",
@@ -4864,6 +4870,61 @@
       "carryExpires_other": "{{days}} carried days can be used until {{date}}",
       "thisRequest_one": "This request · {{days}} working day",
       "thisRequest_other": "This request · {{days}} working days"
+    }
+  },
+  "autoClock": {
+    "title": "Automatic clock",
+    "how": "How it works",
+    "toggle": "Clock me in and out automatically",
+    "subOff": "Clocks you in when you arrive at your workspace and out when you leave. Only if you switch it on.",
+    "subOn_one": "On · watching {{count}} workspace",
+    "subOn_other": "On · watching {{count}} workspaces",
+    "subNotChosen": "On · your office has not switched it on for you yet",
+    "notOnThisPhone": "Not available on this phone right now.",
+    "needsAlways": "Needs location set to “Always”.",
+    "allowAlways": "Allow location “Always”",
+    "turnedOn": "Automatic clock is on",
+    "turnedOff": "Automatic clock is off",
+    "offline": "Switching it on needs a connection.",
+    "failed": "Could not change it. Please try again.",
+    "chip": "Automatic",
+    "consent": {
+      "title": "Automatic clock-in and clock-out",
+      "whatTitle": "What is recorded",
+      "what": "Only the moment you enter and the moment you leave the area of a workspace where your office has switched this on. Never a route, and never where you are in between.",
+      "whoTitle": "Who sees it",
+      "who": "The same people who see your clock-ins today. Every automatic step is marked “Automatic”.",
+      "undoTitle": "Driving past by mistake",
+      "undo": "You get a notification with an Undo button and have {{minutes}} minutes to take it back.",
+      "withdrawTitle": "Switching it off",
+      "withdraw": "Switch it off here at any time. It stops on this phone at once, even without signal.",
+      "agree": "Switch on",
+      "notNow": "Not now"
+    },
+    "push": {
+      "clockedInTitle": "Clocked in automatically",
+      "clockedInBody": "{{place}} · from {{time}}. Only driving past? Undo within {{minutes}} minutes.",
+      "arrivedTitle": "You arrived at {{place}}",
+      "arrivedBody": "You could not be clocked in automatically. Tap to clock in.",
+      "restTitle": "Your rest starts now",
+      "restBody": "{{start}}–{{end}} is planned as your rest. Still working? Tap “Still working”.",
+      "endTitle": "Your shift ended at {{time}}",
+      "endBody": "Still at {{place}}? Clock out, or tell us you are still working.",
+      "undo": "Undo",
+      "stillWorking": "Still working",
+      "clockOut": "Clock out"
+    },
+    "result": {
+      "undone": "Automatic clock-in undone",
+      "undoQueued": "Undo saved on this phone",
+      "tooLate": "Too late to undo here. Ask your office to correct it.",
+      "restSkipped": "No automatic rest for this shift",
+      "restSkipQueued": "Saved on this phone: no automatic rest",
+      "extraSent": "Sent: you are still working",
+      "extraQueued": "Saved on this phone: you are still working",
+      "notYours": "This was for someone else who used this phone.",
+      "failed": "That did not work. Open the Clock screen to do it there.",
+      "cannotUndo": "This clock-in can no longer be undone here: the shift is closed or work is recorded on it. Ask your office to correct it."
     }
   }
 }

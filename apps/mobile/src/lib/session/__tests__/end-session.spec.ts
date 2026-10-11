@@ -25,6 +25,7 @@ const mocks = {
   stopHeartbeat: rec('heartbeat'),
   stopGeofence: rec('geofence'),
   forgetCheckIns: rec('check-ins'),
+  forgetAutoClock: rec('auto-clock'),
   unregisterSync: rec('background-sync'),
   destroyDb: rec('db:destroy'),
   destroyFiles: jest.fn((_id: string) => { calls.push('files:destroy'); }),
@@ -51,7 +52,8 @@ jest.mock('../../../services/background-route-tracking', () => ({
   forgetRouteData: () => mocks.forgetRoute(),
 }));
 jest.mock('../../../services/background-heartbeat', () => ({ stopBackgroundHeartbeat: () => mocks.stopHeartbeat() }));
-jest.mock('../../../services/background-geofence', () => ({ stopGeofence: () => mocks.stopGeofence() }));
+jest.mock('../../../services/background-geofence', () => ({ stopAllGeofences: () => mocks.stopGeofence() }));
+jest.mock('../../../services/auto-clock/plan', () => ({ forgetAutoClock: (id: string) => mocks.forgetAutoClock(id) }));
 jest.mock('../../../services/kept-check-ins', () => ({ keptCheckIns: { forgetAll: () => mocks.forgetCheckIns() } }));
 jest.mock('../../../offline/background-sync', () => ({ unregisterBackgroundSync: () => mocks.unregisterSync() }));
 jest.mock('../../../offline/db/database', () => ({ destroyOfflineDatabase: (id: string) => mocks.destroyDb(id) }));
@@ -80,7 +82,7 @@ beforeEach(() => {
   mocks.loadStoredUser.mockResolvedValue({ id: 'mike' });
 });
 
-const LOCAL_SESSION = ['inflight', 'tokens', 'responseCache:null', 'kept-widgets', 'route:forget', 'check-ins', 'background-sync', 'stored-user'];
+const LOCAL_SESSION = ['inflight', 'tokens', 'responseCache:null', 'kept-widgets', 'route:forget', 'check-ins', 'auto-clock', 'background-sync', 'stored-user'];
 const LOCAL_DATA = [
   'legacy:forget', 'db:destroy', 'files:destroy', 'media:destroy', 'async-storage:remove:pending_avatar_v1_mike',
   'async-storage:remove:route_plan_v1_mike', 'secure:forget:mike',

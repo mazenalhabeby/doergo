@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type * as Location from 'expo-location';
-import { getFix } from '../lib/location-fix';
+import { evidenceFix, getFix } from '../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import type { CompanyLocation } from '../lib/api';
 import { useAuth } from '../contexts/auth-context';
@@ -23,15 +23,7 @@ interface Coords {
   mocked?: boolean;
 }
 
-function coordsOf(loc: Location.LocationObject): Coords {
-  return {
-    lat: loc.coords.latitude,
-    lng: loc.coords.longitude,
-    accuracy: loc.coords.accuracy || 0,
-    fixAt: new Date(loc.timestamp).toISOString(),
-    mocked: loc.mocked,
-  };
-}
+const coordsOf = (loc: Location.LocationObject): Coords => evidenceFix(loc);
 
 /**
  * Single source of truth for the mobile clock-in flow — GPS acquisition, the
