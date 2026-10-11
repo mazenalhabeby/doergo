@@ -4,6 +4,7 @@ import { useRouteAccess } from "@/hooks/use-route-access"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useQuery, keepPreviousData } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import {
@@ -16,7 +17,7 @@ import {
   startOfWeek,
   subMonths,
 } from "date-fns"
-import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { AlertCircle, CalendarDays, ChevronLeft, ChevronRight, House, RefreshCw } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { calendarApi, employeesApi, type OrgTimeOffRequest } from "@/lib/api"
@@ -24,16 +25,22 @@ import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { SpaceTabs } from "@/components/space-tabs"
 import { useSpaceScope } from "@/hooks/use-space-scope"
+import { useLatched } from "@/hooks/use-latched"
+import { PAGE_WIDTH } from "@/components/ui/page-width"
 import { cn } from "@/lib/utils"
 
 import { FloorNowPanel } from "./_components/floor-now-panel"
 import { LeaveWallchart } from "./_components/leave-wallchart"
-import { LeaveDecisionDrawer } from "./_components/leave-decision-drawer"
+// The drawer is a decision somebody may never open — loaded when they do.
+const LeaveDecisionDrawer = dynamic(
+  () => import("./_components/leave-decision-drawer").then((m) => m.LeaveDecisionDrawer),
+  { ssr: false },
+)
 import { COVER_TONE } from "./_lib/cover-labels"
 import { keys } from "@/lib/query-keys"
 
 /**
- * Schedule & Time Off — one page, two questions.
+ * Schedule & Requests — one page, two questions.
  *
  *   who is working RIGHT NOW      → the live floor panel
  *   who wants to be off LATER     → the wallchart, decided in place
@@ -200,6 +207,7 @@ export default function ScheduleAndTimeOffPage() {
   }, [pending, spaces, space])
 
   const selected = selectedId ? requests.find((r) => r.id === selectedId) ?? null : null
+  const drawerMounted = useLatched(!!selected)
 
   // Whichever read failed first. Any of the three leaves the page unable to say
   // anything true, so all three are worth reporting rather than drawing blank.
@@ -214,8 +222,8 @@ export default function ScheduleAndTimeOffPage() {
   if (!canManage) {
     return (
       <div className="min-h-full bg-background">
-        <div className="mx-auto max-w-screen-xl px-6 py-8">
-          <div className="rounded-xl border border-border/80 bg-card p-12 text-center shadow-sm">
+        <div className={cn(PAGE_WIDTH, "py-6")}>
+          <div className="rounded-2xl border border-border bg-card p-12 text-center">
             <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
             <h3 className="mb-2 text-lg font-medium text-foreground">
               {t("technicians.availabilityPage.accessDenied")}
@@ -235,7 +243,7 @@ export default function ScheduleAndTimeOffPage() {
   return (
     <TooltipProvider>
       <div className="min-h-full bg-background">
-        <div className="mx-auto max-w-screen-xl px-6 py-8">
+        <div className={cn(PAGE_WIDTH, "py-6")}>
           <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 data-tour="page-availability" className="text-2xl font-semibold tracking-tight text-foreground">
@@ -247,7 +255,7 @@ export default function ScheduleAndTimeOffPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex rounded-lg border border-border bg-card p-0.5" role="group">
+              <div className="inline-flex rounded-xl border bg-muted/40 p-0.5" role="group">
                 {(["fortnight", "month"] as const).map((r) => (
                   <button
                     key={r}
@@ -255,8 +263,8 @@ export default function ScheduleAndTimeOffPage() {
                     aria-pressed={range === r}
                     onClick={() => setRange(r)}
                     className={cn(
-                      "h-8 rounded-md px-3 text-[13px] font-medium transition",
-                      range === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                      "h-7 rounded-lg px-3 text-[13px] font-medium text-muted-foreground transition hover:text-foreground",
+                      range === r && "bg-background text-foreground shadow-sm ring-1 ring-border",
                     )}
                   >
                     {r === "fortnight" ? t("cover.range.fortnight", "2 weeks") : t("cover.range.month", "Month")}
@@ -265,20 +273,20 @@ export default function ScheduleAndTimeOffPage() {
               </div>
 
               {/* The calendar's counterpart to its Team button — always here, opening on the period on screen. */}
-              <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 rounded-lg bg-card">
+              <Button asChild variant="outline" size="sm" className="h-8 gap-1.5">
                 <Link href={`/calendar?date=${format(anchor, "yyyy-MM-dd")}`}>
                   <CalendarDays className="h-4 w-4" />
                   {t("nav.sidebar.calendar")}
                 </Link>
               </Button>
-              <Button variant="outline" size="sm" className="h-9 rounded-lg bg-card" onClick={() => setAnchor(new Date())}>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>
                 {t("common.today")}
               </Button>
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg bg-card" onClick={() => step(-1)} aria-label={t("common.previous", "Previous")}>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => step(-1)} aria-label={t("common.previous", "Previous")}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="min-w-[10.5rem] text-center text-sm font-semibold text-foreground">{rangeLabel}</span>
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg bg-card" onClick={() => step(1)} aria-label={t("common.next", "Next")}>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => step(1)} aria-label={t("common.next", "Next")}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -293,10 +301,10 @@ export default function ScheduleAndTimeOffPage() {
             it cost a round trip to diagnose something the screen already knew.
           */}
           {loadError && (
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
-              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+            <div className="mb-4 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                <p className="text-sm font-semibold text-destructive">
                   {t("cover.error.title", "This page could not load")}
                 </p>
                 <p className="mt-0.5 text-[12.5px] text-muted-foreground">
@@ -306,7 +314,7 @@ export default function ScheduleAndTimeOffPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 bg-card"
+                className="shrink-0"
                 onClick={() => {
                   void floorQuery.refetch()
                   void leaveQuery.refetch()
@@ -397,12 +405,18 @@ export default function ScheduleAndTimeOffPage() {
               <i className="h-3 w-5 rounded-sm border border-amber-500/80 bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)] dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]" />
               {t("cover.legend.pending", "Pending — yours to decide")}
             </span>
+            <span className="inline-flex items-center gap-2">
+              <i className="inline-flex h-4 items-center rounded-full border border-dashed border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300">
+                <House className="h-2.5 w-2.5" />
+              </i>
+              {t("requests.legendNotLeave")}
+            </span>
             <span>{t("cover.legend.counts", "Cover counts only people rostered that day")}</span>
           </div>
         </div>
       </div>
 
-      <LeaveDecisionDrawer request={selected} canManage={canDecide} onClose={() => setSelectedId(null)} />
+      {drawerMounted && <LeaveDecisionDrawer request={selected} canManage={canDecide} onClose={() => setSelectedId(null)} />}
     </TooltipProvider>
   )
 }
@@ -419,7 +433,7 @@ function Stat({
   sub: string
 }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="flex items-center gap-3.5 rounded-2xl border border-border bg-card p-4">
       <span className={cn("text-[26px] font-bold leading-none tabular-nums", n ? COVER_TONE[tone].text : "text-foreground")}>
         {n}
       </span>

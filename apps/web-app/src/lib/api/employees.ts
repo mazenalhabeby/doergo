@@ -2,7 +2,20 @@ import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
 import type { CoverRangeSpace, FloorSpace, LeaveBalance, OrgTimeOffRequest, ScheduleEntry, ScheduleEntryInput, TimeOffRequest, TimeOffStatus } from './types/employees';
 import type { Task } from './types/tasks';
-import { employeesEndpoints, timeOffEndpoints, type CompanyLocation, type CreateEmployeeInput, type EmployeeListItem, type EmployeeProfile, type EmployeeStats, type EmployeesQueryParams, type PerformanceMetrics, type TimeEntry, type UpdateEmployeeInput } from '@hbcfield/shared/client';
+import { LEAVE_ONLY_OPTIONS, normalizeRequestOptions, type RequestOptions } from '../requests';
+import { defineEndpoints, endpoint, employeesEndpoints, timeOffEndpoints, type RequestInput, type CompanyLocation, type CreateEmployeeInput, type EmployeeListItem, type EmployeeProfile, type EmployeeStats, type EmployeesQueryParams, type PerformanceMetrics, type TimeEntry, type UpdateEmployeeInput } from '@hbcfield/shared/client';
+
+/**
+ * GET /employees/me/request-options — the kinds the caller may ask for, and the
+ * workspaces a remote day may be filed under.
+ *
+ * Defined HERE, beside its one caller, until the shared endpoint table carries
+ * it: when `timeOffEndpoints` gains the entry, `getRequestOptions` swaps this
+ * for it in one line and nothing else moves.
+ */
+const requestOptionsEndpoints = defineEndpoints('webRequests', {
+  options: endpoint<void, unknown>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
+})
 
 // ============================================================================
 // EMPLOYEES API
@@ -253,8 +266,20 @@ export const employeesApi = {
     return response.data?.data ?? null;
   },
 
-  // Request time off
-  requestTimeOff: async (id: string, data: { startDate: string; endDate: string; reason?: string; type?: string }) => {
+  /**
+   * What the caller may ask for here. A server without the route (404) — or one
+   * that cannot answer — still lets a member ask for leave, which is what this
+   * page always offered.
+   */
+  getRequestOptions: async (): Promise<RequestOptions> => {
+    const response = await call(requestOptionsEndpoints.options) as ApiResponse<{ success: boolean; data: unknown }>;
+    if (response.status === 404) return LEAVE_ONLY_OPTIONS;
+    if (response.error) throw apiError(response);
+    return normalizeRequestOptions(response.data?.data ?? response.data);
+  },
+
+  // Send a request — any kind (leave, remote, hours, overtime, other), as `parseRequestInput` shaped it.
+  requestTimeOff: async (id: string, data: RequestInput | { startDate: string; endDate: string; reason?: string; type?: string }) => {
     const response = await call(timeOffEndpoints.request, { employeeId: id }, { body: data }) as ApiResponse<{
       success: boolean;
       data: TimeOffRequest;

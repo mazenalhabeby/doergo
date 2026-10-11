@@ -59,6 +59,8 @@ export interface UpdateLocationInput {
   noShiftDailyMinutes?: number;
   /** The staffing floor. 0 = no floor set, which is not "nobody needed". */
   minCover?: number;
+  /** The request kinds members may send here (requests/request-kinds.ts). Empty = every kind. */
+  requestKinds?: string[];
   kind?: string;
   contactName?: string | null;
   contactEmail?: string | null;

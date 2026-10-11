@@ -849,7 +849,7 @@
       "billing": "Facturación",
       "issues": "Incidencias de turno",
       "myDocuments": "Mis documentos",
-      "timeOff": "Solicitudes de vacaciones",
+      "timeOff": "Solicitudes",
       "calendar": "Calendario",
       "colleagues": "Compañeros"
     },
@@ -865,7 +865,7 @@
     "spaces": "Espacios de trabajo",
     "customers": "Clientes",
     "reports": "Informes",
-    "timeOff": "Solicitudes de vacaciones",
+    "timeOff": "Solicitudes",
     "manage": "Gestionar",
     "shop": "Tienda",
     "team": "Miembros del equipo",
@@ -913,7 +913,7 @@
       "distribution": "Distribución",
       "noDataYet": "Aún no hay datos",
       "recentActivity": "Actividad reciente",
-      "timeOffRequests": "Solicitudes de ausencia",
+      "timeOffRequests": "Solicitudes",
       "pendingRequests": "{{count}} pendiente{{plural}} de aprobación",
       "more": "+{{count}} más",
       "createTask": "Crear tarea",
@@ -948,7 +948,7 @@
       "createANewTask": "Crear una nueva tarea",
       "distribution": "Distribución",
       "noDataYet": "Aún no hay datos",
-      "timeOffRequests": "Solicitudes de ausencia",
+      "timeOffRequests": "Solicitudes",
       "pendingRequests": "{{count}} pendiente{{plural}} de aprobación",
       "more": "+{{count}} más",
       "recentActivity": "Actividad reciente",
@@ -2270,7 +2270,7 @@
         "attendance": "Asistencia",
         "locations": "Ubicaciones",
         "schedule": "Horario",
-        "timeOff": "Ausencias",
+        "timeOff": "Solicitudes",
         "performance": "Rendimiento"
       }
     },
@@ -2330,7 +2330,8 @@
         "clockOutProvisional": "Salida sin confirmar",
         "pastDailyLimit": "Por encima del límite diario",
         "missedRest": "Descanso perdido",
-        "remoteWithWorkspace": "Remoto con espacio asignado"
+        "remoteWithWorkspace": "Remoto con espacio asignado",
+        "approvedRemote": "Remoto · aprobado de antemano"
       }
     },
     "locationsTab": {
@@ -2372,11 +2373,11 @@
       }
     },
     "timeOffTab": {
-      "title": "Ausencias",
-      "description": "Gestiona las solicitudes de ausencia de este empleado",
-      "requestTimeOff": "Solicitar ausencia",
+      "title": "Solicitudes",
+      "description": "Ausencias y otras solicitudes de este miembro",
+      "requestTimeOff": "Añadir ausencia",
       "requestDialog": {
-        "title": "Solicitar ausencia",
+        "title": "Añadir ausencia",
         "description": "Selecciona las fechas y, si quieres, indica un motivo.",
         "dateRangeLabel": "Rango de fechas",
         "selectDates": "Selecciona las fechas",
@@ -2390,23 +2391,23 @@
       "statusColumn": "Estado",
       "reviewedByColumn": "Revisado por",
       "days": "día(s)",
-      "noRequests": "No se encontraron solicitudes de ausencia",
-      "submittedSuccessfully": "Solicitud de ausencia enviada",
-      "approvedSuccessfully": "Solicitud de ausencia aprobada",
-      "rejectedSuccessfully": "Solicitud de ausencia rechazada",
-      "canceledSuccessfully": "Solicitud de ausencia cancelada",
+      "noRequests": "No se encontraron solicitudes",
+      "submittedSuccessfully": "Solicitud enviada",
+      "approvedSuccessfully": "Solicitud aprobada",
+      "rejectedSuccessfully": "Solicitud rechazada",
+      "canceledSuccessfully": "Solicitud cancelada",
       "failedToSubmit": "No se pudo enviar la solicitud",
       "failedToApprove": "No se pudo aprobar la solicitud",
       "failedToReject": "No se pudo rechazar la solicitud",
       "failedToCancel": "No se pudo cancelar la solicitud",
       "cancelRequest": "Cancelar solicitud",
       "approveDialog": {
-        "title": "Aprobar ausencia",
-        "description": "¿Aprobar esta solicitud de ausencia para {{dates}}?"
+        "title": "Aprobar solicitud",
+        "description": "¿Aprobar esta solicitud para {{dates}}?"
       },
       "rejectDialog": {
-        "title": "Rechazar ausencia",
-        "description": "Rechaza la solicitud de ausencia para {{dates}}.",
+        "title": "Rechazar solicitud",
+        "description": "Rechazar la solicitud para {{dates}}.",
         "reasonLabel": "Motivo (opcional)",
         "reasonPlaceholder": "Indica un motivo para el rechazo"
       }
@@ -2427,7 +2428,7 @@
       "hoursWorked": "Horas trabajadas"
     },
     "availabilityPage": {
-      "title": "Horario y ausencias",
+      "title": "Horario y solicitudes",
       "subtitle": "Gestiona la disponibilidad, los horarios y las solicitudes de ausencia de los empleados",
       "calendarTab": "Calendario",
       "timeOffTab": "Solicitudes de ausencia",
@@ -2458,8 +2459,8 @@
       "rejectTimeOffTitle": "Rechazar solicitud de ausencia",
       "approveTimeOffDescription": "¿Aprobar la solicitud de ausencia de {{name}}?",
       "rejectTimeOffDescription": "¿Rechazar la solicitud de ausencia de {{name}}?",
-      "approvedSuccessfully": "Solicitud de ausencia aprobada",
-      "rejectedSuccessfully": "Solicitud de ausencia rechazada",
+      "approvedSuccessfully": "Solicitud aprobada",
+      "rejectedSuccessfully": "Solicitud rechazada",
       "failedToProcess": "No se pudo procesar la solicitud",
       "approve": "Aprobar",
       "reject": "Rechazar",
@@ -3262,9 +3263,9 @@
     "clockOutAction": "Salida registrada",
     "crmReminder": "Seguimiento de cliente pendiente",
     "signatureNeeded": "Se necesita tu firma",
-    "timeOffRequest": "Solicitud de vacaciones",
-    "timeOffApproved": "Vacaciones aprobadas",
-    "timeOffRejected": "Vacaciones no aprobadas",
+    "timeOffRequest": "Nueva solicitud",
+    "timeOffApproved": "Solicitud aprobada",
+    "timeOffRejected": "Solicitud no aprobada",
     "assetExpenseSubmitted": "Un gasto por confirmar",
     "assetExpenseSubmittedBody": "{{author}} envió {{category}} de {{asset}}",
     "assetExpenseAccepted": "Gasto aceptado",
@@ -4462,7 +4463,7 @@
     "featureTabs": {
       "tasks": "Tareas",
       "clock": "Fichaje",
-      "timeOff": "Ausencias"
+      "timeOff": "Solicitudes"
     },
     "platforms": {
       "webOnly": "Solo web",
@@ -4640,7 +4641,7 @@
     "recent": "Reciente",
     "activity": "Actividad",
     "attendance": "Asistencia",
-    "timeOff": "Ausencias",
+    "timeOff": "Solicitudes",
     "message": "Mensaje",
     "voiceCall": "Llamada de voz",
     "videoCall": "Videollamada",
@@ -4665,16 +4666,16 @@
       "submitError": "No se pudo enviar la solicitud",
       "canceledToast": "Solicitud cancelada",
       "cancelError": "No se pudo cancelar",
-      "noAccess": "No tienes acceso a Ausencias.",
-      "title": "Ausencias",
-      "subtitle": "Elija un motivo, seleccione las fechas y envíelo para aprobación.",
+      "noAccess": "No tienes acceso a Solicitudes.",
+      "title": "Solicitudes",
+      "subtitle": "Pide una ausencia, un día en remoto, otro horario u horas extra, y mira en qué punto está cada solicitud.",
       "newRequest": "Nueva solicitud",
       "from": "Desde",
       "to": "Hasta",
       "reasonPlaceholder": "Motivo (opcional) — p. ej. vacaciones, baja por enfermedad, personal",
       "requestButton": "Solicitar vacaciones",
       "myRequests": "Mis solicitudes",
-      "noRequests": "Aún no hay solicitudes de vacaciones.",
+      "noRequests": "Aún no hay solicitudes.",
       "rejectedReason": "Rechazada: {{reason}}",
       "stepReason": "¿Por qué se ausenta?",
       "stepDates": "¿Qué días?",
@@ -5921,7 +5922,7 @@
         "body": "Un registro de los pagos recibidos por tus facturas."
       },
       "myTimeoff": {
-        "title": "Tus ausencias",
+        "title": "Tus solicitudes",
         "body": "Solicita vacaciones o baja y sigue las aprobaciones — elige fechas, añade un motivo y envía."
       },
       "invitations": {
@@ -6113,7 +6114,7 @@
           "body": "Inicia y termina tu turno aquí, y consulta las horas que has registrado."
         },
         "timeOff": {
-          "title": "Ausencias",
+          "title": "Solicitudes",
           "body": "Solicita vacaciones o días de baja y comprueba si te los han aprobado."
         },
         "command": {
@@ -6541,11 +6542,11 @@
       }
     },
     "myTimeoffTour": {
-      "title": "Solicitar ausencia",
+      "title": "Enviar una solicitud",
       "steps": {
         "intro": {
-          "title": "Ausencias",
-          "body": "Solicita días libres y sigue el estado de cada solicitud — todo desde aquí."
+          "title": "Solicitudes",
+          "body": "Pide desde aquí una ausencia, un día en remoto, otro horario u horas extra, y sigue cada solicitud."
         },
         "form": {
           "title": "Nueva solicitud",
@@ -9320,7 +9321,19 @@
     "REMOTE_NOT_FOR_ASSIGNED": "Está asignado a un espacio de trabajo. Fiche allí, en el sitio o fuera si su espacio lo permite.",
     "SHIFT_ONLY_WITHOUT_SHIFTS": "«Solo con turno» requiere un espacio que planifique turnos. Elija primero un modelo de turnos.",
     "CLOCK_OUT_BEFORE_CLOCK_IN": "La salida debe ser posterior a la entrada.",
-    "ENTRY_TIME_INVALID": "Introduzca horas válidas."
+    "ENTRY_TIME_INVALID": "Introduzca horas válidas.",
+    "REQUEST_KIND_INVALID": "Este tipo de solicitud no existe.",
+    "REQUEST_DATES_INVALID": "Elige fechas válidas: el fin no puede ser anterior al inicio y este tipo cubre un solo día.",
+    "REQUEST_TYPE_INVALID": "Elige un motivo para la ausencia.",
+    "REQUEST_SPACE_REQUIRED": "Elige el espacio de trabajo del día en remoto.",
+    "REQUEST_TIME_INVALID": "Indica una nueva hora de inicio o de fin; el fin debe ser posterior al inicio.",
+    "REQUEST_MINUTES_INVALID": "Las horas extra deben estar entre 15 minutos y 12 horas.",
+    "REQUEST_REASON_REQUIRED": "Escribe lo que solicitas.",
+    "REQUEST_REASON_TOO_LONG": "El motivo es demasiado largo: menos de 500 caracteres.",
+    "REQUEST_TOO_MANY_DAYS": "Una solicitud en remoto puede cubrir como máximo 31 días.",
+    "REQUEST_REMOTE_NOT_ALLOWED": "No tienes permiso para trabajar fuera del lugar, así que no puedes pedir un día en remoto.",
+    "REQUEST_SPACE_NOT_YOURS": "Ese espacio de trabajo no es uno de los tuyos.",
+    "REQUEST_KIND_NOT_OFFERED": "Este tipo de solicitud no está disponible en tu espacio de trabajo."
   },
   "signLink": {
     "tabs": {
@@ -9964,7 +9977,7 @@
     "openJob": "Abrir trabajo",
     "openClient": "Abrir cliente",
     "openDocuments": "Documentos",
-    "openTimeOff": "Ausencias",
+    "openTimeOff": "Solicitudes",
     "estimated": "estimado",
     "requested": "solicitado",
     "holiday": "Festivo",
@@ -10047,7 +10060,7 @@
     "declineLeave": "Rechazar",
     "declineReason": "Motivo (opcional)",
     "openSchedule": "Abrir en Horario",
-    "kindTimeOff": "Ausencia",
+    "kindTimeOff": "Solicitud",
     "kindJob": "Trabajo",
     "client": "Cliente",
     "clientNone": "Sin cliente",
@@ -10218,5 +10231,89 @@
     "employerHelp": "La empresa que figura en sus contratos y documentos.",
     "filterAll": "Todas las empresas",
     "column": "Empresa"
+  },
+  "requests": {
+    "kinds": {
+      "LEAVE": {
+        "label": "Ausencia",
+        "hint": "Vacaciones, enfermedad, familia u otra ausencia.",
+        "effect": "Si se aprueba, estos días se marcan como ausencia."
+      },
+      "REMOTE": {
+        "label": "Día en remoto",
+        "hint": "Trabajar fuera del lugar para un espacio de trabajo, acordado de antemano.",
+        "effect": "Si se aprueba, el fichaje de ese día no irá a revisión."
+      },
+      "HOURS": {
+        "label": "Otro horario",
+        "hint": "Empezar más tarde o terminar antes un día.",
+        "effect": "Si se aprueba, ese día se espera el nuevo inicio o fin, sin marca de retraso ni de salida anticipada."
+      },
+      "OVERTIME": {
+        "label": "Horas extra",
+        "hint": "Tiempo extra en un día, acordado antes de trabajarlo.",
+        "effect": "Si se aprueba, cuenta ese día sin una nueva solicitud al final del turno."
+      },
+      "OTHER": {
+        "label": "Otra",
+        "hint": "Cualquier otra cosa: explica con tus palabras lo que necesitas.",
+        "effect": "Aprobarla registra la respuesta; nada más cambia por sí solo."
+      }
+    },
+    "duration": {
+      "hoursMinutes": "{{h}} h {{m}} min",
+      "hours": "{{h}} h",
+      "minutes": "{{m}} min"
+    },
+    "detail": {
+      "hoursBoth": "{{start}} – {{end}}",
+      "hoursStart": "desde las {{start}}",
+      "hoursEnd": "hasta las {{end}}",
+      "overtime": "+{{duration}}"
+    },
+    "form": {
+      "kindQuestion": "¿Qué quieres solicitar?",
+      "workspace": "Espacio de trabajo",
+      "workspacePlaceholder": "Elige un espacio de trabajo",
+      "startAt": "Empezar a las",
+      "finishAt": "Terminar a las",
+      "hoursHint": "Rellena uno o ambos. Una hora vacía mantiene la habitual del día.",
+      "howLong": "Cuánto tiempo",
+      "less": "Menos",
+      "more": "Más",
+      "whatRequired": "¿Qué necesitas?",
+      "reasonOptional": "Motivo (opcional)",
+      "reasonPlaceholder": {
+        "REMOTE": "p. ej. espero una entrega en casa",
+        "HOURS": "p. ej. cita médica por la mañana",
+        "OVERTIME": "p. ej. terminar la instalación en el cliente",
+        "OTHER": "Explica lo que solicitas"
+      },
+      "send": "Enviar solicitud",
+      "sentTitle": "Solicitud enviada",
+      "pickDayHint": "Elige el día en el calendario"
+    },
+    "legendNotLeave": "Otra solicitud (no es ausencia)",
+    "drawer": {
+      "asked": "Qué se solicita",
+      "mayWorkAway": "Puede trabajar fuera del lugar",
+      "mayWorkAwayChecked": "Comprobado al enviarla",
+      "mayWorkAwayNo": "No, ahora mismo no",
+      "newHours": "Nuevo horario",
+      "usualHours": "Lo habitual ese día",
+      "noUsualHours": "Sin semana laboral definida",
+      "overtime": "Tiempo extra",
+      "kind": "Tipo",
+      "balance": "Días de vacaciones",
+      "balanceNow": "Quedan ahora",
+      "balanceAfter": "Quedarían si se aprueba",
+      "daysLeft_one": "{{count}} de {{total}} día",
+      "daysLeft_other": "{{count}} de {{total}} días"
+    },
+    "settings": {
+      "title": "Solicitudes que los miembros pueden enviar aquí",
+      "subtitle": "Desactiva los tipos de solicitud que este espacio no usa. Se guarda al momento.",
+      "note": "Al menos un tipo queda activo. Los días en remoto solo se ofrecen a quienes pueden trabajar fuera del lugar."
+    }
   }
 }

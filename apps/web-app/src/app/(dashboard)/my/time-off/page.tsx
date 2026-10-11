@@ -13,10 +13,18 @@ import { Button } from "@/components/ui/button"
 import { ProgressRing } from "@/components/progress-ring"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
-import { hasAccessModule, localDateKey } from "@hbcfield/shared/client"
+import { hasAccessModule, localDateKey, type LeaveType } from "@hbcfield/shared/client"
 import type { TimeOffRequest } from "@hbcfield/shared"
 import { keys } from "@/lib/query-keys"
 import { formatMediumDate, formatMonthYear } from "@/lib/format-date"
+import { serverErrorMessage } from "@/lib/server-error"
+import { useRequestOptions } from "@/hooks/use-request-options"
+import {
+  LEAVE_TYPE_REASON_KEY, absencesOnly, draftToRequest, isAbsence, isOneDayKind, requestDetail, requestKindEffectKey,
+  type RequestKind,
+} from "@/lib/requests"
+import { RequestKindChip, RequestKindPicker } from "@/components/requests/request-kind"
+import { RequestFields, type RequestFieldsValue } from "@/components/requests/request-fields"
 
 /*
   Leave products lead with three things: allowance remaining, who else is away,
@@ -108,13 +116,12 @@ const REASON_TYPES = [
 ] as const
 type ReasonKey = (typeof REASON_TYPES)[number]["key"]
 
-/** UI key → stored enum. Only VACATION is deducted from the allowance. */
-const REASON_TO_TYPE: Record<ReasonKey, string> = {
-  vacation: "VACATION",
-  sickLeave: "SICK",
-  family: "FAMILY",
-  other: "OTHER",
-}
+/** UI key → stored enum (the inverse of the shared web map). Only VACATION is deducted from the allowance. */
+const REASON_TO_TYPE = Object.fromEntries(
+  Object.entries(LEAVE_TYPE_REASON_KEY).map(([type, key]) => [key, type]),
+) as Record<ReasonKey, LeaveType>
+
+const EMPTY_FIELDS: RequestFieldsValue = { spaceId: "", startTime: "", endTime: "", minutes: 60, reason: "" }
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING: "text-amber-700 bg-amber-100 dark:text-amber-400 dark:bg-amber-500/15",
@@ -161,6 +168,14 @@ function bookedDays(list: TimeOffRequest[]): Map<string, TimeOffRequest> {
   return map
 }
 
+/*
+  Requests — this page grew from "time off" into everything a member asks the
+  person responsible for them: leave, a remote day, a changed day, overtime
+  agreed in advance, anything else. The kind is chosen FIRST; leave keeps every
+  part of the old form (reason cards, working-day cost, clash warning), the
+  other kinds swap in their own few fields. Validity is asked of the shared
+  parser, so the button refuses exactly what the server would.
+*/
 export default function MyTimeOffPage() {
   const { t } = useTranslation()
   const { user } = useAuth()
@@ -174,6 +189,9 @@ export default function MyTimeOffPage() {
     CANCELED: t("common.canceled"),
   }
 
+  const options = useRequestOptions(canSee)
+  const [kind, setKind] = useState<RequestKind>("LEAVE")
+  const [fields, setFields] = useState<RequestFieldsValue>(EMPTY_FIELDS)
   const [reasonType, setReasonType] = useState<ReasonKey | null>(null)
   const [notes, setNotes] = useState("")
   const [rangeStart, setRangeStart] = useState<Date | null>(null)
@@ -192,6 +210,15 @@ export default function MyTimeOffPage() {
       setRangeStart(d); setRangeEnd(d); setCursor(startOfDay(d))
     }
   }, [])
+
+  // A kind the server no longer offers (a workspace changed its list) falls back to the first it does.
+  useEffect(() => {
+    if (options.ready && !options.kinds.includes(kind)) setKind(options.kinds[0] ?? "LEAVE")
+  }, [options.ready, options.kinds, kind])
+  // One workspace a remote day can go to: chosen for you.
+  useEffect(() => {
+    if (options.remoteSpaces.length === 1 && !fields.spaceId) setFields((f) => ({ ...f, spaceId: options.remoteSpaces[0]!.id }))
+  }, [options.remoteSpaces, fields.spaceId])
 
   const today = startOfDay(new Date())
   const weeks = useMemo(() => monthGrid(cursor.getFullYear(), cursor.getMonth()), [cursor])
@@ -212,8 +239,10 @@ export default function MyTimeOffPage() {
     qc.invalidateQueries({ queryKey: keys.timeOff.myBalance(user?.id) })
   }
 
-  const list: TimeOffRequest[] = (requests as TimeOffRequest[]) ?? []
+  const list = useMemo<TimeOffRequest[]>(() => (requests as TimeOffRequest[]) ?? [], [requests])
+  // Every request marks its days on the calendar; only LEAVE can clash with leave.
   const booked = useMemo(() => bookedDays(list), [list])
+  const bookedLeave = useMemo(() => bookedDays(absencesOnly(list)), [list])
 
   // Real figures only — every one is derived from the person's own requests.
   const stats = useMemo(() => {
@@ -224,6 +253,8 @@ export default function MyTimeOffPage() {
     for (const r of list) {
       if (r.status === "PENDING") pending++
       if (r.status === "REJECTED" || r.status === "CANCELED") continue
+      // Days off are leave only — a remote day or a changed day is a day worked.
+      if (!isAbsence(r.kind)) continue
       const s = startOfDay(new Date(r.startDate))
       const e = startOfDay(new Date(r.endDate))
       // What it COSTS (weekends and holidays left out); old rows without a count fall back to the span.
@@ -235,45 +266,60 @@ export default function MyTimeOffPage() {
 
   const reset = () => {
     setReasonType(null); setNotes(""); setRangeStart(null); setRangeEnd(null); setHovered(null)
+    setFields((f) => ({ ...EMPTY_FIELDS, spaceId: options.remoteSpaces.length === 1 ? f.spaceId : "" }))
   }
+
+  const chooseKind = (next: RequestKind) => {
+    setKind(next)
+    // A changed day and agreed overtime are ONE day: keep the first day picked.
+    if (isOneDayKind(next) && rangeStart) setRangeEnd(rangeStart)
+  }
+
+  /*
+    The request as the shared parser reads it. Leave's reason is composed
+    exactly as the phone composes it, from the same four keys.
+  */
+  const draft = useMemo(() => {
+    const leaveLabel = reasonType ? t(`timeOff.reasonTypes.${reasonType}`) : ""
+    const reason = kind === "LEAVE"
+      ? (notes.trim() ? `${leaveLabel}: ${notes.trim()}` : leaveLabel)
+      : fields.reason
+    return draftToRequest({
+      kind,
+      startDate: rangeStart ? toISO(rangeStart) : null,
+      endDate: rangeEnd ? toISO(rangeEnd) : rangeStart ? toISO(rangeStart) : null,
+      leaveType: reasonType ? REASON_TO_TYPE[reasonType] : null,
+      spaceId: fields.spaceId,
+      startTime: fields.startTime,
+      endTime: fields.endTime,
+      minutes: kind === "OVERTIME" ? fields.minutes : null,
+      reason,
+    })
+  }, [kind, reasonType, notes, fields, rangeStart, rangeEnd, t])
 
   const createMut = useMutation({
     mutationFn: () => {
-      // Composed exactly as mobile composes it, from the same four keys.
-      const label = t(`timeOff.reasonTypes.${reasonType}`)
-      const reason = notes.trim() ? `${label}: ${notes.trim()}` : label
-      return employeesApi.requestTimeOff(user!.id, {
-        startDate: toISO(rangeStart!),
-        endDate: toISO(rangeEnd ?? rangeStart!),
-        reason,
-        type: REASON_TO_TYPE[reasonType!],
-      })
+      if (!draft.ok) throw new Error(t(`serverErrors.${draft.code}`))
+      return employeesApi.requestTimeOff(user!.id, draft.value)
     },
     onSuccess: () => {
-      notify.success(t("timeOff.my.requestedTitle"), t("timeOff.my.requestedDesc"))
+      notify.success(t("requests.form.sentTitle"), t("timeOff.my.requestedDesc"))
       reset(); refetch()
     },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("timeOff.my.submitError")),
+    onError: (e) => notify.error(serverErrorMessage(e, t) || t("timeOff.my.submitError")),
   })
 
   const cancelMut = useMutation({
     mutationFn: (id: string) => employeesApi.cancelTimeOff(id),
     onSuccess: () => { notify.success(t("timeOff.my.canceledToast")); refetch() },
-    onError: (e) => notify.error(e instanceof Error ? e.message : t("timeOff.my.cancelError")),
+    onError: (e) => notify.error(serverErrorMessage(e, t) || t("timeOff.my.cancelError")),
   })
-
-  if (!canSee) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
-        {t("timeOff.my.noAccess")}
-      </div>
-    )
-  }
 
   // One click books a day; a second extends it either way. Single-day is the
   // common case, so it is the default rather than a mode to pick first.
   const pickDay = (d: Date) => {
     if (d < today) return
+    if (isOneDayKind(kind)) { setRangeStart(d); setRangeEnd(d); return }
     if (!rangeStart || (rangeStart && rangeEnd)) { setRangeStart(d); setRangeEnd(null); return }
     if (sameDay(d, rangeStart)) { setRangeEnd(d); return }
     if (d < rangeStart) { setRangeEnd(rangeStart); setRangeStart(d) } else { setRangeEnd(d) }
@@ -293,21 +339,33 @@ export default function MyTimeOffPage() {
   const { data: cost } = useQuery({
     queryKey: keys.timeOff.count(user?.id, rangeStart ? toISO(rangeStart) : null, selectedEnd ? toISO(selectedEnd) : null),
     queryFn: () => calendarApi.countLeave(user!.id, toISO(rangeStart!), toISO(selectedEnd!)),
-    enabled: !!user?.id && !!rangeStart && !!selectedEnd,
+    // Only leave costs working days — nothing to ask for any other kind.
+    enabled: kind === "LEAVE" && !!user?.id && !!rangeStart && !!selectedEnd,
     staleTime: 60_000,
   })
 
   // Caught before submitting rather than after a manager rejects it.
   const clash = useMemo(() => {
-    if (!rangeStart || !selectedEnd) return null
+    if (kind !== "LEAVE" || !rangeStart || !selectedEnd) return null
     for (let d = rangeStart; d <= selectedEnd; d = addDays(d, 1)) {
-      const hit = booked.get(toISO(d))
+      const hit = bookedLeave.get(toISO(d))
       if (hit) return hit
     }
     return null
-  }, [rangeStart, selectedEnd, booked])
+  }, [kind, rangeStart, selectedEnd, bookedLeave])
 
-  const canSubmit = !!reasonType && !!rangeStart && !clash && !createMut.isPending
+  const canSubmit = draft.ok && (kind !== "LEAVE" || !!reasonType) && !clash && !createMut.isPending
+  // Said once there are dates to judge; muted — it is guidance, not a refusal yet.
+  const problem = rangeStart && !draft.ok ? t(`serverErrors.${draft.code}`) : null
+  // After every hook — an early return above them changes the hook order between renders.
+  if (!canSee) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
+        {t("timeOff.my.noAccess")}
+      </div>
+    )
+  }
+
   const weekdays = t("timeOff.my.weekdays", { defaultValue: "Mo,Tu,We,Th,Fr,Sa,Su" }).split(",")
   const monthLabel = formatMonthYear(cursor)
 
@@ -416,8 +474,11 @@ export default function MyTimeOffPage() {
                       where the question is asked, not on a list further down. */}
                   {book && !edge && (
                     <span className={cn(
-                      "absolute bottom-1 h-1 w-1 rounded-full",
-                      book.status === "APPROVED" ? "bg-green-500" : "bg-amber-500",
+                      "absolute bottom-1 rounded-full",
+                      isAbsence(book.kind)
+                        ? cn("h-1 w-1", book.status === "APPROVED" ? "bg-green-500" : "bg-amber-500")
+                        // Not a day off — a ring, so it never reads as leave.
+                        : cn("h-1.5 w-1.5 border", book.status === "APPROVED" ? "border-green-500" : "border-amber-500"),
                     )} />
                   )}
                 </button>
@@ -429,11 +490,29 @@ export default function MyTimeOffPage() {
             <Legend className="bg-green-500" label={t("timeOff.my.legendApproved")} />
             <Legend className="bg-amber-500" label={t("timeOff.my.legendPending")} />
             <Legend className="bg-primary" label={t("timeOff.my.legendSelected")} />
+            {options.kinds.length > 1 && (
+              <Legend className="border border-muted-foreground bg-transparent" label={t("requests.legendNotLeave")} />
+            )}
           </div>
         </section>
 
         {/* ── Request ──────────────────────────────────────────────── */}
         <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+          {options.kinds.length > 1 && (
+            <div className="mb-4 border-b border-border pb-4">
+              <h2 className="mb-2.5 text-sm font-semibold text-foreground">{t("requests.form.kindQuestion")}</h2>
+              <RequestKindPicker kinds={options.kinds} value={kind} onChange={chooseKind} />
+            </div>
+          )}
+          {kind !== "LEAVE" ? (
+            <RequestFields
+              kind={kind}
+              value={fields}
+              onChange={(patch) => setFields((f) => ({ ...f, ...patch }))}
+              remoteSpaces={options.remoteSpaces}
+            />
+          ) : (
+          <>
           <h2 className="text-sm font-semibold text-foreground">{t("timeOff.my.stepReason")}</h2>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {REASON_TYPES.map(({ key, glyph: Glyph }) => {
@@ -480,6 +559,8 @@ export default function MyTimeOffPage() {
               />
             </div>
           </div>
+          </>
+          )}
 
           <div className={cn("grid transition-all duration-300 ease-out",
             rangeStart ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
@@ -489,12 +570,16 @@ export default function MyTimeOffPage() {
                   {rangeStart && fmt(toISO(rangeStart))}
                   {rangeEnd && !sameDay(rangeEnd, rangeStart!) && <> → {fmt(toISO(rangeEnd))}</>}
                 </p>
+                {kind === "LEAVE" ? (
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {cost && cost.counted !== cost.calendarDays
                     ? t("timeOff.my.workingDayCount", { count: cost.counted, total: cost.calendarDays })
                     : t("timeOff.my.dayCount", { count: cost?.counted ?? dayCount })}
                 </p>
-                {cost && (cost.restDays > 0 || cost.holidays.length > 0) && (
+                ) : !isOneDayKind(kind) && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">{t("timeOff.my.dayCount", { count: dayCount })}</p>
+                )}
+                {kind === "LEAVE" && cost && (cost.restDays > 0 || cost.holidays.length > 0) && (
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {[
                       cost.restDays > 0 ? t("timeOff.my.restDaysLeftOut", { count: cost.restDays }) : null,
@@ -503,6 +588,13 @@ export default function MyTimeOffPage() {
                   </p>
                 )}
               </div>
+              {kind !== "LEAVE" && (
+                /* What approving it will do — said BEFORE sending, the same words the manager reads. */
+                <p className="rounded-xl border border-border bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
+                  {t(requestKindEffectKey(kind))}
+                </p>
+              )}
+              {problem && <p className="px-1 text-xs text-muted-foreground">{problem}</p>}
               {clash && (
                 <p className="flex items-start gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
@@ -519,16 +611,18 @@ export default function MyTimeOffPage() {
               {createMut.isPending
                 ? <Loader2 className="mr-2 size-4 animate-spin" />
                 : <Check className="mr-2 size-4" />}
-              {t("timeOff.my.requestButton")}
+              {t("requests.form.send")}
             </Button>
-            {(reasonType || rangeStart) && (
+            {(reasonType || rangeStart || fields.reason) && (
               <Button variant="ghost" size="sm" onClick={reset} disabled={createMut.isPending}>
                 {t("common.clear", { defaultValue: "Clear" })}
               </Button>
             )}
           </div>
           {!rangeStart && (
-            <p className="mt-2 text-center text-xs text-muted-foreground">{t("timeOff.my.pickDaysHint")}</p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {isOneDayKind(kind) ? t("requests.form.pickDayHint") : t("timeOff.my.pickDaysHint")}
+            </p>
           )}
         </section>
       </div>
@@ -548,9 +642,15 @@ export default function MyTimeOffPage() {
               <li key={r.id}
                 className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/30">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {fmt(r.startDate)}{r.endDate !== r.startDate && <> → {fmt(r.endDate)}</>}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {fmt(r.startDate)}{r.endDate.slice(0, 10) !== r.startDate.slice(0, 10) && <> → {fmt(r.endDate)}</>}
+                    </p>
+                    {(options.kinds.length > 1 || !isAbsence(r.kind)) && <RequestKindChip kind={r.kind} />}
+                    {!isAbsence(r.kind) && requestDetail(r, t) && (
+                      <span className="text-xs text-muted-foreground">{requestDetail(r, t)}</span>
+                    )}
+                  </div>
                   {r.reason && <p className="mt-0.5 truncate text-xs text-muted-foreground">{r.reason}</p>}
                   {r.status === "REJECTED" && r.rejectionReason && (
                     <p className="mt-1 text-xs text-red-600 dark:text-red-400">

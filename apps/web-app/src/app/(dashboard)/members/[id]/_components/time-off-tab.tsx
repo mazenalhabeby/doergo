@@ -58,6 +58,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
+import { serverErrorMessage } from "@/lib/server-error"
+import { isAbsence, requestDetail } from "@/lib/requests"
+import { RequestKindChip } from "@/components/requests/request-kind"
 
 const STATUS_PILLS: Record<
   TimeOffStatus,
@@ -123,7 +126,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       notify.success(t('technicians.timeOffTab.submittedSuccessfully'))
     },
     onError: (error: Error) => {
-      notify.error(error.message || t('technicians.timeOffTab.failedToSubmit'))
+      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToSubmit'))
     },
   })
 
@@ -136,7 +139,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       notify.success(t('technicians.timeOffTab.approvedSuccessfully'))
     },
     onError: (error: Error) => {
-      notify.error(error.message || t('technicians.timeOffTab.failedToApprove'))
+      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToApprove'))
     },
   })
 
@@ -155,7 +158,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       notify.success(t('technicians.timeOffTab.rejectedSuccessfully'))
     },
     onError: (error: Error) => {
-      notify.error(error.message || t('technicians.timeOffTab.failedToReject'))
+      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToReject'))
     },
   })
 
@@ -167,7 +170,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
       notify.success(t('technicians.timeOffTab.canceledSuccessfully'))
     },
     onError: (error: Error) => {
-      notify.error(error.message || t('technicians.timeOffTab.failedToCancel'))
+      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToCancel'))
     },
   })
 
@@ -185,7 +188,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
           <Skeleton className="h-8 w-8 rounded-lg" />
           <div className="space-y-1.5">
@@ -210,7 +213,7 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
 
   return (
     <>
-      <div className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="px-5 py-4 border-b border-border/60 flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <CalendarOff className="h-4 w-4" />
@@ -330,14 +333,22 @@ export function TimeOffTab({ employeeId, canManage }: TimeOffTabProps) {
                   className="px-5 py-3.5 hover:bg-accent/40 transition-colors flex items-center gap-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {formatDate(request.startDate)} - {formatDate(request.endDate)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {formatDate(request.startDate)}
+                        {request.endDate.slice(0, 10) !== request.startDate.slice(0, 10) && <> – {formatDate(request.endDate)}</>}
+                      </p>
+                      <RequestKindChip kind={request.kind} />
+                    </div>
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex-shrink-0">
-                        {getDurationDays(request.startDate, request.endDate, request.workingDays)}{" "}
-                        {t('technicians.timeOffTab.days')}
-                      </span>
+                      {isAbsence(request.kind) ? (
+                        <span className="flex-shrink-0">
+                          {getDurationDays(request.startDate, request.endDate, request.workingDays)}{" "}
+                          {t('technicians.timeOffTab.days')}
+                        </span>
+                      ) : requestDetail(request, t) ? (
+                        <span className="flex-shrink-0">{requestDetail(request, t)}</span>
+                      ) : null}
                       {request.reason && (
                         <>
                           <span className="text-muted-foreground/40">·</span>

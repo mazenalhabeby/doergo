@@ -10,6 +10,8 @@ import { useTranslation } from "react-i18next"
 import type { FloorSpace, OrgTimeOffRequest } from "@/lib/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { isAbsence, requestDetail, requestKindLabelKey, requestKindOf } from "@/lib/requests"
+import { REQUEST_KIND_ICON } from "@/components/requests/request-kind"
 import { COVER_TONE, coverMark, coverShort } from "../_lib/cover-labels"
 
 /** One workspace's cover for every visible day, from the server's own rule. */
@@ -27,6 +29,10 @@ interface CoverRangeSpace {
  * then switching to a calendar to work out who would be left — and the calendar
  * could not answer, because it drew only APPROVED leave and so never showed the
  * effect of the decision being made.
+ *
+ * ONLY LEAVE IS A BAR. A remote day, a changed day or agreed overtime is a day
+ * WORKED, so it is drawn as a thin outlined marker along the foot of the row —
+ * visible and decidable from here, never mistaken for somebody being off.
  *
  * Approved is SOLID, pending is HATCHED. Texture rather than hue, deliberately:
  * that leaves colour free to mean one thing only — how cover stands — so red on
@@ -74,15 +80,17 @@ export function LeaveWallchart({
 
   /** Leave that is still on the books, indexed by person. Decided-and-refused
    *  rows are history and would only clutter the chart. */
-  const barsByPerson = useMemo(() => {
-    const map = new Map<string, OrgTimeOffRequest[]>()
+  const { barsByPerson, marksByPerson } = useMemo(() => {
+    const bars = new Map<string, OrgTimeOffRequest[]>()
+    const marks = new Map<string, OrgTimeOffRequest[]>()
     for (const r of requests) {
       if (r.status !== "APPROVED" && r.status !== "PENDING") continue
+      const map = isAbsence(r.kind) ? bars : marks
       const list = map.get(r.technicianId) ?? []
       list.push(r)
       map.set(r.technicianId, list)
     }
-    return map
+    return { barsByPerson: bars, marksByPerson: marks }
   }, [requests])
 
   const coverBySpace = useMemo(
@@ -119,7 +127,7 @@ export function LeaveWallchart({
 
   if (isLoading) {
     return (
-      <div className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-3">
+      <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
         {[...Array(6)].map((_, i) => (
           <Skeleton key={i} className="h-10 w-full rounded-lg" />
         ))}
@@ -138,7 +146,7 @@ export function LeaveWallchart({
   */
   if (!spaces.some((s) => s.people.length) && !unassigned.length) {
     return (
-      <div className="rounded-xl border border-border bg-card p-12 text-center shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-12 text-center">
         <Users className="mx-auto mb-3 h-9 w-9 text-muted-foreground" strokeWidth={1.5} />
         <p className="text-sm font-medium text-foreground">
           {t("cover.chart.emptyTitle", "Nobody to show here")}
@@ -159,7 +167,7 @@ export function LeaveWallchart({
   const isWeekend = restingFn(restDays, holidays)
 
   return (
-    <div className={cn("bg-card rounded-xl border border-border shadow-sm overflow-hidden", selected && "is-focused")}>
+    <div className={cn("overflow-hidden rounded-2xl border border-border bg-card", selected && "is-focused")}>
       <div className="overflow-x-auto">
         <div className="min-w-max">
           {/* Dates */}
@@ -210,6 +218,7 @@ export function LeaveWallchart({
                 todayKey={todayKey}
                 template={template}
                 barsByPerson={barsByPerson}
+                marksByPerson={marksByPerson}
                 cover={c}
                 selected={selected}
                 selectedInThisSpace={
@@ -233,6 +242,7 @@ export function LeaveWallchart({
               todayKey={todayKey}
               template={template}
               barsByPerson={barsByPerson}
+              marksByPerson={marksByPerson}
               cover={undefined}
               selected={selected}
               selectedInThisSpace={false}
@@ -257,6 +267,7 @@ function SpaceBlock({
   todayKey,
   template,
   barsByPerson,
+  marksByPerson,
   cover,
   selected,
   selectedInThisSpace,
@@ -273,6 +284,7 @@ function SpaceBlock({
   todayKey: string
   template: React.CSSProperties
   barsByPerson: Map<string, OrgTimeOffRequest[]>
+  marksByPerson: Map<string, OrgTimeOffRequest[]>
   cover?: CoverRangeSpace
   selected: OrgTimeOffRequest | null
   selectedInThisSpace: boolean
@@ -286,7 +298,8 @@ function SpaceBlock({
 
   /** Would the selected request take this day's count down? */
   const projected = (dayKey: string, working: number): number | null => {
-    if (!selected || !selectedInThisSpace) return null
+    // Only leave moves the count — a remote day leaves the floor as it was.
+    if (!selected || !selectedInThisSpace || !isAbsence(selected.kind)) return null
     if (dayKey < selected.startDate.slice(0, 10) || dayKey > selected.endDate.slice(0, 10)) return null
     const d = selected.cover?.days?.find((x) => x.day === dayKey)
     return d ? d.then : working
@@ -310,6 +323,7 @@ function SpaceBlock({
 
       {people.map((p) => {
         const bars = barsByPerson.get(p.id) ?? []
+        const marks = marksByPerson.get(p.id) ?? []
         return (
           <div key={p.id} className="grid border-b border-border last:border-b-0" style={template}>
             <div className="sticky left-0 z-10 flex min-h-[2.9rem] items-center gap-2 border-r border-border bg-card px-3 py-1.5">
@@ -392,6 +406,42 @@ function SpaceBlock({
                 >
                   {label}
                 </div>
+              )
+            })}
+
+            {marks.map((m) => {
+              const from = m.startDate.slice(0, 10)
+              const to = m.endDate.slice(0, 10)
+              if (to < dayKeys[0]! || from > dayKeys[dayKeys.length - 1]!) return null
+              const startIdx = dayKeys.indexOf(from) === -1 ? 0 : dayKeys.indexOf(from)
+              const endIdx = dayKeys.indexOf(to) === -1 ? dayKeys.length - 1 : dayKeys.indexOf(to)
+              const pending = m.status === "PENDING"
+              const k = requestKindOf(m.kind)
+              const Icon = REQUEST_KIND_ICON[k]
+              const detail = requestDetail(m, t)
+              const tip = `${personName(p)} — ${t(requestKindLabelKey(k))}${detail ? ` (${detail})` : ""} · ${format(parseISO(m.startDate), "d MMM")}${
+                from !== to ? ` – ${format(parseISO(m.endDate), "d MMM")}` : ""
+              } · ${pending ? t("cover.chart.pendingTip", "pending — click to decide") : t("common.approved")}`
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  title={tip}
+                  aria-label={tip}
+                  onClick={() => onSelect(m.id)}
+                  style={{ gridColumn: `${startIdx + 2} / ${endIdx + 3}` }}
+                  className={cn(
+                    "row-start-1 z-[3] mx-0.5 mb-0.5 flex h-4 items-center gap-1 self-end overflow-hidden whitespace-nowrap rounded-full border bg-card px-1 text-[10px] font-medium transition hover:-translate-y-px",
+                    pending
+                      ? "border-dashed border-amber-500/80 text-amber-800 dark:text-amber-300"
+                      : "border-border text-muted-foreground",
+                    selected?.id === m.id && "ring-2 ring-primary ring-offset-1 ring-offset-card",
+                    selected && selected.id !== m.id && "opacity-40",
+                  )}
+                >
+                  <Icon className="size-2.5 shrink-0" aria-hidden />
+                  {endIdx > startIdx && <span className="truncate">{t(requestKindLabelKey(k))}</span>}
+                </button>
               )
             })}
           </div>

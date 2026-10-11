@@ -10,7 +10,7 @@ import { personName, countryFromTz } from "@hbcfield/shared/client"
 import { EditHistoryDialog } from "./edit-history-dialog"
 
 // Flag reason badge config for smart auto-approval.
-const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = {
+const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string; labelKey?: string }> = {
   CLOCK_OUT_PROVISIONAL: { label: "Clock-out not confirmed", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
   OVERTIME: { label: "Overtime", className: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20" },
   MISSED_CLOCK_OUT: { label: "Missed Clock-Out", className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" },
@@ -28,9 +28,12 @@ const FLAG_BADGE_CONFIG: Record<string, { label: string; className: string }> = 
   STALE: { label: "Sent a week late", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
   RECORDED_OFFLINE: { label: "Recorded offline", className: "bg-muted text-muted-foreground border-border" },
   UNANCHORED: { label: "Clock not checked", className: "bg-muted text-muted-foreground border-border" },
+  // Calm and neutral: approved in advance, so it explains the entry rather than asking for a look.
+  APPROVED_REMOTE: { label: "Remote · approved in advance", labelKey: "technicians.attendanceTab.flag.approvedRemote", className: "bg-muted text-muted-foreground border-border" },
 }
 
 function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
+  const { t } = useTranslation()
   if (!reasons || reasons.length === 0) return null
   return (
     <div className="flex flex-wrap gap-1">
@@ -44,7 +47,7 @@ function FlagReasonBadges({ reasons }: { reasons?: string[] }) {
               config.className,
             )}
           >
-            {config.label}
+            {config.labelKey ? t(config.labelKey, { defaultValue: config.label }) : config.label}
           </span>
         )
       })}

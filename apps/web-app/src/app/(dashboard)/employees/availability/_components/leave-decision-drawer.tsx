@@ -11,6 +11,9 @@ import { Check, Loader2, X } from "lucide-react"
 import { employeesApi, type OrgTimeOffRequest } from "@/lib/api"
 import { notify } from "@/lib/toast"
 import { keys, invalidateTimeOff } from "@/lib/query-keys"
+import { serverErrorMessage } from "@/lib/server-error"
+import { isAbsence, requestDetail, requestKindEffectKey, requestKindOf, formatRequestMinutes } from "@/lib/requests"
+import { RequestKindChip } from "@/components/requests/request-kind"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -18,7 +21,13 @@ import { cn } from "@/lib/utils"
 import { COVER_TONE, coverDetail, coverTitle } from "../_lib/cover-labels"
 
 /**
- * The decision, with the reason to make it.
+ * The decision, with the reason to make it — for ANY kind of request.
+ *
+ * Leave keeps everything it had (working days, the allowance, cover day by day,
+ * the jobs it would orphan). The other kinds show only what deciding THEM needs:
+ * a remote day's workspace and whether the person may work away at all; a
+ * changed day's new times beside their usual ones; the overtime asked for.
+ * Approve and refuse are the same two buttons for every kind.
  *
  * A drawer over the same page rather than a route of its own: the chart behind
  * it stays visible and its footer shows the projection live, so approving is
@@ -55,13 +64,14 @@ export function LeaveDecisionDrawer({
           : t("cover.decision.rejected", "Not approved — they are told now"),
       )
       invalidateTimeOff(queryClient)
+      queryClient.invalidateQueries({ queryKey: keys.timeOff.myBalance() })
       // The chart footer, the live panel and the calendar all move with it.
       queryClient.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
       queryClient.invalidateQueries({ queryKey: keys.attendance.floorNow() })
       queryClient.invalidateQueries({ queryKey: keys.calendar.all() })
       onClose()
     },
-    onError: (e: Error) => notify.error(e.message || t("technicians.availabilityPage.failedToProcess")),
+    onError: (e: Error) => notify.error(serverErrorMessage(e, t) || t("technicians.availabilityPage.failedToProcess")),
   })
 
   const open = !!request
@@ -112,11 +122,36 @@ function DrawerBody({
   pending: boolean
 }) {
   const { t } = useTranslation()
-  const v = request.cover
+  const kind = requestKindOf(request.kind)
+  const leave = isAbsence(kind)
+  // Cover is a question about ABSENCE — a remote day or a changed day leaves the floor as it is.
+  const v = leave ? request.cover : null
   const tone = v ? COVER_TONE[v.level] : null
   const span = differenceInCalendarDays(parseISO(request.endDate), parseISO(request.startDate)) + 1
   // What it costs (weekends, rota rest days and holidays left out); old rows have no count yet.
   const days = request.workingDays ?? span
+  const pendingVacation = leave && request.status === "PENDING" && (request.type ?? "VACATION") === "VACATION"
+
+  /* The allowance, before and after — only vacation is deducted from it. */
+  const { data: balance } = useQuery({
+    queryKey: keys.timeOff.myBalance(request.technicianId),
+    queryFn: () => employeesApi.getLeaveBalance(request.technicianId),
+    staleTime: 60_000,
+    enabled: pendingVacation,
+  })
+
+  /* A changed day is judged against the day it changes: their usual hours on that weekday. */
+  const { data: schedule } = useQuery({
+    queryKey: keys.schedules.member(request.technicianId),
+    queryFn: () => employeesApi.getSchedule(request.technicianId),
+    staleTime: 60_000,
+    enabled: kind === "HOURS" || kind === "OVERTIME",
+  })
+  const usual = (() => {
+    const dow = parseISO(request.startDate.slice(0, 10)).getDay()
+    const e = schedule?.schedule?.find((s) => s.dayOfWeek === dow && s.isActive)
+    return e ? { start: e.startTime, end: e.endTime } : null
+  })()
 
   /*
     The jobs already booked inside the window.
@@ -134,7 +169,8 @@ function DrawerBody({
         limit: 20,
       }),
     staleTime: 60_000,
-    enabled: request.status === "PENDING",
+    // Only an absence hands jobs over — somebody working remotely still does theirs.
+    enabled: request.status === "PENDING" && isAbsence(request.kind),
   })
 
   // Only work that still needs doing. A job already finished inside the window
@@ -152,24 +188,36 @@ function DrawerBody({
         <p className="text-[12.5px] text-muted-foreground">
           {format(parseISO(request.startDate), "d MMM")}
           {request.startDate !== request.endDate && <> – {format(parseISO(request.endDate), "d MMM")}</>}
-          {" · "}
-          {days !== span
-            ? t("cover.drawer.workingDays", "{{count}} working days of {{total}}", { count: days, total: span })
-            : t("cover.drawer.days", "{{count}} day", { count: days })}
+          {leave && (
+            <>
+              {" · "}
+              {days !== span
+                ? t("cover.drawer.workingDays", "{{count}} working days of {{total}}", { count: days, total: span })
+                : t("cover.drawer.days", "{{count}} day", { count: days })}
+            </>
+          )}
           {" · "}
           {t("cover.drawer.asked", "asked {{date}}", { date: format(parseISO(request.createdAt), "d MMM") })}
         </p>
-        {request.technician.specialty && (
-          <span className="inline-flex w-fit items-center rounded-md bg-muted px-2 py-0.5 text-[11.5px] font-medium text-muted-foreground">
-            {request.technician.specialty}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <RequestKindChip kind={kind} />
+          {leave && request.type && (
+            <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {requestDetail(request, t)}
+            </span>
+          )}
+          {request.technician.specialty && (
+            <span className="inline-flex w-fit items-center rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {request.technician.specialty}
+            </span>
+          )}
+        </div>
       </SheetHeader>
 
       <div className="flex-1 overflow-y-auto px-5 pb-5">
         {v && (
           <section className="pt-4">
-            <div className={cn("flex gap-2.5 rounded-lg p-3 text-[13px]", tone!.bg, tone!.text)}>
+            <div className={cn("flex gap-2.5 rounded-xl p-3 text-[13px]", tone!.bg, tone!.text)}>
               <span className="shrink-0 text-[15px] leading-tight">
                 {v.level === "ok" ? "✓" : v.level === "tight" ? "!" : "▲"}
               </span>
@@ -186,6 +234,59 @@ function DrawerBody({
           </section>
         )}
 
+        {!leave && (
+          <Section title={t("requests.drawer.asked", "What is asked")}>
+            <div className="overflow-hidden rounded-xl border border-border text-[13px]">
+              {kind === "REMOTE" && (
+                <>
+                  <Fact label={t("requests.form.workspace")} value={request.space?.name ?? "—"} />
+                  <Fact
+                    label={t("requests.drawer.mayWorkAway")}
+                    value={
+                      request.mayWorkRemotely == null
+                        ? t("requests.drawer.mayWorkAwayChecked")
+                        : request.mayWorkRemotely
+                          ? t("common.yes", "Yes")
+                          : t("requests.drawer.mayWorkAwayNo")
+                    }
+                    warn={request.mayWorkRemotely === false}
+                  />
+                </>
+              )}
+              {kind === "HOURS" && (
+                <>
+                  <Fact label={t("requests.drawer.newHours")} value={requestDetail(request, t) ?? "—"} />
+                  <Fact
+                    label={t("requests.drawer.usualHours")}
+                    value={usual ? t("requests.detail.hoursBoth", { start: usual.start, end: usual.end }) : t("requests.drawer.noUsualHours")}
+                  />
+                </>
+              )}
+              {kind === "OVERTIME" && (
+                <>
+                  <Fact label={t("requests.drawer.overtime")} value={request.minutes ? formatRequestMinutes(request.minutes, t) : "—"} />
+                  {usual && <Fact label={t("requests.drawer.usualHours")} value={t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })} />}
+                </>
+              )}
+              {kind === "OTHER" && <Fact label={t("requests.drawer.kind")} value={t("requests.kinds.OTHER.label")} />}
+            </div>
+            <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{t(requestKindEffectKey(kind))}</p>
+          </Section>
+        )}
+
+        {pendingVacation && balance && balance.allowance > 0 && (
+          <Section title={t("requests.drawer.balance", "Vacation allowance")}>
+            <div className="overflow-hidden rounded-xl border border-border text-[13px]">
+              <Fact label={t("requests.drawer.balanceNow")} value={t("requests.drawer.daysLeft", { count: balance.remaining, total: balance.allowance })} />
+              <Fact
+                label={t("requests.drawer.balanceAfter")}
+                value={t("requests.drawer.daysLeft", { count: balance.remaining - days, total: balance.allowance })}
+                warn={balance.remaining - days < 0}
+              />
+            </div>
+          </Section>
+        )}
+
         {request.reason && (
           <Section title={t("cover.drawer.theirReason", "Their reason")}>
             <p className="text-[13px] text-foreground">{request.reason}</p>
@@ -194,7 +295,7 @@ function DrawerBody({
 
         {v?.days?.length ? (
           <Section title={t("cover.drawer.dayByDay", "Day by day, if you approve")}>
-            <div className="overflow-hidden rounded-lg border border-border">
+            <div className="overflow-hidden rounded-xl border border-border">
               {v.days.map((d) => (
                 <div
                   key={d.day}
@@ -243,7 +344,7 @@ function DrawerBody({
           </Section>
         ) : null}
 
-        {request.status === "PENDING" && (
+        {leave && request.status === "PENDING" && (
           <Section
             title={t("cover.drawer.jobsBooked", "Jobs already booked for {{name}}", {
               name: request.technician.firstName,
@@ -256,7 +357,7 @@ function DrawerBody({
                     <Link
                       key={j.id}
                       href={`/tasks/${j.id}`}
-                      className="flex items-center gap-2.5 rounded-lg border border-border px-3 py-2 text-[12.5px] transition hover:bg-muted/50"
+                      className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 text-[12.5px] transition hover:bg-muted/50"
                     >
                       <span className="min-w-0 flex-1">
                         <b className="block truncate font-medium">{j.title}</b>
@@ -317,9 +418,19 @@ function DrawerBody({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="pt-4">
-      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h3>
+    <section className="pt-5">
+      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{title}</h3>
       {children}
     </section>
+  )
+}
+
+/** One labelled fact in a drawer list. */
+function Fact({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border px-3 py-2 last:border-b-0">
+      <span className="text-[12px] text-muted-foreground">{label}</span>
+      <span className={cn("text-right font-medium tabular-nums", warn ? "text-red-600 dark:text-red-400" : "text-foreground")}>{value}</span>
+    </div>
   )
 }

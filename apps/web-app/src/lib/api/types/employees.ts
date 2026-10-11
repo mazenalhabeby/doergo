@@ -57,6 +57,18 @@ export interface TimeOffRequest {
   rejectionReason?: string;
   /** What it costs the allowance — weekends, rota rest days and holidays left out. Null on old rows. */
   workingDays?: number | null;
+  /** What is asked — see @hbcfield/shared requests/request-kinds.ts. Absent on old rows = LEAVE. */
+  kind?: import('@hbcfield/shared/client').RequestKind;
+  /** LEAVE: VACATION | SICK | FAMILY | OTHER. */
+  type?: string | null;
+  /** The workspace it is about (REMOTE: always). */
+  spaceId?: string | null;
+  space?: { id: string; name: string } | null;
+  /** HOURS: the day's new start / end, HH:MM local. */
+  startTime?: string | null;
+  endTime?: string | null;
+  /** OVERTIME: minutes agreed in advance. */
+  minutes?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +128,11 @@ export type OrgTimeOffRequest = TimeOffRequest & {
   technician: { id: string; firstName: string; lastName: string; email: string; specialty: string | null };
   /** Present on PENDING requests only — a decided one needs no projection. */
   cover?: CoverVerdict | null;
+  /**
+   * REMOTE only, when the server says it: may this person work away from a site
+   * at the request's workspace right now (ceiling × grant)? Absent = not told.
+   */
+  mayWorkRemotely?: boolean | null;
 };
 
 
