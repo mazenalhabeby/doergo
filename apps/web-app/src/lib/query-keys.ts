@@ -208,6 +208,8 @@ const timeOffKeys = {
   member: (...a: [memberId?: string, status?: string]) => named("employeeTimeOff", a),
   mine: (userId: string | undefined) => named("my-time-off", [userId]),
   myBalance: (...a: [userId?: string]) => named("my-leave-balance", a),
+  /** The kinds of request the signed-in member may send, and where a remote day may be filed. */
+  myOptions: (userId: string | undefined) => named("my-request-options", [userId]),
   /** What a range would cost, in working days. */
   count: (...a: [userId?: string, from?: string | null, to?: string | null]) => named("leave-count", a),
   /** The cover chart's footer. */

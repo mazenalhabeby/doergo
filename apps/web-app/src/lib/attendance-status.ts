@@ -214,6 +214,11 @@ const FLAG_ORDER: Array<{ reason: string; chip: Omit<AttendanceChip, "key"> }> =
     reason: "UNANCHORED",
     chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.unanchored", fallback: "Phone clock not checked" },
   },
+  // Informational: the away/remote work that day was a request approved in advance — never a reason to review.
+  {
+    reason: "APPROVED_REMOTE",
+    chip: { tone: "muted", labelKey: "technicians.attendanceTab.flag.approvedRemote", fallback: "Remote · approved in advance" },
+  },
 ]
 
 export function deriveAttendanceFlags(entry: TimeEntry): AttendanceChip[] {

@@ -18,6 +18,7 @@ import { RotaTab } from "./rota-tab"
 import { RestsSection } from "./rests-section"
 import { AwayPolicySection } from "./away-policy-section"
 import { NoShiftSection } from "./no-shift-section"
+import { RequestKindsSection } from "./request-kinds-section"
 import { workspaceSchedulesShifts } from "@hbcfield/shared/client"
 import { MinCoverSection } from "./min-cover-section"
 
@@ -152,6 +153,11 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
       {/* Clocking in with no shift — every attendance model, like the geofence. */}
       <div className="border-t border-border/60 pt-6">
         <NoShiftSection space={space} schedulesShifts={scheduled} />
+      </div>
+
+      {/* What members may ask for here — leave, remote, a changed day, overtime, other. */}
+      <div className="border-t border-border/60 pt-6">
+        <RequestKindsSection space={space as CompanyLocation & { requestKinds?: string[] | null }} />
       </div>
 
       {/*

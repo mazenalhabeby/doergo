@@ -1,5 +1,6 @@
 "use client"
 
+import { absencesOnly } from "@/lib/requests"
 import { keys } from "@/lib/query-keys"
 import dynamic from "next/dynamic"
 
@@ -158,7 +159,8 @@ export default function AttendancePage() {
   const daysOff = useMemo(() => {
     if (selectedLocationId !== "all") return []
     const q = debouncedSearch.trim().toLowerCase()
-    return (orgTimeOff ?? [])
+    // Only leave is a day off — an approved remote day or changed day is a day worked.
+    return absencesOnly(orgTimeOff ?? [])
       .filter((r) => {
         const rs = r.startDate.slice(0, 10)
         const re = r.endDate.slice(0, 10)

@@ -1,5 +1,6 @@
 import { Shimmer as S } from './primitives';
 import { cn } from "@/lib/utils"
+import { PAGE_WIDTH } from "@/components/ui/page-width"
 
 // ============================================================================
 // Base Shimmer Block
@@ -313,7 +314,7 @@ function CalendarGridSkeleton() {
 export function AvailabilityPageSkeleton() {
   return (
     <div className={PAGE_OUTER}>
-      <div className={PAGE_INNER}>
+      <div className={`${PAGE_WIDTH} py-6`}>
         <div className="flex items-center gap-3 mb-8">
           <S className="h-9 w-9 rounded-lg" />
           <S className="h-9 w-52 rounded-lg" />

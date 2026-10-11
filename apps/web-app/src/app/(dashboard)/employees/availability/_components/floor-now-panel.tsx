@@ -77,7 +77,7 @@ export function FloorNowPanel({ spaceFilter }: { spaceFilter: string }) {
 
   if (isLoading) {
     return (
-      <div className="mb-4 rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-4 rounded-2xl border border-border bg-card p-4">
         <Skeleton className="mb-4 h-4 w-40" />
         <Skeleton className="h-20 w-full" />
       </div>
@@ -273,7 +273,7 @@ function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime: Fmt }
   ]
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-border bg-card">
       <CardHead space={space} c={c} />
       <div className="px-4 pb-3 pt-3">
         <Bar space={space} t={c} />
@@ -344,7 +344,7 @@ function ExceptionsCard({ space, formatTime }: { space: FloorSpace; formatTime: 
   const good = overdue.length === 0 && space.status !== "short"
 
   return (
-    <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-border bg-card">
       <CardHead space={space} c={c} />
 
       <div className="px-4 pb-3.5 pt-3">

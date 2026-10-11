@@ -71,4 +71,9 @@ describe('deriveAttendanceFlags', () => {
     const flags = deriveAttendanceFlags(entry({ flagReasons: ['SOME_NEW_FLAG', 'OVERTIME'] }))
     expect(flags.map((f) => f.key)).toEqual(['OVERTIME', 'SOME_NEW_FLAG'])
   })
+
+  it('shows APPROVED_REMOTE as a calm, neutral chip — approved in advance explains, it never asks for a look', () => {
+    const [chip] = deriveAttendanceFlags(entry({ flagReasons: ['APPROVED_REMOTE'] }))
+    expect(chip).toMatchObject({ key: 'APPROVED_REMOTE', tone: 'muted', labelKey: 'technicians.attendanceTab.flag.approvedRemote' })
+  })
 })

@@ -66,7 +66,7 @@ export function useMySections(): MySection[] {
       },
       {
         href: "/my/time-off",
-        label: t("nav.sidebar.timeOff", "Time off"),
+        label: t("nav.sidebar.timeOff", "Requests"),
         // The registry spells it without the second hyphen; the anchor has to
         // match it exactly or the welcome tour's step points at nothing.
         tour: "nav-my-timeoff",
