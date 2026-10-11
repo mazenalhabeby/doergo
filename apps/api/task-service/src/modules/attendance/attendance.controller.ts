@@ -5,6 +5,8 @@ import { BreakService } from './break.service';
 import { AttendanceReportService } from './attendance-report.service';
 import { ApprovalService } from './approval.service';
 import { BreakRulesService } from './break-rules.service';
+import { AutoClockService } from './auto-clock.service';
+import type { OccurrenceEvidence } from '@hbcfield/shared';
 
 @Controller()
 export class AttendanceController {
@@ -14,6 +16,7 @@ export class AttendanceController {
     private readonly reportService: AttendanceReportService,
     private readonly approvalService: ApprovalService,
     private readonly breakRules: BreakRulesService,
+    private readonly autoClock: AutoClockService,
   ) {}
 
     @MessagePattern({ cmd: 'list_clock_in_locations' })
@@ -441,6 +444,28 @@ export class AttendanceController {
   }
 
   // ── Shift reminder responses (worker actions + leader approval) ──
+  // ── The automatic clock (attendance/auto-clock.ts) — always the caller's own ──
+
+  @MessagePattern({ cmd: 'auto_clock_plan' })
+  autoClockPlan(@Payload() d: { userId: string; organizationId: string }) {
+    return this.autoClock.plan({ userId: d.userId, organizationId: d.organizationId });
+  }
+
+  @MessagePattern({ cmd: 'auto_clock_consent' })
+  autoClockConsent(@Payload() d: { userId: string; organizationId: string; consent: boolean }) {
+    return this.autoClock.setConsent({ userId: d.userId, organizationId: d.organizationId, consent: d.consent === true });
+  }
+
+  @MessagePattern({ cmd: 'auto_clock_undo' })
+  autoClockUndo(@Payload() d: { userId: string; organizationId: string; entryId: string; evidence?: OccurrenceEvidence }) {
+    return this.autoClock.undo(d);
+  }
+
+  @MessagePattern({ cmd: 'auto_clock_skip_rest' })
+  autoClockSkipRest(@Payload() d: { userId: string; organizationId: string; entryId: string; evidence?: OccurrenceEvidence }) {
+    return this.autoClock.skipRest(d);
+  }
+
   @MessagePattern({ cmd: 'resolve_forgot_clock_out' })
   async resolveForgotClockOut(
     @Payload() data: { userId: string; entryId: string; clockOutAt: string; organizationId: string },

@@ -420,6 +420,13 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'list_geofence_excursions' }, data);
   }
 
+  // ── The automatic clock (attendance/auto-clock.ts) — the caller's own, always ──
+  // Writes through `sendOnce`: a retried consent is harmless, a retried undo is not worth the doubt.
+  autoClockPlan(data: { userId: string; organizationId: string }) { return this.send({ cmd: 'auto_clock_plan' }, data); }
+  autoClockConsent(data: { userId: string; organizationId: string; consent: boolean }) { return this.sendOnce({ cmd: 'auto_clock_consent' }, data); }
+  autoClockUndo(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) { return this.sendOnce({ cmd: 'auto_clock_undo' }, data); }
+  autoClockSkipRest(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) { return this.sendOnce({ cmd: 'auto_clock_skip_rest' }, data); }
+
   // ── Shift reminder responses (worker actions + leader approval) ──
 
   /** Worker self-reports their leave time after forgetting to clock out. */

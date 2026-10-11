@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, MaxLength, Matches, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean, IsIn, MaxLength, Matches, ValidateNested } from 'class-validator';
+import { CLOCK_TRIGGERS, type ClockTrigger } from '@hbcfield/shared';
 import { Type } from 'class-transformer';
 import { CLIENT_ID } from '../../../common/dto/upload.dto';
 import { OccurrenceEvidenceDto } from '../../../common/dto/occurrence.dto';
@@ -56,4 +57,14 @@ export class ClockInDto {
   @ValidateNested()
   @Type(() => OccurrenceEvidenceDto)
   evidence?: OccurrenceEvidenceDto;
+
+  /**
+   * AUTO = made by the phone's automatic clock (shared attendance/auto-clock.ts).
+   * A claim, never an authority: the server re-checks consent, the workspace,
+   * the member and the window, and records an ordinary step when it does not hold.
+   */
+  @ApiPropertyOptional({ enum: CLOCK_TRIGGERS, description: 'MANUAL (default) or AUTO — re-checked by the server' })
+  @IsOptional()
+  @IsIn(CLOCK_TRIGGERS as unknown as string[])
+  trigger?: ClockTrigger;
 }

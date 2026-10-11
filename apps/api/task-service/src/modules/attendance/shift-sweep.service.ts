@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { MEMBER_SELECT } from './attendance-selects';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -13,6 +13,7 @@ import {
 import { ABSENCE_WHERE, scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
 import { localPartsIn, toISODateString } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
+import { AutoClockService } from './auto-clock.service';
 
 /**
  * A shift's own nudge cadence — gap between nudges and how many before a
@@ -50,6 +51,8 @@ export class ShiftSweepService {
     private readonly shiftResolver: ShiftResolverService,
     // Who is told about this member, at this workspace.
     private readonly routing: AttendanceRoutingService,
+    // The automatic clock's own threshold for telling the leader (attendance/auto-clock.ts).
+    @Optional() private readonly autoClock?: AutoClockService,
   ) {}
 
   /**
@@ -91,7 +94,27 @@ export class ShiftSweepService {
     type Due = (typeof dueEntries)[number];
     const toRemind: { entry: Due; nextCount: number; intervalMin: number; maxReminders: number }[] = [];
     const toEscalate: Due[] = [];
+    /*
+      ── The automatic clock: still inside after the end ──
+      For a member it is on for, the phone asks the person itself (offline), so
+      the server sends no "forgot to clock out?" nudges: it tells the LEADER once,
+      at the planned end + `leaderAfterMinutes`, through the same routing as any
+      escalation (workspace → the member's watchers → nobody). Due early (an
+      approved extra-time round re-arms the ordinary reminder) → re-armed for
+      that moment. One query for the whole batch.
+    */
+    const autoByEntry = this.autoClock
+      ? await this.autoClock.settingsForEntries(dueEntries.filter((e) => e.expectedClockOutAt), now)
+      : new Map();
+    const rearm: { id: string; at: Date }[] = [];
     for (const entry of dueEntries) {
+      const auto = autoByEntry.get(entry.id);
+      if (auto && entry.expectedClockOutAt) {
+        const leaderAt = new Date(entry.expectedClockOutAt.getTime() + auto.leaderAfterMinutes * 60_000);
+        if (now.getTime() < leaderAt.getTime()) rearm.push({ id: entry.id, at: leaderAt });
+        else toEscalate.push(entry);
+        continue;
+      }
       // No expected end → this was an unscheduled clock-in armed by the safety net;
       // use the slower unscheduled cadence, not the tight shift cadence.
       const isUnscheduled = !entry.expectedClockOutAt;
@@ -117,6 +140,16 @@ export class ShiftSweepService {
 
     // Deferred writes (thunks) so we can cap DB concurrency.
     const tasks: Array<() => Promise<void>> = [];
+
+    for (const r of rearm) {
+      tasks.push(async () => {
+        // Conditional: a clock-out between the read and this write must not be re-armed.
+        await this.prisma.timeEntry.updateMany({
+          where: { id: r.id, status: TimeEntryStatus.CLOCKED_IN },
+          data: { nextRemindAt: r.at },
+        });
+      });
+    }
 
     for (const { entry, nextCount, intervalMin, maxReminders } of toRemind) {
       const userName = `${entry.user.firstName} ${entry.user.lastName}`;

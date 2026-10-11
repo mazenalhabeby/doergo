@@ -21,4 +21,14 @@ export class UpdateAssignmentDto extends PartialType(OmitType(AssignMemberDto, [
   @IsOptional()
   @ValidateIf((_o, v) => v !== null)
   allowRemote?: boolean | null;
+
+  /**
+   * Chosen for the automatic clock in THIS workspace. Arms only where the
+   * workspace switched it on and the member consented. Refused for an external
+   * member. May be set by whoever manages this workspace's people.
+   */
+  @ApiPropertyOptional({ description: 'Chosen for the automatic clock here' })
+  @IsBoolean()
+  @IsOptional()
+  autoClock?: boolean;
 }

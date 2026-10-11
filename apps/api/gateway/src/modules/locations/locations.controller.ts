@@ -358,7 +358,12 @@ export class LocationsController {
       canViewAll: mayViewSpaceRoster(req.user, id),
     });
     if (res && Array.isArray(res.data)) {
-      return { ...res, data: stripSpaceTerms(res.data, mayManageSpaceMembers(req.user, id)) };
+      const mayManage = mayManageSpaceMembers(req.user, id);
+      // Whether a colleague consented to the automatic clock is the office's business, not every reader's.
+      const rows = mayManage
+        ? res.data
+        : res.data.map((r: any) => (r?.user ? { ...r, user: { ...r.user, autoClockConsentAt: undefined } } : r));
+      return { ...res, data: stripSpaceTerms(rows, mayManage) };
     }
     return res;
   }
@@ -397,18 +402,40 @@ export class LocationsController {
   }
 
   @Patch(':id/members/:assignmentId')
-  @RequirePermission('canManageWorkspaces')
+  /*
+    No route-level permission: decided below against the space in the PATH.
+
+    ⚠️ It was `@RequirePermission('canManageWorkspaces')`, which the guard reads
+    as "granted in ANY space" — so somebody who manages one site could edit an
+    assignment at every other. Now:
+      • org-wide `canManageWorkspaces` (or admin): any field, any assignment;
+      • `canManageWorkspaces` in THIS workspace: any field, narrowed to it;
+      • managing this workspace's people (`mayManageSpaceMembers`, the space
+        manager — the same rule as a member's roles and rate here): the
+        automatic-clock choice only, narrowed to it.
+    "Narrowed" = the service refuses an assignment of another workspace as not found.
+  */
   @ApiOperation({ summary: 'Update a member assignment' })
   async updateAssignment(
-    @Param('id') _locationId: string,
+    @Param('id') locationId: string,
     @Param('assignmentId') assignmentId: string,
     @Body() dto: UpdateAssignmentDto,
     @Request() req: any,
   ) {
+    const u = req.user;
+    const orgWide = isAdmin(u) || accessAllows(u?.access, 'canManageWorkspaces');
+    if (!orgWide) {
+      const workspaceManager = accessAllows(u?.access, 'canManageWorkspaces', locationId);
+      const onlyAutoClock = Object.entries(dto ?? {}).every(([k, v]) => k === 'autoClock' || v === undefined);
+      if (!workspaceManager && !(onlyAutoClock && mayManageSpaceMembers(u, locationId))) {
+        throw new ForbiddenException('You do not have permission to manage the members of this workspace');
+      }
+    }
     const result = await this.locationsQueueService.updateAssignment({
       ...dto,
       assignmentId,
       organizationId: req.user.organizationId,
+      spaceId: orgWide ? undefined : locationId,
     });
     // Same reason as assignMember: this route can change the assignment's role.
     this.rebill(req.user.organizationId);

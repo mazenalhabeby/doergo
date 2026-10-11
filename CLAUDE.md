@@ -395,6 +395,30 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **CUSTOMER spaces are workplaces.** A first version excluded them as "somebody else's premises"; in a field-service product people spend the day at a customer site and clock in there, and the clock-in has always accepted it. Excluding them made the list stricter than the check and hid two of three workspaces from a member assigned to all three. Only the Remote bucket is filtered.
 
+### The automatic clock (`/attendance/auto-clock`) — the phone decides offline, the server re-checks
+> OS geofences wake the phone on arriving/leaving; it decides with the shared rules and files the clock step in its outbox with the REAL moment (`evidence.occurredAt`) and `trigger: 'AUTO'`. Rules: `packages/shared/src/attendance/auto-clock.ts`; server: `task-service/.../attendance/auto-clock.service.ts` (+ clock-in/clock-out/close/sweeps). Migration `20261012090000_auto_clock` (additive, all off).
+
+| Method | Endpoint | Description | Gate |
+|--------|----------|-------------|------|
+| GET | `/attendance/auto-clock/plan` | Where to arm for the CALLER: `{ consentAt, places: [{ spaceId, name, lat, lng, radius, polygon, settings, shifts: [{start,end}] }], generatedAt }` — yesterday/today/tomorrow local, after approved requests | the caller; `@DenyExternal` |
+| POST | `/attendance/auto-clock/consent` `{consent}` | → `{ consentAt }`; a second yes keeps the first date | the caller; `@DenyExternal` |
+| POST | `/attendance/entries/:id/auto-undo` `{evidence?}` | Drive-past: the entry is REMOVED (+ `TIME_ENTRY_AUTO_UNDONE` audit row, its shift instance expected again) → `{ undone: true }` | own entry (else 404) |
+| POST | `/attendance/entries/:id/auto-rest/skip` `{evidence?}` | "Still working" → `{ skipped: true }` (`TimeEntry.autoRestSkippedAt`) | own running entry |
+| PATCH | `/locations/:id` `{autoClock}` | Workspace settings (`AutoClockSettings`), parsed STRICTLY; read back parsed (`null` = never configured) | canManageWorkspaces; Remote refused |
+| PATCH | `/locations/:id/members/:assignmentId` `{autoClock}` | The member chosen here (`SpaceAssignment.autoClock`); roster rows carry it + `user.autoClockConsentAt` (managers only) | org-wide canManageWorkspaces · in-space canManageWorkspaces · or `mayManageSpaceMembers` for `autoClock` ONLY — all but org-wide narrowed to the path's space |
+
+> ⚠️ **ON = workspace `enabled` ∧ member chosen ∧ member's consent ∧ not external** (`autoClockActive`). Missing any one → the plan is empty and every AUTO step is an ordinary one.
+>
+> ⚠️ **AUTO is a claim, never an authority — and never a refusal.** Clock-in: marked `AUTO_CLOCK_IN` only when ON, inside the ring and inside the window (`autoClockInWithinWindow`: from `leadMinutes` before the shift start, before its end). Clock-out: `AUTO_CLOCK_OUT` only at/after the planned end (`autoClockOutAfterEnd`). Otherwise recorded as a manual step with the ordinary rules (late, early, geofence) — the person really arrived/left. All three AUTO flags are informational.
+>
+> ⚠️ **Undo window = clock-in + dwell + `AUTO_CLOCK_UNDO_MINUTES` (10) + 2 min slack**, judged at the TAP (`evidence`) so an offline undo counts when made. Refused (`AUTO_CLOCK_UNDO_NOT_ALLOWED`, `params.why` NOT_AUTOMATIC | CLOSED | WORK_RECORDED | TOO_LATE) once a rest, a work-log note or a job step/join exists. A replay finds the audit row → `{undone:true}`; a RESEND of the undone clock-in → 409 `AUTO_CLOCK_UNDONE` (never a second shift).
+>
+> ⚠️ **The automatic rest is a REST ROW inserted in `closeEntry` before counted time** (`autoRestPlan`, centred in the PLANNED shift, clamped inside the entry; `reason: 'AUTO_REST'`, entry flagged `AUTO_REST`, missed-rest dropped). Only when no rest of any kind exists and not skipped. Skipped → the ordinary missed-rest rule.
+>
+> ⚠️ **Still inside after the end** reuses the existing sweeps with the workspace's thresholds: the leader at planned end + `leaderAfterMinutes` (the reminder is ARMED for that at clock-in; no worker nudges — the phone asks; routing as any escalation, never every admin), a provisional close at + `closeAfterMinutes` through `closeProvisionally` — the phone's later AUTO clock-out replaces it like any real one. "Is this member automatic" for a sweep's batch is ONE query (`settingsForEntries`).
+>
+> ⚠️ **The plan is a FIXED number of queries** whatever the workspaces (`ShiftResolverService.plannedWindows` — the shared `rotaFor` + legacy schedule, two queries). Radius = `geofenceArmRadius` (a drawn boundary → its enclosing circle; the decision is still `isAtSite`).
+
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.
 

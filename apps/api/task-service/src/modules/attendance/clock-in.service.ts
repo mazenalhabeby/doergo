@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException, ConflictException, Logger, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { ShiftResolverService, ResolverSpace } from './shift-resolver.service';
@@ -28,6 +28,10 @@ import {
   spaceRunsClock,
   ATTENDANCE_FLAG_REASONS,
   APPROVED_REMOTE_FLAG,
+  AUTO_CLOCK_IN_FLAG,
+  autoClockActive,
+  autoClockInWithinWindow,
+  type ClockTrigger,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
 import { approvedRequestsAround, dayRequestEffect, remoteApprovedAt, type DayRequestRow } from './approved-requests';
@@ -38,6 +42,7 @@ import { BreakRulesService } from './break-rules.service';
 import { PresenceService } from './presence/presence.service';
 import { AttendanceGeocoderService } from './attendance-geocoder.service';
 import { ShiftSweepService } from './shift-sweep.service';
+import { AutoClockService } from './auto-clock.service';
 
 // tz-lookup: offline coords → IANA timezone (single in-memory lookup, no types pkg).
 const tzlookup: (lat: number, lon: number) => string = require('tz-lookup');
@@ -60,6 +65,8 @@ export class ClockInService {
     private readonly presence: PresenceService,
     private readonly geocoder: AttendanceGeocoderService,
     private readonly shiftSweeps: ShiftSweepService,
+    // The automatic clock's re-check. Optional so a clock-in never depends on it: absent, no step is marked automatic.
+    @Optional() private readonly autoClock?: AutoClockService,
   ) {}
 
   /**
@@ -423,6 +430,12 @@ export class ClockInService {
     id?: string;
     /** When and where the tap happened, for a clock-in recorded offline. */
     evidence?: OccurrenceEvidence;
+    /**
+     * AUTO = the phone's automatic clock made it (attendance/auto-clock.ts).
+     * Re-checked here; when it does not hold, it is recorded as an ordinary
+     * clock-in — never refused for it (the person really arrived).
+     */
+    trigger?: ClockTrigger;
   }) {
     this.logger.log(`Clock in attempt: user=${data.userId}, location=${data.locationId}, remote=${!!data.isRemote}`);
 
@@ -435,6 +448,13 @@ export class ClockInService {
     if (data.id) {
       const prior = await this.prisma.timeEntry.findUnique({ where: { id: data.id }, include: { location: true } });
       if (prior) return success(sameRecordOrRefuse(prior, data.userId), 'Already clocked in');
+      /*
+        ⚠️ An automatic clock-in its owner UNDID is gone — a resend of it (the
+        answer was lost, the outbox tries again) must not make the shift again.
+      */
+      if (data.trigger === 'AUTO' && (await this.autoClock?.wasUndone(data.id, data.userId))) {
+        throw new ConflictException({ message: 'This automatic clock-in was undone', code: 'AUTO_CLOCK_UNDONE', params: { id: data.id } });
+      }
     }
 
     /*
@@ -475,6 +495,9 @@ export class ClockInService {
         allowRemote: true,
         role: true,
         organization: { select: { timezone: true } },
+        // The automatic clock: their consent, and that they are not external (who hold no clock).
+        autoClockConsentAt: true,
+        isExternal: true,
       },
     });
 
@@ -859,6 +882,37 @@ export class ClockInService {
           toleranceMin: flagToleranceMin,
         }),
       );
+    }
+
+    /*
+      ── The automatic clock ──
+      ON for this member here = the workspace switched it on ∧ they are chosen
+      ∧ they consented (`autoClockActive`). Then:
+        • the leader is told at the planned end + `leaderAfterMinutes` when they
+          are still clocked in — the reminder is armed for that moment (never
+          later than the ordinary one), whatever pressed the button;
+        • a step the phone sent as AUTO is MARKED only when it holds: on site,
+          inside the window the phone was allowed (`autoClockInWithinWindow`).
+          Otherwise it stays an ordinary clock-in with the ordinary rules —
+          never refused: the person really is here.
+    */
+    const autoSettings = autoClockActive({
+      consentAt: user.autoClockConsentAt,
+      settings: location.autoClock,
+      assignmentAutoClock: assignment.autoClock,
+      isExternal: user.isExternal,
+    });
+    if (autoSettings && stampCols.expectedClockOutAt) {
+      const leaderAt = stampCols.expectedClockOutAt.getTime() + autoSettings.leaderAfterMinutes * 60_000;
+      stampCols.nextRemindAt = new Date(Math.min(stampCols.nextRemindAt?.getTime() ?? leaderAt, leaderAt));
+    }
+    if (
+      data.trigger === 'AUTO' &&
+      autoSettings &&
+      withinGeofence &&
+      autoClockInWithinWindow(autoSettings, clockInTime, stampCols.expectedClockInAt ?? null, stampCols.expectedClockOutAt ?? null)
+    ) {
+      flagReasons.push(AUTO_CLOCK_IN_FLAG);
     }
 
     const approvalStatus = approvalFor(flagReasons);

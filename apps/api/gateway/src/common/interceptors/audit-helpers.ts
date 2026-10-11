@@ -116,6 +116,10 @@ export const ROUTE_ACTIONS: Record<string, string> = {
   'POST /attendance/entries/:id/request-extra-time': 'ATTENDANCE_EXTRA_TIME_REQUESTED',
   'POST /attendance/extra-time/:id/approve': 'ATTENDANCE_EXTRA_TIME_APPROVED',
   'POST /attendance/extra-time/:id/reject': 'ATTENDANCE_EXTRA_TIME_REJECTED',
+  // The automatic clock (attendance/auto-clock.ts)
+  'POST /attendance/auto-clock/consent': 'ATTENDANCE_AUTO_CLOCK_CONSENT',
+  'POST /attendance/entries/:id/auto-undo': 'ATTENDANCE_AUTO_CLOCK_UNDONE',
+  'POST /attendance/entries/:id/auto-rest/skip': 'ATTENDANCE_AUTO_REST_SKIPPED',
   // Operator console (platform-audit.interceptor) — the curated names; anything
   // else on /platform falls back to RESOURCE_VERB like every other route.
   'POST /platform/auth/login': 'PLATFORM_SIGN_IN',

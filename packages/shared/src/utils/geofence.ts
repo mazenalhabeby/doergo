@@ -192,6 +192,24 @@ export function isAtSite(
   };
 }
 
+/**
+ * The circle an OS geofence is armed with for a site (iOS/Android geofences are
+ * circles only): the radius, or — when a boundary is drawn — the smallest circle
+ * round the site's pin that holds every corner of it, rounded up to a metre.
+ *
+ * ⚠️ Only for WAKING the phone. Whether the person is actually at the site is
+ * still `isAtSite`, which honours the drawn boundary exactly.
+ */
+export function geofenceArmRadius(site: SiteZone): number {
+  const ring = site.geofencePolygon;
+  if (ring && ring.length >= 3 && site.lat != null && site.lng != null) {
+    let max = 0;
+    for (const p of ring) max = Math.max(max, haversineDistance(site.lat, site.lng, p.lat, p.lng));
+    return Math.ceil(max);
+  }
+  return site.geofenceRadius;
+}
+
 /** Whether a site enforces a zone at all. */
 export function siteEnforcesZone(site: SiteZone): boolean {
   if (site.geofencePolygon && site.geofencePolygon.length >= 3) return true;

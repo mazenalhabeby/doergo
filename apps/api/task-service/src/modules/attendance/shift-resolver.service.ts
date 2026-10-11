@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn, workspaceSchedulesShifts } from '@hbcfield/shared';
+import { WorkModel, SHIFT_REMINDER_DEFAULTS, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, rotaRunsOn, rotaFor, dowOfDay, workspaceSchedulesShifts } from '@hbcfield/shared';
 // Wall time ↔ UTC comes from ONE place. This service used to carry a verbatim
 // private copy of all of it; two copies of "what time is 06:00 in Vienna" are
 // two chances to be an hour wrong twice a year.
@@ -200,6 +200,73 @@ export class ShiftResolverService {
     local: LocalDate,
   ): boolean {
     return rotaRunsOn(a, local.dateStr);
+  }
+
+  /**
+   * The planned shift windows of ONE member, at several PHYSICAL workspaces, on
+   * the given local days — the same answer `resolveForClockIn` would give a
+   * clock-in on each day (rota first, by priority then the most recently
+   * effective; then the legacy weekly schedule), asked ahead of time.
+   *
+   * For the automatic clock's plan (the phone arms offline). TWO queries
+   * whatever the number of workspaces and days — never one resolution each.
+   * Each space is anchored to its own timezone (callers pass physical spaces
+   * only: an automatic clock needs a site).
+   */
+  async plannedWindows(
+    userId: string,
+    spaces: readonly ResolverSpace[],
+    days: (space: ResolverSpace) => string[],
+  ): Promise<Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>> {
+    const out = new Map<string, Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }>>();
+    const scheduling = spaces.filter((s) => workspaceSchedulesShifts(s.workModel));
+    if (!scheduling.length) return out;
+    const daysBySpace = new Map(scheduling.map((s) => [s.id, days(s)]));
+    const allDays = [...daysBySpace.values()].flat().sort();
+    if (!allDays.length) return out;
+    // A day either side, in UTC, covers every zone's local day.
+    const from = new Date(`${addDaysStr(allDays[0]!, -1)}T00:00:00.000Z`);
+    const to = new Date(`${addDaysStr(allDays[allDays.length - 1]!, 2)}T00:00:00.000Z`);
+    const [assignments, schedules] = await Promise.all([
+      this.prisma.shiftAssignment.findMany({
+        where: {
+          userId,
+          spaceId: { in: scheduling.map((s) => s.id) },
+          isActive: true,
+          effectiveFrom: { lte: to },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: from } }],
+        },
+        include: { shift: true },
+        // The same order resolveAssignment reads them in: the first match wins.
+        orderBy: [{ priority: 'desc' }, { effectiveFrom: 'desc' }],
+      }),
+      this.prisma.technicianSchedule.findMany({ where: { technicianId: userId, isActive: true } }),
+    ]);
+    for (const space of scheduling) {
+      const tz = space.timezone || 'UTC';
+      const windows: Array<{ dateStr: string; shiftId: string | null; expectedClockInAt: Date; expectedClockOutAt: Date }> = [];
+      for (const dateStr of daysBySpace.get(space.id) ?? []) {
+        // The shared rota rule (`rotaFor`: priority, then most recently effective, in force, runs that day).
+        const a = rotaFor(assignments.filter((x) => x.spaceId === space.id), dateStr);
+        let found: (typeof windows)[number] | null = a?.shift
+          ? { dateStr, shiftId: a.shift.id, ...shiftWindowOn(a.shift, tz, dateStr) }
+          : null;
+        if (!found) {
+          const dow = dowOfDay(dateStr);
+          const legacy = schedules.find((s) => s.dayOfWeek === dow && s.endTime);
+          if (legacy) {
+            found = {
+              dateStr,
+              shiftId: null,
+              ...shiftWindowOn({ startLocal: legacy.startTime, endLocal: legacy.endTime!, crossesMidnight: false }, tz, dateStr),
+            };
+          }
+        }
+        if (found) windows.push(found);
+      }
+      out.set(space.id, windows);
+    }
+    return out;
   }
 
   /**

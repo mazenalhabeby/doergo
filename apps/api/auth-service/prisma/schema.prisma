@@ -851,6 +851,8 @@ model User {
   /// for a "join date" that never happened. Unset means no pro-rating.
   employmentStartDate DateTime?         @db.Date
   allowRemote         Boolean           @default(false) // May clock in remotely (WFH/anywhere), geofence-exempt
+  /// When the member consented to the automatic clock in the app (ArbVG §96). NULL = never / withdrawn.
+  autoClockConsentAt  DateTime?
   presence            String? // Manual availability override: AVAILABLE | BUSY | AWAY (null = auto from task/clock)
   lastActiveAt        DateTime? // Last time the user made an authenticated request (throttled ~1/min) → online/last-seen
 
@@ -2483,6 +2485,10 @@ model CompanyLocation {
   /// A String rather than an enum so a value this server has not heard of falls
   /// back to STRICT instead of failing to deserialise — see resolveAwayAccess.
   geofencePolicy    String    @default("STRICT")
+  /// The automatic clock (shared attendance/auto-clock.ts): settings read with
+  /// `parseAutoClockSettings`. NULL = never configured = off. The members are
+  /// chosen on their assignment (SpaceAssignment.autoClock) and each consents.
+  autoClock         Json?
   /// The request kinds members may ask for here (shared requests/request-kinds.ts).
   /// ⚠️ EMPTY MEANS EVERY KIND — the opposite would remove leave requests everywhere.
   requestKinds      String[]  @default([])
@@ -2776,6 +2782,10 @@ model TimeEntry {
   /// sweep's whole cheapness is asking "what is due" against an index rather than
   /// reading every open shift. Kept in step with the plan in the same statement.
   nextBreakRemindAt DateTime?
+
+  /// The member answered "Still working" on the automatic rest: no automatic
+  /// rest is inserted at the close (the missed-rest rule applies as for anybody).
+  autoRestSkippedAt DateTime?
 
   notes String?
 
@@ -3426,6 +3436,9 @@ model SpaceAssignment {
   /// For the person who travels for one site and is only ever physically at
   /// another: granted on the account, refused on the yard's assignment.
   allowRemote   Boolean?
+  /// Chosen for the automatic clock in THIS workspace (shared attendance/auto-clock.ts).
+  /// Only arms when the workspace switched it on AND the member consented.
+  autoClock     Boolean   @default(false)
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
 

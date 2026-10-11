@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES,
@@ -13,7 +14,8 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   validateGeofencePolygon,
   type GeofencePolygonError,
   COST_ON_PROFILE_MESSAGE,
-  stripWorkspaceTerms, assertFoundInOrg } from '@hbcfield/shared';
+  stripWorkspaceTerms, assertFoundInOrg,
+  parseAutoClockSettings, readAutoClockSettings, type AutoClockSettings } from '@hbcfield/shared';
 import { isGeofencePolicy, isRequestKind, REQUEST_KINDS,
   isNoShiftPolicy,
   noShiftPolicyConflict,
@@ -364,6 +366,8 @@ export class LocationsService {
       stripWorkspaceTerms(
         {
           ...location,
+          // Parsed: the stored object with the defaults filled in, or null (never configured = off).
+          autoClock: readAutoClock(location.autoClock),
           ratesSet,
           organizationCurrency,
           effectiveCurrency: workspaceCurrency(location, { currency: organizationCurrency }),
@@ -470,6 +474,8 @@ export class LocationsService {
     workModel?: string;
     geofencePolicy?: string;
     requestKinds?: string[];
+    /** The automatic clock's settings (shared attendance/auto-clock.ts); null switches it off. */
+    autoClock?: unknown;
     noShiftPolicy?: string;
     noShiftDailyMinutes?: number;
     minCover?: number;
@@ -549,6 +555,30 @@ export class LocationsService {
         throw new BadRequestException({ code: 'REQUEST_KIND_INVALID', message: 'Unknown request kind for this workspace' });
       }
       updateData.requestKinds = REQUEST_KINDS.filter((k) => (data.requestKinds as string[]).includes(k));
+    }
+    /*
+      The automatic clock — parsed STRICTLY: an out-of-range number is refused
+      with the field it was, never clamped (the office must see that 500 minutes
+      was not saved as 180). Stored as the parsed whole, so a read never meets a
+      half-written object. The Remote bucket is not a place anybody arrives at.
+    */
+    if (data.autoClock !== undefined) {
+      if (existing.isRemote) {
+        throw new BadRequestException({ message: 'The remote bucket has no automatic clock', code: 'AUTO_CLOCK_SETTING_INVALID', params: { field: 'autoClock' } });
+      }
+      if (data.autoClock === null) {
+        updateData.autoClock = Prisma.DbNull;
+      } else {
+        const parsed = parseAutoClockSettings(data.autoClock, { strict: true });
+        if (!parsed.ok) {
+          throw new BadRequestException({
+            message: `Automatic clock setting out of range: ${parsed.field}`,
+            code: parsed.code,
+            params: { field: parsed.field },
+          });
+        }
+        updateData.autoClock = parsed.value;
+      }
     }
     // Clocking in with no shift — validated for the same reason as the policy above.
     if (data.noShiftPolicy !== undefined) {
@@ -636,7 +666,7 @@ export class LocationsService {
 
     this.logger.log(`Company location updated: ${location.id}`);
     this.announce('space_changed', data.organizationId, location.id);
-    return success(location, 'Company location updated successfully');
+    return success({ ...location, autoClock: readAutoClock(location.autoClock) }, 'Company location updated successfully');
   }
 
   /**
@@ -1181,6 +1211,9 @@ export class LocationsService {
             // Badged in the roster, and the flag the attendance and rota views
             // filter on — an external supervisor never clocks in here.
             isExternal: true,
+            // Whether they consented to the automatic clock — the office needs to see why it is not arming.
+            // Stripped at the gateway for anybody who does not manage this workspace's people.
+            autoClockConsentAt: true,
             /*
               Whether this person can be GIVEN work.
 
@@ -1392,13 +1425,28 @@ export class LocationsService {
      * changing the account.
      */
     allowRemote?: boolean | null;
+    /** Chosen for the automatic clock here (shared attendance/auto-clock.ts). */
+    autoClock?: boolean;
+    /**
+     * Set when the caller manages only THIS workspace (not org-wide): the
+     * assignment must be in it, or it reads as not found.
+     */
+    spaceId?: string;
   }) {
     // Find the assignment and verify organization ownership
     const assignment = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.assignmentId },
+      include: { user: { select: { isExternal: true } } },
     });
 
     assertFoundInOrg(assignment, data.organizationId, 'Assignment');
+    if (data.spaceId !== undefined && assignment.spaceId !== data.spaceId) {
+      throw new NotFoundException('Assignment not found');
+    }
+    // An external member holds no clock, automatic or not.
+    if (data.autoClock === true && assignment.user?.isExternal) {
+      throw new BadRequestException({ message: 'External members do not use the clock', code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL' });
+    }
 
     // Validate schedule days if provided
     if (data.schedule && data.schedule.length > 0) {
@@ -1431,6 +1479,7 @@ export class LocationsService {
       updateData.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
     // Tri-state on purpose: true / false / null-meaning-follow-the-account.
     if (data.allowRemote !== undefined) updateData.allowRemote = data.allowRemote;
+    if (data.autoClock !== undefined) updateData.autoClock = data.autoClock === true;
 
     const updated = await this.prisma.spaceAssignment.update({
       where: { id: data.assignmentId },
@@ -1478,4 +1527,9 @@ export class LocationsService {
     this.announce('space_roster_changed', data.organizationId, assignment.spaceId);
     return success(null, 'Assignment removed successfully');
   }
+}
+
+/** A workspace's automatic-clock settings as every read returns them: parsed with the defaults, or null when never configured. */
+function readAutoClock(raw: unknown): AutoClockSettings | null {
+  return raw == null ? null : readAutoClockSettings(raw);
 }
