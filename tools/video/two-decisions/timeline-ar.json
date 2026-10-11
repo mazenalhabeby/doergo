@@ -1,0 +1,98 @@
+{
+ "chapters": [
+  {
+   "id": "intro",
+   "start": 0.4,
+   "end": 14.057,
+   "phrases": [
+    {
+     "start": 0.4,
+     "end": 13.357,
+     "scene": "intro"
+    }
+   ]
+  },
+  {
+   "id": "p1",
+   "start": 14.057,
+   "end": 67.305,
+   "phrases": [
+    {
+     "start": 14.057,
+     "end": 23.693,
+     "scene": "p1-tap"
+    },
+    {
+     "start": 24.407,
+     "end": 28.656,
+     "scene": "p1-tap"
+    },
+    {
+     "start": 29.377,
+     "end": 37.109,
+     "scene": "p1-now"
+    },
+    {
+     "start": 37.799,
+     "end": 46.808,
+     "scene": "p1-now"
+    },
+    {
+     "start": 47.564,
+     "end": 57.722,
+     "scene": "p1-better"
+    },
+    {
+     "start": 58.343,
+     "end": 66.505,
+     "scene": "p1-better"
+    }
+   ]
+  },
+  {
+   "id": "p2",
+   "start": 67.305,
+   "end": 111.793,
+   "phrases": [
+    {
+     "start": 67.305,
+     "end": 74.944,
+     "scene": "p2-models"
+    },
+    {
+     "start": 75.588,
+     "end": 80.569,
+     "scene": "p2-models"
+    },
+    {
+     "start": 81.231,
+     "end": 93.538,
+     "scene": "p2-now"
+    },
+    {
+     "start": 94.316,
+     "end": 102.745,
+     "scene": "p2-better"
+    },
+    {
+     "start": 103.597,
+     "end": 110.993,
+     "scene": "p2-better"
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "start": 111.793,
+   "end": 127.851,
+   "phrases": [
+    {
+     "start": 111.793,
+     "end": 127.35,
+     "scene": "end"
+    }
+   ]
+  }
+ ],
+ "duration": 129.35
+}

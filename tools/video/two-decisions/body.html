@@ -1,0 +1,159 @@
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="top">
+    <div>
+      <div class="eyebrow">إتش بي سي فيلد · قبل النشر</div>
+      <h1>نقطتان قبل النشر</h1>
+      <p class="lede">بقيت نقطتان في إصلاحات الحضور والانصراف تحتاجان إلى قرار. لكل واحدة: ماذا يحدث في الإصلاح الجديد، وما الأفضل.</p>
+    </div>
+    <div class="player">
+      <button class="play" id="play" aria-label="تشغيل الشرح الصوتي">
+        <svg id="icPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l12-7z"/></svg>
+        <svg id="icPause" viewBox="0 0 24 24" fill="currentColor" hidden><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <div class="bar" id="bar" role="slider" aria-label="موضع التشغيل" tabindex="0"><i id="fill"></i></div>
+      <div class="time num" id="time">0:00 / __DUR__</div>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="phoneCol">
+      <div class="phone" aria-hidden="true">
+        <div class="island"></div>
+        <div class="status"><span class="num" id="clk">9:41</span><span>HBCField</span></div>
+
+        <div class="screen on" data-scene="intro">
+          <div class="sTitle">قبل النشر</div>
+          <div class="sSub">إصلاحات الحضور والانصراف</div>
+          <div class="card row"><span>إصلاحات جاهزة</span><span class="chip ok num">12</span></div>
+          <div class="card row"><span>1 · «عن بُعد» بدون اتصال</span><span class="chip warn">قرار</span></div>
+          <div class="card row"><span>2 · مساحات «حسب المهام»</span><span class="chip warn">قرار</span></div>
+        </div>
+
+        <div class="screen" data-scene="p1-tap">
+          <div class="sTitle">لا توجد إشارة</div>
+          <div class="sSub">قائمة المساحات على الهاتف قديمة</div>
+          <div class="card row"><span>المساحات المعروفة للهاتف</span><span class="chip">لا شيء</span></div>
+          <div class="btn" style="background:var(--pWarn)">سجّل حضوراً عن بُعد</div>
+          <div class="card"><div class="ln"><span>صندوق الإرسال</span><span class="chip warn">محفوظ</span></div><div class="ln"><span>الحضور</span><span class="num">07:30</span></div><div class="ln"><span>الانصراف</span><span class="num">16:00</span></div></div>
+          <div class="sSub">يعمل يومه كاملاً</div>
+        </div>
+
+        <div class="screen" data-scene="p1-now">
+          <div class="sTitle">عادت الإشارة</div>
+          <div class="sSub">في الإصلاح الجديد</div>
+          <div class="notif" style="background:rgba(253,151,140,.14)"><small>الخادم</small>رُفض: لديك مساحة عمل، العمل عن بُعد ليس لك</div>
+          <div class="card row"><span>ساعات اليوم</span><span class="chip bad num">0:00</span></div>
+          <div class="card row"><span>عمل فعلياً</span><span class="num">8:30 h</span></div>
+          <div class="sSub">ضاعت ساعات يوم كامل</div>
+        </div>
+
+        <div class="screen" data-scene="p1-better">
+          <div class="sTitle">الأفضل</div>
+          <div class="card row"><span>الحضور</span><span class="chip ok">مقبول · <span class="num">07:30</span></span></div>
+          <div class="card row"><span>العلامة</span><span class="chip warn">عن بُعد مع مساحة عمل</span></div>
+          <div class="card row"><span>الحالة</span><span class="chip warn">للمراجعة</span></div>
+          <div class="notif"><small>مثل حدّ الساعات اليومي اليوم</small>الحضور بدون اتصال لا يُرفض، بل يُعلَّم</div>
+        </div>
+
+        <div class="screen" data-scene="p2-models">
+          <div class="sTitle">نموذج العمل</div>
+          <div class="sSub">لكل مساحة واحد من أربعة</div>
+          <div class="card"><div class="ln"><span>بدون</span><span class="chip">لا ورديات</span></div><div class="ln"><span>ورديات</span><span class="chip ok">ورديات مخطّطة</span></div><div class="ln"><span>جدول ثابت</span><span class="chip ok">ورديات مخطّطة</span></div><div class="ln"><span>حسب المهام</span><span class="chip">لا ورديات</span></div></div>
+        </div>
+
+        <div class="screen" data-scene="p2-now">
+          <div class="sTitle">مساحة «حسب المهام»</div>
+          <div class="sSub">في الإصلاح الجديد</div>
+          <div class="card row"><span>كريم · <span class="num">07:58</span></span><span class="chip bad">يوم غير مجدول</span></div>
+          <div class="card row"><span>سارة · <span class="num">08:04</span></span><span class="chip bad">يوم غير مجدول</span></div>
+          <div class="card row"><span>نور · <span class="num">08:11</span></span><span class="chip bad">يوم غير مجدول</span></div>
+          <div class="notif"><small>للمراجعة</small>كل حضور، دون سبب</div>
+        </div>
+
+        <div class="screen" data-scene="p2-better">
+          <div class="sTitle">الأفضل</div>
+          <div class="card"><div class="ln"><span>ورديات · جدول ثابت</span><span class="chip warn">يُعلَّم اليوم غير المجدول</span></div><div class="ln"><span>بدون · حسب المهام</span><span class="chip ok">لا علامة</span></div></div>
+          <div class="card row"><span>مساحات «حسب المهام» اليوم</span><span class="chip num">0</span></div>
+          <div class="sSub">لن يتأثّر أحد، لكنها القاعدة الصحيحة</div>
+        </div>
+
+        <div class="screen" data-scene="end">
+          <div class="sTitle">الخلاصة</div>
+          <div class="card row"><span>1 · عن بُعد بدون اتصال</span><span class="chip ok">نحفظ ونراجع</span></div>
+          <div class="card row"><span>2 · حسب المهام</span><span class="chip ok">بلا علامة</span></div>
+          <div class="btn">تغييران صغيران، ثم النشر</div>
+        </div>
+      </div>
+      <div class="caption" id="caption" aria-live="polite">اضغط تشغيل لتبدأ الشرح.</div>
+    </div>
+
+    <nav class="side" aria-label="الفصول">
+      <h2>الفصول</h2>
+      __CHAPTERS__
+    </nav>
+  </div>
+
+  <section class="rules">
+    <h2>القرار المقترح</h2>
+    <div class="groups">
+      <div class="group"><h3><span class="num">1</span>«عن بُعد» بدون اتصال، وقائمة قديمة</h3><ul>
+        <li><b>الإصلاح الجديد:</b> يُرفض الحضور عند المزامنة، فتضيع ساعات اليوم.</li>
+        <li><b>المقترح:</b> يُقبل بوقته الحقيقي، مع علامة «عن بُعد مع مساحة عمل»، ويذهب للمراجعة.</li>
+        <li><b>لماذا:</b> قاعدة التطبيق بدون اتصال: لا يُرمى وقت عمله أحد، كما في حدّ الساعات اليومي.</li>
+        <li>عند الاتصال يبقى الرفض كما هو: من لديه مساحة عمل يسجّل فيها.</li>
+      </ul></div>
+      <div class="group"><h3><span class="num">2</span>مساحات «حسب المهام»</h3><ul>
+        <li><b>الإصلاح الجديد:</b> كل حضور فيها يُعلَّم «يوم غير مجدول» ويذهب للمراجعة.</li>
+        <li><b>المقترح:</b> فقط «ورديات» و«جدول ثابت» تخطّط ورديات، وتُعلَّم فيها الأيام غير المجدولة.</li>
+        <li>لا توجد مساحة «حسب المهام» اليوم، ولا تعرضها إعدادات الويب، فلا أحد يتأثّر الآن.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer>الصوت بالعربية من ElevenLabs.</footer>
+</div>
+
+<audio id="vo" src="voice-ar.mp3" preload="metadata"></audio>
+<script>
+const T = __TIMELINE__;
+const vo = document.getElementById('vo'), play = document.getElementById('play');
+const icPlay = document.getElementById('icPlay'), icPause = document.getElementById('icPause');
+const fill = document.getElementById('fill'), bar = document.getElementById('bar'), time = document.getElementById('time');
+const caption = document.getElementById('caption'), clk = document.getElementById('clk');
+const screens = [...document.querySelectorAll('.screen')], chaps = [...document.querySelectorAll('.chap')];
+const CLOCK = { 'p1-tap': '7:30', 'p1-now': '16:20', 'p1-better': '16:20', 'p2-now': '8:15' };
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const dur = () => (isFinite(vo.duration) && vo.duration) || T.duration;
+let current = -1;
+function show(t) {
+  let i = 0;
+  for (let k = 0; k < T.caps.length; k++) if (T.caps[k][0] <= t + 0.05) i = k;
+  if (i !== current) {
+    current = i;
+    const [, , scene, text] = T.caps[i];
+    caption.textContent = text;
+    screens.forEach(s => s.classList.toggle('on', s.dataset.scene === scene));
+    clk.textContent = CLOCK[scene] || '9:41';
+  }
+  let ch = 0;
+  T.chapters.forEach(([, st], k) => { if (st <= t + 0.05) ch = k; });
+  chaps.forEach((c, k) => c.classList.toggle('on', k === ch));
+  fill.style.width = (100 * t / dur()) + '%';
+  time.textContent = fmt(t) + ' / ' + fmt(dur());
+}
+function setPlaying(p) { icPlay.hidden = p; icPause.hidden = !p; play.setAttribute('aria-label', p ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'); }
+play.addEventListener('click', () => { if (vo.paused) vo.play().catch(() => {}); else vo.pause(); });
+vo.addEventListener('play', () => setPlaying(true));
+vo.addEventListener('pause', () => setPlaying(false));
+vo.addEventListener('timeupdate', () => show(vo.currentTime));
+vo.addEventListener('ended', () => setPlaying(false));
+function seek(t) { vo.currentTime = Math.max(0, Math.min(dur() - 0.1, t)); show(vo.currentTime); }
+bar.addEventListener('click', e => { const r = bar.getBoundingClientRect(); seek(dur() * (r.right - e.clientX) / r.width); });
+bar.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') seek(vo.currentTime + 5); if (e.key === 'ArrowRight') seek(vo.currentTime - 5); });
+chaps.forEach(c => c.addEventListener('click', () => {
+  const st = (T.chapters.find(([id]) => id === c.dataset.ch) || [, 0])[1];
+  seek(st); if (vo.paused) vo.play().catch(() => {});
+}));
+show(0);
+</script>
