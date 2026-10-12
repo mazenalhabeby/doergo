@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-13 (external role builder — not deployed)
+> **Last Updated**: 2026-10-13 (external role builder — PROD 15949851 + OTA 1.0.8)
 
 ---
 
