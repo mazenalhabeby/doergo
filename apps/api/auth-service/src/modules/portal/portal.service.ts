@@ -12,6 +12,7 @@ import {
   scopeAllows,
   type SpaceScopeIds,
   crmCapsIn,
+  activeAssignmentWhere,
 } from '@hbcfield/shared';
 
 // Keep only well-formed { label, value } detail rows — the one sanitizer the
@@ -249,7 +250,20 @@ export class PortalService {
   };
 
   /** The space's portal config (ensures one exists). */
-  async getSpacePortal(data: { organizationId: string; spaceId: string }) {
+  async getSpacePortal(data: { organizationId: string; spaceId: string; mayCreate?: boolean }) {
+    /*
+      Opening the workspace's portal page creates the portal when there is none —
+      a portal is a billed line. Only somebody who may MANAGE portals here may
+      cause that; a reader of requests (`mayCreate: false`) is told there is none.
+      Undefined keeps the old behaviour for the internal callers below.
+    */
+    if (data.mayCreate === false) {
+      const found = await this.prisma.portal.findFirst({
+        where: { organizationId: data.organizationId, spaceId: data.spaceId },
+        select: { id: true, templateKey: true, entityLabel: true, name: true },
+      });
+      return { data: found ?? null };
+    }
     const ensured = await this.ensurePortalForSpace({ organizationId: data.organizationId, spaceId: data.spaceId });
     const portal = await this.prisma.portal.findFirst({
       where: { id: ensured.data.id, organizationId: data.organizationId },
@@ -958,6 +972,17 @@ export class PortalService {
   async setMemberApartment(data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
     const [uid] = await this.keepOrgUserIds([data.userId], data.organizationId);
     if (!uid) throw new NotFoundException('Member not found in this organization');
+    /*
+      Only somebody who works in THIS workspace can live in one of its apartments
+      as a member resident. Without it a workspace-scoped manager could attach
+      any person in the organization — someone they cannot otherwise see — to
+      their site's apartment.
+    */
+    const assigned = await this.prisma.spaceAssignment.findFirst({
+      where: { ...activeAssignmentWhere(uid), spaceId: data.spaceId, organizationId: data.organizationId },
+      select: { id: true },
+    });
+    if (!assigned) throw new NotFoundException('Member not found in this workspace');
 
     // Validate the target apartment belongs to this org + space.
     let targetId: string | null = null;

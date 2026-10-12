@@ -6,6 +6,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissionInSpace, pickUnitFields } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { portalScope } from '../../common/portal-scope';
+import { scopeFor } from '../../common/permission-scope';
 
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
@@ -71,7 +72,10 @@ export class SpacePortalController {
   @ApiOperation({ summary: "The space's portal config (entity type)" })
   async get(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_get_for_space', { organizationId: req.user.organizationId, spaceId });
+    // A reader must not create the (billed) portal by opening the page.
+    const manage = scopeFor(req.user, 'canManagePortals');
+    const mayCreate = manage === null || manage.includes(spaceId);
+    return this.auth('portal_get_for_space', { organizationId: req.user.organizationId, spaceId, mayCreate });
   }
 
   @Patch()
