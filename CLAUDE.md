@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-06 (company calendar deployed)
+> **Last Updated**: 2026-10-13 (external role builder — not deployed)
 
 ---
 
@@ -118,12 +118,32 @@ hbcfield/
 | **DISPATCHER** | WEB only | Office manager, operation coordinator. Can view all tasks and assign technicians. |
 | **TECHNICIAN** | MOBILE only | Field worker, task executor. Can only see and execute assigned tasks. |
 
-**External members** (`User.isExternal`) work for a client or partner, not for you. Their whole authority is ONE space role; an org-wide role is refused, because it would reach every space. They hold no clock, no time off and no personnel file, and `@DenyExternal()` closes the organization's own property to them regardless of permission. Two built-in space roles:
+**External members** (`User.isExternal`) work for a client or partner, not for you. Their whole authority is held IN WORKSPACES — an org-wide role is refused, because it would reach every space. They hold no clock, no time off and no personnel file. Per workspace they may be given anything marked `external: true` on the permission schema — the work, the hours (approve / correct / delete separately), the rota, that workspace's clients, portal and equipment, its people — from watch-only up to running the site, built per person in the **permission builder** (`docs/plans/external-role-builder.md`). `@DenyExternal()` keeps the organization's own surfaces closed regardless of permission (calendar, reports, billing, invoices, legal entities, company members, address-book import, custody/expenses for staff). Built-in space roles:
 
 | Space role | Grants | Seat |
 |---|---|---|
-| **External Supervisor** | canViewAllTasks, canApproveOvertime, canReconcileAttendance, canViewSpaceAttendance | €9.99 |
+| **External Supervisor** | canViewAllTasks, canViewSpaceAttendance, canApproveAttendance, canApproveOvertime (orgs seeded before 2026-10-13 also keep canReconcileAttendance + canDeleteAttendance) | €9.99 |
 | **External Observer** | canViewAllTasks, canCreateTasks — watches, and can raise a job | **€2** |
+
+The seat is priced from the permissions HELD (`isObserverSeat`), paid by the organization; anything beyond the observer set is €9.99.
+
+### The permission builder — one person, one workspace (`/spaces/:spaceId/members/:assignmentId/permissions`)
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| GET | `/spaces/:spaceId/members/:assignmentId/permissions` | `{ roleId, personal, preset, permissions, choice, isExternal, observerSeat, platforms, assignableRoles }` | canGrantSpaceRoles in the path workspace (or org-wide) |
+| PUT | same | `{ roleId }` or `{ permissions }` — a set equal to a shared role is stored as that role, else as this assignment's PERSONAL role | same + grant ceiling + external allow-list |
+
+> ⚠️ **Areas → levels → switches** live once in `packages/shared/src/access/permission-levels.ts` (web, phone, server, tests). Levels are cumulative; delete hours, correct hours, rota, tracking, add people, give roles are separate switches. A grant implies what it cannot work without (`IMPLIED_PERMISSIONS`: manage ⇒ log ⇒ view assets, manage ⇒ answer ⇒ view portal), applied in `buildResolvedAccess`.
+>
+> ⚠️ **A personal role is an ordinary AccessRole with `personalAssignmentId`** — so every rule reading a role applies to it. It must NEVER appear in a list or picker: every role query uses `SHARED_ROLE_WHERE`; `roleUsableOnAssignment` refuses another person's.
+>
+> ⚠️ **External allow-list is opt-in per key** (`external: true` on `ACCESS_PERMISSION_SCHEMA`). `canManageUsers` is space-capable and NOT external — in a space it sets bill rates; adding people / giving roles are their own keys (`canAddSpaceMembers`, `canGrantSpaceRoles`).
+>
+> ⚠️ **Narrowing has ONE rule**: `scopeFor(user, key)` (gateway `common/permission-scope.ts`) — the org FLAG first (flags carry the bridges in `ORG_FLAG_BRIDGES`), then `spacesGranting`. Narrowing on `spacesGranting` alone gave bridged org managers an empty list. Every key is a request field (`orgFlagFields`), CRM keys included.
+>
+> ⚠️ **CRM is per workspace** (`packages/shared/src/crm/crm-reach.ts`): org caps ∪ the client's workspace's crm* keys (NO legacy bridge per workspace), only where the workspace runs `crm`. A client outside reach is 404. Assets per workspace by the KIND's space (`assetSpaces` / task-service `asset-access.service.ts`); portal by the portal's space (`portalScope`).
+>
+> ⚠️ **The sweep**: `gateway/src/common/__tests__/external-reach.spec.ts` walks all routes; any route an external member can reach without a permission must be on the reviewed list with its reason. E2E: `python3 tools/external-access-e2e.py` (LOCAL, 30 checks). Migration `20261013090000_external_role_builder` (additive: every new key granted to exactly the roles whose broader key carried it).
 
 > **Note**: The `CLIENT` role has been deprecated and migrated to `ADMIN`. A backward compatibility layer (`LegacyRoleMap`, `normalizeRole()`) handles legacy data.
 
@@ -599,7 +619,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **The route is the gateway's**: task-service leaves `route: null` when the workspace tracks; the gateway fills it from `get_task_route` (in parallel) only for the office copy AND a reader with `canViewTracking` org-wide or in THIS workspace (`trackingVisibility`); otherwise, or on any tracking failure, the section is removed — never a failed report.
 >
-> ⚠️ **No labour cost, ever** — no rate column is selected; the spec scans both copies for `costRate`/`billableRate`. A client's contact details only to a reader the CRM reaches (`crmReachesClient`); the name always.
+> ⚠️ **No labour cost, ever** — no rate column is selected; the spec scans both copies for `costRate`/`billableRate`. A client's contact details only to a reader the CRM reaches (`crmReachesClientIn`, per the client's workspace); the name always.
 >
 > ⚠️ **Signatures**: a ServiceReport signature is passed on only as a `data:image/png|jpeg;base64,` URL (`safeSignatureDataUrl`) — a URL or SVG is dropped. A step-form photo/signature keeps only THIS job's attachment ids (the value is filtered, not just unlinked).
 >
@@ -1599,8 +1619,8 @@ migration moved the DEFAULT for new sites only. Detail in memory `route-planner-
     nothing in the other.
 - **Sales Rep** is a built-in role — `crmViewOwn + crmWork + crmEditInfo + canCreateTasks`.
   No migration: `listAccessRoles` upserts built-ins per org.
-  - ⚠️ **ORG scope is load-bearing** — `resolveCrmCaps` reads CRM keys off the member's org
-    role only, so a space-scoped sales role grants nothing while looking configured.
+  - Since 2026-10-13 CRM keys also count in a SPACE role (`crm-reach.ts`), for that workspace's
+    clients only. The ORG-scoped Sales Rep still reaches the whole book it is assigned.
   - ⚠️ **Never add `canViewAllTasks` to it.** The resolver treats it as the legacy "read every
     client", so the rep would silently gain the whole organization's book. A test pins this.
 - **A task can be a client visit.** Pick the client in the New Task dialog (only where the
