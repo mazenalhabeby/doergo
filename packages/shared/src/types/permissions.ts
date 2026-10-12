@@ -676,6 +676,34 @@ export interface ResolvedAccess {
 }
 
 /**
+ * A grant that cannot be used without another one implies it: managing assets
+ * without seeing them, answering portal requests without reading them.
+ *
+ * The guard checks ONE exact key while a service reads levels as a ladder, so a
+ * role edited key by key to "manage assets" alone passed the service and was
+ * refused every read at the guard. Applied in the resolver — the one place a
+ * session's permissions are assembled — so every guard, narrowing and screen
+ * sees the ladder the same way. Only ever ADDS what is below; never widens a
+ * grant sideways (manage assets does not imply anything about tasks).
+ */
+export const IMPLIED_PERMISSIONS: Partial<Record<AccessPermissionKey, readonly AccessPermissionKey[]>> = {
+  canManageAssets: ['canLogAssets', 'canViewAssets'],
+  canLogAssets: ['canViewAssets'],
+  canManagePortals: ['canAnswerPortal', 'canViewPortal'],
+  canAnswerPortal: ['canViewPortal'],
+};
+
+/** A permission set with everything its grants imply added (one level deep is enough: each entry lists its whole ladder). */
+export function withImpliedPermissions(set: PermissionSet): PermissionSet {
+  const out: PermissionSet = { ...set };
+  for (const key in IMPLIED_PERMISSIONS) {
+    if (set[key as AccessPermissionKey] !== true) continue;
+    for (const implied of IMPLIED_PERMISSIONS[key as AccessPermissionKey]!) out[implied] = true;
+  }
+  return out;
+}
+
+/**
  * Build the resolved access from raw session inputs. Every source is run through
  * the whitelisting mappers, so unknown/injected JSON keys are dropped — only the
  * known permission vocabulary can ever grant anything.
@@ -725,7 +753,8 @@ export function buildResolvedAccess(input: {
     if (!g?.spaceId) continue;
     perSpace[g.spaceId] = mergePermissions(perSpace[g.spaceId], spaceShareLevelToPermissions(g.level));
   }
-  const access: ResolvedAccess = { org, perSpace };
+  for (const spaceId in perSpace) perSpace[spaceId] = withImpliedPermissions(perSpace[spaceId]!);
+  const access: ResolvedAccess = { org: withImpliedPermissions(org), perSpace };
   if (input.sharedSpaces && input.sharedSpaces.length) access.sharedSpaces = input.sharedSpaces;
   return access;
 }
