@@ -8,7 +8,8 @@ import { Building2, Plus, Users, ListChecks, ChevronRight, LayoutGrid, Loader2, 
 
 import { spacePortalApi, type PortalSummary } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
-import { personInitials } from "@hbcfield/shared/client"
+import { accessAllows, isAdmin, personInitials } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,6 +38,16 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
   const portalsQ = useQuery({ queryKey: keys.spaces.portals(spaceId), queryFn: () => spacePortalApi.listPortals(spaceId) })
   const portals = portalsQ.data ?? []
   const [createOpen, setCreateOpen] = useState(false)
+  /*
+    Creating a portal is a manager's act (`canManagePortals` here or org-wide) —
+    and a workspace's second portal is a billed line. Somebody who only reads or
+    answers this workspace's portal (an external member included) sees the
+    portals, never the way to make one.
+  */
+  const { user } = useAuth()
+  const mayCreate = !!user && (
+    isAdmin(user) || user.canManagePortals === true || accessAllows(user.access as never, "canManagePortals", spaceId)
+  )
 
   return (
     <div className="space-y-6">
@@ -45,7 +56,7 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
         accent="violet"
         title={t("portal.title", "Client portals")}
         description={t("portal.introMulti", "This space's B2C portals. Clients you invite log in to order & follow. Run as many as you need.")}
-        action={<Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> {t("portal.createPortal", "Create portal")}</Button>}
+        action={mayCreate ? <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="mr-1.5 h-4 w-4" /> {t("portal.createPortal", "Create portal")}</Button> : undefined}
       />
 
       {portalsQ.isLoading ? (
@@ -55,9 +66,18 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
       ) : portals.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/20 px-6 py-16 text-center">
           <span className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground"><LayoutGrid className="h-6 w-6" /></span>
-          <p className="mt-4 text-sm font-semibold text-foreground">{t("portal.emptyTitle", "No portals yet")}</p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">{t("portal.emptyHintSpace", "Create a portal for this workspace — pick a type, then invite your clients.")}</p>
-          <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-1.5"><Plus className="h-4 w-4" /> {t("portal.createPortal", "Create portal")}</Button>
+          {mayCreate ? (
+            <>
+              <p className="mt-4 text-sm font-semibold text-foreground">{t("portal.emptyTitle", "No portals yet")}</p>
+              <p className="mt-1 max-w-sm text-xs text-muted-foreground">{t("portal.emptyHintSpace", "Create a portal for this workspace — pick a type, then invite your clients.")}</p>
+              <Button onClick={() => setCreateOpen(true)} className="mt-4 gap-1.5"><Plus className="h-4 w-4" /> {t("portal.createPortal", "Create portal")}</Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-4 text-sm font-semibold text-foreground">{t("portal.noPortalYetTitle")}</p>
+              <p className="mt-1 max-w-sm text-xs text-muted-foreground">{t("portal.noPortalYetHint")}</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -85,8 +105,8 @@ export function PortalTab({ spaceId, hasApartments, onOpenModules }: { spaceId: 
         </div>
       )}
 
-      <CreatePortalDialog spaceId={spaceId} hasApartments={hasApartments} onOpenModules={onOpenModules} open={createOpen} onOpenChange={setCreateOpen}
-        onCreated={(id) => { qc.invalidateQueries({ queryKey: keys.spaces.portals(spaceId) }); router.push(`/locations/${spaceId}/portals/${id}`) }} />
+      {mayCreate && <CreatePortalDialog spaceId={spaceId} hasApartments={hasApartments} onOpenModules={onOpenModules} open={createOpen} onOpenChange={setCreateOpen}
+        onCreated={(id) => { qc.invalidateQueries({ queryKey: keys.spaces.portals(spaceId) }); router.push(`/locations/${spaceId}/portals/${id}`) }} />}
     </div>
   )
 }

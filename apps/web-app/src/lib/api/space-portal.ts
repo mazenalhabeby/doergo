@@ -16,10 +16,15 @@ export const spacePortalApi = {
     if (res.error) throw apiError(res);
     return res.data!;
   },
-  get: async (spaceId: string): Promise<SpacePortalConfig> => {
-    const res = await call(spacePortalWebEndpoints.get, { spaceId }) as ApiResponse<{ data: SpacePortalConfig }>;
+  /**
+   * The workspace's default portal, or null — the server answers `{ data: null }`
+   * when there is none yet and the caller may not create one (a reader must not
+   * create the billed portal by opening a page).
+   */
+  get: async (spaceId: string): Promise<SpacePortalConfig | null> => {
+    const res = await call(spacePortalWebEndpoints.get, { spaceId }) as ApiResponse<{ data: SpacePortalConfig | null }>;
     if (res.error) throw apiError(res);
-    return res.data!.data;
+    return res.data?.data ?? null;
   },
   units: async (spaceId: string): Promise<SpaceUnit[]> => {
     const res = await call(spacePortalWebEndpoints.units, { spaceId }) as ApiResponse<{ data: SpaceUnit[] }>;

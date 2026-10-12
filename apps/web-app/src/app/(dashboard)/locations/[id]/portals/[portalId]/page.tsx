@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { accessAllows, isAdmin } from "@hbcfield/shared/client"
+import { useAuth } from "@/contexts/auth-context"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { ConfirmDialog, ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { copyText } from "@/lib/clipboard"
@@ -62,8 +64,22 @@ export default function PortalDetailPage() {
   const { hasModule } = useSpaceModules(spaceId)
   const spaceHasApartments = hasModule("b2c_portal")
 
+  /*
+    Three trusts, each asked in THIS workspace exactly as the routes ask them
+    (portal-admin.controller): reading the portal opens the page; answering
+    routes a request into work; managing configures it — categories, cover,
+    type, its client register. Inviting clients stays the organization's own
+    (`@DenyExternal`). Somebody who only reads sees the requests, nothing more.
+  */
+  const { user } = useAuth()
+  const holdsHere = (key: string) =>
+    !!user && (isAdmin(user) || (user as unknown as Record<string, unknown>)[key] === true || accessAllows(user.access as never, key as never, spaceId))
+  const mayManage = holdsHere("canManagePortals")
+  const mayAnswer = mayManage || holdsHere("canAnswerPortal")
+  const mayInvite = mayManage && user?.isExternal !== true
+
   const portalQ = useQuery({ queryKey: keys.portal.detail(portalId), queryFn: () => portalAdminApi.getPortal(portalId) })
-  const residentsQ = useQuery({ queryKey: keys.portal.residents(portalId), queryFn: () => portalAdminApi.residents(portalId) })
+  const residentsQ = useQuery({ queryKey: keys.portal.residents(portalId), queryFn: () => portalAdminApi.residents(portalId), enabled: mayManage })
   const requestsQ = useQuery({ queryKey: keys.portal.allRequests(portalId), queryFn: () => portalAdminApi.portalRequests(portalId) })
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
   const spacesQ = useQuery({ queryKey: keys.locations.list({ limit: 100 }), queryFn: () => locationsApi.list({ limit: 100 }), staleTime: 60000 })
@@ -222,10 +238,12 @@ export default function PortalDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="h-11 rounded-xl gap-1.5" onClick={() => setTypePickerOpen(true)}>
-              <Repeat className="h-4 w-4" />{t("portal.changeType", "Change type")}
-            </Button>
-            <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>
+            {mayManage && (
+              <Button variant="outline" className="h-11 rounded-xl gap-1.5" onClick={() => setTypePickerOpen(true)}>
+                <Repeat className="h-4 w-4" />{t("portal.changeType", "Change type")}
+              </Button>
+            )}
+            {mayInvite && <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>}
           </div>
         </div>
 
@@ -266,7 +284,7 @@ export default function PortalDetailPage() {
               onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCoverM.mutate(f); e.currentTarget.value = "" }}
             />
             <div className="mt-1 flex flex-wrap justify-center gap-2 sm:justify-start">
-              <Button size="sm" className="gap-1.5" disabled={uploadCoverM.isPending} onClick={() => coverInputRef.current?.click()}>
+              <Button size="sm" className="gap-1.5" disabled={!mayManage || uploadCoverM.isPending} onClick={() => coverInputRef.current?.click()}>
                 {uploadCoverM.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                 {portal?.coverImageUrl ? t("portal.changeCover", "Change") : t("portal.uploadCover", "Upload cover")}
               </Button>
@@ -310,7 +328,7 @@ export default function PortalDetailPage() {
                   {requestsQ.data!.map((r: PortalRequestView) => {
                     const pending = r.triaged === false
                     return (
-                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => pending ? openTriage(r) : router.push(`/tasks/${r.id}`)}>
+                    <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => pending ? (mayAnswer && openTriage(r)) : router.push(`/tasks/${r.id}`)}>
                       <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority ? "" : "bg-slate-400"}`} style={r.priority ? { backgroundColor: getPriorityConfig(r.priority).hex } : undefined} title={r.priority ? getPriorityConfig(r.priority).label : undefined} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
@@ -336,12 +354,12 @@ export default function PortalDetailPage() {
           {/* ── Clients ── */}
           <TabsContent value="clients" className="mt-4">
             <div className="flex justify-end mb-3">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}><Plus className="h-3.5 w-3.5" />{t("portal.inviteResident", "Invite client")}</Button>
+              {mayInvite && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}><Plus className="h-3.5 w-3.5" />{t("portal.inviteResident", "Invite client")}</Button>}
             </div>
             <Panel>
               {residentsQ.isLoading ? <Loading /> : clientCount === 0 ? (
                 <EmptyState icon={<Users className="h-6 w-6" />} title={t("portal.noResidentsTitle", "No clients yet")} hint={t("portal.noResidents", "Invite one — they get a code to sign in on the app.")}
-                  cta={<Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>} />
+                  cta={mayInvite ? <Button size="sm" className="gap-1.5" onClick={() => setInviteOpen(true)}><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button> : undefined} />
               ) : (
                 <div className="divide-y divide-border/60">
                   {residentsQ.data!.map((r: Customer) => (
@@ -368,11 +386,11 @@ export default function PortalDetailPage() {
           {/* ── Categories ── */}
           <TabsContent value="categories" className="mt-4">
             <div className="flex justify-end mb-3">
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-3.5 w-3.5" />{t("portal.addCategory", "Add category")}</Button>
+              {mayManage && <Button variant="outline" size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-3.5 w-3.5" />{t("portal.addCategory", "Add category")}</Button>}
             </div>
             <Panel>
               {categories.length === 0 ? <EmptyState icon={<ListChecks className="h-6 w-6" />} title={t("portal.noCategoriesTitle", "No categories yet")} hint={t("portal.noCategories", "Add a category so clients can classify what they report.")}
-                cta={<Button size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-4 w-4" />{t("portal.addCategory", "Add category")}</Button>} /> : (
+                cta={mayManage ? <Button size="sm" className="gap-1.5" onClick={openNewCat}><Plus className="h-4 w-4" />{t("portal.addCategory", "Add category")}</Button> : undefined} /> : (
                 <div className="divide-y divide-border/60">
                   {categories.map((c) => (
                     <div key={c.id} className="group flex items-center gap-4 px-5 py-3.5">
@@ -384,8 +402,8 @@ export default function PortalDetailPage() {
                         <p className="text-xs text-muted-foreground truncate mt-0.5">{(c.issues || []).join(" · ") || t("portal.noIssues", "no sub-issues")}{c.team ? ` — ${c.team}` : ""}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditCat(c)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => setCatRemove(c)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        {mayManage && <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditCat(c)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                        {mayManage && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600 hover:text-red-700" onClick={() => setCatRemove(c)}><Trash2 className="h-3.5 w-3.5" /></Button>}
                       </div>
                     </div>
                   ))}

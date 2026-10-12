@@ -25,6 +25,7 @@ import { AuditTrail } from "@/components/audit-trail"
 import { TimezoneCombobox, fetchTimezone } from "@/components/timezone-combobox"
 import { DangerZone } from "./danger-zone"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouteAccess } from "@/hooks/use-route-access"
 
 const { MIN_GEOFENCE_RADIUS: GEO_MIN, MAX_GEOFENCE_RADIUS: GEO_MAX, DEFAULT_GEOFENCE_RADIUS: GEO_DEFAULT } =
   ATTENDANCE_CONSTANTS
@@ -44,6 +45,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { hasPlanFeature, user } = useAuth()
+  const access = useRouteAccess()
   const orgCurrency = user?.orgCurrency ?? "EUR"
   // This workspace's rates and their history, read only where they are shown (a client).
   const { data: spaceRates } = useQuery({
@@ -155,10 +157,11 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
     the workspace actually runs appears.
   */
   const mods = (space.enabledModules ?? []) as string[]
+  // …and only where the page behind the link would open for this reader (the route table).
   const contentLinks = [
-    { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") },
-    { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") },
-    { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") },
+    { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") && access.may("/clients") },
+    { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") && access.may("/assets") },
+    { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") && access.may("/portals") },
     /*
       ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is
       not in `mods` — and what decides whether this workspace can be billed is

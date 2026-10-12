@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft } from "lucide-react"
 
 import { assetsApi, type MaintenanceHistoryItem } from "@/lib/api"
-import { normalizeKindShape, logTypesForKind } from "@hbcfield/shared/client"
+import { normalizeKindShape, logTypesForKind, assetAccessIn } from "@hbcfield/shared/client"
 import { AssetListTable } from "@/components/assets/asset-list-table"
 import { AssetFaults } from "@/components/assets/asset-faults"
 import { AssetCustodyPanel } from "@/components/assets/asset-custody-panel"
@@ -38,15 +38,19 @@ export default function AssetRecordPage() {
   const id = params?.id ?? ""
   const qc = useQueryClient()
   const { user } = useAuth()
-  // A token minted before this capability existed carries neither flag; an
-  // admin is one either way, which is what stops an old session losing buttons
-  // it had yesterday.
-  const canManageAssets = !!(user?.canManageAssets ?? user?.canManageUsers) || user?.role === "ADMIN"
   // A list tab is keyed by its own name, so adding a list adds a tab.
   const [tab, setTab] = useState<string>("activity")
 
   const assetQ = useQuery({ queryKey: keys.assets.record(id), queryFn: () => assetsApi.getAsset(id), enabled: !!id })
   const asset = assetQ.data as unknown as AssetDetail | undefined
+  /*
+    Managing THIS asset is asked in its kind's workspace — an asset has no space
+    of its own (`AssetCategory.spaceId`). A workspace manager, or an external
+    member given "Manage" for their one workspace, holds it there and nowhere
+    else; an org-level kind (no space) needs the org-wide grant.
+    `assetAccessIn` treats an admin and a pre-capability token as org-wide.
+  */
+  const canManageAssets = !!user && assetAccessIn(user, "manage", asset?.category?.spaceId ?? null)
 
   const actQ = useQuery({
     queryKey: keys.assets.activities(id),

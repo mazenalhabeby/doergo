@@ -69,6 +69,25 @@ export interface User {
   canReconcileAttendance?: boolean;
   canViewSpaceAttendance?: boolean;
   canApproveOvertime?: boolean;
+  /*
+    Split out of broader keys for the permission builder (org-wide flat fields,
+    bridges applied server-side by `orgFlagFields`). A grant held only in a
+    workspace is read through `access.perSpace`, never these.
+  */
+  canApproveAttendance?: boolean;
+  canDeleteAttendance?: boolean;
+  canViewAssets?: boolean;
+  canLogAssets?: boolean;
+  canViewPortal?: boolean;
+  canAnswerPortal?: boolean;
+  canAddSpaceMembers?: boolean;
+  canGrantSpaceRoles?: boolean;
+  crmViewOwn?: boolean;
+  crmViewAll?: boolean;
+  crmWork?: boolean;
+  crmEditInfo?: boolean;
+  crmCreateClients?: boolean;
+  crmManageClients?: boolean;
   allowRemote?: boolean;
   presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.
