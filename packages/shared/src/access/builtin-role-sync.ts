@@ -50,6 +50,8 @@ export interface StoredBuiltInRole {
   isSystem: boolean;
   isCustomized: boolean;
   permissions: unknown;
+  /** A personal role (one person, one workspace) is never a built-in, whatever its slug says. */
+  personalAssignmentId?: string | null;
 }
 
 /**
@@ -60,7 +62,7 @@ export function builtInRoleCatchUp(
   role: StoredBuiltInRole,
   definitions: readonly RolePreset[] = BUILTIN_ROLES,
 ): Record<string, unknown> | null {
-  if (!role.isSystem || role.isCustomized) return null;
+  if (!role.isSystem || role.isCustomized || role.personalAssignmentId) return null;
   const def = definitions.find((d) => d.slug === role.slug);
   if (!def) return null;
   const granted = builtInRoleGrants(def);

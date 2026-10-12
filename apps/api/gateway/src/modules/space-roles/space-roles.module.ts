@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SpaceRolesController } from './space-roles.controller';
+import { SpaceMemberPermissionsController } from './space-member-permissions.controller';
 import { SpaceRolesService } from './space-roles.service';
 
 // SERVICE_NAMES.TASK ClientProxy is provided globally (MicroservicesModule).
 @Module({
-  controllers: [SpaceRolesController],
+  controllers: [SpaceRolesController, SpaceMemberPermissionsController],
   providers: [SpaceRolesService],
 })
 export class SpaceRolesModule {}

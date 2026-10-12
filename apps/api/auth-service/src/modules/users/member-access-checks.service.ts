@@ -5,6 +5,7 @@ import {
   type PermissionSet,
   mayTakeOverAccount,
   loadOrgPermissionCeiling,
+  SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -140,7 +141,7 @@ export class MemberAccessChecksService {
     );
     if (isAdmin) return;
     const targetRole = await this.prisma.accessRole.findFirst({
-      where: { id: roleId, organizationId },
+      where: { id: roleId, organizationId, ...SHARED_ROLE_WHERE },
       select: { permissions: true },
     });
     if (!targetRole) return; // invalid id → caller's own tenancy check throws

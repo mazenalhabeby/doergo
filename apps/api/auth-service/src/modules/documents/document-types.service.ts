@@ -5,6 +5,7 @@ import {
   type DocumentDirection,
   type SignatureMode,
   routeProblem,
+  SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -283,8 +284,9 @@ export class DocumentTypesService {
       ...new Set([...(refs.visibleToRoleIds ?? []), ...(refs.requiredFromRoleIds ?? [])]),
     ];
     if (roleIds.length > 0) {
+      // A personal role names one person in one workspace — not a group a document type can address.
       const found = await this.prisma.accessRole.count({
-        where: { id: { in: roleIds }, organizationId },
+        where: { id: { in: roleIds }, organizationId, ...SHARED_ROLE_WHERE },
       });
       if (found !== roleIds.length) {
         throw new BadRequestException('A role on this document type is not in your organization');

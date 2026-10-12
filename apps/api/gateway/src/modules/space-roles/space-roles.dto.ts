@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, Min, MaxLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, Max, Min, MaxLength, ValidateIf } from 'class-validator';
 import { BILL_BY_VALUES, MAX_RATE_CENTS, type BillByValue } from '@hbcfield/shared';
 
 /** `YYYY-MM-DD`. The shared rule then refuses impossible days and far-off dates. */
@@ -105,4 +105,27 @@ export class RateHistoryQueryDto {
   @IsString()
   @MaxLength(64)
   spaceId?: string;
+}
+
+/**
+ * What one person may do in one workspace — EITHER a shared role (`roleId`)
+ * OR a set of permission keys (`permissions`, which becomes their personal
+ * role unless it is exactly a shared one). Exactly one of the two; the
+ * controller refuses both or neither.
+ */
+export class SetMemberPermissionsDto {
+  @ApiPropertyOptional({ description: "A shared workspace role to hold here (never somebody else's personal role)." })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  roleId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Permission keys → true. Workspace keys only; an organization-only or unknown key set to true is refused (400), never silently dropped.',
+    type: 'object',
+    additionalProperties: { type: 'boolean' },
+  })
+  @IsOptional()
+  @IsObject()
+  permissions?: Record<string, boolean>;
 }

@@ -29,6 +29,7 @@ describe('SpaceRolesService — the grant ceiling', () => {
     companyLocation: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     accessRole: {
+      deleteMany: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),

@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService, type PermissionSet, type BillByValue, type RoleKindValue } from '@hbcfield/shared';
+import type { SpaceMemberAuthority } from './space-member-access';
 
 @Injectable()
 export class SpaceRolesService extends BaseGatewayService {
@@ -61,11 +62,31 @@ export class SpaceRolesService extends BaseGatewayService {
     createdById?: string;
     /** Ceiling for what the caller may hand out. Null = admin, no ceiling. */
     requesterPerms?: PermissionSet | null;
+    authority?: SpaceMemberAuthority;
+    outrankCheck?: boolean;
   }) {
     return this.send({ cmd: 'assign_space_member' }, data);
   }
-  removeMember(data: { organizationId: string; spaceId: string; memberId: string }) {
+  removeMember(data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null }) {
     return this.send({ cmd: 'remove_space_member' }, data);
+  }
+
+  /** One person's permissions here, as the builder shows them. */
+  getMemberPermissions(data: { organizationId: string; spaceId: string; assignmentId: string; requesterPerms: PermissionSet | null }) {
+    return this.send({ cmd: 'get_space_member_permissions' }, data);
+  }
+
+  /** Save one person's permissions here: a shared role, or a set of keys (their personal role). */
+  setMemberPermissions(data: {
+    organizationId: string;
+    spaceId: string;
+    assignmentId: string;
+    choice: { roleId: string } | { permissions: PermissionSet };
+    requesterPerms: PermissionSet | null;
+    requesterId: string;
+    outrankCheck: boolean;
+  }) {
+    return this.send({ cmd: 'set_space_member_permissions' }, data);
   }
   updateMemberRouting(data: {
     organizationId: string;
@@ -131,6 +152,8 @@ export class SpaceRolesService extends BaseGatewayService {
     billBy?: BillByValue | null;
     hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null;
     requesterPerms?: PermissionSet | null;
+    authority?: SpaceMemberAuthority;
+    outrankCheck?: boolean;
   }) {
     return this.send({ cmd: 'update_space_member_roles' }, data);
   }

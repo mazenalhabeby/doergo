@@ -111,6 +111,9 @@ export const ROUTE_ACTIONS: Record<string, string> = {
   'DELETE /space-roles/:id': 'SPACE_ROLE_DELETED',
   'POST /spaces/:id/members': 'SPACE_MEMBER_ASSIGNED',
   'DELETE /spaces/:id/members/:id': 'SPACE_MEMBER_REMOVED',
+  // The permission builder: one person's permissions in one workspace (a shared role or their personal role).
+  'PUT /spaces/:id/members/:id/permissions': 'SPACE_MEMBER_PERMISSIONS_SET',
+  'PATCH /spaces/:id/members/:id/roles': 'SPACE_MEMBER_ROLES_CHANGED',
   // Shift reminder responses
   'POST /attendance/entries/:id/forgot-clock-out': 'ATTENDANCE_FORGOT_RESOLVED',
   'POST /attendance/entries/:id/request-extra-time': 'ATTENDANCE_EXTRA_TIME_REQUESTED',

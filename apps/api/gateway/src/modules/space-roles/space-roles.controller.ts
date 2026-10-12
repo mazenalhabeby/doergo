@@ -3,15 +3,20 @@ import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.int
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import {
   isAdmin,
-  permissionsExceed,
-  permissionsFromOrgRole,
   mayViewLabourCost,
   mayManageSpaceMembers,
   type PermissionSet,
-  type ResolvedAccess,
   type BillByValue,
   type RoleKindValue,
 } from '@hbcfield/shared';
+import {
+  assertMayGrant,
+  assertAnyAuthority,
+  grantCeiling,
+  managesMembersOrgWide,
+  outrankCeiling,
+  spaceMemberAuthority,
+} from './space-member-access';
 import { MergeRoleDto, RateHistoryQueryDto, SetDayRateDto, UpdateMemberRateDto, UpdateMemberRolesDto } from './space-roles.dto';
 import { RequirePermission } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -33,48 +38,9 @@ function assertCanManageSpace(user: any, spaceId: string) {
   }
 }
 
-/**
- * Everything the caller holds when acting on THIS space: org-wide grants plus
- * whatever their assignment in this space adds.
- *
- * Read from `access`, which validateToken resolves server-side from the
- * caller's own roles — never from the request. It is the ceiling for what they
- * may hand to somebody else.
- */
-function actorPermsForSpace(user: any, spaceId: string): PermissionSet {
-  const access = user?.access as ResolvedAccess | undefined;
-  return { ...(access?.org ?? {}), ...(access?.perSpace?.[spaceId] ?? {}) };
-}
-
-/**
- * Nobody may grant what they do not hold.
- *
- * The org paths have enforced this for a while (role authoring, member role
- * changes, invitation pre-assignment). The SPACE paths never did, and until
- * today it barely showed: a space role could carry four attendance permissions,
- * so the worst a space manager could do was make somebody else an approver of
- * overtime.
- *
- * A space role can now carry sixteen — including managing this space's members,
- * deleting assets, the CRM client grants and location tracking. Assigning one is
- * now a real transfer of authority, so it needs the ceiling the org side has:
- * a space manager cannot mint themselves asset deletion by assigning a role
- * that happens to include it.
- *
- * Admins bypass, exactly as they do everywhere else — they already hold every
- * permission, so the check could never fire for them anyway.
- */
-function assertMayGrant(user: any, rolePerms: unknown, spaceId?: string) {
-  if (isAdmin(user)) return;
-  // No spaceId = authoring a role DEFINITION, which is org-wide and usable in
-  // any space, so it is measured against org grants alone. A space manager's
-  // extra powers in one workspace must not let them mint a role carrying those
-  // powers everywhere.
-  const ceiling = spaceId ? actorPermsForSpace(user, spaceId) : (user?.access?.org ?? {});
-  if (permissionsExceed(ceiling, permissionsFromOrgRole(rolePerms))) {
-    throw new ForbiddenException('You cannot grant permissions beyond your own');
-  }
-}
+// The ceiling (`actorPermsForSpace` / `assertMayGrant`) and the three trusts over
+// a workspace's people live in ./space-member-access, shared with the builder
+// and the location member routes.
 
 /**
  * Dynamic per-space sub-roles ("Shift Leader", "Team Leader", …) and space
@@ -310,7 +276,14 @@ export class SpaceRolesController {
     });
   }
 
-  /** A member's trade, management role, two-role switch and billing here. */
+  /**
+   * A member's trade, management role, two-role switch and billing here.
+   *
+   * Two trusts on one route: the management role needs `canGrantSpaceRoles`
+   * here (ceiling applies), the trade and the billing terms need managing this
+   * space's people (`canManageUsers` here — never an external member). The
+   * service decides per field with the authority sent below.
+   */
   @Patch('spaces/:spaceId/members/:memberId/roles')
   @ApiOperation({ summary: 'Set a member\'s work role, management role and billing in this workspace' })
   updateMemberRoles(
@@ -319,7 +292,8 @@ export class SpaceRolesController {
     @Body() body: UpdateMemberRolesDto,
     @Request() req: any,
   ) {
-    assertCanManageSpace(req.user, spaceId);
+    const authority = spaceMemberAuthority(req.user, spaceId);
+    assertAnyAuthority(authority);
     return this.thenRebill(req, this.service.updateMemberRoles({
       spaceId,
       memberId,
@@ -330,10 +304,18 @@ export class SpaceRolesController {
       billBy: body.billBy,
       hoursBasis: body.hoursBasis,
       // The management role is authority: same ceiling as assigning one.
-      requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
+      requesterPerms: grantCeiling(req.user, spaceId),
+      authority,
+      outrankCheck: !managesMembersOrgWide(req.user),
     }));
   }
 
+  /**
+   * Put somebody into this workspace (with a role), or change the role they
+   * hold here. Adding needs `canAddSpaceMembers` here, a management role
+   * `canGrantSpaceRoles` (ceiling applies), a trade `canManageUsers` here —
+   * decided in the service, where the role's kind is known.
+   */
   @Post('spaces/:spaceId/members')
   @ApiOperation({ summary: 'Assign a member to a space with a role' })
   assignMember(
@@ -341,7 +323,8 @@ export class SpaceRolesController {
     @Body() body: { userId: string; spaceRoleId?: string | null },
     @Request() req: any,
   ) {
-    assertCanManageSpace(req.user, spaceId);
+    const authority = spaceMemberAuthority(req.user, spaceId);
+    assertAnyAuthority(authority);
     return this.thenRebill(req, this.service.assignMember({
       spaceId,
       userId: body.userId,
@@ -351,10 +334,13 @@ export class SpaceRolesController {
       // The role being handed out is loaded in the service, so the ceiling is
       // checked there. Null means "no ceiling" and is set ONLY for an admin,
       // who holds everything and could never trip it.
-      requesterPerms: isAdmin(req.user) ? null : actorPermsForSpace(req.user, spaceId),
+      requesterPerms: grantCeiling(req.user, spaceId),
+      authority,
+      outrankCheck: !managesMembersOrgWide(req.user),
     }));
   }
 
+  /** Take somebody off this workspace — `canAddSpaceMembers` here, never somebody who holds more than you. */
   @Delete('spaces/:spaceId/members/:memberId')
   @ApiOperation({ summary: 'Remove a member from a space' })
   removeMember(
@@ -362,8 +348,15 @@ export class SpaceRolesController {
     @Param('memberId') memberId: string,
     @Request() req: any,
   ) {
-    assertCanManageSpace(req.user, spaceId);
-    return this.thenRebill(req, this.service.removeMember({ spaceId, memberId, organizationId: req.user.organizationId }));
+    if (!spaceMemberAuthority(req.user, spaceId).addMembers) {
+      throw new ForbiddenException('You do not have permission to remove people from this workspace');
+    }
+    return this.thenRebill(req, this.service.removeMember({
+      spaceId,
+      memberId,
+      organizationId: req.user.organizationId,
+      outrankPerms: outrankCeiling(req.user, spaceId),
+    }));
   }
 
   @Patch('spaces/:spaceId/members/:memberId/routing')

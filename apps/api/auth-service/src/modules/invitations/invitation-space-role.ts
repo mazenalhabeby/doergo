@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { EXTERNAL_DEFAULT_ROLE_SLUG } from '@hbcfield/shared';
+import { EXTERNAL_DEFAULT_ROLE_SLUG, SHARED_ROLE_WHERE } from '@hbcfield/shared';
 
 /**
  * Which role an accepting member gets in the space the invitation assigned.
@@ -53,6 +53,8 @@ export async function defaultSpaceRoleId(
         scope: 'SPACE',
         kind: { not: 'WORK' },
         isActive: true,
+        // Never one person's personal role — an invitation names a role anybody may hold.
+        ...SHARED_ROLE_WHERE,
       },
       select: { id: true },
     });
@@ -63,7 +65,7 @@ export async function defaultSpaceRoleId(
   const role = await tx.accessRole.findFirst({
     // By slug, never by name: the name is editable per organization, and
     // "External Supervisor" is translated in the seed for some locales.
-    where: { organizationId, slug: EXTERNAL_DEFAULT_ROLE_SLUG, isActive: true },
+    where: { organizationId, slug: EXTERNAL_DEFAULT_ROLE_SLUG, isActive: true, ...SHARED_ROLE_WHERE },
     select: { id: true },
   });
   return role?.id ?? null;

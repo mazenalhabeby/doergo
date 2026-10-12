@@ -632,7 +632,9 @@ export function spaceShareLevelToPermissions(level: SpaceShareLevel): Permission
       // canManageUsers is SPACE-scoped here — it only ever authorizes actions on
       // THIS shared space (via accessAllowsInSpace), letting a CONTROL guest add
       // their own workers to it. It is NOT an org-wide member-management grant.
-      return { canViewAllTasks: true, canCreateTasks: true, canAssignTasks: true, canManageUsers: true };
+      // canAddSpaceMembers: adding people now asks its own key (a space's canManageUsers
+      // also sets bill rates); CONTROL keeps adding its own workers through it.
+      return { canViewAllTasks: true, canCreateTasks: true, canAssignTasks: true, canManageUsers: true, canAddSpaceMembers: true };
     case 'CONTRIBUTE':
       return { canViewAllTasks: true, canCreateTasks: true };
     case 'VIEW':

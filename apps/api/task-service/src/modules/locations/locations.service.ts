@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -15,7 +16,8 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   type GeofencePolygonError,
   COST_ON_PROFILE_MESSAGE,
   stripWorkspaceTerms, assertFoundInOrg,
-  parseAutoClockSettings, readAutoClockSettings, type AutoClockSettings } from '@hbcfield/shared';
+  parseAutoClockSettings, readAutoClockSettings, type AutoClockSettings,
+  permissionsExceed, permissionsFromOrgRole, type PermissionSet } from '@hbcfield/shared';
 import { isGeofencePolicy, isRequestKind, REQUEST_KINDS,
   isNoShiftPolicy,
   noShiftPolicyConflict,
@@ -970,7 +972,13 @@ export class LocationsService {
     let location = await this.prisma.companyLocation.findFirst({
       where: { id: data.locationId, organizationId: data.organizationId, isActive: true },
     });
-    if (!location && accessAllowsInSpace(data.access, 'canManageUsers', data.locationId)) {
+    // Adding people asks its own key now (`canAddSpaceMembers`, which a CONTROL share carries);
+    // `canManageUsers` here is kept so a share resolved before the split still works.
+    if (
+      !location &&
+      (accessAllowsInSpace(data.access, 'canAddSpaceMembers', data.locationId) ||
+        accessAllowsInSpace(data.access, 'canManageUsers', data.locationId))
+    ) {
       location = await this.prisma.companyLocation.findFirst({
         where: { id: data.locationId, isActive: true },
       });
@@ -1511,13 +1519,25 @@ export class LocationsService {
   /**
    * Remove a member assignment
    */
-  async removeAssignment(data: { assignmentId: string; organizationId: string }) {
+  async removeAssignment(data: {
+    assignmentId: string;
+    organizationId: string;
+    /** The workspace in the route, for a caller who may act only there; another workspace's row reads as not found. */
+    spaceId?: string;
+    /** Set for a caller acting through a grant in this workspace only: nobody who holds more here is theirs to remove. */
+    outrankPerms?: PermissionSet | null;
+  }) {
     // Find the assignment and verify organization ownership
     const assignment = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.assignmentId },
+      include: { role: { select: { permissions: true } } },
     });
 
     assertFoundInOrg(assignment, data.organizationId, 'Assignment');
+    if (data.spaceId && assignment.spaceId !== data.spaceId) throw new NotFoundException('Assignment not found');
+    if (data.outrankPerms && assignment.role && permissionsExceed(data.outrankPerms, permissionsFromOrgRole(assignment.role.permissions))) {
+      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    }
 
     await this.prisma.spaceAssignment.delete({
       where: { id: data.assignmentId },
