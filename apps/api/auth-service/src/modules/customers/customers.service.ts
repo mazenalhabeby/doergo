@@ -3,20 +3,22 @@ import { sanitizeLabelValueRows, CUSTOMER_DETAIL_LIMITS } from '../../common/rec
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { resolveCrmCaps, ownsClient, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps, toISODateString } from '@hbcfield/shared';
+import { resolveCrmCaps, parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, CRM_COLD_DAYS, CRM_CONTACT_TYPES, type CrmCaps, toISODateString } from '@hbcfield/shared';
+import {
+  crmReachSelect, crmReachOfRow, crmReachOrgOnly, crmCapsIn, crmCapsAnywhere, crmCreateScope, crmSpacesWhere,
+  crmReachesClientIn, crmReachWhere, crmOwnedWhere, NO_CRM_CAPS, type CrmReach,
+} from '@hbcfield/shared';
 import { findPrior, usableLegalEntityId, COMPANY_UNKNOWN_MESSAGE } from '@hbcfield/shared';
 import { contactMatchKeys } from '@hbcfield/shared';
 
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
 const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
-/**
- * Clients this member owns or co-manages, as a `where` — the query form of
- * `ownsClient` (shared). One definition for every read that narrows to "mine".
- */
-function ownedBy(userId: string | undefined) {
-  return { OR: [{ ownerId: userId }, { managerIds: { has: userId } }] };
-}
+/** Clients this member owns or co-manages, as a `where` — `crmOwnedWhere` (shared). */
+const ownedBy = (userId: string | undefined) => crmOwnedWhere(userId as string);
+
+/** A client the caller may not reach answers exactly like one that does not exist. */
+const notFound = () => new NotFoundException('Customer not found');
 
 /** Who is making the request — used to resolve & enforce CRM abilities. */
 export interface CrmCaller {
@@ -25,7 +27,6 @@ export interface CrmCaller {
 }
 /** How many open reminders `due()` reads; past it the totals are counted on the database. */
 const DUE_ROWS = 200;
-const NO_CRM: CrmCaps = { view: 'none', work: false, editInfo: false, create: false, manage: false, canAccess: false };
 
 export interface CustomerDetail {
   label: string;
@@ -168,6 +169,23 @@ export function withContactKeys<T extends Record<string, unknown>>(data: T): T {
   return out as T;
 }
 
+/**
+ * `crmReachWhere` for the one raw query (the longest-cold client) — the same
+ * four branches, so the card's "longest waiting" can never name a client its
+ * list would not show.
+ */
+function reachSql(reach: CrmReach, me: string): Prisma.Sql {
+  if (reach.org.view === 'all') return Prisma.empty;
+  const owned = Prisma.sql`(c."ownerId" = ${me} OR ${me} = ANY(c."managerIds"))`;
+  const parts: Prisma.Sql[] = [];
+  if (reach.org.view === 'own') parts.push(owned);
+  const all = crmSpacesWhere(reach, (c) => c.view === 'all');
+  if (all.length) parts.push(Prisma.sql`c."spaceId" = ANY(${all}::text[])`);
+  const own = crmSpacesWhere(reach, (c) => c.view === 'own');
+  if (own.length) parts.push(Prisma.sql`(c."spaceId" = ANY(${own}::text[]) AND ${owned})`);
+  return parts.length ? Prisma.sql`AND (${Prisma.join(parts, ' OR ')})` : Prisma.sql`AND FALSE`;
+}
+
 @Injectable()
 export class CustomersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -179,38 +197,71 @@ export class CustomersService {
     return r.id;
   }
 
-  /** Resolve a caller's effective CRM abilities from their role (server-authoritative). */
-  /** Public: the contacts import (`ContactImportService`) asks the same rule. */
-  async crmCapsFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmCaps> {
-    if (!caller?.userId) return NO_CRM;
-    if (caller.role === 'ADMIN') return resolveCrmCaps('ADMIN', {});
+  /**
+   * Where the caller may work the client book — org-wide, and per workspace
+   * (`CrmReach`, shared crm/crm-reach.ts). Server-authoritative.
+   *
+   * ⚠️ Resolved from the DATABASE, never from the RPC payload. The gateway does
+   * hold a resolved access on `req.user`, but it is cached up to a minute and
+   * assembled per call site; one row read here (the same one read before) is
+   * always current, applies the module each workspace really runs, and cannot
+   * be handed a reach some future route built from a request body. The payload
+   * carries the caller's identity only.
+   *
+   * Public: the contacts import and the portal's address routes ask the same rule.
+   */
+  async crmReachFor(caller: CrmCaller | undefined, organizationId: string): Promise<CrmReach> {
+    if (!caller?.userId) return crmReachOrgOnly(NO_CRM_CAPS);
+    // An admin holds every CRM ability by being one (as the resolver says) — no read needed.
+    if (caller.role === 'ADMIN') return crmReachOrgOnly(resolveCrmCaps('ADMIN', {}));
     const u = await this.prisma.user.findFirst({
       where: { id: caller.userId, organizationId },
-      select: { role: true, memberRole: { select: { permissions: true } } },
+      select: crmReachSelect(),
     });
-    if (!u) return NO_CRM;
-    return resolveCrmCaps(u.role, (u.memberRole?.permissions as Record<string, boolean> | null) ?? {});
+    return crmReachOfRow(u as never);
+  }
+
+  /** `crmReachesClientIn` for a caller — all-scope where it is filed, or owns / co-manages it there. */
+  canReach(reach: CrmReach, client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
+    return crmReachesClientIn(reach, client, caller?.userId);
+  }
+
+  /** `canReach` as a `where` — one rule, so a list and a single-record check cannot disagree. */
+  reachableWhere(reach: CrmReach, caller: CrmCaller | undefined): Record<string, unknown> {
+    return crmReachWhere(reach, caller?.userId);
   }
 
   /**
-   * `canReach` as a `where` fragment: every client for view 'all', the ones the
-   * caller owns or co-manages for 'own', nothing otherwise. One rule, so a list
-   * and a single-record check cannot disagree.
+   * The caps that apply to ONE client — org ∪ the workspace it is filed in —
+   * or a 404 when the caller cannot reach it. The client's spaceId is the one
+   * read from the database, never one the request names.
    */
-  reachableWhere(caps: CrmCaps, caller: CrmCaller | undefined): Record<string, unknown> {
-    if (caps.view === 'all') return {};
-    if (caps.view === 'own' && caller?.userId) return ownedBy(caller.userId);
-    return { id: { in: [] as string[] } };
+  private capsOn(
+    reach: CrmReach,
+    client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] },
+    caller: CrmCaller | undefined,
+  ): CrmCaps {
+    const caps = crmCapsIn(reach, client.spaceId);
+    if (!caps.canAccess || !this.canReach(reach, client, caller)) throw notFound();
+    return caps;
   }
 
-  /** Can this caller reach a specific client? All-scope OR owns/co-manages it. */
-  canReach(caps: CrmCaps, client: { ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
-    if (caps.view === 'all') return true;
-    if (caps.view === 'own' && caller?.userId) return ownsClient(client, caller.userId);
-    return false;
+  /**
+   * A manage-level action (portal residents, reassigning, deleting) on one
+   * client: manage where it is filed. Out of reach is a 404 like everywhere
+   * else; within reach but without manage, a 403.
+   */
+  private assertManage(
+    reach: CrmReach,
+    client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] },
+    caller: CrmCaller | undefined,
+    message = 'Not allowed',
+  ): CrmCaps {
+    const caps = crmCapsIn(reach, client.spaceId);
+    if (caps.manage) return caps;
+    if (!caps.canAccess || !this.canReach(reach, client, caller)) throw notFound();
+    throw new ForbiddenException(message);
   }
-
-
 
   /**
    * Add each row's contact relationships, in one query for the whole page.
@@ -290,7 +341,7 @@ export class CustomersService {
   private async reachable(
     id: string,
     organizationId: string,
-    caps: CrmCaps,
+    reach: CrmReach,
     caller: CrmCaller | undefined,
   ) {
     const c = await this.prisma.customer.findFirst({
@@ -300,15 +351,15 @@ export class CustomersService {
         ownerId: true, managerIds: true, isPortalResident: true,
       },
     });
-    if (!c) throw new NotFoundException('Customer not found');
-    if (!caps.canAccess || !this.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
-    return c;
+    if (!c) throw notFound();
+    // The caps that apply to THIS record — org ∪ the workspace it is filed in.
+    return { ...c, caps: this.capsOn(reach, c, caller) };
   }
 
   /** Who works at this company. */
   async listContacts(data: { companyId: string; organizationId: string; caller?: CrmCaller }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    await this.reachable(data.companyId, data.organizationId, caps, data.caller);
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    await this.reachable(data.companyId, data.organizationId, reach, data.caller);
     const rows = await this.prisma.customerContact.findMany({
       where: { companyId: data.companyId, organizationId: data.organizationId },
       select: {
@@ -324,8 +375,8 @@ export class CustomersService {
 
   /** Which companies this person is a contact at. */
   async listContactCompanies(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    await this.reachable(data.personId, data.organizationId, caps, data.caller);
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    await this.reachable(data.personId, data.organizationId, reach, data.caller);
     const rows = await this.prisma.customerContact.findMany({
       where: { personId: data.personId, organizationId: data.organizationId },
       select: {
@@ -355,10 +406,10 @@ export class CustomersService {
     isPrimary?: boolean;
     caller?: CrmCaller;
   }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
-
-    const company = await this.reachable(data.companyId, data.organizationId, caps, data.caller);
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    const company = await this.reachable(data.companyId, data.organizationId, reach, data.caller);
+    // Linking is editing the COMPANY — decided by the workspace it is filed in.
+    if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
 
     /*
       ⚠️ The `type` column is NOT a gate here, deliberately.
@@ -376,7 +427,7 @@ export class CustomersService {
     */
     let personId = data.personId;
     if (personId) {
-      const person = await this.reachable(personId, data.organizationId, caps, data.caller);
+      const person = await this.reachable(personId, data.organizationId, reach, data.caller);
       if (person.id === company.id) throw new BadRequestException('A client cannot be its own contact.');
       /*
         Not both ways round.
@@ -408,7 +459,8 @@ export class CustomersService {
         throw new BadRequestException('That person belongs to a different workspace.');
       }
     } else {
-      if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
+      // The new person is filed in the company's workspace, so that is where adding one must be allowed.
+      if (!company.caps.create) throw new ForbiddenException('Not allowed to create clients');
       const name = (data.person?.name || '').trim();
       if (!name) throw new BadRequestException('A name is required');
       const created = await this.prisma.customer.create({
@@ -499,8 +551,7 @@ export class CustomersService {
     isPrimary?: boolean;
     caller?: CrmCaller;
   }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
     const link = await this.prisma.customerContact.findFirst({
       where: { id: data.linkId, organizationId: data.organizationId },
       select: { id: true, companyId: true },
@@ -508,7 +559,8 @@ export class CustomersService {
     if (!link) throw new NotFoundException('Contact not found');
     // The COMPANY is the record being changed, so that is the one whose access
     // decides — reached the same way as everywhere else.
-    await this.reachable(link.companyId, data.organizationId, caps, data.caller);
+    const company = await this.reachable(link.companyId, data.organizationId, reach, data.caller);
+    if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
 
     return this.prisma.$transaction(async (tx) => {
       if (data.isPrimary === true) {
@@ -539,14 +591,14 @@ export class CustomersService {
    * history is worth keeping either way. Removing the link is the whole action.
    */
   async removeContact(data: { linkId: string; organizationId: string; caller?: CrmCaller }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
     const link = await this.prisma.customerContact.findFirst({
       where: { id: data.linkId, organizationId: data.organizationId },
       select: { id: true, companyId: true },
     });
     if (!link) throw new NotFoundException('Contact not found');
-    await this.reachable(link.companyId, data.organizationId, caps, data.caller);
+    const company = await this.reachable(link.companyId, data.organizationId, reach, data.caller);
+    if (!company.caps.editInfo) throw new ForbiddenException('Not allowed to change this client');
     await this.prisma.customerContact.delete({ where: { id: link.id } });
     return { data: { id: link.id } };
   }
@@ -559,9 +611,10 @@ export class CustomersService {
    * takes to add a client any other way.
    */
   async promoteContact(data: { personId: string; organizationId: string; caller?: CrmCaller }) {
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
-    const person = await this.reachable(data.personId, data.organizationId, caps, data.caller);
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
+    const person = await this.reachable(data.personId, data.organizationId, reach, data.caller);
+    // Promoting puts them on the client list of the workspace they are filed in.
+    if (!person.caps.create) throw new ForbiddenException('Not allowed to create clients');
     if (!person.isContact) return { data: { id: person.id, isContact: false } };
     await this.prisma.customer.update({ where: { id: person.id }, data: { isContact: false } });
     return { data: { id: person.id, isContact: false } };
@@ -594,14 +647,24 @@ export class CustomersService {
     const page = Math.max(data.page || 1, 1);
     const limit = Math.min(Math.max(data.limit || 20, 1), 100);
     const isPortalPath = data.portalResident === true || !!data.portalId;
-    const caps = await this.crmCapsFor(data.caller, data.organizationId);
-    // Portal-resident management is a manager/admin surface (not CRM rep scope).
-    if (isPortalPath) {
-      if (!caps.manage) throw new ForbiddenException('Not allowed to manage portal residents');
-    } else if (!caps.canAccess) {
-      throw new ForbiddenException('No CRM access');
-    }
+    const reach = await this.crmReachFor(data.caller, data.organizationId);
     const and: Record<string, unknown>[] = [];
+    /*
+      Portal-resident management is a manager surface (not CRM rep scope):
+      org-wide manage sees every resident, a workspace's manage only that
+      workspace's. Everything else is the CRM reach — org-wide, or the
+      workspaces where the member holds a CRM grant, and nothing past them.
+    */
+    if (isPortalPath) {
+      if (!reach.org.manage) {
+        const manageSpaces = crmSpacesWhere(reach, (c) => c.manage);
+        if (!manageSpaces.length) throw new ForbiddenException('Not allowed to manage portal residents');
+        and.push({ spaceId: { in: manageSpaces } });
+      }
+    } else {
+      if (!crmCapsAnywhere(reach).canAccess) throw new ForbiddenException('No CRM access');
+      and.push(this.reachableWhere(reach, data.caller));
+    }
     const where: Record<string, unknown> = { organizationId: data.organizationId };
     if (data.status === 'active' || !data.status) where.isActive = true;
     else if (data.status === 'inactive') where.isActive = false;
@@ -637,10 +700,6 @@ export class CustomersService {
       if (data.contacts === 'only') where.isContact = true;
       else if (data.contacts !== 'all') where.isContact = false;
     }
-    // CRM "own" scope → only clients this caller owns or co-manages (indexed columns).
-    if (!isPortalPath && caps.view === 'own') {
-      and.push(ownedBy(data.caller?.userId));
-    }
     if (data.search) {
       and.push({
         OR: [
@@ -671,8 +730,15 @@ export class CustomersService {
     const withContacts = await this.decorateContacts(items as Array<Record<string, unknown>>, data.organizationId);
 
     // Surface the caller's resolved CRM abilities so the UI can hide/disable
-    // actions it isn't allowed to take (the server still enforces regardless).
-    return { data: withContacts, meta: { total, page, limit, totalPages: Math.ceil(total / limit), crmCaps: caps } };
+    // actions it isn't allowed to take (the server still enforces regardless):
+    // the workspace's when the list is one workspace's, else the widest held
+    // anywhere — and where adding a client is allowed, so a form can ask for a
+    // workspace when only some are open to the member.
+    const crmCaps = data.spaceId ? crmCapsIn(reach, data.spaceId) : crmCapsAnywhere(reach);
+    return {
+      data: withContacts,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit), crmCaps, crmCreate: crmCreateScope(reach) },
+    };
   }
 
   async get(id: string, organizationId: string, caller?: CrmCaller) {
@@ -684,13 +750,12 @@ export class CustomersService {
 
     // CRM access enforcement (server-authoritative). Portal residents are a
     // manager surface; CRM clients are reachable by owner/co-manager or view-all.
-    const caps = await this.crmCapsFor(caller, organizationId);
-    if (customer.isPortalResident) {
-      if (!caps.manage) throw new ForbiddenException('Not allowed');
-    } else if (!caps.canAccess || !this.canReach(caps, customer, caller)) {
-      // 404 (not 403) so a member can't probe which client ids exist.
-      throw new NotFoundException('Customer not found');
-    }
+    // Decided by the workspace the client is filed in (org ∪ that workspace).
+    // 404 (not 403) when out of reach, so a member can't probe which ids exist.
+    const reach = await this.crmReachFor(caller, organizationId);
+    const caps = customer.isPortalResident
+      ? this.assertManage(reach, customer, caller)
+      : this.capsOn(reach, customer, caller);
 
     // App-access status. `isPortalResident` only means "invited"; a CUSTOMER
     // User bound to this customer is proof they ACCEPTED and can log in. Also
@@ -731,8 +796,8 @@ export class CustomersService {
       reassigning are still manage: those act on somebody else's work, and
       adding does not.
     */
-    const caps = await this.crmCapsFor(caller, organizationId);
-    if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
+    const reach = await this.crmReachFor(caller, organizationId);
+    this.assertMayCreateIn(reach, dto.spaceId ?? null);
 
     // A client added from the phone and sent twice is one client. The id is the
     // phone's (UUIDv7); anything else in that field is ignored, never stored.
@@ -742,7 +807,11 @@ export class CustomersService {
       find: (id) => this.prisma.customer.findUnique({ where: { id }, select: { ...customerSelect, organizationId: true } }),
       isSame: (c) => c.organizationId === organizationId,
     });
-    if (prior) return { data: prior };
+    // The replay answers only to somebody who can reach it — an id is not a key.
+    if (prior) {
+      if (!this.canReach(reach, prior, caller)) throw notFound();
+      return { data: prior };
+    }
 
     const name = (dto.name || '').trim();
     if (!name) throw new BadRequestException('Customer name is required');
@@ -789,26 +858,55 @@ export class CustomersService {
     return { data: customer };
   }
 
+  /**
+   * May the caller add a client filed in `spaceId` (null = filed nowhere)?
+   *
+   * Org-wide create may file it anywhere, including nowhere. A create held only
+   * in some workspaces files it in one of THOSE — never nowhere, because an
+   * unfiled client answers to org-wide grants alone and its creator could not
+   * open it again.
+   */
+  private assertMayCreateIn(reach: CrmReach, spaceId: string | null) {
+    if (crmCapsIn(reach, spaceId).create) return;
+    const scope = crmCreateScope(reach);
+    if (!scope.anywhere && !scope.spaceIds.length) throw new ForbiddenException('Not allowed to create clients');
+    if (!spaceId) throw new BadRequestException({ message: 'Choose a workspace for this client.', code: 'CRM_WORKSPACE_REQUIRED' });
+    throw new ForbiddenException({ message: 'Not allowed to add clients in this workspace.', code: 'CRM_WORKSPACE_NOT_ALLOWED' });
+  }
+
   async update(id: string, organizationId: string, dto: CustomerInput, actorId?: string, caller?: CrmCaller) {
     // `spaceId` is read so a move can be told from a no-op — see the guard below.
     const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true, spaceId: true } });
     if (!existing) throw new NotFoundException('Customer not found');
 
     // ── CRM access enforcement (server-authoritative), by what's being changed ──
-    const caps = await this.crmCapsFor(caller, organizationId);
+    // Decided by the workspace the client is filed in NOW (read above, never the body's).
+    const reach = await this.crmReachFor(caller, organizationId);
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
     const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale', 'currency', 'legalEntityId'] as const;
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
-    const reach = this.canReach(caps, existing, caller);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
       // Portal/app-access + ownership reassignment are manage-level.
-      if (!caps.manage) throw new ForbiddenException('Not allowed');
+      this.assertManage(reach, existing, caller);
     } else {
-      if (!caps.canAccess || !reach) throw new NotFoundException('Customer not found');
+      const caps = this.capsOn(reach, existing, caller);
       if (touchesStatus && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed to change stage');
       if (touchesInfo && !(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
+    }
+    /*
+      Moving it to another workspace (or filing it nowhere) is editing it on
+      BOTH sides: the check above covered where it is, this covers where it
+      goes. Otherwise a member who edits clients in one workspace could hand a
+      client to a workspace they hold nothing in — or, filed nowhere, out of
+      their own reach and into everybody's with an org-wide grant.
+    */
+    if (dto.spaceId !== undefined && (dto.spaceId || null) !== (existing.spaceId ?? null)) {
+      const there = crmCapsIn(reach, dto.spaceId || null);
+      if (!(there.editInfo || there.manage)) {
+        throw new ForbiddenException({ message: 'Not allowed to move this client to that workspace.', code: 'CRM_WORKSPACE_NOT_ALLOWED' });
+      }
     }
 
     const data: Record<string, unknown> = {};
@@ -889,15 +987,15 @@ export class CustomersService {
   private async assertCrmReach(customerId: string, organizationId: string, caller: CrmCaller | undefined, opts?: { needWork?: boolean }) {
     const c = await this.prisma.customer.findFirst({
       where: { id: customerId, organizationId },
-      select: { id: true, ownerId: true, managerIds: true, isPortalResident: true },
+      select: { id: true, spaceId: true, ownerId: true, managerIds: true, isPortalResident: true },
     });
-    if (!c) throw new NotFoundException('Customer not found');
-    const caps = await this.crmCapsFor(caller, organizationId);
+    if (!c) throw notFound();
+    const reach = await this.crmReachFor(caller, organizationId);
     if (c.isPortalResident) {
-      if (!caps.manage) throw new ForbiddenException('Not allowed');
+      this.assertManage(reach, c, caller);
       return c;
     }
-    if (!caps.canAccess || !this.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
+    const caps = this.capsOn(reach, c, caller);
     if (opts?.needWork && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed');
     return c;
   }
@@ -1068,8 +1166,8 @@ export class CustomersService {
     const me = data.caller?.userId;
     const counts = { call: 0, email: 0, other: 0, overdue: 0 };
     // `crmOn === false` only: an older gateway sends nothing and keeps today's answer.
-    const caps = data.crmOn === false ? NO_CRM : await this.crmCapsFor(data.caller, data.organizationId);
-    if (!caps.canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: { count: 0, days: CRM_COLD_DAYS, longest: null }, book: 0 } };
+    const reach = data.crmOn === false ? crmReachOrgOnly(NO_CRM_CAPS) : await this.crmReachFor(data.caller, data.organizationId);
+    if (!crmCapsAnywhere(reach).canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: { count: 0, days: CRM_COLD_DAYS, longest: null }, book: 0 } };
 
     const now = Date.now();
     const DAY = 86_400_000;
@@ -1098,7 +1196,8 @@ export class CustomersService {
 
     const book: Record<string, unknown> = {
       organizationId: data.organizationId, isActive: true, isContact: false, isPortalResident: false,
-      ...(caps.view === 'own' ? ownedBy(me) : {}),
+      // The book the member can reach — org-wide, and the workspaces they hold CRM in.
+      ...this.reachableWhere(reach, data.caller),
     };
 
     const dueWhere = {
@@ -1182,7 +1281,7 @@ export class CustomersService {
         WHERE c."organizationId" = ${data.organizationId}
           AND c."isActive" AND NOT c."isContact" AND NOT c."isPortalResident"
           AND c."createdAt" < ${cutoff}
-          ${caps.view === 'own' ? Prisma.sql`AND (c."ownerId" = ${me} OR ${me} = ANY(c."managerIds"))` : Prisma.empty}
+          ${reachSql(reach, me)}
         GROUP BY c.id
         HAVING COALESCE(MAX(a."createdAt"), '-infinity'::timestamp) < ${cutoff}
         ORDER BY since ASC
@@ -1226,10 +1325,14 @@ export class CustomersService {
   /** Soft-delete (deactivate) — preserves history on tasks/reports. */
   async remove(id: string, organizationId: string, caller?: CrmCaller) {
     // Deleting/archiving a client is a manage-level action.
-    const caps = await this.crmCapsFor(caller, organizationId);
-    if (!caps.manage) throw new ForbiddenException('Not allowed to delete clients');
-    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true } });
-    if (!existing) throw new NotFoundException('Customer not found');
+    // Manage where the client is filed; out of reach is a 404 like every other door.
+    const existing = await this.prisma.customer.findFirst({
+      where: { id, organizationId },
+      select: { id: true, spaceId: true, ownerId: true, managerIds: true },
+    });
+    if (!existing) throw notFound();
+    const reach = await this.crmReachFor(caller, organizationId);
+    this.assertManage(reach, existing, caller, 'Not allowed to delete clients');
     // Grab the portal login ids first so the gateway can bust their cached tokens
     // (instant revocation, not just at the 60s cache TTL).
     const portalUsers = await this.prisma.user.findMany({ where: { customerId: id }, select: { id: true } });

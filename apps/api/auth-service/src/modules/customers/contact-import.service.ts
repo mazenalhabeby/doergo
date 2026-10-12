@@ -10,6 +10,9 @@ import {
   parseContactImport,
   type ContactImportResult,
   type ContactImportSummary,
+  crmCapsIn,
+  crmCreateScope,
+  type CrmReach,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CustomersService, withContactKeys, type CrmCaller } from './customers.service';
@@ -45,15 +48,21 @@ export class ContactImportService {
     private readonly customers: CustomersService,
   ) {}
 
-  private async assertCanCreate(caller: CrmCaller | undefined, organizationId: string) {
-    const caps = await this.customers.crmCapsFor(caller, organizationId);
-    if (!caps.create) throw new ForbiddenException('Not allowed to create clients');
-    return caps;
+  /**
+   * The caller may add clients — anywhere (`spaceId` omitted: the hashes), or in
+   * THIS workspace (the import files every new client there).
+   */
+  private async assertCanCreate(caller: CrmCaller | undefined, organizationId: string, spaceId?: string): Promise<CrmReach> {
+    const reach = await this.customers.crmReachFor(caller, organizationId);
+    const scope = crmCreateScope(reach);
+    const allowed = spaceId ? crmCapsIn(reach, spaceId).create : scope.anywhere || scope.spaceIds.length > 0;
+    if (!allowed) throw new ForbiddenException('Not allowed to create clients');
+    return reach;
   }
 
   /** Every client's keys, hashed with the organization — see `matchKeyMaterial`. */
   async matchKeys(data: { organizationId: string; caller?: CrmCaller }) {
-    const caps = await this.assertCanCreate(data.caller, data.organizationId);
+    const crm = await this.assertCanCreate(data.caller, data.organizationId);
     /*
       Only the clients this caller can REACH.
 
@@ -66,7 +75,7 @@ export class ContactImportService {
       against the WHOLE organization on the server; this only decides which
       "already a client" marks the phone may draw.
     */
-    const reach = caps.view === 'all' ? {} : this.customers.reachableWhere(caps, data.caller);
+    const reach = this.customers.reachableWhere(crm, data.caller);
     const rows = await this.prisma.customer.findMany({
       where: {
         organizationId: data.organizationId,
@@ -95,8 +104,8 @@ export class ContactImportService {
       throw new BadRequestException({ message: CONTACT_IMPORT_MESSAGES[parsed.problem], code: `CONTACT_IMPORT_${parsed.problem}` });
     }
     const { organizationId, caller } = data;
-    const caps = await this.assertCanCreate(caller, organizationId);
     const { spaceId, items } = parsed.value;
+    const crm = await this.assertCanCreate(caller, organizationId, spaceId);
 
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: spaceId, organizationId, isActive: true },
@@ -131,7 +140,7 @@ export class ContactImportService {
           },
           select: {
             id: true, name: true, email: true, phone: true, phoneKey: true, emailKey: true,
-            ownerId: true, managerIds: true, isPortalResident: true, type: true,
+            ownerId: true, managerIds: true, isPortalResident: true, type: true, spaceId: true,
           },
         })
       : [];
@@ -144,7 +153,7 @@ export class ContactImportService {
     const links: Prisma.CustomerContactCreateManyInput[] = [];
     const activities: Prisma.CustomerActivityCreateManyInput[] = [];
     /** A company in this batch → the client it became or matched, and whether people may be linked to it. */
-    const companyOf = new Map<string, { id: string; isNew: boolean }>();
+    const companyOf = new Map<string, { id: string; isNew: boolean; spaceId: string | null }>();
     const seen = new Set<string>();
     const owner = caller?.userId ?? null;
     const source = { source: CONTACT_IMPORT_SOURCE, importedById: owner };
@@ -161,21 +170,23 @@ export class ContactImportService {
           results.set(item.ref, { ...base, outcome: 'skipped', reason: 'NOT_YOURS' });
         } else {
           results.set(item.ref, { ...base, outcome: 'created', id: prior.id, name: prior.name });
-          if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: prior.id, isNew: false });
+          if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: prior.id, isNew: false, spaceId });
         }
         continue;
       }
 
       const match = (phoneKey && byPhone.get(phoneKey)) || (emailKey && byEmail.get(emailKey)) || null;
       if (match) {
-        const reach = this.customers.canReach(caps, match, caller);
-        if (item.kind === 'COMPANY' && reach) companyOf.set(item.ref, { id: match.id, isNew: false });
+        // Reach and the right to fill are both decided where the MATCH is filed.
+        const reach = this.customers.canReach(crm, match, caller);
+        const matchCaps = crmCapsIn(crm, match.spaceId);
+        if (item.kind === 'COMPANY' && reach) companyOf.set(item.ref, { id: match.id, isNew: false, spaceId: match.spaceId });
         if (match.isPortalResident) {
           results.set(item.ref, { ...base, outcome: 'existing', reason: 'APP_USER', ...(reach ? { id: match.id } : {}) });
           continue;
         }
         const fill: Record<string, unknown> = {};
-        if (item.fillMissing && reach && caps.editInfo) {
+        if (item.fillMissing && reach && matchCaps.editInfo) {
           if (!match.email && item.email) fill.email = item.email;
           if (!match.phone && item.phone) fill.phone = item.phone;
         }
@@ -203,7 +214,7 @@ export class ContactImportService {
 
       const company = item.kind === 'PERSON' && item.companyRef ? companyOf.get(item.companyRef) : undefined;
       // A person may only be linked to an EXISTING company by someone who may edit it.
-      const linkTo = company && (company.isNew || caps.editInfo) ? company : undefined;
+      const linkTo = company && (company.isNew || crmCapsIn(crm, company.spaceId).editInfo) ? company : undefined;
 
       creates.push(withContactKeys({
         id: item.ref,
@@ -223,7 +234,7 @@ export class ContactImportService {
         body: `Imported from ${importerName}'s phone contacts`,
         metadata: source,
       });
-      if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: item.ref, isNew: true });
+      if (item.kind === 'COMPANY') companyOf.set(item.ref, { id: item.ref, isNew: true, spaceId });
       if (linkTo) {
         // The first person imported with a NEW company is the one to ring.
         const primary = linkTo.isNew && !links.some((l) => l.companyId === linkTo.id);

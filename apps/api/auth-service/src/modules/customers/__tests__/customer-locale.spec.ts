@@ -81,7 +81,7 @@ describe('client record language', () => {
       // A rep who sees their own clients and may work them, but holds no crmEditInfo.
       prisma.user.findFirst.mockResolvedValue({
         role: 'EMPLOYEE',
-        memberRole: { permissions: { crmViewOwn: true, crmWork: true } },
+        memberRole: { isActive: true, permissions: { crmViewOwn: true, crmWork: true } },
       });
       await expect(
         service.update('c1', ORG, { locale: 'de' }, 'u2', { userId: 'u2', role: 'EMPLOYEE' }),

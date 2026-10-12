@@ -113,6 +113,8 @@ export * from './crm/client-filter';
 export * from './crm/reminder';
 // May this member reach this client — the CRM's rule, for other services (crm/client-reach.ts).
 export * from './crm/client-reach';
+// Where a member may work the client book — org-wide and per workspace (crm/crm-reach.ts).
+export * from './crm/crm-reach';
 export * from './crm/contact-keys';
 export * from './crm/card-extras';
 export * from './crm/card-merge';

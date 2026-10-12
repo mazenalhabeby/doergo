@@ -19,15 +19,22 @@ describe('calendar event: whose client is shown', () => {
       { userId, response: 'PENDING', isOrganizer: false, user: { firstName: 'B', lastName: 'B', avatarUrl: null } },
     ],
   });
-  const make = (userId: string, perms: Record<string, boolean>) => {
+  const make = (userId: string, perms: Record<string, boolean>, spaceAssignments: any[] = [], customer: any = client) => {
     const prisma: any = {
-      calendarEvent: { findFirst: jest.fn().mockResolvedValue(event(userId)) },
-      user: { findFirst: jest.fn().mockResolvedValue({ role: 'EMPLOYEE', memberRole: { permissions: perms } }) },
+      calendarEvent: { findFirst: jest.fn().mockResolvedValue({ ...event(userId), customer }) },
+      user: {
+        findFirst: jest.fn().mockResolvedValue({
+          role: 'EMPLOYEE', organizationId: 'org', isExternal: false,
+          organization: { enabledModules: ['crm'] },
+          memberRole: { permissions: perms, isActive: true },
+          spaceAssignments,
+        }),
+      },
     };
     return new EventsService(prisma, {} as any, { emit: jest.fn() } as any);
   };
-  const read = async (userId: string, perms: Record<string, boolean>, crm = true) =>
-    ((await make(userId, perms).get({ userId, organizationId: 'org', role: 'EMPLOYEE', crm, eventId: 'e1' })) as any).data.customer;
+  const read = async (userId: string, perms: Record<string, boolean>, crm = true, spaces: any[] = [], customer: any = client) =>
+    ((await make(userId, perms, spaces, customer).get({ userId, organizationId: 'org', role: 'EMPLOYEE', crm, eventId: 'e1' })) as any).data.customer;
 
   it('own-scope CRM: another rep’s client is hidden', async () => {
     expect(await read('rep-b', { crmViewOwn: true })).toBeNull();
@@ -41,5 +48,22 @@ describe('calendar event: whose client is shown', () => {
   it('whole-book CRM sees it; no CRM sees nothing', async () => {
     expect(await read('rep-b', { crmViewAll: true })).toEqual({ id: 'c1', name: 'BILLA AG' });
     expect(await read('rep-b', { crmViewAll: true }, false)).toBeNull();
+  });
+
+  /*
+    A CRM grant held in ONE workspace reads that workspace's clients only — the
+    client's own workspace decides, and a client filed nowhere answers to
+    org-wide grants alone.
+  */
+  it('a workspace CRM grant shows a client filed in that workspace, not another or none', async () => {
+    const inS1 = [{ spaceId: 's1', role: { permissions: { crmViewAll: true }, isActive: true }, space: { organizationId: 'org', isActive: true, enabledModules: null } }];
+    expect(await read('rep-b', {}, true, inS1, { ...client, spaceId: 's1' })).toEqual({ id: 'c1', name: 'BILLA AG' });
+    expect(await read('rep-b', {}, true, inS1, { ...client, spaceId: 's2' })).toBeNull();
+    expect(await read('rep-b', {}, true, inS1, { ...client, spaceId: null })).toBeNull();
+  });
+
+  it('a space role\'s canViewAllTasks is not a CRM grant', async () => {
+    const supervisor = [{ spaceId: 's1', role: { permissions: { canViewAllTasks: true, canManageUsers: true }, isActive: true }, space: { organizationId: 'org', isActive: true, enabledModules: null } }];
+    expect(await read('rep-b', {}, true, supervisor, { ...client, spaceId: 's1' })).toBeNull();
   });
 });

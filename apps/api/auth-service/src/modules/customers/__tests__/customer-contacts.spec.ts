@@ -80,7 +80,7 @@ describe('contact people', () => {
     it('says "not found" rather than "not allowed" for a client out of scope', async () => {
       // A rep who sees only their own clients must not learn which client ids
       // exist by watching 403s come back instead of 404s.
-      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { permissions: { crmViewOwn: true, crmEditInfo: true } } });
+      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { isActive: true, permissions: { crmViewOwn: true, crmEditInfo: true } } });
       records(company({ ownerId: 'someone-else' }), person());
       await expect(add({ caller: { userId: 'u1', role: 'MEMBER' } })).rejects.toBeInstanceOf(NotFoundException);
     });
@@ -133,11 +133,11 @@ describe('contact people', () => {
     it('needs edit rights to link, and create rights to invent a person', async () => {
       // Two different abilities, matching the rules this service already has:
       // linking edits the company's details; creating a person creates a client.
-      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { permissions: { crmViewAll: true } } });
+      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { isActive: true, permissions: { crmViewAll: true } } });
       records(company(), person());
       await expect(add({ caller: { userId: 'u1', role: 'MEMBER' } })).rejects.toBeInstanceOf(ForbiddenException);
 
-      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { permissions: { crmViewAll: true, crmEditInfo: true } } });
+      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { isActive: true, permissions: { crmViewAll: true, crmEditInfo: true } } });
       await expect(
         service.addContact({ companyId: 'co-1', person: { name: 'New Person' }, organizationId: ORG, caller: { userId: 'u1', role: 'MEMBER' } } as never),
       ).rejects.toBeInstanceOf(ForbiddenException);
@@ -231,7 +231,7 @@ describe('contact people', () => {
 
     it('needs the right to create clients to promote one', async () => {
       // It puts somebody on the bill, so it takes what adding a client takes.
-      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { permissions: { crmViewAll: true, crmEditInfo: true } } });
+      prisma.user.findFirst.mockResolvedValue({ role: 'MEMBER', memberRole: { isActive: true, permissions: { crmViewAll: true, crmEditInfo: true } } });
       records(person({ isContact: true }));
       await expect(
         service.promoteContact({ personId: 'pe-1', organizationId: ORG, caller: { userId: 'u1', role: 'MEMBER' } } as never),

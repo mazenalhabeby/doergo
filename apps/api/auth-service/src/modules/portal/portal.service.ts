@@ -8,6 +8,7 @@ import {
   templateToIntakeCategories,
   DEFAULT_PORTAL_FEATURES,
   SELECTABLE_ASSET_WHERE,
+  crmCapsIn,
 } from '@hbcfield/shared';
 
 // Keep only well-formed { label, value } detail rows — the one sanitizer the
@@ -626,15 +627,19 @@ export class PortalService {
   async assertClientAddressesEditable(organizationId: string, customerId: string, caller: CrmCaller) {
     const c = await this.prisma.customer.findFirst({
       where: { id: customerId, organizationId },
-      select: { id: true, ownerId: true, managerIds: true, isPortalResident: true },
+      select: { id: true, spaceId: true, ownerId: true, managerIds: true, isPortalResident: true },
     });
     if (!c) throw new NotFoundException('Customer not found');
-    const caps = await this.customers.crmCapsFor(caller, organizationId);
+    // Decided by the workspace the client is filed in (org ∪ that workspace's CRM grant).
+    const reach = await this.customers.crmReachFor(caller, organizationId);
+    const caps = crmCapsIn(reach, c.spaceId);
+    const reachable = caps.canAccess && this.customers.canReach(reach, c, caller);
     if (c.isPortalResident) {
-      if (!caps.manage) throw new ForbiddenException('Not allowed');
-      return;
+      if (caps.manage) return;
+      if (!reachable) throw new NotFoundException('Customer not found');
+      throw new ForbiddenException('Not allowed');
     }
-    if (!caps.canAccess || !this.customers.canReach(caps, c, caller)) throw new NotFoundException('Customer not found');
+    if (!reachable) throw new NotFoundException('Customer not found');
     if (!(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
   }
 

@@ -34,9 +34,9 @@ import {
   type RsvpResponse,
   personName,
   personNameById,
-  CRM_CAPS_SELECT,
-  crmCapsOfRow,
-  crmReachesClient, personSearchOr,
+  crmReachSelect,
+  crmReachOfRow,
+  crmReachesClientIn, personSearchOr,
   toISODateString,
 } from '@hbcfield/shared';
 import { CalendarRulesService } from './calendar-rules.service';
@@ -313,13 +313,13 @@ export class EventsService {
    */
   private async clientShownTo(
     caller: Caller,
-    client: { id: string; name: string; ownerId: string | null; managerIds: string[] } | null,
+    client: { id: string; name: string; spaceId?: string | null; ownerId: string | null; managerIds: string[] } | null,
   ): Promise<{ id: string; name: string } | null> {
     if (!client || !caller.crm) return null;
-    const row = caller.role === 'ADMIN'
-      ? { role: 'ADMIN' }
-      : await this.prisma.user.findFirst({ where: { id: caller.userId, organizationId: caller.organizationId }, select: CRM_CAPS_SELECT });
-    return crmReachesClient(crmCapsOfRow(row), client, caller.userId) ? { id: client.id, name: client.name } : null;
+    if (caller.role === 'ADMIN') return { id: client.id, name: client.name };
+    // Org-wide CRM, or a CRM grant in the workspace the client is filed in (crm/crm-reach.ts).
+    const row = await this.prisma.user.findFirst({ where: { id: caller.userId, organizationId: caller.organizationId }, select: crmReachSelect() });
+    return crmReachesClientIn(crmReachOfRow(row as never), client, caller.userId) ? { id: client.id, name: client.name } : null;
   }
 
   /** One shared rule for a name (people/person-name.ts) — never "John null". */
@@ -595,7 +595,7 @@ export class EventsService {
       where: { id: dto.eventId, organizationId: dto.organizationId, attendees: { some: { userId: dto.userId } } },
       include: {
         attendees: { select: { userId: true, response: true, isOrganizer: true, user: { select: { firstName: true, lastName: true, avatarUrl: true } } }, orderBy: { createdAt: 'asc' } },
-        customer: { select: { id: true, name: true, ownerId: true, managerIds: true } },
+        customer: { select: { id: true, name: true, spaceId: true, ownerId: true, managerIds: true } },
         space: { select: { id: true, name: true } },
         placeSpace: { select: { id: true, name: true, address: true, lat: true, lng: true } },
       },
