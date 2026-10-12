@@ -41,7 +41,9 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     manager: [
-      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label',
+      // Clients: the org-wide legacy bridge (canManageUsers/canViewAllTasks) reads as CRM on the
+      // server's reach too (crmReachOfRow → memberAccessOf); `holds('crmViewOwn')` used to miss it.
+      'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
       'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.support', 'shortcuts.equipmentLog',
@@ -127,25 +129,20 @@ describe('Shortcuts widget — every persona', () => {
     });
   }
 
-  /* ── What the live server said ───────────────────────────────────────── */
+  /* ── What the server says now ───────────────────────────────────────── */
 
   /*
-    Tiles a persona IS offered whose screen's first read the server refused
-    (403) on 2026-09-26. Each is a door that does not open. Root causes are in
-    the report; none is fixable from the card, because the card is a view of
-    the shared table.
+    On 2026-09-26 the server read CRM off the member's ORG ROLE alone, so noor
+    (no role, a legacy `canManageUsers` column in `access.org`) was refused
+    GET /customers while the phone offered Scan card / Add client.
 
-      noor · Scan card / Add client — GET /customers 403: the phone's
-        `resolveCrmCaps` legacy bridge (canManageUsers ⇒ CRM writer) reads
-        `access.org` and says yes; the server said no.
+    The server's CRM reach is now `crmReachOfRow` → `memberAccessOf`, THE
+    access resolver — the very one that built this session's `access.org`. The
+    legacy bridge applies on both sides (until ACCESS_IGNORE_LEGACY_FLAGS
+    retires the columns, which empties `access.org` on both sides too), so the
+    phone and the server agree again and noor is offered both.
   */
-  const REFUSED_BUT_SHOWN: Array<[string, string]> = [
-    ['noor', 'shortcuts.scanCard'],
-    ['noor', 'shortcuts.addClient'],
-  ];
-  for (const [who, key] of REFUSED_BUT_SHOWN) {
-    it(`FIXED: ${who} is not offered ${key} (the server refuses its screen)`, () => {
-      expect(tilesOf(who)).not.toContain(key);
-    });
-  }
+  it('noor: the phone follows the server\'s reach (same resolver), so Scan card and Add client are offered', () => {
+    expect(tilesOf('noor')).toEqual(expect.arrayContaining(['shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']));
+  });
 });

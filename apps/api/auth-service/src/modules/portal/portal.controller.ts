@@ -44,7 +44,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_get_for_space' })
-  getSpacePortal(@Payload() data: { organizationId: string; spaceId: string }) {
+  getSpacePortal(@Payload() data: { organizationId: string; spaceId: string; mayCreate?: boolean }) {
     return this.portalService.getSpacePortal(data);
   }
 

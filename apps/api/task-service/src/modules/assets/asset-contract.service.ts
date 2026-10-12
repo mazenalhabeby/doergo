@@ -166,11 +166,17 @@ export class AssetContractService {
     if (maxHolders(shape) === 0) throw new BadRequestException('This type is not held by anybody');
     if (!shape.holder.members) throw new BadRequestException('This type is held by clients, not members');
 
+    // A workspace-scoped manager hands the thing only to somebody who works in that workspace (same rule as a handover).
+    const narrow = Array.isArray(data.manageSpaceIds);
     const member = await this.prisma.user.findFirst({
-      where: { id: data.holderUserId, organizationId: data.organizationId },
+      where: {
+        id: data.holderUserId,
+        organizationId: data.organizationId,
+        ...(narrow ? { spaceAssignments: { some: { spaceId: kind.spaceId ?? '__none__', OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] } } } : {}),
+      },
       select: { id: true },
     });
-    if (!member) throw new BadRequestException('That person is not in this organization');
+    if (!member) throw new BadRequestException(narrow ? 'That person does not work in this workspace' : 'That person is not in this organization');
 
     if (data.typeId) {
       const type = await this.prisma.assetType.findFirst({

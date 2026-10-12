@@ -256,7 +256,7 @@ export class AssetCustodyService {
 
     const asset = await this.prisma.asset.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true, category: { select: { config: true } } },
+      select: { id: true, category: { select: { config: true, spaceId: true } } },
     });
     if (!asset) throw new NotFoundException('Asset not found in this organization');
 
@@ -264,7 +264,15 @@ export class AssetCustodyService {
     const limit = maxHolders(shape);
     if (limit === 0) throw new BadRequestException('This type is not held by anybody');
 
-    const to = await this.validateParties(data.to ?? [], data.organizationId, shape);
+    /*
+      Somebody who manages assets in ONE workspace hands its equipment to that
+      workspace's people and clients, never to anybody in the organization —
+      otherwise a client's site manager could move our van to a person they
+      cannot even see. An org-wide manager (manageSpaceIds null/undefined) is
+      not narrowed.
+    */
+    const within = Array.isArray(data.manageSpaceIds) ? (asset.category?.spaceId ?? null) : undefined;
+    const to = await this.validateParties(data.to ?? [], data.organizationId, shape, within);
 
     const plan = await this.prisma.$transaction((tx) =>
       this.apply(tx as unknown as Db, {
@@ -328,6 +336,8 @@ export class AssetCustodyService {
     raw: CustodyParty[],
     organizationId: string,
     shape: ReturnType<typeof normalizeKindShape>,
+    /** Only parties of this workspace (a workspace-scoped manager); null = none qualify; undefined = anyone in the organization. */
+    withinSpaceId?: string | null,
   ): Promise<CustodyParty[]> {
     const userIds = new Set<string>();
     const customerIds = new Set<string>();
@@ -351,17 +361,29 @@ export class AssetCustodyService {
 
     const [members, clients] = await Promise.all([
       userIds.size
-        ? this.prisma.user.findMany({ where: { id: { in: [...userIds] }, organizationId }, select: { id: true } })
+        ? this.prisma.user.findMany({
+            where: {
+              id: { in: [...userIds] },
+              organizationId,
+              ...(withinSpaceId === undefined
+                ? {}
+                : { spaceAssignments: { some: { spaceId: withinSpaceId ?? '__none__', OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] } } }),
+            },
+            select: { id: true },
+          })
         : Promise.resolve([]),
       customerIds.size
-        ? this.prisma.customer.findMany({ where: { id: { in: [...customerIds] }, organizationId }, select: { id: true } })
+        ? this.prisma.customer.findMany({
+            where: { id: { in: [...customerIds] }, organizationId, ...(withinSpaceId === undefined ? {} : { spaceId: withinSpaceId ?? '__none__' }) },
+            select: { id: true },
+          })
         : Promise.resolve([]),
     ]);
     if (members.length !== userIds.size) {
-      throw new BadRequestException('Someone on that list is not in this organization');
+      throw new BadRequestException(withinSpaceId === undefined ? 'Someone on that list is not in this organization' : 'Someone on that list does not work in this workspace');
     }
     if (clients.length !== customerIds.size) {
-      throw new BadRequestException('A client on that list is not in this organization');
+      throw new BadRequestException(withinSpaceId === undefined ? 'A client on that list is not in this organization' : 'A client on that list is not filed in this workspace');
     }
 
     return [

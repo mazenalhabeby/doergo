@@ -22,8 +22,9 @@ jest.mock('../../components/home/shortcuts-card', () => ({ ShortcutsCard: () => 
 jest.mock('../../components/home/route-card', () => ({ RouteCard: () => null }));
 jest.mock('../../components/home/today-card', () => ({ TodayCard: () => null }));
 import { availableWidgets } from '../../home/registry';
-import { destinationsFor } from '../manage-rows';
-import { drivesRoutes, isExternalMember } from '../member-reach';
+import { destinationsFor, manageRowsFor } from '../manage-rows';
+import { crmCapsOf, drivesRoutes, isExternalMember } from '../member-reach';
+import { tabAccessFor } from '../tab-layout';
 
 const profile = (modules: string[]) => ({ modules });
 const member = (over: Record<string, unknown> = {}) => ({
@@ -76,7 +77,7 @@ describe('Today\'s route and Plan route ask one question', () => {
 describe('the organization\'s own property is never an external member\'s', () => {
   const ext = member({ isExternal: true, access: { org: { crmViewAll: true, crmEditInfo: true, crmCreateClients: true, canCreateTasks: true }, perSpace: {} } });
 
-  it('hides equipment, documents and the client book', () => {
+  it('org-wide CRM keys never reach an external: hides equipment, documents and the client book', () => {
     const t = tiles(ext);
     for (const k of ['shortcuts.documents', 'shortcuts.myEquipment', 'shortcuts.logExpense', 'shortcuts.equipmentLog', 'shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']) {
       expect(t).not.toContain(k);
@@ -107,8 +108,8 @@ describe('a tile asks what its screen needs', () => {
     expect(tiles(rep)).toContain('shortcuts.addClient');
   });
 
-  it('BUG FIXED: no org role → no CRM tiles, as the server answers (a legacy canManageUsers column is not a CRM grant)', () => {
-    const legacy = member({ memberRoleId: null, canManageUsers: true, access: { org: { canManageUsers: true }, perSpace: {} } });
+  it('a flat legacy column the resolver did not put in access.org is not a CRM grant (the server reads the resolver too)', () => {
+    const legacy = member({ memberRoleId: null, canManageUsers: true, access: { org: {}, perSpace: {} } });
     const t = tiles(legacy);
     for (const k of ['shortcuts.scanCard', 'shortcuts.addClient', 'manage.customers.label']) expect(t).not.toContain(k);
   });
@@ -116,5 +117,62 @@ describe('a tile asks what its screen needs', () => {
   it('Overtime needs the clock, not only the Option', () => {
     expect(tiles(member())).toContain('shortcuts.overtime');
     expect(tiles(member({ enabledModules: profile(['tasks']) }))).not.toContain('shortcuts.overtime');
+  });
+});
+
+describe('an external member given clients in their workspace', () => {
+  const ext = (perSpace: Record<string, Record<string, boolean>>, over: Record<string, unknown> = {}) =>
+    member({ isExternal: true, memberRoleId: null, access: { org: {}, perSpace }, ...over });
+
+  it('crmViewAll in a workspace that runs CRM: the book, its widget and the Manage row', () => {
+    const u = ext({ 'space-a': { crmViewAll: true } });
+    const caps = crmCapsOf(u as never);
+    expect(caps.canAccess).toBe(true);
+    expect(caps.view).toBe('all');
+    expect(caps.create).toBe(false);
+    expect(tiles(u)).toContain('manage.customers.label');
+    expect(manageRowsFor(u as never).map((r) => r.labelKey)).toContain('manage.customers.label');
+    expect(widgets(u)).toContain('clients');
+    expect(tiles(u)).not.toContain('shortcuts.addClient');
+  });
+
+  it('with "add clients" there: Add client, never Scan card', () => {
+    const u = ext({ 'space-a': { crmViewAll: true, crmCreateClients: true } });
+    expect(crmCapsOf(u as never).create).toBe(true);
+    expect(tiles(u)).toContain('shortcuts.addClient');
+    expect(tiles(u)).not.toContain('shortcuts.scanCard');
+  });
+
+  it('never the personnel file, custody or the card camera, whatever they hold', () => {
+    const u = ext({ 'space-a': { crmViewAll: true, crmCreateClients: true, canViewAssets: true, canLogAssets: true, canManageAssets: true } });
+    const t = tiles(u);
+    for (const k of ['shortcuts.documents', 'shortcuts.myEquipment', 'shortcuts.logExpense', 'shortcuts.equipmentLog', 'shortcuts.scanCard']) {
+      expect(t).not.toContain(k);
+    }
+  });
+
+  it('no CRM grant: nothing of the book', () => {
+    const u = ext({ 'space-a': { canViewAllTasks: true } });
+    expect(crmCapsOf(u as never).canAccess).toBe(false);
+    expect(tiles(u)).not.toContain('manage.customers.label');
+    expect(widgets(u)).not.toContain('clients');
+  });
+
+  it('a workspace grant counts only where CRM runs', () => {
+    const u = ext({ 'space-a': { crmViewAll: true } }, { spaceModules: ['tracking', 'assets'] });
+    expect(crmCapsOf(u as never).canAccess).toBe(false);
+    expect(tiles(u)).not.toContain('manage.customers.label');
+  });
+
+  it('the same grant held by a staff member in one workspace counts too (a space-scoped sales role)', () => {
+    const u = member({ access: { org: {}, perSpace: { 'space-a': { crmViewOwn: true, crmCreateClients: true } } } });
+    expect(crmCapsOf(u as never).create).toBe(true);
+    expect(tiles(u)).toContain('shortcuts.addClient');
+    expect(tiles(u)).toContain('shortcuts.scanCard');
+  });
+
+  it('has no calendar tab', () => {
+    expect(tabAccessFor(ext({ 'space-a': { crmViewAll: true } }) as never).calendar).toBe(false);
+    expect(tabAccessFor(member() as never).calendar).toBe(true);
   });
 });

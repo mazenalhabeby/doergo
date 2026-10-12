@@ -108,3 +108,17 @@ describe('what an external member may hold', () => {
     expect(role.permissions.canDeleteAttendance).toBeUndefined();
   });
 });
+
+describe('a grant implies what it cannot work without', () => {
+  const { buildResolvedAccess } = jest.requireActual('@hbcfield/shared');
+  it('managing assets in a workspace implies logging and seeing them there — and nothing else', () => {
+    const a = buildResolvedAccess({ spaces: [{ spaceId: 'A', permissions: { canManageAssets: true } }] });
+    expect(a.perSpace.A).toEqual({ canManageAssets: true, canLogAssets: true, canViewAssets: true });
+    expect(a.org).toEqual({});
+  });
+  it('answering portal requests implies reading them; managing the portal implies both', () => {
+    const a = buildResolvedAccess({ memberRolePermissions: { canManagePortals: true }, spaces: [{ spaceId: 'B', permissions: { canAnswerPortal: true } }] });
+    expect(a.org).toMatchObject({ canManagePortals: true, canAnswerPortal: true, canViewPortal: true });
+    expect(a.perSpace.B).toEqual({ canAnswerPortal: true, canViewPortal: true });
+  });
+});
