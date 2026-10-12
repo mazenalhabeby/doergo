@@ -242,13 +242,13 @@ export class TasksController {
   // ============ Customer Portal (customer-scoped reads) ============
 
   @MessagePattern({ cmd: 'portal_list_requests' })
-  async listPortalRequests(@Payload() data: { organizationId: string; customerId: string }) {
+  async listPortalRequests(@Payload() data: { organizationId: string; customerId: string; scopeSpaceIds?: string[] | null }) {
     return this.tasksService.listPortalRequests(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_requests_by_portal' })
   async listPortalRequestsByPortal(
-    @Payload() data: { organizationId: string; portalId: string },
+    @Payload() data: { organizationId: string; portalId: string; scopeSpaceIds?: string[] | null },
   ) {
     return this.tasksService.listPortalRequestsByPortal(data);
   }
@@ -271,6 +271,9 @@ export class TasksController {
       workflowId?: string | null;
       priority?: string;
       assignedToId?: string | null;
+      // Built in the gateway from the session (portalScope / assignSpaceIds).
+      scopeSpaceIds?: string[] | null;
+      assignScopeSpaceIds?: string[] | null;
     },
   ) {
     return this.tasksService.triageRequest(data);

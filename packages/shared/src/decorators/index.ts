@@ -179,6 +179,7 @@ export type PermissionField =
   | 'canViewReports' | 'canManageInvoices' | 'canManageAssets'
   | 'canManageWorkspaces' | 'canManageRota'
   | 'canManagePortals' | 'canManageTaskTypes' | 'canViewTracking'
+  | 'canViewPortal' | 'canAnswerPortal'
   | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
   | 'canApproveAttendance' | 'canDeleteAttendance'
   | 'crmEditInfo' | 'crmManageClients'
