@@ -4,7 +4,6 @@ import { keys } from "@/lib/query-keys"
 import { useTranslation } from "react-i18next"
 import { CalendarClock, Lock, Pencil, Shield, Trash2, Wrench } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { formatMoney, MONEY_LOCALE } from "@/lib/money"
 import { useQuery } from "@tanstack/react-query"
 import { locationsApi } from "@/lib/api"
@@ -59,50 +58,8 @@ export function useSpaceCurrency(spaceId: string): { bill: string; cost: string 
   return { bill: data?.effectiveCurrency ?? cost, cost }
 }
 
-/** Small segmented control — the page's own idiom for a choice of two or three. */
-export function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-  disabled,
-  ariaLabel,
-}: {
-  value: T
-  options: Array<{ value: T; label: string }>
-  onChange: (v: T) => void
-  disabled?: boolean
-  ariaLabel: string
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label={ariaLabel}
-      className={cn(
-        "inline-flex flex-wrap gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5",
-        disabled && "opacity-60",
-      )}
-    >
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          disabled={disabled}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            "rounded-md px-3 py-1 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            value === o.value
-              ? "bg-card font-semibold text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  )
-}
+/** The page's segmented control — moved to components/ui so the permission builder shares it. */
+export { Segmented } from "@/components/ui/segmented"
 
 function Initials({ p }: { p: { firstName?: string | null; lastName?: string | null; avatarUrl?: string | null } }) {
   return (

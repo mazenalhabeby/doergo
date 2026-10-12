@@ -6949,7 +6949,9 @@
     "triageWorker": "Assegna operatore",
     "uploadCover": "Carica copertina",
     "noWorkspace": "Nessuno spazio ha ancora attivato il portale clienti.",
-    "subtitle": "Ciò che i tuoi clienti vedono quando accedono."
+    "subtitle": "Ciò che i tuoi clienti vedono quando accedono.",
+    "noPortalYetTitle": "Ancora nessun portale in questo spazio di lavoro",
+    "noPortalYetHint": "Chi gestisce il portale di questo spazio di lavoro può crearne uno."
   },
   "scheduling": {
     "title": "Impostazioni spazio di lavoro",
@@ -9408,7 +9410,15 @@
     "LEAVE_TRACKING_DATE_INVALID": "Scelga una data di inizio valida.",
     "LEAVE_POLICY_EMPTY": "Niente da salvare.",
     "AUTO_CLOCK_SETTING_INVALID": "Una delle impostazioni della timbratura automatica è fuori dai limiti consentiti. Controlli il numero evidenziato.",
-    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Questa entrata non può più essere annullata."
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Questa entrata non può più essere annullata.",
+    "PERMISSION_KEY_NOT_IN_SPACE": "Alcune di queste autorizzazioni non possono essere date in uno spazio di lavoro.",
+    "EXTERNAL_PERMISSION_FORBIDDEN": "Alcune di queste autorizzazioni non possono essere date a un membro esterno.",
+    "GRANT_EXCEEDS_OWN": "Non potete dare autorizzazioni che non avete voi stessi.",
+    "MEMBER_ABOVE_YOU": "Questa persona ha più autorizzazioni di voi in questo spazio di lavoro.",
+    "CANNOT_CHANGE_OWN": "Non potete modificare le vostre autorizzazioni in questo spazio di lavoro.",
+    "ASSIGNMENT_NOT_FOUND": "Questa persona non è più in questo spazio di lavoro.",
+    "ROLE_NOT_FOUND": "Quel ruolo non esiste più.",
+    "PERMISSIONS_CHOICE_INVALID": "Scegliete un ruolo oppure un insieme di autorizzazioni."
   },
   "signLink": {
     "tabs": {
@@ -10512,6 +10522,173 @@
       "expiry": "I giorni riportati scadono dopo (mesi)",
       "never": "Mai",
       "carryHint": "I giorni riportati vengono aggiunti il primo giorno del nuovo anno di ferie come riga visibile, e si possono annullare."
+    }
+  },
+  "permissionBuilder": {
+    "startFrom": "Punto di partenza",
+    "areasTitle": "Fin dove, area per area",
+    "switchesTitle": "Capacità separate",
+    "platformTitle": "Dove accede",
+    "platformReadOnly": "Solo chi gestisce i membri dell'organizzazione può modificarlo.",
+    "platformSummary": {
+      "web": "Solo sul web.",
+      "mobile": "Solo nell'app.",
+      "both": "Sul web e nell'app."
+    },
+    "summaryTitle": "Cosa potrà fare {{name}}",
+    "summaryNothing": "Ancora niente: può accedere, ma qui non vede alcun lavoro.",
+    "extraKept": "Ha anche {{count}} autorizzazione/i data/e altrove, mantenuta/e così com'è.",
+    "moduleOff": "Questo spazio di lavoro non usa {{module}}.",
+    "needsLevel": "Richiede {{area}} a «{{level}}» o superiore.",
+    "neverExternal": "Mai disponibile per i membri esterni: fatture, fatturazione, costo del lavoro, fascicoli del personale, i membri della vostra azienda, altri spazi di lavoro, il calendario, i report, né timbrature o ferie proprie.",
+    "seat": {
+      "observer": "{{price}} al mese — il posto da osservatore, addebitato alla vostra organizzazione.",
+      "full": "{{price}} al mese — un posto completo, addebitato alla vostra organizzazione."
+    },
+    "modules": {
+      "time_tracking": "Rilevazione presenze",
+      "crm": "CRM",
+      "b2c_portal": "Portale clienti",
+      "assets": "Beni"
+    },
+    "presets": {
+      "observer": {
+        "title": "Osservatore",
+        "hint": "Segue il lavoro e può aprire un intervento."
+      },
+      "supervisor": {
+        "title": "Supervisore",
+        "hint": "Segue il lavoro e approva le ore."
+      },
+      "manager": {
+        "title": "Responsabile dello spazio",
+        "hint": "Gestisce questo spazio di lavoro ogni giorno."
+      },
+      "custom": {
+        "title": "Personalizzato",
+        "hint": "La vostra combinazione, impostata qui sotto."
+      }
+    },
+    "areas": {
+      "tasks": {
+        "title": "Attività",
+        "levels": {
+          "none": "Nessuno",
+          "view": "Vedere",
+          "create": "Creare",
+          "assign": "Assegnare"
+        },
+        "summary": {
+          "view": "Vedere tutte le attività di questo spazio di lavoro.",
+          "create": "Vedere tutte le attività e crearne di nuove.",
+          "assign": "Vedere, creare e assegnare attività alle persone."
+        }
+      },
+      "attendance": {
+        "title": "Tempo e presenze",
+        "levels": {
+          "none": "Nessuno",
+          "view": "Vedere",
+          "approve": "Approvare"
+        },
+        "summary": {
+          "view": "Vedere i fogli ore delle persone qui.",
+          "approve": "Vedere e approvare i fogli ore qui."
+        }
+      },
+      "crm": {
+        "title": "Clienti",
+        "levels": {
+          "none": "Nessuno",
+          "view": "Vedere",
+          "add": "Aggiungere",
+          "edit": "Modificare",
+          "delete": "Eliminare"
+        },
+        "summary": {
+          "view": "Vedere i clienti di questo spazio di lavoro.",
+          "add": "Vedere e aggiungere clienti.",
+          "edit": "Vedere, aggiungere e modificare clienti, e registrare chiamate e visite.",
+          "delete": "Vedere, aggiungere, modificare ed eliminare clienti."
+        }
+      },
+      "portal": {
+        "title": "Portale clienti",
+        "levels": {
+          "none": "Nessuno",
+          "view": "Vedere",
+          "answer": "Rispondere",
+          "manage": "Gestire"
+        },
+        "summary": {
+          "view": "Leggere le richieste dei clienti dal portale.",
+          "answer": "Leggere le richieste dei clienti e rispondere.",
+          "manage": "Gestire il portale clienti: richieste, categorie e clienti."
+        }
+      },
+      "assets": {
+        "title": "Beni",
+        "levels": {
+          "none": "Nessuno",
+          "view": "Vedere",
+          "log": "Registrare l'uso",
+          "manage": "Gestire"
+        },
+        "summary": {
+          "view": "Vedere le attrezzature qui.",
+          "log": "Vedere le attrezzature e registrarne uso, carburante e spese.",
+          "manage": "Vedere, registrare e gestire le attrezzature qui."
+        }
+      }
+    },
+    "switches": {
+      "overtime": {
+        "title": "Approvare gli straordinari",
+        "summary": "Approvare gli straordinari."
+      },
+      "correctAttendance": {
+        "title": "Correggere le timbrature",
+        "summary": "Correggere le timbrature."
+      },
+      "deleteAttendance": {
+        "title": "Eliminare le timbrature",
+        "summary": "Eliminare le timbrature."
+      },
+      "rota": {
+        "title": "Pianificare i turni",
+        "summary": "Pianificare i turni."
+      },
+      "tracking": {
+        "title": "Vedere le posizioni in tempo reale",
+        "summary": "Vedere sulla mappa dove si trovano le persone."
+      },
+      "addPeople": {
+        "title": "Aggiungere e rimuovere persone",
+        "summary": "Aggiungere persone a questo spazio di lavoro e rimuoverle."
+      },
+      "grantRoles": {
+        "title": "Dare ruoli alle persone",
+        "summary": "Dare un ruolo alle persone qui, mai più di quanto si ha."
+      }
+    },
+    "panel": {
+      "title": "Cosa può fare qui",
+      "customise": "Personalizza",
+      "hide": "Nascondi",
+      "save": "Salva autorizzazioni",
+      "saved": "Autorizzazioni salvate",
+      "discard": "Annulla modifiche",
+      "useRole": "Oppure assegna un ruolo condiviso",
+      "useRolePlaceholder": "Scegli un ruolo…",
+      "personal": "Impostato per questa persona",
+      "role": "Ruolo: {{role}}",
+      "platformSaved": "Accesso salvato",
+      "loadFailed": "Impossibile caricare cosa può fare qui questa persona."
+    },
+    "invite": {
+      "custom": "Imposta cosa può fare",
+      "useRole": "Usa un ruolo esistente",
+      "name": "questa persona"
     }
   }
 }

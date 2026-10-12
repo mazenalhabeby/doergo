@@ -6940,7 +6940,9 @@
     "triageWorker": "Assign worker",
     "uploadCover": "Upload cover",
     "noWorkspace": "No workspace has a client portal switched on yet.",
-    "subtitle": "What your clients see when they log in."
+    "subtitle": "What your clients see when they log in.",
+    "noPortalYetTitle": "No portal in this workspace yet",
+    "noPortalYetHint": "Somebody who manages this workspace's portal can set one up."
   },
   "scheduling": {
     "title": "Workspace settings",
@@ -9399,7 +9401,15 @@
     "LEAVE_TRACKING_DATE_INVALID": "Choose a valid start date.",
     "LEAVE_POLICY_EMPTY": "Nothing to save.",
     "AUTO_CLOCK_SETTING_INVALID": "One of the automatic clock settings is outside what is allowed. Check the highlighted number.",
-    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "This clock-in can no longer be undone."
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "This clock-in can no longer be undone.",
+    "PERMISSION_KEY_NOT_IN_SPACE": "Some of these permissions cannot be given in a workspace.",
+    "EXTERNAL_PERMISSION_FORBIDDEN": "An external member cannot be given some of these permissions.",
+    "GRANT_EXCEEDS_OWN": "You cannot give permissions you do not hold yourself.",
+    "MEMBER_ABOVE_YOU": "This person holds more in this workspace than you do.",
+    "CANNOT_CHANGE_OWN": "You cannot change your own permissions in this workspace.",
+    "ASSIGNMENT_NOT_FOUND": "This person is no longer in this workspace.",
+    "ROLE_NOT_FOUND": "That role no longer exists.",
+    "PERMISSIONS_CHOICE_INVALID": "Choose either a role or a set of permissions."
   },
   "signLink": {
     "tabs": {
@@ -10503,6 +10513,173 @@
       "expiry": "Carried days expire after (months)",
       "never": "Never",
       "carryHint": "Carried days are added on the first day of the new leave year as a visible line, and can be undone."
+    }
+  },
+  "permissionBuilder": {
+    "startFrom": "Start from",
+    "areasTitle": "How far, area by area",
+    "switchesTitle": "Separate abilities",
+    "platformTitle": "Where they sign in",
+    "platformReadOnly": "Only somebody who manages the organization's members can change this.",
+    "platformSummary": {
+      "web": "On the web only.",
+      "mobile": "In the app only.",
+      "both": "On the web and in the app."
+    },
+    "summaryTitle": "What {{name}} will be able to do",
+    "summaryNothing": "Nothing yet — they can sign in, and see no work here.",
+    "extraKept": "Also holds {{count}} permission(s) given elsewhere — kept as they are.",
+    "moduleOff": "This workspace does not run {{module}}.",
+    "needsLevel": "Needs {{area}} at “{{level}}” or higher.",
+    "neverExternal": "Never available to external members: invoices, billing, labour cost, personnel files, your company's members, other workspaces, the calendar, reports, and a clock or leave of their own.",
+    "seat": {
+      "observer": "{{price}} a month — the observer seat, billed to your organization.",
+      "full": "{{price}} a month — a full seat, billed to your organization."
+    },
+    "modules": {
+      "time_tracking": "Time Tracking",
+      "crm": "CRM",
+      "b2c_portal": "Client Portal",
+      "assets": "Assets"
+    },
+    "presets": {
+      "observer": {
+        "title": "Observer",
+        "hint": "Watches the work and can raise a job."
+      },
+      "supervisor": {
+        "title": "Supervisor",
+        "hint": "Follows the work and signs off the hours."
+      },
+      "manager": {
+        "title": "Workspace manager",
+        "hint": "Runs this workspace day to day."
+      },
+      "custom": {
+        "title": "Custom",
+        "hint": "Your own mix, set below."
+      }
+    },
+    "areas": {
+      "tasks": {
+        "title": "Tasks",
+        "levels": {
+          "none": "None",
+          "view": "See",
+          "create": "Create",
+          "assign": "Assign"
+        },
+        "summary": {
+          "view": "See every task in this workspace.",
+          "create": "See every task and create new ones.",
+          "assign": "See, create and assign tasks to people."
+        }
+      },
+      "attendance": {
+        "title": "Time & attendance",
+        "levels": {
+          "none": "None",
+          "view": "See",
+          "approve": "Approve"
+        },
+        "summary": {
+          "view": "See the time sheets of the people here.",
+          "approve": "See and approve the time sheets here."
+        }
+      },
+      "crm": {
+        "title": "Clients",
+        "levels": {
+          "none": "None",
+          "view": "See",
+          "add": "Add",
+          "edit": "Edit",
+          "delete": "Delete"
+        },
+        "summary": {
+          "view": "See this workspace's clients.",
+          "add": "See and add clients.",
+          "edit": "See, add and edit clients, and log calls and visits.",
+          "delete": "See, add, edit and delete clients."
+        }
+      },
+      "portal": {
+        "title": "Client portal",
+        "levels": {
+          "none": "None",
+          "view": "See",
+          "answer": "Answer",
+          "manage": "Manage"
+        },
+        "summary": {
+          "view": "Read client requests from the portal.",
+          "answer": "Read and answer client requests.",
+          "manage": "Run the client portal: requests, categories and clients."
+        }
+      },
+      "assets": {
+        "title": "Assets",
+        "levels": {
+          "none": "None",
+          "view": "See",
+          "log": "Log use",
+          "manage": "Manage"
+        },
+        "summary": {
+          "view": "See the equipment here.",
+          "log": "See the equipment and log its use, fuel and expenses.",
+          "manage": "See, log and manage the equipment here."
+        }
+      }
+    },
+    "switches": {
+      "overtime": {
+        "title": "Approve overtime",
+        "summary": "Approve overtime."
+      },
+      "correctAttendance": {
+        "title": "Correct time entries",
+        "summary": "Correct time entries."
+      },
+      "deleteAttendance": {
+        "title": "Delete time entries",
+        "summary": "Delete time entries."
+      },
+      "rota": {
+        "title": "Plan the rota",
+        "summary": "Plan the rota."
+      },
+      "tracking": {
+        "title": "See live locations",
+        "summary": "See where people are on the map."
+      },
+      "addPeople": {
+        "title": "Add and remove people",
+        "summary": "Add people to this workspace and take them off it."
+      },
+      "grantRoles": {
+        "title": "Give people roles",
+        "summary": "Give people here a role — never more than they hold themselves."
+      }
+    },
+    "panel": {
+      "title": "What they can do here",
+      "customise": "Customise",
+      "hide": "Hide",
+      "save": "Save permissions",
+      "saved": "Permissions saved",
+      "discard": "Discard changes",
+      "useRole": "Or give a shared role",
+      "useRolePlaceholder": "Choose a role…",
+      "personal": "Set for this person",
+      "role": "Role: {{role}}",
+      "platformSaved": "Sign-in saved",
+      "loadFailed": "Could not load what this person can do here."
+    },
+    "invite": {
+      "custom": "Set what they can do",
+      "useRole": "Use an existing role",
+      "name": "this person"
     }
   }
 }

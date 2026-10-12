@@ -23,7 +23,7 @@ import {
   spaceUnitsApi,
   type SpaceUnit,
 } from "@/lib/api"
-import { personInitials, personName, jobTitleOf, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
+import { personInitials, personName, jobTitleOf, mayGrantSpaceRoles, mayManageSpaceMembers, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -39,6 +39,7 @@ import { DatedRateField } from "@/components/rates/dated-rate"
 import { EmptyState } from "./section-header"
 import { MemberRoutingEditor } from "./member-routing-editor"
 import { MemberAutoClock, useWorkspaceAutoClock } from "./member-auto-clock"
+import { MemberPermissions } from "./member-permissions"
 import { BILL_BY, roleQueryKey, Segmented, useBillByLabel, useCents, useSpaceCurrency, type BillBy } from "./work-roles"
 
 /**
@@ -367,6 +368,15 @@ function MemberPanel({
   const [confirmRemove, setConfirmRemove] = useState(false)
 
   const external = member?.user?.isExternal === true
+  /*
+    Giving roles here — the same rule as the server's builder routes
+    (`spaceMemberAuthority().grantRoles`): managing this workspace's people, or
+    `canGrantSpaceRoles` here or org-wide (workspaces administrators and admins
+    included). For an external member the builder REPLACES the role picker:
+    their whole authority is what they may do in this one workspace.
+  */
+  const mayGrant = !!user && (mayManageSpaceMembers(user, spaceId) || mayGrantSpaceRoles(user, spaceId))
+  const builderReplacesPicker = external && mayGrant
   // Only the trades this workspace uses — plus the one this person already holds.
   const workRoles = roles.filter((r) => r.kind === "WORK" && (r.activeHere !== false || r.id === member?.workRole?.id))
   const mgmtRoles = roles.filter((r) => r.kind !== "WORK")
@@ -428,6 +438,8 @@ function MemberPanel({
             </SheetHeader>
 
             <div className="space-y-4">
+              {/* An external member's whole authority is the builder below — no trade, no second role. */}
+              {!builderReplacesPicker && (
               <section className={section}>
                 <h3 className={heading}>{t("scheduling.membersPage.roles")}</h3>
                 {!external && (
@@ -476,6 +488,18 @@ function MemberPanel({
                 </div>
                 {!mgmtOpen && <p className="text-[11px] text-muted-foreground">{t("scheduling.membersPage.secondRoleOff")}</p>}
               </section>
+              )}
+
+              {mayGrant && (
+                <MemberPermissions
+                  key={member.id}
+                  spaceId={spaceId}
+                  member={member}
+                  section={section}
+                  heading={heading}
+                  collapsible={!external}
+                />
+              )}
 
               {isClient && !external && (
                 <section className={section}>

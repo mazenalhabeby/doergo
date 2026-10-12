@@ -2,6 +2,7 @@
 
 import { keys } from "@/lib/query-keys"
 import { useState, useCallback, useMemo } from "react"
+import dynamic from "next/dynamic"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Copy, Check, CheckCircle2, Mail, Link2, ChevronDown, ShieldCheck } from "lucide-react"
@@ -14,8 +15,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScheduleFields, createDefaultSchedule, type EditableScheduleRow } from "@/components/schedule-fields"
 import { AccessFields } from "@/components/access-fields"
-import { defaultAccessDraft, serializeAccessDraft, getDefaultModules } from "@hbcfield/shared/client"
-import type { AccessDraft } from "@hbcfield/shared/client"
+import { defaultAccessDraft, serializeAccessDraft, getDefaultModules, permissionsFromChoice } from "@hbcfield/shared/client"
+import type { AccessDraft, PermissionChoice } from "@hbcfield/shared/client"
+import { presetChoice, withoutMissingModules } from "@/lib/permission-builder"
+import { useSpaceModules } from "@/hooks/use-space-modules"
+import { Segmented } from "@/components/ui/segmented"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import {
   Dialog,
@@ -33,6 +38,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { copyText } from "@/lib/clipboard"
+
+// Only an external invitation draws the builder — not loaded until one is.
+const PermissionBuilder = dynamic(
+  () => import("@/components/permissions/permission-builder").then((m) => m.PermissionBuilder),
+  { loading: () => <Skeleton className="h-64 w-full" /> },
+)
 
 interface CreateInvitationDialogProps {
   open: boolean
@@ -65,6 +76,14 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     without touching this behaves exactly as before.
   */
   const [externalRoleId, setExternalRoleId] = useState("default")
+  /*
+    …or what they may do, set area by area (the permission builder), which is
+    the default: the invitation carries the keys (`spacePermissions`) and the
+    server keeps them as this person's own role on accept — or the shared role
+    they exactly match. Starts at Supervisor, today's default.
+  */
+  const [externalMode, setExternalMode] = useState<"builder" | "role">("builder")
+  const [externalChoice, setExternalChoice] = useState<PermissionChoice>(() => presetChoice("supervisor", { isExternal: true }))
 
   // Access Profile pre-config — applied to the member on accept, so their first
   // screen already matches their final access (no post-registration change).
@@ -97,6 +116,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     to disagree with it.
   */
   const hasSpace = isExternal && spaceId !== "none" && !!spaceId
+  // What the chosen workspace runs, so areas it cannot use are greyed out (and not sent).
+  const { enabledModules: spaceModules, isResolved: spaceModulesResolved } = useSpaceModules(hasSpace ? spaceId : null)
+  const builderModules = hasSpace && spaceModulesResolved ? spaceModules : undefined
   // Space-scoped roles only — an org role reaches every space, which is exactly
   // what an outsider must never have. The server refuses one regardless.
   const { data: spaceRoles = [] } = useQuery({
@@ -145,13 +167,17 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       // Their authority comes from a SPACE role, never an org-wide one. The
       // server validates the scope and refuses anything else.
       input.isExternal = true
-      if (externalRoleId !== "default") input.memberRoleId = externalRoleId
+      if (externalMode === "builder") {
+        input.spacePermissions = permissionsFromChoice(withoutMissingModules(externalChoice, builderModules))
+      } else if (externalRoleId !== "default") {
+        input.memberRoleId = externalRoleId
+      }
     } else if (access.memberRoleId) {
       input.memberRoleId = access.memberRoleId
     }
     input.accessProfile = serializeAccessDraft(access)
     createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, createMutation])
+  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, externalMode, externalChoice, externalRoleId, builderModules, createMutation])
 
   // Keep the feature tabs in sync with the position until the admin edits access
   // themselves (then their choices win).
@@ -189,6 +215,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
     setAccessOpen(false)
     setAccessTouched(false)
     setCodeCopied(false)
+    setExternalMode("builder")
+    setExternalChoice(presetChoice("supervisor", { isExternal: true }))
   }, [])
 
   const handleClose = useCallback(() => {
@@ -207,6 +235,8 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
       setGeneratedCode(null)
       setSuccess(false)
       setCodeCopied(false)
+      setExternalMode("builder")
+      setExternalChoice(presetChoice("supervisor", { isExternal: true }))
       createMutation.reset()
     }, 200)
   }, [onOpenChange, createMutation])
@@ -405,32 +435,6 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
             />
           )}
 
-          {/* Which kind of outsider — only meaningful for an external invite. */}
-          {isExternal && spaceRoles.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">
-                {t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
-              </Label>
-              <Select value={externalRoleId} onValueChange={setExternalRoleId}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">
-                    {t("invitations.inviteDialog.externalRoleDefault", "Default (External Supervisor)")}
-                  </SelectItem>
-                  {spaceRoles.map((r: AccessRole) => (
-                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-muted-foreground">
-                {t(
-                  "invitations.inviteDialog.externalRoleHint",
-                  "An external member's access is this role, in this workspace only.",
-                )}
-              </p>
-            </div>
-          )}
-
           {/* Space (optional) */}
           {locations.length > 0 && (
             <div className="space-y-1.5">
@@ -458,6 +462,59 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
                 <p className="text-[11px] text-amber-600 dark:text-amber-400">
                   {t("members.invite.externalNeedsSpace")}
                 </p>
+              )}
+            </div>
+          )}
+
+          {/*
+            What an outsider may do — only meaningful for an external invite, and
+            only once the workspace is chosen (the builder greys out what that
+            workspace does not run). Two ways: set it area by area, or use an
+            existing shared role.
+          */}
+          {isExternal && hasSpace && (
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <Segmented
+                ariaLabel={t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
+                value={externalMode}
+                onChange={setExternalMode}
+                options={[
+                  { value: "builder", label: t("permissionBuilder.invite.custom") },
+                  ...(spaceRoles.length > 0 ? [{ value: "role" as const, label: t("permissionBuilder.invite.useRole") }] : []),
+                ]}
+              />
+              {externalMode === "builder" ? (
+                <PermissionBuilder
+                  name={email.trim() || t("permissionBuilder.invite.name")}
+                  isExternal
+                  value={externalChoice}
+                  onChange={setExternalChoice}
+                  spaceModules={builderModules}
+                  platform={{ value: access.platforms, onChange: (platforms) => patchAccess({ platforms }) }}
+                />
+              ) : (
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground">
+                    {t("invitations.inviteDialog.externalRoleLabel", "Role in this workspace")}
+                  </Label>
+                  <Select value={externalRoleId} onValueChange={setExternalRoleId}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">
+                        {t("invitations.inviteDialog.externalRoleDefault", "Default (External Supervisor)")}
+                      </SelectItem>
+                      {spaceRoles.map((r: AccessRole) => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">
+                    {t(
+                      "invitations.inviteDialog.externalRoleHint",
+                      "An external member's access is this role, in this workspace only.",
+                    )}
+                  </p>
+                </div>
               )}
             </div>
           )}

@@ -6940,7 +6940,9 @@
     "triageWorker": "Asignar trabajador",
     "uploadCover": "Subir portada",
     "noWorkspace": "Ningún espacio tiene portal de cliente activado todavía.",
-    "subtitle": "Lo que ven tus clientes cuando inician sesión."
+    "subtitle": "Lo que ven tus clientes cuando inician sesión.",
+    "noPortalYetTitle": "Este espacio de trabajo aún no tiene portal",
+    "noPortalYetHint": "Quien gestiona el portal de este espacio de trabajo puede crear uno."
   },
   "scheduling": {
     "title": "Ajustes del espacio de trabajo",
@@ -9399,7 +9401,15 @@
     "LEAVE_TRACKING_DATE_INVALID": "Elija una fecha de inicio válida.",
     "LEAVE_POLICY_EMPTY": "No hay nada que guardar.",
     "AUTO_CLOCK_SETTING_INVALID": "Uno de los ajustes del fichaje automático está fuera de lo permitido. Revise el número marcado.",
-    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Esta entrada ya no se puede deshacer."
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Esta entrada ya no se puede deshacer.",
+    "PERMISSION_KEY_NOT_IN_SPACE": "Algunos de estos permisos no se pueden dar en un espacio de trabajo.",
+    "EXTERNAL_PERMISSION_FORBIDDEN": "A un miembro externo no se le pueden dar algunos de estos permisos.",
+    "GRANT_EXCEEDS_OWN": "No puede dar permisos que usted mismo no tiene.",
+    "MEMBER_ABOVE_YOU": "Esta persona tiene más permisos que usted en este espacio de trabajo.",
+    "CANNOT_CHANGE_OWN": "No puede cambiar sus propios permisos en este espacio de trabajo.",
+    "ASSIGNMENT_NOT_FOUND": "Esta persona ya no está en este espacio de trabajo.",
+    "ROLE_NOT_FOUND": "Ese rol ya no existe.",
+    "PERMISSIONS_CHOICE_INVALID": "Elija un rol o un conjunto de permisos."
   },
   "signLink": {
     "tabs": {
@@ -10503,6 +10513,173 @@
       "expiry": "Los días traspasados caducan tras (meses)",
       "never": "Nunca",
       "carryHint": "Los días traspasados se añaden el primer día del nuevo año de vacaciones como una línea visible, y se pueden deshacer."
+    }
+  },
+  "permissionBuilder": {
+    "startFrom": "Punto de partida",
+    "areasTitle": "Hasta dónde, área por área",
+    "switchesTitle": "Capacidades aparte",
+    "platformTitle": "Dónde inicia sesión",
+    "platformReadOnly": "Solo quien gestiona los miembros de la organización puede cambiarlo.",
+    "platformSummary": {
+      "web": "Solo en la web.",
+      "mobile": "Solo en la app.",
+      "both": "En la web y en la app."
+    },
+    "summaryTitle": "Lo que {{name}} podrá hacer",
+    "summaryNothing": "Nada todavía: puede iniciar sesión, pero no ve ningún trabajo aquí.",
+    "extraKept": "Tiene además {{count}} permiso(s) otorgado(s) en otro lugar, que se mantienen.",
+    "moduleOff": "Este espacio de trabajo no usa {{module}}.",
+    "needsLevel": "Requiere {{area}} en «{{level}}» o superior.",
+    "neverExternal": "Nunca disponible para miembros externos: facturas, facturación, coste laboral, expedientes de personal, los miembros de su empresa, otros espacios de trabajo, el calendario, los informes, ni un fichaje o vacaciones propios.",
+    "seat": {
+      "observer": "{{price}} al mes: la plaza de observador, facturada a su organización.",
+      "full": "{{price}} al mes: una plaza completa, facturada a su organización."
+    },
+    "modules": {
+      "time_tracking": "Control horario",
+      "crm": "CRM",
+      "b2c_portal": "Portal de clientes",
+      "assets": "Activos"
+    },
+    "presets": {
+      "observer": {
+        "title": "Observador",
+        "hint": "Sigue el trabajo y puede crear un trabajo."
+      },
+      "supervisor": {
+        "title": "Supervisor",
+        "hint": "Sigue el trabajo y aprueba las horas."
+      },
+      "manager": {
+        "title": "Responsable del espacio",
+        "hint": "Dirige este espacio de trabajo en el día a día."
+      },
+      "custom": {
+        "title": "Personalizado",
+        "hint": "Su propia combinación, definida abajo."
+      }
+    },
+    "areas": {
+      "tasks": {
+        "title": "Tareas",
+        "levels": {
+          "none": "Nada",
+          "view": "Ver",
+          "create": "Crear",
+          "assign": "Asignar"
+        },
+        "summary": {
+          "view": "Ver todas las tareas de este espacio de trabajo.",
+          "create": "Ver todas las tareas y crear nuevas.",
+          "assign": "Ver, crear y asignar tareas a personas."
+        }
+      },
+      "attendance": {
+        "title": "Tiempo y asistencia",
+        "levels": {
+          "none": "Nada",
+          "view": "Ver",
+          "approve": "Aprobar"
+        },
+        "summary": {
+          "view": "Ver los registros horarios de las personas de aquí.",
+          "approve": "Ver y aprobar los registros horarios de aquí."
+        }
+      },
+      "crm": {
+        "title": "Clientes",
+        "levels": {
+          "none": "Nada",
+          "view": "Ver",
+          "add": "Añadir",
+          "edit": "Editar",
+          "delete": "Eliminar"
+        },
+        "summary": {
+          "view": "Ver los clientes de este espacio de trabajo.",
+          "add": "Ver y añadir clientes.",
+          "edit": "Ver, añadir y editar clientes, y registrar llamadas y visitas.",
+          "delete": "Ver, añadir, editar y eliminar clientes."
+        }
+      },
+      "portal": {
+        "title": "Portal de clientes",
+        "levels": {
+          "none": "Nada",
+          "view": "Ver",
+          "answer": "Responder",
+          "manage": "Gestionar"
+        },
+        "summary": {
+          "view": "Leer las solicitudes de clientes del portal.",
+          "answer": "Leer y responder las solicitudes de clientes.",
+          "manage": "Dirigir el portal de clientes: solicitudes, categorías y clientes."
+        }
+      },
+      "assets": {
+        "title": "Activos",
+        "levels": {
+          "none": "Nada",
+          "view": "Ver",
+          "log": "Registrar uso",
+          "manage": "Gestionar"
+        },
+        "summary": {
+          "view": "Ver el equipo de aquí.",
+          "log": "Ver el equipo y registrar su uso, combustible y gastos.",
+          "manage": "Ver, registrar y gestionar el equipo de aquí."
+        }
+      }
+    },
+    "switches": {
+      "overtime": {
+        "title": "Aprobar horas extra",
+        "summary": "Aprobar horas extra."
+      },
+      "correctAttendance": {
+        "title": "Corregir registros horarios",
+        "summary": "Corregir registros horarios."
+      },
+      "deleteAttendance": {
+        "title": "Eliminar registros horarios",
+        "summary": "Eliminar registros horarios."
+      },
+      "rota": {
+        "title": "Planificar turnos",
+        "summary": "Planificar los turnos."
+      },
+      "tracking": {
+        "title": "Ver ubicaciones en directo",
+        "summary": "Ver en el mapa dónde están las personas."
+      },
+      "addPeople": {
+        "title": "Añadir y quitar personas",
+        "summary": "Añadir personas a este espacio de trabajo y quitarlas."
+      },
+      "grantRoles": {
+        "title": "Dar roles a personas",
+        "summary": "Dar un rol a las personas de aquí, nunca más de lo que uno mismo tiene."
+      }
+    },
+    "panel": {
+      "title": "Lo que puede hacer aquí",
+      "customise": "Personalizar",
+      "hide": "Ocultar",
+      "save": "Guardar permisos",
+      "saved": "Permisos guardados",
+      "discard": "Descartar cambios",
+      "useRole": "O asignar un rol compartido",
+      "useRolePlaceholder": "Elegir un rol…",
+      "personal": "Definido para esta persona",
+      "role": "Rol: {{role}}",
+      "platformSaved": "Inicio de sesión guardado",
+      "loadFailed": "No se pudo cargar lo que esta persona puede hacer aquí."
+    },
+    "invite": {
+      "custom": "Definir lo que puede hacer",
+      "useRole": "Usar un rol existente",
+      "name": "esta persona"
     }
   }
 }

@@ -1,4 +1,5 @@
 import type { AccessPersisted } from './modules';
+import type { PermissionSet } from './permissions';
 
 // Invitation status enum (mirrors Prisma enum)
 export enum InvitationStatus {
@@ -29,6 +30,8 @@ export interface Invitation {
   specialty?: string;
   maxDailyJobs?: number;
   spaceId?: string | null;
+  /** An external invitation's own set of workspace permissions (instead of a shared role). */
+  spacePermissions?: PermissionSet | null;
   // Populated relations
   createdBy?: {
     id: string;
@@ -80,6 +83,11 @@ export interface CreateInvitationInput {
   memberRoleId?: string;
   /** Invite somebody who works for a client or partner. Mutually exclusive with memberRoleId. */
   isExternal?: boolean;
+  /**
+   * An external member's own permissions in `spaceId` (the permission builder),
+   * instead of a shared `memberRoleId`. Validated at create, applied on accept.
+   */
+  spacePermissions?: PermissionSet;
   /** Customer-portal invite (targetRole=CUSTOMER): the Customer + optional unit. */
   customerId?: string;
   unitId?: string;
