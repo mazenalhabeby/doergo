@@ -108,9 +108,20 @@ export const DEFAULT_ORG_MODULES: string[] = [
   'time_tracking',
 ];
 
-/** Space visibility for this user (defaults to 'all' — admins/managers). */
-export function getSpaceScope(user: { enabledModules?: unknown }): SpaceScope {
-  return asProfile(user.enabledModules)?.spaceScope ?? 'all';
+/**
+ * Space visibility for this user (defaults to 'all' — admins/managers).
+ *
+ * ⚠️ An EXTERNAL member is never 'all', whatever the profile says or leaves
+ * out: the default 'all' is right for staff and wrong for a client's
+ * supervisor, whose whole reach is the workspaces they are assigned to. A
+ * profile with no spaceScope (most externals' profiles carry none) handed
+ * GET /locations/team the whole company — every member's name and workspace.
+ * 'tasks' (no workspaces at all) stays 'tasks'.
+ */
+export function getSpaceScope(user: { enabledModules?: unknown; isExternal?: boolean | null }): SpaceScope {
+  const scope = asProfile(user.enabledModules)?.spaceScope ?? 'all';
+  if (user.isExternal === true) return scope === 'tasks' ? 'tasks' : 'own';
+  return scope;
 }
 
 /** Platforms this user may access (defaults to 'both'). */

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { personName } from '@hbcfield/shared/client';
+import { canReceiveTasks, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
@@ -143,7 +143,8 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
             {roster === null ? <ActivityIndicator color={c.accent} /> : (
               <>
                 <SheetOption label={t('clientRequests.decideLater', 'Decide later')} tone={worker === null ? 'accent' : 'strong'} onPress={() => setWorker(null)} />
-                {roster.filter((m) => m.user).map((m) => (
+                {/* Only people who can take a job — a profile without Tasks is refused by the server. */}
+                {roster.filter((m) => m.user && canReceiveTasks(m.user as never)).map((m) => (
                   <SheetOption key={m.userId} label={personName(m.user)} tone={worker === m.userId ? 'accent' : 'strong'} onPress={() => setWorker(m.userId)} />
                 ))}
               </>

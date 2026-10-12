@@ -6,7 +6,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { AlertTriangle, Check, Gauge, Loader2, Receipt, Trash2, X } from "lucide-react"
 
 import {
-  formatCents, kindMeters, logTypesForKind, findLogType, personName,
+  formatCents, kindMeters, logTypesForKind, findLogType, personName, logValueLines,
   type KindShape,
 } from "@hbcfield/shared/client"
 import { assetsApi, type AssetLogDue, type AssetLogEntry } from "@/lib/api"
@@ -337,20 +337,7 @@ function EntryRow({
     since removed is still shown under its key: it is history, and hiding it
     would make an entry look emptier than what was written.
   */
-  const values = entry.values ?? {}
-  const shown = [
-    ...(type?.fields ?? [])
-      // A cost's heading is already in its title, so it is not repeated here.
-      .filter((f) => f.type !== "photo" && f.type !== "money" && values[f.key] !== undefined && !(entry.logType === "cost" && f.key === "category"))
-      .map((f) => {
-        const v = values[f.key]!
-        const text = typeof v === "number" ? v.toLocaleString() : v
-        return `${f.label}: ${text}${f.unit ? ` ${f.unit}` : ""}`
-      }),
-    ...Object.entries(values)
-      .filter(([k]) => !type?.fields.some((f) => f.key === k))
-      .map(([k, v]) => `${k}: ${v}`),
-  ]
+  const shown = logValueLines(entry, type)
   const canRemove = canManage || (isMine && waiting)
 
   return (

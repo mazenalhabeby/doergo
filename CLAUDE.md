@@ -147,7 +147,7 @@ The seat is priced from the permissions HELD (`isObserverSeat`), paid by the org
 >
 > ⚠️ **CRM is per workspace** (`packages/shared/src/crm/crm-reach.ts`): org caps ∪ the client's workspace's crm* keys (NO legacy bridge per workspace), only where the workspace runs `crm`. A client outside reach is 404. Assets per workspace by the KIND's space (`assetSpaces` / task-service `asset-access.service.ts`); portal by the portal's space (`portalScope`).
 >
-> ⚠️ **The sweep**: `gateway/src/common/__tests__/external-reach.spec.ts` walks all routes; any route an external member can reach without a permission must be on the reviewed list with its reason. E2E: `python3 tools/external-access-e2e.py` (LOCAL, 46 checks). Migration `20261013090000_external_role_builder` (additive: every new key granted to exactly the roles whose broader key carried it).
+> ⚠️ **The sweep**: `gateway/src/common/__tests__/external-reach.spec.ts` walks all routes; any route an external member can reach without a permission must be on the reviewed list with its reason. E2E: `python3 tools/external-access-e2e.py` (LOCAL, 48 checks). Hand testing: `python3 tools/external-ui-seed.py` builds a client site + external Klaus (LOCAL; `--remove`). Migration `20261013090000_external_role_builder` (additive: every new key granted to exactly the roles whose broader key carried it).
 
 > **Note**: The `CLIENT` role has been deprecated and migrated to `ADMIN`. A backward compatibility layer (`LegacyRoleMap`, `normalizeRole()`) handles legacy data.
 

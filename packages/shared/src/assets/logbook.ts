@@ -530,3 +530,33 @@ export function creditsByLogType(entries: CreditableEntry[]): Map<string, Credit
   }
   return out;
 }
+
+/**
+ * A logbook entry's answers as lines a person reads — "Hour meter: 1,290 h" —
+ * in the TYPE's order and words. A value whose field the kind has since
+ * removed is still shown under its key: it is history, and hiding it would
+ * make an entry look emptier than what was written. Photos and money are left
+ * out (shown on their own), and a cost's heading is already its title.
+ *
+ * One rule for the web's logbook and the phone's register.
+ */
+export function logValueLines(
+  entry: { logType?: string | null; values?: Record<string, string | number> | null },
+  type: Pick<KindLogType, 'fields'> | null | undefined,
+  formatNumber: (n: number) => string = (n) => n.toLocaleString(),
+): string[] {
+  const values = entry.values ?? {};
+  const fields = type?.fields ?? [];
+  return [
+    ...fields
+      .filter((f) => f.type !== 'photo' && f.type !== 'money' && values[f.key] !== undefined && !(entry.logType === 'cost' && f.key === 'category'))
+      .map((f) => {
+        const v = values[f.key]!;
+        const text = typeof v === 'number' ? formatNumber(v) : v;
+        return `${f.label}: ${text}${f.unit ? ` ${f.unit}` : ''}`;
+      }),
+    ...Object.entries(values)
+      .filter(([k]) => !fields.some((f) => f.key === k))
+      .map(([k, v]) => `${k}: ${v}`),
+  ];
+}

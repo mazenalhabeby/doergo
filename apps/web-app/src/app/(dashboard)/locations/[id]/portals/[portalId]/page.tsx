@@ -9,9 +9,9 @@ import { useQuery, useMutation, useQueryClient, type QueryKey } from "@tanstack/
 import { useTranslation } from "react-i18next"
 import { ArrowLeft, Plus, Trash2, Ticket, Copy, Check, Pencil, AlertTriangle, Inbox, Users, ListChecks, ChevronRight, Loader2, Repeat, Upload, ImageIcon, Building2 } from "lucide-react"
 
-import { portalAdminApi, locationsApi, workflowsApi, spaceMembersApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
+import { portalAdminApi, locationsApi, workflowsApi, type PortalIntakeCategory, type Customer, type PortalCategoryInput, type PortalRequestView } from "@/lib/api"
 import { portalTile } from "@/lib/portal-ui"
-import { personName, personInitials } from "@hbcfield/shared/client"
+import { canReceiveTasks, personName, personInitials } from "@hbcfield/shared/client"
 import { getPriorityConfig } from "@/lib/constants"
 import { useSpaceModules } from "@/hooks/use-space-modules"
 import { notify } from "@/lib/toast"
@@ -139,14 +139,23 @@ export default function PortalDetailPage() {
     setTriageForm({ spaceId: r.suggestedSpaceId ?? r.spaceId ?? "", workflowId: "", priority: r.priority || "MEDIUM", assignedToId: r.assignedToId ?? "" })
     setTriageReq(r)
   }
-  // Assignable workers = ONLY the roster of the space being routed to.
+  /*
+    Assignable workers = ONLY the roster of the space being routed to.
+
+    ⚠️ The ROSTER (`GET /locations/:id/members`, `mayViewSpaceRoster` — held by
+    whoever assigns work there), not the member-management list
+    (`/spaces/:id/members`, which needs canManageSpace): an answerer who may
+    assign work but not manage the workspace was refused that list, and the
+    dialog read the refusal as "No workers assigned to this workspace yet".
+  */
   const spaceMembersQ = useQuery({
-    queryKey: keys.spaceMembers.list(triageForm.spaceId),
-    queryFn: () => spaceMembersApi.list(triageForm.spaceId),
+    queryKey: keys.locations.roster(triageForm.spaceId),
+    queryFn: () => locationsApi.getAssignedMembers(triageForm.spaceId),
     enabled: !!triageReq && !!triageForm.spaceId,
     staleTime: 30000,
   })
-  const spaceWorkers = spaceMembersQ.data ?? []
+  // Only people who can take a job — an Access Profile without Tasks is refused by the server.
+  const spaceWorkers = (spaceMembersQ.data ?? []).filter((m) => m.user && canReceiveTasks(m.user as never))
   // Changing the space invalidates a previously-picked worker (may not be on the
   // new roster) — clear it so we never submit a cross-space assignee.
   const setTriageSpace = (sid: string) => setTriageForm((f) => ({ ...f, spaceId: sid, assignedToId: "" }))
@@ -413,8 +422,8 @@ export default function PortalDetailPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Danger zone */}
-        {portal && (
+        {/* Danger zone — deleting is managing, and closed to external members (the route says both). */}
+        {portal && mayManage && user?.isExternal !== true && (
           <Card className="mt-10 border-destructive/40">
             <CardHeader className="pb-3">
               <div className="flex items-start gap-3">

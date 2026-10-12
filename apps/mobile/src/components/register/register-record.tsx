@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { normalizeKindShape, logTypesForKind, kindHolderLabel, COST_LOG_KEY, formatMoney, personName } from '@hbcfield/shared/client';
+import { normalizeKindShape, logTypesForKind, findLogType, kindHolderLabel, logValueLines, COST_LOG_KEY, formatMoney, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
@@ -173,7 +173,7 @@ export function RegisterRecord({ id }: { id: string }) {
                 last={i === entries.length - 1}
                 leading={<View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: c.accent }} />}
                 title={e.category}
-                detail={[e.author ? personName(e.author) : null, formatDay(e.occurredAt, lang), e.note].filter(Boolean).join(' · ')}
+                detail={[...logValueLines(e, findLogType(shape, e.logType), (n) => n.toLocaleString(lang)), e.author ? personName(e.author) : null, formatDay(e.occurredAt, lang), e.note].filter(Boolean).join(' · ')}
                 trailing={entryState(e) ?? (entryValue(e) ? <AText numeric variant="caption" tone="strong">{entryValue(e)}</AText> : <View />)}
                 onPress={() => undefined}
               />
@@ -233,7 +233,8 @@ export function RegisterRecord({ id }: { id: string }) {
           <ActivityIndicator color={c.accent} />
         ) : (
           <>
-            {roster.filter((m) => m.user).map((m) => (
+            {/* External members hold no equipment — custody is the organization's own staff. */}
+            {roster.filter((m) => m.user && (m.user as { isExternal?: boolean }).isExternal !== true).map((m) => (
               <SheetOption
                 key={m.userId}
                 label={personName(m.user)}

@@ -239,6 +239,13 @@ try:
     awids = [w.get('id') for w in items(r)]
     check('the admin’s map is unchanged (both)', WA in awids and WB in awids, awids)
 
+    print('— people and personnel files')
+    s, r = call('GET', '/locations/team', ext)
+    who = {x.get('id') for x in items(r)}
+    check('the team list is workspace A’s people only', s == 200 and LISA in who and WB not in who and len(who - {LISA, WA, EXT_ID}) == 0, (s, who))
+    s, r = call('GET', '/documents/compliance', ext)
+    check('the credential board (personnel files) is closed', s in (403, 404), s)
+
     print('— the organization’s own')
     for p in ['/calendar?from=2026-10-01&to=2026-10-31', '/invoices', '/billing/bill', '/organizations/members', '/analytics/catalog', '/legal-entities']:
         s, r = call('GET', p, ext)

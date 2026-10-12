@@ -14,6 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type CurrentUserData, isAdmin, spacesGranting } from '@hbcfield/shared';
 import { DocumentsGatewayService } from './documents.service';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import {
@@ -339,6 +340,11 @@ export class DocumentsController {
   // not take the job", and that question now gets asked by someone who staffs
   // one site. The service narrows the answer to the people they staff.
   @RequirePermissionInSpace('canAssignTasks')
+  // ⚠️ Closed to external members. The board names each person's credentials
+  // and when they expire — the personnel file, which an external member never
+  // reads however much of the site they run. Assigning work there does not
+  // need it: the assignment itself refuses somebody blocked by a document.
+  @DenyExternal()
   @ApiOperation({ summary: 'Credential validity for the people the caller assigns work to' })
   async compliance(@CurrentUser() user: CurrentUserData) {
     return this.documents.compliance({

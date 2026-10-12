@@ -284,8 +284,8 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
     why: "GET /documents/types?all=true — the catalogue's editor, the same permission as templates",
   },
   "/documents/compliance": {
-    option: "documents", need: ["any:canAssignTasks"],
-    why: "GET /documents/compliance — @RequirePermissionInSpace('canAssignTasks')",
+    option: "documents", need: ["any:canAssignTasks"], denyExternal: true,
+    why: "GET /documents/compliance — @RequirePermissionInSpace('canAssignTasks') @DenyExternal() (the personnel file)",
   },
 
   // ── Money & reading ──

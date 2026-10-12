@@ -281,3 +281,18 @@ describe('whose money it was', () => {
 // Types compile against what the templates produce.
 const _typed: KindLogType = oil;
 void _typed;
+
+describe('logValueLines — an entry read back (web logbook and phone register)', () => {
+  const { logValueLines } = require('@hbcfield/shared/client');
+  const type = { fields: [
+    { key: 'hours', label: 'Hour meter', type: 'number', required: true, unit: 'h' },
+    { key: 'photo', label: 'Photo', type: 'photo', required: false },
+  ] };
+  it('a reading in the type’s words and unit; photos left out', () => {
+    expect(logValueLines({ logType: 'use', values: { hours: 1290, photo: 'x' } }, type, (n: number) => n.toLocaleString('en'))).toEqual(['Hour meter: 1,290 h']);
+  });
+  it('a value whose field was removed is still shown under its key', () => {
+    expect(logValueLines({ logType: 'use', values: { odometer: 5 } }, type)).toEqual(['odometer: 5']);
+  });
+  it('no values, no lines', () => expect(logValueLines({ logType: 'use', values: null }, type)).toEqual([]));
+});
