@@ -61,6 +61,10 @@ def remove():
     sql(f"delete from roles where \"personalAssignmentId\" in (select id from space_assignments where \"spaceId\" in {ws})")
     sql(f"delete from space_assignments where \"spaceId\" in {ws}")
     sql(f"delete from refresh_tokens where \"userId\"='{KLAUS}'")
+    # Signed up by hand through an external invite while testing (Password123).
+    sql("delete from refresh_tokens where \"userId\" in (select id from users where email='petra.stein@client.example')")
+    sql("delete from invitations where \"spaceId\" in ('ui-ext-weingaertner','ui-ext-other')")
+    sql("delete from users where email='petra.stein@client.example'")
     sql(f"delete from users where id='{KLAUS}'")
     sql(f"delete from company_locations where id in {ws}")
 
