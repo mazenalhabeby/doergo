@@ -1,4 +1,5 @@
-import { isAdmin, spacesGranting } from '@hbcfield/shared';
+import { spacesGranting } from '@hbcfield/shared';
+import { scopeFor } from './permission-scope';
 
 /** The three portal keys, weakest first: read requests · answer them · run the portal. */
 export type PortalKey = 'canViewPortal' | 'canAnswerPortal' | 'canManagePortals';
@@ -27,7 +28,5 @@ export type PortalKey = 'canViewPortal' | 'canAnswerPortal' | 'canManagePortals'
  * key only. That is the intended answer, not a side effect.
  */
 export function portalScope(user: any, key: PortalKey): string[] | undefined {
-  if (!user) return [];
-  if (isAdmin(user) || user[key] === true) return undefined;
-  return spacesGranting(user.access, key) ?? undefined;
+  return scopeFor(user, key) ?? undefined;
 }

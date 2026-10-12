@@ -1,4 +1,5 @@
-import { isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/shared';
+import { isAdmin, type AccessPermissionKey } from '@hbcfield/shared';
+import { scopeFor } from './permission-scope';
 
 /**
  * How far a caller's authority over OTHER people's shifts reaches.
@@ -44,6 +45,6 @@ export function attendanceAuthority(req: { user?: any }, need: AttendanceNeed): 
     work log after the copies were replaced.
   */
   if (user.access?.org?.canManageUsers === true) return { canManage: true, spaceIds: undefined };
-  const granted = spacesGranting(user.access, ATTENDANCE_AUTHORITY_KEY[need]);
+  const granted = scopeFor(user, ATTENDANCE_AUTHORITY_KEY[need]);
   return granted === null ? { canManage: true, spaceIds: undefined } : { canManage: false, spaceIds: granted };
 }

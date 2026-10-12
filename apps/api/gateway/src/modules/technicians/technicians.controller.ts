@@ -40,6 +40,7 @@ import {
 } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
+import { scopeFor } from '../../common/permission-scope';
 
 /**
  * Whose LEAVE this caller decides — approving a request, adjusting a balance, starting balances:
@@ -47,14 +48,13 @@ import { DenyExternal } from '../../common/decorators/deny-external.decorator';
  * [ids] = the people of those workspaces (narrowed in task-service), [] = nobody.
  */
 function leaveWriteScope(user: CurrentUserData | undefined): string[] | undefined {
-  if (user && isAdmin(user as never)) return undefined;
-  return spacesGranting(user?.access as never, 'canManageRota') ?? undefined;
+  return scopeFor(user, 'canManageRota') ?? undefined;
 }
 
 /** Whose leave this caller may READ besides their own: the rota permission or the view permission. */
 function leaveReadScope(user: CurrentUserData | undefined): string[] | undefined {
-  const rota = spacesGranting(user?.access as never, 'canManageRota');
-  const view = spacesGranting(user?.access as never, 'canViewAllTasks');
+  const rota = scopeFor(user, 'canManageRota');
+  const view = scopeFor(user, 'canViewAllTasks');
   if (user?.role === Role.ADMIN || rota === null || view === null) return undefined;
   return [...new Set([...(rota ?? []), ...(view ?? [])])];
 }

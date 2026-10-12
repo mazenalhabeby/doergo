@@ -20,7 +20,6 @@ import {
   Role,
   RequireAccessModule,
   isAdmin,
-  spacesGranting,
   type AccessPermissionKey,
   assertServiceOk,
   clampListLimit,
@@ -41,6 +40,7 @@ import {
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
+import { scopeFor } from '../../common/permission-scope';
 
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -62,10 +62,7 @@ export class AttendanceController {
    * a data leak.
    */
   private scope(req: any, key: AccessPermissionKey): string[] | null {
-    // An admin holds every permission org-wide by being an admin, not by a role
-    // — and `access.org` may not spell that out. Never narrowed.
-    if (isAdmin(req.user)) return null;
-    return spacesGranting(req.user?.access, key);
+    return scopeFor(req.user, key);
   }
 
   constructor(

@@ -13,7 +13,7 @@ import {
   ApiOperation,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Role, isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/shared';
+import { Role, type AccessPermissionKey } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
@@ -25,6 +25,7 @@ import {
   ApproveOvertimeSignatureDto,
   RejectOvertimeDto,
 } from './dto';
+import { scopeFor } from '../../common/permission-scope';
 
 @ApiTags('overtime')
 @ApiBearerAuth()
@@ -37,8 +38,7 @@ export class OvertimeController {
    * the service narrows on that.
    */
   private scope(req: any, key: AccessPermissionKey): string[] | null {
-    if (isAdmin(req.user)) return null;
-    return spacesGranting(req.user?.access, key);
+    return scopeFor(req.user, key);
   }
 
   constructor(

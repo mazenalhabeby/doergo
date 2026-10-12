@@ -1,9 +1,10 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RequirePermissionInSpace } from '../../common/decorators';
-import { isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/shared';
+import { type AccessPermissionKey } from '@hbcfield/shared';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { ShiftsService } from './shifts.service';
+import { scopeFor } from '../../common/permission-scope';
 
 /**
  * Shift definitions + the rota (member → shift). All mutations require
@@ -23,8 +24,7 @@ export class ShiftsController {
    * assertSpaceInOrg.
    */
   private scope(req: any, key: AccessPermissionKey): string[] | null {
-    if (isAdmin(req.user)) return null;
-    return spacesGranting(req.user?.access, key);
+    return scopeFor(req.user, key);
   }
 
   constructor(private readonly service: ShiftsService) {}
