@@ -12,7 +12,7 @@ import {
   type CustodyPeriod,
   type HandoverPlan,
 } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetNotifier } from './asset-notifier.service';
 
 /** Anything that can run the two tables — the client, or a transaction. */
@@ -250,11 +250,9 @@ export class AssetCustodyService {
     to?: CustodyParty[];
     at?: string;
     reason?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & AssetActor) {
+    // Reassigning the organization's property: management, in the record's own workspace.
+    await this.access.assetInScope(data.id, data, 'manage');
 
     const asset = await this.prisma.asset.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
@@ -384,14 +382,8 @@ export class AssetCustodyService {
    * obvious alternative — a SUM per period — is a query per handover, and a van
    * kept for five years has a lot of handovers.
    */
-  async timeline(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  async timeline(data: { id: string } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'view');
 
     const [periods, entries] = await Promise.all([
       this.prisma.assetCustody.findMany({
@@ -433,13 +425,21 @@ export class AssetCustodyService {
   async forMember(data: {
     memberId: string;
     open?: boolean;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
+  } & AssetActor) {
+    this.access.assertMay(data, 'view');
+    /*
+      Only the periods of records the caller may read. A depot manager asking
+      what Ahmed holds sees the depot's vans he has — never the laptop another
+      workspace gave him, nor an org-level record no workspace reaches.
+    */
+    const kind = this.access.spaceFilter(data, 'view');
     return this.periodsFor(
-      { userId: data.memberId, organizationId: data.organizationId, ...(data.open ? { endedAt: null } : {}) },
+      {
+        userId: data.memberId,
+        organizationId: data.organizationId,
+        ...(data.open ? { endedAt: null } : {}),
+        ...(kind ? { asset: { category: kind } } : {}),
+      },
       data.organizationId,
     );
   }

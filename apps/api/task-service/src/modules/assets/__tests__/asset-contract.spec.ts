@@ -62,7 +62,7 @@ describe('AssetContractService', () => {
       providers: [
         AssetContractService,
         { provide: PrismaService, useValue: prisma },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
+        AssetAccessService,
         { provide: AssetCustodyService, useValue: custody },
       ],
     }).compile();
@@ -306,9 +306,9 @@ describe('AssetContractService', () => {
 
     it('is confined to their own workspaces, whatever they ask for', async () => {
       const { db, svc } = catalog();
-      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'], spaceId: 'depot-graz' });
+      await svc.findAllCategories({ ...base, viewSpaceIds: ['depot-linz'], spaceId: 'depot-graz' });
       expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1', spaceId: { in: [] } });
-      await svc.findAllCategories({ ...base, viewAllSpaceIds: ['depot-linz'] });
+      await svc.findAllCategories({ ...base, viewSpaceIds: ['depot-linz'] });
       expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: { in: ['depot-linz'] } });
     });
 
@@ -316,13 +316,13 @@ describe('AssetContractService', () => {
       const { db, svc } = catalog();
       await svc.findAllCategories({ ...base, userRole: 'ADMIN' });
       expect(db.assetCategory.findMany.mock.calls[0][0].where).toEqual({ organizationId: 'org1' });
-      await svc.findAllCategories({ ...base, canViewAllTasks: true, spaceId: 's2' });
+      await svc.findAllCategories({ ...base, viewSpaceIds: null, spaceId: 's2' });
       expect(db.assetCategory.findMany.mock.calls[1][0].where).toEqual({ organizationId: 'org1', spaceId: 's2' });
     });
 
     it('is refused to somebody granted nowhere', async () => {
       const { svc } = catalog();
-      await expect(svc.findAllCategories({ ...base, viewAllSpaceIds: [] })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(svc.findAllCategories({ ...base, viewSpaceIds: [] })).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
@@ -369,9 +369,25 @@ describe('AssetContractService', () => {
       expect(prisma.assetCategory.findFirst).not.toHaveBeenCalled();
     });
 
-    it('an org-wide caller is not narrowed at all', () => {
-      expect(AssetContractService.kindInScope('anywhere', undefined)).toBe(true);
-      expect(AssetContractService.kindInScope(null, undefined)).toBe(true);
+    it('an org-wide caller (null) is not narrowed at all', () => {
+      expect(AssetContractService.kindInScope('anywhere', null)).toBe(true);
+      expect(AssetContractService.kindInScope(null, null)).toBe(true);
+    });
+
+    /*
+      ⚠️ ABSENT is nowhere. It used to mean org-wide here, so a caller that
+      forgot to forward the list was handed every workspace's fleet.
+    */
+    it('a caller that forwarded no list reaches nothing', async () => {
+      expect(AssetContractService.kindInScope('anywhere', undefined)).toBe(false);
+      await expect(service.read({ text: 'x', userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1' } as any))
+        .rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    // The task grant opens nothing in the register any more.
+    it('canViewAllTasks alone does not open the contract flow', async () => {
+      await expect(service.read({ text: 'x', userId: 'u', userRole: 'EMPLOYEE', organizationId: 'org1', canViewAllTasks: true } as any))
+        .rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 });

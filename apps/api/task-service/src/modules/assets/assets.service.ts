@@ -11,7 +11,7 @@ import {
   isAssetStatus, assetDateProblems, SELECTABLE_ASSET_WHERE, type AssetDateProblem, type HandoverPlan, assertFoundInOrg,
   PERSON_BRIEF_SELECT,
 } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetActivityService } from './asset-activity.service';
@@ -165,11 +165,8 @@ export class AssetsService {
     holderUserId?: string | null;
     customerId?: string | null;
     details?: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'create assets');
+  } & AssetActor) {
+    this.access.assertMay(data, 'manage', 'create assets');
     this.assertStatus(data.status);
     this.assertDates(data);
 
@@ -177,16 +174,32 @@ export class AssetsService {
     // what decides how many holders a record may have, and asking for it twice
     // would be a second round trip for something already in hand.
     let kindConfig: unknown = null;
+    let kindSpaceId: string | null = null;
     if (data.categoryId) {
       const category = await this.prisma.assetCategory.findUnique({
         where: { id: data.categoryId },
-        select: { organizationId: true, config: true },
+        select: { organizationId: true, config: true, spaceId: true },
       });
 
-      if (!category || category.organizationId !== data.organizationId) {
+      /*
+        ⚠️ The KIND decides the workspace, so it is the kind a space-scoped
+        manager must be allowed in. Same answer for another depot's kind as for
+        another tenant's — "that kind exists, just not for you" names what
+        another workspace runs.
+      */
+      if (!category || category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', category.spaceId)) {
         throw new BadRequestException('Invalid category');
       }
       kindConfig = category.config;
+      kindSpaceId = category.spaceId;
+    }
+    /*
+      A record with no kind lives in no workspace — reachable afterwards only by
+      an org-wide grant. A space-scoped manager creating one would be creating a
+      record they could never open again, in nobody's register.
+    */
+    if (!this.access.mayIn(data, 'manage', kindSpaceId)) {
+      throw new BadRequestException('Choose a type in a workspace you manage');
     }
 
     // Verify type if provided
@@ -196,7 +209,7 @@ export class AssetsService {
         include: { category: true },
       });
 
-      if (!type || type.category.organizationId !== data.organizationId) {
+      if (!type || type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
         throw new BadRequestException('Invalid type');
       }
 
@@ -279,14 +292,8 @@ export class AssetsService {
     search?: string;
     /** Narrow to one workspace — intersected with what the caller holds. */
     spaceId?: string;
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    /** Workspaces where the caller holds canViewAllTasks by a SPACE role. */
-    viewAllSpaceIds?: string[];
-    organizationId: string;
-  }) {
-    this.access.assertMay(query as any, 'view assets');
+  } & AssetActor) {
+    this.access.assertMay(query, 'view');
 
     const page = Math.max(1, query.page || 1);
     const limit = this.access.pageSize(query.limit);
@@ -303,7 +310,7 @@ export class AssetsService {
       is exactly what it was. A space-scoped one always gets a clause — see
       spaceFilter, which intersects rather than replaces.
     */
-    const category = this.access.spaceFilter(query as any, query.spaceId);
+    const category = this.access.spaceFilter(query, 'view', query.spaceId);
     if (category) where.category = category;
 
     if (query.categoryId) where.categoryId = query.categoryId;
@@ -364,8 +371,16 @@ export class AssetsService {
    * Top-level only, exactly like the billing count: a part inside a machine is
    * reached through the machine, so moving the machine takes it with it.
    */
-  async listOrphans(data: { userId: string; userRole: string; organizationId: string; canViewAllTasks?: boolean }) {
-    this.access.assertMay(data as any, 'view assets');
+  async listOrphans(data: AssetActor) {
+    /*
+      ⚠️ Org-wide readers only. Every row here is in NO workspace, so no
+      workspace grant reaches it — listing them to a depot manager would hand
+      them records outside every scope, which is exactly what the rest of the
+      register refuses.
+    */
+    if (this.access.scope(data, 'view') !== null) {
+      throw new ForbiddenException('Only someone who sees every workspace’s assets can list these');
+    }
 
     const assets = await this.prisma.asset.findMany({
       where: {
@@ -403,13 +418,9 @@ export class AssetsService {
   /**
    * Get a single asset by ID
    */
-  async findOne(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
+  async findOne(data: { id: string } & AssetActor) {
+    // In the caller's workspaces, or 404 — the same answer as no such asset.
+    await this.access.assetInScope(data.id, data, 'view');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -449,12 +460,10 @@ export class AssetsService {
     notes?: string | null;
     categoryId?: string;
     typeId?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & AssetActor) {
     this.assertStatus(data.status);
+    // The record as it is NOW must be in a workspace they manage, or 404.
+    await this.access.assetInScope(data.id, data, 'manage');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -480,12 +489,21 @@ export class AssetsService {
           where: { id: data.categoryId },
         });
 
-        if (!category || category.organizationId !== data.organizationId) {
+        /*
+          ⚠️ Moving a record to a kind IS moving it to that kind's workspace, so
+          the DESTINATION must be one they manage too — otherwise a depot
+          manager could post their van into another depot's register (or into
+          no workspace at all, where only an org-wide grant reaches it).
+        */
+        if (!category || category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', category.spaceId)) {
           throw new BadRequestException('Invalid category');
         }
         // Only an actual change; re-saving the same kind is not a move and must
         // not quietly prune fields somebody added by hand.
         if (category.id !== asset.categoryId) movingToKind = { config: category.config };
+      } else if (!this.access.mayIn(data, 'manage', null)) {
+        // Clearing the kind takes the record out of every workspace.
+        throw new BadRequestException('Choose a type in a workspace you manage');
       }
     }
 
@@ -497,7 +515,8 @@ export class AssetsService {
           include: { category: true },
         });
 
-        if (!type || type.category.organizationId !== data.organizationId) {
+        // A subtype of another workspace's kind is that workspace's vocabulary.
+        if (!type || type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
           throw new BadRequestException('Invalid type');
         }
       }
@@ -657,13 +676,8 @@ export class AssetsService {
   /**
    * Delete an asset
    */
-  async delete(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'delete assets');
+  async delete(data: { id: string } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'manage');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },
@@ -705,11 +719,8 @@ export class AssetsService {
      *          already raised before raising a second one.
      */
     scope?: 'done' | 'all';
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view maintenance history');
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'view');
 
     const asset = await this.prisma.asset.findUnique({
       where: { id: data.id },

@@ -41,7 +41,8 @@ describe('AssetsService.delete — history is not disposable (AS-B1)', () => {
       providers: [
         AssetsService,
         { provide: PrismaService, useValue: prisma },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
+        // The workspace check is pinned in asset-workspace-levels.spec.ts; this file is about history.
+        { provide: AssetAccessService, useValue: { assertMay: jest.fn(), assetInScope: jest.fn() } },
         { provide: AssetActivityService, useValue: { record: jest.fn() } },
         { provide: AssetHoldersService, useValue: {} },
         // Delete touches no custody; a stub is enough to satisfy the constructor.

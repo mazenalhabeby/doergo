@@ -5,8 +5,19 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { AssetResponsibleService } from './asset-responsible.service';
 
-/** Holding any of these, org-wide, is what lets somebody open the register. */
-const SEES_ASSETS = ['canViewAllTasks', 'canManageAssets', 'canManageUsers'] as const;
+/**
+ * Holding any of these, ORG-wide, is what lets somebody open the register —
+ * the register's own keys plus the broad keys the org-flag bridges fold into
+ * `canViewAssets` (`ORG_FLAG_BRIDGES` in shared).
+ */
+const SEES_ASSETS = ['canViewAssets', 'canLogAssets', 'canManageAssets', 'canViewAllTasks', 'canManageUsers'] as const;
+/**
+ * …and in a WORKSPACE, only the register's own keys. Bridges apply org-wide
+ * only: `canViewAllTasks` held in a workspace is how somebody follows the work
+ * there, and it no longer opens that workspace's equipment — so it must not
+ * put the equipment's names in their notifications either.
+ */
+const SEES_ASSETS_IN_SPACE = ['canViewAssets', 'canLogAssets', 'canManageAssets'] as const;
 /** Holding any of these, org-wide, is what lets somebody DECIDE on the register. */
 
 function grants(permissions: unknown, keys: readonly string[]): boolean {
@@ -231,10 +242,11 @@ export class AssetNotifier {
    * the member's ORG role, so finding the holders means reading the roles that
    * grant it and then the people who hold those roles.
    *
-   * ⚠️ ORG-scoped roles only, matching the endpoints: accepting a proposal and
-   * reviewing an expense are both `@RequirePermission('canManageAssets')`, so a
-   * space role however senior is refused there — and telling somebody about
-   * work they will be refused is worse than telling them nothing.
+   * ⚠️ ORG-scoped roles only, as a FALLBACK. Accepting a proposal and
+   * reviewing an expense are open to a workspace manager in that workspace
+   * now, and those people are reached through the routing (watchers ∪ space
+   * roles) before this is asked; the fallback reaches whoever can decide
+   * ANYTHING, which only an org-wide grant guarantees.
    *
    * Where the thing belongs to a workspace, the approvers ASSIGNED to that
    * workspace are preferred: the manager of the depot, not the owner of the
@@ -262,9 +274,10 @@ export class AssetNotifier {
    *
    * The same doors the asset endpoints open: an admin, an org-wide grant (the
    * flag column or the org role), or a grant held in the workspace the thing's
-   * kind belongs to. External members are refused outright — `@DenyExternal`
-   * closes the organization's property to them whatever they hold — and the
-   * subject is never told about themselves.
+   * kind belongs to. External members are refused outright: everything told
+   * here is about the organization's custody system for its staff (expenses
+   * filed by custody, handovers, proposals), which is closed to them whatever
+   * register keys they hold — and the subject is never told about themselves.
    */
   private async whoCanSee(
     organizationId: string,
@@ -302,7 +315,7 @@ export class AssetNotifier {
         select: { userId: true, role: { select: { permissions: true, isActive: true } } },
       });
       for (const a of assignments) {
-        if (a.role?.isActive && grants(a.role.permissions, SEES_ASSETS)) allowed.add(a.userId);
+        if (a.role?.isActive && grants(a.role.permissions, SEES_ASSETS_IN_SPACE)) allowed.add(a.userId);
       }
     }
 

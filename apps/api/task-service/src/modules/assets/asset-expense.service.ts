@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { findPrior } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, parseReceipt, clampListLimit } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetNotifier } from './asset-notifier.service';
 import { ASSET_FILE_MIMES, ASSET_FILE_MAX_BYTES, assetFilePrefix } from './asset-files';
@@ -58,23 +58,26 @@ export class AssetExpenseService {
   /**
    * May this person file against this asset, for this date?
    *
-   * Held it then, or manages assets. Returns the asset's kind, because every
-   * caller needs it next and reading it twice is a second round trip on a path
-   * that runs at a petrol pump on one bar of signal.
+   * Held it then, or may LOG against assets in its workspace (`canLogAssets`,
+   * which managing implies). Returns the asset's kind, because every caller
+   * needs it next and reading it twice is a second round trip on a path that
+   * runs at a petrol pump on one bar of signal.
+   *
+   * ⚠️ An external member never passes on custody: they hold nothing of the
+   * organization's, and a custody row naming one is a mistake to refuse, not
+   * an authorisation to honour. The routes are `@DenyExternal` too — this is
+   * the second lock.
    */
-  private async gate(data: {
-    id: string;
-    organizationId: string;
-    userId: string;
-    canManageAssets?: boolean;
-  }, when: Date) {
+  private async gate(data: { id: string } & AssetActor, when: Date) {
     const asset = await this.prisma.asset.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
-      select: { id: true, name: true, category: { select: { config: true } } },
+      select: { id: true, name: true, category: { select: { config: true, spaceId: true } } },
     });
     if (!asset) throw new NotFoundException('Asset not found in this organization');
+    const spaceId = asset.category?.spaceId ?? null;
 
-    if (!data.canManageAssets && !(await this.custody.heldBy(data.id, data.userId, when))) {
+    const mayLog = this.access.mayIn(data, 'log', spaceId);
+    if (!mayLog && (data.isExternal === true || !(await this.custody.heldBy(data.id, data.userId, when)))) {
       /*
         404-shaped in wording, 403 in code, deliberately: the caller already
         knows this asset exists — they had to pick it from a list of what they
@@ -101,11 +104,7 @@ export class AssetExpenseService {
     fileName: string;
     mimeType: string;
     occurredAt?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    canManageAssets?: boolean;
-  }) {
+  } & AssetActor) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
     await this.gate(data, when);
@@ -145,11 +144,7 @@ export class AssetExpenseService {
     id: string;
     fileKey: string;
     occurredAt?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    canManageAssets?: boolean;
-  }) {
+  } & AssetActor) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
     await this.gate(data, when);
@@ -203,19 +198,23 @@ export class AssetExpenseService {
    */
   async receiptUrl(data: {
     entryId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    canManageAssets?: boolean;
-  }) {
+  } & AssetActor) {
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },
-      select: { id: true, receiptKey: true, receiptMime: true, authorId: true },
+      select: {
+        id: true, receiptKey: true, receiptMime: true, authorId: true,
+        asset: { select: { category: { select: { spaceId: true } } } },
+      },
     });
     if (!entry?.receiptKey) throw new NotFoundException('No receipt on that entry');
-    // The person who sent it, or somebody who may manage the register.
-    if (entry.authorId !== data.userId && !data.canManageAssets) {
-      this.access.assertMay(data as any, 'view assets');
+    /*
+      The person who sent it, or somebody who may read THAT record's money —
+      the same reach the Money tab listing it has. Asked of the record's own
+      workspace, and refused with the same 404 as no receipt at all: another
+      depot's slips are not this reader's to learn about.
+    */
+    if (entry.authorId !== data.userId && !this.access.mayIn(data, 'view', entry.asset?.category?.spaceId ?? null)) {
+      throw new NotFoundException('No receipt on that entry');
     }
     const url = await requireObjectStore(this.store).presignDownload(entry.receiptKey, undefined, 600, {
       // A photograph or a PDF renders; anything else was never accepted.
@@ -236,13 +235,9 @@ export class AssetExpenseService {
     receiptKey?: string;
     receiptName?: string;
     receiptMime?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    canManageAssets?: boolean;
     /** Made on the phone: an expense filed twice is one expense. */
     entryId?: string;
-  }) {
+  } & AssetActor) {
     // The same date rule as a logbook entry — they are the same row.
     const when = readAssetEntryDate(data.occurredAt, data);
     const asset = await this.gate(data, when);
@@ -293,12 +288,15 @@ export class AssetExpenseService {
         receiptName: receiptKey ? data.receiptName?.slice(0, 255) ?? null : null,
         receiptMime: receiptKey ? data.receiptMime ?? null : null,
         /*
-          Somebody who manages the register is the office. Their entry counts
-          immediately — asking them to approve their own typing would be a
-          queue of one item that only ever says yes, and it would make the
-          existing "log money" button behave differently for no reason.
+          Somebody who manages THIS record's register is the office. Their
+          entry counts immediately — asking them to approve their own typing
+          would be a queue of one item that only ever says yes. Logging rights
+          alone are not the office: a `canLogAssets` member's expense waits like
+          any driver's, because it moves the organization's figures.
         */
-        status: data.canManageAssets ? EXPENSE_STATUS.RECORDED : EXPENSE_STATUS.SUBMITTED,
+        status: this.access.mayIn(data, 'manage', asset.category?.spaceId ?? null)
+          ? EXPENSE_STATUS.RECORDED
+          : EXPENSE_STATUS.SUBMITTED,
       },
     });
 
@@ -339,12 +337,18 @@ export class AssetExpenseService {
   // ── The office's queue ─────────────────────────────────────────────────────
 
   /** Everything waiting on a decision. */
-  async pending(data: { userId: string; userRole: string; organizationId: string; limit?: number }) {
-    this.access.assertMay(data as any, 'view assets');
+  async pending(data: { limit?: number } & AssetActor) {
+    this.access.assertMay(data, 'view');
     const take = clampListLimit(data.limit, 100, 200);
+    // Only records in the caller's workspaces — the same reach as each record's Money tab.
+    const kind = this.access.spaceFilter(data, 'view');
 
     const entries = await this.prisma.assetMoney.findMany({
-      where: { organizationId: data.organizationId, status: EXPENSE_STATUS.SUBMITTED },
+      where: {
+        organizationId: data.organizationId,
+        status: EXPENSE_STATUS.SUBMITTED,
+        ...(kind ? { asset: { category: kind } } : {}),
+      },
       orderBy: [{ occurredAt: 'desc' }],
       take,
       select: {
@@ -387,11 +391,8 @@ export class AssetExpenseService {
     entryId: string;
     decision: 'accept' | 'reject';
     note?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & AssetActor) {
+    this.access.assertMay(data, 'manage');
 
     // A member's expense counts for nothing until SOMEBODY ELSE accepts it — an
     // asset manager who filed a slip must not be the one to accept it. The
@@ -399,8 +400,16 @@ export class AssetExpenseService {
     // this check; the guarded update below still decides the race.
     const filed = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },
-      select: { authorId: true },
+      select: { authorId: true, asset: { select: { category: { select: { spaceId: true } } } } },
     });
+    /*
+      ⚠️ Decided in the RECORD's workspace. A depot manager accepts the depot's
+      slips, never another depot's — refused exactly like an entry that is not
+      waiting, so the queue of another workspace cannot be probed id by id.
+    */
+    if (!filed || !this.access.mayIn(data, 'manage', filed.asset?.category?.spaceId ?? null)) {
+      throw new NotFoundException('That expense is not waiting for a decision');
+    }
     await assertNotSelfDecision(this.prisma as never, {
       deciderId: data.userId,
       subjectId: filed?.authorId,

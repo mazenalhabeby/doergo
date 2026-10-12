@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
@@ -15,7 +15,7 @@ import {
   type KindShape,
   type HandoverPlan,
 } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 
 /** What a client sends: the reading, after a person has corrected it. */
@@ -33,20 +33,15 @@ export interface ContractFields {
 type Db = Parameters<AssetCustodyService['apply']>[0];
 
 /**
- * Who is acting, and where they may.
+ * Who is acting, and where they may — the register's own actor.
  *
  * `manageSpaceIds` follows the three states the rest of the codebase uses:
- * undefined = org-wide (the caller already passed `@RequirePermission`-strength
- * checks, or is an internal caller such as accepting a proposal), an array =
- * only kinds in those workspaces, and an EMPTY array = nowhere.
+ * null = org-wide, an array = only kinds in those workspaces, and an EMPTY
+ * array = nowhere. ⚠️ Absent is NOWHERE now (see `AssetActor`): it used to mean
+ * org-wide here, so a caller that forgot to forward the list was handed every
+ * workspace's fleet.
  */
-export interface ContractActor {
-  userId: string;
-  userRole: string;
-  canViewAllTasks?: boolean;
-  manageSpaceIds?: string[];
-  organizationId: string;
-}
+export type ContractActor = AssetActor;
 
 /**
  * A contract → a record, a handover, and the retirement of what it replaces.
@@ -83,29 +78,24 @@ export class AssetContractService {
    * A kind in NO workspace is refused to a space-scoped caller: it belongs to
    * nobody's space, so no space grant can reach it — only an org-wide one.
    */
-  static kindInScope(kindSpaceId: string | null | undefined, manageSpaceIds?: string[]): boolean {
-    if (manageSpaceIds === undefined) return true;
-    return !!kindSpaceId && manageSpaceIds.includes(kindSpaceId);
+  static kindInScope(kindSpaceId: string | null | undefined, manageSpaceIds: string[] | null | undefined): boolean {
+    if (manageSpaceIds === null) return true;
+    return !!kindSpaceId && Array.isArray(manageSpaceIds) && manageSpaceIds.includes(kindSpaceId);
   }
 
   /**
    * May they use the contract flow at all?
    *
-   * Org-wide callers keep the check they always had. A space-scoped manager is
-   * let through when they manage assets SOMEWHERE — which kinds they then reach
-   * is decided in `resolve`, by each kind's own workspace.
+   * Managing assets SOMEWHERE opens the door — org-wide or in a workspace.
+   * Which kinds they then reach is decided in `resolve`, by each kind's own
+   * workspace. It used to fall back to `canViewAllTasks` for the org-wide
+   * caller: a READ permission deciding who may create, hand over and retire.
    *
    * Public because deciding a proposal is the same door: accepting one IS
    * `apply`, and refusing or listing them must not ask a different question.
    */
   assertMay(actor: ContractActor, doing: string): void {
-    if (actor.manageSpaceIds === undefined) {
-      this.access.assertMay(actor, doing);
-      return;
-    }
-    if (actor.manageSpaceIds.length === 0) {
-      throw new ForbiddenException(`You do not have permission to ${doing}`);
-    }
+    this.access.assertMay(actor, 'manage', doing);
   }
 
   /**
@@ -145,9 +135,7 @@ export class AssetContractService {
     holderUserId: string;
     fields: ContractFields;
     retireReplaced?: boolean;
-    manageSpaceIds?: string[];
-    organizationId: string;
-  }): Promise<{
+  } & ContractActor): Promise<{
     proposal: ContractProposal;
     shape: KindShape;
     holding: Array<{ assetId: string; assetName: string }>;
@@ -170,7 +158,7 @@ export class AssetContractService {
       "that type exists, you just may not use it" tells somebody what another
       depot runs.
     */
-    if (!kind || !AssetContractService.kindInScope(kind.spaceId, data.manageSpaceIds)) {
+    if (!kind || !this.access.mayIn(data, 'manage', kind.spaceId)) {
       throw new NotFoundException('That type is not in this organization');
     }
 
@@ -263,7 +251,7 @@ export class AssetContractService {
     fields: ContractFields;
     retireReplaced?: boolean;
   } & ContractActor) {
-    this.assertMay(data, 'view assets');
+    this.assertMay(data, 'use the contract flow');
     const { proposal, startsAt, startClamped } = await this.resolve(data);
     return success({
       ...proposal,
@@ -296,7 +284,7 @@ export class AssetContractService {
      */
     announceHandover?: boolean;
   } = {}) {
-    this.assertMay(data, 'update assets');
+    this.assertMay(data, 'manage assets');
 
     // Recomputed from scratch, on the server, exactly as the preview was.
     const { proposal, shape, startsAt, startClamped } = await this.resolve(data);
@@ -425,7 +413,7 @@ export class AssetContractService {
    * rules — this is only the door for the second.
    */
   async read(data: { text?: string } & ContractActor) {
-    this.assertMay(data, 'view assets');
+    this.assertMay(data, 'use the contract flow');
     const text = (data.text ?? '').slice(0, 20_000);
     if (!text.trim()) throw new BadRequestException('There is nothing to read');
     return success(parseContract(text.split(/\r?\n/)));

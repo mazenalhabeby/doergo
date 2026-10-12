@@ -5,7 +5,7 @@ import {
   success, paginated, normalizeKindShape, findKindList, normalizeListRow, listRowIsEmpty,
   clampListLimit,
 } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 
 /**
  * Rows of the tables a kind declares — a parts catalogue, a set of keys.
@@ -34,11 +34,8 @@ export class AssetRowsService {
     search?: string;
     page?: number;
     limit?: number;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'view');
     const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const page = Math.max(1, data.page ?? 1);
@@ -77,11 +74,8 @@ export class AssetRowsService {
     id: string;
     list: string;
     values: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'manage');
     const { list, owner } = await this.assetList(data.id, data.list, data.organizationId);
 
     const values = normalizeListRow(list, data.values);
@@ -114,12 +108,8 @@ export class AssetRowsService {
     id: string;
     rowId: string;
     values: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'manage');
 
     // Scoped to the ORG, then re-checked against the resolved owner below: a
     // shared row belongs to the kind, so scoping the lookup to this asset would
@@ -153,12 +143,9 @@ export class AssetRowsService {
   async removeRow(data: {
     id: string;
     rowId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
-    const asset = await this.access.assetInOrg(data.id, data.organizationId);
+  } & AssetActor) {
+    // A shared catalogue row belongs to the KIND, which is this record's kind — the same workspace.
+    const asset = await this.access.assetInScope(data.id, data, 'manage');
 
     // Either this record's own row, or a row of a catalogue this record's kind
     // owns. Never another kind's, and never another record's.

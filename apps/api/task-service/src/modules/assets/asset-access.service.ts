@@ -1,13 +1,71 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { Role } from '@hbcfield/shared';
+import { Role, type AssetAccessLevel } from '@hbcfield/shared';
 
 /** Nobody may ask for more than this in one request, however they ask. */
 const MAX_PAGE = 200;
 
 /**
- * The rules every asset operation shares: who may act, how big a page may be,
- * and whether a record is this organization's.
+ * Who is acting on the register, and in which workspaces — as the gateway's
+ * `assetActor` builds it from the verified session.
+ *
+ * Each level is a workspace list with three states: `null` = org-wide, an
+ * array = only those workspaces, `[]` = nowhere. ⚠️ A level that is MISSING is
+ * read as nowhere, never as everywhere: a caller that forgot to forward it (a
+ * new route, a queue job built by hand) must lose access, not gain the whole
+ * organization's register. That is the opposite of what `undefined` used to
+ * mean on the contract flow, and it is the safe one.
+ */
+export interface AssetActor {
+  userId: string;
+  userRole: string;
+  organizationId: string;
+  /** A client's or partner's person — holds no custody, whatever the rows say. */
+  isExternal?: boolean;
+  /** Read records, their history, money, custody and logbook. */
+  viewSpaceIds?: string[] | null;
+  /** Add logbook entries and file expenses. */
+  logSpaceIds?: string[] | null;
+  /** Create, edit, delete, hand over, money rows, contracts, proposals. */
+  manageSpaceIds?: string[] | null;
+  /**
+   * Manages assets ORG-WIDE. Read by the shared entry-date rule (the
+   * backdating exemption) and by "may name somebody else as the holder" —
+   * both org-wide by definition, so a workspace grant never satisfies them.
+   */
+  canManageAssets?: boolean;
+}
+
+const FIELD: Record<AssetAccessLevel, 'viewSpaceIds' | 'logSpaceIds' | 'manageSpaceIds'> = {
+  view: 'viewSpaceIds',
+  log: 'logSpaceIds',
+  manage: 'manageSpaceIds',
+};
+
+const DOING: Record<AssetAccessLevel, string> = {
+  view: 'view assets',
+  log: 'log against assets',
+  manage: 'manage assets',
+};
+
+/**
+ * Where this caller may act at `level`: null = everywhere, [] = nowhere.
+ *
+ * An administrator is org-wide whatever was forwarded. Anything that is not
+ * `null` or an array — absent, or a value nobody meant — is nowhere. A plain
+ * function so a service that does not inject the access rules (the proposal
+ * queue) asks the very same question.
+ */
+export function assetScope(actor: AssetActor, level: AssetAccessLevel): string[] | null {
+  if (actor.userRole === Role.ADMIN) return null;
+  const held = actor[FIELD[level]];
+  if (held === null) return null;
+  return Array.isArray(held) ? held : [];
+}
+
+/**
+ * The rules every asset operation shares: who may act, where, how big a page
+ * may be, and whether a record is reachable at all.
  *
  * Injected rather than inherited. A base class would make every service a
  * subclass of the rules, which is neither true nor testable; a collaborator can
@@ -17,35 +75,32 @@ const MAX_PAGE = 200;
 export class AssetAccessService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Who may read, and who may change.
-   *
-   * This check was written out 25 times, each with its own message and its own
-   * `as any` cast. Once is enough: a rule copied 25 times is a rule that will
-   * eventually be copied wrong, and the cast hid that the caller's type never
-   * admitted the flag it was reading.
-   */
-  assertMay(
-    actor: { userRole: string; canViewAllTasks?: boolean; viewAllSpaceIds?: string[] },
-    doing: string,
-  ): void {
-    if (this.isOrgWide(actor)) return;
-    /*
-      A grant held in a SPACE counts too — for the spaces it covers.
+  /** Where this caller may act at `level` — see `assetScope`. */
+  scope(actor: AssetActor, level: AssetAccessLevel): string[] | null {
+    return assetScope(actor, level);
+  }
 
-      Assets belong to a workspace through their kind, and whoever runs that
-      workspace runs its equipment. Reading the flat column alone refused them
-      the list entirely, which is why the assets page could not be opened by the
-      person standing next to the forklift. WHICH assets they then see is
-      narrowed by `spaceFilter` below; this only decides that the door opens.
-    */
-    if ((actor.viewAllSpaceIds?.length ?? 0) > 0) return;
+  /**
+   * May they act at this level ANYWHERE? The door, not the room: WHICH
+   * records they reach is decided by `spaceFilter` / `assetInScope`.
+   */
+  assertMay(actor: AssetActor, level: AssetAccessLevel, doing: string = DOING[level]): void {
+    const scope = this.scope(actor, level);
+    if (scope === null || scope.length > 0) return;
     throw new ForbiddenException(`You do not have permission to ${doing}`);
   }
 
-  /** Everything, or only certain workspaces? */
-  isOrgWide(actor: { userRole: string; canViewAllTasks?: boolean }): boolean {
-    return actor.userRole === Role.ADMIN || actor.canViewAllTasks === true;
+  /**
+   * May they act at this level on something in `spaceId`?
+   *
+   * `null` — a kind in no workspace, or a record with no kind — answers yes
+   * only to an org-wide grant: it belongs to nobody's workspace, so no
+   * workspace grant can reach it.
+   */
+  mayIn(actor: AssetActor, level: AssetAccessLevel, spaceId: string | null | undefined): boolean {
+    const scope = this.scope(actor, level);
+    if (scope === null) return true;
+    return !!spaceId && scope.includes(spaceId);
   }
 
   /**
@@ -58,14 +113,15 @@ export class AssetAccessService {
    * than replacing it, so `?spaceId=` can narrow their view and never widen it.
    */
   spaceFilter(
-    actor: { userRole: string; canViewAllTasks?: boolean; viewAllSpaceIds?: string[] },
+    actor: AssetActor,
+    level: AssetAccessLevel,
     requestedSpaceId?: string,
   ): { spaceId: string | { in: string[] } } | undefined {
-    if (this.isOrgWide(actor)) {
+    const scope = this.scope(actor, level);
+    if (scope === null) {
       return requestedSpaceId ? { spaceId: requestedSpaceId } : undefined;
     }
-    const held = actor.viewAllSpaceIds ?? [];
-    const allowed = requestedSpaceId ? held.filter((id) => id === requestedSpaceId) : held;
+    const allowed = requestedSpaceId ? scope.filter((id) => id === requestedSpaceId) : scope;
     // Empty means "granted nowhere", and must match nothing rather than
     // everything — the distinction this codebase has been bitten by before.
     return { spaceId: { in: allowed } };
@@ -84,23 +140,45 @@ export class AssetAccessService {
     return Math.min(Math.floor(n), MAX_PAGE);
   }
 
-
-  // ============================================
-  // ASSET CATEGORIES
-  // ============================================
+  /**
+   * One asset, if this caller may act on it at `level` — else 404.
+   *
+   * Ids are guessable, so every per-record call comes through here rather than
+   * trusting the id in the URL. The workspace is the KIND's, read here, never
+   * anything the client sent.
+   *
+   * ⚠️ 404, and the same sentence as an asset in another organization or none
+   * at all: "it exists, you just may not open it" would tell a depot what
+   * another depot runs. Returns the row, since callers need it anyway.
+   */
+  async assetInScope(id: string, actor: AssetActor, level: AssetAccessLevel) {
+    this.assertMay(actor, level);
+    const asset = await this.prisma.asset.findFirst({
+      where: { id, organizationId: actor.organizationId },
+      select: {
+        id: true, holderUserId: true, customerId: true, categoryId: true,
+        category: { select: { spaceId: true } },
+      },
+    });
+    const spaceId = asset?.category?.spaceId ?? null;
+    if (!asset || !this.mayIn(actor, level, spaceId)) {
+      throw new NotFoundException('Asset not found in this organization');
+    }
+    return { ...asset, spaceId };
+  }
 
   /**
-   * Confirm an asset is this organization's before anything reads or writes it.
-   *
-   * Ids are guessable, so every activity call goes through here rather than
-   * trusting the id in the URL. Returns the row, since callers need it anyway.
+   * One kind, if this caller may act on it at `level` — else 404, exactly as a
+   * record. A kind is configuration of ONE workspace's register.
    */
-  async assetInOrg(id: string, organizationId: string) {
-    const asset = await this.prisma.asset.findFirst({
-      where: { id, organizationId },
-      select: { id: true, holderUserId: true, customerId: true, categoryId: true },
+  async kindInScope(id: string, actor: AssetActor, level: AssetAccessLevel) {
+    this.assertMay(actor, level);
+    const kind = await this.prisma.assetCategory.findFirst({
+      where: { id, organizationId: actor.organizationId },
     });
-    if (!asset) throw new NotFoundException('Asset not found in this organization');
-    return asset;
+    if (!kind || !this.mayIn(actor, level, kind.spaceId)) {
+      throw new NotFoundException('Category not found');
+    }
+    return kind;
   }
 }

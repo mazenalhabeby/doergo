@@ -22,8 +22,11 @@ const DEPOT = 'space-depot';
 const vehicle = kindTemplate('vehicle')!.shape;
 
 const member = { userId: 'ahmed', userRole: 'EMPLOYEE', organizationId: ORG };
-const manager = { userId: 'office', userRole: 'MANAGER', organizationId: ORG, canManageAssets: true, canViewAllTasks: true };
-const depotLead = { userId: 'lead', userRole: 'MANAGER', organizationId: ORG, viewAllSpaceIds: [DEPOT] };
+const manager = { userId: 'office', userRole: 'MANAGER', organizationId: ORG, canManageAssets: true, viewSpaceIds: null, logSpaceIds: null, manageSpaceIds: null };
+// May read AND log in the depot — the colleague who notices the dent.
+const depotLead = { userId: 'lead', userRole: 'MANAGER', organizationId: ORG, viewSpaceIds: [DEPOT], logSpaceIds: [DEPOT], manageSpaceIds: [] };
+// May only READ the depot's register.
+const depotViewer = { userId: 'watcher', userRole: 'EMPLOYEE', organizationId: ORG, viewSpaceIds: [DEPOT], logSpaceIds: [], manageSpaceIds: [] };
 
 function setup(opts: { held?: boolean; spaceId?: string | null } = {}) {
   const tx: any = {
@@ -89,6 +92,22 @@ describe('who may log', () => {
     const { service, tx } = setup({ held: false });
     await service.create({ ...depotLead, id: VAN, logType: 'damage', values: { what: 'Mirror' } });
     expect(tx.assetMoney.create).toHaveBeenCalled();
+  });
+
+  /*
+    ⚠️ Seeing is no longer writing. Logging is its own key, so "may watch the
+    vans" (an External Observer, say) never puts entries in their book.
+  */
+  it('but not somebody who may only READ the depot', async () => {
+    const { service, tx } = setup({ held: false });
+    await expect(service.create({ ...depotViewer, id: VAN, logType: 'damage', values: { what: 'Mirror' } })).rejects.toBeInstanceOf(ForbiddenException);
+    expect(tx.assetMoney.create).not.toHaveBeenCalled();
+  });
+
+  // An external member holds no custody — a row naming one is refused, not honoured.
+  it('never lets an external member log on custody', async () => {
+    const { service } = setup({ held: true });
+    await expect(service.create({ ...member, isExternal: true, ...fuel })).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('but not a colleague whose grant is for another workspace', async () => {

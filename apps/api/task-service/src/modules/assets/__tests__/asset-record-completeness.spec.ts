@@ -27,6 +27,8 @@ function setup(stored: Record<string, unknown> = {}) {
         id: 'a1', organizationId: 'org1', categoryId: null, details: [],
         installDate: null, warrantyExpiry: null, ...stored,
       })),
+      // The scope check: the record and its kind's workspace (none — an admin reaches it).
+      findFirst: jest.fn(async () => ({ id: 'a1', categoryId: null, category: null })),
       findUniqueOrThrow: jest.fn(async () => ({ id: 'a1', organizationId: 'org1', holders: [] })),
       create: jest.fn(async ({ data }: any) => ({ id: 'a1', organizationId: 'org1', holders: [], ...data })),
       update: jest.fn(async () => ({ id: 'a1' })),

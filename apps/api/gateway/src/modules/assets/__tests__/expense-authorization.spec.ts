@@ -59,8 +59,10 @@ describe('the books are moved only by someone who may manage them', () => {
     manager" — so a review or a handover gated on it hands an outsider the
     ability to accept spending and to reassign the organization's vehicles.
   */
-  it.each(['reviewExpense', 'handOver'])('%s requires canManageAssets', (name) => {
-    expect(routeOf(name).permissions).toEqual(['canManageAssets']);
+  // In the record's workspace, or org-wide — the service narrows by the record's kind (404 outside).
+  it.each(['reviewExpense', 'handOver'])('%s requires canManageAssets, in a space or org-wide', (name) => {
+    expect(routeOf(name).inSpace).toEqual(['canManageAssets']);
+    expect(routeOf(name).permissions).toBeUndefined();
   });
 
   it.each(['reviewExpense', 'handOver'])('%s is a POST, so no read path reaches it', (name) => {
@@ -69,8 +71,14 @@ describe('the books are moved only by someone who may manage them', () => {
 });
 
 describe('reading other people’s custody', () => {
-  it.each(['custody', 'custodyForMember', 'pendingExpenses'])('%s requires canViewAllTasks', (name) => {
-    expect(routeOf(name).permissions).toEqual(['canViewAllTasks']);
+  /*
+    The register's own read key, never `canViewAllTasks` — the task grant an
+    External Observer holds to follow the work. In space: the service narrows
+    every row to the records of the caller's workspaces.
+  */
+  it.each(['custody', 'custodyForMember', 'pendingExpenses'])('%s requires canViewAssets, in a space or org-wide', (name) => {
+    expect(routeOf(name).inSpace).toEqual(['canViewAssets']);
+    expect(routeOf(name).permissions).toBeUndefined();
   });
 });
 
