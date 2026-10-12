@@ -41,7 +41,26 @@ import {
 } from "@/components/ui/dialog"
 import { keys } from "@/lib/query-keys"
 
-export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
+/*
+  Correcting and deleting are two permissions, asked by two routes:
+  `PUT /attendance/entries/:id/edit` (canReconcileAttendance) and
+  `DELETE /attendance/entries/:id` (canDeleteAttendance). A correction leaves the
+  record and its history; a delete leaves neither, so correcting never implies it.
+
+  Somebody holding only the delete switch still opens the dialog — the entry is
+  shown read-only, with Remove and nothing else.
+*/
+export function EditEntryDialog({
+  entry,
+  canEdit = true,
+  canDelete = false,
+}: {
+  entry: TimeEntry
+  /** canReconcileAttendance — times, note, breaks. */
+  canEdit?: boolean
+  /** canDeleteAttendance — the Remove button. */
+  canDelete?: boolean
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -238,6 +257,9 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
           </DialogDescription>
         </DialogHeader>
 
+        {/* A disabled fieldset disables every control inside it, the break
+            list's buttons included — read-only without a second copy of the form. */}
+        <fieldset disabled={!canEdit} className="contents">
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -543,28 +565,33 @@ export function EditEntryDialog({ entry }: { entry: TimeEntry }) {
             </p>
           </div>
         </div>
+        </fieldset>
 
-        <DialogFooter className="sm:justify-between">
-          <Button
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            disabled={busy}
-            onClick={() => (confirmDelete ? remove.mutate() : setConfirmDelete(true))}
-          >
-            {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Trash2 className="mr-1.5 size-4" />
-            {confirmDelete
-              ? t("attendance.editEntry.confirmDelete", "Confirm remove")
-              : t("attendance.editEntry.delete", "Remove")}
-          </Button>
+        <DialogFooter className={canDelete ? "sm:justify-between" : "sm:justify-end"}>
+          {canDelete && (
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              disabled={busy}
+              onClick={() => (confirmDelete ? remove.mutate() : setConfirmDelete(true))}
+            >
+              {remove.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Trash2 className="mr-1.5 size-4" />
+              {confirmDelete
+                ? t("attendance.editEntry.confirmDelete", "Confirm remove")
+                : t("attendance.editEntry.delete", "Remove")}
+            </Button>
+          )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={() => mutation.mutate()} disabled={!canSubmit}>
-              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t("attendance.editEntry.save")}
-            </Button>
+            {canEdit && (
+              <Button onClick={() => mutation.mutate()} disabled={!canSubmit}>
+                {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t("attendance.editEntry.save")}
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>

@@ -6,7 +6,7 @@ import { ForbiddenException } from '@nestjs/common';
  * Approving hours, a manual entry, a correction, a day off or an expense exists
  * so that SOMEBODY ELSE sanctions it. A permission says "may you decide here?"
  * and nothing about whose item it is, so a shift leader holding
- * `canReconcileAttendance` could approve their own flagged shift, add hours to
+ * the attendance permissions could approve their own flagged shift, add hours to
  * their own record, approve their own leave, or accept their own fuel slip.
  *
  * The rule is the one overtime has carried since audit AT-B1, now shared rather

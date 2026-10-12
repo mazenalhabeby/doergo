@@ -26,13 +26,16 @@ interface ApprovalsTabProps {
   loading: boolean
   data?: { data?: TimeEntry[] }
   onRefresh: () => void
+  /** `canApproveAttendance` — the sign-off. Without it the queue is read-only:
+   *  `canViewSpaceAttendance` reads it, only the sign-off decides it. */
+  canApprove: boolean
   onApprove: (entryId: string) => void
   onReject: (entryId: string, reason: string) => void
   approving: boolean
   rejecting: boolean
 }
 
-export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, approving, rejecting }: ApprovalsTabProps) {
+export function ApprovalsTab({ loading, data, onRefresh, canApprove, onApprove, onReject, approving, rejecting }: ApprovalsTabProps) {
   const { t } = useTranslation()
   const { hour12, locale } = useTimeFormat()
   const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null)
@@ -120,7 +123,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
               <TableHead className="font-semibold text-muted-foreground">{t("common.duration")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground">{t("attendance.approval")}</TableHead>
               <TableHead className="font-semibold text-muted-foreground">{t("attendance.notes")}</TableHead>
-              <TableHead className="font-semibold text-muted-foreground text-right">{t("common.actions")}</TableHead>
+              {canApprove && <TableHead className="font-semibold text-muted-foreground text-right">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -145,6 +148,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                 <TableCell>
                   <NoteCell note={entry.notes} />
                 </TableCell>
+                {canApprove && (
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Button
@@ -168,6 +172,7 @@ export function ApprovalsTab({ loading, data, onRefresh, onApprove, onReject, ap
                     </Button>
                   </div>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

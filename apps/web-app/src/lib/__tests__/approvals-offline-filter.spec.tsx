@@ -44,6 +44,7 @@ async function render(entries: TimeEntry[]) {
         loading={false}
         data={{ data: entries }}
         onRefresh={() => undefined}
+        canApprove
         onApprove={() => undefined}
         onReject={() => undefined}
         approving={false}

@@ -59,6 +59,8 @@ describe('the External Observer role', () => {
     for (const key of [
       'canViewSpaceAttendance',
       'canReconcileAttendance',
+      'canApproveAttendance',
+      'canDeleteAttendance',
       'canApproveOvertime',
       'canManageRota',
     ]) {

@@ -79,15 +79,17 @@ export default function AttendanceReviewScreen() {
   const { formatTime, formatDateRelative } = useTimeFormat();
 
   /*
-    May they DECIDE, or only look?
+    May they DECIDE, CORRECT, or only look?
 
-    Viewing and reconciling are separate grants — a Team Leader sees their
-    space's attendance and approves overtime but does not close entries. The
-    endpoints enforce exactly this split (`canViewSpaceAttendance` to read,
-    `canReconcileAttendance` to approve/reject/excuse), so the buttons follow
-    the second one and the lists follow the first.
+    Three separate grants, and the endpoints enforce exactly this split:
+    `canViewSpaceAttendance` reads the lists, `canApproveAttendance` approves or
+    rejects a shift (a sign-off — a client's supervisor holds it), and
+    `canReconcileAttendance` corrects one: edits its times, excuses a no-show.
+    Each button follows the grant its own route asks, so a supervisor who signs
+    off our hours is never offered a correction the server would refuse.
   */
-  const canDecide = holds(user, 'canReconcileAttendance');
+  const canApprove = holds(user, 'canApproveAttendance');
+  const canCorrect = holds(user, 'canReconcileAttendance');
 
   const [segment, setSegment] = useState<Segment>('approvals');
   const [period, setPeriod] = useState<Period>('today');
@@ -376,7 +378,7 @@ export default function AttendanceReviewScreen() {
 
         {/* Correcting a past shift belongs to whoever reconciles attendance —
             the same grant the endpoint enforces. */}
-        {canDecide && segment === 'records' && (
+        {canCorrect && segment === 'records' && (
           <TouchableOpacity style={s.editRow} onPress={() => setEditing(entry)} activeOpacity={0.7}>
             <Ionicons name="create-outline" size={15} color={COLORS.primary} />
             <Text style={[s.editText, { color: COLORS.primary }]}>{t('attendanceReview.edit.button')}</Text>
@@ -442,7 +444,7 @@ export default function AttendanceReviewScreen() {
           <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{row.excuseReason}</Text>
         )}
 
-        {canDecide && row.state !== 'EXCUSED' && (
+        {canCorrect && row.state !== 'EXCUSED' && (
           <View style={s.actions}>
             <TouchableOpacity style={[s.actionBtn, s.approveBtn]} onPress={() => excuse(row)} disabled={busy}>
               {busy ? <ActivityIndicator size="small" color={COLORS.white} /> : (
@@ -552,7 +554,7 @@ export default function AttendanceReviewScreen() {
             renderItem={({ item }) =>
               segment === 'noshows'
                 ? <NoShowCard row={item as NoShow} />
-                : <EntryCard entry={item as TimeEntry} decidable={canDecide && segment === 'approvals'} />
+                : <EntryCard entry={item as TimeEntry} decidable={canApprove && segment === 'approvals'} />
             }
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}

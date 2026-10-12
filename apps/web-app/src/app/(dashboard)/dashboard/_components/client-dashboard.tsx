@@ -62,7 +62,10 @@ function toRecentTask(tk: Task): RecentTask {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ClientDashboard() {
-  const { user } = useAuth()
+  const { user, hasPermission } = useAuth()
+  // The one-click approve is a sign-off: offered only to who may give it
+  // (`POST /attendance/approvals/:id/approve` asks canApproveAttendance).
+  const canApproveAttendance = hasPermission("canApproveAttendance")
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -292,11 +295,11 @@ export function ClientDashboard() {
         tasks,
         onView: (id) => router.push(`/tasks/${id}`),
         approvals: pendingApprovals,
-        onApproveEntry: handleApproveEntry,
+        onApproveEntry: canApproveAttendance ? handleApproveEntry : undefined,
         // Reject needs a reason → send them to the Approvals tab's reject dialog.
         onReviewApproval: () => router.push("/attendance?tab=approvals"),
       }),
-    [tasks, router, pendingApprovals, handleApproveEntry, i18n.language],
+    [tasks, router, pendingApprovals, handleApproveEntry, canApproveAttendance, i18n.language],
   )
 
   // ── Guide example team ───────────────────────────────────────────────────────

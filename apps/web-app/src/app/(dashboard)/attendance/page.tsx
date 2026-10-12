@@ -87,14 +87,22 @@ export default function AttendancePage() {
     Correcting somebody else's shift — editing the times, adding a break they
     could not record themselves.
 
-    Separate from `isAdmin`, which on this page also gates out-of-ring approval
-    and worklog editing. The server accepts `canReconcileAttendance` for these
+    Separate from `isAdmin`, which on this page still gates worklog editing.
+    The server accepts `canReconcileAttendance` for these
     corrections precisely so the person who runs payroll can hold it without
     being handed the organization — and a UI that only offers them to admins
     makes that grant unreachable, which is how a permission quietly becomes
     decorative.
   */
   const canReconcile = isAdmin || hasPermission("canReconcileAttendance")
+  /*
+    Signing off and erasing are their own permissions, each asked by its own
+    route: approve / reject an entry or time away from the site is
+    `canApproveAttendance`, deleting an entry is `canDeleteAttendance`. A client's
+    supervisor approves our hours without being able to rewrite or erase them.
+  */
+  const canApprove = isAdmin || hasPermission("canApproveAttendance")
+  const canDelete = isAdmin || hasPermission("canDeleteAttendance")
 
   // Fetch locations
   const { data: locationsRaw, isLoading: loadingLocations } = useQuery({
@@ -428,6 +436,8 @@ export default function AttendancePage() {
               page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
               isAdmin={isAdmin}
               canReconcile={canReconcile}
+              canApprove={canApprove}
+              canDelete={canDelete}
               sort={sort} onSort={onSort}
             />
           </TabsContent>
@@ -438,6 +448,7 @@ export default function AttendancePage() {
               loading={loadingApprovals}
               data={pendingApprovalsData}
               onRefresh={refetchApprovals}
+              canApprove={canApprove}
               onApprove={(id) => approveEntry.mutate(id)}
               onReject={(id, reason) => rejectEntry.mutate({ entryId: id, reason })}
               approving={approveEntry.isPending}

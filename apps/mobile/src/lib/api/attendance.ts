@@ -174,12 +174,12 @@ export const attendanceApi = {
     return result?.data ?? [];
   },
 
-  /** Approve one entry (`canReconcileAttendance`). */
+  /** Approve one entry (`canApproveAttendance`). */
   approveEntry: async (entryId: string, notes?: string): Promise<TimeEntry> => {
     return call(E.attendance.approve, { id: entryId }, { body: { notes } });
   },
 
-  /** Reject one entry — the reason is required and is shown to the member. */
+  /** Reject one entry (`canApproveAttendance`) — the reason is required and is shown to the member. */
   rejectEntry: async (entryId: string, reason: string): Promise<TimeEntry> => {
     return call(E.attendance.reject, { id: entryId }, { body: { reason } });
   },

@@ -180,6 +180,7 @@ export type PermissionField =
   | 'canManageWorkspaces' | 'canManageRota'
   | 'canManagePortals' | 'canManageTaskTypes' | 'canViewTracking'
   | 'canReconcileAttendance' | 'canViewSpaceAttendance' | 'canApproveOvertime'
+  | 'canApproveAttendance' | 'canDeleteAttendance'
   | 'crmEditInfo' | 'crmManageClients'
   | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
   | 'canIssueDocuments' | 'canManageDocumentTemplates'

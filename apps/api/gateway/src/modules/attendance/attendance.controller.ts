@@ -855,8 +855,23 @@ export class AttendanceController {
     });
   }
 
+  /*
+    Signing off, correcting and erasing are three permissions, not one.
+
+    All of them rode on `canReconcileAttendance`, so the client's supervisor who
+    should only put their name to our hours could also rewrite them and delete
+    them. Sign-off decisions (approve / reject an entry, bulk approve, approve /
+    reject time away from the site) ask `canApproveAttendance`; deleting an entry
+    asks `canDeleteAttendance`; correcting stays `canReconcileAttendance`.
+
+    ⚠️ The decorator and the narrowing must ALWAYS name the same key. The guard
+    only widens (a grant in any space passes it); `this.scope(req, key)` is what
+    keeps the service inside the spaces granting THAT key. A route gated on one
+    key and narrowed by another lets a grant in space A act on space B.
+    `attendance-decision-keys.spec.ts` reads every route and fails on a mismatch.
+  */
   @Post('approvals/:id/approve')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Approve a time entry' })
   async approveEntry(
     @Param('id') entryId: string,
@@ -867,13 +882,13 @@ export class AttendanceController {
       entryId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       notes: body?.notes,
     });
   }
 
   @Post('approvals/:id/reject')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Reject a time entry' })
   async rejectEntry(
     @Param('id') entryId: string,
@@ -884,7 +899,7 @@ export class AttendanceController {
       entryId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       reason: body.reason,
     });
   }
@@ -922,7 +937,7 @@ export class AttendanceController {
   }
 
   @Patch('excursions/:id/approve')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
   async approveExcursion(
     @Param('id') excursionId: string,
@@ -933,21 +948,21 @@ export class AttendanceController {
       excursionId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       grantedMinutes:
         body?.grantedMinutes != null ? Number(body.grantedMinutes) : undefined,
     });
   }
 
   @Patch('excursions/:id/reject')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Reject an out-of-ring request (clocks the worker out)' })
   async rejectExcursion(@Param('id') excursionId: string, @Request() req?: any) {
     return this.attendanceService.rejectExcursion({
       excursionId,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
     });
   }
 
@@ -1131,15 +1146,17 @@ export class AttendanceController {
     });
   }
 
+  // Erasing a shift is its own permission: a correction leaves a record and a
+  // history, a delete leaves neither, so correcting must not imply it.
   @Delete('entries/:id')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canDeleteAttendance')
   @ApiOperation({ summary: 'Delete a time entry (admin)' })
   async deleteEntry(@Param('id') entryId: string, @Request() req?: any) {
     return this.attendanceService.deleteEntry({
       entryId,
       editorId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canDeleteAttendance'),
     });
   }
 
@@ -1193,7 +1210,7 @@ export class AttendanceController {
   }
 
   @Post('approvals/bulk-approve')
-  @RequirePermissionInSpace('canReconcileAttendance')
+  @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })
   async bulkApprove(
     @Body() body: { entryIds: string[]; notes?: string },
@@ -1203,7 +1220,7 @@ export class AttendanceController {
       entryIds: body.entryIds,
       approverId: req.user.id,
       organizationId: req.user.organizationId,
-      scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
+      scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       notes: body.notes,
     });
   }

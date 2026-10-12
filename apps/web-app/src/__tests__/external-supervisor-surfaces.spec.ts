@@ -15,7 +15,7 @@ import { readNavbar } from './_navbar-screen';
  *     478 lines of approve/reject with no check of any kind);
  *   • the surface asks MORE — a granted permission can never be used, which
  *     makes it decorative (out-of-ring approval was offered to admins only,
- *     while the endpoint accepts canReconcileAttendance).
+ *     while the endpoint accepted the attendance grant).
  */
 const navbar = readNavbar();
 const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
@@ -29,7 +29,7 @@ const supervisor = {
     spaceModules: ['crm', 'assets', 'b2c_portal'],
     access: {
       org: {},
-      perSpace: { s1: { canApproveOvertime: true, canReconcileAttendance: true, canViewAllTasks: true, canViewSpaceAttendance: true } },
+      perSpace: { s1: { canApproveOvertime: true, canApproveAttendance: true, canViewAllTasks: true, canViewSpaceAttendance: true } },
     },
   } as AccessUser,
   hasOption: () => true,
@@ -44,7 +44,9 @@ describe('the External Supervisor role', () => {
       .map(([k]) => k)
       .sort();
     expect(granted).toEqual(
-      ['canApproveOvertime', 'canReconcileAttendance', 'canViewAllTasks', 'canViewSpaceAttendance'].sort(),
+      // Signs off our hours; correcting and deleting are switches an admin turns
+      // on per person — never part of the built-in.
+      ['canApproveAttendance', 'canApproveOvertime', 'canViewAllTasks', 'canViewSpaceAttendance'].sort(),
     );
   });
 
@@ -77,14 +79,40 @@ describe('canApproveOvertime', () => {
   });
 });
 
-describe('canReconcileAttendance', () => {
+describe('canApproveAttendance', () => {
   it('offers out-of-ring approval to whoever holds it, not only to admins', () => {
     // PATCH /attendance/excursions/:id/{approve,reject} are both
-    // @RequirePermissionInSpace('canReconcileAttendance'). Gating the panel on
-    // isAdmin left the grant unreachable.
+    // @RequirePermissionInSpace('canApproveAttendance'). Gating the panel on
+    // isAdmin left the grant unreachable; gating it on the correction grant
+    // would hide it from the supervisor who signs off and nothing else.
     const tab = read('src/app/(dashboard)/attendance/_components/tracking-tab.tsx');
-    expect(tab).toContain('<OutOfRingPanel canApprove={canReconcile} />');
+    expect(tab).toContain('<OutOfRingPanel canApprove={canApprove} />');
     expect(tab).not.toContain('<OutOfRingPanel canApprove={isAdmin} />');
+    expect(tab).not.toContain('<OutOfRingPanel canApprove={canReconcile} />');
+  });
+
+  it('the page reads each of the three attendance decisions space-aware', () => {
+    const page = read('src/app/(dashboard)/attendance/page.tsx');
+    expect(page).toContain('hasPermission("canApproveAttendance")');
+    expect(page).toContain('hasPermission("canDeleteAttendance")');
+    expect(page).toContain('hasPermission("canReconcileAttendance")');
+  });
+
+  it('the approvals queue offers approve / reject only with the sign-off', () => {
+    const tab = read('src/app/(dashboard)/attendance/_components/approvals-tab.tsx');
+    expect(tab).toMatch(/\{canApprove && \(\s*<TableCell/);
+  });
+});
+
+describe('canDeleteAttendance', () => {
+  it('Remove follows its own permission, not the correction grant', () => {
+    // DELETE /attendance/entries/:id asks canDeleteAttendance; the edit asks
+    // canReconcileAttendance. Each half of the dialog asks its own.
+    const dialog = read('src/app/(dashboard)/attendance/_components/edit-entry-dialog.tsx');
+    expect(dialog).toContain('{canDelete && (');
+    expect(dialog).toContain('{canEdit && (');
+    const tab = read('src/app/(dashboard)/attendance/_components/tracking-tab.tsx');
+    expect(tab).toContain('canEdit={canReconcile} canDelete={canDelete}');
   });
 });
 

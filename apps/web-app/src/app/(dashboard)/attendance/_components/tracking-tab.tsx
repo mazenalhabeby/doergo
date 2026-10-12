@@ -62,6 +62,10 @@ interface TrackingTabProps {
   /** May correct someone else's shift — edit times, add a break they could not
    *  record themselves. `canReconcileAttendance`, not "is an admin". */
   canReconcile: boolean
+  /** May sign off — approve / reject time away from the site. `canApproveAttendance`. */
+  canApprove: boolean
+  /** May erase an entry. `canDeleteAttendance` — correcting never implies it. */
+  canDelete: boolean
   sort: { key: string; dir: "asc" | "desc" } | null
   onSort: (key: string) => void
 }
@@ -71,7 +75,7 @@ export function TrackingTab({
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
-  page, setPage, limit, daysOff, locations, isAdmin, canReconcile,
+  page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canApprove, canDelete,
   sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
@@ -79,7 +83,10 @@ export function TrackingTab({
   // Overtime on a closed shift: the approval permission and the Option its route
   // is sold under — one gate, shared with the member's attendance tab.
   const overtime = useOvertimeAction()
-  const showActions = canReconcile || overtime.enabled
+  // The entry dialog opens for whoever may correct OR delete; it shows each
+  // half only to the permission its route asks.
+  const canOpenEntry = canReconcile || canDelete
+  const showActions = canOpenEntry || overtime.enabled
 
   // Days off (org-wide) only load in the "all" view. They get their own sub-tab
   // so the Clock In / Clock Out columns aren't shown for rows that never have
@@ -146,11 +153,12 @@ export function TrackingTab({
         {/*
           Approving an out-of-ring request follows the permission, not the
           title. `PATCH /attendance/excursions/:id/approve` and `/reject` are
-          both `@RequirePermissionInSpace('canReconcileAttendance')`, so gating
-          the panel on isAdmin left that grant unreachable — a permission that
-          exists, is granted, and can never be used is decorative.
+          both `@RequirePermissionInSpace('canApproveAttendance')` — a sign-off,
+          not a correction — so the panel asks exactly that. Gating it on
+          isAdmin left the grant unreachable: a permission that exists, is
+          granted, and can never be used is decorative.
         */}
-        <OutOfRingPanel canApprove={canReconcile} />
+        <OutOfRingPanel canApprove={canApprove} />
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (
@@ -553,7 +561,7 @@ export function TrackingTab({
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             {overtime.canOfferFor(entry) && <AddOvertimeDialog entry={entry} />}
-                            {canReconcile && <EditEntryDialog entry={entry} />}
+                            {canOpenEntry && <EditEntryDialog entry={entry} canEdit={canReconcile} canDelete={canDelete} />}
                           </div>
                         </TableCell>
                       )}
