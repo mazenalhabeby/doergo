@@ -154,14 +154,16 @@ export const WIDGETS: WidgetRow[] = [
     from the row), what is going cold, and the way to the whole book.
 
     ⚠️ One read, `GET /customers/due`, narrowed on the server to the caller's
-    CRM view and to reminders that are THEIRS — not every rep's to-do list.
+    CRM reach and to reminders that are THEIRS — not every rep's to-do list.
+    Not `internal`: an external member given clients in their workspace sees
+    that workspace's due list, which is all the server gives them.
   */
   {
     key: 'clients',
     restHeight: 220,
     title: 'widgets.clients',
     question: 'widgets.q.clients',
-    requires: { spaceModule: 'crm', crm: true, internal: true },
+    requires: { spaceModule: 'crm', crm: true },
     surface: 'well',
     empty: 'allClear',
     Component: ClientsCard,

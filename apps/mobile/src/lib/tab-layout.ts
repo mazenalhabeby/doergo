@@ -1,4 +1,5 @@
 import { Role, canContactColleagues, hasAccessModule, normalizeRole, orgHasAddOn } from '@hbcfield/shared/client';
+import { isExternalMember } from './member-reach';
 /*
   Five is the whole bar.
 
@@ -140,7 +141,8 @@ export function tabAccessFor(user: Record<string, unknown> | null | undefined): 
     create: hasAccessModule(u, 'create_task'),
     team: canContactColleagues(u),
     chat: orgHasAddOn((user as { orgAddOns?: string[] } | null)?.orgAddOns ?? null, 'live_chat') && canContactColleagues(u),
-    calendar: !!user && (user as { isExternal?: boolean }).isExternal !== true,
+    // An external member holds no calendar (`@DenyExternal` on /calendar).
+    calendar: !!user && !isExternalMember(user as never),
   };
 }
 

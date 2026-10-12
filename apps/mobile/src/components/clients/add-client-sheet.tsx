@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
+import { useAuth } from '../../contexts/auth-context';
+import { isExternalMember } from '../../lib/member-reach';
 import { customersApi } from '../../lib/api';
 import { canScanCards } from '../../lib/card-scan';
 import { canReadContacts } from '../../lib/phone-contacts';
@@ -43,6 +45,15 @@ export function AddClientSheet({
   const { t } = useTranslation();
   const toast = useToast();
   const clientCreate = useQueuedCreate('customer.create');
+  const { user } = useAuth();
+  /*
+    The card camera and the address book are the organization's own intake
+    (`@DenyExternal` on import). An external member given "add clients" in
+    their workspace types the client in.
+  */
+  const staff = !isExternalMember(user as never);
+  const canScan = staff && canScanCards();
+  const canImport = staff && canReadContacts();
   const [step, setStep] = useState<'choose' | 'form'>('choose');
   const [form, setForm] = useState<NewClientForm>(EMPTY);
   const [spaceId, setSpaceId] = useState<string | null>(startSpaceId);
@@ -52,9 +63,9 @@ export function AddClientSheet({
   useEffect(() => {
     if (!visible) return;
     // Only a build that can do something else offers the choice; otherwise straight to the form.
-    setStep(canScanCards() || canReadContacts() ? 'choose' : 'form');
+    setStep(canScan || canImport ? 'choose' : 'form');
     setSpaceId(startSpaceId);
-  }, [visible, startSpaceId]);
+  }, [visible, startSpaceId, canScan, canImport]);
 
   const set = (k: keyof NewClientForm) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
   const company = form.type === 'COMPANY';
@@ -103,10 +114,10 @@ export function AddClientSheet({
     <JobSheet visible={visible} onClose={onClose} busy={saving} title={step === 'choose' ? t('customers.add', 'Add client') : t('customers.newClient', 'New client')}>
       {step === 'choose' ? (
         <>
-          {canScanCards() ? (
+          {canScan ? (
             <SheetOption label={t('customers.scanCard', 'Scan a business card')} hint={t('customers.scanCardSub', 'Fills the form for you')} Glyph={ScanCardGlyph} onPress={scan} />
           ) : null}
-          {canReadContacts() ? (
+          {canImport ? (
             <SheetOption label={t('contactsImport.option')} hint={t('contactsImport.optionSub')} Glyph={ImportContactsGlyph} onPress={importContacts} />
           ) : null}
           <SheetOption label={t('customers.enterDetails', 'Enter details')} hint={t('customers.enterDetailsSub', 'Type it in')} onPress={() => setStep('form')} />

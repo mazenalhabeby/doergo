@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { CLIENT_FILTERS, CLIENT_FILTER_KEYS, clientFilterQuery, customerStageLabel, type ClientFilter } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
-import { holds } from '../../lib/permissions';
+import { crmCapsOf } from '../../lib/member-reach';
 import { customersApi, type MobileCustomer } from '../../lib/api';
 import { useCrmSpaces } from '../../hooks/use-crm-spaces';
 import { useResponsive } from '../../lib/responsive';
@@ -56,11 +56,12 @@ export function ClientsScreen() {
   const [adding, setAdding] = useState(false);
 
   /*
-    `crmCreateClients` — deliberately not `crmManageClients` alone, which also
-    covers deleting and reassigning. The server asks the same question, so the
-    button never offers what the save would refuse. Absent, not disabled.
+    The right to ADD a client (`crmCreateClients`, or managing implies it),
+    org-wide or in a workspace that runs CRM — `crmCapsOf`, the same reach the
+    Add client tile and the server read, so the button never offers what the
+    save would refuse. Absent, not disabled.
   */
-  const canAdd = holds(user, 'crmCreateClients') || holds(user, 'crmManageClients');
+  const canAdd = crmCapsOf(user as never).create;
 
   /* `?new=1` — the Add client shortcut. Opened once, then the flag is cleared. */
   const { new: startNew } = useLocalSearchParams<{ new?: string }>();

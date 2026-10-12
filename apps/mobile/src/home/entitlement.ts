@@ -55,8 +55,9 @@ export interface Requires {
    * AND their CRM view is not 'none'. Data, not a closure — the same two
    * questions the Manage row for Clients asks (`manage-rows.ts`).
    *
-   * ⚠️ `resolveCrmCaps` reads the ORG permission set only: a space-scoped sales
-   * role grants no CRM, and the server resolves it the same way.
+   * Read through `crmCapsOf` — the server's reach: org caps ∪ the crm* keys of
+   * each workspace running CRM. A space-scoped sales role and an external
+   * member's workspace grant both count.
    */
   crm?: true;
   /** A per-SPACE module that must run in a workspace the member can see (`moduleAnywhere`). */
@@ -65,6 +66,10 @@ export interface Requires {
    * The organization's own members only. An EXTERNAL member (a client's or
    * partner's) never sees it, whatever they hold — the server's
    * `@DenyExternal` says the same about the data behind it.
+   *
+   * ⚠️ Only for what can never be granted to an outsider: their own clock,
+   * the calendar, custody, the personnel file. Anything a workspace role can
+   * grant (clients, equipment, portal requests) asks the permission instead.
    */
   internal?: true;
   /** They drive a route — `drivesRoutes` in `lib/member-reach.ts`, shared with the Plan route tile. */

@@ -36,7 +36,14 @@ export const MANAGE_ROWS = [
     feature nobody bought. See `moduleAnywhere` in shared for why the question is
     "is it running in a workspace I can see" and not "has the org got it".
   */
-  { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: 'crmViewOwn', orgWide: false, module: 'crm', internal: true },
+  /*
+    ⚠️ Decided by the CRM REACH, not by `crmViewOwn` and not by "internal".
+    `holds('crmViewOwn')` missed a member granted `crmViewAll` alone in one
+    workspace, and `internal` hid the book from an external member the office
+    deliberately gave "view clients" in their workspace — the server serves
+    them that workspace's clients (`crmReachOf`), so the phone offers them.
+  */
+  { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'canAccess' } },
   { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316', permission: 'canManageUsers', orgWide: true },
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
@@ -97,11 +104,11 @@ export type ExtraGate =
   /** The offline engine is switched on for this org (the staged rollout). */
   | { offline: true }
   /**
-   * ⚠️ `resolveCrmCaps` takes a FLAT permission set, so a space-scoped sales
-   * role grants nothing while looking configured. That is the resolver's
-   * behaviour, not this row's, and it must not be worked around here.
+   * The widest CRM caps held anywhere — org-wide, or in a workspace that runs
+   * `crm` (`crmCapsOf`, the server's own reach). A space-scoped sales role and
+   * an external member's workspace grant both count.
    */
-  | { crmCap: 'editInfo' | 'create' | 'manage' | 'work' }
+  | { crmCap: 'canAccess' | 'editInfo' | 'create' | 'manage' | 'work' }
   /** They drive a route — the same rule as the Today's route widget (`lib/member-reach.ts`). */
   | { drives: true }
   /** A SECOND permission the screen's own first read needs (in any space). */
@@ -120,8 +127,11 @@ export interface Destination {
   /** An Access Profile module the member must hold (the phone's own gate: `clock`, `tasks`). */
   accessModule?: MobileModule;
   /**
-   * The organization's own property — never an external member's, whatever
-   * they hold. Mirrors `@DenyExternal` on the server.
+   * The organization's own property, or something reached through CUSTODY or
+   * the member's own clock — never an external member's, whatever they hold.
+   * Mirrors `@DenyExternal` on the server. ⚠️ NOT a shorthand for "sensitive":
+   * clients, equipment and portal requests are given to externals per
+   * workspace by permission, and a row that can be granted asks THAT instead.
    */
   internal?: true;
   gate?: ExtraGate;
@@ -180,7 +190,13 @@ export const MEMBER_ROWS: Destination[] = [
   */
   { icon: 'add-circle', labelKey: 'shortcuts.newJob', descKey: 'shortcuts.newJobDesc', route: '/(app)/(tabs)/create-task', color: '#0b8168', permission: 'canCreateTasks', orgWide: false, home: true, act: true },
   { icon: 'scan', labelKey: 'shortcuts.scanCard', descKey: 'shortcuts.scanCardDesc', route: '/(app)/scan-card', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
-  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', internal: true, gate: { crmCap: 'create' }, home: true, act: true },
+  /*
+    Scan card stays `internal`: it is a staff member's own phone and camera
+    feeding the organization's book (as importing the address book is,
+    `@DenyExternal` on the server). Add client is not — an external member given
+    "add clients" in their workspace adds one there, and the server files it.
+  */
+  { icon: 'person-add', labelKey: 'shortcuts.addClient', descKey: 'shortcuts.addClientDesc', route: '/(app)/customers?new=1', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'create' }, home: true, act: true },
   /*
     No "Send a contract" tile: a contract for a vehicle is handed in from
     Documents → Add a document ("For the office"), or from My equipment where
@@ -189,6 +205,12 @@ export const MEMBER_ROWS: Destination[] = [
   { icon: 'map', labelKey: 'shortcuts.planRoute', descKey: 'shortcuts.planRouteDesc', route: '/(app)/route-planner', color: '#0ea5e9', permission: '', orgWide: false, gate: { drives: true }, home: true },
   // Reachable, and not a tile: nobody opens support twice a week.
   { icon: 'help-buoy', labelKey: 'shortcuts.support', descKey: 'shortcuts.supportDesc', route: '/(app)/support', color: '#64748b', permission: '', orgWide: false },
+  /*
+    ⚠️ Still `internal`, like My equipment and Log expense: on the phone the
+    logbook is reached through what the member HOLDS (`/assets/mine`, the
+    picker), and custody is staff-only. An external member granted
+    `canLogAssets` logs from the register on the web; the phone has no register.
+  */
   { icon: 'list', labelKey: 'shortcuts.equipmentLog', descKey: 'shortcuts.equipmentLogDesc', route: '/(app)/asset-log', color: '#0f766e', permission: '', orgWide: false, module: 'assets', internal: true },
 ];
 
@@ -240,18 +262,7 @@ type ManageSubject =
 
 /** The rows this member can actually open. */
 export function manageRowsFor(user: ManageSubject): ManageRow[] {
-  return MANAGE_ROWS.filter((row) => {
-    const allowed = row.orgWide ? holdsOrgWide(user, row.permission) : holds(user, row.permission);
-    if (!allowed) return false;
-    // The organization's own property (clients, contracts) — never an external member's.
-    if ('internal' in row && isExternalMember(user as never)) return false;
-    // Rows naming no module are not gated on one — most of Manage is the
-    // organization itself (members, invitations, the rota), which is never
-    // bought or unbought.
-    const module = 'module' in row ? (row.module as string) : undefined;
-    if (module !== undefined && !moduleAnywhere(user, module)) return false;
-    return passesGate(user as never, 'gate' in row ? (row.gate as ExtraGate) : undefined);
-  });
+  return MANAGE_ROWS.filter((row) => opens(user, asDestination(row)));
 }
 
 /** Is there a Manage tab for this member at all? */
@@ -272,10 +283,9 @@ type DestinationSubject = ManageSubject & {
 /**
  * A gate a permission and a module together cannot express.
  *
- * ⚠️ `resolveCrmCaps` is given the FLAT org permission set on purpose. A
- * space-scoped sales role grants no CRM capability while looking perfectly
- * configured, and that is the resolver's documented behaviour — working round
- * it here would give the phone a different answer from the server.
+ * The CRM gate reads `crmCapsOf` — the server's own reach (org caps ∪ the
+ * crm* keys of each workspace that runs CRM) — so the phone and the API
+ * answer the same member the same way.
  */
 function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): boolean {
   if (!gate) return true;
@@ -295,20 +305,38 @@ function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): bool
  * doorways is that every door opens.
  */
 export function destinationsFor(user: DestinationSubject): Destination[] {
-  const manage: Destination[] = MANAGE_ROWS.map((r) => ({
+  return [...MANAGE_ROWS.map(asDestination), ...MEMBER_ROWS].filter((row) => opens(user, row));
+}
+
+/** A Manage row read as a destination (its optional fields made explicit). */
+function asDestination(r: ManageRow): Destination {
+  return {
     ...r,
     module: 'module' in r ? (r.module as string) : undefined,
     internal: 'internal' in r ? (r.internal as true) : undefined,
+    gate: 'gate' in r ? (r.gate as ExtraGate) : undefined,
     manage: true as const,
-  }));
-  return [...manage, ...MEMBER_ROWS].filter((row) => {
-    if (row.permission) {
-      const allowed = row.orgWide ? holdsOrgWide(user, row.permission) : holds(user, row.permission);
-      if (!allowed) return false;
-    }
-    if (row.module !== undefined && !moduleAnywhere(user, row.module)) return false;
-    if (row.internal && isExternalMember(user as never)) return false;
-    if (row.accessModule && !hasAccessModule(user as never, row.accessModule)) return false;
-    return passesGate(user, row.gate);
-  });
+  };
+}
+
+/**
+ * ONE answer to "may this member open this row" — the Manage tab, the More
+ * sheet and the home rail all ask it, so they cannot disagree.
+ *
+ *   • permission — empty = none needed; else org-wide or in any space, as the
+ *     row's endpoint decides;
+ *   • module — runs in a workspace the member can see (rows naming none are the
+ *     organization itself: members, invitations, the rota);
+ *   • internal — never an external member's;
+ *   • the Access Profile module, and the row's extra gate.
+ */
+function opens(user: DestinationSubject | ManageSubject, row: Destination): boolean {
+  if (row.permission) {
+    const allowed = row.orgWide ? holdsOrgWide(user, row.permission) : holds(user, row.permission);
+    if (!allowed) return false;
+  }
+  if (row.module !== undefined && !moduleAnywhere(user, row.module)) return false;
+  if (row.internal && isExternalMember(user as never)) return false;
+  if (row.accessModule && !hasAccessModule(user as never, row.accessModule)) return false;
+  return passesGate(user as DestinationSubject, row.gate);
 }
