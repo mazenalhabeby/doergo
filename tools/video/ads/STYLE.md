@@ -70,3 +70,11 @@ Same message rule, but each ad has its OWN look (the user rejected reusing the m
 - Music + SFX are Mixkit (free licence) in `series/_audio` (m<id>.mp3 / s<id>.mp3): 653 Cinematic Jazz, 876 Like a Loop Machine, 1168 Coffee or Tea, 13 Summer Fun, 677 Epical Drums 02, 1142 Gummies, 126 Trap Electro Vibes.
 - Never put real company names on screen (BILLA/Siemens were swapped for invented names).
 - German + 16:9 (2026-09-30): each `<ad>-de/` holds its own script/voice/timeline (`"lang":"de"`) and a SYMLINK to `../<ad>/ad.html` — ONE page serves both languages (string table by `TL.lang`) and both formats (landscape layout when innerWidth > innerHeight). `W=1920 H=1080 node ../render.mjs` → `<dir>-wide-silent.mp4`; `WIDE=1 ./mix.py …`. Delivered to Desktop/HBCField-ads-series in 4 folders (28 files).
+
+## 08-matchday — basketball club film (2026-10-11), 16:9 first
+- 92 s explainer of the match-seats idea (mockup docs/design/match-seats). It is a full-idea film, so it is longer than the shorts.
+- Look, following the 2026 trends: kinetic type (Archivo 900 slams on springs, pill keyword), liquid-glass panels (backdrop blur + gradient border), abstracted UI instead of footage, one hero object (a top-down hall seat map) that recurs and changes state. Colour still tells the story: red pain → blue turn → green finale.
+- `series/08-matchday/ad.html` is 1920×1080 only (`W=1920 H=1080 node ../render.mjs`). Kinetic lines carry an explicit word index (5th field) so they land on the spoken word.
+- Music: m677 Epical Drums 02, started at 36.6 s so its break and hit (track 56–58 s) land on "Meet match day" (`WIDE=1 ./mix.py 08-matchday 677 36.6 0.5 0`). Ends at −14.8 LUFS.
+- Delivered: Desktop/HBCField-ads-series/HBCField-match-day-EN-16x9.mp4. Preview page: https://claude.ai/artifact/CMNfNtXJ1KzyFt86yUzuJr
+- ⚠️ Elements placed with `tf()` (translate) must have CSS left/top 0. A CSS offset plus the translate pushed the phone, the mail, the ring and the gauge off-screen in the first cut.

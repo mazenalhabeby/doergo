@@ -1,4 +1,3 @@
-import { spacesGranting } from '@hbcfield/shared';
 import { scopeFor } from './permission-scope';
 
 /** The three portal keys, weakest first: read requests · answer them · run the portal. */
