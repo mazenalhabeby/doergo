@@ -3,7 +3,7 @@ import type { GlyphProps } from '../glyphs/glyphs';
 import { DocumentsGlyph, SupportGlyph } from '../glyphs/glyphs';
 import {
   SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, NewJobGlyph, ScanCardGlyph, AddClientGlyph,
-  EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph,
+  EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph, RegisterGlyph, ClientRequestsGlyph,
 } from '../glyphs/tile-glyphs';
 import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph } from '../glyphs/queue-glyphs';
 import { PlanRouteGlyph } from '../glyphs/route-glyphs';
@@ -41,4 +41,6 @@ export const SHORTCUT_GLYPHS: Record<string, React.ComponentType<GlyphProps>> = 
   'manage.invitations.label': InvitationsGlyph,
   'manage.schedules.label': SchedulesGlyph,
   'manage.issues.label': IssueNewGlyph,
+  'manage.equipment.label': RegisterGlyph,
+  'manage.clientRequests.label': ClientRequestsGlyph,
 };

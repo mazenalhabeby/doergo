@@ -36,6 +36,8 @@ describe('Shortcuts widget — every persona', () => {
   const EXPECTED: Record<string, string[]> = {
     client: [
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
+      // The workspace's register and client requests — the owner holds everything and the org runs both.
+      'manage.equipment.label', 'manage.clientRequests.label',
       'manage.joinRequests.label', 'manage.invitations.label', 'manage.schedules.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',

@@ -17,7 +17,7 @@ import { assetEntryDateText, dayKeyOf, occurredAtForDay } from '../../src/lib/lo
 import { useToast } from '../../src/island/island-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
-import { assetsApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
+import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
 import { normalizeKindShape, findLogType, validateLogValues, moneyToCents, COST_LOG_KEY, type KindLogField, type LogValueProblem, fromCents } from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
@@ -64,9 +64,16 @@ function AssetLogScreen() {
   const offline = useOffline();
   const insets = useSafeAreaInsets();
   const { takePhoto, pickFromGallery } = useImagePicker();
-  const params = useLocalSearchParams<{ assetId?: string; logType?: string }>();
+  const params = useLocalSearchParams<{ assetId?: string; logType?: string; from?: string }>();
   const assetId = typeof params.assetId === 'string' ? params.assetId : '';
   const logKey = typeof params.logType === 'string' ? params.logType : '';
+  /*
+    Opened from the workspace's register (Manage → Equipment) by somebody who
+    holds `canLogAssets` there — not from what they hold. The record is then
+    read by id, which the server answers only inside their workspaces (404
+    otherwise), and the entry is authorised by the permission, not custody.
+  */
+  const fromRegister = params.from === 'register';
 
   const [held, setHeld] = useState<HeldAsset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,9 +96,15 @@ function AssetLogScreen() {
     let alive = true;
     (async () => {
       try {
+        if (fromRegister) {
+          const asset = await assetRegisterApi.get(assetId);
+          if (alive) setHeld({ id: asset.id, assetId: asset.id, startedAt: '', endedAt: null, asset: asset as HeldAsset['asset'], totals: { inCents: 0, outCents: 0, netCents: 0, entries: 0 } });
+          return;
+        }
         const { periods } = await assetsApi.mine();
         // From what I HOLD, never fetched by id: this screen must not be a way
-        // to look up an asset somebody was not given.
+        // to look up an asset somebody was not given (the register's door is
+        // `from=register`, read under the workspace permission instead).
         if (alive) setHeld(periods.find((h) => h.assetId === assetId) ?? null);
       } catch (e: any) {
         if (alive) toast.error(e?.message || tt('logbook.loadFailed', 'Could not open that'));
@@ -101,7 +114,7 @@ function AssetLogScreen() {
     })();
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetId]);
+  }, [assetId, fromRegister]);
 
   // A cost is the receipt flow. Replace rather than push, so "back" leaves both.
   useEffect(() => {

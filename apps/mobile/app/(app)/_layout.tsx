@@ -67,6 +67,12 @@ const OWN_HEADER_SCREENS = [
   // covers the viewfinder and titles it "asset-expense".
   'asset-expense',
   'asset-log',
+  // The workspace's equipment register and its client requests — for whoever
+  // holds those permissions there (staff and external members alike).
+  'equipment',
+  'equipment/[id]',
+  'client-requests',
+  'client-request/[id]',
   // Clients from the phone's address book — draws its own header.
   'import-contacts',
   'send-document',

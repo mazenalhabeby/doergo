@@ -58,6 +58,8 @@ const ROSTER_VIEW_KEYS: AccessPermissionKey[] = [
   'canViewAllTasks', 'canAssignTasks', 'canViewSpaceAttendance', 'canManageUsers',
   // Whoever decides who is in a workspace, or what they may do there, must be able to see who is.
   'canAddSpaceMembers', 'canGrantSpaceRoles',
+  // Handing equipment to somebody in the workspace (custody is limited to its people) needs to see who they are.
+  'canManageAssets',
 ];
 
 /**

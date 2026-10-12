@@ -62,6 +62,14 @@ const ONLINE_ONLY: Record<string, string> = {
   '/attendance/no-shows': 'presence: a kept answer would name somebody late who has since arrived',
   '/attendance/active-entries': 'presence: who is clocked in now',
   '/attendance/breaks/active': 'presence: who is on a rest now',
+  // The workspace's register (Manage → Equipment): the organization's records, read under a
+  // workspace permission that can be withdrawn — not the member's own data, so not kept on the phone.
+  '/assets': 'the workspace register — the organization’s records under a revocable workspace permission',
+  '/assets/:x': 'one register record — as /assets',
+  '/assets/:x/log': 'a record’s logbook — as /assets; entries are filed online from it',
+  // Client requests: an answering queue. A kept "waiting" request offers one somebody else already turned into a job.
+  '/spaces/:x/portal/portals': 'the workspace’s portals — read only to reach the request queue, online only',
+  '/portal/admin/portals/:x/requests': 'the answering queue: a kept list would offer a request already turned into a job',
 };
 
 /*

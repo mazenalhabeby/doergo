@@ -44,6 +44,15 @@ export const MANAGE_ROWS = [
     them that workspace's clients (`crmReachOf`), so the phone offers them.
   */
   { icon: 'people-circle', labelKey: 'manage.customers.label', descKey: 'manage.customers.desc', route: '/(app)/customers', color: '#2563eb', permission: '', orgWide: false, module: 'crm', gate: { crmCap: 'canAccess' } },
+  /*
+    A workspace's equipment and its client requests — for whoever holds the
+    permission there, staff or external alike (the server narrows to those
+    workspaces and 404s the rest). Not `internal`: running a client's site is
+    exactly what an external member may be given. Custody ("What I have",
+    Log expense) stays staff-only above.
+  */
+  { icon: 'construct', labelKey: 'manage.equipment.label', descKey: 'manage.equipment.desc', route: '/(app)/equipment', color: '#0f766e', permission: 'canViewAssets', orgWide: false, module: 'assets' },
+  { icon: 'chatbox-ellipses', labelKey: 'manage.clientRequests.label', descKey: 'manage.clientRequests.desc', route: '/(app)/client-requests', color: '#b45309', permission: 'canViewPortal', orgWide: false, module: 'b2c_portal' },
   { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316', permission: 'canManageUsers', orgWide: true },
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
@@ -209,7 +218,7 @@ export const MEMBER_ROWS: Destination[] = [
     ⚠️ Still `internal`, like My equipment and Log expense: on the phone the
     logbook is reached through what the member HOLDS (`/assets/mine`, the
     picker), and custody is staff-only. An external member granted
-    `canLogAssets` logs from the register on the web; the phone has no register.
+    `canLogAssets` logs from the register (Manage → Equipment).
   */
   { icon: 'list', labelKey: 'shortcuts.equipmentLog', descKey: 'shortcuts.equipmentLogDesc', route: '/(app)/asset-log', color: '#0f766e', permission: '', orgWide: false, module: 'assets', internal: true },
 ];

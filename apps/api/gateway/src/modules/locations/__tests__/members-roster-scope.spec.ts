@@ -16,6 +16,11 @@ describe('roster access rules', () => {
     // The legacy column never widens an external member to every space.
     expect(mayViewSpaceRoster(user({ isExternal: true, canViewAllTasks: true }), 'b')).toBe(false);
   });
+  it('whoever hands equipment over in a workspace sees its people — there, and only there', () => {
+    const keeper = user({ isExternal: true, access: { org: {}, perSpace: { a: { canManageAssets: true } } } });
+    expect(mayViewSpaceRoster(keeper, 'a')).toBe(true);
+    expect(mayViewSpaceRoster(keeper, 'b')).toBe(false);
+  });
   it('bill rates leave only for whoever manages that space\'s people', () => {
     const rows = [{ userId: 'x', billRateCents: 9000, isPrimary: true }];
     expect(stripSpaceTerms(rows, false)).toEqual([{ userId: 'x', isPrimary: true }]);

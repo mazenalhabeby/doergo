@@ -1217,6 +1217,14 @@
     "issues": {
       "label": "Incidencias de turno",
       "desc": "Bloqueos reportados en obra"
+    },
+    "equipment": {
+      "label": "Equipos",
+      "desc": "Los equipos del espacio y su registro"
+    },
+    "clientRequests": {
+      "label": "Solicitudes de clientes",
+      "desc": "Lo que los residentes enviaron por el portal"
     }
   },
   "components": {
@@ -4929,5 +4937,65 @@
       "failed": "No ha funcionado. Abre la pantalla de fichaje y hazlo allí.",
       "cannotUndo": "Este fichaje ya no se puede deshacer aquí: el turno está cerrado o ya hay trabajo registrado. Pide a tu oficina que lo corrija."
     }
+  },
+  "register": {
+    "title": "Equipos",
+    "allSpaces": "Todos los espacios",
+    "allKinds": "Todos",
+    "search": "Buscar nombre, número de serie, modelo",
+    "empty": "Aún no hay equipos en este espacio.",
+    "emptyFiltered": "No hay coincidencias.",
+    "heldBy": "Lo tiene {{name}}",
+    "notHanded": "Sin entregar",
+    "notFound": "No está en tus espacios.",
+    "failed": "No ha funcionado. Inténtalo de nuevo.",
+    "logbook": "Registro",
+    "logEmpty": "Aún no hay anotaciones.",
+    "olderEntries": "Anotaciones anteriores",
+    "changeStatus": "Cambiar estado",
+    "handOver": "Entregar",
+    "addToLog": "Añadir al registro",
+    "readOnly": "Puedes leerlo. Para anotar en el registro necesitas «Anotar» en este espacio.",
+    "statusSaved": "Estado guardado",
+    "retireOnWeb": "Retirar o eliminar un registro se hace en la web.",
+    "handOverTitle": "¿Quién lo recibe?",
+    "handOverWeb": "Este tipo no pertenece a ningún espacio. Entrégalo en la web.",
+    "handedOver": "Entregado",
+    "takeBack": "Nadie (recogerlo)",
+    "takenBack": "Recogido",
+    "facts": {
+      "status": "Estado",
+      "holder": "Quién lo tiene",
+      "serial": "Número de serie",
+      "makeModel": "Marca · modelo",
+      "where": "Dónde"
+    },
+    "status": {
+      "ACTIVE": "Activo",
+      "INACTIVE": "Inactivo",
+      "MAINTENANCE": "En mantenimiento",
+      "RETIRED": "Retirado"
+    }
+  },
+  "clientRequests": {
+    "title": "Solicitudes de clientes",
+    "waiting": "En espera",
+    "becameJob": "Ya es un trabajo",
+    "done": "Hecho",
+    "noneWaiting": "Nada espera respuesta.",
+    "none": "No hay nada.",
+    "notFound": "Esta solicitud no está en tus espacios.",
+    "from": "De",
+    "unit": "Unidad",
+    "sent": "Enviada",
+    "turnIntoJob": "Convertir en trabajo",
+    "openJob": "Abrir el trabajo",
+    "readOnly": "Puedes leer las solicitudes. Para responder necesitas «Responder» en este espacio.",
+    "priority": "Prioridad",
+    "whoDoesIt": "Quién lo hace",
+    "decideLater": "Decidir después",
+    "createJob": "Crear trabajo",
+    "jobCreated": "Trabajo creado",
+    "residentSees": "El residente ve en su app que su solicitud avanza."
   }
 }

@@ -1217,6 +1217,14 @@
     "issues": {
       "label": "Incidents de poste",
       "desc": "Blocages signalés sur site"
+    },
+    "equipment": {
+      "label": "Équipements",
+      "desc": "Les équipements de l’espace et leur journal"
+    },
+    "clientRequests": {
+      "label": "Demandes clients",
+      "desc": "Ce que les résidents ont envoyé via le portail"
     }
   },
   "components": {
@@ -4929,5 +4937,65 @@
       "failed": "Cela n’a pas fonctionné. Ouvrez l’écran de pointage pour le faire là.",
       "cannotUndo": "Ce pointage ne peut plus être annulé ici : le service est clôturé ou du travail y est déjà enregistré. Demandez à votre bureau de corriger."
     }
+  },
+  "register": {
+    "title": "Équipements",
+    "allSpaces": "Tous les espaces",
+    "allKinds": "Tous",
+    "search": "Rechercher nom, numéro de série, modèle",
+    "empty": "Aucun équipement dans cet espace pour l’instant.",
+    "emptyFiltered": "Aucun résultat.",
+    "heldBy": "{{name}} l’a",
+    "notHanded": "Non attribué",
+    "notFound": "Cet élément n’est pas dans vos espaces.",
+    "failed": "Cela n’a pas fonctionné. Réessayez.",
+    "logbook": "Journal",
+    "logEmpty": "Rien d’enregistré pour l’instant.",
+    "olderEntries": "Entrées plus anciennes",
+    "changeStatus": "Changer le statut",
+    "handOver": "Remettre",
+    "addToLog": "Ajouter au journal",
+    "readOnly": "Vous pouvez lire ceci. Pour ajouter au journal, il faut « Consigner » dans cet espace.",
+    "statusSaved": "Statut enregistré",
+    "retireOnWeb": "Retirer ou supprimer un élément se fait sur le web.",
+    "handOverTitle": "Qui le reçoit ?",
+    "handOverWeb": "Ce type n’appartient à aucun espace. Remettez-le sur le web.",
+    "handedOver": "Remis",
+    "takeBack": "Personne (le reprendre)",
+    "takenBack": "Repris",
+    "facts": {
+      "status": "Statut",
+      "holder": "Qui l’a",
+      "serial": "Numéro de série",
+      "makeModel": "Marque · modèle",
+      "where": "Où"
+    },
+    "status": {
+      "ACTIVE": "Actif",
+      "INACTIVE": "Inactif",
+      "MAINTENANCE": "En maintenance",
+      "RETIRED": "Retiré"
+    }
+  },
+  "clientRequests": {
+    "title": "Demandes clients",
+    "waiting": "En attente",
+    "becameJob": "Devenue une intervention",
+    "done": "Terminé",
+    "noneWaiting": "Rien n’attend de réponse.",
+    "none": "Rien ici.",
+    "notFound": "Cette demande n’est pas dans vos espaces.",
+    "from": "De",
+    "unit": "Logement",
+    "sent": "Envoyée",
+    "turnIntoJob": "Transformer en intervention",
+    "openJob": "Ouvrir l’intervention",
+    "readOnly": "Vous pouvez lire les demandes. Pour répondre, il faut « Répondre » dans cet espace.",
+    "priority": "Priorité",
+    "whoDoesIt": "Qui s’en charge",
+    "decideLater": "Décider plus tard",
+    "createJob": "Créer l’intervention",
+    "jobCreated": "Intervention créée",
+    "residentSees": "Le résident voit sa demande avancer dans son application."
   }
 }

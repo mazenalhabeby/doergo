@@ -1217,6 +1217,14 @@
     "issues": {
       "label": "Shift issues",
       "desc": "Blockers reported on site"
+    },
+    "equipment": {
+      "label": "Equipment",
+      "desc": "The workspace’s equipment and its logbook"
+    },
+    "clientRequests": {
+      "label": "Client requests",
+      "desc": "What residents sent through the portal"
     }
   },
   "components": {
@@ -4929,5 +4937,65 @@
       "failed": "That did not work. Open the Clock screen to do it there.",
       "cannotUndo": "This clock-in can no longer be undone here: the shift is closed or work is recorded on it. Ask your office to correct it."
     }
+  },
+  "register": {
+    "title": "Equipment",
+    "allSpaces": "All workspaces",
+    "allKinds": "All",
+    "search": "Search name, serial, model",
+    "empty": "No equipment in this workspace yet.",
+    "emptyFiltered": "Nothing matches.",
+    "heldBy": "{{name}} has it",
+    "notHanded": "Not handed out",
+    "notFound": "This one is not in your workspaces.",
+    "failed": "That did not work. Try again.",
+    "logbook": "Logbook",
+    "logEmpty": "Nothing logged yet.",
+    "olderEntries": "Older entries",
+    "changeStatus": "Change status",
+    "handOver": "Hand over",
+    "addToLog": "Add to logbook",
+    "readOnly": "You can read this. Adding to the logbook needs Log in this workspace.",
+    "statusSaved": "Status saved",
+    "retireOnWeb": "Retiring or deleting a record is done on the web.",
+    "handOverTitle": "Who gets it?",
+    "handOverWeb": "This kind belongs to no workspace. Hand it over on the web.",
+    "handedOver": "Handed over",
+    "takeBack": "Nobody (take it back)",
+    "takenBack": "Taken back",
+    "facts": {
+      "status": "Status",
+      "holder": "Who has it",
+      "serial": "Serial",
+      "makeModel": "Make · model",
+      "where": "Where"
+    },
+    "status": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive",
+      "MAINTENANCE": "In maintenance",
+      "RETIRED": "Retired"
+    }
+  },
+  "clientRequests": {
+    "title": "Client requests",
+    "waiting": "Waiting",
+    "becameJob": "Became a job",
+    "done": "Done",
+    "noneWaiting": "Nothing is waiting for an answer.",
+    "none": "Nothing here.",
+    "notFound": "This request is not in your workspaces.",
+    "from": "From",
+    "unit": "Unit",
+    "sent": "Sent",
+    "turnIntoJob": "Turn into a job",
+    "openJob": "Open the job",
+    "readOnly": "You can read requests. Answering needs Answer in this workspace.",
+    "priority": "Priority",
+    "whoDoesIt": "Who does it",
+    "decideLater": "Decide later",
+    "createJob": "Create job",
+    "jobCreated": "Job created",
+    "residentSees": "The resident sees their request move on in their app."
   }
 }

@@ -1217,6 +1217,14 @@
     "issues": {
       "label": "Schichtprobleme",
       "desc": "Vor Ort gemeldete Blocker"
+    },
+    "equipment": {
+      "label": "Ausstattung",
+      "desc": "Die Ausstattung des Arbeitsbereichs und ihr Logbuch"
+    },
+    "clientRequests": {
+      "label": "Kundenanfragen",
+      "desc": "Was Bewohner über das Portal gesendet haben"
     }
   },
   "components": {
@@ -4929,5 +4937,65 @@
       "failed": "Das hat nicht geklappt. Öffnen Sie die Stempeluhr und erledigen Sie es dort.",
       "cannotUndo": "Diese Einstempelung kann hier nicht mehr rückgängig gemacht werden: Die Schicht ist abgeschlossen oder es ist bereits Arbeit erfasst. Bitten Sie Ihr Büro um eine Korrektur."
     }
+  },
+  "register": {
+    "title": "Ausstattung",
+    "allSpaces": "Alle Arbeitsbereiche",
+    "allKinds": "Alle",
+    "search": "Name, Seriennummer, Modell suchen",
+    "empty": "Noch keine Ausstattung in diesem Arbeitsbereich.",
+    "emptyFiltered": "Nichts gefunden.",
+    "heldBy": "{{name}} hat es",
+    "notHanded": "Nicht ausgegeben",
+    "notFound": "Das gehört nicht zu Ihren Arbeitsbereichen.",
+    "failed": "Das hat nicht geklappt. Bitte erneut versuchen.",
+    "logbook": "Logbuch",
+    "logEmpty": "Noch nichts eingetragen.",
+    "olderEntries": "Ältere Einträge",
+    "changeStatus": "Status ändern",
+    "handOver": "Übergeben",
+    "addToLog": "Ins Logbuch eintragen",
+    "readOnly": "Sie können das lesen. Für Einträge ins Logbuch brauchen Sie „Eintragen“ in diesem Arbeitsbereich.",
+    "statusSaved": "Status gespeichert",
+    "retireOnWeb": "Ausmustern oder Löschen erfolgt im Web.",
+    "handOverTitle": "Wer bekommt es?",
+    "handOverWeb": "Diese Art gehört zu keinem Arbeitsbereich. Bitte im Web übergeben.",
+    "handedOver": "Übergeben",
+    "takeBack": "Niemand (zurücknehmen)",
+    "takenBack": "Zurückgenommen",
+    "facts": {
+      "status": "Status",
+      "holder": "Wer hat es",
+      "serial": "Seriennummer",
+      "makeModel": "Hersteller · Modell",
+      "where": "Wo"
+    },
+    "status": {
+      "ACTIVE": "Aktiv",
+      "INACTIVE": "Inaktiv",
+      "MAINTENANCE": "In Wartung",
+      "RETIRED": "Ausgemustert"
+    }
+  },
+  "clientRequests": {
+    "title": "Kundenanfragen",
+    "waiting": "Wartet",
+    "becameJob": "Wurde Auftrag",
+    "done": "Erledigt",
+    "noneWaiting": "Nichts wartet auf eine Antwort.",
+    "none": "Hier ist nichts.",
+    "notFound": "Diese Anfrage gehört nicht zu Ihren Arbeitsbereichen.",
+    "from": "Von",
+    "unit": "Einheit",
+    "sent": "Gesendet",
+    "turnIntoJob": "In Auftrag umwandeln",
+    "openJob": "Auftrag öffnen",
+    "readOnly": "Sie können Anfragen lesen. Zum Beantworten brauchen Sie „Beantworten“ in diesem Arbeitsbereich.",
+    "priority": "Priorität",
+    "whoDoesIt": "Wer erledigt es",
+    "decideLater": "Später entscheiden",
+    "createJob": "Auftrag anlegen",
+    "jobCreated": "Auftrag angelegt",
+    "residentSees": "Der Bewohner sieht in seiner App, dass es weitergeht."
   }
 }

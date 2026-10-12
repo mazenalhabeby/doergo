@@ -1217,6 +1217,14 @@
     "issues": {
       "label": "Problemi di turno",
       "desc": "Blocchi segnalati in cantiere"
+    },
+    "equipment": {
+      "label": "Attrezzature",
+      "desc": "Le attrezzature dello spazio e il loro registro"
+    },
+    "clientRequests": {
+      "label": "Richieste dei clienti",
+      "desc": "Ciò che i residenti hanno inviato tramite il portale"
     }
   },
   "components": {
@@ -4929,5 +4937,65 @@
       "failed": "Non ha funzionato. Apri la schermata delle timbrature e fallo lì.",
       "cannotUndo": "Questa timbratura non può più essere annullata qui: il turno è chiuso o c’è già lavoro registrato. Chiedi al tuo ufficio di correggere."
     }
+  },
+  "register": {
+    "title": "Attrezzature",
+    "allSpaces": "Tutti gli spazi",
+    "allKinds": "Tutte",
+    "search": "Cerca nome, matricola, modello",
+    "empty": "Nessuna attrezzatura in questo spazio.",
+    "emptyFiltered": "Nessun risultato.",
+    "heldBy": "Ce l’ha {{name}}",
+    "notHanded": "Non assegnata",
+    "notFound": "Non è nei tuoi spazi.",
+    "failed": "Non ha funzionato. Riprova.",
+    "logbook": "Registro",
+    "logEmpty": "Ancora nessuna registrazione.",
+    "olderEntries": "Registrazioni precedenti",
+    "changeStatus": "Cambia stato",
+    "handOver": "Consegna",
+    "addToLog": "Aggiungi al registro",
+    "readOnly": "Puoi leggerlo. Per aggiungere al registro serve «Registra» in questo spazio.",
+    "statusSaved": "Stato salvato",
+    "retireOnWeb": "Dismettere o eliminare una scheda si fa sul web.",
+    "handOverTitle": "A chi va?",
+    "handOverWeb": "Questo tipo non appartiene a nessuno spazio. Consegnalo sul web.",
+    "handedOver": "Consegnata",
+    "takeBack": "Nessuno (ritirala)",
+    "takenBack": "Ritirata",
+    "facts": {
+      "status": "Stato",
+      "holder": "Chi ce l’ha",
+      "serial": "Matricola",
+      "makeModel": "Marca · modello",
+      "where": "Dove"
+    },
+    "status": {
+      "ACTIVE": "Attivo",
+      "INACTIVE": "Inattivo",
+      "MAINTENANCE": "In manutenzione",
+      "RETIRED": "Dismesso"
+    }
+  },
+  "clientRequests": {
+    "title": "Richieste dei clienti",
+    "waiting": "In attesa",
+    "becameJob": "Diventata un lavoro",
+    "done": "Fatto",
+    "noneWaiting": "Nulla attende una risposta.",
+    "none": "Niente qui.",
+    "notFound": "Questa richiesta non è nei tuoi spazi.",
+    "from": "Da",
+    "unit": "Unità",
+    "sent": "Inviata",
+    "turnIntoJob": "Trasforma in lavoro",
+    "openJob": "Apri il lavoro",
+    "readOnly": "Puoi leggere le richieste. Per rispondere serve «Rispondi» in questo spazio.",
+    "priority": "Priorità",
+    "whoDoesIt": "Chi se ne occupa",
+    "decideLater": "Decidi dopo",
+    "createJob": "Crea lavoro",
+    "jobCreated": "Lavoro creato",
+    "residentSees": "Il residente vede la sua richiesta andare avanti nell’app."
   }
 }

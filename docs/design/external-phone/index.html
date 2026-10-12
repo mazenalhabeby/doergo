@@ -1,0 +1,348 @@
+<title>Equipment &amp; Requests on the Phone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a row of phone frames (the real app's tokens), one control strip above them,
+   decisions to confirm below. The page is the reviewer's desk; the phones are the app. */
+:root{
+  --desk:#e9eeec; --deskInk:#0b1f1a; --deskMuted:#4e5f59; --deskLine:#0b332a1f; --deskCard:#ffffff;
+  /* the app (amazen LIGHT) */
+  --canvas:#f3f7f5; --well:#ffffff; --sunken:#eef3f1; --tile:#0b332a0f; --lineWell:#0b332a14; --lineField:#9aa8a3;
+  --inkStrong:#0b1f1a; --ink:#485752; --inkMuted:#63726d;
+  --accent:#097058; --accentSolid:#0b8168; --accentInk:#ffffff; --accentTint:#09705814;
+  --warn:#9a5b00; --warnTint:#f2b26329; --critical:#b3372a; --criticalTint:#b3372a14;
+  --ext:#9a4a07; --extTint:#b453091a;
+  --frame:#0b1416;
+  --sans:"Readex Pro",system-ui,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --desk:#020304; --deskInk:#f1f6fa; --deskMuted:#94a39c; --deskLine:#ffffff17; --deskCard:#0b0f12;
+  --canvas:#040507; --well:#0b0f12; --sunken:#0c1013; --tile:#ffffff14; --lineWell:#ffffff12; --lineField:#616871;
+  --inkStrong:#f1f6fa; --ink:#acb6bf; --inkMuted:#808b95;
+  --accent:#66dbba; --accentSolid:#10b993; --accentInk:#001810; --accentTint:#66dbba24;
+  --warn:#f2b263; --warnTint:#f2b2631f; --critical:#fd978c; --criticalTint:#2e1512;
+  --ext:#f0a35e; --extTint:#f0a35e1c; --frame:#2a3236;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --desk:#020304; --deskInk:#f1f6fa; --deskMuted:#94a39c; --deskLine:#ffffff17; --deskCard:#0b0f12;
+  --canvas:#040507; --well:#0b0f12; --sunken:#0c1013; --tile:#ffffff14; --lineWell:#ffffff12; --lineField:#616871;
+  --inkStrong:#f1f6fa; --ink:#acb6bf; --inkMuted:#808b95;
+  --accent:#66dbba; --accentSolid:#10b993; --accentInk:#001810; --accentTint:#66dbba24;
+  --warn:#f2b263; --warnTint:#f2b2631f; --critical:#fd978c; --criticalTint:#2e1512;
+  --ext:#f0a35e; --extTint:#f0a35e1c; --frame:#2a3236;
+}
+*{box-sizing:border-box}
+body{background:var(--desk);color:var(--deskInk);font-family:var(--sans);font-size:15px;line-height:1.6}
+.wrap{max-width:1500px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:flex;flex-direction:column;gap:28px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header h1{font-weight:400;font-size:clamp(26px,3.4vw,36px);line-height:1.2;margin:4px 0 8px;letter-spacing:-.02em;text-wrap:balance}
+header p{margin:0;color:var(--deskMuted);max-width:72ch}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--deskMuted)}
+.extPill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:1px 10px;font-size:12px;background:var(--extTint);color:var(--ext);font-weight:500}
+
+/* control strip */
+.controls{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;background:var(--deskCard);border:1px solid var(--deskLine);border-radius:16px;padding:14px 18px}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.ctl > span{font-size:13px;color:var(--deskMuted)}
+.seg{display:inline-flex;background:var(--sunken);border-radius:999px;padding:3px;gap:2px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;padding:5px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--well);color:var(--inkStrong);box-shadow:0 1px 2px #0002;font-weight:500}
+.seg button:focus-visible,.btn:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.seat{margin-left:auto;font-size:13px;color:var(--deskMuted)}
+.seat b{color:var(--deskInk);font-weight:500}
+
+/* phones */
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:28px 22px}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+figcaption{font-size:13px;color:var(--deskMuted);padding-inline:4px}
+figcaption b{color:var(--deskInk);font-weight:500;display:block;font-size:14px}
+.phone{background:var(--frame);border-radius:42px;padding:10px;max-width:340px;width:100%;margin-inline:auto}
+.screen{background:var(--canvas);border-radius:33px;height:640px;overflow:hidden;position:relative;display:flex;flex-direction:column;color:var(--ink)}
+.status{display:flex;justify-content:space-between;padding:12px 26px 4px;font-size:12px;color:var(--inkStrong)}
+.status .mono{font-size:12px}
+.body{flex:1;overflow:auto;padding:6px 16px 90px;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;align-items:center;gap:10px}
+.back{width:34px;height:34px;border-radius:50%;background:var(--tile);display:grid;place-items:center;color:var(--inkStrong);flex:none}
+.h2{font-size:22px;font-weight:500;color:var(--inkStrong);letter-spacing:-.02em;line-height:1.25}
+.ws{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);background:var(--tile);border-radius:999px;padding:3px 10px;align-self:flex-start}
+.ws i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:block}
+.eb{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--inkMuted)}
+.well{background:var(--well);border-radius:18px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--lineWell);cursor:default}
+.row:first-child{border-top:0}
+.ico{width:36px;height:36px;border-radius:11px;background:var(--tile);display:grid;place-items:center;flex:none;color:var(--accent)}
+.ico svg{width:18px;height:18px}
+.rt{flex:1;min-width:0}
+.rt b{display:block;font-weight:400;color:var(--inkStrong);font-size:15px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt small{display:block;font-size:12px;color:var(--inkMuted);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:var(--inkMuted)}
+.new{font-size:10.5px;font-family:var(--mono);letter-spacing:.12em;color:var(--accent);background:var(--accentTint);border-radius:6px;padding:1px 6px}
+.lvl{font-size:11px;color:var(--ext);background:var(--extTint);border-radius:6px;padding:1px 7px;white-space:nowrap}
+.search{background:var(--sunken);border-radius:12px;padding:9px 12px;font-size:14px;color:var(--inkMuted);display:flex;gap:8px;align-items:center}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12.5px;border-radius:999px;padding:4px 11px;background:var(--tile);color:var(--ink)}
+.chip.on{background:var(--accentTint);color:var(--accent);font-weight:500}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:1px}
+.ok{background:var(--accent)} .mt{background:var(--warn)} .off{background:var(--inkMuted)}
+.hero{display:flex;flex-direction:column;gap:6px}
+.hero .h2{font-size:24px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:12px 14px;font-size:13.5px}
+.kv dt{color:var(--inkMuted)} .kv dd{margin:0;color:var(--inkStrong);text-align:right}
+.tl{display:flex;flex-direction:column}
+.tl .row{align-items:flex-start}
+.tl .ico{width:30px;height:30px;border-radius:9px}
+.amt{font-family:var(--mono);font-size:13px;color:var(--inkStrong);white-space:nowrap}
+.dock{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 22px;background:linear-gradient(to top,var(--canvas) 70%,transparent);display:flex;gap:8px;flex-wrap:wrap}
+.btn{appearance:none;border:0;font:inherit;font-size:14.5px;border-radius:14px;padding:12px 14px;cursor:pointer;flex:1;min-width:0;text-align:center;font-weight:500}
+.btn.pri{background:var(--accentSolid);color:var(--accentInk)}
+.btn.sec{background:var(--tile);color:var(--inkStrong)}
+.readonly{flex:1;font-size:12.5px;color:var(--inkMuted);text-align:center;background:var(--tile);border-radius:14px;padding:11px 12px}
+.sheetWrap{position:absolute;inset:0;background:#0006;display:flex;align-items:flex-end}
+.sheet{background:var(--well);width:100%;border-radius:26px 26px 0 0;padding:10px 16px 22px;display:flex;flex-direction:column;gap:12px}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--lineField);margin:0 auto 4px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--inkMuted)}
+.input{border:1px solid var(--lineField);border-radius:12px;padding:10px 12px;font-size:14.5px;color:var(--inkStrong);background:var(--well);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kinds{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kinds span{font-size:12px;text-align:center;border-radius:10px;padding:8px 2px;background:var(--tile);color:var(--ink)}
+.kinds span.on{background:var(--accentTint);color:var(--accent);font-weight:500}
+.photo{height:64px;border-radius:12px;border:1px dashed var(--lineField);display:grid;place-items:center;font-size:12.5px;color:var(--inkMuted)}
+.tabs{display:flex;gap:4px;background:var(--sunken);border-radius:12px;padding:3px}
+.tabs span{flex:1;text-align:center;font-size:13px;padding:6px 4px;border-radius:9px;color:var(--ink)}
+.tabs span.on{background:var(--well);color:var(--inkStrong);font-weight:500}
+.tabs .n{font-family:var(--mono);font-size:11px;color:var(--inkMuted);margin-left:3px}
+.req{font-size:13.5px;color:var(--ink);padding:12px 14px;line-height:1.55}
+.thumbs{display:flex;gap:6px;padding:0 14px 14px}
+.thumbs i{width:64px;height:48px;border-radius:9px;background:linear-gradient(135deg,var(--tile),var(--sunken));display:block}
+.state{font-size:12px;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.state.wait{background:var(--warnTint);color:var(--warn)}
+.state.job{background:var(--accentTint);color:var(--accent)}
+.state.done{background:var(--tile);color:var(--inkMuted)}
+.note{font-size:12.5px;color:var(--inkMuted);padding-inline:4px}
+
+/* decisions */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.panel{background:var(--deskCard);border:1px solid var(--deskLine);border-radius:16px;padding:18px 20px;min-width:0}
+.panel h2{font-weight:500;font-size:18px;margin:0 0 10px}
+.panel ol,.panel ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:9px;color:var(--deskMuted)}
+.panel li b{color:var(--deskInk);font-weight:500}
+@media (prefers-reduced-motion:no-preference){.btn,.seg button{transition:background .12s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mockup · not built yet</div>
+    <h1>Equipment and client requests on the phone</h1>
+    <p>Klaus Huber <span class="extPill">External</span> runs the Weingärtner site for HBC USA. The web already lets him see equipment and client requests in his workspace only. The phone has no screen for either. These five screens add them, for externals and for the office's own staff alike. Switch his level below and the screens change to match what the server allows.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Klaus's levels">
+    <div class="ctl"><span>Equipment</span>
+      <div class="seg" id="segA"><button data-v="view" aria-pressed="false">View</button><button data-v="log" aria-pressed="true">Log</button><button data-v="manage" aria-pressed="false">Manage</button></div></div>
+    <div class="ctl"><span>Client requests</span>
+      <div class="seg" id="segP"><button data-v="view" aria-pressed="false">View</button><button data-v="answer" aria-pressed="true">Answer</button></div></div>
+    <div class="seat">Seat: <b>€9.99</b>, paid by HBC USA (he approves hours, so it is a full seat)</div>
+  </div>
+
+  <div class="phones">
+    <!-- 1 · Manage tab -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="h2">Manage</div>
+          <span class="ws"><i></i>Weingärtner Laakirchen</span>
+          <div class="eb">This workspace</div>
+          <div class="well">
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><path d="M16 5.5a3 3 0 0 1 0 5.6M18 14c1.4.6 2.3 2 2.6 4"/></svg></div><div class="rt"><b>Clients</b><small>14 in this workspace</small></div><span class="chev">›</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="7" width="16" height="11" rx="2"/><path d="M9 7V5.5h6V7M4 12h16"/></svg></div><div class="rt"><b>Equipment <span class="new">NEW</span></b><small>9 items · 1 in maintenance</small></div><span class="lvl" id="lvlA">Log</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v10H9l-5 4z"/><path d="M8 10h8M8 13h5"/></svg></div><div class="rt"><b>Client requests <span class="new">NEW</span></b><small>2 waiting for an answer</small></div><span class="lvl" id="lvlP">Answer</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg></div><div class="rt"><b>Hours to approve</b><small>5 entries this week</small></div><span class="chev">›</span></div>
+          </div>
+          <p class="note">A row shows only when Klaus holds at least View in this workspace and the workspace runs that module. His own equipment and expenses stay staff-only, since externals hold no custody.</p>
+        </div>
+      </div></div>
+      <figcaption><b>1 · The way in</b>Two new rows on Manage, next to Clients. Same rule as the server: a grant in this workspace, and the module switched on there.</figcaption>
+    </figure>
+
+    <!-- 2 · Equipment list -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="top"><span class="back">‹</span><div class="h2">Equipment</div></div>
+          <span class="ws"><i></i>Weingärtner Laakirchen</span>
+          <div class="search">⌕ Search name, plate, serial</div>
+          <div class="chips"><span class="chip on">All 9</span><span class="chip">Lifts 3</span><span class="chip">Vehicles 2</span><span class="chip">Cleaning 4</span></div>
+          <div class="well">
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 19h12M8 19V9h8v10M8 13h8M10 9V5h4v4"/></svg></div><div class="rt"><b>Scissor lift Genie GS-1930</b><small><span class="dot ok"></span>On site · Lifts</small></div><span class="chev">›</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15V8h11v7M14 10h4l3 3v2h-7"/><circle cx="7" cy="16.5" r="1.6"/><circle cx="17" cy="16.5" r="1.6"/></svg></div><div class="rt"><b>Ford Transit · <span class="mono">GM-482 KL</span></b><small><span class="dot ok"></span>Hassan Berger has it · Vehicles</small></div><span class="chev">›</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="6" width="14" height="9" rx="2"/><path d="M8 15v3M16 15v3M5 18h14"/></svg></div><div class="rt"><b>Floor scrubber Kärcher B 60</b><small><span class="dot mt"></span>In maintenance · Cleaning</small></div><span class="chev">›</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 19h12M8 19V9h8v10M8 13h8M10 9V5h4v4"/></svg></div><div class="rt"><b>Mast lift JLG Toucan 8E</b><small><span class="dot off"></span>Not in use · Lifts</small></div><span class="chev">›</span></div>
+          </div>
+          <p class="note">Only this workspace's equipment. Klaus never sees the other workspaces' register, and a link to one opens as "not found".</p>
+        </div>
+      </div></div>
+      <figcaption><b>2 · The register</b>Search, kind chips with counts, status as a dot. Who has it comes from custody, the same as on the web.</figcaption>
+    </figure>
+
+    <!-- 3 · Equipment record -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="top"><span class="back">‹</span><span class="eb">Lifts</span></div>
+          <div class="hero"><div class="h2">Scissor lift Genie GS-1930</div><span style="font-size:13px"><span class="dot ok"></span>On site · Hall 2</span></div>
+          <div class="well"><dl class="kv">
+            <dt>Serial</dt><dd class="mono">GS30-188421</dd>
+            <dt>Hour meter</dt><dd class="mono">1,284 h</dd>
+            <dt>Next inspection</dt><dd>14 Nov 2026</dd>
+            <dt>Who has it</dt><dd>Nobody · on site</dd>
+          </dl></div>
+          <div class="eb">Logbook</div>
+          <div class="well tl">
+            <div class="row"><div class="ico">⏱</div><div class="rt"><b>Used 6 h</b><small>Lisa Adler · today 07:10</small></div><span class="amt">1,284 h</span></div>
+            <div class="row"><div class="ico" style="color:var(--critical)">!</div><div class="rt"><b>Damage: platform gate sticks</b><small>Klaus Huber · Mon 14:32 · 1 photo</small></div></div>
+            <div class="row"><div class="ico">⏱</div><div class="rt"><b>Used 4 h</b><small>Hassan Berger · Fri 13:05</small></div><span class="amt">1,278 h</span></div>
+          </div>
+        </div>
+        <div class="dock" id="dockA"></div>
+      </div></div>
+      <figcaption><b>3 · One item</b>Details, then the logbook. The buttons at the bottom follow his level. <span id="capA"></span></figcaption>
+    </figure>
+
+    <!-- 4 · Log sheet -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body" style="opacity:.35">
+          <div class="top"><span class="back">‹</span><span class="eb">Lifts</span></div>
+          <div class="h2">Scissor lift Genie GS-1930</div>
+        </div>
+        <div class="sheetWrap" id="sheetA"><div class="sheet">
+          <div class="grab"></div>
+          <div class="h2" style="font-size:19px">Add to the logbook</div>
+          <div class="kinds"><span class="on">Use</span><span>Fuel</span><span>Damage</span><span>Note</span></div>
+          <div class="field"><label>Hour meter now</label><div class="input"><span class="mono">1,290</span><span style="color:var(--inkMuted);font-size:13px">h · was 1,284</span></div></div>
+          <div class="field"><label>Date</label><div class="input">Today, 13 Oct</div></div>
+          <div class="field"><label>Note (optional)</label><div class="input" style="color:var(--inkMuted)">Hall 2, ceiling lights</div></div>
+          <div class="photo">＋ Photo</div>
+          <button class="btn pri" type="button">Save to logbook</button>
+        </div></div>
+        <div class="sheetWrap" id="sheetAno" hidden><div class="sheet">
+          <div class="grab"></div>
+          <div class="h2" style="font-size:19px">Read only</div>
+          <p style="margin:0;font-size:14px">With View, Klaus reads the register and the logbook. Adding to it needs Log in this workspace.</p>
+        </div></div>
+      </div></div>
+      <figcaption><b>4 · Logging</b>Use, fuel, damage or a note, with the same date rule as the web (120 days back). The phone's existing logbook form, opened from the register instead of from what you hold.</figcaption>
+    </figure>
+
+    <!-- 5 · Requests list -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="top"><span class="back">‹</span><div class="h2">Client requests</div></div>
+          <span class="ws"><i></i>Weingärtner Laakirchen</span>
+          <div class="tabs"><span class="on">Waiting<span class="n">2</span></span><span>Became a job<span class="n">5</span></span><span>Done<span class="n">31</span></span></div>
+          <div class="well">
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/></svg></div><div class="rt"><b>Light out in stairwell B</b><small>Flat 4/12 · M. Gruber · 2 h ago</small></div><span class="state wait">Waiting</span></div>
+            <div class="row"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3s5 6 5 10a5 5 0 0 1-10 0c0-4 5-10 5-10z"/></svg></div><div class="rt"><b>Water under the kitchen sink</b><small>Flat 2/03 · A. Novak · yesterday</small></div><span class="state wait">Waiting</span></div>
+          </div>
+          <p class="note">"Became a job" lists requests already turned into work; tapping one opens the job like any other on the Jobs tab.</p>
+        </div>
+      </div></div>
+      <figcaption><b>5 · Requests</b>What residents sent through this workspace's portal. Waiting ones first, with the flat and who sent it.</figcaption>
+    </figure>
+
+    <!-- 6 · Request detail -->
+    <figure>
+      <div class="phone"><div class="screen">
+        <div class="status"><span class="mono">9:41</span><span>●●● ▮</span></div>
+        <div class="body">
+          <div class="top"><span class="back">‹</span><span class="eb mono">#AB12CD</span></div>
+          <div class="hero"><div class="h2">Light out in stairwell B</div><span class="state wait" style="align-self:flex-start">Waiting</span></div>
+          <div class="well">
+            <div class="req">"The light on the 3rd floor of stairwell B has been out since Sunday. It's completely dark in the evening."</div>
+            <div class="thumbs"><i></i><i></i></div>
+          </div>
+          <div class="well"><dl class="kv">
+            <dt>From</dt><dd>M. Gruber</dd>
+            <dt>Flat</dt><dd>4/12 · House B</dd>
+            <dt>Category</dt><dd>Electrical</dd>
+            <dt>Sent</dt><dd>Today 07:42</dd>
+          </dl></div>
+        </div>
+        <div class="dock" id="dockP"></div>
+        <div class="sheetWrap" id="sheetP" hidden><div class="sheet">
+          <div class="grab"></div>
+          <div class="h2" style="font-size:19px">Turn into a job</div>
+          <div class="field"><label>Workspace</label><div class="input">Weingärtner Laakirchen <span style="color:var(--inkMuted);font-size:12px">fixed</span></div></div>
+          <div class="field"><label>Priority</label><div class="kinds" style="grid-template-columns:repeat(4,1fr)"><span>Low</span><span class="on">Medium</span><span>High</span><span>Urgent</span></div></div>
+          <div class="field"><label>Who does it</label><div class="input">Lisa Adler <span style="color:var(--inkMuted);font-size:12px">Electrician · free now</span></div></div>
+          <button class="btn pri" type="button" id="closeP">Create job</button>
+          <p class="note" style="margin:0">Only people of this workspace are offered. M. Gruber sees the request move to "In progress" in her portal.</p>
+        </div></div>
+      </div></div>
+      <figcaption><b>6 · Answering</b>The request and its photos, then one action: turn it into a job (workspace fixed, priority, who). <span id="capP"></span></figcaption>
+    </figure>
+  </div>
+
+  <div class="cols">
+    <section class="panel">
+      <h2>Stays on the web</h2>
+      <ul>
+        <li><b>Adding or deleting equipment</b> and its kinds. These are rare desk jobs with many fields.</li>
+        <li><b>Portal setup</b>: categories, flats, residents, invitations, the cover picture (the Manage level of the portal).</li>
+        <li><b>Expenses review</b> for the office's own staff stays on the web queue.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Please confirm</h2>
+      <ol>
+        <li><b>Where the way in sits.</b> Two rows on Manage (screen 1). Should they also be offered as Home tiles?</li>
+        <li><b>Manage level on the phone</b> = edit details, change status, hand it to somebody of this workspace. Creating and deleting stay on the web.</li>
+        <li><b>Answering</b> = only "Turn into a job". The server has no "decline with a reason" today. Do you want one, or is turning it into a job enough?</li>
+        <li><b>Same screens for your own staff</b> with these permissions, not externals only. Today nobody has them on the phone.</li>
+      </ol>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var lvA='log', lvP='answer';
+  var labels={view:'View',log:'Log',manage:'Manage',answer:'Answer'};
+  function seg(id,cb){
+    var el=document.getElementById(id);
+    el.addEventListener('click',function(e){
+      var b=e.target.closest('button'); if(!b) return;
+      el.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+      cb(b.dataset.v); render();
+    });
+  }
+  seg('segA',function(v){lvA=v}); seg('segP',function(v){lvP=v});
+  function render(){
+    document.getElementById('lvlA').textContent=labels[lvA];
+    document.getElementById('lvlP').textContent=labels[lvP];
+    var dA=document.getElementById('dockA');
+    if(lvA==='view') dA.innerHTML='<div class="readonly">You can read this. Logging needs Log here.</div>';
+    else if(lvA==='log') dA.innerHTML='<button class="btn pri" type="button">Add to logbook</button>';
+    else dA.innerHTML='<button class="btn sec" type="button">Edit</button><button class="btn sec" type="button">Hand over</button><button class="btn pri" type="button">Add to logbook</button>';
+    document.getElementById('capA').textContent= lvA==='view'?'View: read only.':lvA==='log'?'Log: adds to the logbook.':'Manage: also edit and hand over.';
+    document.getElementById('sheetA').hidden = lvA==='view';
+    document.getElementById('sheetAno').hidden = lvA!=='view';
+    var dP=document.getElementById('dockP');
+    if(lvP==='view'){ dP.innerHTML='<div class="readonly">You can read requests. Answering needs Answer here.</div>'; document.getElementById('sheetP').hidden=true; }
+    else { dP.innerHTML='<button class="btn pri" type="button" id="openP">Turn into a job</button>';
+      document.getElementById('openP').onclick=function(){document.getElementById('sheetP').hidden=false}; }
+    document.getElementById('capP').textContent= lvP==='view'?'View: read only.':'Answer: tap the button to see the sheet.';
+  }
+  document.getElementById('closeP').onclick=function(){document.getElementById('sheetP').hidden=true};
+  render();
+})();
+</script>

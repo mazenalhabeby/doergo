@@ -192,6 +192,77 @@ export const assetsApi = {
     call(E.assets.withdrawLog, { id: assetId, entryId }),
 };
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE REGISTER — a workspace's equipment, for whoever holds `canViewAssets` there.
+
+   ⚠️ Not the driver's door. "What I have" above is decided by custody; this is
+   decided by a PERMISSION in the record's workspace (view / log / manage), and
+   the server narrows every list and refuses every record outside it (404). The
+   phone only chooses what to render.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+export interface RegisterHolder {
+  id: string;
+  userId: string | null;
+  customerId: string | null;
+  user?: { id: string; firstName: string; lastName: string } | null;
+  customer?: { id: string; name: string } | null;
+}
+
+export interface RegisterAsset {
+  id: string;
+  name: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE' | 'RETIRED' | string;
+  serialNumber?: string | null;
+  model?: string | null;
+  manufacturer?: string | null;
+  notes?: string | null;
+  locationAddress?: string | null;
+  category?: { id: string; name: string; color?: string | null; icon?: string | null; spaceId?: string | null; config?: unknown } | null;
+  type?: { id: string; name: string } | null;
+  holders?: RegisterHolder[];
+}
+
+/** A logbook entry as the record shows it — with who wrote it. */
+export interface RegisterLogEntry extends MyLogEntry {
+  author?: { id: string; firstName: string; lastName: string } | null;
+}
+
+export const REGISTER_PAGE_SIZE = 40;
+
+export const assetRegisterApi = {
+  /** One page of a workspace's equipment, by name. Retired records stay out unless asked for. */
+  list: async (q: { spaceId?: string; search?: string; categoryId?: string; page?: number }): Promise<RegisterAsset[]> => {
+    const res: RegisterAsset[] | null = await call(E.assets.list, {
+      spaceId: q.spaceId, search: q.search?.trim() || undefined, categoryId: q.categoryId,
+      hideRetired: 'true', page: q.page ?? 1, limit: REGISTER_PAGE_SIZE,
+    });
+    return Array.isArray(res) ? res : [];
+  },
+
+  get: (id: string): Promise<RegisterAsset> => call(E.assets.get, { id }),
+
+  /** The kinds of one workspace, with how many records each holds — the filter chips. */
+  kinds: async (spaceId?: string): Promise<{ id: string; name: string; count: number }[]> => {
+    const res = await call(E.assetCategories.list, spaceId ? { spaceId } : undefined);
+    return (Array.isArray(res) ? res : []).map((k: any) => ({ id: k.id, name: k.name, count: k._count?.assets ?? 0 }));
+  },
+
+  /** The logbook, newest first, keyset-paged. */
+  log: async (id: string, cursor?: string): Promise<{ entries: RegisterLogEntry[]; nextCursor: string | null }> => {
+    const res: { entries?: RegisterLogEntry[]; nextCursor?: string | null } | null = await call(E.assets.log, { id, cursor, limit: 30 });
+    return { entries: res?.entries ?? [], nextCursor: res?.nextCursor ?? null };
+  },
+
+  /** Manage: the status only — every other field is the web's form. */
+  setStatus: (id: string, status: string): Promise<RegisterAsset> =>
+    call(E.assets.update, { id }, { body: { status } }),
+
+  /** Manage: hand it to a member of the workspace, or take it back (nobody). */
+  handOver: (id: string, input: { userId: string | null; reason?: string }): Promise<unknown> =>
+    call(E.assets.handOver, { id }, { body: { to: input.userId ? [{ userId: input.userId }] : [], reason: input.reason || undefined } }),
+};
+
 /** One page I sent in, and what happened to it. */
 export interface MyProposal {
   id: string;

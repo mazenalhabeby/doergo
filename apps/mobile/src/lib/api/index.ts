@@ -97,8 +97,11 @@ export type { JoinRequest, OrgMember, Invitation, CreateInvitationInput, Colleag
 export { overtimeApi } from './overtime';
 export type { OvertimeRequest } from './overtime';
 export { locationsApi } from './locations';
-export { assetsApi, assetProposalsApi } from './assets';
+export { assetsApi, assetProposalsApi, assetRegisterApi, REGISTER_PAGE_SIZE } from './assets';
+export { portalOfficeApi } from './portal-office';
+export type { OfficePortal, OfficeRequest } from './portal-office';
 export type {
+  RegisterAsset, RegisterHolder, RegisterLogEntry,
   HeldAsset, MyExpense, SubmitExpenseInput, MyLogEntry, DueItem, CreateLogInput,
   ContractFields,
   MyProposal, RaiseProposalInput,

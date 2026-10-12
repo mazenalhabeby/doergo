@@ -367,3 +367,33 @@ export function ClientsGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphPr
     </Svg>
   );
 }
+
+/**
+ * THE REGISTER — a workspace's equipment, stacked: one crate behind another,
+ * the front one labelled. `MyEquipmentGlyph` is the case YOU carry (a
+ * handle); this is the store of everything the workspace has (no handle, two
+ * crates), so the two read apart side by side.
+ */
+export function RegisterGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Rect x={4.6} y={2.4} width={14.8} height={8.4} rx={2.4} fill={color} fillOpacity={0.34} />
+      <Rect x={1.6} y={8.6} width={20.8} height={13} rx={3.2} fill={color} fillOpacity={0.95} />
+      <Rect x={8.2} y={12.4} width={7.6} height={3.4} rx={1.2} fill={contrast} />
+    </Svg>
+  );
+}
+
+/**
+ * A CLIENT'S REQUEST — a speech bubble with a house punched out of it: what a
+ * resident said about where they live. The bubble's tail sets it apart from
+ * the square marks in the same row.
+ */
+export function ClientRequestsGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Path d="M4.6 2.2h14.8A3 3 0 0 1 22.4 5.2v10.4a3 3 0 0 1-3 3H10.2l-4.8 3.6v-3.6h-.8a3 3 0 0 1-3-3V5.2a3 3 0 0 1 3-3z" fill={color} fillOpacity={0.95} />
+      <Path d="M12 5.6l-4.6 4v5h3.2v-3h2.8v3h3.2v-5z" fill={contrast} />
+    </Svg>
+  );
+}
