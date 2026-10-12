@@ -12,6 +12,8 @@ them permissions through the BUILDER API, then proves:
   - clients: A's visible and editable, B's 404, create only in A, no delete,
   - assets: A's listed, B's 404,
   - hours: approve in A, 404 in B, delete refused without the switch,
+  - live map: refused without the switch; with it, A's people and A's job
+    routes only — B's person and B's job read as nobody / nothing,
   - the organization's own surfaces closed.
 
 Deletes what it made. Exit code = number of failures.
@@ -26,7 +28,8 @@ ORG = 'cmoyg9pzs0000sbtcdb6r9de7'
 A, B = 'e2e-ext-ws-a', 'e2e-ext-ws-b'
 EXT_ID, EXT_EMAIL = 'e2e-ext-user', 'e2e.external@client.example'
 SA_EXT = 'e2e-ext-sa'
-MODS = '["crm","assets","b2c_portal","time_tracking"]'
+MODS = '["crm","assets","b2c_portal","time_tracking","tracking"]'
+WA, WB = 'e2e-ext-worker-a', 'e2e-ext-worker-b'   # a field worker in A, one in B only
 fails = 0
 _last = [0.0]
 
@@ -78,6 +81,9 @@ def login(email):
 
 
 def cleanup():
+    sql(f"delete from location_history where \"userId\" in ('{WA}','{WB}')")
+    sql(f"delete from worker_last_locations where \"userId\" in ('{WA}','{WB}')")
+    sql("delete from tasks where id in ('e2e-ext-task-a','e2e-ext-task-b')")
     sql(f"delete from customers where \"spaceId\" in ('{A}','{B}') or name like 'E2E-EXT %'")
     sql(f"delete from assets where \"categoryId\" in ('e2e-ext-kind-a','e2e-ext-kind-b')")
     sql("delete from asset_categories where id in ('e2e-ext-kind-a','e2e-ext-kind-b')")
@@ -86,7 +92,7 @@ def cleanup():
     sql(f"delete from roles where \"personalAssignmentId\" in (select id from space_assignments where \"spaceId\" in ('{A}','{B}'))")
     sql(f"delete from space_assignments where \"spaceId\" in ('{A}','{B}')")
     sql(f"delete from refresh_tokens where \"userId\"='{EXT_ID}'")
-    sql(f"delete from users where id='{EXT_ID}'")
+    sql(f"delete from users where id in ('{EXT_ID}','{WA}','{WB}')")
     sql(f"delete from company_locations where id in ('{A}','{B}')")
 
 
@@ -107,6 +113,19 @@ for ws in (A, B):
     for n in (1, 2):
         sql(f"""insert into time_entries (id,"organizationId","userId","locationId",status,"clockInAt","clockOutAt","clockInLat","clockInLng","approvalStatus","flagReasons","totalMinutes","createdAt","updatedAt")
                 values ('e2e-ext-te-{ws[-1]}{n}','{ORG}','{LISA}','{ws}','CLOCKED_OUT',now()-interval '{n+1} days',now()-interval '{n+1} days'+interval '8 hours',48.3,14.29,'PENDING','{{LATE_ARRIVAL}}',480,now(),now())""")
+
+ADMIN_ID = sql("select id from users where email='client@example.com'")
+for w, ws in ((WA, A), (WB, B)):
+    sql(f"""insert into users (id,email,"passwordHash","firstName","lastName",role,"organizationId","onboardingCompleted","updatedAt")
+            select '{w}','{w}@e2e.example',"passwordHash",'E2E','Worker {ws[-1].upper()}','EMPLOYEE','{ORG}',true,now() from users where email='mike@example.com'""")
+    sql(f"""insert into space_assignments (id,"organizationId","userId","spaceId","isPrimary","allowSecondRole","effectiveFrom","createdAt","updatedAt")
+            values ('{w}-sa','{ORG}','{w}','{ws}',true,false,now()-interval '1 day',now(),now())""")
+    sql(f"""insert into worker_last_locations (id,"userId",lat,lng,"updatedAt") values ('{w}-loc','{w}',48.3,14.29,now())""")
+    t = f'e2e-ext-task-{ws[-1]}'
+    sql(f"""insert into tasks (id,title,"organizationId","createdById","assignedToId","spaceId",status,"routeStartedAt","updatedAt")
+            values ('{t}','E2E route {ws[-1]}','{ORG}','{ADMIN_ID}','{w}','{ws}','EN_ROUTE',now()-interval '10 minutes',now())""")
+    sql(f"""insert into location_history (id,"userId","taskId",lat,lng,timestamp) values ('{t}-p1','{w}','{t}',48.30,14.29,now()-interval '5 minutes'),
+            ('{t}-p2','{w}','{t}',48.31,14.29,now()-interval '1 minute')""")
 
 admin = login('client@example.com')
 s, r = call('POST', '/customers', admin, {'name': 'E2E-EXT client A', 'spaceId': A})
@@ -176,6 +195,29 @@ try:
     check('with the switch on, deletes an entry in A', s == 200 and sql("select count(*) from time_entries where id='e2e-ext-te-a2'") == '0', (s, r))
     s, r = call('DELETE', '/attendance/entries/e2e-ext-te-b2', ext)
     check('…but never in B', s in (403, 404) and sql("select count(*) from time_entries where id='e2e-ext-te-b2'") == '1', (s, r))
+
+    print('— live map')
+    s, r = call('GET', '/tracking/workers', ext)
+    check('no live map without the tracking switch', s == 403, s)
+    s, r = call('PUT', path, admin, {'permissions': {**perms, 'canDeleteAttendance': True, 'canViewTracking': True}})
+    ext = login(EXT_EMAIL)
+    s, r = call('GET', '/tracking/workers', ext)
+    wids = [w.get('id') for w in items(r)]
+    check('the live map shows A’s worker', s == 200 and WA in wids, (s, wids))
+    check('…and never B’s', WB not in wids, wids)
+    s, r = call('GET', f'/tracking/workers/{WB}', ext)
+    check('B’s worker by id reads as nobody', s == 200 and data(r) is None, (s, r))
+    s, r = call('GET', f'/tracking/workers/{WA}/history', ext)
+    check('A’s worker history = A’s job points', s == 200 and len(items(r)) == 2, (s, r))
+    s, r = call('GET', '/tracking/tasks/e2e-ext-task-a/route', ext)
+    check('A’s job route', s == 200 and isinstance(data(r), dict) and len(data(r).get('points') or []) == 2, (s, r))
+    s, r = call('GET', '/tracking/tasks/e2e-ext-task-b/route', ext)
+    check('B’s job route reads as nothing', s == 200 and data(r) is None, (s, r))
+    s, r = call('GET', f'/tracking/workers/{WB}/current-route', ext)
+    check('B’s drive in progress reads as nothing', s == 200 and data(r) is None, (s, r))
+    s, r = call('GET', '/tracking/workers', admin)
+    awids = [w.get('id') for w in items(r)]
+    check('the admin’s map is unchanged (both)', WA in awids and WB in awids, awids)
 
     print('— the organization’s own')
     for p in ['/calendar?from=2026-10-01&to=2026-10-31', '/invoices', '/billing/bill', '/organizations/members', '/analytics/catalog', '/legal-entities']:

@@ -40,6 +40,13 @@ interface TaskPermissions {
   canCancel: boolean
   /** ADMIN, or granted view-all: reaches every task in the org. */
   canViewAll: boolean
+  /**
+   * May read where the work went — the route map. `canViewTracking` org-wide
+   * or in THIS task's workspace (the live map given to one site's supervisor);
+   * the gateway narrows `/tracking/tasks/:id/route` to the same workspaces.
+   * A task in no workspace needs the org-wide grant.
+   */
+  canViewRoute: boolean
 }
 
 export function useTaskPermissions(task?: TaskPermissionSubject | null): TaskPermissions {
@@ -57,6 +64,10 @@ export function useTaskPermissions(task?: TaskPermissionSubject | null): TaskPer
       accessAllowsInSpace(access as never, key, spaceId)
 
     const canViewAll = isAdmin || hasPermission('canViewAllTasks')
+    const canViewRoute =
+      isAdmin ||
+      (user as Record<string, unknown> | null)?.canViewTracking === true ||
+      (!!spaceId && accessAllowsInSpace(access as never, "canViewTracking", spaceId))
     const editable = !task?.isFinished
 
     const canEdit = holds("canCreateTasks") && editable
@@ -72,6 +83,7 @@ export function useTaskPermissions(task?: TaskPermissionSubject | null): TaskPer
       // Cancelling is an edit of the most destructive kind — same permission.
       canCancel: canEdit,
       canViewAll,
+      canViewRoute,
     }
   }, [user, task?.spaceId, task?.isFinished])
 }

@@ -3,13 +3,34 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter, isTaskAssignee, runWithCronLock, } from '@hbcfield/shared';
+import { success, SERVICE_NAMES, haversineDistance, buildDateRangeFilter, isTaskAssignee, runWithCronLock, memberScopeFilter, } from '@hbcfield/shared';
 import { RouteMatchingService } from './route-matching.service';
 import { catchError, of } from 'rxjs';
 
-// Field-worker roles across the legacy → current rename. Must be valid DB Role
-// enum values (no 'WORKER' — that's not in the enum).
-const WORKER_ROLES = ['EMPLOYEE', 'TECHNICIAN'] as const;
+// Field-worker roles. Must be valid DB Role enum values: TECHNICIAN was retired
+// from the enum (2026-07-16) and asking for it made Prisma refuse the whole
+// query — GET /tracking/workers answered 500 for everybody, admins included.
+const WORKER_ROLES = ['EMPLOYEE'] as const;
+
+/**
+ * The live map held in a WORKSPACE (`canViewTracking` in a space role — an
+ * external supervisor running one site, a site manager) shows that workspace
+ * and nothing else. Three states, as everywhere (gateway `scopeFor`):
+ *
+ *   undefined  org-wide — unchanged
+ *   [ids]      people rostered there now; routes only of jobs in those spaces
+ *   []         granted nowhere — matches nothing
+ *
+ * ⚠️ A person is often in two workspaces. Their CURRENT position is a fact about
+ * the person, and they are in my crew — shown. Their ROUTES and HISTORY are a
+ * fact about the work: a drive to a job in another workspace is that
+ * workspace's business, so a scoped caller reads only points of jobs in scope.
+ * Out of scope answers exactly what "not found" answers (null / []), never an
+ * error that would confirm the person or the job exists.
+ */
+function taskInScope(scopeSpaceIds?: string[]): Record<string, unknown> {
+  return scopeSpaceIds === undefined ? {} : { spaceId: { in: scopeSpaceIds } };
+}
 
 @Injectable()
 export class LocationService {
@@ -364,13 +385,14 @@ export class LocationService {
     this.logger.log(`Late route points: task=${taskId} user=${userId} stored=${fresh.length} distance=${Math.round(distance)}m`);
   }
 
-  async getActiveWorkers(organizationId?: string, userIds?: string[]) {
+  async getActiveWorkers(organizationId?: string, userIds?: string[], scopeSpaceIds?: string[]) {
     const where: any = {
       user: {
         // Field workers across legacy + current role names (the live map must
         // show EMPLOYEE workers, not just the dropped legacy TECHNICIAN role).
         role: { in: [...WORKER_ROLES] },
         isActive: true,
+        ...memberScopeFilter(scopeSpaceIds),
       },
     };
 
@@ -412,6 +434,8 @@ export class LocationService {
       where: {
         assignedToId: { in: workerIds },
         status: { in: ['EN_ROUTE', 'IN_PROGRESS', 'ARRIVED'] },
+        // A job in another workspace is not named to a caller scoped to this one.
+        ...taskInScope(scopeSpaceIds),
       },
       select: {
         id: true,
@@ -451,12 +475,13 @@ export class LocationService {
     return success(data);
   }
 
-  async getWorkerLocation(workerId: string, organizationId?: string) {
+  async getWorkerLocation(workerId: string, organizationId?: string, scopeSpaceIds?: string[]) {
     const location = await this.prisma.workerLastLocation.findFirst({
       where: {
         userId: workerId,
-        // Scope by tenant so one org can't read another org's worker location.
-        ...(organizationId ? { user: { organizationId } } : {}),
+        // Scope by tenant so one org can't read another org's worker location;
+        // a workspace-scoped caller only their own workspaces' people.
+        user: { ...(organizationId ? { organizationId } : {}), ...memberScopeFilter(scopeSpaceIds) },
       },
       include: {
         user: {
@@ -488,11 +513,13 @@ export class LocationService {
     startDate?: string,
     endDate?: string,
     organizationId?: string,
+    scopeSpaceIds?: string[],
   ) {
-    // Tenant scope: bail out if the worker isn't in the requesting org.
-    if (organizationId) {
+    // Tenant scope: bail out if the worker isn't in the requesting org — or,
+    // for a workspace-scoped caller, isn't rostered in one of its workspaces.
+    if (organizationId || scopeSpaceIds !== undefined) {
       const worker = await this.prisma.user.findFirst({
-        where: { id: workerId, organizationId },
+        where: { id: workerId, ...(organizationId ? { organizationId } : {}), ...memberScopeFilter(scopeSpaceIds) },
         select: { id: true },
       });
       if (!worker) return success([]);
@@ -505,6 +532,9 @@ export class LocationService {
       dateFilter = { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
     }
     const where: any = { userId: workerId, timestamp: dateFilter };
+    // Scoped: only points of jobs in scope — not the drive to another
+    // workspace's job, and not untagged points between jobs.
+    if (scopeSpaceIds !== undefined) where.task = taskInScope(scopeSpaceIds);
 
     const history = await this.prisma.locationHistory.findMany({
       where,
@@ -523,10 +553,11 @@ export class LocationService {
     return success(history);
   }
 
-  async getTaskRoute(taskId: string, organizationId?: string) {
-    // Get task with route info — scoped to the requesting org (tenant isolation).
+  async getTaskRoute(taskId: string, organizationId?: string, scopeSpaceIds?: string[]) {
+    // Get task with route info — scoped to the requesting org (tenant isolation)
+    // and, for a workspace-scoped caller, to its workspaces.
     const task = await this.prisma.task.findFirst({
-      where: { id: taskId, ...(organizationId ? { organizationId } : {}) },
+      where: { id: taskId, ...(organizationId ? { organizationId } : {}), ...taskInScope(scopeSpaceIds) },
       select: {
         id: true,
         status: true,
@@ -581,13 +612,15 @@ export class LocationService {
     });
   }
 
-  async getWorkerCurrentRoute(workerId: string, organizationId?: string) {
-    // Find the worker's current EN_ROUTE task — scoped to the requesting org.
+  async getWorkerCurrentRoute(workerId: string, organizationId?: string, scopeSpaceIds?: string[]) {
+    // Find the worker's current EN_ROUTE task — scoped to the requesting org,
+    // and for a workspace-scoped caller to a job in its workspaces.
     const task = await this.prisma.task.findFirst({
       where: {
         assignedToId: workerId,
         status: 'EN_ROUTE',
         ...(organizationId ? { organizationId } : {}),
+        ...taskInScope(scopeSpaceIds),
       },
       select: {
         id: true,

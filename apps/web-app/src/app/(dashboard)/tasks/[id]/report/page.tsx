@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { InvoiceTopBar, InvoiceWorkbench } from "@/app/(dashboard)/invoices/_components/invoice-shell"
 import { CopySwitch, HeadSwitches, IssuerPicker, ReportRail } from "./_components/report-rail"
 import { ReportSheet } from "./_components/report-sheet"
+import { useTaskPermissions } from "@/hooks/use-task-permissions"
 import { JobReportPageSkeleton, ReportSheetSkeleton } from "./_components/report-skeleton"
 import {
   availableHeadToggles, availableToggles, loadClientInclude, loadHeadOff, loadIssuerChoice, loadOffToggles, normalizeInclude,
@@ -37,9 +38,7 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
   const { t, i18n } = useTranslation()
   const tt = t as unknown as Translate
   const router = useRouter()
-  const { user, hasPermission } = useAuth()
-  const isAdmin = user?.role === "ADMIN"
-  const canViewTracking = isAdmin || user?.canViewTracking === true || hasPermission("canViewAllTasks")
+  const { user } = useAuth()
 
   const [copy, setCopy] = useState<TaskReportCopy>("office")
   const [include, setInclude] = useState<ClientCopyOption[]>([])
@@ -66,6 +65,9 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
 
   // The workspace is known once the first copy arrives; its remembered choices load then.
   const spaceId = report ? (report.header.workspace?.id ?? null) : undefined
+  // The route may be added to the client copy by whoever may read it: org-wide
+  // tracking, or tracking in THIS job's workspace (the gateway's rule).
+  const { canViewRoute: canViewTracking } = useTaskPermissions(spaceId === undefined ? null : { spaceId })
   useEffect(() => {
     if (spaceId === undefined || spaceId === prefsFor) return
     setOff(loadOffToggles(spaceId))

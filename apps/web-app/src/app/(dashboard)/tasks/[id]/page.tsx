@@ -116,7 +116,6 @@ export default function TaskDetailPage({
   // Org-level, not task-scoped: reaching every task in the org is a flat grant.
   const canViewAllTasks = isAdmin || hasPermission('canViewAllTasks')
   // The route map shows where a person physically went — its own capability now.
-  const canViewTracking = isAdmin || user?.canViewTracking === true || hasPermission('canViewAllTasks')
   /*
     May this viewer add work under the task — subtasks, and the dependencies
     that order them?
@@ -151,11 +150,11 @@ export default function TaskDetailPage({
     The route is asked only where it can exist and be read: the task's
     workspace runs Tracking (resolved — not the org fallback shown while the
     workspace's own list loads), and the reader holds what the gateway asks,
-    `@RequirePermission('canViewTracking')` as the flat flag (admins pass).
+    `canViewTracking` org-wide or in THIS task's workspace (admins pass).
     It was asked of every canViewAllTasks holder on every task — a 403 for a
     dispatcher without tracking, and a wasted request wherever the module is off.
   */
-  const mayReadRoute = isAdmin || user?.canViewTracking === true
+  const { canViewRoute: mayReadRoute } = useTaskPermissions(task ? { spaceId: task.spaceId } : null)
   const { data: routeData, isLoading: loadingRoute } = useQuery({
     queryKey: keys.tasks.route(id),
     queryFn: () => trackingApi.getTaskRoute(id),
@@ -632,7 +631,7 @@ export default function TaskDetailPage({
                 appear, because this gate removed the section before the
                 component could render it. Kept mounted while loading so it
                 doesn't flash in and out. */}
-            {hasModule("tracking") && canViewTracking && mayReadRoute &&
+            {hasModule("tracking") && mayReadRoute &&
               (loadingRoute || (routeData?.points?.length ?? 0) > 0 || task.status === "EN_ROUTE") && (
               <div data-tour="task-route-tracking">
               <CollapsibleSection id="route-tracking" icon={MapPin} title={t("tasks.sections.routeTracking")}>

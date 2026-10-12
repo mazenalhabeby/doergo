@@ -2,6 +2,16 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LocationService } from './location.service';
 
+/**
+ * The gateway sends `scopeSpaceIds` only for a workspace-scoped caller (an
+ * array, possibly empty = nowhere); absent or null = org-wide. A JSON hop turns
+ * undefined into a missing key, so anything that is not an array is org-wide —
+ * and an array is passed through untouched, `[]` included.
+ */
+function scopeOf(data: { scopeSpaceIds?: unknown }): string[] | undefined {
+  return Array.isArray(data.scopeSpaceIds) ? (data.scopeSpaceIds as string[]) : undefined;
+}
+
 @Controller()
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
@@ -28,8 +38,8 @@ export class LocationController {
   }
 
   @MessagePattern({ cmd: 'get_active_workers' })
-  async getActiveWorkers(@Payload() data: { organizationId?: string }) {
-    return this.locationService.getActiveWorkers(data.organizationId);
+  async getActiveWorkers(@Payload() data: { organizationId?: string; scopeSpaceIds?: string[] }) {
+    return this.locationService.getActiveWorkers(data.organizationId, undefined, scopeOf(data));
   }
 
   // Cross-org shared space: live locations of the owner-org workers assigned to
@@ -41,24 +51,24 @@ export class LocationController {
   }
 
   @MessagePattern({ cmd: 'get_worker_location' })
-  async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string }) {
-    return this.locationService.getWorkerLocation(data.workerId, data.organizationId);
+  async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+    return this.locationService.getWorkerLocation(data.workerId, data.organizationId, scopeOf(data));
   }
 
   @MessagePattern({ cmd: 'get_worker_history' })
   async getWorkerHistory(
-    @Payload() data: { workerId: string; startDate?: string; endDate?: string; organizationId?: string },
+    @Payload() data: { workerId: string; startDate?: string; endDate?: string; organizationId?: string; scopeSpaceIds?: string[] },
   ) {
-    return this.locationService.getWorkerHistory(data.workerId, data.startDate, data.endDate, data.organizationId);
+    return this.locationService.getWorkerHistory(data.workerId, data.startDate, data.endDate, data.organizationId, scopeOf(data));
   }
 
   @MessagePattern({ cmd: 'get_task_route' })
-  async getTaskRoute(@Payload() data: { taskId: string; organizationId?: string }) {
-    return this.locationService.getTaskRoute(data.taskId, data.organizationId);
+  async getTaskRoute(@Payload() data: { taskId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+    return this.locationService.getTaskRoute(data.taskId, data.organizationId, scopeOf(data));
   }
 
   @MessagePattern({ cmd: 'get_worker_current_route' })
-  async getWorkerCurrentRoute(@Payload() data: { workerId: string; organizationId?: string }) {
-    return this.locationService.getWorkerCurrentRoute(data.workerId, data.organizationId);
+  async getWorkerCurrentRoute(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+    return this.locationService.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
   }
 }

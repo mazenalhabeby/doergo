@@ -6,7 +6,17 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { Role, SERVICE_NAMES } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
+import { scopeFor } from '../../common/permission-scope';
+
+/**
+ * The live map held in a workspace shows that workspace (tracking-service
+ * narrows; see `taskInScope` there). null = org-wide, sent as absent.
+ */
+function trackingScope(user: any): { scopeSpaceIds?: string[] } {
+  const scope = scopeFor(user, 'canViewTracking');
+  return scope === null ? {} : { scopeSpaceIds: scope };
+}
 import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
 
 @ApiTags('tracking')
@@ -97,19 +107,20 @@ export class TrackingController {
   }
 
   @Get('workers')
-  @RequirePermission('canViewTracking')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: 'Get all active employee locations' })
   async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_active_workers' }, {
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
+        ...trackingScope(req.user),
       }),
     );
   }
 
   @Get('workers/:id')
-  @RequirePermission('canViewTracking')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: 'Get employee location by ID' })
   async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
@@ -117,12 +128,13 @@ export class TrackingController {
         workerId: id,
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
+        ...trackingScope(req.user),
       }),
     );
   }
 
   @Get('workers/:id/history')
-  @RequirePermission('canViewTracking')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: 'Get employee location history' })
   async getWorkerHistory(
     @Param('id') id: string,
@@ -135,6 +147,7 @@ export class TrackingController {
         workerId: id,
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
+        ...trackingScope(req.user),
         // Forwarded to the service; when both are omitted it defaults to last 24h (M2).
         startDate,
         endDate,
@@ -143,25 +156,27 @@ export class TrackingController {
   }
 
   @Get('workers/:id/current-route')
-  @RequirePermission('canViewTracking')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: 'Get employee current EN_ROUTE journey' })
   async getWorkerCurrentRoute(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_worker_current_route' }, {
         workerId: id,
         organizationId: req.user.organizationId,
+        ...trackingScope(req.user),
       }),
     );
   }
 
   @Get('tasks/:taskId/route')
-  @RequirePermission('canViewTracking')
+  @RequirePermissionInSpace('canViewTracking')
   @ApiOperation({ summary: 'Get full route for a task' })
   async getTaskRoute(@Param('taskId') taskId: string, @Request() req: any) {
     return firstValueFrom(
       this.trackingClient.send({ cmd: 'get_task_route' }, {
         taskId,
         organizationId: req.user.organizationId,
+        ...trackingScope(req.user),
       }),
     );
   }
