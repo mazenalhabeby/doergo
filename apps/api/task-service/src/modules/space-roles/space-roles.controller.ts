@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { SpaceRolesService } from './space-roles.service';
+import { SpaceRolesService, type SpaceMemberAuthority } from './space-roles.service';
 import type { PermissionSet } from '@hbcfield/shared';
 
 @Controller()
@@ -78,14 +78,27 @@ export class SpaceRolesController {
       spaceRoleId?: string | null;
       createdById?: string;
       requesterPerms?: PermissionSet | null;
+      authority?: SpaceMemberAuthority;
+      outrankCheck?: boolean;
     },
   ) {
     return this.service.assignMember(data);
   }
 
   @MessagePattern({ cmd: 'remove_space_member' })
-  removeMember(@Payload() data: { organizationId: string; spaceId: string; memberId: string }) {
+  removeMember(@Payload() data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null }) {
     return this.service.removeMember(data);
+  }
+
+  // ── One person's permissions here (the builder) ──
+  @MessagePattern({ cmd: 'get_space_member_permissions' })
+  getMemberPermissions(@Payload() data: { organizationId: string; spaceId: string; assignmentId: string; requesterPerms?: PermissionSet | null }) {
+    return this.service.getMemberPermissions(data);
+  }
+
+  @MessagePattern({ cmd: 'set_space_member_permissions' })
+  setMemberPermissions(@Payload() data: any) {
+    return this.service.setMemberPermissions(data);
   }
 
   @MessagePattern({ cmd: 'list_space_roles_in_space' })

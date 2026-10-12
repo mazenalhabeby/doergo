@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { documentKey } from '@hbcfield/shared/storage';
+import { SHARED_ROLE_WHERE } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import {
   type DocumentActor,
@@ -69,6 +70,7 @@ export class DocumentControlService {
           organizationId: data.actor.organizationId,
           isActive: true,
           scope: { in: ['ORG', 'BOTH'] },
+          ...SHARED_ROLE_WHERE,
         },
         select: { id: true, name: true },
       });

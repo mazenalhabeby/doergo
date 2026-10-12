@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsArray,
   IsBoolean,
+  IsObject,
   ValidateNested,
   Min,
   Max,
@@ -176,6 +177,17 @@ export class CreateInvitationDto {
   @IsBoolean()
   @IsOptional()
   isExternal?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'EXTERNAL invites only, instead of memberRoleId: what they may do in `spaceId` (permission keys → true), built in the permission builder. ' +
+      'Workspace keys inside the external allow-list and within your own permissions there; applied on accept as their personal role (or the shared role it exactly matches).',
+    type: 'object',
+    additionalProperties: { type: 'boolean' },
+  })
+  @IsOptional()
+  @IsObject()
+  spacePermissions?: Record<string, boolean>;
 
   @ApiPropertyOptional({
     type: AccessProfileDto,

@@ -201,6 +201,8 @@ export * from './access/permission-levels';
 export * from './access/org-flags';
 // One person's permissions in one workspace, as a role nobody else may hold (access/personal-role.ts)
 export * from './access/personal-role';
+// Put a shared role or a set of keys on one workspace assignment — the builder's and the invitation's one writer (access/assignment-permissions.ts)
+export * from './access/assignment-permissions';
 // A member's org-wide access from their row, resolved like the session (access/org-access.ts).
 export * from './access/org-access';
 // What a member may upload, and how big — one definition (constants/upload-rules.ts).

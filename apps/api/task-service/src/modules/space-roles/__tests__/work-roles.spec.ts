@@ -29,6 +29,7 @@ describe('SpaceRolesService — work roles', () => {
     companyLocation: { findFirst: jest.fn() },
     user: { findFirst: jest.fn() },
     accessRole: {
+      deleteMany: jest.fn(),
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),

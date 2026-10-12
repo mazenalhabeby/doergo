@@ -7,6 +7,7 @@ import {
   Role,
   filterExternalModules,
   normalizeEmail,
+  SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import {
   Injectable,
@@ -502,7 +503,8 @@ export class MemberAdminService {
           );
         }
         const role = await this.prisma.accessRole.findFirst({
-          where: { id: roleId, organizationId, isActive: true, scope: { in: ['ORG', 'BOTH'] } },
+          // Never a personal role — those are SPACE-scoped anyway, said out loud so a scope change cannot open it.
+          where: { id: roleId, organizationId, isActive: true, scope: { in: ['ORG', 'BOTH'] }, ...SHARED_ROLE_WHERE },
           select: { id: true },
         });
         if (!role) throw new BadRequestException('Invalid role');

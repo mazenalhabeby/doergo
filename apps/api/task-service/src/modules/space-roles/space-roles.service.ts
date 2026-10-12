@@ -30,6 +30,12 @@ import {
   type HoursBasis,
   COST_ON_PROFILE_MESSAGE,
   toISODateString,
+  SHARED_ROLE_WHERE,
+  roleUsableOnAssignment,
+  setAssignmentPermissions,
+  readAssignmentPermissions,
+  AssignmentPermissionsError,
+  type AssignmentPermissionsChoice,
 } from '@hbcfield/shared';
 
 // Permission keys that make sense on a SPACE role.
@@ -53,7 +59,38 @@ const userSelect = {
     avatarUrl: true, position: true, isExternal: true,
   },
 };
-const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true } };
+// `personalAssignmentId` set = this person's own permissions here (the builder), not a role from the list.
+const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true, personalAssignmentId: true } };
+
+/**
+ * What the caller may change about people in THIS workspace, decided at the
+ * gateway from the route's space (`mayAddSpaceMembers`, `mayGrantSpaceRoles`,
+ * `mayManageSpaceMembers`) and enforced here, where the role's kind is known.
+ * Absent = all three (internal callers and tests that predate the split).
+ */
+export interface SpaceMemberAuthority {
+  /** Put a person into the workspace, or take them off it. */
+  addMembers: boolean;
+  /** Choose the MANAGEMENT role somebody holds here (the ceiling still applies). */
+  grantRoles: boolean;
+  /** Trades, billing terms and routing — `canManageUsers` here; never an external member. */
+  manageTerms: boolean;
+}
+
+function authorityRefusal(what: string): ForbiddenException {
+  return new ForbiddenException({ message: `You cannot ${what} in this workspace`, code: 'SPACE_MEMBER_NOT_ALLOWED' });
+}
+
+/** The shared writer's refusal as this service's HTTP exception — status, message, code, params intact. */
+function toHttp(e: unknown): never {
+  if (e instanceof AssignmentPermissionsError) {
+    const body = e.toBody();
+    if (e.status === 404) throw new NotFoundException(body);
+    if (e.status === 403) throw new ForbiddenException(body);
+    throw new BadRequestException(body);
+  }
+  throw e;
+}
 
 /** A refusal the screens can translate, with the rule's own sentence as the fallback. */
 function comboRefusal(code: keyof typeof ROLE_COMBO_MESSAGES): BadRequestException {
@@ -103,7 +140,8 @@ export class SpaceRolesService {
   async listRoles(data: { organizationId: string }) {
     await this.ensureBuiltInRoles(data.organizationId);
     const roles = await this.prisma.accessRole.findMany({
-      where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] } },
+      // ⚠️ Never a personal role: one person's permissions in one workspace are not a role anybody may pick.
+      where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
       orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
       include: { _count: { select: { spaceAssignments: true, workAssignments: true } } },
     });
@@ -127,7 +165,7 @@ export class SpaceRolesService {
     );
     const [roles, assignments] = await Promise.all([
       this.prisma.accessRole.findMany({
-        where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] } },
+        where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
         select: {
           id: true, name: true, slug: true, color: true, description: true, permissions: true,
@@ -573,9 +611,28 @@ export class SpaceRolesService {
      * holds every permission and could never trip it.
      */
     requesterPerms?: PermissionSet | null;
+    /** What the caller may change here (see SpaceMemberAuthority). Absent = everything. */
+    authority?: SpaceMemberAuthority;
+    /**
+     * The caller acts through a grant in THIS workspace only: they may not
+     * re-shape somebody who already holds more here than they do.
+     */
+    outrankCheck?: boolean;
   }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { activeOnly: true });
     const target = await assertUserInOrg(this.prisma, data.userId, data.organizationId);
+    const may: SpaceMemberAuthority = data.authority ?? { addMembers: true, grantRoles: true, manageTerms: true };
+    const existing = await this.prisma.spaceAssignment.findUnique({
+      where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
+      select: { id: true, roleId: true, workRoleId: true, allowSecondRole: true, role: { select: { permissions: true } } },
+    });
+    /*
+      Adding somebody to the workspace and choosing what they may do there are
+      two different trusts now (canAddSpaceMembers / canGrantSpaceRoles), so a
+      person may hold one without the other. Putting a NEW person in needs the
+      first; whatever role comes with them needs the second as well.
+    */
+    if (!existing && !may.addMembers) throw authorityRefusal('add people');
     /*
       ONE role picker, two columns: a trade lands in `workRoleId` (grants
       nothing), anything else in `roleId` (permissions). Re-assigning a member
@@ -583,13 +640,12 @@ export class SpaceRolesService {
       to the two-role rule.
     */
     if (data.spaceRoleId) {
-      const picked = await this.getOwnedRole(data.organizationId, data.spaceRoleId);
+      // Only a shared role, or this very assignment's own personal role — never somebody else's.
+      const picked = await this.getOwnedRole(data.organizationId, data.spaceRoleId, { assignmentId: existing?.id ?? null });
       if (picked.kind === 'WORK') {
+        // A trade carries the billing terms: canManageUsers here, never an external member.
+        if (!may.manageTerms) throw authorityRefusal('give people a trade');
         if (target.isExternal) throw comboRefusal('EXTERNAL_NO_WORK_ROLE');
-        const existing = await this.prisma.spaceAssignment.findUnique({
-          where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
-          select: { roleId: true, allowSecondRole: true },
-        });
         if (existing?.roleId && !existing.allowSecondRole) throw comboRefusal('SECOND_ROLE_NOT_ALLOWED');
         const member = await this.prisma.spaceAssignment.upsert({
           where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
@@ -610,8 +666,14 @@ export class SpaceRolesService {
         );
       }
     }
+    const changesRole = (data.spaceRoleId ?? null) !== (existing?.roleId ?? null);
+    if (changesRole && (data.spaceRoleId || existing?.roleId) && !may.grantRoles) throw authorityRefusal('give roles');
+    if (changesRole && data.outrankCheck && data.requesterPerms && existing?.role
+      && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(existing.role.permissions))) {
+      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    }
     if (data.spaceRoleId) {
-      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId);
+      const role = await this.getOwnedRole(data.organizationId, data.spaceRoleId, { assignmentId: existing?.id ?? null });
       /*
         An external member may hold only what the allow-list permits.
 
@@ -648,15 +710,9 @@ export class SpaceRolesService {
       if (data.requesterPerms && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(role.permissions))) {
         throw new ForbiddenException('You cannot grant permissions beyond your own');
       }
-    }
-
-    if (data.spaceRoleId) {
-      const existing = await this.prisma.spaceAssignment.findUnique({
-        where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
-        select: { workRoleId: true, allowSecondRole: true },
-      });
       if (existing?.workRoleId && !existing.allowSecondRole) throw comboRefusal('SECOND_ROLE_NOT_ALLOWED');
     }
+
     const member = await this.prisma.spaceAssignment.upsert({
       where: { userId_spaceId: { userId: data.userId, spaceId: data.spaceId } },
       create: {
@@ -669,6 +725,7 @@ export class SpaceRolesService {
       update: { roleId: data.spaceRoleId ?? null },
       include: { user: userSelect, role: roleSelect, workRole: roleSelect },
     });
+    await this.dropStalePersonalRole(member.id, member.roleId ?? null);
     return success(
       { id: member.id, userId: member.userId, user: member.user, spaceRole: member.role, workRole: member.workRole },
       'Member assigned',
@@ -695,12 +752,27 @@ export class SpaceRolesService {
     billBy?: BillByValue | null;
     hoursBasis?: HoursBasis | null;
     requesterPerms?: PermissionSet | null;
+    /** What the caller may change here (see SpaceMemberAuthority). Absent = everything. */
+    authority?: SpaceMemberAuthority;
+    /** The caller acts through a grant in this workspace only (see assignMember). */
+    outrankCheck?: boolean;
   }) {
     const member = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
       include: { user: { select: { isExternal: true } }, role: true, workRole: true },
     });
     if (!member) throw new NotFoundException('Space member not found');
+    const may: SpaceMemberAuthority = data.authority ?? { addMembers: true, grantRoles: true, manageTerms: true };
+    // The trade, the two-role switch and the billing terms are the space's people management (canManageUsers here).
+    const touchesTerms = [data.workRoleId, data.allowSecondRole, data.billBy, data.hoursBasis].some((v) => v !== undefined);
+    if (touchesTerms && !may.manageTerms) throw authorityRefusal("change people's trade or billing");
+    if (data.managementRoleId !== undefined && (data.managementRoleId ?? null) !== (member.roleId ?? null)) {
+      if (!may.grantRoles) throw authorityRefusal('give roles');
+      if (data.outrankCheck && data.requesterPerms && member.role
+        && permissionsExceed(data.requesterPerms, permissionsFromOrgRole(member.role.permissions))) {
+        throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+      }
+    }
 
     const workRole =
       data.workRoleId === undefined
@@ -713,7 +785,7 @@ export class SpaceRolesService {
         ? member.role
         : data.managementRoleId === null
           ? null
-          : await this.getOwnedRole(data.organizationId, data.managementRoleId);
+          : await this.getOwnedRole(data.organizationId, data.managementRoleId, { assignmentId: member.id });
     const allowSecondRole = data.allowSecondRole ?? member.allowSecondRole;
 
     const problem = roleComboProblem({
@@ -766,6 +838,7 @@ export class SpaceRolesService {
     });
     // A trade somebody holds here is a role this workspace uses.
     if (data.workRoleId && workRole) await this.useWorkRoleIn(this.prisma, data.spaceId, workRole.id);
+    if (data.managementRoleId !== undefined) await this.dropStalePersonalRole(updated.id, updated.roleId ?? null);
     return success(
       {
         id: updated.id,
@@ -783,13 +856,76 @@ export class SpaceRolesService {
     );
   }
 
-  async removeMember(data: { organizationId: string; spaceId: string; memberId: string }) {
+  async removeMember(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    /** Set only for a caller acting through a grant in THIS workspace (see assignMember). */
+    outrankPerms?: PermissionSet | null;
+  }) {
     const member = await this.prisma.spaceAssignment.findFirst({
       where: { id: data.memberId, organizationId: data.organizationId, spaceId: data.spaceId },
+      include: { role: { select: { permissions: true } } },
     });
     if (!member) throw new NotFoundException('Space member not found');
+    // Taking somebody off a workspace who holds more there than you is not yours to do.
+    if (data.outrankPerms && member.role && permissionsExceed(data.outrankPerms, permissionsFromOrgRole(member.role.permissions))) {
+      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    }
     await this.prisma.spaceAssignment.delete({ where: { id: member.id } });
     return success({ id: member.id }, 'Member removed');
+  }
+
+  // ── Per-person permissions (the builder) ────────────────────────────────────
+
+  /** What one person may do here, as the builder shows it (shared `readAssignmentPermissions`). */
+  async getMemberPermissions(data: {
+    organizationId: string;
+    spaceId: string;
+    assignmentId: string;
+    /** The caller's ceiling here, for the roles they may pick; null = admin. */
+    requesterPerms?: PermissionSet | null;
+  }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+    const view = await readAssignmentPermissions(this.prisma as any, {
+      organizationId: data.organizationId,
+      assignmentId: data.assignmentId,
+      spaceId: data.spaceId,
+      ceiling: data.requesterPerms ?? null,
+    }).catch(toHttp);
+    return success(view);
+  }
+
+  /**
+   * Save what one person may do here: a shared role, or a set of keys that
+   * becomes their personal role (or the shared role it exactly matches).
+   * Every rule is the shared writer's (`setAssignmentPermissions`) — the
+   * invitation accept path runs the same one.
+   */
+  async setMemberPermissions(data: {
+    organizationId: string;
+    spaceId: string;
+    assignmentId: string;
+    choice: AssignmentPermissionsChoice;
+    requesterPerms?: PermissionSet | null;
+    requesterId?: string;
+    outrankCheck?: boolean;
+  }) {
+    await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
+    const ceiling = data.requesterPerms ?? null;
+    await this.prisma.$transaction((tx) =>
+      setAssignmentPermissions(tx as any, {
+        organizationId: data.organizationId,
+        spaceId: data.spaceId,
+        assignmentId: data.assignmentId,
+        choice: data.choice,
+        ceiling,
+        actorId: data.requesterId ?? null,
+        outrankCheck: data.outrankCheck !== false,
+      }),
+    ).catch(toHttp);
+    // Answer with what is now true, read back — the screen re-renders from it.
+    return this.getMemberPermissions({ ...data, requesterPerms: ceiling });
   }
 
   /** Set the per-member, per-space routing override. Whitelists ids to arrays. */
@@ -976,7 +1112,7 @@ export class SpaceRolesService {
     const userIds = [...new Set(ids.userIds)];
     const [roles, users] = await Promise.all([
       roleIds.length
-        ? this.prisma.accessRole.count({ where: { id: { in: roleIds }, organizationId } })
+        ? this.prisma.accessRole.count({ where: { id: { in: roleIds }, organizationId, ...SHARED_ROLE_WHERE } })
         : Promise.resolve(0),
       userIds.length
         ? this.prisma.user.count({ where: { id: { in: userIds }, organizationId } })
@@ -1003,8 +1139,8 @@ export class SpaceRolesService {
       });
     }
     const stored = await this.prisma.accessRole.findMany({
-      where: { organizationId, isSystem: true, isCustomized: false, slug: { in: BUILTIN_ROLES.map((r) => r.slug) } },
-      select: { id: true, slug: true, isSystem: true, isCustomized: true, permissions: true },
+      where: { organizationId, isSystem: true, isCustomized: false, slug: { in: BUILTIN_ROLES.map((r) => r.slug) }, ...SHARED_ROLE_WHERE },
+      select: { id: true, slug: true, isSystem: true, isCustomized: true, permissions: true, personalAssignmentId: true },
     });
     for (const role of stored) {
       const next = builtInRoleCatchUp(role);
@@ -1029,6 +1165,8 @@ export class SpaceRolesService {
       where: {
         organizationId,
         scope: { in: ['SPACE', 'BOTH'] },
+        // A personal role's name ("Ann Lee · Site A") is nobody's to collide with.
+        ...SHARED_ROLE_WHERE,
         name: { equals: name.trim(), mode: 'insensitive' },
         ...(excludeId ? { id: { not: excludeId } } : {}),
       },
@@ -1043,12 +1181,31 @@ export class SpaceRolesService {
     }
   }
 
-  private async getOwnedRole(organizationId: string, roleId: string) {
+  /**
+   * A space role of this organization. ⚠️ Never another person's PERSONAL role:
+   * with no assignment named, any personal role reads as not found (editing,
+   * merging, deleting, pricing them is the builder's job alone); with one named,
+   * only that assignment's own personal role is usable on it
+   * (`roleUsableOnAssignment`). Otherwise somebody's private grant becomes a
+   * role anyone can hand out by id.
+   */
+  private async getOwnedRole(organizationId: string, roleId: string, opts?: { assignmentId?: string | null }) {
     const role = await this.prisma.accessRole.findFirst({
       where: { id: roleId, organizationId, scope: { in: ['SPACE', 'BOTH'] } },
     });
-    if (!role) throw new NotFoundException('Space role not found');
+    if (!role || !roleUsableOnAssignment(role, opts?.assignmentId ?? null)) throw new NotFoundException('Space role not found');
     return role;
+  }
+
+  /**
+   * An assignment that no longer holds its personal role must not keep one: a
+   * stale personal role would come back the moment the builder reads "is there
+   * one already?". Deleted in the same breath as the change that orphaned it.
+   */
+  private async dropStalePersonalRole(assignmentId: string, keepRoleId: string | null) {
+    await this.prisma.accessRole.deleteMany({
+      where: { personalAssignmentId: assignmentId, ...(keepRoleId ? { id: { not: keepRoleId } } : {}) },
+    });
   }
 
   /**

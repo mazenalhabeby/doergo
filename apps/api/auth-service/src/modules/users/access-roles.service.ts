@@ -9,6 +9,7 @@ import {
   builtInRoleCreateData,
   whitelistPermissions,
   permissionsForKind,
+  SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import {
   Injectable,
@@ -72,6 +73,7 @@ export class AccessRolesService {
         WHERE "slug" = ${p.slug}
           AND "isSystem" = true
           AND "isCustomized" = false
+          AND "personalAssignmentId" IS NULL
           AND NOT ("permissions"::jsonb @> ${def}::jsonb)
           ${organizationId ? Prisma.sql`AND "organizationId" = ${organizationId}` : Prisma.empty}`);
     }
@@ -97,7 +99,8 @@ export class AccessRolesService {
     const scopes = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
     const [roles, holders] = await Promise.all([
       this.prisma.accessRole.findMany({
-        where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any } },
+        // ⚠️ Never a personal role (one person's permissions in one workspace): it is nobody's to pick.
+        where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any }, ...SHARED_ROLE_WHERE },
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
         select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
       }),
@@ -223,8 +226,9 @@ export class AccessRolesService {
     color?: string;
     permissions?: unknown;
   }) {
+    // A personal role is edited only through the workspace permission builder — here it does not exist.
     const role = await this.prisma.accessRole.findFirst({
-      where: { id: data.roleId, organizationId: data.organizationId },
+      where: { id: data.roleId, organizationId: data.organizationId, ...SHARED_ROLE_WHERE },
     });
     if (!role) throw new NotFoundException('Role not found');
 
@@ -355,7 +359,7 @@ export class AccessRolesService {
     const refuse = (statusCode: number, message: string) => ({ success: false as const, statusCode, message });
 
     const role = await this.prisma.accessRole.findFirst({
-      where: { id: data.roleId, organizationId: data.organizationId },
+      where: { id: data.roleId, organizationId: data.organizationId, ...SHARED_ROLE_WHERE },
     });
     if (!role) return refuse(HttpStatus.NOT_FOUND, 'Role not found');
     if (role.isSystem) return refuse(HttpStatus.BAD_REQUEST, 'Built-in roles cannot be deleted');

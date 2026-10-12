@@ -20,10 +20,45 @@ export function mayManageSpaceMembers(user: unknown, spaceId: string): boolean {
 }
 
 /**
+ * May this caller add people to THIS workspace, or take them off it?
+ *
+ * Its own key (`canAddSpaceMembers`) rather than `canManageUsers`, because in a
+ * workspace `canManageUsers` also sets what each person BILLS at there — a
+ * price agreed with the client, which an external member running the site must
+ * never touch. Org-wide it is the bridged flat field (whoever managed members
+ * before the split still does) or the org-wide workspace permission.
+ */
+export function mayAddSpaceMembers(user: unknown, spaceId: string): boolean {
+  return holdsHereOrOrgWide(user, 'canAddSpaceMembers', spaceId);
+}
+
+/**
+ * May this caller choose the role people hold in THIS workspace? The grant
+ * ceiling still applies to WHICH role — this only answers whether they may
+ * give roles here at all.
+ */
+export function mayGrantSpaceRoles(user: unknown, spaceId: string): boolean {
+  return holdsHereOrOrgWide(user, 'canGrantSpaceRoles', spaceId);
+}
+
+function holdsHereOrOrgWide(user: unknown, key: AccessPermissionKey, spaceId: string): boolean {
+  const u = user as (Record<string, unknown> & { access?: ResolvedAccess }) | null | undefined;
+  if (!u) return false;
+  if (isAdmin(u as any)) return true;
+  // Flat fields are org-wide by construction (orgFlagFields), bridges applied.
+  if (u[key] === true || u.canManageWorkspaces === true) return true;
+  return accessAllows(u.access, key, spaceId) || accessAllows(u.access, 'canManageWorkspaces');
+}
+
+/**
  * The permissions that make a workspace's roster readable in full: following
  * its work, assigning it, supervising its attendance, managing its people.
  */
-const ROSTER_VIEW_KEYS: AccessPermissionKey[] = ['canViewAllTasks', 'canAssignTasks', 'canViewSpaceAttendance', 'canManageUsers'];
+const ROSTER_VIEW_KEYS: AccessPermissionKey[] = [
+  'canViewAllTasks', 'canAssignTasks', 'canViewSpaceAttendance', 'canManageUsers',
+  // Whoever decides who is in a workspace, or what they may do there, must be able to see who is.
+  'canAddSpaceMembers', 'canGrantSpaceRoles',
+];
 
 /**
  * May this caller read THIS workspace's roster regardless of their own

@@ -50,3 +50,38 @@ export async function loadOrgPermissionCeiling(
   const perms = memberAccessOf(row).org;
   return { role: row.role, isAdmin: row.role === Role.ADMIN, perms };
 }
+
+/**
+ * What a member may hand out IN ONE WORKSPACE: their org-wide ceiling plus
+ * whatever their own assignment there grants — the same union the gateway's
+ * `actorPermsForSpace` reads off a session, loaded here for a door that has no
+ * session in hand (an invitation, checked when it is made and again when it is
+ * accepted, possibly weeks later and after the inviter's access changed).
+ *
+ * Only an assignment in force now counts, the window sign-in uses.
+ */
+export async function loadSpacePermissionCeiling(
+  prisma: OrgCeilingPrisma,
+  userId: string,
+  organizationId: string,
+  spaceId: string,
+): Promise<OrgPermissionCeiling | null> {
+  const now = new Date();
+  const row = (await prisma.user.findFirst({
+    where: { id: userId, organizationId },
+    select: {
+      ...ORG_ACCESS_SELECT,
+      spaceAssignments: {
+        where: {
+          spaceId,
+          effectiveFrom: { lte: now },
+          OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }],
+        },
+        select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+      },
+    },
+  })) as OrgAccessRow | null;
+  if (!row) return null;
+  const access = memberAccessOf(row);
+  return { role: row.role, isAdmin: row.role === Role.ADMIN, perms: { ...access.org, ...(access.perSpace[spaceId] ?? {}) } };
+}

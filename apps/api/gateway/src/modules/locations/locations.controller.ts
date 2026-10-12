@@ -22,6 +22,7 @@ import {
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
 import { getSpaceScope, spacesGranting, isAdmin, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms, stripWorkspaceTerms, type SpaceScope } from '@hbcfield/shared';
 import { RebillService } from '../../common/billing/rebill.service';
+import { outrankCeiling, spaceMemberAuthority } from '../space-roles/space-member-access';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { capModulesToCatalogue } from '../../common/entitlements';
 import { LocationsService } from './locations.service';
@@ -370,9 +371,16 @@ export class LocationsController {
 
   // Space-aware: org member-managers add anyone in their org; a CONTROL guest may
   // add their OWN people to a space shared with them (service enforces the real
-  // space + tags the row with the guest org). Guard widens; service authorizes.
+  // space + tags the row with the guest org). Guard widens; the controller decides
+  // against the space in the PATH (`assertMayManageMembersIn`); the service
+  // confines a caller to people of their own organization.
+  //
+  // `canAddSpaceMembers` OR the workspace grant, decided in the controller (a
+  // route decorator can only AND its keys, and the guard never reads `:id`):
+  // a space role cannot carry `canManageWorkspaces`, so an outsider running one
+  // site could never add their own crew. This route sets no role, so adding
+  // somebody grants nothing by itself.
   @Post(':id/members')
-  @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Assign a member to a location' })
   async assignMember(
     @Param('id') locationId: string,
@@ -442,17 +450,28 @@ export class LocationsController {
     return result;
   }
 
+  /*
+    ⚠️ It was `@RequirePermission('canManageWorkspaces')` and never read the
+    space in the path, so the assignment could be in any workspace. Now the
+    same rule as adding: `canAddSpaceMembers` (or the workspace grant) HERE, the
+    row must be in this workspace unless the caller manages workspaces
+    org-wide, and somebody acting only through this workspace may not remove a
+    person who holds more in it than they do.
+  */
   @Delete(':id/members/:assignmentId')
-  @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Remove a member assignment' })
   async removeAssignment(
-    @Param('id') _locationId: string,
+    @Param('id') locationId: string,
     @Param('assignmentId') assignmentId: string,
     @Request() req: any,
   ) {
+    this.assertMayManageMembersIn(req, locationId);
+    const orgWide = isAdmin(req.user) || accessAllows(req.user?.access, 'canManageWorkspaces');
     const result = await this.locationsQueueService.removeAssignment({
       assignmentId,
       organizationId: req.user.organizationId,
+      spaceId: orgWide ? undefined : locationId,
+      outrankPerms: outrankCeiling(req.user, locationId),
     });
     // Losing a space role can move an external member back to the full seat.
     this.rebill(req.user.organizationId);
@@ -476,7 +495,8 @@ export class LocationsController {
   private assertMayManageMembersIn(req: any, spaceId: string): void {
     if (isAdmin(req.user)) return;
     if (accessAllows(req.user?.access, 'canManageWorkspaces', spaceId)) return;
-    if (mayManageSpaceMembers(req.user, spaceId)) return;
+    // Adding people here (`canAddSpaceMembers`), or managing its people — one rule with the space-roles routes.
+    if (spaceMemberAuthority(req.user, spaceId).addMembers) return;
     throw new ForbiddenException('You do not have permission to manage the members of this workspace');
   }
 }
