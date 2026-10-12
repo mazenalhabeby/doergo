@@ -48,9 +48,11 @@ describe('the observer seat', () => {
     expect(isObserverSeat(external, [])).toBe(true);
   });
 
-  it('allows exactly two permissions and no third', () => {
-    expect([...OBSERVER_SEAT_PERMISSIONS].sort()).toEqual(['canCreateTasks', 'canViewAllTasks']);
-    for (const extra of ['canManageUsers', 'canViewSpaceAttendance', 'canAssignTasks', 'canManageRota']) {
+  it('allows view-only (and raising a job), nothing that changes anything', () => {
+    expect([...OBSERVER_SEAT_PERMISSIONS].sort()).toEqual([
+      'canCreateTasks', 'canViewAllTasks', 'canViewAssets', 'canViewPortal', 'canViewSpaceAttendance', 'canViewTracking', 'crmViewAll',
+    ]);
+    for (const extra of ['canManageUsers', 'canApproveAttendance', 'canAssignTasks', 'canManageRota', 'canLogAssets', 'canAnswerPortal', 'crmCreateClients']) {
       expect(isObserverSeat(external, [...OBSERVER_SEAT_PERMISSIONS, extra])).toBe(false);
     }
   });

@@ -125,7 +125,9 @@ hbcfield/
 | **External Supervisor** | canViewAllTasks, canViewSpaceAttendance, canApproveAttendance, canApproveOvertime (orgs seeded before 2026-10-13 also keep canReconcileAttendance + canDeleteAttendance) | €9.99 |
 | **External Observer** | canViewAllTasks, canCreateTasks — watches, and can raise a job | **€2** |
 
-The seat is priced from the permissions HELD (`isObserverSeat`), paid by the organization; anything beyond the observer set is €9.99.
+> **€2 = VIEW-ONLY** (decided 2026-10-12): the See level of every builder area (jobs, hours, clients, portal, equipment) + the live map + raising a job (`OBSERVER_SEAT_PERMISSIONS`, kept equal to the builder's view levels by `permission-levels.spec`). Anything that changes something is €9.99.
+
+The seat is priced from the permissions HELD (`isObserverSeat`), paid by the organization; view-only (every area's See level, the live map, raising a job) is €2, anything that changes something is €9.99.
 
 ### The permission builder — one person, one workspace (`/spaces/:spaceId/members/:assignmentId/permissions`)
 | Method | Endpoint | Description | Gate |

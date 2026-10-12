@@ -66,9 +66,29 @@ describe('permission levels', () => {
     }
   });
 
-  it('the observer preset is exactly the €2 seat; every other preset is a full seat', () => {
+  it('the €2 seat is VIEW-ONLY: every area’s See level, the live map and raising a job — nothing that changes anything', () => {
+    const viewKeys = PERMISSION_AREAS.flatMap((a) => a.levels.find((l) => l.id === 'view')?.adds ?? []);
+    const expected = [...viewKeys, 'canCreateTasks', 'canViewTracking'];
+    expect([...OBSERVER_SEAT_PERMISSIONS].sort()).toEqual([...new Set(expected)].sort());
+    const held = (p: PermissionSet) => PERMISSION_KEYS.filter((k) => p[k]);
+    // Seeing every area at once is still €2…
+    const allSee = permissionsFromChoice({
+      levels: Object.fromEntries(PERMISSION_AREAS.map((a) => [a.id, 'view'])) as never,
+      switches: Object.fromEntries(PERMISSION_SWITCHES.map((sw) => [sw.id, sw.id === 'tracking'])) as never,
+      extra: [],
+    });
+    expect(isObserverSeat({ isExternal: true }, held(allSee))).toBe(true);
+    // …and one level above See anywhere is a full seat.
+    for (const area of PERMISSION_AREAS) {
+      const above = area.levels[2];
+      if (!above || area.id === 'tasks') continue; // tasks' second level is "raise a job", still €2
+      const choice = { levels: Object.fromEntries(PERMISSION_AREAS.map((a) => [a.id, a.id === area.id ? above.id : 'view'])) as never, switches: {} as never, extra: [] };
+      expect(isObserverSeat({ isExternal: true }, held(permissionsFromChoice(choice)))).toBe(false);
+    }
+  });
+
+  it('the observer preset is a €2 seat; every other preset is a full seat', () => {
     const observer = permissionsFromChoice(choiceOfPreset('observer'));
-    expect(Object.keys(observer).sort()).toEqual([...OBSERVER_SEAT_PERMISSIONS].sort());
     const held = (p: PermissionSet) => PERMISSION_KEYS.filter((k) => p[k]);
     expect(isObserverSeat({ isExternal: true }, held(observer))).toBe(true);
     for (const id of ['supervisor', 'manager'] as const) {

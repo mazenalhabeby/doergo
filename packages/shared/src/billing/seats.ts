@@ -133,10 +133,26 @@ export function isBillableSeat(user: SeatClassifiable): boolean {
 /**
  * The permissions an OBSERVER seat may hold, and no more.
  *
- * Watching the work and raising a job. Anything beyond this — approving hours,
- * reconciling attendance, assigning, managing anything at all — is a full seat.
+ * VIEW-ONLY (decided 2026-10-12): the "See" level of every area of the
+ * permission builder — the work, the hours, the clients, the client portal,
+ * the equipment — the live map, and raising a job. Anything that CHANGES
+ * something — approving or correcting hours, assigning, adding or editing
+ * clients, answering a request, logging on or managing equipment, the rota,
+ * people, roles — is a full seat.
+ *
+ * ⚠️ Kept equal to the builder's "view" levels by a test
+ * (permission-levels.spec): a new area's See level that is not added here
+ * would make watching it cost €9.99 without anybody deciding so.
  */
-export const OBSERVER_SEAT_PERMISSIONS: readonly string[] = ['canViewAllTasks', 'canCreateTasks'];
+export const OBSERVER_SEAT_PERMISSIONS: readonly string[] = [
+  'canViewAllTasks',
+  'canCreateTasks',
+  'canViewSpaceAttendance',
+  'crmViewAll',
+  'canViewPortal',
+  'canViewAssets',
+  'canViewTracking',
+];
 
 /**
  * Does this member cost the reduced seat?

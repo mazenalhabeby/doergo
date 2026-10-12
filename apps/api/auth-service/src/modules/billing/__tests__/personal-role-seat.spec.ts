@@ -38,8 +38,13 @@ describe('the observer seat through a personal role', () => {
     expect(b.observerSeatCount).toBe(1);
   });
 
-  it('reading assets as well → a full seat', async () => {
+  it('reading assets as well is still view-only → the observer seat', async () => {
     const b: any = await bill({ canViewAllTasks: true, canCreateTasks: true, canViewAssets: true });
+    expect(b.observerSeatCount).toBe(1);
+  });
+
+  it('logging on assets changes something → a full seat', async () => {
+    const b: any = await bill({ canViewAllTasks: true, canViewAssets: true, canLogAssets: true });
     expect(b.observerSeatCount ?? 0).toBe(0);
   });
 });
