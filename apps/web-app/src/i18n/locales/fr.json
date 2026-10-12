@@ -6949,7 +6949,9 @@
     "triageWorker": "Attribuer un intervenant",
     "uploadCover": "Téléverser une couverture",
     "noWorkspace": "Aucun espace n’a encore activé le portail client.",
-    "subtitle": "Ce que vos clients voient en se connectant."
+    "subtitle": "Ce que vos clients voient en se connectant.",
+    "noPortalYetTitle": "Pas encore de portail dans cet espace de travail",
+    "noPortalYetHint": "Une personne qui gère le portail de cet espace de travail peut en créer un."
   },
   "scheduling": {
     "title": "Paramètres de l’espace de travail",
@@ -9408,7 +9410,15 @@
     "LEAVE_TRACKING_DATE_INVALID": "Choisissez une date de début valide.",
     "LEAVE_POLICY_EMPTY": "Rien à enregistrer.",
     "AUTO_CLOCK_SETTING_INVALID": "L’un des réglages du pointage automatique est hors des limites autorisées. Vérifiez le nombre signalé.",
-    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Ce pointage ne peut plus être annulé."
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Ce pointage ne peut plus être annulé.",
+    "PERMISSION_KEY_NOT_IN_SPACE": "Certaines de ces autorisations ne peuvent pas être données dans un espace de travail.",
+    "EXTERNAL_PERMISSION_FORBIDDEN": "Certaines de ces autorisations ne peuvent pas être données à un membre externe.",
+    "GRANT_EXCEEDS_OWN": "Vous ne pouvez pas donner des autorisations que vous n'avez pas vous-même.",
+    "MEMBER_ABOVE_YOU": "Cette personne détient plus que vous dans cet espace de travail.",
+    "CANNOT_CHANGE_OWN": "Vous ne pouvez pas modifier vos propres autorisations dans cet espace de travail.",
+    "ASSIGNMENT_NOT_FOUND": "Cette personne ne fait plus partie de cet espace de travail.",
+    "ROLE_NOT_FOUND": "Ce rôle n'existe plus.",
+    "PERMISSIONS_CHOICE_INVALID": "Choisissez soit un rôle, soit un ensemble d'autorisations."
   },
   "signLink": {
     "tabs": {
@@ -10512,6 +10522,173 @@
       "expiry": "Les jours reportés expirent après (mois)",
       "never": "Jamais",
       "carryHint": "Les jours reportés sont ajoutés le premier jour de la nouvelle année de congés sous forme de ligne visible, et peuvent être annulés."
+    }
+  },
+  "permissionBuilder": {
+    "startFrom": "Point de départ",
+    "areasTitle": "Jusqu'où, domaine par domaine",
+    "switchesTitle": "Capacités à part",
+    "platformTitle": "Où se connecter",
+    "platformReadOnly": "Seule une personne qui gère les membres de l'organisation peut modifier ceci.",
+    "platformSummary": {
+      "web": "Sur le web uniquement.",
+      "mobile": "Dans l'app uniquement.",
+      "both": "Sur le web et dans l'app."
+    },
+    "summaryTitle": "Ce que {{name}} pourra faire",
+    "summaryNothing": "Rien pour l'instant : la personne peut se connecter, mais ne voit aucun travail ici.",
+    "extraKept": "Détient aussi {{count}} autorisation(s) accordée(s) ailleurs, conservée(s) telles quelles.",
+    "moduleOff": "Cet espace de travail n'utilise pas {{module}}.",
+    "needsLevel": "Nécessite {{area}} au niveau « {{level}} » ou plus.",
+    "neverExternal": "Jamais accessible aux membres externes : factures, facturation, coût du travail, dossiers du personnel, les membres de votre entreprise, les autres espaces de travail, le calendrier, les rapports, ni pointage ou congés propres.",
+    "seat": {
+      "observer": "{{price}} par mois — la place d'observateur, facturée à votre organisation.",
+      "full": "{{price}} par mois — une place complète, facturée à votre organisation."
+    },
+    "modules": {
+      "time_tracking": "Suivi du temps",
+      "crm": "CRM",
+      "b2c_portal": "Portail client",
+      "assets": "Équipements"
+    },
+    "presets": {
+      "observer": {
+        "title": "Observateur",
+        "hint": "Suit le travail et peut créer une intervention."
+      },
+      "supervisor": {
+        "title": "Superviseur",
+        "hint": "Suit le travail et valide les heures."
+      },
+      "manager": {
+        "title": "Responsable de l'espace",
+        "hint": "Dirige cet espace de travail au quotidien."
+      },
+      "custom": {
+        "title": "Personnalisé",
+        "hint": "Votre propre combinaison, définie ci-dessous."
+      }
+    },
+    "areas": {
+      "tasks": {
+        "title": "Tâches",
+        "levels": {
+          "none": "Aucun",
+          "view": "Voir",
+          "create": "Créer",
+          "assign": "Attribuer"
+        },
+        "summary": {
+          "view": "Voir toutes les tâches de cet espace de travail.",
+          "create": "Voir toutes les tâches et en créer.",
+          "assign": "Voir, créer et attribuer des tâches."
+        }
+      },
+      "attendance": {
+        "title": "Temps et présence",
+        "levels": {
+          "none": "Aucun",
+          "view": "Voir",
+          "approve": "Valider"
+        },
+        "summary": {
+          "view": "Voir les relevés d'heures des personnes ici.",
+          "approve": "Voir et valider les relevés d'heures ici."
+        }
+      },
+      "crm": {
+        "title": "Clients",
+        "levels": {
+          "none": "Aucun",
+          "view": "Voir",
+          "add": "Ajouter",
+          "edit": "Modifier",
+          "delete": "Supprimer"
+        },
+        "summary": {
+          "view": "Voir les clients de cet espace de travail.",
+          "add": "Voir et ajouter des clients.",
+          "edit": "Voir, ajouter et modifier des clients, et noter appels et visites.",
+          "delete": "Voir, ajouter, modifier et supprimer des clients."
+        }
+      },
+      "portal": {
+        "title": "Portail client",
+        "levels": {
+          "none": "Aucun",
+          "view": "Voir",
+          "answer": "Répondre",
+          "manage": "Gérer"
+        },
+        "summary": {
+          "view": "Lire les demandes des clients du portail.",
+          "answer": "Lire les demandes des clients et y répondre.",
+          "manage": "Gérer le portail client : demandes, catégories et clients."
+        }
+      },
+      "assets": {
+        "title": "Équipements",
+        "levels": {
+          "none": "Aucun",
+          "view": "Voir",
+          "log": "Noter l'usage",
+          "manage": "Gérer"
+        },
+        "summary": {
+          "view": "Voir les équipements ici.",
+          "log": "Voir les équipements et noter leur usage, le carburant et les dépenses.",
+          "manage": "Voir, noter et gérer les équipements ici."
+        }
+      }
+    },
+    "switches": {
+      "overtime": {
+        "title": "Valider les heures supplémentaires",
+        "summary": "Valider les heures supplémentaires."
+      },
+      "correctAttendance": {
+        "title": "Corriger les pointages",
+        "summary": "Corriger les pointages."
+      },
+      "deleteAttendance": {
+        "title": "Supprimer des pointages",
+        "summary": "Supprimer des pointages."
+      },
+      "rota": {
+        "title": "Planifier le planning",
+        "summary": "Établir le planning."
+      },
+      "tracking": {
+        "title": "Voir les positions en direct",
+        "summary": "Voir sur la carte où se trouvent les personnes."
+      },
+      "addPeople": {
+        "title": "Ajouter et retirer des personnes",
+        "summary": "Ajouter des personnes à cet espace de travail et les en retirer."
+      },
+      "grantRoles": {
+        "title": "Donner des rôles",
+        "summary": "Donner un rôle aux personnes ici, jamais plus que ce que l'on détient soi-même."
+      }
+    },
+    "panel": {
+      "title": "Ce que la personne peut faire ici",
+      "customise": "Personnaliser",
+      "hide": "Masquer",
+      "save": "Enregistrer les autorisations",
+      "saved": "Autorisations enregistrées",
+      "discard": "Annuler les modifications",
+      "useRole": "Ou attribuer un rôle partagé",
+      "useRolePlaceholder": "Choisir un rôle…",
+      "personal": "Défini pour cette personne",
+      "role": "Rôle : {{role}}",
+      "platformSaved": "Connexion enregistrée",
+      "loadFailed": "Impossible de charger ce que cette personne peut faire ici."
+    },
+    "invite": {
+      "custom": "Définir ce que la personne peut faire",
+      "useRole": "Utiliser un rôle existant",
+      "name": "cette personne"
     }
   }
 }

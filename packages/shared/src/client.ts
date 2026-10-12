@@ -68,6 +68,10 @@ export * from './access/space-manage';
 export * from './access/permission-levels';
 // One person's permissions in one workspace, as a role nobody else may hold (access/personal-role.ts)
 export * from './access/personal-role';
+// Who may add people to a workspace, give them roles, or manage their terms there.
+export * from './access/roster-access';
+// The permission builder's view of one assignment (the type only — the reader/writer are server code).
+export type { AssignmentPermissionsView, AssignableRole } from './access/assignment-permissions';
 export * from './access/module-anywhere';
 
 // Code lengths and charsets for invitations and org join codes. Pure data, and

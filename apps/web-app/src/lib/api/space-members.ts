@@ -1,6 +1,6 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import { spaceMembersWebEndpoints, type SpaceMember } from '@hbcfield/shared/client';
+import { spaceMembersWebEndpoints, type AssignmentPermissionsView, type PermissionSet, type SpaceMember } from '@hbcfield/shared/client';
 
 export const spaceMembersApi = {
   list: async (spaceId: string) => {
@@ -52,6 +52,26 @@ export const spaceMembersApi = {
     const res = await call(spaceMembersWebEndpoints.updateRoles, { spaceId, memberId }, { body: data }) as ApiResponse<{ success: boolean; data: SpaceMember }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
+  },
+  /** What one person may do in this workspace, as the permission builder shows it. */
+  getPermissions: async (spaceId: string, assignmentId: string): Promise<AssignmentPermissionsView> => {
+    const res = await call(spaceMembersWebEndpoints.getPermissions, { spaceId, assignmentId }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
+  },
+  /**
+   * Set it — a shared role, or their own set of keys (which the server keeps as
+   * their personal role, or the shared role it exactly matches). Answers with
+   * what is now true, read back.
+   */
+  setPermissions: async (
+    spaceId: string,
+    assignmentId: string,
+    body: { roleId: string } | { permissions: PermissionSet },
+  ): Promise<AssignmentPermissionsView> => {
+    const res = await call(spaceMembersWebEndpoints.setPermissions, { spaceId, assignmentId }, { body }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
   },
   updateRouting: async (
     spaceId: string,

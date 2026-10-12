@@ -140,15 +140,18 @@ export function AssetsTab({
                 }
               />
             )}
-            <AssetKindDialog
-              spaceId={spaceId}
-              onSaved={invalidate}
-              trigger={
-                <Button size="sm">
-                  <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New type")}
-                </Button>
-              }
-            />
+            {/* Creating a type is a write (`canManageAssets` in this workspace); a viewer sees the list only. */}
+            {canUseContracts && (
+              <AssetKindDialog
+                spaceId={spaceId}
+                onSaved={invalidate}
+                trigger={
+                  <Button size="sm">
+                    <Plus className="mr-1.5 h-4 w-4" /> {t("assetKinds.add", "New type")}
+                  </Button>
+                }
+              />
+            )}
           </div>
         }
       />
@@ -237,6 +240,7 @@ export function AssetsTab({
 
                 {/* Kept out of the button: a link wrapping a button is invalid,
                     and nesting them makes the hit areas fight. */}
+                {canUseContracts && (
                 <div className="absolute right-3 top-3 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                   <AssetKindDialog
                     spaceId={spaceId}
@@ -256,6 +260,7 @@ export function AssetsTab({
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
+                )}
               </div>
             )
           })}
@@ -282,6 +287,7 @@ function KindContents({
   const { t } = useTranslation()
   const router = useRouter()
   const qc = useQueryClient()
+  const { user } = useAuth()
   const shape = normalizeKindShape(kind.config)
   const statusLabel = useAssetStatusLabel()
   const [search, setSearch] = useState("")
@@ -367,12 +373,15 @@ function KindContents({
         title={kind.name}
         description={kind.description || t("assetRecords.intro", "Everything of this kind in this workspace.")}
         action={
-          <AssetRecordDialog
-            spaceId={spaceId}
-            kind={kind}
-            onSaved={refresh}
-            trigger={<Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("common.add", "Add")}</Button>}
-          />
+          // Adding a record is a write: `canManageAssets` in this workspace.
+          canManageAssetsIn(user, spaceId) ? (
+            <AssetRecordDialog
+              spaceId={spaceId}
+              kind={kind}
+              onSaved={refresh}
+              trigger={<Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> {t("common.add", "Add")}</Button>}
+            />
+          ) : undefined
         }
       />
 

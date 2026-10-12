@@ -92,8 +92,11 @@ function ctx(user: Partial<AccessUser>, options: Set<string> = ALL_OPTIONS): Acc
 }
 
 const admin = ctx({ role: "ADMIN" })
-/** A manager who reads all work and nothing else. */
-const manager = ctx({ canViewAllTasks: true, access: { org: { canViewAllTasks: true } } })
+/**
+ * A manager who reads all work and nothing else. The session's flat fields carry
+ * the server's bridges (`orgFlagFields`): org-wide canViewAllTasks also reads assets.
+ */
+const manager = ctx({ canViewAllTasks: true, canViewAssets: true, access: { org: { canViewAllTasks: true } } })
 /** A dispatcher who assigns work and nothing else. */
 const dispatcher = ctx({ canAssignTasks: true, access: { org: { canAssignTasks: true } } })
 /** An external observer: a SPACE role granting canViewAllTasks + canCreateTasks. */
@@ -149,17 +152,54 @@ describe("a dispatcher with canAssignTasks only", () => {
 })
 
 describe("an external observer", () => {
-  it("is refused the organization's own property, though canViewAllTasks is held", () => {
-    for (const p of ["/clients", "/customers/c1", "/assets", "/portals", "/calendar", "/reports", "/settings/billing"]) {
+  it("is refused what stays the organization's own, whatever they hold", () => {
+    for (const p of ["/calendar", "/reports", "/settings/billing", "/employees/availability", "/employees/leave-opening"]) {
       expect([p, checkRoute(p, observer)]).toEqual([p, { ok: false, reason: "external" }])
     }
   })
-  it("is refused org-wide pages a SPACE grant does not reach", () => {
-    expect(mayOpen("/assets/a1", observer)).toBe(false)
+  it("is refused clients, assets and portals — canViewAllTasks in a workspace grants none of them", () => {
+    for (const p of ["/clients", "/customers/c1", "/assets", "/assets/a1", "/portals", "/locations/s1/portals/p1"]) {
+      expect([p, checkRoute(p, observer)]).toEqual([p, { ok: false, reason: "permission" }])
+    }
     expect(mayOpen("/shared/s1", observer)).toBe(false)
   })
   it("still reaches the work they are there for", () => {
     for (const p of ["/dashboard", "/tasks", "/tasks/t1", "/locations"]) expect([p, mayOpen(p, observer)]).toEqual([p, true])
+  })
+})
+
+describe("an external member given a workspace by the permission builder", () => {
+  const withGrants = (perms: Record<string, boolean>) =>
+    ctx({ isExternal: true, access: { org: {}, perSpace: { s1: { canViewAllTasks: true, ...perms } } } })
+
+  it("is offered /clients with crmViewAll in their workspace, and not without it", () => {
+    const seesClients = withGrants({ crmViewAll: true })
+    expect(mayOpen("/clients", seesClients)).toBe(true)
+    expect(mayOpen("/customers/c1", seesClients)).toBe(true)
+    expect(navModelFor(seesClients).clients).toBe(true)
+    expect(mayOpen("/clients", observer)).toBe(false)
+    expect(navModelFor(observer).clients).toBe(false)
+  })
+  it("never reaches clients through the org-wide legacy bridge — an external holds no org caps", () => {
+    const bridged = ctx({ isExternal: true, canViewAllTasks: true, access: { org: { canViewAllTasks: true }, perSpace: {} } })
+    expect(mayOpen("/clients", bridged)).toBe(false)
+  })
+  it("needs the workspace to run the CRM", () => {
+    const noCrm = ctx({ isExternal: true, spaceModules: ["assets"], access: { org: {}, perSpace: { s1: { crmViewAll: true } } } })
+    // A workspace grant counts only where the workspace runs the CRM (crmReachOf).
+    expect(mayOpen("/clients", noCrm)).toBe(false)
+  })
+  it("is offered assets with canViewAssets there, portals with canViewPortal there", () => {
+    const both = withGrants({ canViewAssets: true, canViewPortal: true })
+    for (const p of ["/assets", "/assets/a1", "/portals", "/locations/s1/portals/p1"]) expect([p, mayOpen(p, both)]).toEqual([p, true])
+    expect(navModelFor(both)).toMatchObject({ assets: true, portals: true })
+  })
+  it("still never gets the calendar, reports or billing — even holding everything in the workspace", () => {
+    const all = withGrants({ crmViewAll: true, canViewAssets: true, canViewPortal: true, canViewReports: true })
+    for (const p of ["/calendar", "/reports", "/settings/billing"]) {
+      expect([p, checkRoute(p, all)]).toEqual([p, { ok: false, reason: "external" }])
+    }
+    expect(navModelFor(all).calendar).toBe(false)
   })
 })
 

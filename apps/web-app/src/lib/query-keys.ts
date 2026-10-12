@@ -94,6 +94,8 @@ const locationsKeys = {
 const spaceMembersKeys = {
   all: () => queryKey("spaceMembers.list"),
   list: (spaceId: string | null | undefined) => queryKey("spaceMembers.list", { spaceId }),
+  /** What one person may do in one workspace — the permission builder's read. */
+  permissions: (spaceId: string, assignmentId: string) => queryKey("spaceMembers.getPermissions", { spaceId, assignmentId }),
 } as const
 
 const sprintsKeys = {

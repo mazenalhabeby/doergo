@@ -127,11 +127,20 @@ describe('canViewSpaceAttendance', () => {
 });
 
 describe('what an external member may never reach', () => {
-  it('keeps org property out of their navigation', () => {
-    // Their clients, equipment and portals belong to the organization. Assets
-    // asked canViewAllTasks — a permission this role legitimately holds.
-    for (const route of ['/clients', '/assets', '/portals']) expect(ROUTE_RULES[route].denyExternal).toBe(true);
+  it('reaches clients, assets and portals only by a grant for them — never through canViewAllTasks', () => {
+    // These are per-workspace now (the permission builder). What gates them is
+    // the permission the route asks — canViewAssets, canViewPortal, the crm*
+    // keys — never canViewAllTasks, which this role legitimately holds.
+    expect(ROUTE_RULES['/assets'].need).toEqual(['any:canViewAssets']);
+    expect(ROUTE_RULES['/portals'].need).toEqual(['any:canViewPortal']);
     expect(navModelFor(supervisor)).toMatchObject({ clients: false, assets: false, portals: false });
+  });
+
+  it('keeps what stays the organization\'s own closed to them, whatever they hold', () => {
+    for (const route of ['/calendar', '/reports', '/settings/billing', '/employees/availability', '/employees/leave-opening']) {
+      expect([route, ROUTE_RULES[route].denyExternal]).toEqual([route, true]);
+    }
+    expect(navModelFor(supervisor).calendar).toBe(false);
   });
 
   it('still reaches their own documents — they countersign', () => {

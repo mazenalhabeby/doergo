@@ -6940,7 +6940,9 @@
     "triageWorker": "Mitarbeiter zuweisen",
     "uploadCover": "Titelbild hochladen",
     "noWorkspace": "Noch kein Workspace hat ein Kundenportal aktiviert.",
-    "subtitle": "Was Ihre Kunden sehen, wenn sie sich anmelden."
+    "subtitle": "Was Ihre Kunden sehen, wenn sie sich anmelden.",
+    "noPortalYetTitle": "In diesem Arbeitsbereich gibt es noch kein Portal",
+    "noPortalYetHint": "Wer das Portal dieses Arbeitsbereichs verwaltet, kann eines einrichten."
   },
   "scheduling": {
     "title": "Arbeitsbereichseinstellungen",
@@ -9399,7 +9401,15 @@
     "LEAVE_TRACKING_DATE_INVALID": "Wählen Sie ein gültiges Startdatum.",
     "LEAVE_POLICY_EMPTY": "Nichts zu speichern.",
     "AUTO_CLOCK_SETTING_INVALID": "Eine der Einstellungen für die automatische Zeiterfassung liegt außerhalb des Erlaubten. Bitte prüfen Sie die markierte Zahl.",
-    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Dieses Einstempeln kann nicht mehr rückgängig gemacht werden."
+    "AUTO_CLOCK_UNDO_NOT_ALLOWED": "Dieses Einstempeln kann nicht mehr rückgängig gemacht werden.",
+    "PERMISSION_KEY_NOT_IN_SPACE": "Einige dieser Berechtigungen können in einem Arbeitsbereich nicht vergeben werden.",
+    "EXTERNAL_PERMISSION_FORBIDDEN": "Einem externen Mitglied können einige dieser Berechtigungen nicht gegeben werden.",
+    "GRANT_EXCEEDS_OWN": "Sie können keine Berechtigungen vergeben, die Sie selbst nicht haben.",
+    "MEMBER_ABOVE_YOU": "Diese Person hat in diesem Arbeitsbereich mehr Berechtigungen als Sie.",
+    "CANNOT_CHANGE_OWN": "Sie können Ihre eigenen Berechtigungen in diesem Arbeitsbereich nicht ändern.",
+    "ASSIGNMENT_NOT_FOUND": "Diese Person ist nicht mehr in diesem Arbeitsbereich.",
+    "ROLE_NOT_FOUND": "Diese Rolle existiert nicht mehr.",
+    "PERMISSIONS_CHOICE_INVALID": "Wählen Sie entweder eine Rolle oder eine Auswahl an Berechtigungen."
   },
   "signLink": {
     "tabs": {
@@ -10503,6 +10513,173 @@
       "expiry": "Übertragene Tage verfallen nach (Monaten)",
       "never": "Nie",
       "carryHint": "Übertragene Tage werden am ersten Tag des neuen Urlaubsjahres als sichtbarer Eintrag hinzugefügt und können rückgängig gemacht werden."
+    }
+  },
+  "permissionBuilder": {
+    "startFrom": "Ausgangspunkt",
+    "areasTitle": "Wie weit, Bereich für Bereich",
+    "switchesTitle": "Einzelne Befugnisse",
+    "platformTitle": "Wo die Anmeldung möglich ist",
+    "platformReadOnly": "Nur wer die Mitglieder der Organisation verwaltet, kann das ändern.",
+    "platformSummary": {
+      "web": "Nur im Web.",
+      "mobile": "Nur in der App.",
+      "both": "Im Web und in der App."
+    },
+    "summaryTitle": "Was {{name}} tun kann",
+    "summaryNothing": "Noch nichts — die Person kann sich anmelden, sieht hier aber keine Arbeit.",
+    "extraKept": "Hat zusätzlich {{count}} anderswo vergebene Berechtigung(en) — diese bleiben unverändert.",
+    "moduleOff": "Dieser Arbeitsbereich nutzt {{module}} nicht.",
+    "needsLevel": "Erfordert {{area}} auf „{{level}}“ oder höher.",
+    "neverExternal": "Für externe Mitglieder nie verfügbar: Rechnungen, Abrechnung, Personalkosten, Personalakten, die Mitglieder Ihres Unternehmens, andere Arbeitsbereiche, der Kalender, Berichte sowie eine eigene Stempeluhr oder eigener Urlaub.",
+    "seat": {
+      "observer": "{{price}} pro Monat — der Beobachter-Platz, abgerechnet über Ihre Organisation.",
+      "full": "{{price}} pro Monat — ein voller Platz, abgerechnet über Ihre Organisation."
+    },
+    "modules": {
+      "time_tracking": "Zeiterfassung",
+      "crm": "CRM",
+      "b2c_portal": "Kundenportal",
+      "assets": "Anlagen"
+    },
+    "presets": {
+      "observer": {
+        "title": "Beobachter",
+        "hint": "Verfolgt die Arbeit und kann einen Auftrag anlegen."
+      },
+      "supervisor": {
+        "title": "Aufsicht",
+        "hint": "Verfolgt die Arbeit und gibt die Stunden frei."
+      },
+      "manager": {
+        "title": "Arbeitsbereichsleitung",
+        "hint": "Führt diesen Arbeitsbereich im Alltag."
+      },
+      "custom": {
+        "title": "Individuell",
+        "hint": "Ihre eigene Auswahl, unten festgelegt."
+      }
+    },
+    "areas": {
+      "tasks": {
+        "title": "Aufgaben",
+        "levels": {
+          "none": "Keine",
+          "view": "Sehen",
+          "create": "Anlegen",
+          "assign": "Zuweisen"
+        },
+        "summary": {
+          "view": "Alle Aufgaben in diesem Arbeitsbereich sehen.",
+          "create": "Alle Aufgaben sehen und neue anlegen.",
+          "assign": "Aufgaben sehen, anlegen und Personen zuweisen."
+        }
+      },
+      "attendance": {
+        "title": "Zeit & Anwesenheit",
+        "levels": {
+          "none": "Keine",
+          "view": "Sehen",
+          "approve": "Freigeben"
+        },
+        "summary": {
+          "view": "Die Zeitnachweise der Personen hier sehen.",
+          "approve": "Die Zeitnachweise hier sehen und freigeben."
+        }
+      },
+      "crm": {
+        "title": "Kunden",
+        "levels": {
+          "none": "Keine",
+          "view": "Sehen",
+          "add": "Hinzufügen",
+          "edit": "Bearbeiten",
+          "delete": "Löschen"
+        },
+        "summary": {
+          "view": "Die Kunden dieses Arbeitsbereichs sehen.",
+          "add": "Kunden sehen und hinzufügen.",
+          "edit": "Kunden sehen, hinzufügen und bearbeiten sowie Anrufe und Besuche erfassen.",
+          "delete": "Kunden sehen, hinzufügen, bearbeiten und löschen."
+        }
+      },
+      "portal": {
+        "title": "Kundenportal",
+        "levels": {
+          "none": "Keine",
+          "view": "Sehen",
+          "answer": "Beantworten",
+          "manage": "Verwalten"
+        },
+        "summary": {
+          "view": "Kundenanfragen aus dem Portal lesen.",
+          "answer": "Kundenanfragen lesen und beantworten.",
+          "manage": "Das Kundenportal führen: Anfragen, Kategorien und Kunden."
+        }
+      },
+      "assets": {
+        "title": "Anlagen",
+        "levels": {
+          "none": "Keine",
+          "view": "Sehen",
+          "log": "Nutzung erfassen",
+          "manage": "Verwalten"
+        },
+        "summary": {
+          "view": "Die Ausrüstung hier sehen.",
+          "log": "Die Ausrüstung sehen und Nutzung, Kraftstoff und Ausgaben erfassen.",
+          "manage": "Die Ausrüstung hier sehen, erfassen und verwalten."
+        }
+      }
+    },
+    "switches": {
+      "overtime": {
+        "title": "Überstunden freigeben",
+        "summary": "Überstunden freigeben."
+      },
+      "correctAttendance": {
+        "title": "Zeiteinträge korrigieren",
+        "summary": "Zeiteinträge korrigieren."
+      },
+      "deleteAttendance": {
+        "title": "Zeiteinträge löschen",
+        "summary": "Zeiteinträge löschen."
+      },
+      "rota": {
+        "title": "Dienstplan erstellen",
+        "summary": "Den Dienstplan erstellen."
+      },
+      "tracking": {
+        "title": "Live-Standorte sehen",
+        "summary": "Sehen, wo sich Personen auf der Karte befinden."
+      },
+      "addPeople": {
+        "title": "Personen hinzufügen und entfernen",
+        "summary": "Personen zu diesem Arbeitsbereich hinzufügen und daraus entfernen."
+      },
+      "grantRoles": {
+        "title": "Personen Rollen geben",
+        "summary": "Personen hier eine Rolle geben — nie mehr, als man selbst hat."
+      }
+    },
+    "panel": {
+      "title": "Was die Person hier tun kann",
+      "customise": "Anpassen",
+      "hide": "Ausblenden",
+      "save": "Berechtigungen speichern",
+      "saved": "Berechtigungen gespeichert",
+      "discard": "Änderungen verwerfen",
+      "useRole": "Oder eine gemeinsame Rolle vergeben",
+      "useRolePlaceholder": "Rolle wählen…",
+      "personal": "Für diese Person festgelegt",
+      "role": "Rolle: {{role}}",
+      "platformSaved": "Anmeldung gespeichert",
+      "loadFailed": "Es konnte nicht geladen werden, was diese Person hier tun kann."
+    },
+    "invite": {
+      "custom": "Festlegen, was die Person tun kann",
+      "useRole": "Eine bestehende Rolle verwenden",
+      "name": "diese Person"
     }
   }
 }

@@ -30,8 +30,8 @@ export function ExpenseQueue() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(true)
 
-  // GET /assets/expenses/pending is @RequirePermission('canViewAllTasks') — the ORG-wide flag.
-  const mayRead = useRouteAccess().holds("org:canViewAllTasks")
+  // GET /assets/expenses/pending is @RequirePermissionInSpace('canViewAssets') — held anywhere; the server narrows.
+  const mayRead = useRouteAccess().holds("any:canViewAssets")
   const q = useQuery({
     queryKey: keys.assets.expensesPending(),
     queryFn: () => assetsApi.getPendingExpenses(),

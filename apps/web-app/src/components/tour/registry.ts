@@ -279,7 +279,7 @@ export const TOURS: TourDef[] = [
   // ── PAGE HINTS — a one-line "what is this screen" guide on every page. ──
   // (pageEmployees retired — /employees redirects to /members.)
   ...pageTour("pageInvoices", "invoices", "reports", "/invoices", "page-invoices", (c) => c.isAdmin),
-  ...pageTour("pageAssets", "assets", "spaces", "/assets", "page-assets", (c) => c.hasPermission("canViewAllTasks")),
+  ...pageTour("pageAssets", "assets", "spaces", "/assets", "page-assets", (c) => c.hasPermission("canViewAssets")),
   // Time Off (your own) — request flow + your requests list.
   {
     id: "pageMyTimeoff",

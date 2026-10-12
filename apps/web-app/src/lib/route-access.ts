@@ -37,7 +37,8 @@ import {
   accessAllows,
   accessAllowsAnywhere,
   moduleAnywhere,
-  resolveCrmCaps,
+  crmReachOf,
+  crmCanAccess,
   hasAccessModule,
 } from "@hbcfield/shared/client"
 
@@ -126,9 +127,21 @@ export function evaluateRule(rule: AccessRule, ctx: AccessContext): AccessVerdic
 
 // ─── Shared conditions ──────────────────────────────────────────────────────
 
-/** CRM reach, as the server resolves it from the member's org role. */
-function crmAccess(u: AccessUser): boolean {
-  return resolveCrmCaps(u.role, (u.access?.org ?? undefined) as never).canAccess
+/**
+ * CRM reach, as the server resolves it: the org role's caps, plus the crm* keys
+ * of every workspace that runs the CRM (`crmReachOf`). An external member holds
+ * no org-wide caps, so a workspace grant is their only way in — exactly the
+ * client book of their one workspace.
+ */
+export function crmAccess(u: AccessUser): boolean {
+  return crmCanAccess(
+    crmReachOf(u.role, (u.access ?? null) as never, {
+      // The session carries the union of modules, not one list per workspace; the
+      // route's own `module: "crm"` asks the same. The server narrows per workspace.
+      crmSpaces: () => moduleAnywhere(u as never, "crm"),
+      isExternal: u.isExternal === true,
+    }),
+  )
 }
 
 const OPEN: AccessRule = { why: "every signed-in staff member — the server scopes what it returns" }
@@ -176,30 +189,32 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
   },
   "/locations/[id]": { why: "the page checks canManageSpace for THIS workspace and says so itself" },
   "/locations/[id]/portals/[portalId]": {
-    denyExternal: true, need: ["org:canManagePortals"], module: "b2c_portal",
-    why: "GET /portal/admin/* — @DenyExternal() @RequirePermission('canManagePortals')",
+    need: ["any:canViewPortal"], module: "b2c_portal",
+    why: "GET /portal/admin/portals/:id — @RequirePermissionInSpace('canViewPortal'), narrowed to the portal's workspace",
   },
 
-  // ── The organization's property ──
+  // ── Clients, equipment, portals — per workspace, by permission ──
+  // An external member reaches these through a grant in their one workspace
+  // (the permission builder); the server narrows every read to it.
   "/clients": {
-    denyExternal: true, module: "crm", when: ({ user }) => crmAccess(user),
-    why: "GET /customers — @DenyExternal(), CRM caps in the service",
+    module: "crm", when: ({ user }) => crmAccess(user),
+    why: "GET /customers — CRM caps, org-wide or per workspace (crmReachOf), narrowed in the service",
   },
   "/customers/[id]": {
-    denyExternal: true, when: ({ user }) => crmAccess(user),
-    why: "GET /customers/:id — @DenyExternal(), CRM caps + reach in the service (404 outside it)",
+    when: ({ user }) => crmAccess(user),
+    why: "GET /customers/:id — CRM caps + reach in the service (404 outside it)",
   },
   "/assets": {
-    denyExternal: true, module: "assets", need: ["any:canViewAllTasks"],
-    why: "GET /assets — @DenyExternal() @RequireModule('assets') @RequirePermissionInSpace('canViewAllTasks')",
+    module: "assets", need: ["any:canViewAssets"],
+    why: "GET /assets — @RequireModule('assets') @RequirePermissionInSpace('canViewAssets')",
   },
   "/assets/[id]": {
-    denyExternal: true, module: "assets", need: ["org:canViewAllTasks"],
-    why: "GET /assets/:id — @RequirePermission('canViewAllTasks'), the ORG-wide flag",
+    module: "assets", need: ["any:canViewAssets"],
+    why: "GET /assets/:id — @RequirePermissionInSpace('canViewAssets'), narrowed by the asset's kind's workspace",
   },
   "/portals": {
-    denyExternal: true, module: "b2c_portal", need: ["org:canManagePortals"],
-    why: "GET /spaces/:id/portal/portals — @DenyExternal() @RequirePermission('canManagePortals')",
+    module: "b2c_portal", need: ["any:canViewPortal"],
+    why: "GET /spaces/:id/portal/portals — @RequirePermissionInSpace('canViewPortal')",
   },
 
   // ── People ──
