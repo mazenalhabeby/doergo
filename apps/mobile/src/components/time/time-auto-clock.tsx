@@ -47,10 +47,16 @@ export function TimeAutoClock() {
 
   const decide = async (consent: boolean) => {
     if (!member) return;
+    /*
+      ⚠️ The sheet goes BEFORE switching on, not after. Switching on can show the
+      background-location disclosure, and iOS presents one modal at a time: with
+      this sheet still up the disclosure was refused, its promise never settled
+      and "Switch on" spun for good (blur-sheet.tsx, the one modal slot).
+    */
+    setSheet(null);
     setBusy(true);
     try {
       const r = await setAutoClockConsent(member, consent);
-      setSheet(null);
       if (r === 'on') toast.success(t('autoClock.turnedOn'));
       else if (r === 'needs-always') toast.warning(t('autoClock.turnedOn'), t('autoClock.needsAlways'));
       else if (r === 'off') toast.info(t('autoClock.turnedOff'));

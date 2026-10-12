@@ -372,6 +372,21 @@ describe('the automatic rest at the close', () => {
     expect(t.prisma.timeEntry.updateMany.mock.calls[0][0].data.flagReasons).not.toContain('AUTO_CLOCK_OUT');
   });
 
+  it('an AUTO clock-out sent from outside the area (where it always comes from) is not a geofence violation', async () => {
+    const t = buildClose(shiftEntry());
+    // ~1.5 km north of the site: the phone sends its position after leaving.
+    await t.svc.clockOut({ userId: 'u1', organizationId: 'org-1', lat: 47.995, lng: 13.8269, trigger: 'AUTO' } as any);
+    const data = t.prisma.timeEntry.updateMany.mock.calls[0][0].data;
+    expect(data.flagReasons).toContain('AUTO_CLOCK_OUT');
+    expect(data.flagReasons).not.toContain('OUTSIDE_GEOFENCE_OUT');
+  });
+
+  it('…but an ordinary clock-out from outside still is', async () => {
+    const t = buildClose(shiftEntry());
+    await t.svc.clockOut({ userId: 'u1', organizationId: 'org-1', lat: 47.995, lng: 13.8269 } as any);
+    expect(t.prisma.timeEntry.updateMany.mock.calls[0][0].data.flagReasons).toContain('OUTSIDE_GEOFENCE_OUT');
+  });
+
   it('an AUTO clock-out before the planned end is an ordinary one (early departure, no AUTO mark)', async () => {
     jest.setSystemTime(at('12:00'));
     const t = buildClose(shiftEntry());

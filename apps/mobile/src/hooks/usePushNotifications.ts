@@ -294,22 +294,29 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
     is what joins: the job page asks the server with the leader's start.
   */
   useEffect(() => {
-    void Notifications.setNotificationCategoryAsync(CREW_JOIN_CATEGORY, [
-      { identifier: CREW_JOIN_ACTION, buttonTitle: i18n.t('job.crew.pushJoin'), options: { opensAppToForeground: true } },
-    ]).catch(() => undefined);
-    // The calendar's buttons (src/lib/calendar-push-actions.ts): a reminder's Done / +10 min, an invitation's answer.
+    /*
+      ⚠️ ONE AT A TIME. iOS keeps the categories as ONE set, and each call reads
+      it and writes it back — started together they overwrite each other and the
+      losers' buttons vanish without an error. The automatic clock's Undo did.
+    */
     const open = { opensAppToForeground: true };
-    void Notifications.setNotificationCategoryAsync(CALENDAR_REMINDER_CATEGORY, [
-      { identifier: CALENDAR_ACTIONS.done, buttonTitle: i18n.t('calendar.push.done'), options: open },
-      { identifier: CALENDAR_ACTIONS.snooze, buttonTitle: i18n.t('calendar.push.snooze'), options: open },
-    ]).catch(() => undefined);
-    void Notifications.setNotificationCategoryAsync(CALENDAR_INVITE_CATEGORY, [
-      { identifier: CALENDAR_ACTIONS.accept, buttonTitle: i18n.t('calendar.push.accept'), options: open },
-      { identifier: CALENDAR_ACTIONS.maybe, buttonTitle: i18n.t('calendar.push.maybe'), options: open },
-      { identifier: CALENDAR_ACTIONS.decline, buttonTitle: i18n.t('calendar.push.decline'), options: { ...open, isDestructive: true } },
-    ]).catch(() => undefined);
-    // The automatic clock's buttons (src/services/auto-clock/notifications.ts): Undo, Still working, Clock out.
-    void registerAutoClockCategories();
+    void (async () => {
+      await Notifications.setNotificationCategoryAsync(CREW_JOIN_CATEGORY, [
+        { identifier: CREW_JOIN_ACTION, buttonTitle: i18n.t('job.crew.pushJoin'), options: open },
+      ]).catch(() => undefined);
+      // The calendar's buttons (src/lib/calendar-push-actions.ts): a reminder's Done / +10 min, an invitation's answer.
+      await Notifications.setNotificationCategoryAsync(CALENDAR_REMINDER_CATEGORY, [
+        { identifier: CALENDAR_ACTIONS.done, buttonTitle: i18n.t('calendar.push.done'), options: open },
+        { identifier: CALENDAR_ACTIONS.snooze, buttonTitle: i18n.t('calendar.push.snooze'), options: open },
+      ]).catch(() => undefined);
+      await Notifications.setNotificationCategoryAsync(CALENDAR_INVITE_CATEGORY, [
+        { identifier: CALENDAR_ACTIONS.accept, buttonTitle: i18n.t('calendar.push.accept'), options: open },
+        { identifier: CALENDAR_ACTIONS.maybe, buttonTitle: i18n.t('calendar.push.maybe'), options: open },
+        { identifier: CALENDAR_ACTIONS.decline, buttonTitle: i18n.t('calendar.push.decline'), options: { ...open, isDestructive: true } },
+      ]).catch(() => undefined);
+      // The automatic clock's buttons (src/services/auto-clock/notifications.ts): Undo, Still working, Clock out.
+      await registerAutoClockCategories();
+    })();
   }, []);
 
   // Android notification channel setup

@@ -152,16 +152,20 @@ export const autoClockNotifier: AutoClockNotifier = {
  */
 export async function registerAutoClockCategories(): Promise<void> {
   const open = { opensAppToForeground: true };
-  await Promise.all([
-    Notifications.setNotificationCategoryAsync(AUTO_CLOCK_CATEGORIES.in, [
+  // ⚠️ In turn, never `Promise.all`: each call rewrites iOS's whole category set (see usePushNotifications).
+  const categories: Array<[string, Notifications.NotificationAction[]]> = [
+    [AUTO_CLOCK_CATEGORIES.in, [
       { identifier: AUTO_CLOCK_ACTIONS.undo, buttonTitle: i18n.t('autoClock.push.undo'), options: { ...open, isDestructive: true } },
-    ]),
-    Notifications.setNotificationCategoryAsync(AUTO_CLOCK_CATEGORIES.rest, [
+    ]],
+    [AUTO_CLOCK_CATEGORIES.rest, [
       { identifier: AUTO_CLOCK_ACTIONS.skipRest, buttonTitle: i18n.t('autoClock.push.stillWorking'), options: open },
-    ]),
-    Notifications.setNotificationCategoryAsync(AUTO_CLOCK_CATEGORIES.end, [
+    ]],
+    [AUTO_CLOCK_CATEGORIES.end, [
       { identifier: AUTO_CLOCK_ACTIONS.clockOut, buttonTitle: i18n.t('autoClock.push.clockOut'), options: open },
       { identifier: AUTO_CLOCK_ACTIONS.stillWorking, buttonTitle: i18n.t('autoClock.push.stillWorking'), options: open },
-    ]),
-  ]).catch(() => undefined);
+    ]],
+  ];
+  for (const [id, actions] of categories) {
+    await Notifications.setNotificationCategoryAsync(id, actions).catch(() => undefined);
+  }
 }

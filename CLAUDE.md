@@ -396,7 +396,7 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **CUSTOMER spaces are workplaces.** A first version excluded them as "somebody else's premises"; in a field-service product people spend the day at a customer site and clock in there, and the clock-in has always accepted it. Excluding them made the list stricter than the check and hid two of three workspaces from a member assigned to all three. Only the Remote bucket is filtered.
 
 ### The automatic clock (`/attendance/auto-clock`) — the phone decides offline, the server re-checks
-> OS geofences wake the phone on arriving/leaving; it decides with the shared rules and files the clock step in its outbox with the REAL moment (`evidence.occurredAt`) and `trigger: 'AUTO'`. Rules: `packages/shared/src/attendance/auto-clock.ts`; server: `task-service/.../attendance/auto-clock.service.ts` (+ clock-in/clock-out/close/sweeps). Migration `20261012090000_auto_clock` (additive, all off).
+> OS geofences wake the phone on arriving/leaving; it decides with the shared rules and files the clock step in its outbox with the REAL moment (`evidence.occurredAt`) and `trigger: 'AUTO'`. Rules: `packages/shared/src/attendance/auto-clock.ts`; server: `task-service/.../attendance/auto-clock.service.ts` (+ clock-in/clock-out/close/sweeps). Migration `20261012090000_auto_clock` (additive, all off). E2E: `python3 tools/auto-clock-e2e.py` (LOCAL, 55 checks, ~5 min; `--no-sweep` skips the sweep waits).
 
 | Method | Endpoint | Description | Gate |
 |--------|----------|-------------|------|

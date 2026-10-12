@@ -255,9 +255,29 @@ export class ClockOutService {
       site" to the member's watchers — a rule reported broken on a day worked
       exactly as agreed.
     */
-    const outsideAtOut = !withinGeofence && !entry.isRemote;
-
     const clockOutTime = occurrence.at;
+
+    /*
+      ── The automatic clock ──
+      Marked only when it holds: the automatic clock is on for this member here
+      (asked of the shift's own clock-in) and they left at or after the planned
+      end. Anything else is an ordinary clock-out with the ordinary rules
+      (early departure included) — never refused.
+    */
+    const autoOut =
+      data.trigger === 'AUTO' && this.autoClock
+        ? await this.autoClock
+            .settingsFor(entry.userId, entry.locationId, entry.clockInAt)
+            .then((auto) => !!auto && autoClockOutAfterEnd(auto, clockOutTime, entry.expectedClockOutAt))
+        : false;
+
+    /*
+      ⚠️ An automatic clock-out is sent from where the member is AFTER leaving
+      the area — leaving it is what made it. Outside is the only place it can
+      come from, so it is never a violation: flagged, every one of them would
+      wait for a person, and the leader would be told about each departure.
+    */
+    const outsideAtOut = !withinGeofence && !entry.isRemote && !autoOut;
     const totalMinutes = Math.round(
       (clockOutTime.getTime() - entry.clockInAt.getTime()) / (1000 * 60),
     );
@@ -288,17 +308,7 @@ export class ClockOutService {
     const toleranceMin = await this.getShiftFlagTolerance(entry.shiftId);
     flagReasons.push(...clockOutTimeFlags(entry, clockOutTime, toleranceMin));
 
-    /*
-      ── The automatic clock ──
-      Marked only when it holds: the automatic clock is on for this member here
-      (asked of the shift's own clock-in) and they left at or after the planned
-      end. Anything else is an ordinary clock-out with the ordinary rules
-      (early departure included) — never refused.
-    */
-    if (data.trigger === 'AUTO' && this.autoClock) {
-      const auto = await this.autoClock.settingsFor(entry.userId, entry.locationId, entry.clockInAt);
-      if (auto && autoClockOutAfterEnd(auto, clockOutTime, entry.expectedClockOutAt)) flagReasons.push(AUTO_CLOCK_OUT_FLAG);
-    }
+    if (autoOut) flagReasons.push(AUTO_CLOCK_OUT_FLAG);
 
     /*
       How far short of the shift this falls.

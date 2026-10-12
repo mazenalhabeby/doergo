@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { registerConsentUI, resolveBackgroundLocationConsent } from '../services/location-consent';
+import { BlurSheet } from './blur-sheet';
+import { SheetPanel } from './sheet-panel';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constants';
 
 /**
@@ -17,7 +18,6 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../lib/constant
  */
 export function LocationConsentModal() {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
@@ -28,15 +28,13 @@ export function LocationConsentModal() {
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={() => decide(false)}
-      statusBarTranslucent
-    >
-      <View style={styles.backdrop}>
-        <View style={[styles.card, { backgroundColor: colors.card, paddingBottom: insets.bottom + SPACING.lg }]}>
+    /*
+      ⚠️ Through the app's one modal slot (blur-sheet.tsx), never a raw <Modal>:
+      it is asked for from inside other flows, and on iOS a second modal while
+      one is up is refused — the caller then waits on this forever.
+    */
+    <BlurSheet visible={visible} onClose={() => decide(false)}>
+        <SheetPanel onClose={() => decide(false)} maxHeightFraction={0.9} style={styles.card}>
           <View style={styles.iconWrap}>
             <View style={styles.iconCircle}>
               <Ionicons name="navigate" size={30} color={COLORS.primary} />
@@ -64,6 +62,13 @@ export function LocationConsentModal() {
                 {t('locationConsent.clockPre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.clockBold')}</Text>{t('locationConsent.clockPost')}
               </Text>
             </View>
+            {/* The automatic clock watches arriving BEFORE any clock-in — the disclosure must say so (Play's prominent-disclosure rule). */}
+            <View style={styles.bullet}>
+              <Ionicons name="enter-outline" size={18} color={COLORS.primary} style={styles.bulletIcon} />
+              <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
+                {t('locationConsent.autoPre')}<Text style={{ fontWeight: FONT_WEIGHT.semibold, color: colors.textPrimary }}>{t('locationConsent.autoBold')}</Text>{t('locationConsent.autoPost')}
+              </Text>
+            </View>
 
             <Text style={[styles.text, { color: colors.textSecondary, marginTop: SPACING.sm }]}>
               {t('locationConsent.privacyPre')}<Text style={{ color: COLORS.primary }}>{t('locationConsent.privacyLink')}</Text>{t('locationConsent.privacyPost')}
@@ -76,18 +81,12 @@ export function LocationConsentModal() {
           <TouchableOpacity style={styles.denyBtn} onPress={() => decide(false)} activeOpacity={0.7}>
             <Text style={[styles.denyText, { color: colors.textMuted }]}>{t('locationConsent.deny')}</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
+        </SheetPanel>
+    </BlurSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
-  },
   card: {
     borderTopLeftRadius: RADIUS.xl,
     borderTopRightRadius: RADIUS.xl,
