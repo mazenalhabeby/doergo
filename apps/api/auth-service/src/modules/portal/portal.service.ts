@@ -8,6 +8,9 @@ import {
   templateToIntakeCategories,
   DEFAULT_PORTAL_FEATURES,
   SELECTABLE_ASSET_WHERE,
+  scopeWhereOn,
+  scopeAllows,
+  type SpaceScopeIds,
 } from '@hbcfield/shared';
 
 // Keep only well-formed { label, value } detail rows — the one sanitizer the
@@ -67,12 +70,14 @@ export class PortalService {
 
   // ── Portals (office) ──
 
-  async listPortals(data: { organizationId: string; spaceId?: string }) {
+  async listPortals(data: { organizationId: string; spaceId?: string; scopeSpaceIds?: SpaceScopeIds }) {
     const portals = await this.prisma.portal.findMany({
       where: {
         organizationId: data.organizationId,
         isActive: true,
-        ...(data.spaceId ? { spaceId: data.spaceId } : {}),
+        // Both can apply at once (a workspace tab asking for its own portals),
+        // so the scope rides in an AND instead of fighting over `spaceId`.
+        AND: [data.spaceId ? { spaceId: data.spaceId } : {}, scopeWhereOn('spaceId', data.scopeSpaceIds)],
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -276,9 +281,9 @@ export class PortalService {
     return { data: await this.withResidentUsers(rows) };
   }
 
-  async getPortal(data: { id: string; organizationId: string }) {
+  async getPortal(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
     });
     if (!portal) throw new NotFoundException('Portal not found');
     const categories = await this.prisma.intakeCategory.findMany({
@@ -296,12 +301,17 @@ export class PortalService {
     reseed?: boolean;
     coverImageUrl?: string | null;
     spaceId?: string | null;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true, spaceId: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
+    // A workspace-scoped manager may not carry the portal OUT of their reach —
+    // into another workspace, or up to organization level (spaceId null), where
+    // only the org-wide key reaches it. Same 404 as a portal they cannot see.
+    if (data.spaceId !== undefined) this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     // Switching to the Apartment entity requires the space's Assets module.
     if (data.templateKey === 'rental' && portal.spaceId) {
       await this.assertApartmentsModule(data.organizationId, portal.spaceId);
@@ -354,9 +364,9 @@ export class PortalService {
     return this.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
-  async deletePortal(data: { id: string; organizationId: string }) {
+  async deletePortal(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
@@ -417,10 +427,15 @@ export class PortalService {
    * for a scoped caller, which is the safe answer: nothing ties it to a site
    * they run.
    */
-  private unitScope(scopeSpaceIds?: string[]): Record<string, unknown> {
-    if (scopeSpaceIds === undefined) return {};
+  private unitScope(scopeSpaceIds?: SpaceScopeIds): Record<string, unknown> {
+    if (scopeSpaceIds === undefined || scopeSpaceIds === null) return {};
     return {
       OR: [
+        // The unit's own workspace — the catalog a workspace's Units tab lists
+        // (`listSpaceUnits` reads exactly this column). Without it a unit filed
+        // in the workspace but not yet given a client or a portal was out of
+        // reach of the very people who run that workspace.
+        { spaceId: { in: scopeSpaceIds } },
         { customer: { spaceId: { in: scopeSpaceIds } } },
         { portal: { spaceId: { in: scopeSpaceIds } } },
       ],
@@ -488,8 +503,8 @@ export class PortalService {
     return { data: rows.map((r) => ({ ...r, author: r.authorId ? byId.get(r.authorId) ?? null : null })) };
   }
 
-  async addUnitActivity(data: { id: string; organizationId: string; body?: string; authorId?: string }) {
-    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId }, select: { id: true } });
+  async addUnitActivity(data: { id: string; organizationId: string; body?: string; authorId?: string; scopeSpaceIds?: SpaceScopeIds }) {
+    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) }, select: { id: true } });
     if (!unit) throw new NotFoundException('Unit not found');
     const body = (data.body ?? '').trim().slice(0, 5000);
     if (!body) throw new NotFoundException('Note body required');
@@ -509,13 +524,19 @@ export class PortalService {
   }
 
   /** Make a unit the customer's primary address (unsets the siblings). */
-  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller }) {
+  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller; scopeSpaceId?: string }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
       await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
     const unit = await this.prisma.customerUnit.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, ...(data.customerId ? { customerId: data.customerId } : {}) },
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        ...(data.customerId ? { customerId: data.customerId } : {}),
+        // The workspace route's own workspace — see `updateUnit.scopeSpaceId`.
+        ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
+      },
       select: { id: true, customerId: true },
     });
     if (!unit) throw new NotFoundException('Unit not found');
@@ -528,12 +549,13 @@ export class PortalService {
     return { success: true };
   }
 
-  async listUnits(data: { organizationId: string; customerId?: string }) {
+  async listUnits(data: { organizationId: string; customerId?: string; scopeSpaceIds?: SpaceScopeIds }) {
     return this.prisma.customerUnit.findMany({
       where: {
         organizationId: data.organizationId,
         isActive: true,
         ...(data.customerId ? { customerId: data.customerId } : {}),
+        ...this.unitScope(data.scopeSpaceIds),
       },
       orderBy: { createdAt: 'asc' },
       take: 500,
@@ -612,6 +634,113 @@ export class PortalService {
     }
   }
 
+  // ── Workspace reach for portal writes ──────────────────────────────────────
+  //
+  // `scopeSpaceIds` is the list of workspaces in which the caller holds the
+  // portal key the route asks for (undefined/null = org-wide, [] = nowhere).
+  // The org check above says an id is OURS; these say it is in a workspace the
+  // CALLER runs. Every refusal is the same 404 a missing record gets, so a
+  // workspace-scoped manager learns nothing about the workspaces beside theirs.
+
+  /** A workspace a write names (a target, not the record's own) must be in reach. */
+  private assertSpaceRefInScope(scope: SpaceScopeIds, spaceId: string | null | undefined) {
+    if (spaceId === undefined) return;
+    // null = "organization level": reachable with the org-wide key only.
+    if (!scopeAllows(scope, spaceId)) throw new NotFoundException('Space not found');
+  }
+
+  /**
+   * Every relation a unit write names must be in the caller's reach.
+   *
+   * ⚠️ `anchor`: on create, a scoped caller must file the unit SOMEWHERE they
+   * run (a workspace or a portal in one). A unit with neither is reachable only
+   * org-wide — creating one would put a record where its own author can never
+   * see it again.
+   */
+  private async assertUnitRefsInScope(
+    organizationId: string,
+    scope: SpaceScopeIds,
+    refs: { spaceId?: string | null; portalId?: string | null; customerId?: string | null },
+    opts: { anchor?: boolean } = {},
+  ) {
+    if (scope === undefined || scope === null) return;
+    this.assertSpaceRefInScope(scope, refs.spaceId);
+    if (refs.portalId !== undefined) {
+      const portal = refs.portalId
+        ? await this.prisma.portal.findFirst({ where: { id: refs.portalId, organizationId, spaceId: { in: scope } }, select: { id: true } })
+        : null;
+      if (!portal) throw new NotFoundException('Portal not found');
+    }
+    if (refs.customerId) await this.assertCustomerInScope(organizationId, scope, refs.customerId);
+    if (opts.anchor && !refs.spaceId && !refs.portalId) throw new NotFoundException('Space not found');
+  }
+
+  /** A client is in reach when filed in, or a resident of a portal in, a workspace the caller runs. */
+  private async assertCustomerInScope(organizationId: string, scope: SpaceScopeIds, customerId: string) {
+    if (scope === undefined || scope === null) return;
+    const c = await this.prisma.customer.findFirst({
+      where: {
+        id: customerId,
+        organizationId,
+        OR: [{ spaceId: { in: scope } }, { portal: { spaceId: { in: scope } } }],
+      },
+      select: { id: true },
+    });
+    if (!c) throw new NotFoundException('Customer not found');
+  }
+
+  /**
+   * The gateway's question before it calls ANOTHER module on a portal's behalf
+   * (the CRM to create or promote a resident, invitations to send or re-send a
+   * code): is this portal, client or unit inside the caller's reach?
+   *
+   *   portalId    the portal must sit in a workspace in scope
+   *   customerId  with a portal: a client of that portal's workspace (the same
+   *               set `listAssignableCustomersForPortal` offers) or already its
+   *               resident; alone: a resident of a portal in scope
+   *   unitId      the unit must be in reach (`unitScope`)
+   *
+   * Org-wide callers pass no scope and only the organization is checked.
+   */
+  async assertPortalReach(data: {
+    organizationId: string;
+    scopeSpaceIds?: SpaceScopeIds;
+    portalId?: string;
+    customerId?: string;
+    unitId?: string;
+  }) {
+    const scope = data.scopeSpaceIds;
+    let portal: { id: string; spaceId: string | null } | null = null;
+    if (data.portalId) {
+      portal = await this.prisma.portal.findFirst({
+        where: { id: data.portalId, organizationId: data.organizationId, ...scopeWhereOn('spaceId', scope) },
+        select: { id: true, spaceId: true },
+      });
+      if (!portal) throw new NotFoundException('Portal not found');
+    }
+    if (data.customerId) {
+      const reach =
+        scope === undefined || scope === null
+          ? {}
+          : portal
+            ? { OR: [{ portalId: portal.id }, ...(portal.spaceId ? [{ spaceId: portal.spaceId }] : [])] }
+            : { portal: { spaceId: { in: scope } } };
+      const c = await this.prisma.customer.findFirst({
+        where: { id: data.customerId, organizationId: data.organizationId, ...reach },
+        select: { id: true },
+      });
+      if (!c) throw new NotFoundException('Customer not found');
+    }
+    if (data.unitId) {
+      const u = await this.prisma.customerUnit.findFirst({
+        where: { id: data.unitId, organizationId: data.organizationId, ...this.unitScope(scope) },
+        select: { id: true },
+      });
+      if (!u) throw new NotFoundException('Unit not found');
+    }
+    return { data: { portalId: portal?.id ?? null, spaceId: portal?.spaceId ?? null } };
+  }
+
   /**
    * A CRM caller may change this client's addresses — the same rule a CRM write
    * of the client's info obeys (`customers.service.update`): reach the record
@@ -672,12 +801,19 @@ export class PortalService {
     details?: any[];
     actorId?: string;
     crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
+    scopeSpaceIds?: SpaceScopeIds; // set by the portal routes — the workspaces the caller runs portals in
   }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
       await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
     }
     await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
+    await this.assertUnitRefsInScope(
+      data.organizationId,
+      data.scopeSpaceIds,
+      { spaceId: data.spaceId, portalId: data.portalId, customerId: data.customerId },
+      { anchor: true },
+    );
     // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
     const residentUserId = data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null;
     const clientId = residentUserId ? null : (data.customerId || null);
@@ -744,6 +880,8 @@ export class PortalService {
      */
     scopeSpaceId?: string;
     crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
+    /** The workspaces the caller runs portals in — the unit AND whatever it is moved to must be in them. */
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     if (data.crmCaller) {
       // The CRM route always scopes to the client in its path; no scope, no edit.
@@ -751,12 +889,18 @@ export class PortalService {
       await this.assertClientAddressesEditable(data.organizationId, data.scopeCustomerId, data.crmCaller);
     }
     await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId, portalId: data.portalId });
+    await this.assertUnitRefsInScope(data.organizationId, data.scopeSpaceIds, {
+      spaceId: data.spaceId,
+      portalId: data.portalId,
+      customerId: data.customerId,
+    });
     const existing = await this.prisma.customerUnit.findFirst({
       where: {
         id: data.id,
         organizationId: data.organizationId,
         ...(data.scopeCustomerId ? { customerId: data.scopeCustomerId } : {}),
         ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
+        ...this.unitScope(data.scopeSpaceIds),
       },
       select: { id: true, customerId: true, residentUserId: true, spaceId: true },
     });
@@ -846,9 +990,9 @@ export class PortalService {
   /** Vacant apartments the office can assign when inviting a client — the
    *  portal's space catalog, minus any already occupied (member or client).
    *  Staff-only (portal-admin); no apartments-module gate. */
-  async listAvailableUnitsForPortal(data: { organizationId: string; portalId: string }) {
+  async listAvailableUnitsForPortal(data: { organizationId: string; portalId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.portalId, organizationId: data.organizationId },
+      where: { id: data.portalId, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true, spaceId: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
@@ -870,9 +1014,9 @@ export class PortalService {
 
   /** Existing CRM customers the office can invite into the portal — the portal's
    *  space customers who aren't portal residents yet. Staff-only (portal-admin). */
-  async listAssignableCustomersForPortal(data: { organizationId: string; portalId: string }) {
+  async listAssignableCustomersForPortal(data: { organizationId: string; portalId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.portalId, organizationId: data.organizationId },
+      where: { id: data.portalId, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true, spaceId: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
@@ -896,9 +1040,16 @@ export class PortalService {
    *  apartment they held, and revokes pending invites. The customer record is
    *  KEPT (isActive), so it's reversible and no history is lost. Returns the
    *  deactivated login ids so the gateway can bust the token cache instantly. */
-  async removePortalClient(data: { organizationId: string; customerId: string }) {
+  async removePortalClient(data: { organizationId: string; customerId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const customer = await this.prisma.customer.findFirst({
-      where: { id: data.customerId, organizationId: data.organizationId },
+      where: {
+        id: data.customerId,
+        organizationId: data.organizationId,
+        // A resident of a portal in a workspace the caller runs.
+        ...(data.scopeSpaceIds === undefined || data.scopeSpaceIds === null
+          ? {}
+          : { portal: { spaceId: { in: data.scopeSpaceIds } } }),
+      },
       select: { id: true },
     });
     if (!customer) throw new NotFoundException('Client not found');
@@ -930,6 +1081,7 @@ export class PortalService {
     /** The workspace route's own workspace — see `updateUnit.scopeSpaceId`. */
     scopeSpaceId?: string;
     crmCaller?: CrmCaller;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
@@ -941,6 +1093,7 @@ export class PortalService {
         organizationId: data.organizationId,
         ...(data.customerId ? { customerId: data.customerId } : {}),
         ...(data.scopeSpaceId ? { spaceId: data.scopeSpaceId } : {}),
+        ...this.unitScope(data.scopeSpaceIds),
       },
       select: { id: true },
     });
@@ -964,14 +1117,18 @@ export class PortalService {
     issues?: string[];
     position?: number;
     spaceId?: string;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     const portal = await this.prisma.portal.findFirst({
-      where: { id: data.portalId, organizationId: data.organizationId },
+      where: { id: data.portalId, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true },
     });
     if (!portal) throw new NotFoundException('Portal not found');
     // The routing space is a body id too — same tenant check updateCategory makes.
     await this.assertUnitRefsInOrg(data.organizationId, { spaceId: data.spaceId });
+    // …and a workspace-scoped manager may only route their portal's requests
+    // into a workspace they run — never into the one next door.
+    this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     const cat = await this.prisma.intakeCategory.create({
       data: {
         organizationId: data.organizationId,
@@ -1004,12 +1161,16 @@ export class PortalService {
     issues?: string[];
     isActive?: boolean;
     spaceId?: string | null;
+    scopeSpaceIds?: SpaceScopeIds;
   }) {
     const existing = await this.prisma.intakeCategory.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...this.categoryScope(data.scopeSpaceIds) },
       select: { id: true, portalId: true },
     });
     if (!existing) throw new NotFoundException('Category not found');
+    // Routing target in reach (null = "no routing space" is a value only the
+    // org-wide key may choose, like every other organization-level setting).
+    this.assertSpaceRefInScope(data.scopeSpaceIds, data.spaceId);
     // Validate the target space belongs to this org (defence in depth — the
     // onDelete:SetNull relation already guards deletions).
     if (data.spaceId) {
@@ -1037,9 +1198,9 @@ export class PortalService {
     return cat;
   }
 
-  async deleteCategory(data: { id: string; organizationId: string }) {
+  async deleteCategory(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const existing = await this.prisma.intakeCategory.findFirst({
-      where: { id: data.id, organizationId: data.organizationId },
+      where: { id: data.id, organizationId: data.organizationId, ...this.categoryScope(data.scopeSpaceIds) },
       select: { id: true, portalId: true },
     });
     if (!existing) throw new NotFoundException('Category not found');
@@ -1048,7 +1209,20 @@ export class PortalService {
     return { success: true };
   }
 
-  async reorderCategories(data: { organizationId: string; portalId: string; orderedIds: string[] }) {
+  /** A category is in reach through its PORTAL's workspace (not its routing space). */
+  private categoryScope(scope: SpaceScopeIds): Record<string, unknown> {
+    if (scope === undefined || scope === null) return {};
+    return { portal: { spaceId: { in: scope } } };
+  }
+
+  async reorderCategories(data: { organizationId: string; portalId: string; orderedIds: string[]; scopeSpaceIds?: SpaceScopeIds }) {
+    if (data.scopeSpaceIds !== undefined && data.scopeSpaceIds !== null) {
+      const portal = await this.prisma.portal.findFirst({
+        where: { id: data.portalId, organizationId: data.organizationId, spaceId: { in: data.scopeSpaceIds } },
+        select: { id: true },
+      });
+      if (!portal) throw new NotFoundException('Portal not found');
+    }
     await this.prisma.$transaction(
       data.orderedIds.map((id, i) =>
         this.prisma.intakeCategory.updateMany({

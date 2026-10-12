@@ -1,29 +1,31 @@
 import { DenyExternal } from '../../common/decorators';
-import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermission, pickUnitFields } from '@hbcfield/shared';
+import { RequirePermissionInSpace, pickUnitFields } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
+import { portalScope } from '../../common/portal-scope';
 
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
  * IN the space (Portal.spaceId). A "unit" is the portal's entity — an apartment
  * for a rental portal — and can be assigned to a customer (→ their primary
- * address). Staff-only (canManageUsers).
+ * address).
+ *
+ * Every route names its workspace in the path, so `@RequirePermissionInSpace`
+ * is decided for THAT workspace by the guard (the key held org-wide, or in this
+ * space). What the guard cannot see is a unit id under the path: those writes
+ * carry `scopeSpaceId` (the unit must be this workspace's) — two of them did
+ * not, so a manager of workspace A could edit or reassign workspace B's flat by
+ * putting its id under A's path.
+ *
+ * ⚠️ No class-level @DenyExternal any more: an external member given the portal
+ * keys for THIS workspace reads and runs this workspace's portal. Creating a
+ * portal stays closed to them (route below, with its reason).
  */
 @ApiTags('space-portal')
 @ApiBearerAuth()
-/*
-  The organization's own property, not the work at a site.
-
-  An external supervisor holds `canViewAllTasks` in their space — it is how they
-  follow the work they are there to supervise — and this surface was gated on
-  that same permission, so granting the first silently granted the second and an
-  outsider could list the organization's records. The relationship disqualifies
-  them, not the permission, so the rule is stated about the relationship.
-*/
-@DenyExternal()
 @Controller('spaces/:spaceId/portal')
 export class SpacePortalController {
   constructor(
@@ -41,15 +43,23 @@ export class SpacePortalController {
 
 
   @Get('portals')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "List the space's client portals (a space can run several)" })
   async listPortals(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_list', { organizationId: req.user.organizationId, spaceId });
+    return this.auth('portal_list', {
+      organizationId: req.user.organizationId,
+      spaceId,
+      scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+    });
   }
 
   @Post('portals')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
+  // Closed to externals: a workspace's second portal is a billed line (€29) on
+  // the organization's bill. Running the portal that exists is theirs to do;
+  // buying another is the organization's decision.
+  @DenyExternal()
   @ApiOperation({ summary: 'Create a new client portal for this space' })
   async createPortal(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string; name?: string }, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -57,7 +67,7 @@ export class SpacePortalController {
   }
 
   @Get()
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "The space's portal config (entity type)" })
   async get(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -65,7 +75,7 @@ export class SpacePortalController {
   }
 
   @Patch()
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Set the space portal's entity type" })
   async update(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string }, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
@@ -74,14 +84,14 @@ export class SpacePortalController {
 
   // ── Unit / apartment catalog ──
   @Get('units')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canViewPortal')
   async listUnits(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
     return this.auth('portal_list_space_units', { organizationId: req.user.organizationId, spaceId });
   }
 
   @Post('units')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
   async addUnit(@Param('spaceId') spaceId: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number }, @Request() req: any) {
     const orgId = req.user.organizationId;
     await this.requirePortalModule(spaceId, orgId);
@@ -90,11 +100,12 @@ export class SpacePortalController {
       organizationId: orgId, spaceId, portalId: portal?.data?.id,
       name: body.name?.trim() || body.address || 'Unit',
       address: body.address, lat: body.lat, lng: body.lng,
+      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Patch('units/:unitId')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
   async updateUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
     // Whitelist explicitly — never spread the untyped body (audit I-B1).
@@ -112,24 +123,34 @@ export class SpacePortalController {
       id: unitId,
       organizationId: req.user.organizationId,
       actorId: req.user.id,
+      scopeSpaceId: spaceId,
+      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Delete('units/:unitId')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
   async deleteUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId });
+    return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, scopeSpaceId: spaceId });
   }
 
   @Post('units/:unitId/assign')
-  @RequirePermission('canManagePortals')
+  @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Assign this unit to a customer (→ their primary address)' })
   async assign(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Body() body: { customerId: string }, @Request() req: any) {
     const orgId = req.user.organizationId;
     await this.requirePortalModule(spaceId, orgId);
-    await this.auth('portal_update_unit', { id: unitId, organizationId: orgId, customerId: body.customerId });
-    await this.auth('portal_set_primary_unit', { id: unitId, organizationId: orgId });
+    // The unit must be THIS workspace's and the client in reach (scopeSpaceIds),
+    // before anything is written.
+    await this.auth('portal_update_unit', {
+      id: unitId,
+      organizationId: orgId,
+      customerId: body.customerId,
+      scopeSpaceId: spaceId,
+      scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
+    });
+    await this.auth('portal_set_primary_unit', { id: unitId, organizationId: orgId, scopeSpaceId: spaceId });
     return { data: { success: true } };
   }
 }

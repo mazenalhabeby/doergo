@@ -1,9 +1,17 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { MediaSigner } from '../../common/storage/media-signer.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
-import { TaskStatus, TaskEventType, success, canReceiveTasks, portalRequestReference } from '@hbcfield/shared';
+import {
+  TaskStatus,
+  TaskEventType,
+  success,
+  canReceiveTasks,
+  portalRequestReference,
+  scopeAllows,
+  type SpaceScopeIds,
+} from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
 import { TaskAssignmentService } from './task-assignment.service';
 
@@ -56,13 +64,33 @@ export class TaskPortalService {
     };
   }
 
-  /** A customer's own requests (newest first). */
-  async listPortalRequests(data: { organizationId: string; customerId: string }) {
+  /**
+   * A request's workspace is its PORTAL's (`Customer.portal.spaceId`) — not
+   * `Task.spaceId`, which stays empty until triage and then names wherever the
+   * work was routed. The office reads a portal's inbox, so reach follows the
+   * portal: a request from a portal in a workspace the caller answers for is
+   * theirs to read, wherever it was later routed. An organization-level portal
+   * (no workspace) is in no list of ids — org-wide key only.
+   *
+   * undefined/null = org-wide (adds nothing) · [] = nowhere (matches nothing).
+   */
+  private requestScope(scope: SpaceScopeIds): Record<string, unknown> {
+    if (scope === undefined || scope === null) return {};
+    return { customer: { portal: { spaceId: { in: scope } } } };
+  }
+
+  /**
+   * One client's requests (newest first) — the customer's own list, and the
+   * office's view of one resident (`scopeSpaceIds` set by the office route
+   * only; the customer route passes their own customerId from the token).
+   */
+  async listPortalRequests(data: { organizationId: string; customerId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const tasks = await this.prisma.task.findMany({
       where: {
         organizationId: data.organizationId,
         customerId: data.customerId,
         source: 'CUSTOMER_PORTAL',
+        ...this.requestScope(data.scopeSpaceIds),
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -78,7 +106,7 @@ export class TaskPortalService {
    * the portal's customers via the Customer.portalId relation, so it never leaks
    * across orgs or portals. Includes the submitting client's name.
    */
-  async listPortalRequestsByPortal(data: { organizationId: string; portalId: string }) {
+  async listPortalRequestsByPortal(data: { organizationId: string; portalId: string; scopeSpaceIds?: SpaceScopeIds }) {
     // Explicit portal-ownership check (defense-in-depth): the task filter below
     // already scopes by org + the customer→portal join, but assert the portal
     // belongs to the caller's org so ownership never rests on an implicit join.
@@ -87,6 +115,9 @@ export class TaskPortalService {
       select: { id: true, spaceId: true },
     });
     if (!ownsPortal) return success([]);
+    // …and to a workspace the caller reads portal requests in. 404, like a
+    // portal of another organization: "it exists, but not for you" is an answer.
+    if (!scopeAllows(data.scopeSpaceIds, ownsPortal.spaceId)) throw new NotFoundException('Portal not found');
 
     // The portal's routing space (if linked) — pre-fills triage so the admin
     // doesn't re-pick the space for every request from this property.
@@ -161,15 +192,35 @@ export class TaskPortalService {
     priority?: string;
     assignedToId?: string | null;
     userId: string;
+    /** Workspaces the caller ANSWERS portal requests in (undefined/null = org-wide). */
+    scopeSpaceIds?: SpaceScopeIds;
+    /**
+     * Workspaces the caller may ASSIGN work in — sent only for a workspace-scoped
+     * answerer. Routing a request is answering it; naming who does the job is
+     * assigning work, which is its own permission. An org-wide answerer keeps
+     * what `canManagePortals` always allowed (the field is not sent).
+     */
+    assignScopeSpaceIds?: SpaceScopeIds;
   }) {
     const task = await this.prisma.task.findFirst({
-      where: { id: data.id, organizationId: data.organizationId, source: 'CUSTOMER_PORTAL' },
+      where: {
+        id: data.id,
+        organizationId: data.organizationId,
+        source: 'CUSTOMER_PORTAL',
+        ...this.requestScope(data.scopeSpaceIds),
+      },
     });
     if (!task) throw new NotFoundException('Request not found');
     if (task.triaged) throw new BadRequestException('This request has already been routed');
 
     // Space is REQUIRED — a triaged task always belongs to a space.
     if (!data.spaceId) throw new BadRequestException('Pick a space to route this request to');
+    // A workspace-scoped answerer routes into a workspace they answer for —
+    // never drops work onto the board next door. Same 404 as a missing space.
+    if (!scopeAllows(data.scopeSpaceIds, data.spaceId)) throw new NotFoundException('Space not found');
+    if (data.assignedToId && !scopeAllows(data.assignScopeSpaceIds, data.spaceId)) {
+      throw new ForbiddenException('You cannot assign work in this workspace');
+    }
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: data.spaceId, organizationId: data.organizationId },
       select: { id: true, lat: true, lng: true, address: true, workflowId: true },

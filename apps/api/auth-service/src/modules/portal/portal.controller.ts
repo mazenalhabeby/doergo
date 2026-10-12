@@ -1,6 +1,16 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import type { SpaceScopeIds } from '@hbcfield/shared';
 import { PortalService } from './portal.service';
+
+/*
+  `scopeSpaceIds` on an office payload = the workspaces in which the caller holds
+  the portal key the gateway route asked for (undefined/null = org-wide, [] =
+  nowhere). It is built from the verified session in the gateway
+  (`portalScope`), never from a request body, and the service narrows every
+  query to it — the guard alone only knows the key is held SOMEWHERE.
+*/
+type Scoped = { scopeSpaceIds?: SpaceScopeIds };
 
 @Controller()
 export class PortalController {
@@ -9,7 +19,7 @@ export class PortalController {
   // ── Portals (office) ──
 
   @MessagePattern({ cmd: 'portal_list' })
-  listPortals(@Payload() data: { organizationId: string; spaceId?: string }) {
+  listPortals(@Payload() data: { organizationId: string; spaceId?: string } & Scoped) {
     return this.portalService.listPortals(data);
   }
 
@@ -24,7 +34,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_get' })
-  getPortal(@Payload() data: { id: string; organizationId: string }) {
+  getPortal(@Payload() data: { id: string; organizationId: string } & Scoped) {
     return this.portalService.getPortal(data);
   }
 
@@ -54,7 +64,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_add_unit_activity' })
-  addUnitActivity(@Payload() data: { id: string; organizationId: string; body?: string; authorId?: string }) {
+  addUnitActivity(@Payload() data: { id: string; organizationId: string; body?: string; authorId?: string } & Scoped) {
     return this.portalService.addUnitActivity(data);
   }
 
@@ -69,7 +79,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_delete' })
-  deletePortal(@Payload() data: { id: string; organizationId: string }) {
+  deletePortal(@Payload() data: { id: string; organizationId: string } & Scoped) {
     return this.portalService.deletePortal(data);
   }
 
@@ -93,7 +103,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_admin_list_units' })
-  adminListUnits(@Payload() data: { organizationId: string; customerId?: string }) {
+  adminListUnits(@Payload() data: { organizationId: string; customerId?: string } & Scoped) {
     return this.portalService.listUnits(data);
   }
 
@@ -108,7 +118,7 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_set_primary_unit' })
-  setPrimaryUnit(@Payload() data: { id: string; organizationId: string }) {
+  setPrimaryUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string }) {
     return this.portalService.setPrimaryUnit(data);
   }
 
@@ -118,23 +128,31 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_delete_unit' })
-  deleteUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string }) {
+  deleteUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string } & Scoped) {
     return this.portalService.deleteUnit(data);
   }
 
   @MessagePattern({ cmd: 'portal_remove_client' })
-  removePortalClient(@Payload() data: { organizationId: string; customerId: string }) {
+  removePortalClient(@Payload() data: { organizationId: string; customerId: string } & Scoped) {
     return this.portalService.removePortalClient(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_available_units' })
-  listAvailableUnitsForPortal(@Payload() data: { organizationId: string; portalId: string }) {
+  listAvailableUnitsForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
     return this.portalService.listAvailableUnitsForPortal(data);
   }
 
   @MessagePattern({ cmd: 'portal_list_assignable_customers' })
-  listAssignableCustomersForPortal(@Payload() data: { organizationId: string; portalId: string }) {
+  listAssignableCustomersForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
     return this.portalService.listAssignableCustomersForPortal(data);
+  }
+
+  /** Is this portal / client / unit in the caller's reach? 404 when not (see the service). */
+  @MessagePattern({ cmd: 'portal_assert_reach' })
+  assertPortalReach(
+    @Payload() data: { organizationId: string; portalId?: string; customerId?: string; unitId?: string } & Scoped,
+  ) {
+    return this.portalService.assertPortalReach(data);
   }
 
   // ── Intake category editor (per portal) ──
@@ -150,12 +168,12 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_delete_category' })
-  deleteCategory(@Payload() data: { id: string; organizationId: string }) {
+  deleteCategory(@Payload() data: { id: string; organizationId: string } & Scoped) {
     return this.portalService.deleteCategory(data);
   }
 
   @MessagePattern({ cmd: 'portal_reorder_categories' })
-  reorderCategories(@Payload() data: { organizationId: string; portalId: string; orderedIds: string[] }) {
+  reorderCategories(@Payload() data: { organizationId: string; portalId: string; orderedIds: string[] } & Scoped) {
     return this.portalService.reorderCategories(data);
   }
 }
