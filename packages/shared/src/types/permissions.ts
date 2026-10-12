@@ -29,6 +29,11 @@ export const PERMISSION_KEYS = [
   'canManageRota',
   'canReconcileAttendance',
   'canViewSpaceAttendance',
+  // Approving an entry and correcting one are different trusts — a client's
+  // supervisor signs off our hours without being able to rewrite them — and
+  // erasing one is a third. All three rode on canReconcileAttendance.
+  'canApproveAttendance',
+  'canDeleteAttendance',
   // CRM (clients). View scope is two keys: own ⊂ all (viewAll implies viewOwn).
   'crmViewOwn',
   'crmViewAll',
@@ -47,6 +52,11 @@ export const PERMISSION_KEYS = [
   // while an owner reading margin has no reason to issue anything.
   'canViewLabourCost',
   'canManageAssets',
+  // Reading the equipment and logging what was done with it. Reads rode on
+  // canViewAllTasks — a task permission — so "see the jobs" also meant "see the
+  // vans", and nothing short of canManageAssets could log a refuel.
+  'canViewAssets',
+  'canLogAssets',
   // Creating and configuring workspaces — the space itself, its roles, and who
   // outside the organization may see it. Split out of canManageUsers, where
   // "invite a colleague" and "delete a site" were the same grant.
@@ -54,6 +64,14 @@ export const PERMISSION_KEYS = [
   // Client portals — the B2B2C surface. 41 endpoints rode on canManageUsers,
   // so "invite a colleague" also meant "publish a portal to your customers".
   'canManagePortals',
+  // Reading a portal's requests and answering them, without configuring the
+  // portal itself — what a client's site manager does all day.
+  'canViewPortal',
+  'canAnswerPortal',
+  // A workspace's own people: adding them, and choosing their role there. Rode
+  // on canManageUsers, which in a space ALSO sets what each person bills at.
+  'canAddSpaceMembers',
+  'canGrantSpaceRoles',
   // Task-type / workflow definitions: which statuses exist and how work flows.
   'canManageTaskTypes',
   // Where staff physically are. Split from canViewAllTasks because reading a
@@ -84,7 +102,7 @@ export type PermissionSet = Partial<Record<AccessPermissionKey, boolean>>;
 export type PermissionGrantScope = 'org' | 'space';
 
 /** Domain grouping for UI. */
-export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'billing' | 'assets' | 'workspaces' | 'tracking' | 'documents';
+export type PermissionDomain = 'tasks' | 'members' | 'reports' | 'attendance' | 'crm' | 'portal' | 'billing' | 'assets' | 'workspaces' | 'tracking' | 'documents';
 
 /** Human-facing metadata for every permission — drives the role-builder UI. */
 export const ACCESS_PERMISSION_SCHEMA: {
@@ -94,30 +112,44 @@ export const ACCESS_PERMISSION_SCHEMA: {
   domain: PermissionDomain;
   /** Scopes where granting this permission is meaningful. */
   scopes: PermissionGrantScope[];
+  /**
+   * May an EXTERNAL member hold it (in a space)? Opt-in per key, on purpose: a
+   * permission added later is refused to outsiders until somebody decides
+   * otherwise here, in a diff.
+   */
+  external?: true;
 }[] = [
-  { key: 'canCreateTasks', label: 'Create tasks', description: 'Create new tasks', domain: 'tasks', scopes: ['org', 'space'] },
-  { key: 'canViewAllTasks', label: 'View all tasks', description: 'See every task in scope, not just own/assigned', domain: 'tasks', scopes: ['org', 'space'] },
-  { key: 'canAssignTasks', label: 'Assign tasks', description: 'Assign tasks to members', domain: 'tasks', scopes: ['org', 'space'] },
+  { key: 'canCreateTasks', label: 'Create tasks', description: 'Create new tasks', domain: 'tasks', scopes: ['org', 'space'], external: true },
+  { key: 'canViewAllTasks', label: 'View all tasks', description: 'See every task in scope, not just own/assigned', domain: 'tasks', scopes: ['org', 'space'], external: true },
+  { key: 'canAssignTasks', label: 'Assign tasks', description: 'Assign tasks to members', domain: 'tasks', scopes: ['org', 'space'], external: true },
   { key: 'canManageUsers', label: 'Manage members', description: 'Invite, edit and remove members (org) / manage this space’s members (space)', domain: 'members', scopes: ['org', 'space'] },
+  { key: 'canAddSpaceMembers', label: 'Add people to the workspace', description: 'Add people to this workspace and take them off it', domain: 'members', scopes: ['org', 'space'], external: true },
+  { key: 'canGrantSpaceRoles', label: 'Give roles in the workspace', description: 'Choose the role people hold in this workspace — never more than your own', domain: 'members', scopes: ['org', 'space'], external: true },
   { key: 'canViewReports', label: 'View reports', description: 'Build and run reports', domain: 'reports', scopes: ['org', 'space'] },
-  { key: 'canApproveOvertime', label: 'Approve overtime', description: 'Approve extra-time requests', domain: 'attendance', scopes: ['org', 'space'] },
-  { key: 'canManageRota', label: 'Manage rota', description: 'Create shifts and assign members to shifts', domain: 'attendance', scopes: ['org', 'space'] },
-  { key: 'canReconcileAttendance', label: 'Reconcile attendance', description: 'Close/fix open attendance entries', domain: 'attendance', scopes: ['org', 'space'] },
-  { key: 'canViewSpaceAttendance', label: 'View attendance', description: 'See attendance for everyone in scope', domain: 'attendance', scopes: ['org', 'space'] },
+  { key: 'canApproveOvertime', label: 'Approve overtime', description: 'Approve extra-time requests', domain: 'attendance', scopes: ['org', 'space'], external: true },
+  { key: 'canManageRota', label: 'Manage rota', description: 'Create shifts and assign members to shifts', domain: 'attendance', scopes: ['org', 'space'], external: true },
+  { key: 'canReconcileAttendance', label: 'Reconcile attendance', description: 'Close/fix open attendance entries', domain: 'attendance', scopes: ['org', 'space'], external: true },
+  { key: 'canViewSpaceAttendance', label: 'View attendance', description: 'See attendance for everyone in scope', domain: 'attendance', scopes: ['org', 'space'], external: true },
+  { key: 'canApproveAttendance', label: 'Approve attendance', description: 'Approve or reject time entries and time away from the site', domain: 'attendance', scopes: ['org', 'space'], external: true },
+  { key: 'canDeleteAttendance', label: 'Delete attendance', description: 'Delete a time entry for good', domain: 'attendance', scopes: ['org', 'space'], external: true },
   // CRM — client relationship management (gated per-space by the `crm` module).
-  { key: 'crmViewOwn', label: 'View own clients', description: 'See CRM clients assigned to them', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmViewAll', label: 'View all clients', description: 'See every CRM client, not just assigned ones', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmWork', label: 'Work clients', description: 'Change pipeline stage and add timeline notes on visible clients', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmCreateClients', label: 'Add clients', description: 'Add a new client — without the power to reassign or delete one', domain: 'crm', scopes: ['org', 'space'] },
-  { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership and delete/archive clients', domain: 'crm', scopes: ['org', 'space'] },
+  { key: 'crmViewOwn', label: 'View own clients', description: 'See CRM clients assigned to them', domain: 'crm', scopes: ['org', 'space'], external: true },
+  { key: 'crmViewAll', label: 'View all clients', description: 'See every CRM client, not just assigned ones', domain: 'crm', scopes: ['org', 'space'], external: true },
+  { key: 'crmWork', label: 'Work clients', description: 'Change pipeline stage and add timeline notes on visible clients', domain: 'crm', scopes: ['org', 'space'], external: true },
+  { key: 'crmEditInfo', label: 'Edit client info', description: 'Edit client details, addresses and units', domain: 'crm', scopes: ['org', 'space'], external: true },
+  { key: 'crmCreateClients', label: 'Add clients', description: 'Add a new client — without the power to reassign or delete one', domain: 'crm', scopes: ['org', 'space'], external: true },
+  { key: 'crmManageClients', label: 'Manage clients', description: 'Reassign ownership and delete/archive clients', domain: 'crm', scopes: ['org', 'space'], external: true },
   { key: 'canManageInvoices', label: 'Customer invoices', description: 'Open customer invoicing and see what has been billed', domain: 'billing', scopes: ['org'] },
   { key: 'canViewLabourCost', label: 'Labour cost and margin', description: 'See what an hour costs as well as what it bills at', domain: 'billing', scopes: ['org'] },
-  { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'] },
+  { key: 'canViewAssets', label: 'View assets', description: 'See equipment, vehicles and their history', domain: 'assets', scopes: ['org', 'space'], external: true },
+  { key: 'canLogAssets', label: 'Log asset use', description: 'Record use, fuel and expenses against equipment', domain: 'assets', scopes: ['org', 'space'], external: true },
+  { key: 'canManageAssets', label: 'Manage assets', description: 'Delete assets and record money against them', domain: 'assets', scopes: ['org', 'space'], external: true },
   { key: 'canManageWorkspaces', label: 'Manage workspaces', description: 'Create, configure, archive and share workspaces', domain: 'workspaces', scopes: ['org'] },
-  { key: 'canManagePortals', label: 'Manage client portals', description: 'Create and configure the portals customers log in to', domain: 'crm', scopes: ['org'] },
+  { key: 'canViewPortal', label: 'View portal requests', description: 'See the requests clients send through the portal', domain: 'portal', scopes: ['org', 'space'], external: true },
+  { key: 'canAnswerPortal', label: 'Answer portal requests', description: 'Reply to portal requests and change their status', domain: 'portal', scopes: ['org', 'space'], external: true },
+  { key: 'canManagePortals', label: 'Manage client portals', description: 'Create and configure the portals customers log in to', domain: 'portal', scopes: ['org', 'space'], external: true },
   { key: 'canManageTaskTypes', label: 'Manage task types', description: 'Define task types, statuses and how work flows through them', domain: 'tasks', scopes: ['org'] },
-  { key: 'canViewTracking', label: 'View location tracking', description: 'See where field staff are and the routes they travelled', domain: 'tracking', scopes: ['org', 'space'] },
+  { key: 'canViewTracking', label: 'View location tracking', description: 'See where field staff are and the routes they travelled', domain: 'tracking', scopes: ['org', 'space'], external: true },
   // Personnel file. Org scope only: a document belongs to a PERSON, not to a
   // site, so granting it per space would say "you may read their payslip while
   // they are working in Laakirchen", which is not a thing anyone means.
@@ -302,13 +334,18 @@ export const BUILTIN_ROLES: RolePreset[] = [
     scope: 'SPACE',
     permissions: {
       canManageUsers: true, // manages members + routing WITHIN this space (delegation)
+      canAddSpaceMembers: true,
+      canGrantSpaceRoles: true,
       canCreateTasks: true,
       canViewAllTasks: true,
       canAssignTasks: true,
       canApproveOvertime: true,
       canManageRota: true,
       canReconcileAttendance: true,
+      canApproveAttendance: true,
+      canDeleteAttendance: true,
       canViewSpaceAttendance: true,
+      canViewAssets: true,
     },
   },
   {
@@ -320,6 +357,8 @@ export const BUILTIN_ROLES: RolePreset[] = [
     permissions: {
       canApproveOvertime: true,
       canReconcileAttendance: true,
+      canApproveAttendance: true,
+      canDeleteAttendance: true,
       canViewSpaceAttendance: true,
     },
   },
@@ -394,10 +433,16 @@ export const BUILTIN_ROLES: RolePreset[] = [
     // colour wherever either appears.
     color: '#b45309',
     scope: 'SPACE',
+    /*
+      Signs off our hours; does not rewrite them. Correcting (canReconcileAttendance)
+      and deleting (canDeleteAttendance) are switches an admin turns on for one
+      person in the builder. An organization seeded before the split keeps what its
+      copy of this role already held — built-ins only ever gain keys.
+    */
     permissions: {
       canViewSpaceAttendance: true,
+      canApproveAttendance: true,
       canApproveOvertime: true,
-      canReconcileAttendance: true,
       canViewAllTasks: true,
     },
   },
@@ -486,27 +531,23 @@ export function permissionsExceed(
  * otherwise, in a diff, on purpose. Same discipline as the billing gates, which
  * 402 on a key they do not recognise rather than waving it through.
  *
- * The line drawn: an external member may run the WORK and the HOURS in the
- * space they were assigned to. That is the job a client's shift leader actually
- * does — approve the overtime, reconcile the shift, see the roster for the site
- * they supervise, and keep the tasks moving.
+ * The line drawn: an external member may be given anything that is SCOPED TO
+ * THE WORKSPACE they are assigned to — the work, the hours, the rota, that
+ * workspace's clients, portal and equipment, its people — from watch-only up to
+ * running the site (docs/plans/external-role-builder.md). Organization-scoped keys
+ * never reach them, because an external member holds no org role at all.
  *
- * Everything absent is absent for a reason. Your client list, your personnel
- * files, where your staff physically are, your invoices, your portals, your
- * workspaces and your other sites all belong to the organization, and an
- * outsider supervising one site has no claim on any of them.
+ * It stays an ALLOW-list, read from `external: true` on the schema: a key
+ * nobody marked is refused. `canManageUsers` is space-capable and still not
+ * marked — in a space it also sets what each person BILLS at, a price agreed
+ * with the client, not by the client's person; adding people and giving roles
+ * are their own keys for exactly that. Your personnel files, your
+ * invoices, your other sites and your company's members belong to the
+ * organization, and an outsider running one site has no claim on any of them.
  */
-export const EXTERNAL_ALLOWED_PERMISSIONS: readonly AccessPermissionKey[] = [
-  // The work in their space
-  'canCreateTasks',
-  'canViewAllTasks',
-  'canAssignTasks',
-  // The hours in their space — the reason they are here
-  'canApproveOvertime',
-  'canManageRota',
-  'canReconcileAttendance',
-  'canViewSpaceAttendance',
-];
+export const EXTERNAL_ALLOWED_PERMISSIONS: readonly AccessPermissionKey[] = ACCESS_PERMISSION_SCHEMA
+  .filter((p) => p.external === true && p.scopes.includes('space'))
+  .map((p) => p.key);
 
 const EXTERNAL_ALLOWED = new Set<string>(EXTERNAL_ALLOWED_PERMISSIONS);
 

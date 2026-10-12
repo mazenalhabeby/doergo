@@ -195,6 +195,12 @@ export * from './access/builtin-role-sync';
 export * from './people/person-name';
 // The permission keys a role may carry, org-wide or in a space — one list for both services (access/permission-whitelist.ts)
 export * from './access/permission-whitelist';
+// What somebody may do in one workspace, as areas, levels and switches — the builder's model (access/permission-levels.ts)
+export * from './access/permission-levels';
+// Every permission as an org-wide request field, bridges applied (access/org-flags.ts)
+export * from './access/org-flags';
+// One person's permissions in one workspace, as a role nobody else may hold (access/personal-role.ts)
+export * from './access/personal-role';
 // A member's org-wide access from their row, resolved like the session (access/org-access.ts).
 export * from './access/org-access';
 // What a member may upload, and how big — one definition (constants/upload-rules.ts).

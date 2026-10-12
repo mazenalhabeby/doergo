@@ -34,18 +34,37 @@ describe('external member permission ceiling', () => {
       }
     });
 
-    it('allows only work and hours — never the organization itself', () => {
+    it('allows only what is scoped to their workspace — never the organization itself', () => {
       // Named individually rather than derived, so widening the allow-list has
-      // to change this test too and cannot happen by accident.
+      // to change this test too and cannot happen by accident. Widened on
+      // 2026-10-12 to the workspace's clients, portal, equipment, tracking and
+      // people (docs/plans/external-role-builder.md) — every one space-scoped.
       expect([...EXTERNAL_ALLOWED_PERMISSIONS].sort()).toEqual(
         [
+          'canAddSpaceMembers',
+          'canAnswerPortal',
+          'canApproveAttendance',
           'canApproveOvertime',
           'canAssignTasks',
           'canCreateTasks',
+          'canDeleteAttendance',
+          'canGrantSpaceRoles',
+          'canLogAssets',
+          'canManageAssets',
+          'canManagePortals',
           'canManageRota',
           'canReconcileAttendance',
           'canViewAllTasks',
+          'canViewAssets',
+          'canViewPortal',
           'canViewSpaceAttendance',
+          'canViewTracking',
+          'crmCreateClients',
+          'crmEditInfo',
+          'crmManageClients',
+          'crmViewAll',
+          'crmViewOwn',
+          'crmWork',
         ].sort(),
       );
     });
@@ -53,14 +72,12 @@ describe('external member permission ceiling', () => {
 
   describe('the things an outsider must never reach', () => {
     const forbidden = [
-      'canManageUsers', // could add their own people
+      'canManageUsers', // in a space it also sets what each person bills at
       'canManageWorkspaces', // could delete a site
-      'canManagePortals', // could publish to your customers
       'canManageInvoices', // could invoice your customers
-      'canViewTracking', // where your staff physically are
+      'canViewLabourCost', // what your people cost you
       'canViewReports', // org-wide reporting
-      'crmViewAll', // your client list is your business
-      'crmManageClients',
+      'canManageTaskTypes', // how work flows in every workspace
       'canOpenMemberDocuments', // payslips
       'canIssueDocuments',
     ] as const;
@@ -91,9 +108,9 @@ describe('external member permission ceiling', () => {
       const out = externalForbiddenIn({
         canApproveOvertime: true,
         canManageUsers: true,
-        canViewTracking: true,
+        canViewReports: true,
       });
-      expect(out.sort()).toEqual(['canManageUsers', 'canViewTracking']);
+      expect(out.sort()).toEqual(['canManageUsers', 'canViewReports']);
     });
   });
 

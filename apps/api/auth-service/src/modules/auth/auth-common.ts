@@ -7,7 +7,7 @@ import {
   BCRYPT_COST_FACTOR,
   DEFAULT_PROFILE_BADGES,
   buildResolvedAccess,
-  accessAllows,
+  orgFlagFields,
   resolveTaskCreationScope,
   type ProfileBadgesConfig,
 } from '@hbcfield/shared';
@@ -93,89 +93,12 @@ export function orgPermissionFields(
 ) {
   return {
     taskCreationScope: resolveTaskCreationScope(taskCreationScopeColumn, access),
-    canCreateTasks: accessAllows(access, 'canCreateTasks'),
-    canViewAllTasks: accessAllows(access, 'canViewAllTasks'),
-    canAssignTasks: accessAllows(access, 'canAssignTasks'),
-    canManageUsers: accessAllows(access, 'canManageUsers'),
-    canViewReports: accessAllows(access, 'canViewReports'),
-
     /*
-      Split out of the two flags that were carrying the product: canManageUsers
-      gated 129 endpoints and canViewAllTasks 81, so "can manage members" also
-      meant "can invoice customers and delete assets".
-
-      Each is BRIDGED to the gate it replaces, so this is strictly additive —
-      nobody who can do these things today loses them, and an organization can now
-      grant either precisely, to a bookkeeper who has no business editing members.
-      Drop the `||` half once roles carry the grant.
+      Every permission key, as an org-wide boolean, with the bridges that keep a
+      grant split out of a broader one (ORG_FLAG_BRIDGES in shared — the reasons
+      for each bridge, and for documents having none, live there).
     */
-    canManageInvoices:
-      accessAllows(access, 'canManageInvoices') || accessAllows(access, 'canViewAllTasks'),
-    /*
-      What labour COSTS, as opposed to what it bills at.
-
-      ⚠️ Deliberately NOT bridged to `canManageInvoices`. Raising an invoice is
-      an office job — build it, send it, chase it — and the margin is a
-      different question asked by a different person. Bundling them lets the
-      first bookkeeper hired read the company's margin on every job.
-
-      Bridged to `canManageUsers` instead, which is the grant that already
-      carries employment terms: whoever sets somebody's start date and holiday
-      entitlement is the person who may reasonably know what their hour costs.
-      That also means an owner has it on day one without hunting for a switch.
-    */
-    canViewLabourCost:
-      accessAllows(access, 'canViewLabourCost') || accessAllows(access, 'canManageUsers'),
-    canManageAssets:
-      accessAllows(access, 'canManageAssets') || accessAllows(access, 'canManageUsers'),
-    canManageWorkspaces:
-      accessAllows(access, 'canManageWorkspaces') || accessAllows(access, 'canManageUsers'),
-    // canManageRota already existed in the catalogue and was required by nothing.
-    // The rota endpoints were on canManageUsers, so the key describing exactly
-    // that job sat unused while the job was granted by an unrelated one.
-    canManageRota:
-      accessAllows(access, 'canManageRota') || accessAllows(access, 'canManageUsers'),
-    canManagePortals:
-      accessAllows(access, 'canManagePortals') || accessAllows(access, 'canManageUsers'),
-    canManageTaskTypes:
-      accessAllows(access, 'canManageTaskTypes') || accessAllows(access, 'canManageUsers'),
-    // Like canManageRota, these three were already in the catalogue and required
-    // by nothing, while the job each names was granted by canManageUsers or
-    // canViewAllTasks. Wiring them is the fix, not a new concept.
-    canReconcileAttendance:
-      accessAllows(access, 'canReconcileAttendance') || accessAllows(access, 'canManageUsers'),
-    canViewSpaceAttendance:
-      accessAllows(access, 'canViewSpaceAttendance') || accessAllows(access, 'canViewAllTasks'),
-    canApproveOvertime:
-      accessAllows(access, 'canApproveOvertime') ||
-      accessAllows(access, 'canManageUsers') ||
-      accessAllows(access, 'canViewAllTasks'),
-    canViewTracking:
-      accessAllows(access, 'canViewTracking') || accessAllows(access, 'canViewAllTasks'),
-
-    /*
-      Personnel file — the four document permissions, deliberately with NO `||`
-      bridge on any of them.
-
-      Every bridge above exists to preserve access somebody already had when a
-      broad flag was split into precise ones. That argument does not apply here:
-      documents are a NEW capability, so nobody holds it today and there is
-      nothing to preserve. A bridge would therefore not preserve power, it would
-      GRANT it — silently handing every holder of `canManageUsers` the ability to
-      read their colleagues' payslips on the day this ships.
-
-      The built-in Admin role still receives all four through `allPermissions()`,
-      which is honest: the org owner is the employer, and could tick the box for
-      themselves in any case. Everyone else — Manager included — is granted
-      explicitly, in a UI that already exists, once.
-    */
-    canViewMemberDocuments: accessAllows(access, 'canViewMemberDocuments'),
-    canOpenMemberDocuments: accessAllows(access, 'canOpenMemberDocuments'),
-    canIssueDocuments: accessAllows(access, 'canIssueDocuments'),
-    canManageDocumentTemplates: accessAllows(access, 'canManageDocumentTemplates'),
-    canManageDocumentVisibility: accessAllows(access, 'canManageDocumentVisibility'),
-    canReplaceDocuments: accessAllows(access, 'canReplaceDocuments'),
-    canDeleteDocuments: accessAllows(access, 'canDeleteDocuments'),
+    ...orgFlagFields(access),
   };
 }
 

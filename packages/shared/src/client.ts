@@ -64,6 +64,10 @@ export * from './access/task-access';
 export * from './access/space-scope';
 // Who may configure a space, and add people to it — asked by web and mobile alike.
 export * from './access/space-manage';
+// What somebody may do in one workspace, as areas, levels and switches — the builder's model (access/permission-levels.ts)
+export * from './access/permission-levels';
+// One person's permissions in one workspace, as a role nobody else may hold (access/personal-role.ts)
+export * from './access/personal-role';
 export * from './access/module-anywhere';
 
 // Code lengths and charsets for invitations and org join codes. Pure data, and

@@ -3370,6 +3370,15 @@ model AccessRole {
   /// roles is MANAGEMENT, so nothing that already grants authority changes meaning.
   kind RoleKind @default(MANAGEMENT)
 
+  /// A PERSONAL role: what ONE person may do in ONE workspace, built in the
+  /// permission builder (docs/plans/external-role-builder.md). Owned by that
+  /// space assignment, hidden from every role list and picker, deleted with it.
+  /// A role and not an override column so that every check that reads a role —
+  /// whitelist, external allow-list, grant ceiling, re-bill, resolver — applies
+  /// to it unchanged.
+  personalAssignmentId String?          @unique
+  personalAssignment   SpaceAssignment? @relation("PersonalRole", fields: [personalAssignmentId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -3401,6 +3410,8 @@ model SpaceAssignment {
 
   roleId String?
   role   AccessRole? @relation("AssignmentRole", fields: [roleId], references: [id], onDelete: SetNull)
+  /// This assignment's own role, when its permissions were built for this person (see AccessRole.personalAssignmentId).
+  personalRole AccessRole? @relation("PersonalRole")
 
   /// The member's TRADE in this workspace (a WORK role). Grants nothing — every
   /// permission check keeps reading `roleId` alone, by design.
@@ -3600,6 +3611,12 @@ model Invitation {
   /// ordinary staff. Refused together with `memberRoleId`; see User.isExternal.
   isExternal Boolean     @default(false)
   memberRole AccessRole? @relation(fields: [memberRoleId], references: [id], onDelete: SetNull)
+  /// What an EXTERNAL invitee may do in `spaceId`, built in the permission
+  /// builder. Validated when the invitation is made (space keys, external
+  /// allow-list, the inviter's ceiling) and re-checked on accept, where it
+  /// becomes the new assignment's personal role. Null = `memberRoleId` / the
+  /// default external role, as before.
+  spacePermissions Json?
 
   // Technician-specific fields (only used when targetRole = TECHNICIAN)
   position          String?
