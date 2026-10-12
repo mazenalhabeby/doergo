@@ -184,7 +184,9 @@ export type PermissionField =
   | 'canViewMemberDocuments' | 'canOpenMemberDocuments'
   | 'canIssueDocuments' | 'canManageDocumentTemplates'
   | 'canManageDocumentVisibility' | 'canReplaceDocuments' | 'canDeleteDocuments'
-  | 'canViewLabourCost';
+  | 'canViewLabourCost'
+  // The asset register's three levels (manage is above): read, then log.
+  | 'canViewAssets' | 'canLogAssets';
 
 /**
  * Decorator to specify required permissions for a route.

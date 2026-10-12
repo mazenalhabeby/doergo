@@ -28,7 +28,7 @@ describe('AssetProposalService', () => {
   // same door the contract flow opens; only `apply` is stubbed.
   const contracts = {
     apply: jest.fn(),
-    assertMay: AssetContractService.prototype.assertMay.bind({ access: { assertMay: jest.fn() } }),
+    assertMay: AssetContractService.prototype.assertMay.bind({ access: new AssetAccessService({} as never) }),
   };
   const routing = { resolveWatchers: jest.fn() };
   const notifications = { emit: jest.fn() };
@@ -69,7 +69,7 @@ describe('AssetProposalService', () => {
         AssetResponsibleService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
+        AssetAccessService,
         { provide: AssetContractService, useValue: contracts },
         { provide: NotificationRoutingService, useValue: routing },
         { provide: 'NOTIFICATION_SERVICE', useValue: notifications },

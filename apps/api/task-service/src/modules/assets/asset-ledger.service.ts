@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, findMoneyCategory, clampListLimit } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { AssetLogService } from './asset-log.service';
 import { readAssetEntryDate } from './asset-entry-date';
@@ -28,12 +28,8 @@ export class AssetLedgerService {
   async listMoney(data: {
     id: string;
     limit?: number;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'view');
 
     const take = clampListLimit(data.limit, 100, 200);
 
@@ -98,12 +94,13 @@ export class AssetLedgerService {
     amountCents: number;
     note?: string;
     occurredAt?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-    canManageAssets?: boolean;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
+  } & AssetActor) {
+    /*
+      A money row is RECORDED the moment it is written — it moves the books with
+      no review — so it is management, in the record's own workspace. Logging
+      a cost that waits for the office is the logbook's job, not this one.
+    */
+    await this.access.assetInScope(data.id, data, 'manage');
 
     const asset = await this.prisma.asset.findFirst({
       where: { id: data.id, organizationId: data.organizationId },
@@ -130,8 +127,8 @@ export class AssetLedgerService {
 
     /*
       The same date rule as the logbook and a member's expense — this is the
-      same row. In practice only the future refuses here, because the route
-      already asks `canManageAssets` org-wide — the backdating exemption.
+      same row. The backdating exemption is ORG-WIDE `canManageAssets`, so a
+      workspace manager gets the same 120-day window a member does.
     */
     const occurredAt = readAssetEntryDate(data.occurredAt, data);
 
@@ -155,12 +152,8 @@ export class AssetLedgerService {
   async removeMoney(data: {
     id: string;
     entryId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'manage');
 
     // Read the key BEFORE the row goes, or the object behind it is orphaned in
     // the bucket forever — a photograph of somebody's receipt that nothing

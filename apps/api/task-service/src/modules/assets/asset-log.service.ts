@@ -30,7 +30,7 @@ import {
   clampListLimit,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService, EXPENSE_STATUS } from './asset-expense.service';
 import { ASSET_FILE_MAX_BYTES, ASSET_FILE_MIMES, isAssetFileKey, assetFilePrefix } from './asset-files';
@@ -46,14 +46,7 @@ const READINGS_WINDOW = 200;
 
 type Db = PrismaService | Prisma.TransactionClient;
 
-interface Actor {
-  userId: string;
-  userRole: string;
-  organizationId: string;
-  canManageAssets?: boolean;
-  canViewAllTasks?: boolean;
-  viewAllSpaceIds?: string[];
-}
+type Actor = AssetActor;
 
 /**
  * The logbook: what gets done to a thing, and when it is due again.
@@ -69,9 +62,10 @@ interface Actor {
  * ⚠️ CREDITED TO WHO DID IT, AUTHORISED BY CUSTODY. The author is stored; the
  * holder never is (see custody.ts). A type marked "holder only" is refused to
  * anybody who did not hold the thing ON THE ENTRY'S DATE, exactly as an expense
- * is; `canManageAssets` passes, because the office types in what the garage
- * sent. A type that is not holder-only may also be logged by anybody who can
- * see the asset — the colleague who noticed the dent.
+ * is; `canManageAssets` in the record's workspace passes, because the office
+ * types in what the garage sent. A type that is not holder-only may also be
+ * logged by anybody holding `canLogAssets` in the record's workspace — the
+ * colleague who noticed the dent.
  *
  * ⚠️ DERIVED STATE IS WRITTEN IN THE SAME TRANSACTION AS THE ENTRY. The latest
  * reading of each meter and where every due rule stands are stored on the asset
@@ -105,27 +99,33 @@ export class AssetLogService {
   /**
    * Can this person SEE this asset's register?
    *
-   * The `assertMay` door plus the workspace: a grant held in the depot opens
-   * the depot's vans, not the Linz office's. `assetInOrg` alone checks the
-   * organization, which is the gap a space-scoped reader would walk through.
+   * The door plus the workspace: a grant held in the depot opens the depot's
+   * vans, not the Linz office's. Asked of the KIND's workspace, which is the
+   * gap a space-scoped reader would otherwise walk through.
    */
-  private canSee(actor: Actor, spaceId: string | null): boolean {
-    if (this.access.isOrgWide(actor)) return true;
-    if (!spaceId) return false;
-    return (actor.viewAllSpaceIds ?? []).includes(spaceId);
-  }
-
   private assertSees(actor: Actor, spaceId: string | null): void {
-    this.access.assertMay(actor, 'view assets');
+    this.access.assertMay(actor, 'view');
     // 404-shaped: the asset exists, but not for this reader.
-    if (!this.canSee(actor, spaceId)) throw new NotFoundException('Asset not found in this organization');
+    if (!this.access.mayIn(actor, 'view', spaceId)) throw new NotFoundException('Asset not found in this organization');
   }
 
   /**
    * May this person log this type against this asset, on this date?
    *
-   * Managers always. A holder-only type: whoever held it then. Any other type:
-   * whoever held it then, or whoever can see it.
+   *   · Whoever manages the record's workspace — always: the office types in
+   *     what the garage sent, holder-only or not.
+   *   · Whoever held it on that date — the driver's own fuel, by custody.
+   *   · Whoever may LOG in the record's workspace (`canLogAssets`) — any type
+   *     that is not holder-only: the colleague who noticed the dent.
+   *
+   * ⚠️ Seeing a record is no longer enough to write to it. Logging became its
+   * own key so that "may watch the vans" and "may put entries in their book"
+   * can be given separately — an External Observer must be able to have the
+   * first without the second.
+   *
+   * ⚠️ An external member never passes on custody: they hold nothing of the
+   * organization's. Their reach is `canLogAssets` in their workspace, nothing
+   * else.
    */
   private async assertMayLog(
     actor: Actor,
@@ -133,11 +133,9 @@ export class AssetLogService {
     holderOnly: boolean,
     when: Date,
   ): Promise<void> {
-    if (actor.canManageAssets) return;
-    if (await this.custody.heldBy(asset.id, actor.userId, when)) return;
-    if (!holderOnly && (this.access.isOrgWide(actor) || (actor.viewAllSpaceIds?.length ?? 0) > 0) && this.canSee(actor, asset.spaceId)) {
-      return;
-    }
+    if (this.access.mayIn(actor, 'manage', asset.spaceId)) return;
+    if (actor.isExternal !== true && (await this.custody.heldBy(asset.id, actor.userId, when))) return;
+    if (!holderOnly && this.access.mayIn(actor, 'log', asset.spaceId)) return;
     throw new ForbiddenException(holderOnly ? 'You did not have this on that date' : 'You cannot log against this');
   }
 
@@ -218,7 +216,9 @@ export class AssetLogService {
       be able to move the organization's figures — or reset a service interval
       — by photographing something.
     */
-    const status = type.needsApproval && !data.canManageAssets ? EXPENSE_STATUS.SUBMITTED : EXPENSE_STATUS.RECORDED;
+    const status = type.needsApproval && !this.access.mayIn(data, 'manage', asset.spaceId)
+      ? EXPENSE_STATUS.SUBMITTED
+      : EXPENSE_STATUS.RECORDED;
     const isCost = type.key === COST_LOG_KEY;
 
     const entry = await this.prisma.$transaction(async (tx) => {
@@ -451,11 +451,16 @@ export class AssetLogService {
   async remove(data: Actor & { id: string; entryId: string }) {
     const entry = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, assetId: data.id, organizationId: data.organizationId },
-      select: { id: true, assetId: true, authorId: true, status: true, receiptKey: true, logType: true },
+      select: {
+        id: true, assetId: true, authorId: true, status: true, receiptKey: true, logType: true,
+        asset: { select: { category: { select: { spaceId: true } } } },
+      },
     });
     if (!entry) throw new NotFoundException('Entry not found');
     const ownWaiting = entry.authorId === data.userId && entry.status === EXPENSE_STATUS.SUBMITTED;
-    if (!data.canManageAssets && !ownWaiting) throw new ForbiddenException('Only the office can remove this entry');
+    // "The office" is whoever manages THIS record's workspace.
+    const office = this.access.mayIn(data, 'manage', entry.asset?.category?.spaceId ?? null);
+    if (!office && !ownWaiting) throw new ForbiddenException('Only the office can remove this entry');
 
     await this.prisma.$transaction(async (tx) => {
       await tx.assetMoney.delete({ where: { id: entry.id } });

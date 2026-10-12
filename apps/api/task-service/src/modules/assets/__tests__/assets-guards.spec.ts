@@ -10,7 +10,7 @@ import { AssetAccessService } from '../asset-access.service';
 describe('asset access rules', () => {
   // Only the guards are exercised; nothing here touches the database.
   const svc = new AssetAccessService({} as never);
-  const may = (actor: unknown) => (svc as any).assertMay(actor, 'do the thing');
+  const may = (actor: unknown) => (svc as any).assertMay(actor, 'view', 'do the thing');
   const page = (limit: unknown, fallback?: number) => (svc as any).pageSize(limit, fallback);
 
   describe('who may act', () => {
@@ -18,18 +18,24 @@ describe('asset access rules', () => {
       expect(() => may({ userRole: 'ADMIN' })).not.toThrow();
     });
 
-    it('lets anyone with canViewAllTasks through', () => {
-      expect(() => may({ userRole: 'EMPLOYEE', canViewAllTasks: true })).not.toThrow();
+    it('lets a reader through, org-wide or in a workspace', () => {
+      expect(() => may({ userRole: 'EMPLOYEE', viewSpaceIds: null })).not.toThrow();
+      expect(() => may({ userRole: 'EMPLOYEE', viewSpaceIds: ['s1'] })).not.toThrow();
+    });
+
+    // The task grant means nothing to the register any more.
+    it('no longer reads canViewAllTasks', () => {
+      expect(() => may({ userRole: 'EMPLOYEE', canViewAllTasks: true })).toThrow(ForbiddenException);
     });
 
     it('refuses everybody else', () => {
       expect(() => may({ userRole: 'EMPLOYEE' })).toThrow(ForbiddenException);
-      expect(() => may({ userRole: 'EMPLOYEE', canViewAllTasks: false })).toThrow(ForbiddenException);
+      expect(() => may({ userRole: 'EMPLOYEE', viewSpaceIds: [] })).toThrow(ForbiddenException);
       expect(() => may({ userRole: 'CUSTOMER' })).toThrow(ForbiddenException);
     });
 
     it('says what was refused, not just that something was', () => {
-      expect(() => (svc as any).assertMay({ userRole: 'EMPLOYEE' }, 'delete assets'))
+      expect(() => (svc as any).assertMay({ userRole: 'EMPLOYEE' }, 'manage', 'delete assets'))
         .toThrow(/delete assets/);
     });
   });

@@ -13,7 +13,7 @@
  */
 
 import { isAdmin } from '../guards/role-helpers';
-import { spacesGranting, type ResolvedAccess } from '../types/permissions';
+import { spacesGranting, type AccessPermissionKey, type ResolvedAccess } from '../types/permissions';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Status
@@ -139,6 +139,8 @@ export function assetDateProblems(input: {
 type AssetManager =
   | {
       role?: string | null;
+      canViewAssets?: boolean;
+      canLogAssets?: boolean;
       canManageAssets?: boolean;
       canManageUsers?: boolean;
       access?: unknown;
@@ -147,23 +149,82 @@ type AssetManager =
   | undefined;
 
 /**
- * The workspaces in which this member may manage assets.
+ * The three things a member may do with the register, narrowest last.
  *
- * `null` means everywhere — an admin, or the permission held org-wide — and an
+ *   view   — read records, their history, money, custody and logbook.
+ *   log    — add logbook entries and file expenses against them.
+ *   manage — create, edit, delete, hand over, record money, contracts, proposals.
+ */
+export type AssetAccessLevel = 'view' | 'log' | 'manage';
+
+/**
+ * The keys that grant each level — CUMULATIVE on purpose.
+ *
+ * Whoever may manage a depot's vans may log against them and read them, and
+ * whoever may log may read. The permission builder always saves the levels
+ * this way, but a role edited key by key can hold `canManageAssets` alone, and
+ * refusing such a manager the list of the very vans they manage would be a
+ * scoping bug dressed as a permission one.
+ */
+export const ASSET_LEVEL_KEYS: Readonly<Record<AssetAccessLevel, readonly AccessPermissionKey[]>> = {
+  view: ['canViewAssets', 'canLogAssets', 'canManageAssets'],
+  log: ['canLogAssets', 'canManageAssets'],
+  manage: ['canManageAssets'],
+};
+
+/**
+ * The workspaces in which this member may act on the register at `level`.
+ *
+ * `null` means everywhere — an admin, or the level held org-wide — and an
  * empty array means nowhere. Those are different TYPES on purpose: collapsing
  * them into one falsy value is exactly how a scoping bug turns into a leak.
  *
- * The flat `canManageAssets` column is the ORG-wide resolution (auth-service
- * folds the legacy `canManageUsers` into it), so holding it is org-wide by
- * definition. A token minted before the capability existed carries only
- * `canManageUsers`, which is honoured for the same reason.
+ * The flat `canX` fields are the ORG-wide resolution (auth-service applies the
+ * org-flag bridges — `canViewAssets` ← `canViewAllTasks`, and so on), so
+ * holding one is org-wide by definition. A token minted before the capability
+ * existed carries only `canManageUsers`, which is honoured for the same reason.
+ *
+ * ⚠️ An asset whose kind has NO workspace is reachable only through `null`: no
+ * list of workspaces can contain it. That is the rule, not a gap — an org-level
+ * record belongs to nobody's workspace, so no workspace grant can reach it.
  */
-export function assetManageSpaces(user: AssetManager): string[] | null {
+export function assetSpaces(user: AssetManager, level: AssetAccessLevel): string[] | null {
   if (!user) return [];
   if (user.role && isAdmin({ role: user.role })) return null;
-  if (user.canManageAssets === true) return null;
+  const keys = ASSET_LEVEL_KEYS[level];
+  const flags = user as Record<string, unknown>;
+  if (keys.some((k) => flags[k] === true)) return null;
   if (user.canManageAssets === undefined && user.canManageUsers === true) return null;
-  return spacesGranting(user.access as ResolvedAccess | null | undefined, 'canManageAssets');
+  const out = new Set<string>();
+  for (const key of keys) {
+    const spaces = spacesGranting(user.access as ResolvedAccess | null | undefined, key);
+    // Granted org-wide by the role itself (not yet folded into a flat field).
+    if (spaces === null) return null;
+    for (const id of spaces) out.add(id);
+  }
+  return [...out];
+}
+
+/** The workspaces in which this member may manage assets — `assetSpaces(user, 'manage')`. */
+export function assetManageSpaces(user: AssetManager): string[] | null {
+  return assetSpaces(user, 'manage');
+}
+
+/**
+ * May this member act at `level` IN THIS workspace?
+ *
+ * Without a `spaceId` this answers "anywhere", which is the right question for
+ * whether to show an entry point that then lists only their own kinds. `null`
+ * (an org-level kind) is reachable only by an org-wide grant.
+ *
+ * This decides what to RENDER. The server narrows independently by the kind's
+ * real workspace, so a wrong answer here only shows or hides a button.
+ */
+export function assetAccessIn(user: AssetManager, level: AssetAccessLevel, spaceId?: string | null): boolean {
+  const spaces = assetSpaces(user, level);
+  if (spaces === null) return true;
+  if (spaceId === undefined) return spaces.length > 0;
+  return !!spaceId && spaces.includes(spaceId);
 }
 
 /**
@@ -181,8 +242,6 @@ export function assetManageSpaces(user: AssetManager): string[] | null {
  * real workspace, so a wrong answer here only shows or hides a button.
  */
 export function canManageAssetsIn(user: AssetManager, spaceId?: string | null): boolean {
-  const spaces = assetManageSpaces(user);
-  if (spaces === null) return true;
-  if (!spaceId) return spaces.length > 0;
-  return spaces.includes(spaceId);
+  // An empty/absent space keeps meaning "anywhere" here, as it always has.
+  return assetAccessIn(user, 'manage', spaceId || undefined);
 }

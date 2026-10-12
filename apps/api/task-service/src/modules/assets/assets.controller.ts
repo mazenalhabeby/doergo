@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, ForbiddenException } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AssetsService } from './assets.service';
 import { AssetCatalogService } from './asset-catalog.service';
@@ -11,6 +11,7 @@ import { AssetExpenseService } from './asset-expense.service';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { AssetLogService } from './asset-log.service';
+import { AssetAccessService } from './asset-access.service';
 
 @Controller()
 export class AssetsController {
@@ -26,6 +27,7 @@ export class AssetsController {
     private readonly contracts: AssetContractService,
     private readonly proposals: AssetProposalService,
     private readonly logs: AssetLogService,
+    private readonly access: AssetAccessService,
   ) {}
 
   // ============================================
@@ -83,6 +85,10 @@ export class AssetsController {
   /** Billable assets per space — the counts only; pricing is shared. */
   @MessagePattern({ cmd: 'asset_billing_usage' })
   async billingUsage(@Payload() data: any) {
+    // The bill's counts, every workspace's: an org-wide reader only.
+    if (this.access.scope(data, 'view') !== null) {
+      throw new ForbiddenException('Only someone who sees every workspace’s assets can read these counts');
+    }
     return this.usage.count(data.organizationId);
   }
 

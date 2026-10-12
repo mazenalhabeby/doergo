@@ -22,6 +22,8 @@ function serviceHolding(assetCount: number) {
   const calls = { updateMany: 0, delete: 0 };
   const prisma: any = {
     assetCategory: {
+      // The workspace check reads the kind first (an admin reaches any).
+      findFirst: jest.fn().mockResolvedValue({ ...CATEGORY, spaceId: null }),
       findUnique: jest.fn().mockResolvedValue({ ...CATEGORY, _count: { assets: assetCount } }),
       delete: jest.fn(async () => { calls.delete++; return CATEGORY; }),
     },

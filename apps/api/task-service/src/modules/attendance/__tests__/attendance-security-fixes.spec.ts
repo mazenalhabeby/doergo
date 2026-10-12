@@ -285,7 +285,8 @@ describe('self-decisions', () => {
 
   it('nobody accepts their own expense', async () => {
     const svc = Object.create(AssetExpenseService.prototype) as any;
-    svc.access = { assertMay: jest.fn() };
+    // A manager of the record's workspace — the self-decision rule is what is under test.
+    svc.access = { assertMay: jest.fn(), mayIn: () => true };
     svc.notifier = { expenseDecided: jest.fn() };
     svc.prisma = {
       user: notAdmin,

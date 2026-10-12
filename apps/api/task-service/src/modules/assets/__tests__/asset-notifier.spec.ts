@@ -100,7 +100,7 @@ describe('AssetNotifier', () => {
         { id: 'u-depot', role: 'EMPLOYEE', canViewAllTasks: false, canManageUsers: false, memberRole: null },
       ]);
       prisma.spaceAssignment.findMany.mockResolvedValueOnce([
-        { userId: 'u-depot', role: { isActive: true, permissions: { canViewAllTasks: true } } },
+        { userId: 'u-depot', role: { isActive: true, permissions: { canViewAssets: true } } },
       ]);
 
       await notifier.expenseSubmitted(ENTRY);

@@ -17,10 +17,9 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { RequirePermission, RequirePermissionInSpace, DenyExternal } from '../../common/decorators';
+import { RequirePermissionInSpace } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
 import {
@@ -30,20 +29,29 @@ import {
   UpdateAssetTypeDto,
 } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
-import { taskActor } from '../../common/task-actor';
+import { assetActor } from './asset-actor';
 
 @ApiTags('asset-categories')
 @ApiBearerAuth()
 /*
-  The organization's own property, not the work at a site.
+  Kinds (and their subtypes) are ONE workspace's configuration of its
+  register — so they follow the register's keys, in that workspace:
 
-  An external supervisor holds `canViewAllTasks` in their space — it is how they
-  follow the work they are there to supervise — and this surface was gated on
-  that same permission, so granting the first silently granted the second and an
-  outsider could list the organization's records. The relationship disqualifies
-  them, not the permission, so the rule is stated about the relationship.
+    reading kinds            — canViewAssets in their workspace
+    creating / editing kinds — canManageAssets in THAT workspace; a workspace
+                               manager creates kinds in their workspace only,
+                               never an org-level kind (no workspace)
+
+  The guard asks "somewhere?" (or, for a create naming `spaceId` in the body,
+  "in that workspace?"); task-service checks each kind's real `spaceId` and
+  answers 404 outside the caller's workspaces.
+
+  ⚠️ No `@DenyExternal()` any more. It closed this surface because the reads
+  rode on `canViewAllTasks`, which an external supervisor holds to follow the
+  work. The register has its own keys now, granted per workspace on purpose,
+  so an external member may read — or, given `canManageAssets`, shape — the
+  kinds of THEIR workspace, exactly as its records, and nothing outside it.
 */
-@DenyExternal()
 /**
  * ⚠️ This had NO module gate. Kinds are the Assets module's own configuration — the same purchase.
  *
@@ -63,53 +71,41 @@ export class AssetCategoriesController {
   // CATEGORIES
   // ============================================
 
-  @Post()
   /*
-    A WRITE, so it asks the WRITE permission.
-
-    These were `canViewAllTasks` — a read permission authorising changes to the
-    organization's equipment, which is how somebody given sight of the work
-    quietly gains the ability to edit the asset register. `canManageAssets`
-    exists precisely for this and was being bypassed.
-
-    Nobody loses the ability: the migration granted `canManageAssets` to every
-    role that already had it through the old gate.
+    A WRITE, so it asks the WRITE permission — in the workspace named by the
+    body's `spaceId`, which IS stored on the kind (unlike a record's). No
+    workspace named means an org-level kind, which the service refuses to
+    anybody short of an org-wide manager.
   */
-  @RequirePermission('canManageAssets')
+  @Post()
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset category' })
   async createCategory(@Body() dto: CreateAssetCategoryDto, @Request() req: any) {
     return this.assetsQueueService.createCategory({
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 
   /*
-    Space-aware, exactly like `GET /assets`.
-
-    The records list already admitted a Space Manager to their own workspace's
-    assets, while the list of KINDS those records are grouped under still asked
-    the org-wide column — so the Assets tab of their own depot loaded no kinds,
-    and the contract flow they may now use had nothing to create. The guard
-    widens; the service narrows by `viewAllSpaceIds`, intersecting any
-    requested `spaceId` rather than trusting it.
+    A space's own kinds, or every kind the caller may read. The service
+    narrows by the caller's workspaces, intersecting any requested `spaceId`
+    rather than trusting it — a kind and its records can never be visible to
+    different people.
   */
   @Get()
-  @RequirePermissionInSpace('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'List asset kinds — a space\'s own, or the whole org' })
   @ApiQuery({ name: 'spaceId', required: false, description: "Only this space's kinds" })
   async findAllCategories(@Request() req: any, @Query('spaceId') spaceId?: string) {
     return this.assetsService.findAllCategories({
       spaceId,
-      ...taskActor(req),
+      ...assetActor(req),
     });
   }
 
   @Patch(':id')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Update a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async updateCategory(
@@ -120,24 +116,18 @@ export class AssetCategoriesController {
     return this.assetsQueueService.updateCategory({
       id,
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 
   @Delete(':id')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Delete a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   async deleteCategory(@Param('id') id: string, @Request() req: any) {
     return this.assetsQueueService.deleteCategory({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 
@@ -146,7 +136,7 @@ export class AssetCategoriesController {
   // ============================================
 
   @Post(':categoryId/types')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset type in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
   async createType(
@@ -157,15 +147,12 @@ export class AssetCategoriesController {
     return this.assetsQueueService.createType({
       categoryId,
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 
   @Get(':categoryId/types')
-  @RequirePermission('canViewAllTasks')
+  @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'List all types in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
   async findTypesByCategory(
@@ -174,10 +161,7 @@ export class AssetCategoriesController {
   ) {
     return this.assetsService.findTypesByCategory({
       categoryId,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 }
@@ -186,15 +170,10 @@ export class AssetCategoriesController {
 @ApiTags('asset-types')
 @ApiBearerAuth()
 /*
-  The organization's own property, not the work at a site.
-
-  An external supervisor holds `canViewAllTasks` in their space — it is how they
-  follow the work they are there to supervise — and this surface was gated on
-  that same permission, so granting the first silently granted the second and an
-  outsider could list the organization's records. The relationship disqualifies
-  them, not the permission, so the rule is stated about the relationship.
+  A subtype sits under a kind and follows it: managed in the kind's workspace,
+  decided in task-service by the kind's real `spaceId` (404 outside). No
+  `@DenyExternal()` — see AssetCategoriesController.
 */
-@DenyExternal()
 /**
  * ⚠️ This had NO module gate. Types sit under a kind, so they follow it.
  *
@@ -210,7 +189,7 @@ export class AssetTypesController {
   ) {}
 
   @Patch(':id')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Update an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async updateType(
@@ -221,24 +200,18 @@ export class AssetTypesController {
     return this.assetsQueueService.updateType({
       id,
       ...dto,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 
   @Delete(':id')
-  @RequirePermission('canManageAssets')
+  @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Delete an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
   async deleteType(@Param('id') id: string, @Request() req: any) {
     return this.assetsQueueService.deleteType({
       id,
-      userId: req.user.id,
-      userRole: req.user.role,
-      canViewAllTasks: req.user.canViewAllTasks,
-      organizationId: req.user.organizationId,
+      ...assetActor(req),
     });
   }
 }

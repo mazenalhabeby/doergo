@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 
 /**
  * What happened to a record: notes people wrote, and events worth keeping.
@@ -24,14 +24,8 @@ export class AssetActivityService {
    * Authors are resolved in one query rather than per row — a timeline is the
    * screen most likely to grow long, and N+1 here would be felt.
    */
-  async listActivities(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'view assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  async listActivities(data: { id: string } & AssetActor) {
+    await this.access.assetInScope(data.id, data, 'view');
 
     const activities = await this.prisma.assetActivity.findMany({
       where: { assetId: data.id },
@@ -55,12 +49,10 @@ export class AssetActivityService {
   async addActivity(data: {
     id: string;
     body: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update assets');
-    await this.access.assetInOrg(data.id, data.organizationId);
+  } & AssetActor) {
+    // A note is part of the record's history, written by whoever runs it:
+    // management, in the record's own workspace — never a wider door.
+    await this.access.assetInScope(data.id, data, 'manage');
 
     const body = (data.body ?? '').trim();
     if (!body) throw new BadRequestException('A note needs something in it');

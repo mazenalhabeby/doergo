@@ -9,7 +9,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, normalizeKindShape, assertFoundInOrg } from '@hbcfield/shared';
-import { AssetAccessService } from './asset-access.service';
+import { AssetAccessService, type AssetActor } from './asset-access.service';
 import { AssetLogService } from './asset-log.service';
 
 /** Did the parts of a kind that decide readings and due dates change? Labels and colours do not. */
@@ -51,12 +51,18 @@ export class AssetCatalogService {
     color?: string;
     spaceId?: string;
     config?: unknown;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    // Only CLIENT and DISPATCHER can create categories
-    this.access.assertMay(data as any, 'create asset categories');
+  } & AssetActor) {
+    this.access.assertMay(data, 'manage', 'create asset categories');
+    /*
+      A kind IS a workspace's configuration, so a workspace manager creates
+      kinds in THEIR workspace and nowhere else — and never an org-level kind
+      (no workspace), which only an org-wide grant can reach afterwards. Same
+      404 as a workspace of another tenant: no list of other depots.
+    */
+    if (!this.access.mayIn(data, 'manage', data.spaceId ?? null)) {
+      if (!data.spaceId) throw new ForbiddenException('Choose a workspace you manage for this type');
+      throw new NotFoundException('Space not found in this organization');
+    }
 
     // A kind belongs to a space, so the space must be one of THIS org's. Without
     // this check a caller could hang their kinds off another tenant's space by
@@ -111,16 +117,8 @@ export class AssetCatalogService {
   /**
    * Get all categories for an organization
    */
-  async findAllCategories(query: {
-    userId: string;
-    userRole: string;
-    canViewAllTasks?: boolean;
-    /** Workspaces where the caller holds canViewAllTasks by a SPACE role. */
-    viewAllSpaceIds?: string[];
-    organizationId: string;
-    spaceId?: string;
-  }) {
-    this.access.assertMay(query, 'view asset categories');
+  async findAllCategories(query: { spaceId?: string } & AssetActor) {
+    this.access.assertMay(query, 'view', 'view asset categories');
 
     /*
       Asking for a space returns THAT space's kinds only; asking for none
@@ -129,7 +127,7 @@ export class AssetCatalogService {
       intersecting filter the records list uses, so a kind and its records can
       never be visible to different people.
     */
-    const scope = this.access.spaceFilter(query, query.spaceId);
+    const scope = this.access.spaceFilter(query, 'view', query.spaceId);
     const categories = await this.prisma.assetCategory.findMany({
       where: {
         organizationId: query.organizationId,
@@ -156,17 +154,9 @@ export class AssetCatalogService {
     description?: string;
     icon?: string;
     color?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update asset categories');
-
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: data.id },
-    });
-
-    assertFoundInOrg(category, data.organizationId, 'Category');
+  } & AssetActor) {
+    // Its own workspace, or 404. A kind's workspace is not editable here, so it stays where it was made.
+    const category = await this.access.kindInScope(data.id, data, 'manage');
 
     // Renaming: the clash is with the OTHER kinds in the same space, not the
     // whole org — another space is free to have a kind by this name.
@@ -222,13 +212,8 @@ export class AssetCatalogService {
   /**
    * Delete a category (and its types)
    */
-  async deleteCategory(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'delete asset categories');
+  async deleteCategory(data: { id: string } & AssetActor) {
+    await this.access.kindInScope(data.id, data, 'manage');
 
     const category = await this.prisma.assetCategory.findUnique({
       where: { id: data.id },
@@ -272,18 +257,9 @@ export class AssetCatalogService {
     categoryId: string;
     name: string;
     description?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'create asset types');
-
-    // Verify category exists and belongs to org
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: data.categoryId },
-    });
-
-    assertFoundInOrg(category, data.organizationId, 'Category');
+  } & AssetActor) {
+    // A subtype is vocabulary of its kind's workspace — managed there, or 404.
+    await this.access.kindInScope(data.categoryId, data, 'manage');
 
     // Check for duplicate name in same category
     const existing = await this.prisma.assetType.findUnique({
@@ -317,20 +293,9 @@ export class AssetCatalogService {
   /**
    * Get all types for a category
    */
-  async findTypesByCategory(query: {
-    categoryId: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(query as any, 'view asset types');
-
-    // Verify category belongs to org
-    const category = await this.prisma.assetCategory.findUnique({
-      where: { id: query.categoryId },
-    });
-
-    assertFoundInOrg(category, query.organizationId, 'Category');
+  async findTypesByCategory(query: { categoryId: string } & AssetActor) {
+    // Read in the kind's own workspace, or 404 — the same reach as its records.
+    await this.access.kindInScope(query.categoryId, query, 'view');
 
     const types = await this.prisma.assetType.findMany({
       where: { categoryId: query.categoryId },
@@ -350,11 +315,8 @@ export class AssetCatalogService {
     id: string;
     name?: string;
     description?: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'update asset types');
+  } & AssetActor) {
+    this.access.assertMay(data, 'manage', 'update asset types');
 
     const type = await this.prisma.assetType.findUnique({
       where: { id: data.id },
@@ -365,8 +327,9 @@ export class AssetCatalogService {
       throw new NotFoundException('Type not found');
     }
 
-    if (type.category.organizationId !== data.organizationId) {
-      throw new NotFoundException('Type not found'); // another org's: no existence oracle
+    // Another org's, or another workspace's: the same answer — no existence oracle.
+    if (type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
+      throw new NotFoundException('Type not found');
     }
 
     // Check for duplicate name if changing name
@@ -403,13 +366,8 @@ export class AssetCatalogService {
   /**
    * Delete a type
    */
-  async deleteType(data: {
-    id: string;
-    userId: string;
-    userRole: string;
-    organizationId: string;
-  }) {
-    this.access.assertMay(data as any, 'delete asset types');
+  async deleteType(data: { id: string } & AssetActor) {
+    this.access.assertMay(data, 'manage', 'delete asset types');
 
     const type = await this.prisma.assetType.findUnique({
       where: { id: data.id },
@@ -423,8 +381,9 @@ export class AssetCatalogService {
       throw new NotFoundException('Type not found');
     }
 
-    if (type.category.organizationId !== data.organizationId) {
-      throw new NotFoundException('Type not found'); // another org's: no existence oracle
+    // Another org's, or another workspace's: the same answer — no existence oracle.
+    if (type.category.organizationId !== data.organizationId || !this.access.mayIn(data, 'manage', type.category.spaceId)) {
+      throw new NotFoundException('Type not found');
     }
 
     // Set assets' typeId to null instead of blocking delete

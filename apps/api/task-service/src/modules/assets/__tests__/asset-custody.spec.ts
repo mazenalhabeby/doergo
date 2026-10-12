@@ -56,7 +56,7 @@ describe('AssetCustodyService.handOver', () => {
       providers: [
         AssetCustodyService,
         { provide: PrismaService, useValue: prisma },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn(), assetInOrg: jest.fn() } },
+        AssetAccessService,
         { provide: AssetNotifier, useValue: notifier },
       ],
     }).compile();
@@ -220,7 +220,7 @@ describe('filing an expense is gated on custody', () => {
         AssetExpenseService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
+        AssetAccessService,
         { provide: AssetCustodyService, useValue: custody },
         { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: { head: async () => ({ exists: true, sizeBytes: 1000 }) } },
@@ -263,7 +263,7 @@ describe('filing an expense is gated on custody', () => {
 
   it('lets somebody who manages the register file against anything', async () => {
     custody.heldBy.mockResolvedValue(false);
-    await submit({ canManageAssets: true });
+    await submit({ canManageAssets: true, logSpaceIds: null, manageSpaceIds: null });
     expect(prisma.assetMoney.create).toHaveBeenCalled();
   });
 
@@ -283,7 +283,7 @@ describe('filing an expense is gated on custody', () => {
     // says yes — and would make the existing "log money" button behave
     // differently for no reason.
     custody.heldBy.mockResolvedValue(false);
-    const res: any = await submit({ canManageAssets: true });
+    const res: any = await submit({ canManageAssets: true, logSpaceIds: null, manageSpaceIds: null });
     expect(res.data.status).toBe('RECORDED');
   });
 
@@ -302,7 +302,7 @@ describe('filing an expense is gated on custody', () => {
   */
   it('asks nobody about an entry the office typed itself', async () => {
     custody.heldBy.mockResolvedValue(false);
-    await submit({ canManageAssets: true });
+    await submit({ canManageAssets: true, logSpaceIds: null, manageSpaceIds: null });
     expect(notifier.expenseSubmitted).not.toHaveBeenCalled();
   });
 
@@ -365,7 +365,7 @@ describe('reviewing one', () => {
         AssetExpenseService,
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: { get: (_k: string, d?: string) => d ?? '' } },
-        { provide: AssetAccessService, useValue: { assertMay: jest.fn() } },
+        AssetAccessService,
         { provide: AssetCustodyService, useValue: { heldBy: jest.fn() } },
         { provide: AssetNotifier, useValue: notifier },
         { provide: OBJECT_STORE, useValue: null },
