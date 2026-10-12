@@ -1,4 +1,3 @@
-import { ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { of } from 'rxjs';
 import { CustomersController } from '../customers.controller';
@@ -7,9 +6,9 @@ import { ExternalMemberGuard } from '../../../common/guards/external-member.guar
 /*
   GET /customers/due — the Clients widget's one read, at the gateway edge.
 
-  Two decisions live here and not in auth-service: an external member never
-  reaches the organization's client book, and "is CRM running anywhere I work"
-  is read off the session and forwarded as `crmOn`.
+  One decision lives here and not in auth-service: "is CRM running anywhere I
+  work" is read off the session and forwarded as `crmOn`. Whose clients — an
+  external member's included — is the service's (crm/crm-reach.ts).
 */
 describe('GET /customers/due — gateway', () => {
   const setup = (user: Record<string, unknown>) => {
@@ -27,8 +26,10 @@ describe('GET /customers/due — gateway', () => {
     return () => guard.canActivate(ctx);
   };
 
-  it('an external member is refused (403) before anything is forwarded', () => {
-    expect(guardFor({ id: 'x', isExternal: true })).toThrow(ForbiddenException);
+  // An external member's reach is their workspace's CRM grant, resolved in
+  // customers.service (no org-wide caps) — the relationship no longer closes the door.
+  it('an external member passes the edge; the service narrows them to their workspace', () => {
+    expect(guardFor({ id: 'x', isExternal: true })()).toBe(true);
     expect(guardFor({ id: 'm', isExternal: false })()).toBe(true);
   });
 

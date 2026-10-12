@@ -48,7 +48,7 @@ describe('unit references stay inside the tenant', () => {
 describe('CRM address writes obey the CRM reach rule', () => {
   const rep = { userId: 'rep-1', role: 'EMPLOYEE' };
   const asRep = (prisma: any, perms: Record<string, boolean>) =>
-    prisma.user.findFirst.mockResolvedValue({ role: 'EMPLOYEE', memberRole: { permissions: perms } });
+    prisma.user.findFirst.mockResolvedValue({ role: 'EMPLOYEE', memberRole: { isActive: true, permissions: perms } });
 
   it("a rep scoped to their OWN clients cannot edit somebody else's client's address", async () => {
     const { prisma, service } = setup();

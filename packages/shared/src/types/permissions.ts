@@ -186,17 +186,27 @@ export interface CrmCaps {
 export function resolveCrmCaps(
   systemRole: string | null | undefined,
   permissions: PermissionSet | null | undefined,
+  opts: {
+    /**
+     * Read canManageUsers / canViewAllTasks as CRM keys (the default). FALSE for
+     * a WORKSPACE's permission set (crm/crm-reach.ts): every space manager and
+     * every external supervisor holds those two in their workspace, and the
+     * bridge would hand each of them that workspace's whole client book.
+     */
+    legacyBridge?: boolean;
+  } = {},
 ): CrmCaps {
   if (systemRole === 'ADMIN') {
     return { view: 'all', work: true, editInfo: true, create: true, manage: true, canAccess: true };
   }
   const p = permissions ?? {};
+  const bridge = opts.legacyBridge !== false;
   // Backward-compat bridge: before CRM caps existed, CRM read = canViewAllTasks and
   // CRM write = canManageUsers. Keep those working so existing manager roles don't
   // lose access the moment this ships (they gain the granular keys only when an
   // admin edits the role). New crm* keys are additive on top.
-  const legacyManage = !!p.canManageUsers; // full CRM writer (manager)
-  const legacyViewAll = !!p.canViewAllTasks; // read-only CRM (see everything)
+  const legacyManage = bridge && !!p.canManageUsers; // full CRM writer (manager)
+  const legacyViewAll = bridge && !!p.canViewAllTasks; // read-only CRM (see everything)
   const work = !!p.crmWork || legacyManage;
   const editInfo = !!p.crmEditInfo || legacyManage;
   const manage = !!p.crmManageClients || legacyManage;

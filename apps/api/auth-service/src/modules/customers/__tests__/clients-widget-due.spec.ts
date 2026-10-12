@@ -37,7 +37,7 @@ describe('customers due() — the Clients widget', () => {
     service = m.get(CustomersService);
   });
 
-  const rep = (permissions: Record<string, boolean>) => prisma.user.findFirst.mockResolvedValue({ role: 'EMPLOYEE', memberRole: { permissions } });
+  const rep = (permissions: Record<string, boolean>) => prisma.user.findFirst.mockResolvedValue({ role: 'EMPLOYEE', memberRole: { isActive: true, permissions } });
   const reminderWhere = () => prisma.customerActivity.findMany.mock.calls[0][0].where;
   const bookWhere = () => prisma.customer.count.mock.calls[1][0].where;
 

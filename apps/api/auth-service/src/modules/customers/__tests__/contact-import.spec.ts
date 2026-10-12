@@ -9,6 +9,7 @@ import {
   parseContactImport,
   phoneMatchKey,
   type CrmCaps,
+  crmReachOrgOnly,
 } from '@hbcfield/shared';
 import { createHash } from 'crypto';
 import { CustomersService, withContactKeys } from '../customers.service';
@@ -129,11 +130,11 @@ describe('ContactImportService', () => {
     }).compile();
     service = module.get(ContactImportService);
     customers = module.get(CustomersService);
-    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps());
+    jest.spyOn(customers, 'crmReachFor').mockResolvedValue(crmReachOrgOnly(caps()));
   });
 
   it('refuses a member who may not create clients', async () => {
-    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps({ create: false }));
+    jest.spyOn(customers, 'crmReachFor').mockResolvedValue(crmReachOrgOnly(caps({ create: false })));
     await expect(run([{ ref: ref(1), kind: 'PERSON', name: 'A' }])).rejects.toBeInstanceOf(ForbiddenException);
     await expect(service.matchKeys({ organizationId: ORG, caller })).rejects.toBeInstanceOf(ForbiddenException);
   });
@@ -177,7 +178,7 @@ describe('ContactImportService', () => {
 
   it('does not fill a client the member may not edit, or cannot reach', async () => {
     const match = { id: 'c-9', name: 'H', phone: '0650 2210045', email: null, phoneKey: phoneMatchKey('0650 2210045'), emailKey: null, ownerId: 'someone-else', managerIds: [], isPortalResident: false };
-    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps({ view: 'own' }));
+    jest.spyOn(customers, 'crmReachFor').mockResolvedValue(crmReachOrgOnly(caps({ view: 'own' })));
     existing({ matches: [match] });
     const r = await run([{ ref: ref(1), kind: 'PERSON', name: 'H', phone: '0650 2210045', email: 'h@x.at', fillMissing: true }]);
     expect(r.data).toMatchObject({ existing: 1, filled: 0 });
@@ -230,7 +231,7 @@ describe('ContactImportService', () => {
   });
 
   it('links to an EXISTING company only for a member who may edit it', async () => {
-    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps({ editInfo: false }));
+    jest.spyOn(customers, 'crmReachFor').mockResolvedValue(crmReachOrgOnly(caps({ editInfo: false })));
     existing({ matches: [{ id: 'co-9', name: 'Bauer', phone: null, email: 'office@bauer.at', phoneKey: null, emailKey: 'office@bauer.at', ownerId: null, managerIds: [], isPortalResident: false }] });
     const r = await run([
       { ref: ref(1), kind: 'COMPANY', name: 'Bauer', email: 'office@bauer.at' },
@@ -257,7 +258,7 @@ describe('ContactImportService', () => {
     keys of clients they can reach — never the whole organization's book.
   */
   it("gives an own-scope member only their own clients' keys", async () => {
-    jest.spyOn(customers, 'crmCapsFor').mockResolvedValue(caps({ view: 'own' }));
+    jest.spyOn(customers, 'crmReachFor').mockResolvedValue(crmReachOrgOnly(caps({ view: 'own' })));
     prisma.customer.findMany.mockResolvedValueOnce([]);
     await service.matchKeys({ organizationId: ORG, caller });
     const where = prisma.customer.findMany.mock.calls[0][0].where;

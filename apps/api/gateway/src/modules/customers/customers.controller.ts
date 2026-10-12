@@ -17,7 +17,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Throttle } from '@nestjs/throttler';
-import { RequirePermission, DenyExternal } from '../../common/decorators';
+import { DenyExternal } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { parseClientLocale, CLIENT_LOCALE_INVALID_MESSAGE, parseCurrency, CURRENCY_INVALID_MESSAGE, moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES, pickUnitFields } from '@hbcfield/shared';
 import { SpaceModulesService } from '../../common/space-modules.service';
@@ -78,15 +78,27 @@ function assertClientLocale(dto: CustomerDto): void {
 @ApiTags('customers')
 @ApiBearerAuth()
 /*
-  The organization's own property, not the work at a site.
+  Open to external members — by their CRM grant in a workspace, and nothing else.
 
-  An external supervisor holds `canViewAllTasks` in their space — it is how they
-  follow the work they are there to supervise — and this surface was gated on
-  that same permission, so granting the first silently granted the second and an
-  outsider could list the organization's records. The relationship disqualifies
-  them, not the permission, so the rule is stated about the relationship.
+  This class was `@DenyExternal()` because the surface was gated on
+  `canViewAllTasks`, which an external supervisor holds to follow the work, so
+  granting the first silently granted the second. That is no longer how it is
+  decided: customers.service resolves the caller's CRM REACH (crm/crm-reach.ts)
+  from the database on every call — org-wide caps, and per workspace ONLY the
+  crm* keys of that workspace's role (no canViewAllTasks/canManageUsers bridge),
+  only where the workspace runs the crm module — and judges each client by the
+  workspace it is filed in. An external member has no org-wide caps at all, so
+  they reach exactly the clients of the workspace that granted them CRM, and
+  everything else answers 404.
+
+  What stays closed to them is what belongs to the organization rather than to a
+  workspace: the phone's address-book import (and its hashes), and inviting a
+  client into the app (`@DenyExternal()` on those routes).
+
+  ⚠️ No `@RequirePermission('crm…')` on a route that cannot name its workspace:
+  that guard reads the ORG-wide flag and would refuse a member whose CRM grant
+  is a workspace's. The service is the boundary on every route here.
 */
-@DenyExternal()
 @Controller('customers')
 export class CustomersController {
   constructor(
@@ -191,10 +203,12 @@ export class CustomersController {
     ── Clients from the phone's address book ──────────────────────────────────
 
     Both gated in the SERVICE on the ability to create clients (the same gate as
-    adding one by hand) and closed to external members by the class decorator.
+    adding one by hand) and closed to external members: a phone's address book
+    is the organization's channel into its book, not a workspace's.
     ⚠️ Declared BEFORE `:id` so "match-keys" / "import" are not read as ids.
   */
   @Get('match-keys')
+  @DenyExternal()
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @ApiOperation({ summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact" })
   matchKeys(@Request() req: any) {
@@ -202,6 +216,7 @@ export class CustomersController {
   }
 
   @Post('import')
+  @DenyExternal()
   // An import is up to 200 clients in one go; a member does this a few times, not a few hundred.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Import picked phone contacts as clients — one transaction, duplicates matched on the server' })
@@ -344,12 +359,14 @@ export class CustomersController {
     Address WRITES carry the caller as `crmCaller`: the portal service then asks
     the CRM's own reach rule (view-all, or own / co-manage this client, plus
     editInfo) before touching a unit. `crmEditInfo` alone let a rep scoped to
-    their own clients edit any client's addresses by id. Identity goes LAST and
+    their own clients edit any client's addresses by id. No route-level
+    `crmEditInfo` any more: it read the ORG-wide flag and refused a member whose
+    edit right is a workspace's — the service decides on the client's own
+    workspace (org ∪ that workspace's grant). Identity goes LAST and
     the body is whitelisted (`pickUnitFields`, no relations): an address edits
     its own text and pin, never which client, space or portal it belongs to.
   */
   @Post(':id/addresses')
-  @RequirePermission('crmEditInfo')
   addAddress(@Param('id') id: string, @Body() body: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string; contactPhone?: string }, @Request() req: any) {
     const fields = pickUnitFields(body, { relations: false });
     return this.auth('portal_create_unit', {
@@ -360,7 +377,6 @@ export class CustomersController {
   }
 
   @Patch(':id/addresses/:unitId')
-  @RequirePermission('crmEditInfo')
   updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
     return this.auth('portal_update_unit', {
@@ -371,13 +387,11 @@ export class CustomersController {
   }
 
   @Post(':id/addresses/:unitId/primary')
-  @RequirePermission('crmEditInfo')
   setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
     return this.auth('portal_set_primary_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
   }
 
   @Delete(':id/addresses/:unitId')
-  @RequirePermission('crmEditInfo')
   deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
     return this.auth('portal_delete_unit', { id: unitId, organizationId: req.user.organizationId, customerId: id, crmCaller: this.caller(req) });
   }
@@ -431,7 +445,8 @@ export class CustomersController {
   }
 
   @Post(':id/invite')
-  @RequirePermission('crmManageClients')
+  // Bringing a client into the app is the organization's act, not a workspace's.
+  @DenyExternal()
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
   async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
     const orgId = req.user.organizationId;
@@ -443,9 +458,7 @@ export class CustomersController {
       client could be flipped into a portal resident.
     */
     const caller = this.caller(req);
-    const custRes: any = await this.auth('get_customer', { id, organizationId: orgId, caller });
-    const customer = custRes?.data ?? custRes;
-    if (!customer) throw new BadRequestException('Customer not found');
+    const customer = await this.managedCustomer(id, orgId, caller);
     if (!customer.spaceId) throw new BadRequestException('Customer is not attached to a space');
     await this.requireSpaceModule(customer.spaceId, orgId, 'b2c_portal');
 
@@ -486,9 +499,25 @@ export class CustomersController {
   }
 
   @Post(':id/resend-invite')
-  @RequirePermission('crmManageClients')
+  @DenyExternal()
   @ApiOperation({ summary: "Re-send a customer's app invite" })
   async resendInvite(@Param('id') id: string, @Request() req: any) {
+    // The same door as the invite: manage where the client is filed. It used to
+    // re-send for any client id on the org-wide flag alone.
+    await this.managedCustomer(id, req.user.organizationId, this.caller(req));
     return this.auth('resend_invitation', { organizationId: req.user.organizationId, customerId: id });
+  }
+
+  /**
+   * The client, read AS the caller (404 when out of their reach), and refused
+   * unless they may manage it where it is filed — `crmCaps` on the record is
+   * customers.service's answer for org ∪ that workspace, never the org flag.
+   */
+  private async managedCustomer(id: string, organizationId: string, caller: { userId: string; role: string }) {
+    const res: any = await this.auth('get_customer', { id, organizationId, caller });
+    const customer = res?.data ?? res;
+    if (!customer?.id) throw new BadRequestException('Customer not found');
+    if (!customer.crmCaps?.manage) throw new ForbiddenException('Not allowed to manage this client');
+    return customer;
   }
 }

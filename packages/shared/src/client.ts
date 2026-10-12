@@ -112,6 +112,8 @@ export * from './notifications/locale';
 // What a client record's "Language for emails" may hold — the form and the server share it.
 export * from './crm/client-locale';
 export * from './crm/client-filter';
+// Where a member may work the client book — org-wide and per workspace (crm/crm-reach.ts).
+export * from './crm/crm-reach';
 export * from './crm/reminder';
 export * from './crm/contact-keys';
 export * from './crm/card-extras';

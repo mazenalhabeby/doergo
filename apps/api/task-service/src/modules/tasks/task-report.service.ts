@@ -1,11 +1,11 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  CRM_CAPS_SELECT,
+  crmReachSelect,
   EVENT_PERSON_KEYS,
   REPORT_COPY_INVALID,
   REPORT_HISTORY_MAX,
-  crmCapsOfRow,
-  crmReachesClient,
+  crmReachOfRow,
+  crmReachesClientIn,
   effectiveSpaceModules,
   isAdmin,
   issuerAddressLines,
@@ -92,6 +92,8 @@ const REPORT_TASK_SELECT = {
     select: {
       id: true, name: true, type: true, legalName: true, vatId: true, address: true, email: true, phone: true,
       contactName: true, ownerId: true, managerIds: true, currency: true, legalEntityId: true,
+      // The workspace it is filed in decides a workspace CRM grant (clientReach).
+      spaceId: true,
     },
   },
   unit: { select: { id: true, name: true, label: true, address: true, contactName: true, contactPhone: true } },
@@ -457,14 +459,16 @@ export class TaskReportService {
 
   /**
    * May this reader open the job's client in the CRM? The CRM's own reach rule
-   * (crm/client-reach.ts), as the calendar asks it. The NAME is the job's and is
-   * always shown; the record's details only to somebody who reaches it.
+   * (crm/client-reach.ts + crm-reach.ts), as the calendar asks it — org-wide,
+   * or a CRM grant in the workspace the client is filed in. The NAME is the
+   * job's and is always shown; the record's details only to somebody who
+   * reaches it.
    */
-  private async clientReach(customer: { ownerId: string | null; managerIds: string[] } | null, facts: TaskAccessFacts): Promise<boolean> {
+  private async clientReach(customer: { spaceId?: string | null; ownerId: string | null; managerIds: string[] } | null, facts: TaskAccessFacts): Promise<boolean> {
     if (!customer) return false;
     if (isAdmin({ role: facts.userRole })) return true;
-    const row = await this.prisma.user.findFirst({ where: { id: facts.userId, organizationId: facts.organizationId }, select: CRM_CAPS_SELECT });
-    return crmReachesClient(crmCapsOfRow(row), customer, facts.userId);
+    const row = await this.prisma.user.findFirst({ where: { id: facts.userId, organizationId: facts.organizationId }, select: crmReachSelect() });
+    return crmReachesClientIn(crmReachOfRow(row as never), customer, facts.userId);
   }
 
   private client(c: any, shown: boolean) {

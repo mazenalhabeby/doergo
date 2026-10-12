@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Role, CurrentUser, CurrentUserData, isAdmin, resolveCrmCaps, spacesGranting } from '@hbcfield/shared';
+import { Role, CurrentUser, CurrentUserData, isAdmin, crmReachOf, crmCanAccess, moduleAnywhere, spacesGranting } from '@hbcfield/shared';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { DenyExternal, RequirePermission, Roles } from '../../common/decorators';
@@ -39,8 +39,10 @@ export class CalendarController {
       role: String(u.role),
       canManageUsers: !!u.canManageUsers,
       orgWideView: admin || spacesGranting(u.access as any, 'canViewAllTasks') === null,
-      // A client on an event is shown (and may be set) only for somebody who reads the client book.
-      crm: resolveCrmCaps(String(u.role), (u.access as any)?.org).canAccess,
+      // A client on an event is shown (and may be set) only for somebody who reads the client book —
+      // org-wide or in a workspace (crm/crm-reach.ts). A coarse gate: task-service then asks the
+      // reach from the database for the client's own workspace, module included.
+      crm: crmCanAccess(crmReachOf(String(u.role), u.access as any, { crmSpaces: () => moduleAnywhere(u as any, 'crm') })),
       // Whose leave the caller may be told about — availability hides the reason from everyone else.
       teamSpaces: this.teamSpaces(u),
     };
