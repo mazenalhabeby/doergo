@@ -14,7 +14,7 @@ import {
   computeScheduleFlags,
   SHIFT_REMINDER_DEFAULTS,
   resolveAwayAccess,
-  UNSCHEDULED_SESSION_DEFAULTS,
+  noShiftReminderAt,
   SERVICE_NAMES,
   mayClockInRemotely as canClockInRemotely,
   noShiftAllowance,
@@ -31,6 +31,9 @@ import {
   AUTO_CLOCK_IN_FLAG,
   autoClockActive,
   autoClockInWithinWindow,
+  clocksByPresence,
+  presenceClockInAllowed,
+  presenceSessionEnd,
   type ClockTrigger,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
@@ -188,7 +191,7 @@ export class ClockInService {
 
   private async buildShiftStamp(
     userId: string,
-    space: ResolverSpace,
+    space: ResolverSpace & { noShiftDailyMinutes?: number | null },
     clockInAt: Date,
     clockInTz?: string,
   ): Promise<{
@@ -206,7 +209,7 @@ export class ClockInService {
   }> {
     try {
       const resolved = await this.shiftResolver.resolveForClockIn({ userId, space, clockInAt, clockInTz });
-      if (!resolved) return { ...this.unscheduledStamp(clockInAt), scheduled: false };
+      if (!resolved) return { ...this.unscheduledStamp(clockInAt, space), scheduled: false };
       return {
         ...(resolved.shiftId ? { shiftId: resolved.shiftId } : {}),
         expectedClockInAt: resolved.expectedClockInAt,
@@ -218,19 +221,17 @@ export class ClockInService {
     } catch (err) {
       this.logger.error(`Shift resolution failed for user=${userId} space=${space.id}: ${err}`);
       // Even on resolver failure, arm the safety-net so the session can't run silently forever.
-      return { ...this.unscheduledStamp(clockInAt), scheduled: false };
+      return { ...this.unscheduledStamp(clockInAt, space), scheduled: false };
     }
   }
 
   /**
    * Safety-net stamp for a clock-in with NO resolved shift: leave shiftId /
    * expectedClockOutAt null (marks it "unscheduled") but arm nextRemindAt at
-   * SOFT_HOURS so the reminder sweep picks it up and can't let it run to 71h.
+   * the workspace's hours without a shift, so the reminder sweep picks it up and can't let it run to 71h.
    */
-  private unscheduledStamp(clockInAt: Date): { nextRemindAt: Date } {
-    return {
-      nextRemindAt: new Date(clockInAt.getTime() + UNSCHEDULED_SESSION_DEFAULTS.SOFT_HOURS * 3_600_000),
-    };
+  private unscheduledStamp(clockInAt: Date, space: { noShiftDailyMinutes?: number | null }): { nextRemindAt: Date } {
+    return { nextRemindAt: noShiftReminderAt(clockInAt, space.noShiftDailyMinutes) };
   }
 
   /**
@@ -901,16 +902,25 @@ export class ClockInService {
       settings: location.autoClock,
       assignmentAutoClock: assignment.autoClock,
       isExternal: user.isExternal,
+      mode: assignment.autoClockMode,
+      startWindow: assignment.autoClockStartWindow,
+      noShiftDailyMinutes: location.noShiftDailyMinutes,
+      noShiftPolicy: location.noShiftPolicy,
     });
-    if (autoSettings && stampCols.expectedClockOutAt) {
-      const leaderAt = stampCols.expectedClockOutAt.getTime() + autoSettings.leaderAfterMinutes * 60_000;
-      stampCols.nextRemindAt = new Date(Math.min(stampCols.nextRemindAt?.getTime() ?? leaderAt, leaderAt));
+    // No shift here today and clocked by arriving and leaving: the session's course is the workspace's hours.
+    const byPresence = clocksByPresence(autoSettings, stampCols);
+    const autoPlannedEnd = stampCols.expectedClockOutAt ?? (byPresence && autoSettings ? presenceSessionEnd(clockInTime, autoSettings) : null);
+    if (autoSettings && autoPlannedEnd) {
+      const leaderAt = autoPlannedEnd.getTime() + autoSettings.leaderAfterMinutes * 60_000;
+      stampCols.nextRemindAt = new Date(byPresence && !stampCols.expectedClockOutAt ? leaderAt : Math.min(stampCols.nextRemindAt?.getTime() ?? leaderAt, leaderAt));
     }
     if (
       data.trigger === 'AUTO' &&
       autoSettings &&
       withinGeofence &&
-      autoClockInWithinWindow(autoSettings, clockInTime, stampCols.expectedClockInAt ?? null, stampCols.expectedClockOutAt ?? null)
+      (byPresence
+        ? presenceClockInAllowed(autoSettings, clockInTime, location.timezone || workerTz || orgTz)
+        : autoClockInWithinWindow(autoSettings, clockInTime, stampCols.expectedClockInAt ?? null, stampCols.expectedClockOutAt ?? null))
     ) {
       flagReasons.push(AUTO_CLOCK_IN_FLAG);
     }

@@ -4068,7 +4068,8 @@
       "hours": "{{count}} h",
       "less": "Moins",
       "more": "Plus",
-      "saved": "Enregistré"
+      "saved": "Enregistré",
+      "allowHours": "Passé ce délai, on leur demande « Oubli de dépointer ? ». C’est aussi la session la plus longue pour les personnes pointées automatiquement à l’arrivée et au départ. Un changement s’applique tout de suite, y compris à ceux qui ont pointé maintenant."
     },
     "presence": {
       "title": "Où la personne a travaillé",
@@ -4127,7 +4128,20 @@
           "label": "Clôturer le service après",
           "hint": "Minutes sans réponse. Le départ est marqué comme non confirmé."
         }
-      }
+      },
+      "modeLabel": "Comment pointer",
+      "modeShift": "Selon son poste",
+      "modePresence": "À l’arrivée et au départ",
+      "modeShiftHint": "Pointe près du début du poste et dépointe après sa fin. Nécessite un planning.",
+      "modePresenceHint": "Pour les personnes sans poste fixe. Pointe quand elles restent sur le site, dépointe quand elles sont parties. Un jour avec un poste ici, les règles du poste s’appliquent.",
+      "startWindow": "Début habituel",
+      "startWindowHint": "Arriver en dehors de ces heures leur demande d’abord au lieu de pointer. Repris de leurs 60 derniers jours ici.",
+      "anyTime": "À toute heure",
+      "save": "Enregistrer",
+      "longest": "Session la plus longue : {{hours}} h",
+      "longestHint": "Les heures sans poste de cet espace de travail (réglages de présence). Le téléphone demande alors « Toujours au travail ? ». Les modifier là-bas s’applique à tous immédiatement.",
+      "presenceTiming": "Reste {{dwell}} min sur le site avant de pointer, absent {{exit}} min avant de dépointer (réglages du pointage automatique de cet espace).",
+      "windowInvalid": "Choisissez deux heures différentes."
     }
   },
   "auditLog": {

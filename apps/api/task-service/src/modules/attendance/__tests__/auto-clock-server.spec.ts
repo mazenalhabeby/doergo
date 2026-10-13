@@ -293,6 +293,20 @@ describe('the plan the phone arms from', () => {
     expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
   });
 
+  it('a member clocked by arriving and leaving carries their usual hours, zone and the workspace’s hours', async () => {
+    const { prisma } = planPrisma(1);
+    prisma.spaceAssignment.findMany = jest.fn(async () => [{ spaceId: 'loc-0', autoClock: true, autoClockMode: 'PRESENCE', autoClockStartWindow: { from: '19:00', to: '23:00' } }]);
+    prisma.companyLocation.findMany = jest.fn(async () => [{ ...location, id: 'loc-0', name: 'AGRU', noShiftDailyMinutes: 660, noShiftPolicy: 'ALLOW' }]);
+    const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
+    expect(res.data.places[0].presence).toEqual({ startWindow: { from: '19:00', to: '23:00' }, timezone: location.timezone || 'UTC', noShiftMinutes: 660, noShiftLimit: false });
+  });
+
+  it('by shift → no presence on the place', async () => {
+    const { prisma } = planPrisma(1);
+    const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
+    expect(res.data.places[0].presence).toBeNull();
+  });
+
   it('chosen nowhere → offered 0, so the phone does not offer the switch', async () => {
     const { prisma } = planPrisma(0, false);
     const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
@@ -420,7 +434,7 @@ describe('still clocked in after the end — the workspace’s own thresholds', 
   function sweepPrisma(entries: any[]) {
     const prisma: any = {
       timeEntry: {
-        findMany: jest.fn(async (args: any) => (args.select ? entries.map(({ id, userId, locationId, clockInAt, expectedClockOutAt }) => ({ id, userId, locationId, clockInAt, expectedClockOutAt })) : args.where?.id ? entries : [])),
+        findMany: jest.fn(async (args: any) => (args.select ? entries.filter((e) => args.where?.expectedClockOutAt !== null || !e.expectedClockOutAt).map(({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt }) => ({ id, userId, locationId, clockInAt, expectedClockOutAt, expectedClockInAt })) : args.where?.id ? entries : [])),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         update: jest.fn(),
       },

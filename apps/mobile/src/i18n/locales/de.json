@@ -4929,7 +4929,12 @@
       "endBody": "Noch bei {{place}}? Stempeln Sie aus oder sagen Sie uns, dass Sie noch arbeiten.",
       "undo": "Rückgängig",
       "stillWorking": "Arbeite noch",
-      "clockOut": "Ausstempeln"
+      "clockOut": "Ausstempeln",
+      "presenceEndTitle_one": "{{count}} Stunde bei {{place}} – arbeiten Sie noch?",
+      "presenceEndTitle_other": "{{count}} Stunden bei {{place}} – arbeiten Sie noch?",
+      "presenceEndBody": "Stempeln Sie aus, wenn Sie fertig sind, oder arbeiten Sie weiter.",
+      "presenceEndBodyLimit": "Das ist die heutige Grenze hier. Stempeln Sie aus oder bitten Sie um Mehrarbeit.",
+      "arrivedOutsideBody": "Das ist außerhalb Ihrer üblichen Zeiten. Beginnen Sie mit der Arbeit? Tippen Sie zum Einstempeln."
     },
     "result": {
       "undone": "Automatisches Einstempeln rückgängig gemacht",
@@ -4941,7 +4946,8 @@
       "extraQueued": "Auf diesem Telefon gespeichert: Sie arbeiten noch",
       "notYours": "Dies war für eine andere Person, die dieses Telefon benutzt hat.",
       "failed": "Das hat nicht geklappt. Öffnen Sie die Stempeluhr und erledigen Sie es dort.",
-      "cannotUndo": "Diese Einstempelung kann hier nicht mehr rückgängig gemacht werden: Die Schicht ist abgeschlossen oder es ist bereits Arbeit erfasst. Bitten Sie Ihr Büro um eine Korrektur."
+      "cannotUndo": "Diese Einstempelung kann hier nicht mehr rückgängig gemacht werden: Die Schicht ist abgeschlossen oder es ist bereits Arbeit erfasst. Bitten Sie Ihr Büro um eine Korrektur.",
+      "carryOn": "Weiter – Sie sind noch eingestempelt"
     }
   },
   "register": {

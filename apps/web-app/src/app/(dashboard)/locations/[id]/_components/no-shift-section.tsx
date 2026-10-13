@@ -69,7 +69,9 @@ export function NoShiftSection({
   }
 
   const minutes = clampDailyMinutes(Math.round(hours * 60))
-  const hoursDirty = policy === "LIMIT" && savedPolicy === "LIMIT" && minutes !== savedMinutes
+  // One number, two meanings: a cap under LIMIT; under ALLOW, when "forgot to clock out?" is asked (and the automatic clock's longest session).
+  const hasHours = policy === "LIMIT" || policy === "ALLOW"
+  const hoursDirty = hasHours && policy === savedPolicy && minutes !== savedMinutes
   const step = (delta: number) => setHours((h) => clampDailyMinutes(Math.round((h + delta) * 60)) / 60)
   const formatHours = (m: number) => t("attendance.noShift.hours", { count: m / 60, defaultValue: `${m / 60} h` })
 
@@ -123,7 +125,7 @@ export function NoShiftSection({
                 <PolicyOptionContent active={active} title={o.title} body={o.body} saving={save.isPending} />
               </button>
 
-              {o.value === "LIMIT" && active && (
+              {(o.value === "LIMIT" || o.value === "ALLOW") && active && (
                 <div className="flex flex-wrap items-center gap-3 px-4 pb-4 pl-11">
                   <div className="inline-flex items-center overflow-hidden rounded-lg border bg-background">
                     <button
@@ -166,6 +168,11 @@ export function NoShiftSection({
                       {save.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                       {t("common.save")}
                     </Button>
+                  )}
+                  {o.value === "ALLOW" && (
+                    <p className="basis-full text-xs leading-snug text-muted-foreground">
+                      {t("attendance.noShift.allowHours")}
+                    </p>
                   )}
                 </div>
               )}

@@ -1,7 +1,10 @@
 import {
   autoClockUndoDeadline,
+  clocksByPresence,
   decideAutoClockIn,
   decideAutoClockOut,
+  decidePresenceClockIn,
+  presenceSessionEnd,
   localDateKey,
   type AttendanceStatus,
   type AutoClockPlace,
@@ -11,7 +14,7 @@ import { checkClockInLocally } from '../../offline/attendance/clock-in-check';
 import { autoClockInFromPhone, autoClockOutFromPhone } from '../../offline/attendance/shift-actions';
 import type { SyncEngine } from '../../offline/sync-engine';
 import type { AutoClockNotifier } from './notifications';
-import { entered, exited, placeAsLocation, remindersFor, shiftForArrival, shiftForEntry, type PlaceState } from './rules';
+import { entered, exited, placeAsLocation, presenceSettings, remindersFor, shiftForArrival, shiftForEntry, type PlaceState } from './rules';
 import type { AutoClockState, AutoClockStore } from './store';
 
 /*
@@ -122,16 +125,32 @@ async function tryArrival(deps: AutoClockDeps, state: AutoClockState, place: Aut
   const planned = shiftForArrival(place, now);
   const status = await shift();
   const clockedIn = !!status?.isClockedIn;
-  const decision = decideAutoClockIn({
-    settings: place.settings,
-    now,
-    enteredAt: new Date(ps.enteredAt),
-    stillInside: true,
-    shiftStart: planned?.start ?? null,
-    shiftEnd: planned?.end ?? null,
-    alreadyClockedIn: clockedIn,
-  });
-  if (decision.action === 'SKIP' || !planned) return;
+  // A shift today rules the day; with none, a member clocked by arriving and leaving goes by their usual hours.
+  const presence = planned ? null : presenceSettings(place);
+  const decision = presence
+    ? decidePresenceClockIn({
+        settings: presence,
+        now,
+        enteredAt: new Date(ps.enteredAt),
+        stillInside: true,
+        timezone: place.presence!.timezone,
+        alreadyClockedIn: clockedIn,
+      })
+    : decideAutoClockIn({
+        settings: place.settings,
+        now,
+        enteredAt: new Date(ps.enteredAt),
+        stillInside: true,
+        shiftStart: planned?.start ?? null,
+        shiftEnd: planned?.end ?? null,
+        alreadyClockedIn: clockedIn,
+      });
+  if (decision.action === 'ASK') {
+    // Outside their usual hours: ask, once a day — never turn a visit into a shift on its own.
+    await promptOncePerDay(deps, ps, place, now, true);
+    return;
+  }
+  if (decision.action === 'SKIP' || (!planned && !presence)) return;
   const holdUntil = decision.action === 'WAIT' ? decision.until.getTime() : now.getTime();
   const at = decision.action === 'CLOCK_IN' ? decision.at : new Date(holdUntil - place.settings.dwellMinutes * 60_000);
 
@@ -142,19 +161,29 @@ async function tryArrival(deps: AutoClockDeps, state: AutoClockState, place: Aut
   if ('code' in verdict) {
     // Not inside the drawn site yet (the OS circle is wider): wait for the next wake.
     if (verdict.code === 'OUTSIDE_SITE' || verdict.code === 'ALREADY_CLOCKED_IN') return;
-    const today = localDateKey(now);
-    if (ps.promptedDay !== today) {
-      ps.promptedDay = today;
-      await deps.notifier.arrivedPrompt({ userId: deps.userId, spaceId: place.spaceId, place: place.name });
-    }
+    await promptOncePerDay(deps, ps, place, now);
     return;
   }
 
   const filed = await autoClockInFromPhone(deps.engine, { locationId: place.spaceId, fix: fix!, at, holdUntil });
   ps.inOp = { opId: filed.opId, entryId: filed.entryId, at: at.getTime(), holdUntil };
   await deps.notifier.clockedIn({ userId: deps.userId, entryId: filed.entryId, place: place.name, at, showAt: new Date(holdUntil) });
-  const reminders = remindersFor({ settings: place.settings, shift: planned, now });
-  await deps.notifier.reminders({ userId: deps.userId, entryId: filed.entryId, place: place.name, rest: reminders.rest, endAt: reminders.end, shiftEnd: planned.end });
+  if (planned) {
+    const reminders = remindersFor({ settings: place.settings, shift: planned, now });
+    await deps.notifier.reminders({ userId: deps.userId, entryId: filed.entryId, place: place.name, rest: reminders.rest, endAt: reminders.end, shiftEnd: planned.end });
+  } else if (presence) {
+    // No rest is placed without a plan; "Still working?" comes at the workspace's hours.
+    const endAt = presenceSessionEnd(at, presence);
+    await deps.notifier.reminders({ userId: deps.userId, entryId: filed.entryId, place: place.name, rest: null, endAt, shiftEnd: endAt, presence: { hours: presence.noShiftMinutes / 60, limit: presence.noShiftLimit } });
+  }
+}
+
+/** "You arrived — tap to clock in", at most once a day per workspace. */
+async function promptOncePerDay(deps: AutoClockDeps, ps: PlaceState, place: AutoClockPlace, now: Date, outsideHours = false) {
+  const today = localDateKey(now);
+  if (ps.promptedDay === today) return;
+  ps.promptedDay = today;
+  await deps.notifier.arrivedPrompt({ userId: deps.userId, spaceId: place.spaceId, place: place.name, ...(outsideHours ? { outsideHours } : {}) });
 }
 
 /** Outside, clocked in here, nothing filed: did they go home? */
@@ -167,7 +196,12 @@ async function tryDeparture(deps: AutoClockDeps, state: AutoClockState, place: A
   const now = deps.now();
   // Approved extra time MOVES the expected end — read it first, the plan second.
   const expected = (entry as { expectedClockOutAt?: string | null }).expectedClockOutAt;
-  const plannedEnd = expected ? new Date(expected) : shiftForEntry(place, new Date(entry.clockInAt))?.end ?? null;
+  // Clocked by arriving and leaving with no shift: leaving at any time after clocking in is going home.
+  const plannedEnd = clocksByPresence(presenceSettings(place), entry as { expectedClockInAt?: string | null })
+    ? new Date(entry.clockInAt)
+    : expected
+      ? new Date(expected)
+      : shiftForEntry(place, new Date(entry.clockInAt))?.end ?? null;
   const exitedAt = new Date(ps.exitedAt);
   const decision = decideAutoClockOut({ settings: place.settings, now, exitedAt, stillOutside: true, plannedEnd, clockedIn: true });
   if (decision.action === 'SKIP') return;

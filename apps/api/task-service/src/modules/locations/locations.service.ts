@@ -9,6 +9,7 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { rearmNoShiftSessions } from '../attendance/no-shift-rearm';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_NAMES,
   ATTENDANCE_CONSTANTS,
@@ -18,7 +19,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   stripWorkspaceTerms, assertFoundInOrg,
   parseAutoClockSettings, readAutoClockSettings, type AutoClockSettings,
   permissionsExceed, permissionsFromOrgRole, type PermissionSet } from '@hbcfield/shared';
-import { autoClockOffered, spaceRunsClock, activeAssignmentWhere } from '@hbcfield/shared';
+import { autoClockOffered, spaceRunsClock, activeAssignmentWhere, isAutoClockMode, parseAutoClockStartWindow, suggestStartWindow, localPartsIn, type AutoClockStartWindow } from '@hbcfield/shared';
 import { isGeofencePolicy, isRequestKind, REQUEST_KINDS,
   isNoShiftPolicy,
   noShiftPolicyConflict,
@@ -89,6 +90,22 @@ export class LocationsService {
    * Tracking running, not external, assigned now. Nobody who already agreed —
    * for them it simply starts. Fire-and-forget, like `announce`.
    */
+  /**
+   * Usual start hours from this member's clock-ins here over the last 60 days,
+   * in the workspace's zone (`suggestStartWindow`). One narrow query, capped.
+   */
+  private async suggestStartWindow(userId: string, spaceId: string): Promise<AutoClockStartWindow | null> {
+    const space = await this.prisma.companyLocation.findUnique({ where: { id: spaceId }, select: { timezone: true } });
+    const rows = await this.prisma.timeEntry.findMany({
+      where: { userId, locationId: spaceId, clockInAt: { gte: new Date(Date.now() - 60 * 86_400_000) } },
+      select: { clockInAt: true },
+      orderBy: { clockInAt: 'desc' },
+      take: 200,
+    });
+    const tz = space?.timezone || 'UTC';
+    return suggestStartWindow(rows.map((r) => localPartsIn(r.clockInAt, tz).minutesOfDay));
+  }
+
   private async offerAutoClock(organizationId: string, spaceId: string, onlyUserIds?: string[]) {
     try {
       const space = await this.prisma.companyLocation.findFirst({
@@ -698,6 +715,7 @@ export class LocationsService {
     }
 
     const wasOn = !!autoClockOffered({ settings: existing.autoClock, assignmentAutoClock: true });
+    const hoursBefore = existing.noShiftDailyMinutes;
     await this.prisma.companyLocation.update({
       where: { id: data.id },
       data: updateData,
@@ -706,6 +724,15 @@ export class LocationsService {
     const location = await this.prisma.companyLocation.findUniqueOrThrow({ where: { id: data.id } });
 
     this.logger.log(`Company location updated: ${location.id}`);
+    // Its hours without a shift changed → the sessions running there follow now, not tomorrow.
+    if (data.noShiftDailyMinutes !== undefined && location.noShiftDailyMinutes !== hoursBefore) {
+      await rearmNoShiftSessions(this.prisma, {
+        spaceId: location.id,
+        organizationId: data.organizationId,
+        fromMinutes: hoursBefore,
+        toMinutes: location.noShiftDailyMinutes,
+      }).catch((err) => this.logger.error(`Re-timing running sessions in ${location.id} failed: ${err}`));
+    }
     this.announce('space_changed', data.organizationId, location.id);
     // The workspace's automatic clock switched ON → the members already chosen here learn the switch is there.
     if (data.autoClock !== undefined && !wasOn && autoClockOffered({ settings: location.autoClock, assignmentAutoClock: true })) {
@@ -1478,6 +1505,10 @@ export class LocationsService {
     allowRemote?: boolean | null;
     /** Chosen for the automatic clock here (shared attendance/auto-clock.ts). */
     autoClock?: boolean;
+    /** SHIFT | PRESENCE — by their shift, or by arriving and leaving. */
+    autoClockMode?: string;
+    /** PRESENCE: usual start hours, or null for any time. Omitted when switching to PRESENCE → suggested from their clock-ins here. */
+    autoClockStartWindow?: unknown;
     /**
      * Set when the caller manages only THIS workspace (not org-wide): the
      * assignment must be in it, or it reads as not found.
@@ -1531,6 +1562,23 @@ export class LocationsService {
     // Tri-state on purpose: true / false / null-meaning-follow-the-account.
     if (data.allowRemote !== undefined) updateData.allowRemote = data.allowRemote;
     if (data.autoClock !== undefined) updateData.autoClock = data.autoClock === true;
+    if (data.autoClockMode !== undefined) {
+      if (!isAutoClockMode(data.autoClockMode)) {
+        throw new BadRequestException({ message: 'Unknown automatic clock mode', code: 'AUTO_CLOCK_SETTING_INVALID', params: { field: 'mode' } });
+      }
+      updateData.autoClockMode = data.autoClockMode;
+    }
+    if (data.autoClockStartWindow !== undefined) {
+      const parsed = parseAutoClockStartWindow(data.autoClockStartWindow, { strict: true });
+      if (!parsed.ok) {
+        throw new BadRequestException({ message: 'Usual start hours must be two different times, HH:MM', code: parsed.code, params: { field: parsed.field } });
+      }
+      updateData.autoClockStartWindow = parsed.value ?? Prisma.DbNull;
+    } else if (data.autoClockMode === 'PRESENCE' && assignment.autoClockMode !== 'PRESENCE') {
+      // Switched to arriving and leaving: start from their own habit here, which the office can change.
+      const suggested = await this.suggestStartWindow(assignment.userId, assignment.spaceId);
+      updateData.autoClockStartWindow = suggested ?? Prisma.DbNull;
+    }
 
     const updated = await this.prisma.spaceAssignment.update({
       where: { id: data.assignmentId },

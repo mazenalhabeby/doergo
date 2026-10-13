@@ -4929,7 +4929,12 @@
       "endBody": "Toujours à {{place}} ? Pointez votre départ ou dites-nous que vous travaillez encore.",
       "undo": "Annuler",
       "stillWorking": "Je travaille encore",
-      "clockOut": "Pointer le départ"
+      "clockOut": "Pointer le départ",
+      "presenceEndTitle_one": "{{count}} heure à {{place}} — toujours au travail ?",
+      "presenceEndTitle_other": "{{count}} heures à {{place}} — toujours au travail ?",
+      "presenceEndBody": "Dépointez si vous avez fini, ou continuez.",
+      "presenceEndBodyLimit": "C’est la limite d’aujourd’hui ici. Dépointez, ou demandez du temps en plus.",
+      "arrivedOutsideBody": "C’est en dehors de vos heures habituelles. Vous commencez ? Touchez pour pointer."
     },
     "result": {
       "undone": "Pointage automatique annulé",
@@ -4941,7 +4946,8 @@
       "extraQueued": "Enregistré sur ce téléphone : vous travaillez encore",
       "notYours": "Ceci était destiné à une autre personne ayant utilisé ce téléphone.",
       "failed": "Cela n’a pas fonctionné. Ouvrez l’écran de pointage pour le faire là.",
-      "cannotUndo": "Ce pointage ne peut plus être annulé ici : le service est clôturé ou du travail y est déjà enregistré. Demandez à votre bureau de corriger."
+      "cannotUndo": "Ce pointage ne peut plus être annulé ici : le service est clôturé ou du travail y est déjà enregistré. Demandez à votre bureau de corriger.",
+      "carryOn": "Vous continuez — toujours pointé"
     }
   },
   "register": {

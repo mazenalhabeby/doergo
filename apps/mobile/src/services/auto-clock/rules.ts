@@ -4,6 +4,7 @@ import {
   type AutoClockPlace,
   type AutoClockSettings,
   type CompanyLocation,
+  type MemberAutoClockSettings,
 } from '@hbcfield/shared/client';
 
 /*
@@ -78,7 +79,8 @@ export function selectAutoRegions(
       p.settings.enabled &&
       Number.isFinite(p.lat) &&
       Number.isFinite(p.lng) &&
-      shiftsOf(p).some((s) => s.end.getTime() + p.settings.exitGraceMinutes * 60_000 > now),
+      // Clocked by arriving and leaving: always worth watching (no shift to wait for).
+      (!!p.presence || shiftsOf(p).some((s) => s.end.getTime() + p.settings.exitGraceMinutes * 60_000 > now)),
   );
   const origin = opts.origin;
   const ranked = origin
@@ -121,6 +123,23 @@ export function shiftForEntry(place: AutoClockPlace, clockInAt: Date): Shift | n
     if (gap < bestGap) best = s;
   }
   return best;
+}
+
+/**
+ * A place clocked by arriving and leaving, as the shared rules read it — or
+ * null when this member is clocked by shift only here. The workspace's hours
+ * come with the plan, refreshed with it.
+ */
+export function presenceSettings(place: AutoClockPlace): MemberAutoClockSettings | null {
+  const p = place.presence;
+  if (!p) return null;
+  return {
+    ...place.settings,
+    mode: 'PRESENCE',
+    startWindow: p.startWindow,
+    noShiftMinutes: p.noShiftMinutes,
+    noShiftLimit: p.noShiftLimit,
+  };
 }
 
 /* ------------------------------------------------------------------ memory */

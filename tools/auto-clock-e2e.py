@@ -20,6 +20,10 @@ This proves what the server does with what the phone sends:
      is inserted at the close unless skipped
   H. the sweeps — leader re-armed, then escalated, then a provisional close
      that the phone's later AUTO clock-out replaces
+  I. no fixed shift (by arriving and leaving) — the mode and usual hours, the
+     plan, marking inside/outside the hours, a departure any time, the
+     workspace's hours read live and re-timing a running session, the close
+     for review only when he is gone (at the last moment seen on site)
 
 It builds its own workspace (a timezone where it is late morning, so a
 10:00–18:00 shift is always running) and uses the database (docker psql) to
@@ -121,6 +125,9 @@ def entry(eid):
 
 
 def ts(s):  # a timestamp column (UTC, no zone) as an aware datetime
+    if '.' in s:  # Postgres trims trailing zeros ("…:04.17"); older Pythons need six digits
+        head, frac = s.split('.', 1)
+        s = f'{head}.{frac[:6].ljust(6, "0")}'
     return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
 
 
@@ -396,7 +403,100 @@ try:
               and abs((ts(e['out']) - left).total_seconds()) < 15 and 'AUTO_CLOCK_OUT' in e['flags'], (s, r, e))
     else:
         print('\n— H. skipped (--no-sweep)')
+
+    # ── I. No fixed shift: clocked by arriving and leaving ────────────────
+    print('\n— I. no fixed shift (by arriving and leaving)')
+    s, r = call('GET', '/attendance/status', mike)
+    st = data(r) or {}
+    if st.get('isClockedIn'):
+        call('POST', '/attendance/clock-out', mike, {**SITE, 'earlyReason': 'presence e2e'})
+    # No rota any more: called in. Its already-made instances go too, or one still matches today.
+    sql(f"delete from shift_assignments where id='{RA_MIKE}'")
+    sql(f"delete from shift_instances where \"spaceId\"='{WS}'")
+    # …and no weekly schedule either (the demo seed gives Mike one): put back in `finally`.
+    PAUSED_SCHEDULES = sql(f"update technician_schedules set \"isActive\"=false where \"technicianId\"='{MIKE_ID}' and \"isActive\" returning id").split()
+    local_h = (now().hour - off) % 24
+    INSIDE = {'from': f'{(local_h - 1) % 24:02d}:00', 'to': f'{(local_h + 2) % 24:02d}:00'}
+    OUTSIDE = {'from': f'{(local_h + 6) % 24:02d}:00', 'to': f'{(local_h + 8) % 24:02d}:00'}
+    path = f'/locations/{WS}/members/{SA_MIKE}'
+
+    s, r = call('PATCH', path, admin, {'autoClock': True, 'autoClockMode': 'PRESENCE'})
+    row = sql(f"select \"autoClockMode\", coalesce(\"autoClockStartWindow\"::text,'') from space_assignments where id='{SA_MIKE}'").split('|')
+    check('switching to arriving and leaving saves the mode (usual hours suggested from his clock-ins here, or any time)', s in (200, 201) and row[0] == 'PRESENCE', (s, r, row))
+    s, r = call('PATCH', path, admin, {'autoClockStartWindow': {'from': '19:00', 'to': '19:00'}})
+    check('a window of two equal times is refused, coded', s == 400 and code(r) == 'AUTO_CLOCK_SETTING_INVALID', (s, r))
+    s, r = call('PATCH', path, mike, {'autoClockMode': 'SHIFT'})
+    check('the member cannot change it himself', s == 403, (s, r))
+    s, r = call('PATCH', path, admin, {'autoClockStartWindow': INSIDE})
+    check('usual hours saved', s in (200, 201), (s, r))
+
+    s, r = call('GET', '/attendance/auto-clock/plan', mike)
+    pl = next((p for p in (data(r) or {}).get('places', []) if p.get('spaceId') == WS), None)
+    check('the plan carries presence: usual hours, zone, the workspace hours', pl and (pl.get('presence') or {}).get('startWindow') == INSIDE
+          and (pl.get('presence') or {}).get('noShiftMinutes') == 480 and (pl.get('presence') or {}).get('timezone') == TZ, pl)
+
+    P1 = str(uuid.uuid4())
+    arrived = now() - timedelta(seconds=20)  # after his last step (a step dated before it is out of order)
+    s, r = clock_in(mike, P1, at=arrived)
+    e = entry(P1)
+    check('AUTO clock-in inside the usual hours with no shift is marked automatic', s in (200, 201) and e and 'AUTO_CLOCK_IN' in e['flags'], (s, r, e))
+    check('…the leader is due at arrival + the workspace hours + leaderAfter (no worker nudge)',
+          e and e['nextRemindAt'] and abs((ts(e['nextRemindAt']) - (ts(e['in']) + timedelta(minutes=480 + 25))).total_seconds()) < 5, e)
+
+    s, r = call('PATCH', f'/locations/{WS}', admin, {'noShiftDailyMinutes': 600})
+    e = entry(P1)
+    check('the workspace hours are read live: the plan says 600 at once', s in (200, 201) and
+          next((p for p in (data(call('GET', '/attendance/auto-clock/plan', mike)[1]) or {}).get('places', []) if p.get('spaceId') == WS), {}).get('presence', {}).get('noShiftMinutes') == 600, (s, r))
+
+    s, r = clock_out(mike, P1, at=now())
+    e = entry(P1)
+    check('AUTO clock-out at any time after clocking in is marked automatic (no planned end to wait for)', s in (200, 201) and e and 'AUTO_CLOCK_OUT' in e['flags'], (s, r, e))
+
+    call('PATCH', path, admin, {'autoClockStartWindow': OUTSIDE})
+    P2 = str(uuid.uuid4())
+    s, r = clock_in(mike, P2, at=now())
+    e = entry(P2)
+    check('AUTO clock-in OUTSIDE the usual hours is an ordinary clock-in (the phone asks; never marked)', s in (200, 201) and e and 'AUTO_CLOCK_IN' not in e['flags'], (s, r, e))
+    clock_out(mike, P2, trigger='MANUAL', earlyReason='e2e')
+
+    # A session not on the automatic clock: changing the workspace hours re-times it, running.
+    call('PATCH', path, admin, {'autoClock': False})
+    P3 = str(uuid.uuid4())
+    clock_in(mike, P3, trigger='MANUAL')
+    before = entry(P3)
+    call('PATCH', f'/locations/{WS}', admin, {'noShiftDailyMinutes': 720})
+    after = entry(P3)
+    check('changing the hours moves a running session\'s "forgot to clock out?" to clock-in + the new hours',
+          after and after['nextRemindAt'] and abs((ts(after['nextRemindAt']) - (ts(after['in']) + timedelta(minutes=720))).total_seconds()) < 5, (before, after))
+    clock_out(mike, P3, trigger='MANUAL', earlyReason='e2e')
+
+    if SWEEP:
+        # Gone, phone silent: closed for review at the last moment it saw him on site.
+        call('PATCH', path, admin, {'autoClock': True, 'autoClockStartWindow': None})
+        call('PATCH', f'/locations/{WS}', admin, {'noShiftDailyMinutes': 480})
+        P4 = str(uuid.uuid4())
+        clock_in(mike, P4, at=now())
+        sql(f"""update time_entries set "clockInAt"=now() at time zone 'utc' - interval '600 minutes',
+                "lastSeenAt"=now() at time zone 'utc' - interval '90 minutes', presence='ON_SITE',
+                "nextRemindAt"=now() at time zone 'utc' + interval '1 day' where id='{P4}'""")
+        seen = sql(f"select \"lastSeenAt\" from time_entries where id='{P4}'")
+        e = wait_for(lambda: (lambda x: x if x and x['status'] != 'CLOCKED_IN' else None)(entry(P4)), 150)
+        basis = sql(f"select coalesce(\"clockOutBasis\",'') from time_entries where id='{P4}'")
+        check('past the hours + closeAfter and silent: closed for review at the last moment seen on site',
+              e and e['provisional'] and basis == 'LAST_SEEN' and abs((ts(e['out']) - ts(seen)).total_seconds()) < 5, (e, basis, seen))
+        # Still heard from on site: never closed.
+        P5 = str(uuid.uuid4())
+        clock_in(mike, P5, at=now())
+        sql(f"""update time_entries set "clockInAt"=now() at time zone 'utc' - interval '600 minutes',
+                "lastSeenAt"=now() at time zone 'utc' - interval '2 minutes', presence='ON_SITE',
+                "nextRemindAt"=now() at time zone 'utc' + interval '1 day' where id='{P5}'""")
+        time.sleep(75)
+        e = entry(P5)
+        check('still reported on site: never closed (the leader is told instead)', e and e['status'] == 'CLOCKED_IN', e)
+        clock_out(mike, P5, trigger='MANUAL', earlyReason='e2e')
 finally:
+    if 'PAUSED_SCHEDULES' in globals() and PAUSED_SCHEDULES:
+        sql("update technician_schedules set \"isActive\"=true where id in (" + ','.join(f"'{i}'" for i in PAUSED_SCHEDULES) + ")")
     s, r = call('GET', '/attendance/status', mike)
     cleanup()
     sql(f"update users set \"autoClockConsentAt\"={('null' if not CONSENT_BEFORE else repr(CONSENT_BEFORE))} where id='{MIKE_ID}'")

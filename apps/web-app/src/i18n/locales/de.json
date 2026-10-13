@@ -4068,7 +4068,8 @@
       "hours": "{{count}} Std.",
       "less": "Weniger",
       "more": "Mehr",
-      "saved": "Gespeichert"
+      "saved": "Gespeichert",
+      "allowHours": "Nach dieser Zeit werden sie gefragt „Ausstempeln vergessen?“. Es ist auch die längste Sitzung für Personen, die automatisch nach Ankommen und Gehen gestempelt werden. Eine Änderung gilt sofort, auch für alle, die gerade eingestempelt sind."
     },
     "presence": {
       "title": "Wo gearbeitet wurde",
@@ -4127,7 +4128,20 @@
           "label": "Schicht schließen nach",
           "hint": "Minuten ohne Antwort. Das Ausstempeln wird als nicht bestätigt markiert."
         }
-      }
+      },
+      "modeLabel": "Wie gestempelt wird",
+      "modeShift": "Nach Schicht",
+      "modePresence": "Nach Ankommen und Gehen",
+      "modeShiftHint": "Stempelt zum Schichtbeginn ein und nach Schichtende aus. Braucht einen Dienstplan.",
+      "modePresenceHint": "Für Personen ohne feste Schicht. Stempelt ein, wenn sie am Standort bleiben, und aus, wenn sie gegangen sind. An einem Tag mit Schicht hier gelten die Regeln der Schicht.",
+      "startWindow": "Üblicher Beginn",
+      "startWindowHint": "Wer außerhalb dieser Zeiten ankommt, wird zuerst gefragt statt eingestempelt. Aus den letzten 60 Tagen hier übernommen.",
+      "anyTime": "Jederzeit",
+      "save": "Speichern",
+      "longest": "Längste Sitzung: {{hours}} Std.",
+      "longestHint": "Die Stunden ohne Schicht dieses Arbeitsbereichs (Einstellungen der Anwesenheit). Dann fragt das Telefon „Arbeiten Sie noch?“. Eine Änderung dort gilt sofort für alle.",
+      "presenceTiming": "Bleibt {{dwell}} Min. am Standort, bevor eingestempelt wird, und ist {{exit}} Min. weg, bevor ausgestempelt wird (Einstellungen der automatischen Stempeluhr dieses Arbeitsbereichs).",
+      "windowInvalid": "Wählen Sie zwei verschiedene Uhrzeiten."
     }
   },
   "auditLog": {

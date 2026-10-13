@@ -222,7 +222,7 @@ export interface UnconfirmedClockOut {
   id: string;
   clockInAt: string | Date;
   clockOutAt: string | Date;
-  /** LEFT_SITE | SHIFT_END | CLOCK_IN_PLUS_8H */
+  /** LEFT_SITE | LAST_SEEN | SHIFT_END | CLOCK_IN_PLUS_8H (the workspace's hours without a shift, despite the name) */
   clockOutBasis: string | null;
   expectedClockOutAt: string | Date | null;
   timezone: string | null;

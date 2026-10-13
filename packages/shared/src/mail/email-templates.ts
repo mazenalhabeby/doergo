@@ -218,7 +218,7 @@ function shiftMoment(
   }
 }
 
-const CLOSE_BASES = ['LEFT_SITE', 'SHIFT_END', 'CLOCK_IN_PLUS_8H'] as const;
+const CLOSE_BASES = ['LEFT_SITE', 'LAST_SEEN', 'SHIFT_END', 'CLOCK_IN_PLUS_8H'] as const;
 
 /**
  * A shift left open, closed by the sweep with a TEMPORARY clock-out.

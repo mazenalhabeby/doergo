@@ -4929,7 +4929,12 @@
       "endBody": "Still at {{place}}? Clock out, or tell us you are still working.",
       "undo": "Undo",
       "stillWorking": "Still working",
-      "clockOut": "Clock out"
+      "clockOut": "Clock out",
+      "presenceEndTitle_one": "{{count}} hour at {{place}} — still working?",
+      "presenceEndTitle_other": "{{count}} hours at {{place}} — still working?",
+      "presenceEndBody": "Clock out if you are done, or carry on.",
+      "presenceEndBodyLimit": "That is today's limit here. Clock out, or ask for extra time.",
+      "arrivedOutsideBody": "It is outside your usual hours. Starting work? Tap to clock in."
     },
     "result": {
       "undone": "Automatic clock-in undone",
@@ -4941,7 +4946,8 @@
       "extraQueued": "Saved on this phone: you are still working",
       "notYours": "This was for someone else who used this phone.",
       "failed": "That did not work. Open the Clock screen to do it there.",
-      "cannotUndo": "This clock-in can no longer be undone here: the shift is closed or work is recorded on it. Ask your office to correct it."
+      "cannotUndo": "This clock-in can no longer be undone here: the shift is closed or work is recorded on it. Ask your office to correct it.",
+      "carryOn": "Carrying on — you are still clocked in"
     }
   },
   "register": {

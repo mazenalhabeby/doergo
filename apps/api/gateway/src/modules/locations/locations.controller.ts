@@ -62,6 +62,9 @@ export function shapeLocationList<T>(result: T, user: any): T {
   return { ...r, data: r.data.map((row: unknown) => stripWorkspaceTerms(row, false)) };
 }
 
+/** What somebody who manages a workspace's people (not the workspace) may change on a member: the automatic clock only. */
+const AUTO_CLOCK_MEMBER_FIELDS = new Set(['autoClock', 'autoClockMode', 'autoClockStartWindow']);
+
 @ApiTags('locations')
 @ApiBearerAuth()
 @UseInterceptors(LabourCostInterceptor)
@@ -434,7 +437,7 @@ export class LocationsController {
     const orgWide = isAdmin(u) || accessAllows(u?.access, 'canManageWorkspaces');
     if (!orgWide) {
       const workspaceManager = accessAllows(u?.access, 'canManageWorkspaces', locationId);
-      const onlyAutoClock = Object.entries(dto ?? {}).every(([k, v]) => k === 'autoClock' || v === undefined);
+      const onlyAutoClock = Object.entries(dto ?? {}).every(([k, v]) => AUTO_CLOCK_MEMBER_FIELDS.has(k) || v === undefined);
       if (!workspaceManager && !(onlyAutoClock && mayManageSpaceMembers(u, locationId))) {
         throw new ForbiddenException('You do not have permission to manage the members of this workspace');
       }

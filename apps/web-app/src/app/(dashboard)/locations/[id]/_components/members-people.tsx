@@ -273,6 +273,7 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
         roster={members ?? []}
         isClient={isClient}
         autoClockRow={autoClock.on && open && open.user?.isExternal !== true ? autoClock.rowFor(open.userId) ?? null : undefined}
+        autoClockWorkspace={autoClock.workspace}
         onClose={() => setOpenId(null)}
       />
       {adding && (
@@ -343,6 +344,7 @@ function MemberPanel({
   roster,
   isClient,
   autoClockRow,
+  autoClockWorkspace,
   onClose,
 }: {
   spaceId: string
@@ -356,6 +358,7 @@ function MemberPanel({
    * `null` = offered, still loading.
    */
   autoClockRow?: LocationAssignment | null
+  autoClockWorkspace: { dwellMinutes: number; exitGraceMinutes: number; noShiftMinutes: number }
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -593,7 +596,7 @@ function MemberPanel({
 
               {/* Only while the workspace has the automatic clock on, and never for an external member. */}
               {autoClockRow !== undefined && (
-                <MemberAutoClock spaceId={spaceId} row={autoClockRow ?? undefined} section={section} heading={heading} />
+                <MemberAutoClock spaceId={spaceId} row={autoClockRow ?? undefined} workspace={autoClockWorkspace} section={section} heading={heading} />
               )}
 
               <section className={section}>

@@ -103,6 +103,16 @@ export function noShiftAllowance(input: {
   };
 }
 
+/**
+ * When a session with no shift is first asked "forgot to clock out?" — after
+ * the workspace's own hours without a shift (8, 10, 12 — whatever it set),
+ * never a number of its own. Read from the workspace, so changing it there
+ * changes it for everybody (`rearmNoShiftSessions` moves the running ones).
+ */
+export function noShiftReminderAt(clockInAt: Date, dailyMinutes: number | null | undefined): Date {
+  return new Date(clockInAt.getTime() + clampDailyMinutes(dailyMinutes) * 60_000);
+}
+
 export function clampDailyMinutes(minutes: number | null | undefined): number {
   const m = Number.isFinite(minutes as number) ? Math.round(minutes as number) : NO_SHIFT_LIMIT.DEFAULT_MINUTES;
   return Math.min(NO_SHIFT_LIMIT.MAX_MINUTES, Math.max(NO_SHIFT_LIMIT.MIN_MINUTES, m));

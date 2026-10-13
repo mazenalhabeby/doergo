@@ -4068,7 +4068,8 @@
       "hours": "{{count}} h",
       "less": "Meno",
       "more": "Più",
-      "saved": "Salvato"
+      "saved": "Salvato",
+      "allowHours": "Dopo questo tempo viene chiesto «Hai dimenticato di timbrare l’uscita?». È anche la sessione più lunga per chi timbra automaticamente all’arrivo e all’uscita. Una modifica vale subito, anche per chi ha già timbrato."
     },
     "presence": {
       "title": "Dove ha lavorato",
@@ -4127,7 +4128,20 @@
           "label": "Chiudere il turno dopo",
           "hint": "Minuti senza risposta. L’uscita viene segnata come non confermata."
         }
-      }
+      },
+      "modeLabel": "Come si timbra",
+      "modeShift": "In base al turno",
+      "modePresence": "All’arrivo e all’uscita",
+      "modeShiftHint": "Timbra vicino all’inizio del turno ed esce dopo la fine. Serve una turnazione.",
+      "modePresenceHint": "Per chi non ha un turno fisso. Timbra quando resta sul posto, esce quando se n’è andato. Nei giorni con un turno qui valgono le regole del turno.",
+      "startWindow": "Inizio abituale",
+      "startWindowHint": "Chi arriva fuori da questi orari viene prima interpellato invece di timbrare. Ricavato dagli ultimi 60 giorni qui.",
+      "anyTime": "A qualsiasi ora",
+      "save": "Salva",
+      "longest": "Sessione più lunga: {{hours}} h",
+      "longestHint": "Le ore senza turno di questo spazio di lavoro (impostazioni presenze). A quel punto il telefono chiede «Stai ancora lavorando?». Modificarle lì vale subito per tutti.",
+      "presenceTiming": "Resta {{dwell}} min sul posto prima di timbrare e {{exit}} min fuori prima di uscire (impostazioni della timbratura automatica di questo spazio).",
+      "windowInvalid": "Scegli due orari diversi."
     }
   },
   "auditLog": {

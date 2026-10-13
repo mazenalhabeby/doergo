@@ -4929,7 +4929,12 @@
       "endBody": "Ancora a {{place}}? Timbra l’uscita o dicci che stai ancora lavorando.",
       "undo": "Annulla",
       "stillWorking": "Sto ancora lavorando",
-      "clockOut": "Timbra uscita"
+      "clockOut": "Timbra uscita",
+      "presenceEndTitle_one": "{{count}} ora a {{place}}: stai ancora lavorando?",
+      "presenceEndTitle_other": "{{count}} ore a {{place}}: stai ancora lavorando?",
+      "presenceEndBody": "Timbra l’uscita se hai finito, oppure continua.",
+      "presenceEndBodyLimit": "È il limite di oggi qui. Timbra l’uscita o chiedi tempo extra.",
+      "arrivedOutsideBody": "È fuori dal tuo orario abituale. Inizi a lavorare? Tocca per timbrare."
     },
     "result": {
       "undone": "Timbratura automatica annullata",
@@ -4941,7 +4946,8 @@
       "extraQueued": "Salvato su questo telefono: stai ancora lavorando",
       "notYours": "Questo era per un’altra persona che ha usato questo telefono.",
       "failed": "Non ha funzionato. Apri la schermata delle timbrature e fallo lì.",
-      "cannotUndo": "Questa timbratura non può più essere annullata qui: il turno è chiuso o c’è già lavoro registrato. Chiedi al tuo ufficio di correggere."
+      "cannotUndo": "Questa timbratura non può più essere annullata qui: il turno è chiuso o c’è già lavoro registrato. Chiedi al tuo ufficio di correggere.",
+      "carryOn": "Continui: risulti ancora in servizio"
     }
   },
   "register": {

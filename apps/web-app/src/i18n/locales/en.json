@@ -4068,7 +4068,8 @@
       "hours": "{{count}} h",
       "less": "Less",
       "more": "More",
-      "saved": "Saved"
+      "saved": "Saved",
+      "allowHours": "After this long, they are asked “Forgot to clock out?”. It is also the longest session for people clocked automatically by arriving and leaving. A change applies at once, also to people clocked in now."
     },
     "presence": {
       "title": "Where they worked",
@@ -4127,7 +4128,20 @@
           "label": "Close the shift after",
           "hint": "Minutes with no answer. The clock-out is marked as not confirmed."
         }
-      }
+      },
+      "modeLabel": "How they are clocked",
+      "modeShift": "By their shift",
+      "modePresence": "By arriving and leaving",
+      "modeShiftHint": "Clocks in near the shift start and out after the shift ends. Needs a rota.",
+      "modePresenceHint": "For people with no fixed shift. Clocks in when they stay on site, out when they have left. On a day they have a shift here, the shift's rules apply.",
+      "startWindow": "Usual start",
+      "startWindowHint": "Arriving outside these hours asks them first instead of clocking in. Filled from their last 60 days here.",
+      "anyTime": "Any time",
+      "save": "Save",
+      "longest": "Longest session: {{hours}} h",
+      "longestHint": "This workspace's hours without a shift (Attendance settings). At that point the phone asks \"Still working?\". Changing it there applies to everybody at once.",
+      "presenceTiming": "Stays {{dwell}} min on site before clocking in, away {{exit}} min before clocking out (this workspace's automatic clock settings).",
+      "windowInvalid": "Choose two different times."
     }
   },
   "auditLog": {

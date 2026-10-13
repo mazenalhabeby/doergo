@@ -415,3 +415,55 @@ describe('which workspaces the OS watches', () => {
     expect(entered(b, 20)).toEqual({ inside: true, enteredAt: 20 });
   });
 });
+
+/* ---------------------------------------------------------------- no fixed shift */
+
+describe('clocked by arriving and leaving (no fixed shift)', () => {
+  // Vienna, 07:00 local at T0. No shifts at all — called in.
+  const presence = (window: { from: string; to: string } | null) =>
+    place({ shifts: [], settings: { ...AUTO_CLOCK_DEFAULTS, enabled: true, dwellMinutes: 10, exitGraceMinutes: 20, leadMinutes: 30, autoRestMinutes: 30 }, presence: { startWindow: window, timezone: 'Europe/Vienna', noShiftMinutes: 600, noShiftLimit: false } });
+
+  it('the OS watches the workspace though there is no shift', () => {
+    expect(selectAutoRegions([presence(null)], { now: new Date(T0), max: MAX_OS_REGIONS }).map((r) => r.identifier)).toEqual([autoRegionId('hall')]);
+  });
+
+  it('inside the usual hours: a clock-in dated at the arrival, held for the dwell; "still working?" at the workspace’s hours; no rest', async () => {
+    const w = await world({ places: [presence({ from: '06:30', to: '09:00' })] });
+    w.at(T0);
+    await onRegionEvent(w.deps, 'enter', 'hall', new Date(T0));
+    const [op] = w.ops('attendance.clockIn');
+    expect(op!.nextAttemptAt).toBe(T0 + min(10));
+    expect((op!.payload.body as { evidence: { occurredAt: string } }).evidence.occurredAt).toBe(new Date(T0).toISOString());
+    expect(w.notifier.log.some((l) => l.startsWith('end:') && l.endsWith(new Date(T0 + min(600)).toISOString()))).toBe(true);
+    expect(w.notifier.log.some((l) => l.startsWith('rest:'))).toBe(false);
+  });
+
+  it('outside them: asked once, nothing filed', async () => {
+    const w = await world({ places: [presence({ from: '19:00', to: '23:00' })] });
+    w.at(T0 + min(15));
+    await onRegionEvent(w.deps, 'enter', 'hall', new Date(T0));
+    await reevaluate(w.deps);
+    expect(w.ops('attendance.clockIn')).toHaveLength(0);
+    expect(w.notifier.log.filter((l) => l === 'prompt:hall')).toHaveLength(1);
+  });
+
+  it('leaving at any time after clocking in is going home, dated when they left', async () => {
+    const w = await world({ places: [presence(null)] });
+    w.clockedIn({ id: 'e1', locationId: 'hall', clockInAt: new Date(T0).toISOString(), expectedClockInAt: null });
+    w.at(T0 + min(120));
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(T0 + min(120)));
+    const [op] = w.ops('attendance.clockOut');
+    expect(op!.state).toBe('held');
+    expect(op!.nextAttemptAt).toBe(T0 + min(140));
+  });
+
+  it('a step out shorter than the grace is taken back, never sent', async () => {
+    const w = await world({ places: [presence(null)] });
+    w.clockedIn({ id: 'e1', locationId: 'hall', clockInAt: new Date(T0).toISOString(), expectedClockInAt: null });
+    w.at(T0 + min(120));
+    await onRegionEvent(w.deps, 'exit', 'hall', new Date(T0 + min(120)));
+    w.at(T0 + min(130));
+    await onRegionEvent(w.deps, 'enter', 'hall', new Date(T0 + min(130)));
+    expect(w.ops('attendance.clockOut').every((o) => o.state !== 'held' && o.state !== 'pending')).toBe(true);
+  });
+});

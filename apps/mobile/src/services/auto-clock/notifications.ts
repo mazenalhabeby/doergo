@@ -47,9 +47,18 @@ export interface AutoClockNotifier {
   /** "Clocked in automatically at 07:30 · Undo", shown when the dwell has passed. */
   clockedIn(i: { userId: string; entryId: string; place: string; at: Date; showAt: Date }): Promise<void>;
   /** The planned rest and the "still here?" after the shift — both delivered by the OS on time. */
-  reminders(i: { userId: string; entryId: string; place: string; rest: { startAt: Date; endAt: Date } | null; endAt: Date | null; shiftEnd: Date }): Promise<void>;
-  /** Arrived, but the phone could not clock in on its own: "tap to clock in". */
-  arrivedPrompt(i: { userId: string; spaceId: string; place: string }): Promise<void>;
+  reminders(i: {
+    userId: string;
+    entryId: string;
+    place: string;
+    rest: { startAt: Date; endAt: Date } | null;
+    endAt: Date | null;
+    shiftEnd: Date;
+    /** Clocked by arriving and leaving: asked after the workspace's hours, not after a shift end. */
+    presence?: { hours: number; limit: boolean };
+  }): Promise<void>;
+  /** Arrived, but the phone could not clock in on its own: "tap to clock in" — or, outside their usual hours, "starting work?". */
+  arrivedPrompt(i: { userId: string; spaceId: string; place: string; outsideHours?: boolean }): Promise<void>;
   /** Take back what a shift scheduled (all kinds when none are named). */
   cancel(entryId: string, kinds?: ReminderKind[]): Promise<void>;
 }
@@ -100,7 +109,7 @@ export const autoClockNotifier: AutoClockNotifier = {
     });
   },
 
-  async reminders({ userId, entryId, place, rest, endAt, shiftEnd }) {
+  async reminders({ userId, entryId, place, rest, endAt, shiftEnd, presence }) {
     await i18nReady.catch(() => undefined);
     const h12 = await hour12();
     if (rest) {
@@ -116,21 +125,26 @@ export const autoClockNotifier: AutoClockNotifier = {
     if (endAt) {
       await schedule({
         identifier: notificationIdFor('end', entryId),
-        title: i18n.t('autoClock.push.endTitle', { time: formatTimeOfDay(shiftEnd, h12) }),
-        body: i18n.t('autoClock.push.endBody', { place }),
-        data: { kind: 'end', entryId, recipientId: userId },
+        title: presence
+          ? i18n.t('autoClock.push.presenceEndTitle', { count: presence.hours, place })
+          : i18n.t('autoClock.push.endTitle', { time: formatTimeOfDay(shiftEnd, h12) }),
+        body: presence
+          ? i18n.t(presence.limit ? 'autoClock.push.presenceEndBodyLimit' : 'autoClock.push.presenceEndBody')
+          : i18n.t('autoClock.push.endBody', { place }),
+        // `presence` tells the button what "Still working" means: past a limit it asks for extra time; otherwise it just goes on.
+        data: { kind: 'end', entryId, recipientId: userId, ...(presence ? { presence: true, limit: presence.limit } : {}) },
         category: AUTO_CLOCK_CATEGORIES.end,
         at: endAt,
       });
     }
   },
 
-  async arrivedPrompt({ userId, spaceId, place }) {
+  async arrivedPrompt({ userId, spaceId, place, outsideHours }) {
     await i18nReady.catch(() => undefined);
     await schedule({
       identifier: notificationIdFor('arrived', spaceId),
       title: i18n.t('autoClock.push.arrivedTitle', { place }),
-      body: i18n.t('autoClock.push.arrivedBody'),
+      body: i18n.t(outsideHours ? 'autoClock.push.arrivedOutsideBody' : 'autoClock.push.arrivedBody'),
       data: { kind: 'arrived', spaceId, recipientId: userId },
       at: null,
     });

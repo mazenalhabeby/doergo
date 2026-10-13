@@ -88,8 +88,8 @@ describe('closeAbandonedShifts', () => {
     expect(svc.notificationClient.emit).toHaveBeenCalledWith('attendance_shift_closed_provisionally', expect.objectContaining({
       entryId: 'e1', userId: 'u1', basis: 'SHIFT_END', clockOutAt: at('14T17:00').toISOString(), timezone: 'Europe/Vienna', locationName: 'Lager',
     }));
-    // The site is named in the member's email, so the sweep asks for it in the same read.
-    expect(svc.prisma.timeEntry.findMany.mock.calls[0][0].include.location).toEqual({ select: { name: true } });
+    // The site is named in the member's email, and its hours without a shift are the fallback — one read.
+    expect(svc.prisma.timeEntry.findMany.mock.calls[0][0].include.location).toEqual({ select: { name: true, noShiftDailyMinutes: true } });
     expect(res.data).toEqual({ closed: 1 });
   });
 

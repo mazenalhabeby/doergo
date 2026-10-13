@@ -40,6 +40,14 @@ describe('PATCH /locations/:id/members/:assignmentId', () => {
     expect(queue.updateAssignment).not.toHaveBeenCalled();
   });
 
+  it('…including how they are clocked and their usual hours (the automatic clock as a whole)', async () => {
+    const { c, queue } = ctrl();
+    const mgr = user({ access: { org: {}, perSpace: { a: { canManageUsers: true } } } });
+    await c.updateAssignment('a', 'as1', { autoClockMode: 'PRESENCE', autoClockStartWindow: { from: '19:00', to: '23:00' } } as any, { user: mgr });
+    expect(queue.updateAssignment.mock.calls[0][0]).toMatchObject({ autoClockMode: 'PRESENCE', spaceId: 'a' });
+    await expect(c.updateAssignment('a', 'as1', { autoClockMode: 'PRESENCE', effectiveTo: '2026-12-31' } as any, { user: mgr })).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('canManageWorkspaces granted in ANOTHER space no longer reaches this one', async () => {
     const { c } = ctrl();
     const other = user({ access: { org: {}, perSpace: { b: { canManageWorkspaces: true } } } });

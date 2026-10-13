@@ -22,6 +22,7 @@ import {
   type AutoClockPlace,
   type AutoClockPlan,
   type AutoClockSettings,
+  type MemberAutoClockSettings,
   type OccurrenceEvidence,
 } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
@@ -58,6 +59,39 @@ interface EntryRef {
  * own consent (`autoClockActive`). Any one missing and the step is an ordinary
  * one — never refused, never marked.
  */
+/**
+ * What "is this member automatic, and how" reads — one select, one mapping, so
+ * the clock-in, the clock-out, the sweeps and the plan cannot answer it differently.
+ * The workspace's hours without a shift are read LIVE: changing them on the
+ * workspace changes them for every running session at once.
+ */
+const MEMBER_AUTO_CLOCK_SELECT = {
+  autoClock: true,
+  autoClockMode: true,
+  autoClockStartWindow: true,
+  space: { select: { autoClock: true, noShiftDailyMinutes: true, noShiftPolicy: true } },
+  user: { select: { autoClockConsentAt: true, isExternal: true } },
+} as const;
+
+function memberAutoClock(row: {
+  autoClock: boolean;
+  autoClockMode: string;
+  autoClockStartWindow: Prisma.JsonValue | null;
+  space: { autoClock: Prisma.JsonValue | null; noShiftDailyMinutes: number; noShiftPolicy: string };
+  user: { autoClockConsentAt: Date | null; isExternal: boolean };
+}): MemberAutoClockSettings | null {
+  return autoClockActive({
+    consentAt: row.user.autoClockConsentAt,
+    settings: row.space.autoClock,
+    assignmentAutoClock: row.autoClock,
+    isExternal: row.user.isExternal,
+    mode: row.autoClockMode,
+    startWindow: row.autoClockStartWindow,
+    noShiftDailyMinutes: row.space.noShiftDailyMinutes,
+    noShiftPolicy: row.space.noShiftPolicy,
+  });
+}
+
 @Injectable()
 export class AutoClockService {
   private readonly logger = new Logger(AutoClockService.name);
@@ -71,30 +105,21 @@ export class AutoClockService {
   // ── Is this member automatic? ───────────────────────────────────────────
 
   /** The settings in force for this member at this workspace at `at`, or null when the automatic clock is not on for them. One query. */
-  async settingsFor(userId: string, spaceId: string, at: Date): Promise<AutoClockSettings | null> {
+  async settingsFor(userId: string, spaceId: string, at: Date): Promise<MemberAutoClockSettings | null> {
     const row = await this.prisma.spaceAssignment.findFirst({
       where: { ...activeAssignmentWhere(userId, at), spaceId, autoClock: true },
-      select: {
-        autoClock: true,
-        space: { select: { autoClock: true, isRemote: true } },
-        user: { select: { autoClockConsentAt: true, isExternal: true } },
-      },
+      select: { ...MEMBER_AUTO_CLOCK_SELECT, space: { select: { ...MEMBER_AUTO_CLOCK_SELECT.space.select, isRemote: true } } },
     });
     if (!row || row.space.isRemote) return null;
-    return autoClockActive({
-      consentAt: row.user.autoClockConsentAt,
-      settings: row.space.autoClock,
-      assignmentAutoClock: row.autoClock,
-      isExternal: row.user.isExternal,
-    });
+    return memberAutoClock(row);
   }
 
   /**
    * The same answer for a sweep's whole batch — ONE query whatever its size.
    * Keyed by entry id; an entry absent from the map is not automatic.
    */
-  async settingsForEntries(entries: readonly EntryRef[], at: Date = new Date()): Promise<Map<string, AutoClockSettings>> {
-    const out = new Map<string, AutoClockSettings>();
+  async settingsForEntries(entries: readonly EntryRef[], at: Date = new Date()): Promise<Map<string, MemberAutoClockSettings>> {
+    const out = new Map<string, MemberAutoClockSettings>();
     if (!entries.length) return out;
     const userIds = [...new Set(entries.map((e) => e.userId))];
     const spaceIds = [...new Set(entries.map((e) => e.locationId))];
@@ -107,15 +132,7 @@ export class AutoClockService {
         effectiveFrom: { lte: at },
         space: { autoClock: { not: Prisma.DbNull }, isRemote: false },
       },
-      select: {
-        userId: true,
-        spaceId: true,
-        autoClock: true,
-        effectiveTo: true,
-        effectiveFrom: true,
-        space: { select: { autoClock: true } },
-        user: { select: { autoClockConsentAt: true, isExternal: true } },
-      },
+      select: { ...MEMBER_AUTO_CLOCK_SELECT, userId: true, spaceId: true, effectiveTo: true, effectiveFrom: true },
     });
     for (const e of entries) {
       const row = rows.find(
@@ -126,12 +143,7 @@ export class AutoClockService {
           (!r.effectiveTo || r.effectiveTo >= e.clockInAt),
       );
       if (!row) continue;
-      const s = autoClockActive({
-        consentAt: row.user.autoClockConsentAt,
-        settings: row.space.autoClock,
-        assignmentAutoClock: row.autoClock,
-        isExternal: row.user.isExternal,
-      });
+      const s = memberAutoClock(row);
       if (s) out.set(e.id, s);
     }
     return out;
@@ -233,9 +245,12 @@ export class AutoClockService {
         autoClock: true,
         OR: [activeAssignmentWhere(data.userId, now), activeAssignmentWhere(data.userId, tomorrow)],
       },
-      select: { spaceId: true, autoClock: true },
+      select: { spaceId: true, autoClock: true, autoClockMode: true, autoClockStartWindow: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
+    // How this member is clocked in each workspace (PRESENCE wins when any active row says so).
+    const assignmentFor = (spaceId: string) =>
+      assignments.find((a) => a.spaceId === spaceId && a.autoClockMode === 'PRESENCE') ?? assignments.find((a) => a.spaceId === spaceId)!;
     if (!spaceIds.length) return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
 
     const locations = await this.prisma.companyLocation.findMany({
@@ -250,7 +265,7 @@ export class AutoClockService {
       },
       select: {
         id: true, name: true, lat: true, lng: true, geofenceRadius: true, geofencePolygon: true,
-        timezone: true, workModel: true, autoClock: true, enabledModules: true,
+        timezone: true, workModel: true, autoClock: true, enabledModules: true, noShiftDailyMinutes: true, noShiftPolicy: true,
         organization: { select: { enabledModules: true } },
       },
       orderBy: { name: 'asc' },
@@ -259,9 +274,23 @@ export class AutoClockService {
     // phone offers the switch at all. A count only: nothing of a workspace's
     // settings reaches a member who has not agreed.
     const chosen = locations
-      .map((l) => ({ l, settings: autoClockOffered({ settings: l.autoClock, assignmentAutoClock: true, isExternal: user.isExternal }) }))
+      .map((l) => {
+        const a = assignmentFor(l.id);
+        return {
+          l,
+          settings: autoClockOffered({
+            settings: l.autoClock,
+            assignmentAutoClock: true,
+            isExternal: user.isExternal,
+            mode: a.autoClockMode,
+            startWindow: a.autoClockStartWindow,
+            noShiftDailyMinutes: l.noShiftDailyMinutes,
+            noShiftPolicy: l.noShiftPolicy,
+          }),
+        };
+      })
       // The clock-in refuses where Time Tracking is off — never arm a site that cannot clock.
-      .filter((x): x is { l: (typeof locations)[number]; settings: AutoClockSettings } =>
+      .filter((x): x is { l: (typeof locations)[number]; settings: MemberAutoClockSettings } =>
         !!x.settings && spaceRunsClock(x.l.enabledModules as string[] | null, x.l.organization?.enabledModules as string[] | null),
       );
     const offered = chosen.length;
@@ -311,6 +340,10 @@ export class AutoClockService {
         polygon,
         settings,
         shifts,
+        presence:
+          settings.mode === 'PRESENCE'
+            ? { startWindow: settings.startWindow, timezone: tz, noShiftMinutes: settings.noShiftMinutes, noShiftLimit: settings.noShiftLimit }
+            : null,
       };
     });
     return success({ consentAt: consentIso, places, generatedAt, offered, offeredIn });

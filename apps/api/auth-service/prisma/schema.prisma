@@ -3450,6 +3450,14 @@ model SpaceAssignment {
   /// Chosen for the automatic clock in THIS workspace (shared attendance/auto-clock.ts).
   /// Only arms when the workspace switched it on AND the member consented.
   autoClock     Boolean   @default(false)
+  /// How the automatic clock decides for this member here: SHIFT (by the
+  /// planned shift — needs a rota) or PRESENCE (by arriving and leaving — for
+  /// people with no fixed shift). See packages/shared/src/attendance/auto-clock.ts.
+  autoClockMode String    @default("SHIFT")
+  /// PRESENCE only: the local hours an arrival starts work automatically
+  /// ({ from: "HH:MM", to: "HH:MM" }, may cross midnight). Outside them the phone
+  /// asks first. NULL = any time.
+  autoClockStartWindow Json?
   effectiveFrom DateTime  @default(now())
   effectiveTo   DateTime?
 

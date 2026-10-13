@@ -8,6 +8,8 @@ import {
   TimeEntryStatus,
   SHIFT_REMINDER_DEFAULTS,
   UNSCHEDULED_SESSION_DEFAULTS,
+  clocksByPresence,
+  presenceSessionEnd,
   SERVICE_NAMES,
 } from '@hbcfield/shared';
 import { ABSENCE_WHERE, scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
@@ -103,14 +105,14 @@ export class ShiftSweepService {
       approved extra-time round re-arms the ordinary reminder) → re-armed for
       that moment. One query for the whole batch.
     */
-    const autoByEntry = this.autoClock
-      ? await this.autoClock.settingsForEntries(dueEntries.filter((e) => e.expectedClockOutAt), now)
-      : new Map();
+    const autoByEntry = this.autoClock ? await this.autoClock.settingsForEntries(dueEntries, now) : new Map();
     const rearm: { id: string; at: Date }[] = [];
     for (const entry of dueEntries) {
       const auto = autoByEntry.get(entry.id);
-      if (auto && entry.expectedClockOutAt) {
-        const leaderAt = new Date(entry.expectedClockOutAt.getTime() + auto.leaderAfterMinutes * 60_000);
+      // Clocked by arriving and leaving with no shift: its course is the workspace's hours, read now.
+      const plannedEnd = entry.expectedClockOutAt ?? (auto && clocksByPresence(auto, entry) ? presenceSessionEnd(entry.clockInAt, auto) : null);
+      if (auto && plannedEnd) {
+        const leaderAt = new Date(plannedEnd.getTime() + auto.leaderAfterMinutes * 60_000);
         if (now.getTime() < leaderAt.getTime()) rearm.push({ id: entry.id, at: leaderAt });
         else toEscalate.push(entry);
         continue;

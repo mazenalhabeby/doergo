@@ -4929,7 +4929,12 @@
       "endBody": "¿Sigues en {{place}}? Ficha la salida o dinos que sigues trabajando.",
       "undo": "Deshacer",
       "stillWorking": "Sigo trabajando",
-      "clockOut": "Fichar salida"
+      "clockOut": "Fichar salida",
+      "presenceEndTitle_one": "{{count}} hora en {{place}}: ¿sigues trabajando?",
+      "presenceEndTitle_other": "{{count}} horas en {{place}}: ¿sigues trabajando?",
+      "presenceEndBody": "Ficha la salida si has terminado, o sigue.",
+      "presenceEndBodyLimit": "Es el límite de hoy aquí. Ficha la salida o pide tiempo extra.",
+      "arrivedOutsideBody": "Es fuera de tu horario habitual. ¿Empiezas a trabajar? Toca para fichar."
     },
     "result": {
       "undone": "Fichaje automático de entrada anulado",
@@ -4941,7 +4946,8 @@
       "extraQueued": "Guardado en este teléfono: sigues trabajando",
       "notYours": "Esto era para otra persona que usó este teléfono.",
       "failed": "No ha funcionado. Abre la pantalla de fichaje y hazlo allí.",
-      "cannotUndo": "Este fichaje ya no se puede deshacer aquí: el turno está cerrado o ya hay trabajo registrado. Pide a tu oficina que lo corrija."
+      "cannotUndo": "Este fichaje ya no se puede deshacer aquí: el turno está cerrado o ya hay trabajo registrado. Pide a tu oficina que lo corrija.",
+      "carryOn": "Sigues: todavía tienes la entrada fichada"
     }
   },
   "register": {

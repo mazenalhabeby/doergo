@@ -1,4 +1,4 @@
-import { OPEN_SHIFT_CLOSE, breakTotals, computeScheduleFlags, endRunningBreaks, flagsAgainstDailyLimit } from '@hbcfield/shared';
+import { OPEN_SHIFT_CLOSE, breakTotals, noShiftReminderAt, computeScheduleFlags, endRunningBreaks, flagsAgainstDailyLimit } from '@hbcfield/shared';
 
 /**
  * The temporary clock-out for a shift left open — pure, so every rule is a test.
@@ -6,20 +6,28 @@ import { OPEN_SHIFT_CLOSE, breakTotals, computeScheduleFlags, endRunningBreaks, 
  * Best evidence first, and never generous:
  *  1. LEFT_SITE — the moment the member was seen leaving the site (an open
  *     out-of-ring excursion). They were not working after that.
- *  2. SHIFT_END — the planned end. Nothing past it is counted without approval.
- *  3. CLOCK_IN_PLUS_8H — no planned end and no better evidence.
+ *  2. LAST_SEEN — the last position the phone reported ON SITE, when the
+ *     caller has it (a phone that died at the gate). Only the automatic
+ *     clock's no-shift close passes it.
+ *  3. SHIFT_END — the planned end. Nothing past it is counted without approval.
+ *  4. CLOCK_IN_PLUS_8H — no planned end and no better evidence: clock-in + the
+ *     workspace's hours without a shift (8 unless it set another; the name is history).
  * Always between clock-in and now, and never past the planned end.
  */
-type ClockOutBasis = 'LEFT_SITE' | 'SHIFT_END' | 'CLOCK_IN_PLUS_8H';
+type ClockOutBasis = 'LEFT_SITE' | 'LAST_SEEN' | 'SHIFT_END' | 'CLOCK_IN_PLUS_8H';
 
 export function provisionalClockOut(input: {
   clockInAt: Date;
   expectedClockOutAt: Date | null;
   /** When an open excursion says the member left the site, if one does. */
   leftSiteAt: Date | null;
+  /** The last position heard while on site, when the caller trusts it. */
+  lastSeenOnSiteAt?: Date | null;
+  /** The workspace's hours without a shift (`noShiftDailyMinutes`); the fallback's length. */
+  fallbackMinutes?: number | null;
   now: Date;
 }): { at: Date; basis: ClockOutBasis } {
-  const { clockInAt, expectedClockOutAt, leftSiteAt, now } = input;
+  const { clockInAt, expectedClockOutAt, leftSiteAt, lastSeenOnSiteAt, now } = input;
   const clamp = (d: Date) => {
     let t = d.getTime();
     if (expectedClockOutAt) t = Math.min(t, expectedClockOutAt.getTime());
@@ -27,11 +35,9 @@ export function provisionalClockOut(input: {
     return new Date(Math.max(t, clockInAt.getTime()));
   };
   if (leftSiteAt && leftSiteAt >= clockInAt) return { at: clamp(leftSiteAt), basis: 'LEFT_SITE' };
+  if (lastSeenOnSiteAt && lastSeenOnSiteAt >= clockInAt) return { at: clamp(lastSeenOnSiteAt), basis: 'LAST_SEEN' };
   if (expectedClockOutAt) return { at: clamp(expectedClockOutAt), basis: 'SHIFT_END' };
-  return {
-    at: clamp(new Date(clockInAt.getTime() + OPEN_SHIFT_CLOSE.UNPLANNED_FALLBACK_HOURS * 3_600_000)),
-    basis: 'CLOCK_IN_PLUS_8H',
-  };
+  return { at: clamp(noShiftReminderAt(clockInAt, input.fallbackMinutes)), basis: 'CLOCK_IN_PLUS_8H' };
 }
 
 /** Is this open shift due to be closed provisionally? The same rule as the sweep's query. */

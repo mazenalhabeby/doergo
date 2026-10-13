@@ -4068,7 +4068,8 @@
       "hours": "{{count}} h",
       "less": "Menos",
       "more": "Más",
-      "saved": "Guardado"
+      "saved": "Guardado",
+      "allowHours": "Pasado este tiempo, se les pregunta «¿Olvidaste fichar la salida?». También es la sesión más larga para quien ficha automáticamente al llegar y al irse. Un cambio se aplica al momento, también a quien ha fichado ahora."
     },
     "presence": {
       "title": "Dónde trabajó",
@@ -4127,7 +4128,20 @@
           "label": "Cerrar el turno tras",
           "hint": "Minutos sin respuesta. La salida queda marcada como no confirmada."
         }
-      }
+      },
+      "modeLabel": "Cómo se ficha",
+      "modeShift": "Por su turno",
+      "modePresence": "Al llegar y al irse",
+      "modeShiftHint": "Ficha cerca del inicio del turno y la salida después de que termine. Necesita un cuadrante.",
+      "modePresenceHint": "Para personas sin turno fijo. Ficha la entrada cuando se quedan en el lugar y la salida cuando se han ido. Un día con turno aquí, se aplican las reglas del turno.",
+      "startWindow": "Inicio habitual",
+      "startWindowHint": "Si llegan fuera de este horario, se les pregunta antes de fichar. Tomado de sus últimos 60 días aquí.",
+      "anyTime": "A cualquier hora",
+      "save": "Guardar",
+      "longest": "Sesión más larga: {{hours}} h",
+      "longestHint": "Las horas sin turno de este espacio de trabajo (ajustes de asistencia). Entonces el teléfono pregunta «¿Sigues trabajando?». Cambiarlo allí se aplica a todos al momento.",
+      "presenceTiming": "Permanece {{dwell}} min en el lugar antes de fichar la entrada y {{exit}} min fuera antes de fichar la salida (ajustes del fichaje automático de este espacio).",
+      "windowInvalid": "Elige dos horas distintas."
     }
   },
   "auditLog": {

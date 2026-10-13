@@ -1,5 +1,6 @@
 import { ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, ValidateIf } from 'class-validator';
+import { IsBoolean, IsIn, IsObject, IsOptional, ValidateIf } from 'class-validator';
+import { AUTO_CLOCK_MODES, type AutoClockMode, type AutoClockStartWindow } from '@hbcfield/shared';
 import { AssignMemberDto } from './assign-technician.dto';
 
 /** What assigning accepts, minus WHO (an assignment's member never changes), plus the away override. */
@@ -31,4 +32,21 @@ export class UpdateAssignmentDto extends PartialType(OmitType(AssignMemberDto, [
   @IsBoolean()
   @IsOptional()
   autoClock?: boolean;
+
+  /** How the automatic clock decides for them here: by their shift, or by arriving and leaving (no fixed shift). */
+  @ApiPropertyOptional({ enum: AUTO_CLOCK_MODES })
+  @IsIn(AUTO_CLOCK_MODES as unknown as string[])
+  @IsOptional()
+  autoClockMode?: AutoClockMode;
+
+  /**
+   * Arriving and leaving only: the local hours an arrival starts work on its
+   * own — { from: "HH:MM", to: "HH:MM" }. null = any time. Checked strictly by
+   * the service (a malformed one is refused, never read as "any time").
+   */
+  @ApiPropertyOptional({ nullable: true, example: { from: '19:00', to: '23:00' } })
+  @IsObject()
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  autoClockStartWindow?: AutoClockStartWindow | null;
 }

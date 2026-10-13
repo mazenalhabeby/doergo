@@ -7,6 +7,7 @@
  */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AUTO_CLOCK_DEFAULTS } from '@hbcfield/shared';
+import { Prisma } from '@prisma/client';
 import { LocationsService } from '../locations.service';
 
 function build(space: Record<string, unknown> = {}, assignment: Record<string, unknown> = {}) {
@@ -16,6 +17,7 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
       findFirst: jest.fn().mockResolvedValue(row),
       update: jest.fn(async ({ data }: any) => Object.assign(row, data)),
       findUniqueOrThrow: jest.fn(async () => row),
+      findUnique: jest.fn(async () => ({ timezone: 'America/Los_Angeles' })),
     },
     spaceAssignment: {
       findFirst: jest.fn().mockResolvedValue({ id: 'a1', organizationId: 'org-1', userId: 'u1', spaceId: 'loc-1', user: { isExternal: false }, ...assignment }),
@@ -23,8 +25,10 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
       updateMany: jest.fn(),
       findMany: jest.fn().mockResolvedValue([{ userId: 'u1' }]),
     },
+    timeEntry: { findMany: jest.fn().mockResolvedValue([]) },
     rateHistory: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
+    $executeRaw: jest.fn().mockResolvedValue(0),
   };
   const client = { emit: jest.fn() };
   return { prisma, client, svc: new LocationsService(prisma, client as any) };
@@ -126,5 +130,49 @@ describe('telling a member the switch is there', () => {
     await patch(svc, { ...ON, leadMinutes: 45 });
     await settle();
     expect(offers(client)).toEqual([]);
+  });
+});
+
+describe('how a member is clocked — by shift, or by arriving and leaving', () => {
+  const upd = (svc: LocationsService, body: Record<string, unknown>) => svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', ...body } as any);
+
+  it('switching to arriving and leaving fills their usual hours from their own clock-ins here', async () => {
+    const { svc, prisma } = build({ autoClock: { enabled: true } }, { autoClockMode: 'SHIFT' });
+    // Juan's last eight nights, PDT: 20:00–22:03 local.
+    prisma.timeEntry.findMany.mockResolvedValue(['03:08', '03:10', '03:03', '03:02', '03:25', '03:05', '05:03', '03:00'].map((h) => ({ clockInAt: new Date(`2026-10-0${1}T${h}:00Z`) })));
+    await upd(svc, { autoClockMode: 'PRESENCE' });
+    const data = prisma.spaceAssignment.update.mock.calls[0][0].data;
+    expect(data.autoClockMode).toBe('PRESENCE');
+    expect(data.autoClockStartWindow).toEqual({ from: '19:00', to: '23:30' });
+    // Only this member, this workspace, the last 60 days.
+    expect(prisma.timeEntry.findMany.mock.calls[0][0].where).toMatchObject({ userId: 'u1', locationId: 'loc-1' });
+  });
+
+  it('hours sent by the office win over the suggestion; null = any time', async () => {
+    const { svc, prisma } = build({}, { autoClockMode: 'SHIFT' });
+    await upd(svc, { autoClockMode: 'PRESENCE', autoClockStartWindow: null });
+    expect(prisma.timeEntry.findMany).not.toHaveBeenCalled();
+    expect(prisma.spaceAssignment.update.mock.calls[0][0].data.autoClockStartWindow).toBe(Prisma.DbNull);
+  });
+
+  it('a malformed window or mode is refused, nothing saved', async () => {
+    const { svc, prisma } = build();
+    await expect(upd(svc, { autoClockStartWindow: { from: '19:00', to: '19:00' } })).rejects.toMatchObject({ response: { code: 'AUTO_CLOCK_SETTING_INVALID', params: { field: 'startWindow' } } });
+    await expect(upd(svc, { autoClockMode: 'ALWAYS' })).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.spaceAssignment.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('the workspace’s hours without a shift — a change reaches running sessions', () => {
+  it('changing them re-times the sessions open here', async () => {
+    const { svc, prisma } = build({ noShiftDailyMinutes: 480 });
+    await svc.update({ id: 'loc-1', organizationId: 'org-1', userId: 'admin', noShiftDailyMinutes: 600 } as any);
+    expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+  });
+  it('anything else does not', async () => {
+    const { svc, prisma } = build({ noShiftDailyMinutes: 480 });
+    await svc.update({ id: 'loc-1', organizationId: 'org-1', userId: 'admin', name: 'Halle 2' } as any);
+    await svc.update({ id: 'loc-1', organizationId: 'org-1', userId: 'admin', noShiftDailyMinutes: 480 } as any);
+    expect(prisma.$executeRaw).not.toHaveBeenCalled();
   });
 });

@@ -99,14 +99,14 @@ export const SHIFT_REMINDER_DEFAULTS = {
 
 // Safety net for UNSCHEDULED open sessions (a clock-in with no resolved shift →
 // no expected end). Without this, such a session runs forever with no reminder
-// (the "71h" bug). We arm a synthetic reminder at SOFT_HOURS so it flows through
+// (the "71h" bug). We arm a synthetic reminder after the WORKSPACE's hours without
+// a shift (`noShiftReminderAt`, noShiftDailyMinutes) so it flows through
 // the SAME indexed reminder sweep: nudge the worker every REMINDER_INTERVAL, then
 // after MAX_REMINDERS escalate to the responsible space leader to review/approve.
 // It NEVER force-closes — same philosophy as the shift engine.
 export const UNSCHEDULED_SESSION_DEFAULTS = {
-  SOFT_HOURS: 8,               // Hours open (no shift) before the first nudge
   REMINDER_INTERVAL_MINUTES: 60, // Then remind hourly (not the 5-min shift cadence)
-  MAX_REMINDERS: 3,            // Nudges before escalating to the responsible leader (~11h)
+  MAX_REMINDERS: 3,            // Nudges before escalating to the responsible leader (the workspace's hours + 3)
 } as const;
 
 /*
@@ -121,7 +121,6 @@ export const UNSCHEDULED_SESSION_DEFAULTS = {
 export const OPEN_SHIFT_CLOSE = {
   AFTER_SHIFT_END_HOURS: 12,     // A planned shift, this long after its end
   UNPLANNED_AFTER_HOURS: 24,     // A shift with no planned end, this long after clock-in
-  UNPLANNED_FALLBACK_HOURS: 8,   // …closed at clock-in + this, with nothing better to go on
   BATCH: 100,                    // Per sweep tick — the partial indexes make each one cheap
 } as const;
 

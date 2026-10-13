@@ -1,4 +1,4 @@
-import type { AutoClockSettings, CompanyLocation } from '@hbcfield/shared/client';
+import type { AutoClockMode, AutoClockSettings, AutoClockStartWindow, CompanyLocation } from '@hbcfield/shared/client';
 
 // ============================================================================
 // LOCATIONS API
@@ -109,6 +109,10 @@ export interface LocationAssignment {
   autoClock?: boolean;
   /** When the member agreed in the app (null = not agreed / withdrawn). Absent on an older server. */
   autoClockConsentAt?: string | null;
+  /** SHIFT (by their shift) | PRESENCE (by arriving and leaving). Absent on an older server. */
+  autoClockMode?: AutoClockMode;
+  /** PRESENCE: usual start hours; null = any time. */
+  autoClockStartWindow?: AutoClockStartWindow | null;
 }
 
 
@@ -137,4 +141,7 @@ export interface UpdateAssignmentInput {
   allowRemote?: boolean | null;
   /** Arm the automatic clock for this member here. Nothing happens until they also agree in the app. */
   autoClock?: boolean;
+  /** By their shift, or by arriving and leaving. Switching to PRESENCE without hours → suggested from their clock-ins. */
+  autoClockMode?: AutoClockMode;
+  autoClockStartWindow?: AutoClockStartWindow | null;
 }

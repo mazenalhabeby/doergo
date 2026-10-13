@@ -14,6 +14,8 @@ export type AutoClockActionResult =
   | 'restSkipQueued'
   | 'extraSent'
   | 'extraQueued'
+  /** No fixed shift and no daily limit: "Still working" just carries on — nothing to approve. */
+  | 'carryOn'
   /** "Clock out" — the Clock screen opens, where the clock-out asks what it always asks. */
   | 'openClock'
   | 'notYours'
@@ -59,7 +61,11 @@ export async function runAutoClockAction(
       return r.kind === 'queued' ? 'restSkipQueued' : 'restSkipped';
     }
     if (action === AUTO_CLOCK_ACTIONS.stillWorking) {
-      // Still here after the end: the same "I'm working extra time" as the Clock screen — a leader decides.
+      if (data?.presence === true && data?.limit !== true) {
+        await autoClockNotifier.cancel(entryId, ['end']);
+        return 'carryOn';
+      }
+      // Still here after the end (or past the daily limit): the same "I'm working extra time" as the Clock screen — a leader decides.
       const r = await requestExtraTimeFromPhone(engine, { entryId });
       if (r.kind === 'refused') return 'failed';
       await autoClockNotifier.cancel(entryId, ['end']);
