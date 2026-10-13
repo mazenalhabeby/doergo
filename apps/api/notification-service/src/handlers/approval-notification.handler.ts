@@ -25,4 +25,18 @@ export class ApprovalNotificationHandler {
       this.logger.error(`approval second-step push failed: ${(e as Error).message}`);
     }
   }
+
+  /** Nobody answered an item under an office rule: a reminder, or it is passed on. */
+  @EventPattern('approval_reminder')
+  async handleReminder(@Payload() data: { recipientIds?: string[]; kind: 'overtime' | 'request' | 'expense'; itemId: string; stage: 'REMIND' | 'ESCALATE'; subjectName?: string; hours?: number }) {
+    if (!data?.recipientIds?.length) return;
+    try {
+      await this.pushService.sendApprovalReminderPush({
+        recipientIds: data.recipientIds, kind: data.kind, itemId: data.itemId, stage: data.stage,
+        subjectName: data.subjectName ?? '', hours: data.hours ?? 0,
+      });
+    } catch (e) {
+      this.logger.error(`approval reminder push failed: ${(e as Error).message}`);
+    }
+  }
 }

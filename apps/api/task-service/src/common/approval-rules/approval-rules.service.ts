@@ -52,8 +52,9 @@ export class ApprovalRulesService {
     subjectId?: string | null;
     subjectName?: string | null;
   }, retried = false): Promise<GateVerdict> {
+    // Only rules with a SECOND STEP gate a decision; reminder-only rules are the sweep's.
     const rules = await this.prisma.approvalRule.findMany({
-      where: { organizationId: input.organizationId, kind: input.kind, isActive: true },
+      where: { organizationId: input.organizationId, kind: input.kind, isActive: true, secondRoleId: { not: null } },
     });
     const open = await this.openStep(input.organizationId, input.kind, input.itemId);
     // Rules changed since step 1: the step's own rule still governs it, if it exists.
@@ -67,7 +68,8 @@ export class ApprovalRulesService {
       where: { id: input.deciderId, organizationId: input.organizationId },
       select: { role: true, firstName: true, lastName: true },
     });
-    const roleName = await this.roleName(rule.secondRoleId);
+    const secondRoleId = rule.secondRoleId as string;
+    const roleName = await this.roleName(secondRoleId);
 
     if (decider?.role === 'ADMIN') {
       if (open) await this.consume(open.id);
@@ -91,14 +93,14 @@ export class ApprovalRulesService {
         if (retried) throw e;
         return this.gate(input, true);
       }
-      await this.tellSecondStep(rule.secondRoleId, input, decider ? personName(decider) : '');
+      await this.tellSecondStep(secondRoleId, input, decider ? personName(decider) : '');
       return { finalize: false, roleName };
     }
 
     if (open.firstById === input.deciderId) {
       throw new ConflictException({ message: `This needs a second approval by ${roleName}.`, code: 'SECOND_STEP_SAME_PERSON', params: { role: roleName } });
     }
-    if (!(await this.holdsRole(input.organizationId, input.deciderId, rule.secondRoleId, input.facts.spaceIds))) {
+    if (!(await this.holdsRole(input.organizationId, input.deciderId, secondRoleId, input.facts.spaceIds))) {
       throw new ForbiddenException({ message: `The second approval is for ${roleName}.`, code: 'SECOND_STEP_REQUIRED', params: { role: roleName } });
     }
     // Claimed, not read-then-written: two second approvals cannot both finish it.
@@ -126,7 +128,7 @@ export class ApprovalRulesService {
       this.prisma.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.firstById))] } }, select: { id: true, firstName: true, lastName: true } }),
       this.prisma.approvalRule.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.ruleId))] } }, select: { id: true, secondRoleId: true } }),
     ]);
-    const roles = await this.prisma.accessRole.findMany({ where: { id: { in: [...new Set(rules.map((r) => r.secondRoleId))] } }, select: { id: true, name: true } });
+    const roles = await this.prisma.accessRole.findMany({ where: { id: { in: [...new Set(rules.map((r) => r.secondRoleId).filter(Boolean) as string[])] } }, select: { id: true, name: true } });
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleByRule = new Map(rules.map((r) => [r.id, roles.find((x) => x.id === r.secondRoleId)?.name ?? '']));
     return rows.map((r) => ({
@@ -142,8 +144,9 @@ export class ApprovalRulesService {
 
   async listRules(organizationId: string): Promise<ApprovalRuleView[]> {
     const rules = await this.prisma.approvalRule.findMany({ where: { organizationId }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] });
+    const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
     const [roles, spaces] = await Promise.all([
-      this.prisma.accessRole.findMany({ where: { id: { in: rules.map((r) => r.secondRoleId) } }, select: { id: true, name: true } }),
+      this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } }),
       this.prisma.companyLocation.findMany({ where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } }, select: { id: true, name: true } }),
     ]);
     return rules.map((r) => ({
@@ -154,8 +157,13 @@ export class ApprovalRulesService {
       minMinutes: r.minMinutes,
       minDays: r.minDays,
       minAmountCents: r.minAmountCents,
+      whenCoverShort: r.whenCoverShort,
       secondRoleId: r.secondRoleId,
       secondRoleName: roles.find((x) => x.id === r.secondRoleId)?.name ?? null,
+      remindAfterHours: r.remindAfterHours,
+      escalateAfterHours: r.escalateAfterHours,
+      escalateRoleId: r.escalateRoleId,
+      escalateRoleName: roles.find((x) => x.id === r.escalateRoleId)?.name ?? null,
       isActive: r.isActive,
     }));
   }
@@ -163,12 +171,14 @@ export class ApprovalRulesService {
   async saveRule(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string): Promise<{ id: string }> {
     const problem = ruleInputProblem(input);
     if (problem) throw new BadRequestException({ message: RULE_MESSAGES[problem], code: problem });
-    const [role, space] = await Promise.all([
-      // Any of the organization's SHARED roles — never somebody's personal role.
-      this.prisma.accessRole.findFirst({ where: { id: input.secondRoleId, organizationId, personalAssignmentId: null }, select: { id: true } }),
+    // Any of the organization's SHARED roles — never somebody's personal role.
+    const sharedRole = (id: string) => this.prisma.accessRole.findFirst({ where: { id, organizationId, personalAssignmentId: null }, select: { id: true } });
+    const [second, escalate, space] = await Promise.all([
+      input.secondRoleId ? sharedRole(input.secondRoleId) : Promise.resolve({ id: null }),
+      input.escalateRoleId ? sharedRole(input.escalateRoleId) : Promise.resolve({ id: null }),
       input.spaceId ? this.prisma.companyLocation.findFirst({ where: { id: input.spaceId, organizationId }, select: { id: true } }) : Promise.resolve({ id: null }),
     ]);
-    if (!role) throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
+    if (!second || !escalate) throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
     if (!space) throw new NotFoundException('Workspace not found');
     const data = {
       kind: input.kind,
@@ -176,7 +186,11 @@ export class ApprovalRulesService {
       minMinutes: input.kind === 'overtime' ? input.minMinutes ?? null : null,
       minDays: input.kind === 'request' ? input.minDays ?? null : null,
       minAmountCents: input.kind === 'expense' ? input.minAmountCents ?? null : null,
-      secondRoleId: input.secondRoleId,
+      whenCoverShort: input.kind === 'request' ? input.whenCoverShort === true : false,
+      secondRoleId: input.secondRoleId || null,
+      remindAfterHours: input.remindAfterHours ?? null,
+      escalateAfterHours: input.escalateAfterHours ?? null,
+      escalateRoleId: input.escalateRoleId || null,
       isActive: input.isActive ?? true,
     };
     if (id) {
@@ -230,29 +244,35 @@ export class ApprovalRulesService {
     return !!org || !!space;
   }
 
+  /** Active holders of a role — org-wide, or as a workspace role in one of these workspaces. */
+  async holdersOf(organizationId: string, roleId: string, spaceIds: string[], exclude: string[] = []): Promise<string[]> {
+    const now = new Date();
+    const holders = await this.prisma.user.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        id: { notIn: exclude },
+        OR: [
+          { memberRoleId: roleId, memberRole: { isActive: true } },
+          ...(spaceIds.length
+            ? [{ spaceAssignments: { some: { roleId, spaceId: { in: spaceIds }, role: { isActive: true }, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] } } }]
+            : []),
+        ],
+      },
+      select: { id: true },
+      take: 50,
+    });
+    return holders.map((h) => h.id);
+  }
+
   /** Push the holders of the second role (never the first approver or the person it is about). */
   private async tellSecondStep(roleId: string, input: { organizationId: string; kind: RuleKind; itemId: string; facts: RuleFacts; deciderId: string; subjectId?: string | null; subjectName?: string | null }, firstName: string) {
     try {
-      const now = new Date();
-      const holders = await this.prisma.user.findMany({
-        where: {
-          organizationId: input.organizationId,
-          isActive: true,
-          id: { notIn: [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])] },
-          OR: [
-            { memberRoleId: roleId, memberRole: { isActive: true } },
-            ...(input.facts.spaceIds.length
-              ? [{ spaceAssignments: { some: { roleId, spaceId: { in: input.facts.spaceIds }, effectiveFrom: { lte: now }, OR: [{ effectiveTo: null }, { effectiveTo: { gte: now } }] } } }]
-              : []),
-          ],
-        },
-        select: { id: true },
-        take: 50,
-      });
-      if (!holders.length) return;
+      const recipientIds = await this.holdersOf(input.organizationId, roleId, input.facts.spaceIds, [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])]);
+      if (!recipientIds.length) return;
       this.notifications.emit('approval_second_step', {
         organizationId: input.organizationId,
-        recipientIds: holders.map((h) => h.id),
+        recipientIds,
         kind: input.kind,
         itemId: input.itemId,
         firstName,
@@ -267,5 +287,8 @@ export class ApprovalRulesService {
 const RULE_MESSAGES: Record<string, string> = {
   RULE_KIND_INVALID: 'Rules exist for overtime, requests and expenses.',
   RULE_THRESHOLD_INVALID: 'The threshold is not a valid number.',
-  RULE_ROLE_REQUIRED: 'Choose the role that gives the second approval.',
+  RULE_ROLE_REQUIRED: 'Choose one of the organization\'s roles.',
+  RULE_EMPTY: 'A rule needs a second approval, a reminder or an escalation.',
+  RULE_HOURS_INVALID: 'Hours must be a whole number between 1 and 720.',
+  RULE_ESCALATE_ROLE_REQUIRED: 'Choose who it passes to when nobody answers.',
 };

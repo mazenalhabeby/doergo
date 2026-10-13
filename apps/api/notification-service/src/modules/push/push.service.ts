@@ -476,6 +476,19 @@ export class PushService {
     );
   }
 
+  /** Nobody answered: remind the usual deciders, or pass it to the escalation role. */
+  async sendApprovalReminderPush(data: { recipientIds: string[]; kind: 'overtime' | 'request' | 'expense'; itemId: string; stage: 'REMIND' | 'ESCALATE'; subjectName: string; hours: number }) {
+    const what = msg(`approval.what.${data.kind}`);
+    const facts = { subject: data.subjectName, what, hours: data.hours };
+    return this.sendToUsers(
+      data.recipientIds,
+      data.stage === 'ESCALATE'
+        ? { title: msg('approval.escalate.title'), body: msg('approval.escalate.body', facts) }
+        : { title: msg('approval.remind.title'), body: msg('approval.remind.body', facts) },
+      { type: 'approval_reminder', kind: data.kind, itemId: data.itemId, stage: data.stage },
+    );
+  }
+
   /** An attendance alert answered by what the member actually did, arriving late. */
   async sendAttendanceResolvedPush(data: { recipientIds: string[]; text: LocalizedText; type: string; entryId: string }) {
     return this.sendToUsers(data.recipientIds, data.text, { type: data.type, entryId: data.entryId });

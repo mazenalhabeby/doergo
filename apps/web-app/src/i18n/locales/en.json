@@ -9437,9 +9437,12 @@
     "SECOND_STEP_SAME_PERSON": "You gave the first approval — the second must come from {{role}}.",
     "SECOND_STEP_REQUIRED": "The second approval is for {{role}}.",
     "SECOND_STEP_TAKEN": "Somebody else decided this a moment ago.",
-    "RULE_ROLE_REQUIRED": "Choose the role that gives the second approval.",
+    "RULE_ROLE_REQUIRED": "Choose one of the organization’s roles.",
     "RULE_THRESHOLD_INVALID": "The threshold is not a valid number.",
-    "RULE_KIND_INVALID": "Rules exist for overtime, requests and expenses."
+    "RULE_KIND_INVALID": "Rules exist for overtime, requests and expenses.",
+    "RULE_EMPTY": "A rule needs a second approval, a reminder or an escalation.",
+    "RULE_HOURS_INVALID": "Hours must be a whole number between 1 and 720.",
+    "RULE_ESCALATE_ROLE_REQUIRED": "Choose who it passes to when nobody answers."
   },
   "signLink": {
     "tabs": {
@@ -10942,7 +10945,18 @@
       "whenDays_one": "over {{count}} day",
       "whenDays_other": "over {{count}} days",
       "whenAmount": "over {{amount}}",
-      "sentence": "{{what}} {{when}} in {{where}} also needs {{role}}."
+      "whenCover": "when cover would drop below the minimum",
+      "head": "{{what}} {{when}} in {{where}}:",
+      "needs": "needs {{role}} too.",
+      "reminds": "Reminder after {{hours}} h.",
+      "escalates": "Passed to {{role}} after {{hours}} h.",
+      "noSecond": "No second approval",
+      "coverLabel": "Only when cover would drop below the minimum (or a skill would be missing)",
+      "noAnswer": "If nobody answers",
+      "remindAfter": "Remind after (hours)",
+      "escalateAfter": "Pass on after (hours)",
+      "escalateTo": "Pass to",
+      "noAnswerHint": "Reminders go to whoever can decide it today (not to anyone on leave). Pass it to a role that can decide it."
     }
   }
 }

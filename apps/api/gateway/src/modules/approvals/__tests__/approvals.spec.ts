@@ -222,7 +222,7 @@ describe('office rules — which rule applies', () => {
   });
 
   it('a rule as entered is checked', () => {
-    expect(ruleInputProblem({ kind: 'overtime', secondRoleId: '' })).toBe('RULE_ROLE_REQUIRED');
+    expect(ruleInputProblem({ kind: 'overtime', secondRoleId: '' })).toBe('RULE_EMPTY');
     expect(ruleInputProblem({ kind: 'expense', secondRoleId: 'x', minAmountCents: -1 })).toBe('RULE_THRESHOLD_INVALID');
     expect(ruleInputProblem({ kind: 'expense', secondRoleId: 'x', minAmountCents: 20000 })).toBeNull();
   });
@@ -232,5 +232,33 @@ describe('office rules — which rule applies', () => {
     expect(firstStepOf({ success: true, data: { id: 'x' } })).toBeNull();
     const item: any = { kind: 'expense', id: 'e', canDecide: true, data: {}, step: { mine: true } };
     expect(approvalActionsFor(item).map((a: any) => a.id)).toEqual(['reject']);
+  });
+});
+
+describe('office rules — cover and nobody answering', () => {
+  const { ruleMatches, noticeDue, ruleInputProblem } = jest.requireActual('@hbcfield/shared');
+  const r = (o: any) => ({ kind: 'request', spaceId: null, minMinutes: null, minDays: null, minAmountCents: null, isActive: true, ...o });
+
+  it('the cover condition holds only when the leave would leave too few people', () => {
+    expect(ruleMatches(r({ whenCoverShort: true }), { spaceIds: [], coverShort: true })).toBe(true);
+    expect(ruleMatches(r({ whenCoverShort: true }), { spaceIds: [], coverShort: false })).toBe(false);
+    expect(ruleMatches(r({ whenCoverShort: true, minDays: 3 }), { spaceIds: [], coverShort: true, days: 2 })).toBe(false);
+  });
+
+  it('reminder first, escalation later, each once', () => {
+    const rule = { remindAfterHours: 4, escalateAfterHours: 24, escalateRoleId: 'f' };
+    const since = new Date('2026-10-20T00:00:00Z');
+    const at = (h: number) => new Date(since.getTime() + h * 3_600_000);
+    expect(noticeDue(rule, since, at(3), new Set())).toBeNull();
+    expect(noticeDue(rule, since, at(5), new Set())).toBe('REMIND');
+    expect(noticeDue(rule, since, at(5), new Set(['REMIND']))).toBeNull();
+    expect(noticeDue(rule, since, at(25), new Set(['REMIND']))).toBe('ESCALATE');
+    expect(noticeDue(rule, since, at(30), new Set(['ESCALATE']))).toBeNull();
+  });
+
+  it('a rule must do something, and an escalation needs a role', () => {
+    expect(ruleInputProblem({ kind: 'request' })).toBe('RULE_EMPTY');
+    expect(ruleInputProblem({ kind: 'request', escalateAfterHours: 24 })).toBe('RULE_ESCALATE_ROLE_REQUIRED');
+    expect(ruleInputProblem({ kind: 'request', remindAfterHours: 4 })).toBeNull();
   });
 });

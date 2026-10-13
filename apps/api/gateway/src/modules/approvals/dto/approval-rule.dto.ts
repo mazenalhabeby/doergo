@@ -7,6 +7,11 @@ export class ApprovalRuleDto {
   @IsOptional() @IsInt() @Min(0) @Max(1440) minMinutes?: number | null;
   @IsOptional() @IsInt() @Min(0) @Max(366) minDays?: number | null;
   @IsOptional() @IsInt() @Min(0) @Max(100_000_000) minAmountCents?: number | null;
-  @IsString() @Length(1, 128) secondRoleId!: string;
+  @IsOptional() @IsBoolean() whenCoverShort?: boolean;
+  /** Null/absent = no second step (the rule only reminds / escalates). */
+  @IsOptional() @IsString() @Length(1, 128) secondRoleId?: string | null;
+  @IsOptional() @IsInt() @Min(1) @Max(720) remindAfterHours?: number | null;
+  @IsOptional() @IsInt() @Min(1) @Max(720) escalateAfterHours?: number | null;
+  @IsOptional() @IsString() @Length(1, 128) escalateRoleId?: string | null;
   @IsOptional() @IsBoolean() isActive?: boolean;
 }

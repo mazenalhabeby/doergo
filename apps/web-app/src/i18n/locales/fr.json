@@ -9446,9 +9446,12 @@
     "SECOND_STEP_SAME_PERSON": "Vous avez donné la première validation — la seconde doit venir de {{role}}.",
     "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}.",
     "SECOND_STEP_TAKEN": "Quelqu’un d’autre vient de décider.",
-    "RULE_ROLE_REQUIRED": "Choisissez le rôle qui donne la seconde validation.",
+    "RULE_ROLE_REQUIRED": "Choisissez l’un des rôles de l’organisation.",
     "RULE_THRESHOLD_INVALID": "Le seuil n’est pas un nombre valide.",
-    "RULE_KIND_INVALID": "Les règles existent pour les heures supplémentaires, les demandes et les dépenses."
+    "RULE_KIND_INVALID": "Les règles existent pour les heures supplémentaires, les demandes et les dépenses.",
+    "RULE_EMPTY": "Une règle demande une seconde validation, un rappel ou une transmission.",
+    "RULE_HOURS_INVALID": "Les heures doivent être un nombre entier entre 1 et 720.",
+    "RULE_ESCALATE_ROLE_REQUIRED": "Choisissez à qui transmettre si personne ne répond."
   },
   "signLink": {
     "tabs": {
@@ -10951,7 +10954,18 @@
       "whenDays_one": "au-delà de {{count}} jour",
       "whenDays_other": "au-delà de {{count}} jours",
       "whenAmount": "au-delà de {{amount}}",
-      "sentence": "{{what}} {{when}} dans {{where}} demande aussi {{role}}."
+      "whenCover": "quand l’effectif passerait sous le minimum",
+      "head": "{{what}} {{when}} dans {{where}} :",
+      "needs": "demande aussi {{role}}.",
+      "reminds": "Rappel après {{hours}} h.",
+      "escalates": "Transmis à {{role}} après {{hours}} h.",
+      "noSecond": "Pas de seconde validation",
+      "coverLabel": "Seulement quand l’effectif passerait sous le minimum (ou qu’une compétence manquerait)",
+      "noAnswer": "Si personne ne répond",
+      "remindAfter": "Rappeler après (heures)",
+      "escalateAfter": "Transmettre après (heures)",
+      "escalateTo": "Transmettre à",
+      "noAnswerHint": "Les rappels vont à qui peut décider aujourd’hui (pas aux absents). Transmettez à un rôle qui peut décider."
     }
   }
 }

@@ -496,6 +496,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ One OPEN step per item is a PARTIAL unique index (`approval_steps_open_item_key … WHERE consumedAt IS NULL`) that Prisma's schema cannot express — a `migrate diff` lists it as drift; keep it. Deleting / switching off a rule closes its open steps. The second-step holders get push `approval_second_step` (→ phone opens Approvals).
 >
+> **Cover and nobody answering** (migration `20261014110000_approval_escalation`, additive; `secondRoleId` now nullable). A request rule may require `whenCoverShort` — the wallchart's own `CoverService` verdict (short/skill), computed only when such a rule exists. A rule may remind the usual deciders after `remindAfterHours` and pass it to the holders of `escalateRoleId` after `escalateAfterHours` — with or without a second step. Sweep `ApprovalEscalationService` (task-service, every 10 min, cron lease `task:approvalEscalation`): one query per organization and kind; each stage said ONCE (`ApprovalNotice`, unique per item+stage, claimed by the insert); never anybody on leave; never the subject; an escalation role nobody holds falls back to the usual deciders. Push `approval_reminder` (→ phone opens Approvals). Telling only — who may decide is unchanged. "Usual deciders" = the same resolver as "who else can decide" (`common/approval-rules/approval-route.service.ts`).
+>
 > E2E: `python3 tools/approvals-e2e.py` (LOCAL, creates and ends a stand-in; adds and removes a rule, leaves the request untouched).
 
 ### Documents — the personnel file (`/documents`)

@@ -9437,9 +9437,12 @@
     "SECOND_STEP_SAME_PERSON": "Usted dio la primera aprobación — la segunda debe venir de {{role}}.",
     "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}.",
     "SECOND_STEP_TAKEN": "Otra persona lo decidió hace un momento.",
-    "RULE_ROLE_REQUIRED": "Elija el rol que da la segunda aprobación.",
+    "RULE_ROLE_REQUIRED": "Elija uno de los roles de la organización.",
     "RULE_THRESHOLD_INVALID": "El umbral no es un número válido.",
-    "RULE_KIND_INVALID": "Hay reglas para horas extra, solicitudes y gastos."
+    "RULE_KIND_INVALID": "Hay reglas para horas extra, solicitudes y gastos.",
+    "RULE_EMPTY": "Una regla necesita una segunda aprobación, un recordatorio o un paso a otro.",
+    "RULE_HOURS_INVALID": "Las horas deben ser un número entero entre 1 y 720.",
+    "RULE_ESCALATE_ROLE_REQUIRED": "Elija a quién pasa si nadie responde."
   },
   "signLink": {
     "tabs": {
@@ -10942,7 +10945,18 @@
       "whenDays_one": "de más de {{count}} día",
       "whenDays_other": "de más de {{count}} días",
       "whenAmount": "de más de {{amount}}",
-      "sentence": "{{what}} {{when}} en {{where}} también necesita a {{role}}."
+      "whenCover": "cuando la cobertura bajaría del mínimo",
+      "head": "{{what}} {{when}} en {{where}}:",
+      "needs": "también necesita a {{role}}.",
+      "reminds": "Recordatorio a las {{hours}} h.",
+      "escalates": "Pasa a {{role}} a las {{hours}} h.",
+      "noSecond": "Sin segunda aprobación",
+      "coverLabel": "Solo cuando la cobertura bajaría del mínimo (o faltaría una habilidad)",
+      "noAnswer": "Si nadie responde",
+      "remindAfter": "Recordar tras (horas)",
+      "escalateAfter": "Pasar tras (horas)",
+      "escalateTo": "Pasar a",
+      "noAnswerHint": "Los recordatorios van a quien puede decidir hoy (no a quien está de permiso). Páselo a un rol que pueda decidir."
     }
   }
 }

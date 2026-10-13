@@ -9446,9 +9446,12 @@
     "SECOND_STEP_SAME_PERSON": "Ha dato la prima approvazione — la seconda deve venire da {{role}}.",
     "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}.",
     "SECOND_STEP_TAKEN": "Qualcun altro l’ha appena deciso.",
-    "RULE_ROLE_REQUIRED": "Scelga il ruolo che dà la seconda approvazione.",
+    "RULE_ROLE_REQUIRED": "Scelga uno dei ruoli dell’organizzazione.",
     "RULE_THRESHOLD_INVALID": "La soglia non è un numero valido.",
-    "RULE_KIND_INVALID": "Le regole esistono per straordinari, richieste e spese."
+    "RULE_KIND_INVALID": "Le regole esistono per straordinari, richieste e spese.",
+    "RULE_EMPTY": "Una regola richiede una seconda approvazione, un promemoria o un passaggio.",
+    "RULE_HOURS_INVALID": "Le ore devono essere un numero intero tra 1 e 720.",
+    "RULE_ESCALATE_ROLE_REQUIRED": "Scelga a chi passa se nessuno risponde."
   },
   "signLink": {
     "tabs": {
@@ -10951,7 +10954,18 @@
       "whenDays_one": "oltre {{count}} giorno",
       "whenDays_other": "oltre {{count}} giorni",
       "whenAmount": "oltre {{amount}}",
-      "sentence": "{{what}} {{when}} in {{where}} richiede anche {{role}}."
+      "whenCover": "quando la copertura scenderebbe sotto il minimo",
+      "head": "{{what}} {{when}} in {{where}}:",
+      "needs": "richiede anche {{role}}.",
+      "reminds": "Promemoria dopo {{hours}} h.",
+      "escalates": "Passa a {{role}} dopo {{hours}} h.",
+      "noSecond": "Nessuna seconda approvazione",
+      "coverLabel": "Solo quando la copertura scenderebbe sotto il minimo (o mancherebbe una competenza)",
+      "noAnswer": "Se nessuno risponde",
+      "remindAfter": "Ricorda dopo (ore)",
+      "escalateAfter": "Passa dopo (ore)",
+      "escalateTo": "Passa a",
+      "noAnswerHint": "I promemoria vanno a chi può decidere oggi (non a chi è in ferie). Lo passi a un ruolo che può decidere."
     }
   }
 }

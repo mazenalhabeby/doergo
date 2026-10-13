@@ -1102,11 +1102,20 @@ export class TechniciansService {
       const spaceIds = (timeOff as { spaceId?: string | null }).spaceId
         ? [(timeOff as { spaceId: string }).spaceId]
         : timeOff.technician.spaceAssignments.map((a) => a.spaceId);
+      // Cover is asked only when a rule cares — it is the wallchart's own verdict (CoverService).
+      const coverShort = isAbsence(timeOff.kind) && (await this.prisma.approvalRule.count({
+        where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true },
+      })) > 0
+        ? ['short', 'skill'].includes(
+            (await this.cover.assessMany(organizationId, [{ id: timeOff.id, technicianId: timeOff.technicianId, startDate: timeOff.startDate, endDate: timeOff.endDate }]))
+              .get(timeOff.id)?.level ?? 'ok',
+          )
+        : false;
       const verdict = await this.rules.gate({
         organizationId,
         kind: 'request',
         itemId: timeOffId,
-        facts: { spaceIds, days },
+        facts: { spaceIds, days, coverShort },
         deciderId: approverId,
         subjectId: timeOff.technicianId,
       });

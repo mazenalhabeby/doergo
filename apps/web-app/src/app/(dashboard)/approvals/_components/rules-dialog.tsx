@@ -16,10 +16,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const ALL = "__all__"
+const NONE = "__none__"
 
 /**
  * The office's approval rules: past a threshold, a decision needs a second
@@ -46,7 +48,13 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   const [kind, setKind] = useState<RuleKind>("overtime")
   const [spaceId, setSpaceId] = useState(ALL)
   const [threshold, setThreshold] = useState("")
-  const [roleId, setRoleId] = useState("")
+  const [roleId, setRoleId] = useState(NONE)
+  const [coverShort, setCoverShort] = useState(false)
+  const [remind, setRemind] = useState("")
+  const [escalate, setEscalate] = useState("")
+  const [escalateRoleId, setEscalateRoleId] = useState(NONE)
+  const hoursOf = (v: string) => (v.trim() === "" ? null : Math.round(Number(v)))
+  const reset = () => { setThreshold(""); setRoleId(NONE); setCoverShort(false); setRemind(""); setEscalate(""); setEscalateRoleId(NONE) }
 
   const refresh = () => qc.invalidateQueries({ queryKey: keys.approvals.all() })
   const save = useMutation({
@@ -55,14 +63,18 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
       return approvalsApi.saveRule({
         kind,
         spaceId: spaceId === ALL ? null : spaceId,
-        secondRoleId: roleId,
+        secondRoleId: roleId === NONE ? null : roleId,
+        whenCoverShort: kind === "request" && coverShort,
+        remindAfterHours: hoursOf(remind),
+        escalateAfterHours: hoursOf(escalate),
+        escalateRoleId: escalateRoleId === NONE ? null : escalateRoleId,
         // Entered as hours / days / money; stored as minutes / days / cents.
         minMinutes: kind === "overtime" && n != null ? Math.round(n * 60) : null,
         minDays: kind === "request" && n != null ? Math.round(n) : null,
         minAmountCents: kind === "expense" && n != null ? Math.round(n * 100) : null,
       })
     },
-    onSuccess: () => { setThreshold(""); setRoleId(""); notify.success(t("approvals.rules.saved")); refresh() },
+    onSuccess: () => { reset(); notify.success(t("approvals.rules.saved")); refresh() },
     onError: (e: Error) => notify.error(e.message),
   })
   const toggle = useMutation({
@@ -77,18 +89,22 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   })
 
   const describe = (r: ApprovalRuleView) => {
-    const when = r.kind === "overtime"
-      ? (r.minMinutes != null ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 }) : t("approvals.rules.always"))
-      : r.kind === "request"
-        ? (r.minDays != null ? t("approvals.rules.whenDays", { count: r.minDays }) : t("approvals.rules.always"))
-        : (r.minAmountCents != null ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) }) : t("approvals.rules.always"))
-    return t("approvals.rules.sentence", {
-      what: t(`approvals.rules.kind.${r.kind}`),
-      when,
-      where: r.spaceName ?? t("approvals.rules.everywhere"),
-      role: r.secondRoleName ?? "?",
-    })
+    const when = [
+      r.kind === "overtime" && r.minMinutes != null ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 }) : null,
+      r.kind === "request" && r.minDays != null ? t("approvals.rules.whenDays", { count: r.minDays }) : null,
+      r.kind === "expense" && r.minAmountCents != null ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) }) : null,
+      r.whenCoverShort ? t("approvals.rules.whenCover") : null,
+    ].filter(Boolean).join(", ") || t("approvals.rules.always")
+    const head = t("approvals.rules.head", { what: t(`approvals.rules.kind.${r.kind}`), when, where: r.spaceName ?? t("approvals.rules.everywhere") })
+    const parts = [
+      r.secondRoleId ? t("approvals.rules.needs", { role: r.secondRoleName ?? "?" }) : null,
+      r.remindAfterHours != null ? t("approvals.rules.reminds", { hours: r.remindAfterHours }) : null,
+      r.escalateAfterHours != null ? t("approvals.rules.escalates", { hours: r.escalateAfterHours, role: r.escalateRoleName ?? "?" }) : null,
+    ].filter(Boolean)
+    return `${head} ${parts.join(" ")}`
   }
+
+  const ready = roleId !== NONE || remind.trim() !== "" || (escalate.trim() !== "" && escalateRoleId !== NONE)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,14 +156,43 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.secondRole")}</Label>
               <Select value={roleId} onValueChange={setRoleId}>
-                <SelectTrigger><SelectValue placeholder={t("approvals.rules.pickRole")} /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={NONE}>{t("approvals.rules.noSecond")}</SelectItem>
                   {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <Button className="w-full rounded-lg" disabled={!roleId || save.isPending} onClick={() => save.mutate()}>
+          {kind === "request" && (
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <Checkbox checked={coverShort} onCheckedChange={(v) => setCoverShort(v === true)} />
+              {t("approvals.rules.coverLabel")}
+            </label>
+          )}
+          <p className="pt-1 text-sm font-medium text-foreground">{t("approvals.rules.noAnswer")}</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="rule-remind">{t("approvals.rules.remindAfter")}</Label>
+              <Input id="rule-remind" type="number" min={1} max={720} value={remind} onChange={(e) => setRemind(e.target.value)} placeholder="—" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="rule-escalate">{t("approvals.rules.escalateAfter")}</Label>
+              <Input id="rule-escalate" type="number" min={1} max={720} value={escalate} onChange={(e) => setEscalate(e.target.value)} placeholder="—" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("approvals.rules.escalateTo")}</Label>
+              <Select value={escalateRoleId} onValueChange={setEscalateRoleId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>—</SelectItem>
+                  {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("approvals.rules.noAnswerHint")}</p>
+          <Button className="w-full rounded-lg" disabled={!ready || save.isPending} onClick={() => save.mutate()}>
             {t("approvals.rules.save")}
           </Button>
         </div>

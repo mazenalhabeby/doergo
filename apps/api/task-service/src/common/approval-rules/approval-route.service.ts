@@ -15,8 +15,8 @@ import {
   type ApprovalKind,
   type ApprovalRouting,
 } from '@hbcfield/shared';
-import { PrismaService } from '../../common/prisma/prisma.service';
-import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationRoutingService } from '../notification-routing.service';
 
 /** "Who else can decide" is a hint, not a directory: the first few, and how many more. */
 const MAX_DECIDERS = 8;

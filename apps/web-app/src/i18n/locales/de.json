@@ -9437,9 +9437,12 @@
     "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
     "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}.",
     "SECOND_STEP_TAKEN": "Jemand anderes hat das gerade entschieden.",
-    "RULE_ROLE_REQUIRED": "Wählen Sie die Rolle für die zweite Freigabe.",
+    "RULE_ROLE_REQUIRED": "Wählen Sie eine Rolle der Organisation.",
     "RULE_THRESHOLD_INVALID": "Die Schwelle ist keine gültige Zahl.",
-    "RULE_KIND_INVALID": "Regeln gibt es für Überstunden, Anträge und Ausgaben."
+    "RULE_KIND_INVALID": "Regeln gibt es für Überstunden, Anträge und Ausgaben.",
+    "RULE_EMPTY": "Eine Regel braucht eine zweite Freigabe, eine Erinnerung oder eine Weitergabe.",
+    "RULE_HOURS_INVALID": "Stunden müssen eine ganze Zahl zwischen 1 und 720 sein.",
+    "RULE_ESCALATE_ROLE_REQUIRED": "Wählen Sie, an wen es weitergeht, wenn niemand antwortet."
   },
   "signLink": {
     "tabs": {
@@ -10942,7 +10945,18 @@
       "whenDays_one": "über {{count}} Tag",
       "whenDays_other": "über {{count}} Tage",
       "whenAmount": "über {{amount}}",
-      "sentence": "{{what}} {{when}} in {{where}} braucht auch {{role}}."
+      "whenCover": "wenn die Besetzung unter das Minimum fiele",
+      "head": "{{what}} {{when}} in {{where}}:",
+      "needs": "braucht auch {{role}}.",
+      "reminds": "Erinnerung nach {{hours}} h.",
+      "escalates": "An {{role}} nach {{hours}} h.",
+      "noSecond": "Keine zweite Freigabe",
+      "coverLabel": "Nur wenn die Besetzung unter das Minimum fiele (oder eine Qualifikation fehlte)",
+      "noAnswer": "Wenn niemand antwortet",
+      "remindAfter": "Erinnern nach (Stunden)",
+      "escalateAfter": "Weitergeben nach (Stunden)",
+      "escalateTo": "Weitergeben an",
+      "noAnswerHint": "Erinnerungen gehen an alle, die heute entscheiden können (nicht an Abwesende). Geben Sie es an eine Rolle weiter, die entscheiden kann."
     }
   }
 }

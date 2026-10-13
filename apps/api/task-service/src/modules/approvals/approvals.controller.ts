@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApprovalRouteService, type ApprovalRouteInput } from './approval-route.service';
+import { ApprovalRouteService, type ApprovalRouteInput } from '../../common/approval-rules/approval-route.service';
 import { StandInsService, type StandInCaller } from './stand-ins.service';
 import type { ApprovalRuleInput, RuleKind, StandInInput } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';

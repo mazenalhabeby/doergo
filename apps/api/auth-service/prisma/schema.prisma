@@ -2646,8 +2646,15 @@ model ApprovalRule {
   minDays        Int?
   /// expense: more than this amount (organization's currency, cents)
   minAmountCents Int?
-  /// The second step: whoever holds this role (org role, or a workspace role in the item's workspace).
-  secondRoleId   String
+  /// request: only when the leave would drop cover below the workspace's minimum (or miss a skill)
+  whenCoverShort Boolean      @default(false)
+  /// The second step: whoever holds this role (org role, or a workspace role in the item's workspace). Null = no second step.
+  secondRoleId   String?
+  /// Nobody answered: remind the usual deciders after this many hours.
+  remindAfterHours   Int?
+  /// Still nobody: pass it to the holders of `escalateRoleId` after this many hours.
+  escalateAfterHours Int?
+  escalateRoleId     String?
   isActive       Boolean      @default(true)
   createdById    String
   createdAt      DateTime     @default(now())
@@ -2674,6 +2681,22 @@ model ApprovalStep {
 
   @@index([organizationId, kind, itemId])
   @@map("approval_steps")
+}
+
+/// One reminder / escalation sent for one waiting item — so the sweep says it once.
+model ApprovalNotice {
+  id             String   @id @default(cuid())
+  organizationId String
+  kind           String
+  itemId         String
+  ruleId         String
+  /// REMIND | ESCALATE
+  stage          String
+  sentAt         DateTime @default(now())
+
+  @@unique([kind, itemId, stage])
+  @@index([organizationId])
+  @@map("approval_notices")
 }
 
 model ApprovalDelegation {
