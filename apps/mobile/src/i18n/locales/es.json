@@ -4892,6 +4892,8 @@
     "how": "Cómo funciona",
     "toggle": "Fichar entrada y salida automáticamente",
     "subOff": "Ficha tu entrada al llegar a tu lugar de trabajo y tu salida al irte. Solo si lo activas.",
+    "subOffAt": "Ficha tu entrada al llegar a {{places}} y tu salida al irte. Solo si lo activas. En cualquier otro sitio fichas tú.",
+    "subOnAt": "Activado en {{places}}. En cualquier otro sitio fichas tú.",
     "subOn_one": "Activado · vigilando {{count}} lugar de trabajo",
     "subOn_other": "Activado · vigilando {{count}} lugares de trabajo",
     "subNotChosen": "Activado · tu oficina aún no lo ha activado para ti",

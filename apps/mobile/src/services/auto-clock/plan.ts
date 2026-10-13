@@ -49,6 +49,9 @@ export interface AutoClockStatus {
   consentAt: string | null;
   /** Workspaces in the plan (where the member is chosen). */
   places: number;
+  /** Where the office has chosen them, consent aside (undefined = a server older than this). */
+  offered?: number;
+  offeredIn?: string[];
   /** Workspaces actually watched by the OS now. */
   armed: number;
   /** Background ("Always") location. */
@@ -125,6 +128,8 @@ export function refreshAutoClock(member: { userId: string; organizationId: strin
       availability: state.available === false ? 'no' : state.available ? (engine ? 'yes' : 'engine') : status.availability,
       consentAt: state.withdrawPending ? null : plan?.consentAt ?? null,
       places: plan?.places.length ?? 0,
+      offered: plan?.offered,
+      offeredIn: plan?.offeredIn,
     });
 
     if (!consented || !engine || !plan?.places.length) {

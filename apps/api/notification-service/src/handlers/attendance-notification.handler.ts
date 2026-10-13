@@ -426,6 +426,34 @@ export class AttendanceNotificationHandler {
   }
 
   /*
+    The office chose these members for the automatic clock in one workspace
+    (or switched the workspace on with them already chosen), and they have not
+    agreed yet. Their phone now shows the switch; this tells them it is there
+    and that it is about THIS workspace only. Tapping opens the Time screen.
+  */
+  @EventPattern('auto_clock_offered')
+  async handleAutoClockOffered(@Payload() data: { organizationId: string; spaceId: string; spaceName: string; userIds: string[] }) {
+    if (!data.userIds?.length) return;
+    const text: LocalizedText = {
+      title: msg('attendance.autoClockOffered.title', { workspace: data.spaceName }),
+      body: msg('attendance.autoClockOffered.body'),
+    };
+    try {
+      await this.pushService.sendToUsers(data.userIds, text, { type: 'attendance.auto_clock_offered', spaceId: data.spaceId });
+    } catch (error) {
+      this.logger.error(`Failed to send automatic clock offer push: ${error}`);
+    }
+    for (const userId of data.userIds) this.websocketGateway.emitToUser(userId, 'auto_clock_offered', { spaceId: data.spaceId });
+    await this.store.record({
+      recipientIds: data.userIds,
+      organizationId: data.organizationId,
+      eventType: 'auto_clock_offered',
+      text,
+      link: '/attendance',
+    });
+  }
+
+  /*
     "Still clocked in past the end of the shift" answered by the clock-out
     itself, arriving late from a phone without signal. Same people as the
     escalation, so nobody phones round about a shift that ended hours ago.

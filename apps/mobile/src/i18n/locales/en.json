@@ -4892,6 +4892,8 @@
     "how": "How it works",
     "toggle": "Clock me in and out automatically",
     "subOff": "Clocks you in when you arrive at your workspace and out when you leave. Only if you switch it on.",
+    "subOffAt": "Clocks you in when you arrive at {{places}} and out when you leave. Only if you switch it on. Anywhere else you clock in yourself.",
+    "subOnAt": "On at {{places}}. Anywhere else you clock in yourself.",
     "subOn_one": "On · watching {{count}} workspace",
     "subOn_other": "On · watching {{count}} workspaces",
     "subNotChosen": "On · your office has not switched it on for you yet",

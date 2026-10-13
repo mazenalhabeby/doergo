@@ -4892,6 +4892,8 @@
     "how": "So funktioniert es",
     "toggle": "Automatisch ein- und ausstempeln",
     "subOff": "Stempelt Sie ein, wenn Sie an Ihrem Arbeitsort ankommen, und aus, wenn Sie gehen. Nur wenn Sie es einschalten.",
+    "subOffAt": "Stempelt Sie ein, wenn Sie bei {{places}} ankommen, und aus, wenn Sie gehen. Nur wenn Sie es einschalten. Überall sonst stempeln Sie selbst.",
+    "subOnAt": "An bei {{places}}. Überall sonst stempeln Sie selbst.",
     "subOn_one": "An · {{count}} Arbeitsort wird beobachtet",
     "subOn_other": "An · {{count}} Arbeitsorte werden beobachtet",
     "subNotChosen": "An · Ihr Büro hat es für Sie noch nicht eingeschaltet",

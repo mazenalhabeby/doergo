@@ -21,11 +21,13 @@ function build(space: Record<string, unknown> = {}, assignment: Record<string, u
       findFirst: jest.fn().mockResolvedValue({ id: 'a1', organizationId: 'org-1', userId: 'u1', spaceId: 'loc-1', user: { isExternal: false }, ...assignment }),
       update: jest.fn(async ({ data }: any) => ({ id: 'a1', spaceId: 'loc-1', space: {}, user: {}, ...data })),
       updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([{ userId: 'u1' }]),
     },
     rateHistory: { findMany: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0) },
     $transaction: jest.fn(async (fn: any) => fn(prisma)),
   };
-  return { prisma, svc: new LocationsService(prisma, { emit: jest.fn() } as any) };
+  const client = { emit: jest.fn() };
+  return { prisma, client, svc: new LocationsService(prisma, client as any) };
 }
 
 const patch = (svc: LocationsService, autoClock: unknown) =>
@@ -77,5 +79,52 @@ describe('a member chosen for the automatic clock', () => {
     await expect(svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', autoClock: true })).rejects.toMatchObject({
       response: { code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL' },
     });
+  });
+});
+
+describe('telling a member the switch is there', () => {
+  const ON = { ...AUTO_CLOCK_DEFAULTS, enabled: true };
+  const offers = (client: { emit: jest.Mock }) => client.emit.mock.calls.filter((c) => c[0] === 'auto_clock_offered');
+  const settle = () => new Promise((r) => setImmediate(r));
+
+  it('choosing a member in a workspace that uses it offers it to them, naming the workspace', async () => {
+    const { svc, client, prisma } = build({ autoClock: ON, name: 'HBC Office', enabledModules: ['time_tracking'] }, { autoClock: false });
+    await svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', autoClock: true } as any);
+    await settle();
+    expect(offers(client)).toEqual([['auto_clock_offered', { organizationId: 'org-1', spaceId: 'loc-1', spaceName: 'HBC Office', userIds: ['u1'] }]]);
+    // Only people who have not agreed yet, assigned now.
+    expect(prisma.spaceAssignment.findMany.mock.calls[0][0].where).toMatchObject({ spaceId: 'loc-1', autoClock: true, userId: { in: ['u1'] }, user: { autoClockConsentAt: null, isExternal: false } });
+  });
+
+  it('no offer when they were already chosen, or the workspace does not use it', async () => {
+    const again = build({ autoClock: ON, enabledModules: ['time_tracking'] }, { autoClock: true });
+    await again.svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', autoClock: true } as any);
+    const off = build({ autoClock: null }, { autoClock: false });
+    await off.svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', autoClock: true } as any);
+    await settle();
+    expect(offers(again.client)).toEqual([]);
+    expect(offers(off.client)).toEqual([]);
+  });
+
+  it('no offer where Time Tracking is off — it could never clock there', async () => {
+    const { svc, client } = build({ autoClock: ON, enabledModules: ['tasks'] }, { autoClock: false });
+    await svc.updateAssignment({ assignmentId: 'a1', organizationId: 'org-1', autoClock: true } as any);
+    await settle();
+    expect(offers(client)).toEqual([]);
+  });
+
+  it('switching the workspace on offers it to everyone already chosen there', async () => {
+    const { svc, client, prisma } = build({ autoClock: null, name: 'HBC Office', enabledModules: ['time_tracking'] });
+    await patch(svc, ON);
+    await settle();
+    expect(offers(client)).toHaveLength(1);
+    expect('userId' in prisma.spaceAssignment.findMany.mock.calls[0][0].where).toBe(false);
+  });
+
+  it('a settings change on a workspace already on offers nothing again', async () => {
+    const { svc, client } = build({ autoClock: ON, enabledModules: ['time_tracking'] });
+    await patch(svc, { ...ON, leadMinutes: 45 });
+    await settle();
+    expect(offers(client)).toEqual([]);
   });
 });

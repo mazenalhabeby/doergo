@@ -284,11 +284,26 @@ describe('the plan the phone arms from', () => {
     ]);
   });
 
-  it('no consent → no places, and nothing else is read', async () => {
+  it('no consent → no places and no shifts read, but it says where the office chose them', async () => {
     const { prisma, calls } = planPrisma(3, false);
     const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
-    expect(res.data).toMatchObject({ consentAt: null, places: [] });
-    expect(calls.n).toBe(1);
+    expect(res.data).toMatchObject({ consentAt: null, places: [], offered: 3, offeredIn: ['Halle 0', 'Halle 1', 'Halle 2'] });
+    // The member, their assignments, the workspaces — never the rota or the requests.
+    expect(calls.n).toBe(3);
+    expect(prisma.shiftAssignment.findMany).not.toHaveBeenCalled();
+  });
+
+  it('chosen nowhere → offered 0, so the phone does not offer the switch', async () => {
+    const { prisma } = planPrisma(0, false);
+    const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
+    expect(res.data).toMatchObject({ consentAt: null, places: [], offered: 0, offeredIn: [] });
+  });
+
+  it('with consent, offered counts the same workspaces it arms', async () => {
+    const { prisma } = planPrisma(2);
+    const res: any = await buildAuto(prisma).svc.plan({ userId: 'u1', organizationId: 'org-1', now });
+    expect(res.data.places).toHaveLength(2);
+    expect(res.data).toMatchObject({ offered: 2, offeredIn: ['Halle 0', 'Halle 1'] });
   });
 });
 

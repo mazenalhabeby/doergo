@@ -90,6 +90,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   'attendance.clock_out_unconfirmed': CLOCK,
   // The automatic clock's own local notifications (services/auto-clock): clocked in, the rest, "still here?".
   'attendance.auto_clock': CLOCK,
+  // A workspace chose them for the automatic clock: the Time screen, where the switch now is.
+  'attendance.auto_clock_offered': CLOCK,
 
   // Somebody else's shift
   shift_escalation: TEAM_ATTENDANCE,

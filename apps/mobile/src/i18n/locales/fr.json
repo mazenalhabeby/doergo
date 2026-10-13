@@ -4892,6 +4892,8 @@
     "how": "Comment ça marche",
     "toggle": "Me pointer automatiquement à l’arrivée et au départ",
     "subOff": "Vous pointe à votre arrivée sur votre lieu de travail et à votre départ. Seulement si vous l’activez.",
+    "subOffAt": "Vous pointe à votre arrivée à {{places}} et à votre départ. Seulement si vous l’activez. Partout ailleurs, vous pointez vous-même.",
+    "subOnAt": "Activé à {{places}}. Partout ailleurs, vous pointez vous-même.",
     "subOn_one": "Activé · {{count}} lieu de travail surveillé",
     "subOn_other": "Activé · {{count}} lieux de travail surveillés",
     "subNotChosen": "Activé · votre bureau ne l’a pas encore activé pour vous",

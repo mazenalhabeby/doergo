@@ -4892,6 +4892,8 @@
     "how": "Come funziona",
     "toggle": "Timbra entrata e uscita automaticamente",
     "subOff": "Timbra l’entrata quando arrivi sul posto di lavoro e l’uscita quando te ne vai. Solo se lo attivi.",
+    "subOffAt": "Timbra l’entrata quando arrivi a {{places}} e l’uscita quando te ne vai. Solo se lo attivi. Altrove timbri tu.",
+    "subOnAt": "Attivo a {{places}}. Altrove timbri tu.",
     "subOn_one": "Attivo · {{count}} posto di lavoro monitorato",
     "subOn_other": "Attivo · {{count}} posti di lavoro monitorati",
     "subNotChosen": "Attivo · il tuo ufficio non l’ha ancora attivato per te",

@@ -9,6 +9,7 @@ import {
   activeAssignmentWhere,
   addDaysStr,
   autoClockActive,
+  autoClockOffered,
   autoClockUndoDeadline,
   autoRestPlan,
   geofenceArmRadius,
@@ -207,7 +208,9 @@ export class AutoClockService {
    * approved requests.
    *
    * ⚠️ No consent → no places. The settings of a workspace are not the
-   * member's to read before they have agreed to be clocked by it.
+   * member's to read before they have agreed to be clocked by it. What they DO
+   * get is `offered` — how many workspaces chose them — so the phone offers the
+   * switch only where agreeing would change something.
    *
    * A FIXED number of queries whatever the number of workspaces: the member,
    * their assignments, the workspaces, the rota + legacy schedule (two, in
@@ -221,9 +224,8 @@ export class AutoClockService {
       select: { autoClockConsentAt: true, isExternal: true },
     });
     const consentAt = user?.autoClockConsentAt ?? null;
-    if (!user || !consentAt || user.isExternal) {
-      return success({ consentAt: consentAt ? consentAt.toISOString() : null, places: [], generatedAt });
-    }
+    const consentIso = consentAt ? consentAt.toISOString() : null;
+    if (!user || user.isExternal) return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
 
     const tomorrow = new Date(now.getTime() + 86_400_000);
     const assignments = await this.prisma.spaceAssignment.findMany({
@@ -234,7 +236,7 @@ export class AutoClockService {
       select: { spaceId: true, autoClock: true },
     });
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
-    if (!spaceIds.length) return success({ consentAt: consentAt.toISOString(), places: [], generatedAt });
+    if (!spaceIds.length) return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
 
     const locations = await this.prisma.companyLocation.findMany({
       where: {
@@ -253,16 +255,20 @@ export class AutoClockService {
       },
       orderBy: { name: 'asc' },
     });
-    const active = locations
-      .map((l) => ({
-        l,
-        settings: autoClockActive({ consentAt, settings: l.autoClock, assignmentAutoClock: true, isExternal: user.isExternal }),
-      }))
+    // Where the OFFICE has chosen them (consent aside) — what decides whether the
+    // phone offers the switch at all. A count only: nothing of a workspace's
+    // settings reaches a member who has not agreed.
+    const chosen = locations
+      .map((l) => ({ l, settings: autoClockOffered({ settings: l.autoClock, assignmentAutoClock: true, isExternal: user.isExternal }) }))
       // The clock-in refuses where Time Tracking is off — never arm a site that cannot clock.
       .filter((x): x is { l: (typeof locations)[number]; settings: AutoClockSettings } =>
         !!x.settings && spaceRunsClock(x.l.enabledModules as string[] | null, x.l.organization?.enabledModules as string[] | null),
       );
-    if (!active.length) return success({ consentAt: consentAt.toISOString(), places: [], generatedAt });
+    const offered = chosen.length;
+    const offeredIn = chosen.map((x) => x.l.name);
+    // ⚠️ No consent → no places.
+    const active = consentAt ? chosen : [];
+    if (!active.length) return success({ consentAt: consentIso, places: [], generatedAt, offered, offeredIn });
 
     const daysOf = (tz: string) => {
       const today = localPartsIn(now, tz).dateStr;
@@ -307,7 +313,7 @@ export class AutoClockService {
         shifts,
       };
     });
-    return success({ consentAt: consentAt.toISOString(), places, generatedAt });
+    return success({ consentAt: consentIso, places, generatedAt, offered, offeredIn });
   }
 
   // ── Undo a drive-past ───────────────────────────────────────────────────

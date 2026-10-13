@@ -1,7 +1,7 @@
 import React, { useState, useSyncExternalStore } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { AUTO_CLOCK_UNDO_MINUTES } from '@hbcfield/shared/client';
+import { AUTO_CLOCK_UNDO_MINUTES, showAutoClockSwitch } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { isExternalMember } from '../../lib/member-reach';
 import { useTheme } from '../../contexts/theme-context';
@@ -33,17 +33,21 @@ export function TimeAutoClock() {
   // An external member holds no clock — the server refuses their consent, so the switch is never offered.
   if (isExternalMember(user)) return null;
   if (status.availability !== 'yes' && status.availability !== 'engine') return null;
+  // Offered only where a workspace has chosen them — or once they agreed, so they can always switch it off.
+  if (!showAutoClockSwitch({ consentAt: status.consentAt, offered: status.offered })) return null;
   const member = user?.id && user.organizationId ? { userId: user.id, organizationId: user.organizationId } : null;
   const on = !!status.consentAt;
   const usable = status.availability === 'yes';
 
+  // Named, so somebody in several workspaces reads WHERE it works — never "everywhere".
+  const where = status.offeredIn?.length ? status.offeredIn.join(', ') : null;
   const sub = !usable
     ? t('autoClock.notOnThisPhone')
     : !on
-      ? t('autoClock.subOff')
+      ? where ? t('autoClock.subOffAt', { places: where }) : t('autoClock.subOff')
       : status.places === 0
         ? t('autoClock.subNotChosen')
-        : t('autoClock.subOn', { count: status.armed || status.places });
+        : where ? t('autoClock.subOnAt', { places: where }) : t('autoClock.subOn', { count: status.armed || status.places });
 
   const decide = async (consent: boolean) => {
     if (!member) return;

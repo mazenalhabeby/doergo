@@ -236,6 +236,31 @@ export interface AutoClockPlan {
   /** Today and tomorrow in each workspace's zone, so a phone offline overnight still arms the morning. */
   places: AutoClockPlace[];
   generatedAt: string;
+  /**
+   * How many workspaces have chosen this member — on there, the member chosen,
+   * Time Tracking running — whether or not they have agreed yet. It is what
+   * decides whether the phone OFFERS the switch (`showAutoClockSwitch`): asking
+   * somebody to agree to a clock no workspace uses for them is a question with
+   * no answer. Absent from a server older than this field.
+   */
+  offered?: number;
+  /**
+   * Their NAMES, so the phone can say where it works — a member in three
+   * workspaces where one uses it must not read the switch as "all three".
+   * Names only: the member already sees their own workspaces.
+   */
+  offeredIn?: string[];
+}
+
+/**
+ * PHONE: is the automatic clock's switch shown? Once the member has agreed it
+ * always is (they can always withdraw); before that, only where a workspace has
+ * chosen them. A plan from an older server (no `offered`) shows it, as before.
+ */
+export function showAutoClockSwitch(plan: { consentAt: string | null; offered?: number } | null | undefined): boolean {
+  if (!plan) return false;
+  if (plan.consentAt) return true;
+  return plan.offered === undefined || plan.offered > 0;
 }
 
 /** Codes the automatic clock answers with. */
@@ -259,7 +284,21 @@ export function autoClockActive(input: {
   assignmentAutoClock: boolean | null | undefined;
   isExternal?: boolean | null;
 }): AutoClockSettings | null {
-  if (!input.consentAt || input.assignmentAutoClock !== true || input.isExternal === true) return null;
+  if (!input.consentAt) return null;
+  return autoClockOffered(input);
+}
+
+/**
+ * Has the OFFICE chosen this member for the automatic clock here — the
+ * workspace on, the member chosen, not external — leaving out only their own
+ * consent? `autoClockActive` is this plus the consent.
+ */
+export function autoClockOffered(input: {
+  settings: unknown;
+  assignmentAutoClock: boolean | null | undefined;
+  isExternal?: boolean | null;
+}): AutoClockSettings | null {
+  if (input.assignmentAutoClock !== true || input.isExternal === true) return null;
   if (input.settings == null) return null;
   const parsed = parseAutoClockSettings(input.settings);
   return parsed.ok && parsed.value.enabled ? parsed.value : null;

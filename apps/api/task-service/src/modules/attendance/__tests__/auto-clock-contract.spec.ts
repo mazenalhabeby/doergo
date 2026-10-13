@@ -1,4 +1,7 @@
 import {
+  autoClockActive,
+  autoClockOffered,
+  showAutoClockSwitch,
   AUTO_CLOCK_DEFAULTS,
   INFORMATIONAL_FLAGS,
   autoRestPlan,
@@ -85,4 +88,25 @@ describe('autoRestPlan', () => {
 
 it('automatic steps are marked, not suspected', () => {
   for (const f of ['AUTO_CLOCK_IN', 'AUTO_CLOCK_OUT', 'AUTO_REST']) expect(INFORMATIONAL_FLAGS.has(f)).toBe(true);
+});
+
+describe('offered before agreed — who sees the switch', () => {
+  const ON = { enabled: true };
+  it('the office chose them: offered, whatever their consent', () => {
+    expect(autoClockOffered({ settings: ON, assignmentAutoClock: true })).toBeTruthy();
+    expect(autoClockActive({ consentAt: null, settings: ON, assignmentAutoClock: true })).toBeNull();
+  });
+  it('not chosen, workspace off, or external: not offered', () => {
+    expect(autoClockOffered({ settings: ON, assignmentAutoClock: false })).toBeNull();
+    expect(autoClockOffered({ settings: { enabled: false }, assignmentAutoClock: true })).toBeNull();
+    expect(autoClockOffered({ settings: null, assignmentAutoClock: true })).toBeNull();
+    expect(autoClockOffered({ settings: ON, assignmentAutoClock: true, isExternal: true })).toBeNull();
+  });
+  it('the phone shows the switch where chosen, always once agreed, and as before on an older server', () => {
+    expect(showAutoClockSwitch({ consentAt: null, offered: 0 })).toBe(false);
+    expect(showAutoClockSwitch({ consentAt: null, offered: 1 })).toBe(true);
+    expect(showAutoClockSwitch({ consentAt: '2026-10-13T00:00:00Z', offered: 0 })).toBe(true);
+    expect(showAutoClockSwitch({ consentAt: null })).toBe(true);
+    expect(showAutoClockSwitch(null)).toBe(false);
+  });
 });

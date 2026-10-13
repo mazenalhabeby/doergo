@@ -18,6 +18,7 @@ import { success, paginated, DEFAULT_ORG_MODULES, accessAllowsInSpace, SERVICE_N
   stripWorkspaceTerms, assertFoundInOrg,
   parseAutoClockSettings, readAutoClockSettings, type AutoClockSettings,
   permissionsExceed, permissionsFromOrgRole, type PermissionSet } from '@hbcfield/shared';
+import { autoClockOffered, spaceRunsClock, activeAssignmentWhere } from '@hbcfield/shared';
 import { isGeofencePolicy, isRequestKind, REQUEST_KINDS,
   isNoShiftPolicy,
   noShiftPolicyConflict,
@@ -77,6 +78,43 @@ export class LocationsService {
       this.notificationClient.emit(event, { organizationId, spaceId: spaceId ?? null });
     } catch (err) {
       this.logger.warn(`Failed to announce ${event} for org ${organizationId}: ${err}`);
+    }
+  }
+
+  /**
+   * "This workspace uses the automatic clock — switch it on?" to members the
+   * office has just chosen here and who have not agreed yet. Their phone shows
+   * the switch from now on (`offered` in the plan); the push is how they learn
+   * it is there. Only where it would actually run: the workspace on, Time
+   * Tracking running, not external, assigned now. Nobody who already agreed —
+   * for them it simply starts. Fire-and-forget, like `announce`.
+   */
+  private async offerAutoClock(organizationId: string, spaceId: string, onlyUserIds?: string[]) {
+    try {
+      const space = await this.prisma.companyLocation.findFirst({
+        where: { id: spaceId, organizationId, isActive: true, isRemote: false },
+        select: { name: true, autoClock: true, enabledModules: true, organization: { select: { enabledModules: true } } },
+      });
+      if (!space) return;
+      if (!autoClockOffered({ settings: space.autoClock, assignmentAutoClock: true })) return;
+      if (!spaceRunsClock(space.enabledModules as string[] | null, space.organization?.enabledModules as string[] | null)) return;
+      // Assigned here now — the same window the clock-in reads.
+      const { userId: _anyone, ...assignedNow } = activeAssignmentWhere('', new Date());
+      const rows = await this.prisma.spaceAssignment.findMany({
+        where: {
+          ...assignedNow,
+          spaceId,
+          autoClock: true,
+          ...(onlyUserIds ? { userId: { in: onlyUserIds } } : {}),
+          user: { autoClockConsentAt: null, isExternal: false, organizationId },
+        },
+        select: { userId: true },
+      });
+      const userIds = [...new Set(rows.map((r) => r.userId))];
+      if (!userIds.length) return;
+      this.notificationClient.emit('auto_clock_offered', { organizationId, spaceId, spaceName: space.name, userIds });
+    } catch (err) {
+      this.logger.warn(`Failed to offer the automatic clock in ${spaceId}: ${err}`);
     }
   }
 
@@ -659,6 +697,7 @@ export class LocationsService {
       if (derived) updateData.timezone = derived;
     }
 
+    const wasOn = !!autoClockOffered({ settings: existing.autoClock, assignmentAutoClock: true });
     await this.prisma.companyLocation.update({
       where: { id: data.id },
       data: updateData,
@@ -668,6 +707,10 @@ export class LocationsService {
 
     this.logger.log(`Company location updated: ${location.id}`);
     this.announce('space_changed', data.organizationId, location.id);
+    // The workspace's automatic clock switched ON → the members already chosen here learn the switch is there.
+    if (data.autoClock !== undefined && !wasOn && autoClockOffered({ settings: location.autoClock, assignmentAutoClock: true })) {
+      void this.offerAutoClock(data.organizationId, location.id);
+    }
     return success({ ...location, autoClock: readAutoClock(location.autoClock) }, 'Company location updated successfully');
   }
 
@@ -1508,6 +1551,10 @@ export class LocationsService {
 
     this.logger.log(`Assignment updated: ${updated.id}`);
     this.announce('space_roster_changed', data.organizationId, updated.spaceId ?? null);
+    // Chosen for the automatic clock just now → tell them the switch is there.
+    if (data.autoClock === true && assignment.autoClock !== true && updated.spaceId) {
+      void this.offerAutoClock(data.organizationId, updated.spaceId, [assignment.userId]);
+    }
     // Alias to the legacy shape (locationId/location) for client compat.
     const { space, spaceId, ...rest } = updated;
     return success(
