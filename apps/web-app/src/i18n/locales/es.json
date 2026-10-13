@@ -9433,7 +9433,13 @@
     "STAND_IN_NOTHING_TO_HAND_OVER": "No hay aprobaciones que pasar.",
     "STAND_IN_EXTERNAL": "Un miembro externo no puede sustituir a uno de sus responsables.",
     "STAND_IN_NOT_A_COLLEAGUE": "Elija a alguien que trabaje en uno de sus espacios.",
-    "STAND_IN_NOT_YOURS": "Solo quien gestiona personas puede organizar un sustituto para otra persona."
+    "STAND_IN_NOT_YOURS": "Solo quien gestiona personas puede organizar un sustituto para otra persona.",
+    "SECOND_STEP_SAME_PERSON": "Usted dio la primera aprobación — la segunda debe venir de {{role}}.",
+    "SECOND_STEP_REQUIRED": "La segunda aprobación corresponde a {{role}}.",
+    "SECOND_STEP_TAKEN": "Otra persona lo decidió hace un momento.",
+    "RULE_ROLE_REQUIRED": "Elija el rol que da la segunda aprobación.",
+    "RULE_THRESHOLD_INVALID": "El umbral no es un número válido.",
+    "RULE_KIND_INVALID": "Hay reglas para horas extra, solicitudes y gastos."
   },
   "signLink": {
     "tabs": {
@@ -10898,6 +10904,45 @@
       "covering": "Sustituye a {{names}} — sus aprobaciones están en su lista.",
       "pickPerson": "Elija una persona",
       "maxDays": "Como máximo {{count}} días seguidos."
+    },
+    "step": {
+      "firstDone": "Aprobado — ahora espera a {{role}}.",
+      "mine": "Usted aprobó. Ahora necesita a {{role}}.",
+      "waiting": "{{name}} aprobó. También necesita a {{role}}.",
+      "short": "necesita a {{role}}"
+    },
+    "rules": {
+      "open": "Reglas",
+      "title": "Reglas de aprobación",
+      "intro": "A partir de un umbral, una decisión necesita una segunda persona. Vale en todas partes: la bandeja, las páginas de siempre y el móvil.",
+      "none": "Aún no hay reglas: cada decisión necesita una persona.",
+      "add": "Añadir una regla",
+      "kindLabel": "Qué",
+      "kind": {
+        "overtime": "Horas extra y tiempo extra",
+        "request": "Permisos y solicitudes",
+        "expense": "Gastos"
+      },
+      "where": "Dónde",
+      "everywhere": "todos los espacios",
+      "threshold": {
+        "overtime": "Más de (horas)",
+        "request": "Más de (días laborables)",
+        "expense": "Más de ({{currency}})"
+      },
+      "thresholdHint": "Vacío = siempre",
+      "secondRole": "Segunda aprobación por",
+      "pickRole": "Elija un rol",
+      "save": "Añadir regla",
+      "saved": "Regla guardada.",
+      "active": "Activa",
+      "remove": "Quitar",
+      "always": "siempre",
+      "whenOvertime": "de más de {{hours}} h",
+      "whenDays_one": "de más de {{count}} día",
+      "whenDays_other": "de más de {{count}} días",
+      "whenAmount": "de más de {{amount}}",
+      "sentence": "{{what}} {{when}} en {{where}} también necesita a {{role}}."
     }
   }
 }

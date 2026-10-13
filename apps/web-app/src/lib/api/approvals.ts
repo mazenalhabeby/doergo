@@ -6,6 +6,8 @@ import {
   type ApprovalKind,
   type ApprovalRouting,
   type StandInInput,
+  type ApprovalRuleInput,
+  type ApprovalRuleView,
   type StandInView,
   type StandInsResponse,
   type ApprovalsCount,
@@ -43,8 +45,25 @@ export const approvalsApi = {
     const res = await call(approvalsEndpoints.endStandIn, { id }, { body: {} }) as ApiResponse<unknown>;
     if (res.error) throw apiError(res);
   },
-  decide: async (decision: ApprovalDecision): Promise<void> => {
-    const res = await call(approvalsEndpoints.decide, undefined, { body: decision }) as ApiResponse<unknown>;
+  rules: async (): Promise<ApprovalRuleView[]> => {
+    const res = await call(approvalsEndpoints.rules) as ApiResponse<{ data: ApprovalRuleView[] }>;
     if (res.error) throw apiError(res);
+    return res.data!.data;
+  },
+  saveRule: async (input: ApprovalRuleInput, id?: string): Promise<void> => {
+    const res = (id
+      ? await call(approvalsEndpoints.updateRule, { id }, { body: input })
+      : await call(approvalsEndpoints.createRule, undefined, { body: input })) as ApiResponse<unknown>;
+    if (res.error) throw apiError(res);
+  },
+  deleteRule: async (id: string): Promise<void> => {
+    const res = await call(approvalsEndpoints.deleteRule, { id }) as ApiResponse<unknown>;
+    if (res.error) throw apiError(res);
+  },
+  /** `stage: 'FIRST_STEP'` = approved by them, still waiting for the second person (`waitingFor`). */
+  decide: async (decision: ApprovalDecision): Promise<{ stage?: 'FIRST_STEP'; waitingFor?: string }> => {
+    const res = await call(approvalsEndpoints.decide, undefined, { body: decision }) as ApiResponse<{ data: { stage?: 'FIRST_STEP'; waitingFor?: string } }>;
+    if (res.error) throw apiError(res);
+    return res.data?.data ?? {};
   },
 };

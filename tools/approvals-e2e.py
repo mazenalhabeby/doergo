@@ -14,6 +14,10 @@ Covers:
   C. a stand-in (delegation): the deputy gains the leader's approval decisions
      in the leader's workspaces only, says "covering for", never about the
      leader themselves, cannot hand it on, and loses it when it ends
+  D. an office rule: past a threshold the first approval is step 1 of 2 —
+     nothing is written, the same person and somebody without the role are
+     refused, removing the rule closes the half-done step (the leave request
+     stays exactly as it was)
 """
 import json
 import sys
@@ -189,7 +193,55 @@ def main():
     check('ending it twice is 404', status == 404, status)
 
 
+def rules_section():
+    print('\n— D. an office rule')
+    admin = login('client')
+    leader_tok = login('mike')
+    status, _ = call('GET', '/approvals/rules', leader_tok)
+    check('only people managers read the rules', status == 403, status)
+
+    status, body = call('GET', '/organizations/roles', admin)
+    roles = data(body) if status == 200 else []
+    # A role nobody in the scenario holds: the second step can only be refused here.
+    role = next((r for r in roles if r.get('memberCount', 0) == 0), None) or (roles[-1] if roles else None)
+    check('found a role for the second step', role is not None, status)
+    if not role:
+        return
+    requests = [i for i in inbox(leader_tok) if i['kind'] == 'request']
+    if not requests:
+        print('SKIP office rule (the leader has no pending requests)')
+        return
+    item = requests[0]
+    status, body = call('POST', '/approvals/rules', admin, {'kind': 'request', 'secondRoleId': role['id']})
+    rule_id = data(body).get('id') if status in (200, 201) else None
+    check('the office adds a rule: every request needs a second approval', bool(rule_id), (status, body))
+    if not rule_id:
+        return
+    try:
+        status, body = call('POST', '/approvals/decide', leader_tok, {'kind': 'request', 'id': item['id'], 'action': 'approve'})
+        check('the first approval is step 1 of 2', status == 200 and data(body).get('stage') == 'FIRST_STEP', (status, body))
+        again = next((i for i in inbox(leader_tok) if i['kind'] == 'request' and i['id'] == item['id']), None)
+        check('nothing was decided: it is still waiting', again is not None)
+        check('it says who went first and whom it needs', bool(again and again.get('step', {}).get('mine') is True and again['step'].get('roleName')), again and again.get('step'))
+        status, body = call('POST', '/approvals/decide', leader_tok, {'kind': 'request', 'id': item['id'], 'action': 'approve'})
+        check('the same person cannot give the second', status == 409 and body.get('code') == 'SECOND_STEP_SAME_PERSON', (status, body.get('code')))
+        for name in ('hassan', 'lisa'):
+            tok = login(name)
+            if any(i['kind'] == 'request' and i['id'] == item['id'] for i in inbox(tok)):
+                status, body = call('POST', '/approvals/decide', tok, {'kind': 'request', 'id': item['id'], 'action': 'approve'})
+                check(f'{name} (no {role["name"]}) cannot give the second', status == 403 and body.get('code') == 'SECOND_STEP_REQUIRED', (status, body.get('code')))
+                break
+        else:
+            print('SKIP second-step refusal (nobody else in the demo decides this request)')
+    finally:
+        status, _ = call('DELETE', f'/approvals/rules/{rule_id}', admin)
+        check('the rule is removed', status == 200, status)
+    still = next((i for i in inbox(leader_tok) if i['kind'] == 'request' and i['id'] == item['id']), None)
+    check('the request is untouched and no longer half-way', still is not None and not still.get('step'), still and still.get('step'))
+
+
 if __name__ == '__main__':
     main()
+    rules_section()
     print(f"\n{'ALL PASSED' if failures == 0 else f'{failures} FAILED'}")
     sys.exit(1 if failures else 0)

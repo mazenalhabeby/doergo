@@ -81,6 +81,8 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   break_due: CLOCK,
   break_over: CLOCK,
   overtime_decision: CLOCK,
+  // An office rule's second approval: the inbox, where the item says who went first.
+  approval_second_step: () => to('/(app)/approvals'),
   noshow_reminder: CLOCK,
   'attendance.geofence_excursion_out': CLOCK,
   'attendance.geofence_excursion_approved': CLOCK,

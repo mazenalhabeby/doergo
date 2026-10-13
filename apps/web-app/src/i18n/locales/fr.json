@@ -9442,7 +9442,13 @@
     "STAND_IN_NOTHING_TO_HAND_OVER": "Il n’y a aucune validation à confier.",
     "STAND_IN_EXTERNAL": "Un membre externe ne peut pas remplacer l’un de vos responsables.",
     "STAND_IN_NOT_A_COLLEAGUE": "Choisissez quelqu’un qui travaille dans l’un de vos espaces.",
-    "STAND_IN_NOT_YOURS": "Seule une personne qui gère les personnes peut organiser un remplacement pour autrui."
+    "STAND_IN_NOT_YOURS": "Seule une personne qui gère les personnes peut organiser un remplacement pour autrui.",
+    "SECOND_STEP_SAME_PERSON": "Vous avez donné la première validation — la seconde doit venir de {{role}}.",
+    "SECOND_STEP_REQUIRED": "La seconde validation revient à {{role}}.",
+    "SECOND_STEP_TAKEN": "Quelqu’un d’autre vient de décider.",
+    "RULE_ROLE_REQUIRED": "Choisissez le rôle qui donne la seconde validation.",
+    "RULE_THRESHOLD_INVALID": "Le seuil n’est pas un nombre valide.",
+    "RULE_KIND_INVALID": "Les règles existent pour les heures supplémentaires, les demandes et les dépenses."
   },
   "signLink": {
     "tabs": {
@@ -10907,6 +10913,45 @@
       "covering": "Vous remplacez {{names}} — leurs validations sont dans votre liste.",
       "pickPerson": "Choisir une personne",
       "maxDays": "Au plus {{count}} jours d’affilée."
+    },
+    "step": {
+      "firstDone": "Validé — en attente de {{role}}.",
+      "mine": "Vous avez validé. Il faut maintenant {{role}}.",
+      "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
+      "short": "attend {{role}}"
+    },
+    "rules": {
+      "open": "Règles",
+      "title": "Règles de validation",
+      "intro": "Au-delà d’un seuil, une décision demande une deuxième personne. Cela vaut partout : la boîte, les pages habituelles et le téléphone.",
+      "none": "Pas encore de règle — chaque décision demande une personne.",
+      "add": "Ajouter une règle",
+      "kindLabel": "Quoi",
+      "kind": {
+        "overtime": "Heures supplémentaires et temps en plus",
+        "request": "Congés et demandes",
+        "expense": "Dépenses"
+      },
+      "where": "Où",
+      "everywhere": "tous les espaces",
+      "threshold": {
+        "overtime": "Plus de (heures)",
+        "request": "Plus de (jours ouvrés)",
+        "expense": "Plus de ({{currency}})"
+      },
+      "thresholdHint": "Vide = toujours",
+      "secondRole": "Deuxième validation par",
+      "pickRole": "Choisir un rôle",
+      "save": "Ajouter la règle",
+      "saved": "Règle enregistrée.",
+      "active": "Active",
+      "remove": "Supprimer",
+      "always": "toujours",
+      "whenOvertime": "au-delà de {{hours}} h",
+      "whenDays_one": "au-delà de {{count}} jour",
+      "whenDays_other": "au-delà de {{count}} jours",
+      "whenAmount": "au-delà de {{amount}}",
+      "sentence": "{{what}} {{when}} dans {{where}} demande aussi {{role}}."
     }
   }
 }

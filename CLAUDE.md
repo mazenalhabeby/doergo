@@ -490,7 +490,13 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **Never about the leader they cover**: `assertNotSelfDecision` refuses `STAND_IN_FOR_SUBJECT` (a day either side); the inbox hides those items. Creating/ending is audited (`APPROVAL_STAND_IN_CREATED/ENDED`); only `/approvals/decide` is skipped by the audit interceptor (audited at the kind's route). The stand-in's cached session is dropped on change.
 >
-> E2E: `python3 tools/approvals-e2e.py` (LOCAL, creates and ends a stand-in).
+> **Office rules** (`ApprovalRule` + `ApprovalStep`, migration `20261014100000_approval_rules`, additive; rules `packages/shared/src/approvals/approval-rules.ts`; gate `task-service/common/approval-rules/approval-rules.service.ts`): `GET/POST /approvals/rules`, `PATCH/DELETE /approvals/rules/:id` — admin or org-wide `canManageUsers` on their OWN access. Kinds: overtime (incl. extra time; "more than N minutes"), request ("more than N working days"), expense ("more than N cents"); one workspace or all; second step = holders of an AccessRole (org role, or a workspace role in the item's workspace).
+>
+> ⚠️ **ENFORCED IN THE KIND'S OWN APPROVE PATH**, wherever the decision is made: `extra-time.service.approveExtraTime` (overtime + extra time), `technicians.service.approveTimeOff`, `asset-expense.service.review` call `rules.gate()` after their own checks and BEFORE writing; a step 1 returns `{ stage: 'FIRST_STEP', waitingFor }` with nothing written. Same person again → 409 `SECOND_STEP_SAME_PERSON`; no role → 403 `SECOND_STEP_REQUIRED`; an administrator finishes at once; overtime never above the first person's minutes. Every rejection path `clear()`s. `approval-rules-wiring.spec.ts` fails if a path stops asking.
+>
+> ⚠️ One OPEN step per item is a PARTIAL unique index (`approval_steps_open_item_key … WHERE consumedAt IS NULL`) that Prisma's schema cannot express — a `migrate diff` lists it as drift; keep it. Deleting / switching off a rule closes its open steps. The second-step holders get push `approval_second_step` (→ phone opens Approvals).
+>
+> E2E: `python3 tools/approvals-e2e.py` (LOCAL, creates and ends a stand-in; adds and removes a rule, leaves the request untouched).
 
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.

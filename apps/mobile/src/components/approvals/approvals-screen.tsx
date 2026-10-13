@@ -133,7 +133,7 @@ export function ApprovalsScreen() {
               first={index === 0}
               last={index === section.data.length - 1}
               title={item.subject.name || t('approvals.someone')}
-              detail={[text.headline, lead, item.space?.name].filter(Boolean).join(' · ')}
+              detail={[text.headline, lead, item.space?.name, item.step ? t('approvals.step.short', { role: item.step.roleName }) : null].filter(Boolean).join(' · ')}
               trailing={<AText variant="caption" tone="muted" numeric>{item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}</AText>}
               onPress={() => router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)}
             />

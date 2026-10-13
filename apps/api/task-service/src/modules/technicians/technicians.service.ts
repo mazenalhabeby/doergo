@@ -1,3 +1,4 @@
+import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import { ABSENCE_WHERE, REQUEST_KINDS, REQUEST_LIMITS, activeAssignmentWhere, assertFoundInOrg, isAbsence, parseRequestInput, requestKindOf, requestKindsOffered, resolveAwayAccess, type RequestInput, type RequestInputError, type RequestKind, assertMemberInScope, memberScopeFilter, dowOf, eachDay, paginated, type DateKey, toISODateString, dayKeyIn } from '@hbcfield/shared';
 import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -54,6 +55,8 @@ export class TechniciansService {
     private readonly leaveLedger: LeaveLedgerService,
     // A weekly schedule set after the clock-in reaches the entries it now covers.
     @Optional() private readonly rematch?: ShiftRematchService,
+    // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   /**
@@ -1090,6 +1093,27 @@ export class TechniciansService {
     const workingDays = approved && isAbsence(timeOff.kind)
       ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
       : undefined;
+
+    // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
+    if (!approved) await this.rules?.clear(organizationId, 'request', timeOffId);
+    if (approved && this.rules) {
+      const days = workingDays ?? (timeOff as { workingDays?: number | null }).workingDays
+        ?? Math.round((timeOff.endDate.getTime() - timeOff.startDate.getTime()) / 86_400_000) + 1;
+      const spaceIds = (timeOff as { spaceId?: string | null }).spaceId
+        ? [(timeOff as { spaceId: string }).spaceId]
+        : timeOff.technician.spaceAssignments.map((a) => a.spaceId);
+      const verdict = await this.rules.gate({
+        organizationId,
+        kind: 'request',
+        itemId: timeOffId,
+        facts: { spaceIds, days },
+        deciderId: approverId,
+        subjectId: timeOff.technicianId,
+      });
+      if (!verdict.finalize) {
+        return success({ ...timeOff, stage: 'FIRST_STEP', waitingFor: verdict.roleName }, `Approved — waiting for ${verdict.roleName}`);
+      }
+    }
     const updated = await this.prisma.timeOff.update({
       where: { id: timeOffId },
       data: {

@@ -40,6 +40,9 @@ export const ROUTE_ACTIONS: Record<string, string> = {
   // A leader's approval decisions handed to a stand-in for some days (approvals/stand-ins).
   'POST /approvals/stand-ins': 'APPROVAL_STAND_IN_CREATED',
   'POST /approvals/stand-ins/:id/end': 'APPROVAL_STAND_IN_ENDED',
+  'POST /approvals/rules': 'APPROVAL_RULE_CREATED',
+  'PATCH /approvals/rules/:id': 'APPROVAL_RULE_UPDATED',
+  'DELETE /approvals/rules/:id': 'APPROVAL_RULE_DELETED',
   // Calendar (shared calendar/*): appointments, answers, and the holiday/weekend settings.
   'POST /calendar/events': 'CALENDAR_EVENT_CREATED',
   'PATCH /calendar/events/:id': 'CALENDAR_EVENT_UPDATED',

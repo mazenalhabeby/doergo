@@ -9442,7 +9442,13 @@
     "STAND_IN_NOTHING_TO_HAND_OVER": "Non ci sono approvazioni da affidare.",
     "STAND_IN_EXTERNAL": "Un membro esterno non può sostituire uno dei suoi responsabili.",
     "STAND_IN_NOT_A_COLLEAGUE": "Scelga qualcuno che lavora in uno dei suoi spazi.",
-    "STAND_IN_NOT_YOURS": "Solo chi gestisce le persone può organizzare un sostituto per altri."
+    "STAND_IN_NOT_YOURS": "Solo chi gestisce le persone può organizzare un sostituto per altri.",
+    "SECOND_STEP_SAME_PERSON": "Ha dato la prima approvazione — la seconda deve venire da {{role}}.",
+    "SECOND_STEP_REQUIRED": "La seconda approvazione spetta a {{role}}.",
+    "SECOND_STEP_TAKEN": "Qualcun altro l’ha appena deciso.",
+    "RULE_ROLE_REQUIRED": "Scelga il ruolo che dà la seconda approvazione.",
+    "RULE_THRESHOLD_INVALID": "La soglia non è un numero valido.",
+    "RULE_KIND_INVALID": "Le regole esistono per straordinari, richieste e spese."
   },
   "signLink": {
     "tabs": {
@@ -10907,6 +10913,45 @@
       "covering": "Sostituisce {{names}} — le loro approvazioni sono nella sua lista.",
       "pickPerson": "Scelga una persona",
       "maxDays": "Al massimo {{count}} giorni di fila."
+    },
+    "step": {
+      "firstDone": "Approvato — ora attende {{role}}.",
+      "mine": "Lei ha approvato. Ora serve {{role}}.",
+      "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
+      "short": "serve {{role}}"
+    },
+    "rules": {
+      "open": "Regole",
+      "title": "Regole di approvazione",
+      "intro": "Oltre una soglia, una decisione richiede una seconda persona. Vale ovunque: la casella, le pagine solite e il telefono.",
+      "none": "Ancora nessuna regola — ogni decisione richiede una persona.",
+      "add": "Aggiungi una regola",
+      "kindLabel": "Cosa",
+      "kind": {
+        "overtime": "Straordinari e tempo in più",
+        "request": "Ferie e richieste",
+        "expense": "Spese"
+      },
+      "where": "Dove",
+      "everywhere": "tutti gli spazi",
+      "threshold": {
+        "overtime": "Più di (ore)",
+        "request": "Più di (giorni lavorativi)",
+        "expense": "Più di ({{currency}})"
+      },
+      "thresholdHint": "Vuoto = sempre",
+      "secondRole": "Seconda approvazione da",
+      "pickRole": "Scelga un ruolo",
+      "save": "Aggiungi regola",
+      "saved": "Regola salvata.",
+      "active": "Attiva",
+      "remove": "Rimuovi",
+      "always": "sempre",
+      "whenOvertime": "oltre {{hours}} h",
+      "whenDays_one": "oltre {{count}} giorno",
+      "whenDays_other": "oltre {{count}} giorni",
+      "whenAmount": "oltre {{amount}}",
+      "sentence": "{{what}} {{when}} in {{where}} richiede anche {{role}}."
     }
   }
 }

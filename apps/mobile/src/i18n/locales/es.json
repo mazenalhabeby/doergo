@@ -5206,6 +5206,12 @@
       "covering": "Sustituye a {{names}} — sus aprobaciones están en su lista.",
       "pickPerson": "Elija una persona",
       "maxDays": "Como máximo {{count}} días seguidos."
+    },
+    "step": {
+      "firstDone": "Aprobado — ahora espera a {{role}}.",
+      "mine": "Usted aprobó. Ahora necesita a {{role}}.",
+      "waiting": "{{name}} aprobó. También necesita a {{role}}.",
+      "short": "necesita a {{role}}"
     }
   }
 }

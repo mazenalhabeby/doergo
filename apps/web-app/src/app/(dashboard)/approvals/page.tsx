@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query"
 import dynamic from "next/dynamic"
-import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, UserRoundCheck } from "lucide-react"
+import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, ScrollText, UserRoundCheck } from "lucide-react"
 import {
   APPROVAL_GROUPS,
   APPROVAL_KINDS,
@@ -22,6 +22,7 @@ import { notify } from "@/lib/toast"
 import { dateLocale, formatTimeAgo } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
+import { useRouteAccess } from "@/hooks/use-route-access"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
@@ -30,6 +31,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { DecisionPanel } from "./_components/decision-panel"
 
 // Opened by a button: never part of the first load.
+const RulesDialog = dynamic(() => import("./_components/rules-dialog").then((m) => m.RulesDialog), { ssr: false })
 const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), { ssr: false })
 import { nameParts } from "./_components/name-parts"
 
@@ -67,6 +69,10 @@ export default function ApprovalsPage() {
   const [filter, setFilter] = useState<Filter>("all")
   const [selected, setSelected] = useState<string | null>(null)
   const [standInOpen, setStandInOpen] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
+  // Office rules are the organization's own policy: people managers only (the server checks the same).
+  const { holds } = useRouteAccess()
+  const managesPeople = holds("org:canManageUsers")
 
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: keys.approvals.list(),
@@ -108,8 +114,14 @@ export default function ApprovalsPage() {
 
   const decide = useMutation({
     mutationFn: (d: ApprovalDecision) => approvalsApi.decide(d),
-    onSuccess: (_, d) => {
+    onSuccess: (res, d) => {
       const done = items.find((i) => i.kind === d.kind && i.id === d.id)
+      if (res.stage === "FIRST_STEP") {
+        // Step 1 of 2: theirs is in; the item stays, now waiting for the second person.
+        notify.success(t("approvals.step.firstDone", { role: res.waitingFor ?? "" }))
+        qc.invalidateQueries({ queryKey: keys.approvals.all() })
+        return
+      }
       // Next in line BEFORE the list drops it, so the panel moves on instead of emptying.
       const at = visible.findIndex((i) => i.kind === d.kind && i.id === d.id)
       const next = visible[at + 1] ?? visible[at - 1]
@@ -150,6 +162,12 @@ export default function ApprovalsPage() {
             <span className="hidden text-xs text-muted-foreground sm:inline">
               {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
             </span>
+          )}
+          {managesPeople && (
+            <Button variant="outline" className="h-10 rounded-xl" onClick={() => setRulesOpen(true)}>
+              <ScrollText className="size-4" />
+              {t("approvals.rules.open")}
+            </Button>
           )}
           <Button variant="outline" className="h-10 rounded-xl" onClick={() => setStandInOpen(true)}>
             <UserRoundCheck className="size-4" />
@@ -282,6 +300,7 @@ export default function ApprovalsPage() {
         </div>
       )}
       {standInOpen && <StandInDialog open={standInOpen} onOpenChange={setStandInOpen} />}
+      {rulesOpen && <RulesDialog open={rulesOpen} onOpenChange={setRulesOpen} />}
     </div>
   )
 }
@@ -357,6 +376,7 @@ function Row({
             {text.headline}
             {lead ? ` · ${lead.value}` : ""}
             {item.space ? ` · ${item.space.name}` : ""}
+            {item.step ? ` · ${t("approvals.step.short", { role: item.step.roleName })}` : ""}
           </p>
         </div>
         {item.raisedAt && (

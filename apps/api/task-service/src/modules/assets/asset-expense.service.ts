@@ -1,4 +1,6 @@
+import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Optional } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore, extensionForMime, requireObjectStore } from '@hbcfield/shared/storage';
 import { pdfToLines } from './pdf-lines';
 import { randomUUID } from 'crypto';
@@ -48,6 +50,8 @@ export class AssetExpenseService {
     private readonly custody: AssetCustodyService,
     private readonly notifier: AssetNotifier,
     @Inject(OBJECT_STORE) private readonly store: ObjectStore | null,
+    // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   /** Everything a receipt for this asset lives under. Also the anti-IDOR check. */
@@ -400,7 +404,7 @@ export class AssetExpenseService {
     // this check; the guarded update below still decides the race.
     const filed = await this.prisma.assetMoney.findFirst({
       where: { id: data.entryId, organizationId: data.organizationId },
-      select: { authorId: true, asset: { select: { category: { select: { spaceId: true } } } } },
+      select: { authorId: true, amountCents: true, asset: { select: { category: { select: { spaceId: true } } } } },
     });
     /*
       ⚠️ Decided in the RECORD's workspace. A depot manager accepts the depot's
@@ -416,6 +420,23 @@ export class AssetExpenseService {
       organizationId: data.organizationId,
       message: 'You cannot decide your own expense. Ask a manager or an administrator.',
     });
+
+    // Office rules: past a threshold accepting is step 1 of 2; the slip stays submitted. A refusal ends it.
+    if (data.decision === 'reject') await this.rules?.clear(data.organizationId, 'expense', data.entryId);
+    if (data.decision === 'accept' && this.rules) {
+      const spaceId = filed.asset?.category?.spaceId ?? null;
+      const verdict = await this.rules.gate({
+        organizationId: data.organizationId,
+        kind: 'expense',
+        itemId: data.entryId,
+        facts: { spaceIds: spaceId ? [spaceId] : [], amountCents: filed.amountCents ?? 0 },
+        deciderId: data.userId,
+        subjectId: filed.authorId,
+      });
+      if (!verdict.finalize) {
+        return success({ id: data.entryId, status: EXPENSE_STATUS.SUBMITTED, stage: 'FIRST_STEP', waitingFor: verdict.roleName });
+      }
+    }
 
     const { count } = await this.prisma.assetMoney.updateMany({
       where: {

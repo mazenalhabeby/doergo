@@ -5206,6 +5206,12 @@
       "covering": "Sostituisce {{names}} — le loro approvazioni sono nella sua lista.",
       "pickPerson": "Scelga una persona",
       "maxDays": "Al massimo {{count}} giorni di fila."
+    },
+    "step": {
+      "firstDone": "Approvato — ora attende {{role}}.",
+      "mine": "Lei ha approvato. Ora serve {{role}}.",
+      "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
+      "short": "serve {{role}}"
     }
   }
 }

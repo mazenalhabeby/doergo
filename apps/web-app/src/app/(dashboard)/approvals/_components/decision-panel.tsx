@@ -110,6 +110,14 @@ export function DecisionPanel({
         {item.raisedAt && <Fact label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
+      {item.step && (
+        <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+          {item.step.mine
+            ? t("approvals.step.mine", { role: item.step.roleName })
+            : t("approvals.step.waiting", { name: item.step.firstByName, role: item.step.roleName })}
+        </p>
+      )}
+
       {armed && (
         <div className="space-y-3">
           {armed.input === "minutes" && (

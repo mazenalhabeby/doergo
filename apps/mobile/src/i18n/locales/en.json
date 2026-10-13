@@ -5206,6 +5206,12 @@
       "covering": "You're covering for {{names}} — their approvals are in your list.",
       "pickPerson": "Choose a person",
       "maxDays": "At most {{count}} days at a time."
+    },
+    "step": {
+      "firstDone": "Approved — now waiting for {{role}}.",
+      "mine": "You approved. It now needs {{role}}.",
+      "waiting": "{{name}} approved. It needs {{role}} too.",
+      "short": "needs {{role}}"
     }
   }
 }

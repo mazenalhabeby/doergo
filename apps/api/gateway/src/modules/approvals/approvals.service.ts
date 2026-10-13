@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   APPROVAL_KIND_SPECS,
@@ -7,6 +7,7 @@ import {
   countApprovals,
   dedupeApprovals,
   isAdmin,
+  ruleKindOf,
   orgFlagFields,
   ownAccess,
   spacesGranting,
@@ -21,6 +22,7 @@ import {
   type ApprovalsResponse,
 } from '@hbcfield/shared';
 import { scopeFor } from '../../common/permission-scope';
+import { ApprovalRulesClient } from './approval-rules.client';
 import { selfDispatchBase, selfDispatchHeaders, type SelfDispatchCaller } from '../../common/self-dispatch';
 
 /** One existing list may take this long; past it, its kind is "unavailable" and the rest still shows. */
@@ -56,7 +58,11 @@ export class ApprovalsService {
   /** The last inbox each person read, by `kind:id` — "who else can decide" answers only for these. */
   private readonly known = new Map<string, { at: number; items: Map<string, ApprovalItem> }>();
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    // Office rules' open first steps. Present in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesClient,
+  ) {
     this.base = selfDispatchBase(config);
   }
 
@@ -139,10 +145,32 @@ export class ApprovalsService {
       dedupeApprovals(items).filter((i) => i.canDecide && i.subject.id !== user.id && !(i.subject.id && covering.has(i.subject.id))),
     );
     for (const i of decidable) i.why = whyCallerDecides(user, i);
+    await this.attachSteps(user, decidable);
     this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable) });
     if (this.known.size > 2000) this.known.clear();
     this.known.set(user.id, { at: Date.now(), items: new Map(decidable.map((i) => [`${i.kind}:${i.id}`, i])) });
     return { items: decidable, unavailable: [...new Set(unavailable)], generatedAt: ctx.now.toISOString() };
+  }
+
+  /** Items half-way through an office rule's two approvals: who went first, who must finish. */
+  private async attachSteps(user: any, items: ApprovalItem[]): Promise<void> {
+    if (!this.rules) return;
+    const keyOf = (i: ApprovalItem) => (i.kind === 'overtime' ? String(i.data.timeEntryId ?? '') : i.id);
+    const asked = items
+      .map((i) => ({ i, kind: ruleKindOf(i.kind), itemId: keyOf(i) }))
+      .filter((x) => x.kind && x.itemId) as Array<{ i: ApprovalItem; kind: NonNullable<ReturnType<typeof ruleKindOf>>; itemId: string }>;
+    if (!asked.length) return;
+    try {
+      const steps = await this.rules.steps(user.organizationId, asked.map(({ kind, itemId }) => ({ kind, itemId })));
+      const byKey = new Map(steps.map((s) => [`${s.kind}:${s.itemId}`, s]));
+      for (const { i, kind, itemId } of asked) {
+        const s = byKey.get(`${kind}:${itemId}`);
+        if (s) i.step = { firstById: s.firstById, firstByName: s.firstByName, roleName: s.roleName, mine: s.firstById === user.id };
+      }
+    } catch (e) {
+      // The inbox still shows; a step that cannot be read is refused at the button with its reason.
+      this.logger.warn(`approvals: steps unavailable for ${user.id}: ${(e as Error).message}`);
+    }
   }
 
   /**
@@ -181,7 +209,11 @@ export class ApprovalsService {
     });
     const body = (await res.json().catch(() => undefined)) as any;
     this.counts.delete(caller.user.id);
-    if (res.ok) return { ok: true as const, status: res.status };
+    if (res.ok) {
+      // Step 1 of an office rule's two approvals: approved by them, still waiting for the second person.
+      const step = firstStepOf(body);
+      return { ok: true as const, status: res.status, ...(step ? { stage: 'FIRST_STEP' as const, waitingFor: step } : {}) };
+    }
     return {
       ok: false as const,
       status: res.status,
@@ -204,6 +236,16 @@ export class ApprovalsService {
     if (!res.ok) throw new Error(`HTTP ${res.status} on ${path.split('?')[0]}`);
     return res.json();
   }
+}
+
+/** The role a FIRST_STEP answer waits for, whatever envelope the kind's route wraps it in. */
+export function firstStepOf(body: unknown): string | null {
+  let b = body as any;
+  for (let depth = 0; b && typeof b === 'object' && depth < 3; depth++) {
+    if (b.stage === 'FIRST_STEP') return typeof b.waitingFor === 'string' ? b.waitingFor : '';
+    b = b.data;
+  }
+  return null;
 }
 
 /** A list response as rows, whatever the envelope ({data:[…]}, paginated, or a bare array). */

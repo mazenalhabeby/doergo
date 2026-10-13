@@ -462,6 +462,20 @@ export class PushService {
     });
   }
 
+  /** An office rule: the first approval is in, and these people must give the second. */
+  async sendApprovalSecondStepPush(data: { recipientIds: string[]; kind: string; itemId: string; firstName: string; subjectName?: string }) {
+    return this.sendToUsers(
+      data.recipientIds,
+      {
+        title: msg('approval.secondStep.title'),
+        body: data.subjectName
+          ? msg('approval.secondStep.bodyAbout', { first: data.firstName, subject: data.subjectName })
+          : msg('approval.secondStep.body', { first: data.firstName }),
+      },
+      { type: 'approval_second_step', kind: data.kind, itemId: data.itemId },
+    );
+  }
+
   /** An attendance alert answered by what the member actually did, arriving late. */
   async sendAttendanceResolvedPush(data: { recipientIds: string[]; text: LocalizedText; type: string; entryId: string }) {
     return this.sendToUsers(data.recipientIds, data.text, { type: data.type, entryId: data.entryId });

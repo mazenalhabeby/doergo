@@ -5206,6 +5206,12 @@
       "covering": "Sie vertreten {{names}} — deren Freigaben stehen in Ihrer Liste.",
       "pickPerson": "Person wählen",
       "maxDays": "Höchstens {{count}} Tage am Stück."
+    },
+    "step": {
+      "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
+      "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
+      "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
+      "short": "braucht {{role}}"
     }
   }
 }

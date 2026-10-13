@@ -30,7 +30,9 @@ export const approvalsApi = {
   endStandIn: async (id: string): Promise<void> => {
     await call(E.approvals.endStandIn, { id }, { body: {} });
   },
-  decide: async (decision: ApprovalDecision): Promise<void> => {
-    await call(E.approvals.decide, undefined, { body: decision });
+  /** `stage: 'FIRST_STEP'` = approved by them, still waiting for the second person (`waitingFor`). */
+  decide: async (decision: ApprovalDecision): Promise<{ stage?: 'FIRST_STEP'; waitingFor?: string }> => {
+    const r = await call(E.approvals.decide, undefined, { body: decision });
+    return (r?.decided ? r : r?.data) ?? {};
   },
 };

@@ -199,6 +199,11 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'ApprovalsController.listStandIns': 'ApprovalsController',
   'ApprovalsController.createStandIn': 'ApprovalsController',
   'ApprovalsController.endStandIn': 'ApprovalsController',
+  // Office rules: checked inside (admin, or canManageUsers org-wide on their OWN access — never an external member).
+  'ApprovalsController.listRules': 'ApprovalsController',
+  'ApprovalsController.createRule': 'ApprovalsController',
+  'ApprovalsController.updateRule': 'ApprovalsController',
+  'ApprovalsController.deleteRule': 'ApprovalsController',
   // SyncController: the phone's own offline sync, filtered to what the caller can read
   'SyncController.mediaLinks': 'SyncController',
   'SyncController.pull': 'SyncController',

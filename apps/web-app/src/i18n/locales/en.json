@@ -9433,7 +9433,13 @@
     "STAND_IN_NOTHING_TO_HAND_OVER": "There are no approval decisions to hand over.",
     "STAND_IN_EXTERNAL": "An external member cannot stand in for one of your leaders.",
     "STAND_IN_NOT_A_COLLEAGUE": "Choose somebody who works in one of your workspaces.",
-    "STAND_IN_NOT_YOURS": "Only somebody who manages people can arrange a stand-in for someone else."
+    "STAND_IN_NOT_YOURS": "Only somebody who manages people can arrange a stand-in for someone else.",
+    "SECOND_STEP_SAME_PERSON": "You gave the first approval — the second must come from {{role}}.",
+    "SECOND_STEP_REQUIRED": "The second approval is for {{role}}.",
+    "SECOND_STEP_TAKEN": "Somebody else decided this a moment ago.",
+    "RULE_ROLE_REQUIRED": "Choose the role that gives the second approval.",
+    "RULE_THRESHOLD_INVALID": "The threshold is not a valid number.",
+    "RULE_KIND_INVALID": "Rules exist for overtime, requests and expenses."
   },
   "signLink": {
     "tabs": {
@@ -10898,6 +10904,45 @@
       "covering": "You're covering for {{names}} — their approvals are in your list.",
       "pickPerson": "Choose a person",
       "maxDays": "At most {{count}} days at a time."
+    },
+    "step": {
+      "firstDone": "Approved — now waiting for {{role}}.",
+      "mine": "You approved. It now needs {{role}}.",
+      "waiting": "{{name}} approved. It needs {{role}} too.",
+      "short": "needs {{role}}"
+    },
+    "rules": {
+      "open": "Rules",
+      "title": "Approval rules",
+      "intro": "Past a threshold, a decision needs a second person. It holds everywhere — the inbox, the old pages and the phone.",
+      "none": "No rules yet — every decision needs one person.",
+      "add": "Add a rule",
+      "kindLabel": "What",
+      "kind": {
+        "overtime": "Overtime and extra time",
+        "request": "Leave and requests",
+        "expense": "Expenses"
+      },
+      "where": "Where",
+      "everywhere": "every workspace",
+      "threshold": {
+        "overtime": "More than (hours)",
+        "request": "More than (working days)",
+        "expense": "More than ({{currency}})"
+      },
+      "thresholdHint": "Empty = always",
+      "secondRole": "Second approval by",
+      "pickRole": "Choose a role",
+      "save": "Add rule",
+      "saved": "Rule saved.",
+      "active": "On",
+      "remove": "Remove",
+      "always": "always",
+      "whenOvertime": "over {{hours}} h",
+      "whenDays_one": "over {{count}} day",
+      "whenDays_other": "over {{count}} days",
+      "whenAmount": "over {{amount}}",
+      "sentence": "{{what}} {{when}} in {{where}} also needs {{role}}."
     }
   }
 }

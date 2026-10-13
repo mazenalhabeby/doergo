@@ -201,3 +201,36 @@ describe('a stand-in', () => {
     expect(standInDatesProblem('2026-10-13', '2027-01-01', '2026-10-13', 60)).toBe('STAND_IN_TOO_LONG');
   });
 });
+
+describe('office rules — which rule applies', () => {
+  const { ruleMatches, pickRule, ruleInputProblem, approvalActionsFor } = jest.requireActual('@hbcfield/shared');
+  const { firstStepOf } = jest.requireActual('../approvals.service');
+  const r = (o: any) => ({ kind: 'overtime', spaceId: null, minMinutes: null, minDays: null, minAmountCents: null, isActive: true, ...o });
+
+  it('strictly MORE than the threshold; no threshold = always; off = never', () => {
+    expect(ruleMatches(r({ minMinutes: 120 }), { spaceIds: [], minutes: 120 })).toBe(false);
+    expect(ruleMatches(r({ minMinutes: 120 }), { spaceIds: [], minutes: 121 })).toBe(true);
+    expect(ruleMatches(r({}), { spaceIds: [] })).toBe(true);
+    expect(ruleMatches(r({ isActive: false }), { spaceIds: [] })).toBe(false);
+  });
+
+  it('a workspace\'s own rule before an every-workspace one, then the highest threshold', () => {
+    const everywhere = r({ id: 'a', minMinutes: 60 });
+    const site = r({ id: 'b', spaceId: 's1', minMinutes: 30 });
+    expect(pickRule([everywhere, site], { spaceIds: ['s1'], minutes: 90 }).id).toBe('b');
+    expect(pickRule([everywhere, site], { spaceIds: ['s2'], minutes: 90 }).id).toBe('a');
+  });
+
+  it('a rule as entered is checked', () => {
+    expect(ruleInputProblem({ kind: 'overtime', secondRoleId: '' })).toBe('RULE_ROLE_REQUIRED');
+    expect(ruleInputProblem({ kind: 'expense', secondRoleId: 'x', minAmountCents: -1 })).toBe('RULE_THRESHOLD_INVALID');
+    expect(ruleInputProblem({ kind: 'expense', secondRoleId: 'x', minAmountCents: 20000 })).toBeNull();
+  });
+
+  it('a step-1 answer is read through any envelope; the first approver sees only reject', () => {
+    expect(firstStepOf({ success: true, data: { data: { stage: 'FIRST_STEP', waitingFor: 'Finance' } } })).toBe('Finance');
+    expect(firstStepOf({ success: true, data: { id: 'x' } })).toBeNull();
+    const item: any = { kind: 'expense', id: 'e', canDecide: true, data: {}, step: { mine: true } };
+    expect(approvalActionsFor(item).map((a: any) => a.id)).toEqual(['reject']);
+  });
+});

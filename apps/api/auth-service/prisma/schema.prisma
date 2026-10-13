@@ -431,6 +431,7 @@ enum SprintStatus {
 // Table dropped in migration 20260807150000_drop_legacy_orgrole.
 
 model Organization {
+  approvalRules ApprovalRule[]
   approvalDelegations ApprovalDelegation[]
   /// The legal companies inside this organization (docs/plans/companies-legal-entities.md).
   legalEntities LegalEntity[]
@@ -2628,6 +2629,53 @@ model CompanyLocation {
 /// leader's own approval keys (DELEGATABLE_KEYS in shared access/delegation.ts),
 /// in the leader's own scope, for those days only — added to the session, never
 /// counted when granting roles. Revoked rows stay for the record.
+/// An office rule on approvals: past a threshold, a decision needs a SECOND
+/// person holding `secondRoleId` (shared `approvals/approval-rules.ts`). Enforced
+/// in the kind's own approve path, wherever the decision is made.
+model ApprovalRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// overtime | request | expense
+  kind           String
+  /// One workspace, or null = every workspace.
+  spaceId        String?
+  /// overtime: more than this many minutes approved
+  minMinutes     Int?
+  /// request: more than this many working days
+  minDays        Int?
+  /// expense: more than this amount (organization's currency, cents)
+  minAmountCents Int?
+  /// The second step: whoever holds this role (org role, or a workspace role in the item's workspace).
+  secondRoleId   String
+  isActive       Boolean      @default(true)
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, kind])
+  @@map("approval_rules")
+}
+
+/// The first of two approvals under an `ApprovalRule`, waiting for the second.
+/// Consumed (consumedAt) when the second step finalizes or anybody rejects.
+model ApprovalStep {
+  id             String    @id @default(cuid())
+  organizationId String
+  kind           String
+  /// The id the kind's route takes (a time entry, a time-off request, an expense).
+  itemId         String
+  ruleId         String
+  firstById      String
+  firstAt        DateTime  @default(now())
+  /// overtime: the minutes the first approver agreed to
+  minutes        Int?
+  consumedAt     DateTime?
+
+  @@index([organizationId, kind, itemId])
+  @@map("approval_steps")
+}
+
 model ApprovalDelegation {
   id             String       @id @default(cuid())
   organizationId String

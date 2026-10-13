@@ -9433,7 +9433,13 @@
     "STAND_IN_NOTHING_TO_HAND_OVER": "Es gibt keine Freigaben zu übergeben.",
     "STAND_IN_EXTERNAL": "Ein externes Mitglied kann keine Führungskraft vertreten.",
     "STAND_IN_NOT_A_COLLEAGUE": "Wählen Sie jemanden aus einem Ihrer Arbeitsbereiche.",
-    "STAND_IN_NOT_YOURS": "Nur wer Personen verwaltet, kann eine Vertretung für andere einrichten."
+    "STAND_IN_NOT_YOURS": "Nur wer Personen verwaltet, kann eine Vertretung für andere einrichten.",
+    "SECOND_STEP_SAME_PERSON": "Sie haben die erste Freigabe gegeben — die zweite muss von {{role}} kommen.",
+    "SECOND_STEP_REQUIRED": "Die zweite Freigabe gibt {{role}}.",
+    "SECOND_STEP_TAKEN": "Jemand anderes hat das gerade entschieden.",
+    "RULE_ROLE_REQUIRED": "Wählen Sie die Rolle für die zweite Freigabe.",
+    "RULE_THRESHOLD_INVALID": "Die Schwelle ist keine gültige Zahl.",
+    "RULE_KIND_INVALID": "Regeln gibt es für Überstunden, Anträge und Ausgaben."
   },
   "signLink": {
     "tabs": {
@@ -10898,6 +10904,45 @@
       "covering": "Sie vertreten {{names}} — deren Freigaben stehen in Ihrer Liste.",
       "pickPerson": "Person wählen",
       "maxDays": "Höchstens {{count}} Tage am Stück."
+    },
+    "step": {
+      "firstDone": "Freigegeben — jetzt wartet es auf {{role}}.",
+      "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
+      "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
+      "short": "braucht {{role}}"
+    },
+    "rules": {
+      "open": "Regeln",
+      "title": "Freigaberegeln",
+      "intro": "Ab einer Schwelle braucht eine Entscheidung eine zweite Person. Das gilt überall — Eingang, bisherige Seiten und Handy.",
+      "none": "Noch keine Regeln — jede Entscheidung braucht eine Person.",
+      "add": "Regel hinzufügen",
+      "kindLabel": "Was",
+      "kind": {
+        "overtime": "Überstunden und Mehrzeit",
+        "request": "Urlaub und Anträge",
+        "expense": "Ausgaben"
+      },
+      "where": "Wo",
+      "everywhere": "allen Arbeitsbereichen",
+      "threshold": {
+        "overtime": "Mehr als (Stunden)",
+        "request": "Mehr als (Arbeitstage)",
+        "expense": "Mehr als ({{currency}})"
+      },
+      "thresholdHint": "Leer = immer",
+      "secondRole": "Zweite Freigabe durch",
+      "pickRole": "Rolle wählen",
+      "save": "Regel hinzufügen",
+      "saved": "Regel gespeichert.",
+      "active": "Aktiv",
+      "remove": "Entfernen",
+      "always": "immer",
+      "whenOvertime": "über {{hours}} h",
+      "whenDays_one": "über {{count}} Tag",
+      "whenDays_other": "über {{count}} Tage",
+      "whenAmount": "über {{amount}}",
+      "sentence": "{{what}} {{when}} in {{where}} braucht auch {{role}}."
     }
   }
 }

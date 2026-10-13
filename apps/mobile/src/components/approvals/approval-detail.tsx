@@ -66,7 +66,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     if (!item) return;
     setBusy(true);
     try {
-      await approvalsApi.decide({
+      const res = await approvalsApi.decide({
         kind: item.kind,
         id: item.id,
         action: a.id,
@@ -75,8 +75,13 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
         spaceId: item.kind === 'clientRequest' ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined)) : undefined,
       });
-      forgetApproval(itemKey);
-      toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));
+      if (res.stage === 'FIRST_STEP') {
+        // Step 1 of 2: theirs is in; the item stays in the list, now waiting for the second person.
+        toast.success(t('approvals.step.firstDone', { role: res.waitingFor ?? '' }));
+      } else {
+        forgetApproval(itemKey);
+        toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));
+      }
       setArmed(null);
       back();
     } catch (e: any) {
@@ -143,6 +148,15 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
             </View>
           ))}
         </View>
+        {item.step ? (
+          <View style={{ backgroundColor: c.accentTint, borderRadius: amazen.radius.panel, padding: amazen.space(3) }}>
+            <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>
+              {item.step.mine
+                ? t('approvals.step.mine', { role: item.step.roleName })
+                : t('approvals.step.waiting', { name: item.step.firstByName, role: item.step.roleName })}
+            </AText>
+          </View>
+        ) : null}
         <WhoElse item={item} />
         {pageOnly ? <AText variant="caption" tone="onGlass">{t(`approvals.needsPage.${item.kind}`)}</AText> : null}
         {!item.canDecide ? <AText variant="caption" tone="onGlass">{t('approvals.readOnly')}</AText> : null}

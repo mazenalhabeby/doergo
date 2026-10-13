@@ -5206,6 +5206,12 @@
       "covering": "Vous remplacez {{names}} — leurs validations sont dans votre liste.",
       "pickPerson": "Choisir une personne",
       "maxDays": "Au plus {{count}} jours d’affilée."
+    },
+    "step": {
+      "firstDone": "Validé — en attente de {{role}}.",
+      "mine": "Vous avez validé. Il faut maintenant {{role}}.",
+      "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
+      "short": "attend {{role}}"
     }
   }
 }

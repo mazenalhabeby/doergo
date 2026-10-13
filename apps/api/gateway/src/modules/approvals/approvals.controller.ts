@@ -1,11 +1,13 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, HttpException, Param, Post, Query, Request } from '@nestjs/common';
-import { isApprovalKind } from '@hbcfield/shared';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpException, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import { accessAllows, isAdmin, isApprovalKind, ownAccess } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { ApprovalsService } from './approvals.service';
 import { ApprovalRouteService } from './approval-route.service';
 import { StandInsService } from './stand-ins.service';
 import { CreateStandInDto } from './dto/stand-in.dto';
+import { ApprovalRuleDto } from './dto/approval-rule.dto';
+import { ApprovalRulesClient } from './approval-rules.client';
 
 /**
  * Everything waiting for the caller to decide, in one place — see
@@ -21,6 +23,7 @@ export class ApprovalsController {
     private readonly approvals: ApprovalsService,
     private readonly routes: ApprovalRouteService,
     private readonly standIns: StandInsService,
+    private readonly rules: ApprovalRulesClient,
   ) {}
 
   @Get()
@@ -62,16 +65,54 @@ export class ApprovalsController {
     return { success: true, data: await this.standIns.end(req.user, id) };
   }
 
+  @Get('rules')
+  @ApiOperation({ summary: "The office's approval rules (thresholds → a second approval)" })
+  async listRules(@Request() req: any) {
+    assertManagesPeople(req.user);
+    return { success: true, data: await this.rules.list(req.user.organizationId) };
+  }
+
+  @Post('rules')
+  @ApiOperation({ summary: 'Add an approval rule' })
+  async createRule(@Body() dto: ApprovalRuleDto, @Request() req: any) {
+    assertManagesPeople(req.user);
+    return { success: true, data: await this.rules.save(req.user.organizationId, req.user.id, dto) };
+  }
+
+  @Patch('rules/:id')
+  @ApiOperation({ summary: 'Change an approval rule' })
+  async updateRule(@Param('id') id: string, @Body() dto: ApprovalRuleDto, @Request() req: any) {
+    assertManagesPeople(req.user);
+    return { success: true, data: await this.rules.save(req.user.organizationId, req.user.id, dto, id) };
+  }
+
+  @Delete('rules/:id')
+  @ApiOperation({ summary: 'Remove an approval rule' })
+  async deleteRule(@Param('id') id: string, @Request() req: any) {
+    assertManagesPeople(req.user);
+    return { success: true, data: await this.rules.remove(req.user.organizationId, id) };
+  }
+
   @Post('decide')
   @HttpCode(200)
   @ApiOperation({ summary: "Decide one item through its kind's existing route" })
   async decide(@Body() dto: DecideApprovalDto, @Request() req: any) {
     const r = await this.approvals.decide(caller(req), dto);
     if (!r.ok) throw new HttpException({ statusCode: r.status, message: r.message ?? r.code, code: r.code, params: r.params }, r.status);
-    return { success: true, data: { decided: true } };
+    return { success: true, data: { decided: true, ...('stage' in r && r.stage ? { stage: r.stage, waitingFor: r.waitingFor } : {}) } };
   }
 }
 
 function caller(req: any) {
   return { user: req.user, headers: req.headers, ip: req.ip };
+}
+
+/**
+ * Office rules decide who may finish a decision, so they are the organization's
+ * own policy: an administrator, or `canManageUsers` held org-wide on their OWN
+ * access (never through a stand-in). An external member never holds it org-wide.
+ */
+function assertManagesPeople(user: any) {
+  if (isAdmin(user) || accessAllows(ownAccess(user?.access), 'canManageUsers')) return;
+  throw new ForbiddenException('Only somebody who manages people can set approval rules');
 }

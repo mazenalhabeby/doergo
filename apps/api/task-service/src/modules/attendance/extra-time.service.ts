@@ -1,3 +1,5 @@
+import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
+import { Optional } from '@nestjs/common';
 import { standInGrant } from '../../common/stand-in';
 import { grantHolds } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
@@ -33,6 +35,8 @@ export class ExtraTimeService {
     private readonly countedTime: CountedTimeService,
     // Who is told about this member, at this workspace.
     private readonly routing: AttendanceRoutingService,
+    // Office rules (a threshold → a second approval). Global in the app; absent only in narrow unit tests.
+    @Optional() private readonly rules?: ApprovalRulesService,
   ) {}
 
   /**
@@ -169,7 +173,7 @@ export class ExtraTimeService {
     signature?: string | null;
     notes?: string | null;
   }) {
-    const minutes = Math.round(data.minutes);
+    let minutes = Math.round(data.minutes);
     if (!minutes || minutes < 1 || minutes > 1440) {
       throw new BadRequestException('Approved minutes must be between 1 and 1440');
     }
@@ -210,6 +214,22 @@ export class ExtraTimeService {
       orderBy: { cycle: 'desc' },
       select: { id: true, overtimeStartAt: true },
     });
+
+    // Office rules: past a threshold this approval is step 1 of 2, and the shift waits for the second person.
+    if (this.rules) {
+      const verdict = await this.rules.gate({
+        organizationId: data.organizationId,
+        kind: 'overtime',
+        itemId: entry.id,
+        facts: { spaceIds: entry.locationId ? [entry.locationId] : [], minutes },
+        deciderId: data.approverId,
+        subjectId: entry.userId,
+      });
+      if (!verdict.finalize) {
+        return success({ entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName }, `Approved — waiting for ${verdict.roleName}`);
+      }
+      if (verdict.minutes != null) minutes = verdict.minutes;
+    }
 
     /*
       ⚠️ APPROVED OVERTIME IS A NUMBER OF MINUTES AFTER THE END, NOT AFTER THE CLICK.
@@ -421,6 +441,8 @@ export class ExtraTimeService {
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
     if (!allowed) throw new ForbiddenException('You are not allowed to approve overtime for this space');
     await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
+    // A rejection ends any two-step under an office rule.
+    await this.rules?.clear(data.organizationId, 'overtime', entry.id);
 
     const round = await this.prisma.overtimeRequest.findFirst({
       where: { timeEntryId: entry.id, status: 'PENDING_APPROVAL' },
