@@ -24,6 +24,8 @@ import { selfDispatchBase, selfDispatchHeaders, type SelfDispatchCaller } from '
 const SOURCE_TIMEOUT_MS = 8_000;
 /** The badge is asked often (every page, every focus): answered from a short per-person cache. */
 const COUNT_TTL_MS = 20_000;
+/** How long a read inbox vouches for its items ("who else can decide" asks about one of them). */
+const KNOWN_TTL_MS = 10 * 60_000;
 /** Fan-outs are bounded: a portal or a shared workspace past this is reached through its own page. */
 const MAX_PORTALS = 20;
 const MAX_SHARED_SPACES = 20;
@@ -48,6 +50,8 @@ export class ApprovalsService {
   private readonly logger = new Logger(ApprovalsService.name);
   private readonly base: string;
   private readonly counts = new Map<string, { at: number; value: ApprovalsCount }>();
+  /** The last inbox each person read, by `kind:id` — "who else can decide" answers only for these. */
+  private readonly known = new Map<string, { at: number; items: Map<string, ApprovalItem> }>();
 
   constructor(config: ConfigService) {
     this.base = selfDispatchBase(config);
@@ -127,8 +131,24 @@ export class ApprovalsService {
     });
     // Never your own: every kind refuses deciding about yourself (SELF_DECISION), so it is not yours to see here.
     const decidable = sortApprovals(dedupeApprovals(items).filter((i) => i.canDecide && i.subject.id !== user.id));
+    for (const i of decidable) i.why = { via: whyCallerDecides(user, i) };
     this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable) });
+    if (this.known.size > 2000) this.known.clear();
+    this.known.set(user.id, { at: Date.now(), items: new Map(decidable.map((i) => [`${i.kind}:${i.id}`, i])) });
     return { items: decidable, unavailable: [...new Set(unavailable)], generatedAt: ctx.now.toISOString() };
+  }
+
+  /**
+   * One item of the caller's OWN inbox — the last read, or a fresh one when it
+   * is old or absent (another replica answered the list). Null when it is not
+   * theirs to decide: nothing about an item is told to somebody who cannot see it.
+   */
+  async item(caller: ApprovalCaller, kind: ApprovalKind, id: string): Promise<ApprovalItem | null> {
+    const key = `${kind}:${id}`;
+    const hit = this.known.get(caller.user.id);
+    if (hit && Date.now() - hit.at < KNOWN_TTL_MS && hit.items.has(key)) return hit.items.get(key)!;
+    await this.list(caller);
+    return this.known.get(caller.user.id)?.items.get(key) ?? null;
   }
 
   async count(caller: ApprovalCaller): Promise<ApprovalsCount> {
@@ -167,6 +187,7 @@ export class ApprovalsService {
   /** Forget a person's cached count (a socket event said something changed). */
   forget(userId: string) {
     this.counts.delete(userId);
+    this.known.delete(userId);
   }
 
   private async get(caller: ApprovalCaller, path: string): Promise<unknown> {
@@ -209,4 +230,12 @@ export function mayDecide(user: any, kind: ApprovalKind, spaceId: string | null)
   // A row that names no workspace (an expense, a proposal): the route checks the record's own.
   if (!spaceId) return scope.length > 0;
   return scope.includes(spaceId);
+}
+
+/** Why the caller may decide this item — said on the item ("you approve hours at Binderholz"). */
+export function whyCallerDecides(user: any, item: ApprovalItem): 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' {
+  if (isAdmin(user)) return 'ADMIN';
+  if (scopeFor(user, APPROVAL_KIND_SPECS[item.kind].decideKey) === null) return 'ORG';
+  if (item.kind === 'issue' && !mayDecide(user, item.kind, item.space?.id ?? null)) return 'ASSIGNED';
+  return 'SPACE';
 }

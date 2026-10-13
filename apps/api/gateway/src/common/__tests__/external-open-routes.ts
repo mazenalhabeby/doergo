@@ -195,6 +195,7 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'ApprovalsController.count': 'ApprovalsController',
   'ApprovalsController.decide': 'ApprovalsController',
   'ApprovalsController.list': 'ApprovalsController',
+  'ApprovalsController.route': 'ApprovalsController',
   // SyncController: the phone's own offline sync, filtered to what the caller can read
   'SyncController.mediaLinks': 'SyncController',
   'SyncController.pull': 'SyncController',

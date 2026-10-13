@@ -1,7 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpException, Post, Request } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpException, Post, Query, Request } from '@nestjs/common';
+import { isApprovalKind } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { ApprovalsService } from './approvals.service';
+import { ApprovalRouteService } from './approval-route.service';
 
 /**
  * Everything waiting for the caller to decide, in one place — see
@@ -13,7 +15,10 @@ import { ApprovalsService } from './approvals.service';
 @ApiBearerAuth()
 @Controller('approvals')
 export class ApprovalsController {
-  constructor(private readonly approvals: ApprovalsService) {}
+  constructor(
+    private readonly approvals: ApprovalsService,
+    private readonly routes: ApprovalRouteService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Everything waiting for the caller to decide, ordered by what cannot wait' })
@@ -25,6 +30,13 @@ export class ApprovalsController {
   @ApiOperation({ summary: 'How many decisions wait for the caller (cached ~20 s)' })
   async count(@Request() req: any) {
     return { success: true, data: await this.approvals.count(caller(req)) };
+  }
+
+  @Get('route')
+  @ApiOperation({ summary: 'Who else can decide one item of your inbox, and who is told about the person' })
+  async route(@Query('kind') kind: string, @Query('id') id: string, @Request() req: any) {
+    if (!isApprovalKind(kind) || typeof id !== 'string' || !id || id.length > 128) throw new BadRequestException('kind and id are required');
+    return { success: true, data: await this.routes.route(caller(req), kind, id) };
   }
 
   @Post('decide')

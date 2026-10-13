@@ -26,7 +26,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/list-page"
 import { UserAvatar } from "@/components/user-avatar"
-import { DecisionPanel, nameParts } from "./_components/decision-panel"
+import { DecisionPanel } from "./_components/decision-panel"
+import { nameParts } from "./_components/name-parts"
 
 type Filter = ApprovalKind | "all"
 

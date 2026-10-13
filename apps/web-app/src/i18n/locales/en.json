@@ -10839,6 +10839,30 @@
       "URGENT": "Urgent"
     },
     "gone": "This one has already been decided, or is no longer yours to decide.",
-    "readOnly": "You can see this one. Deciding it needs a permission you don't hold here."
+    "readOnly": "You can see this one. Deciding it needs a permission you don't hold here.",
+    "why": {
+      "title": "Why you see this",
+      "ADMIN": "You're an administrator.",
+      "ORG": "Your role lets you decide this everywhere.",
+      "SPACE": "You decide this in {{space}}.",
+      "SPACE_any": "You decide this in your workspace.",
+      "ASSIGNED": "It was given to you.",
+      "DELEGATED": "{{name}} handed you their decisions."
+    },
+    "route": {
+      "title": "Who else can decide",
+      "told": "Also told about {{name}}",
+      "onlyYou": "Nobody else can decide this.",
+      "onLeave": "On leave today",
+      "more": "+{{count}} more",
+      "loading": "Looking up who else…",
+      "via": {
+        "ADMIN": "Administrator",
+        "ORG": "Everywhere",
+        "SPACE": "This workspace",
+        "ASSIGNED": "Given to them",
+        "DELEGATED": "Covering"
+      }
+    }
   }
 }

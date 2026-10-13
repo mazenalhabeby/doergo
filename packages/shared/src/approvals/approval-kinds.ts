@@ -57,6 +57,8 @@ export interface ApprovalItem {
   group: ApprovalGroup;
   /** The caller may press the buttons. False = shown read-only (they may see it, not decide it). */
   canDecide: boolean;
+  /** Why the caller may decide it ("you approve hours at Binderholz"). Absent on a read-only item. */
+  why?: { via: 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' | 'DELEGATED'; fromName?: string | null };
   /**
    * Kind-specific facts, flat and serialisable — rendered by each app's own
    * words for the kind (see `approvalFacts`). Never a sentence.

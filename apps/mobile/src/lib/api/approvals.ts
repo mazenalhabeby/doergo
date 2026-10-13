@@ -4,7 +4,7 @@
  * queued, because somebody else may make it first.
  */
 import { call, E } from './client';
-import type { ApprovalDecision, ApprovalsCount, ApprovalsResponse } from '@hbcfield/shared/client';
+import type { ApprovalDecision, ApprovalKind, ApprovalRouting, ApprovalsCount, ApprovalsResponse } from '@hbcfield/shared/client';
 
 export const approvalsApi = {
   list: async (): Promise<ApprovalsResponse> => {
@@ -14,6 +14,10 @@ export const approvalsApi = {
   count: async (): Promise<ApprovalsCount> => {
     const r = await call(E.approvals.count);
     return (typeof r?.total === 'number' ? r : r?.data) ?? { total: 0, now: 0, byKind: {} };
+  },
+  route: async (kind: ApprovalKind, id: string): Promise<ApprovalRouting> => {
+    const r = await call(E.approvals.route, { kind, id });
+    return (Array.isArray(r?.deciders) ? r : r?.data) ?? { deciders: [], moreDeciders: 0, told: [] };
   },
   decide: async (decision: ApprovalDecision): Promise<void> => {
     await call(E.approvals.decide, undefined, { body: decision });

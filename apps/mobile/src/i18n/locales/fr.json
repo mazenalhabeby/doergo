@@ -5157,6 +5157,30 @@
       "URGENT": "Urgente"
     },
     "gone": "Une décision a déjà été prise, ou elle ne vous revient plus.",
-    "readOnly": "Vous pouvez le voir. Pour décider, il vous faut une autorisation que vous n’avez pas ici."
+    "readOnly": "Vous pouvez le voir. Pour décider, il vous faut une autorisation que vous n’avez pas ici.",
+    "why": {
+      "title": "Pourquoi vous voyez ceci",
+      "ADMIN": "Vous êtes administrateur.",
+      "ORG": "Votre rôle vous permet de décider partout.",
+      "SPACE": "Vous décidez ceci à {{space}}.",
+      "SPACE_any": "Vous décidez ceci dans votre espace de travail.",
+      "ASSIGNED": "Cela vous a été confié.",
+      "DELEGATED": "{{name}} vous a confié ses décisions."
+    },
+    "route": {
+      "title": "Qui d’autre peut décider",
+      "told": "Également informés au sujet de {{name}}",
+      "onlyYou": "Personne d’autre ne peut décider.",
+      "onLeave": "En congé aujourd’hui",
+      "more": "+{{count}} autres",
+      "loading": "Recherche des autres…",
+      "via": {
+        "ADMIN": "Administrateur",
+        "ORG": "Partout",
+        "SPACE": "Cet espace",
+        "ASSIGNED": "Confié",
+        "DELEGATED": "Remplaçant"
+      }
+    }
   }
 }

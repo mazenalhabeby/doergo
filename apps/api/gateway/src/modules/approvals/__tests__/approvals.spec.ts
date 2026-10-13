@@ -142,3 +142,31 @@ describe('ApprovalsService — reads as the caller, asks only what they could de
     expect(r).toMatchObject({ ok: false, status: 403, code: 'SELF_APPROVAL' });
   });
 });
+
+describe('why you see it, and who else could decide', () => {
+  const { decideVia, sortDeciders } = jest.requireActual('@hbcfield/shared');
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({ org, perSpace });
+
+  it('an administrator decides anything', () => {
+    expect(decideVia({ isAdmin: true, access: null }, 'document', null)).toBe('ADMIN');
+  });
+
+  it('org-wide through a role, or through a broader key bridged to it', () => {
+    expect(decideVia({ isAdmin: false, access: access({ canApproveAttendance: true }) }, 'hours', 's1')).toBe('ORG');
+    // canManageUsers carries the rota org-wide (ORG_FLAG_BRIDGES) — as the request user's flags do.
+    expect(decideVia({ isAdmin: false, access: access({ canManageUsers: true }) }, 'request', 's1')).toBe('ORG');
+  });
+
+  it('a workspace grant decides THAT workspace only, and never an org-wide kind', () => {
+    const a = access({}, { s1: { canApproveAttendance: true, canIssueDocuments: true } });
+    expect(decideVia({ isAdmin: false, access: a }, 'hours', 's1')).toBe('SPACE');
+    expect(decideVia({ isAdmin: false, access: a }, 'hours', 's2')).toBeNull();
+    expect(decideVia({ isAdmin: false, access: a }, 'document', null)).toBeNull();
+  });
+
+  it('who else: on duty first, then the workspace before the whole organization', () => {
+    const d = (name: string, via: string, onLeave = false) => ({ id: name, name, avatarUrl: null, via, onLeave });
+    expect(sortDeciders([d('Zoe', 'ADMIN'), d('Ali', 'ORG', true), d('Ben', 'SPACE'), d('Cy', 'ORG')]).map((x: any) => x.name))
+      .toEqual(['Ben', 'Cy', 'Zoe', 'Ali']);
+  });
+});

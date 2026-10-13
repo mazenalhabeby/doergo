@@ -21,6 +21,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
+import { WhoElse } from "./who-else"
+import { nameParts } from "./name-parts"
 
 /**
  * One decision, made here.
@@ -181,6 +183,10 @@ export function DecisionPanel({
         </p>
       )}
 
+      <div className="border-t border-border pt-4">
+        <WhoElse item={item} />
+      </div>
+
       <Link
         href={approvalWebPath(item)}
         className="inline-flex items-center gap-1 self-start text-sm font-medium text-primary hover:underline"
@@ -209,8 +215,3 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
   )
 }
 
-/** "Juan Diego Castrillon Salazar" → initials J·S, the way every avatar in the app reads. */
-export function nameParts(name: string): { firstName: string; lastName: string } {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  return { firstName: parts[0] ?? "", lastName: parts.length > 1 ? parts[parts.length - 1]! : "" }
-}

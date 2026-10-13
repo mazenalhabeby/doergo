@@ -44,6 +44,7 @@ const OWN_READER: Record<string, string> = {
 /** Reads that cannot mean anything without a server, with the reason. */
 const ONLINE_ONLY: Record<string, string> = {
   '/approvals': 'what waits for a decision NOW — somebody else may decide it first, and deciding is itself online',
+  '/approvals/route': 'who else could decide one item, right now — leave and roles change; asked when the item is opened',
   '/approvals/count': 'the same, as one number on More — a kept count is a number from another moment',
   '/app/version': 'the update gate — any failure lets the app run, and an old answer would hide a required update',
   '/calendar/people': 'the invite picker — inviting somebody is itself online, so a kept colleague list would only offer a send that cannot happen',

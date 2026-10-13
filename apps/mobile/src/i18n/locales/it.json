@@ -5157,6 +5157,30 @@
       "URGENT": "Urgente"
     },
     "gone": "È già stato deciso, oppure non spetta più a lei.",
-    "readOnly": "Può vederlo. Per decidere serve un permesso che qui non ha."
+    "readOnly": "Può vederlo. Per decidere serve un permesso che qui non ha.",
+    "why": {
+      "title": "Perché lo vede",
+      "ADMIN": "È amministratore.",
+      "ORG": "Il suo ruolo le permette di decidere ovunque.",
+      "SPACE": "Lei decide questo a {{space}}.",
+      "SPACE_any": "Lei decide questo nel suo spazio di lavoro.",
+      "ASSIGNED": "È stato affidato a lei.",
+      "DELEGATED": "{{name}} le ha affidato le sue decisioni."
+    },
+    "route": {
+      "title": "Chi altro può decidere",
+      "told": "Informati anche su {{name}}",
+      "onlyYou": "Nessun altro può deciderlo.",
+      "onLeave": "In ferie oggi",
+      "more": "+{{count}} altri",
+      "loading": "Cerco chi altro…",
+      "via": {
+        "ADMIN": "Amministratore",
+        "ORG": "Ovunque",
+        "SPACE": "Questo spazio",
+        "ASSIGNED": "Affidato",
+        "DELEGATED": "Sostituto"
+      }
+    }
   }
 }

@@ -39,6 +39,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WorklogModule } from './modules/worklog/worklog.module';
 import { ShiftIssuesModule } from './modules/shift-issues/shift-issues.module';
+import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { SyncModule } from './modules/sync/sync.module';
 import { RetentionService } from './common/retention/retention.service';
 
@@ -105,6 +106,7 @@ import { RetentionService } from './common/retention/retention.service';
     AnalyticsModule,
     WorklogModule,
     ShiftIssuesModule,
+    ApprovalsModule,
     SyncModule,
   ],
   providers: [RetentionService],

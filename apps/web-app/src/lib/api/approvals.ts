@@ -3,6 +3,8 @@ import { apiError } from '../server-error';
 import {
   approvalsEndpoints,
   type ApprovalDecision,
+  type ApprovalKind,
+  type ApprovalRouting,
   type ApprovalsCount,
   type ApprovalsResponse,
 } from '@hbcfield/shared/client';
@@ -16,6 +18,11 @@ export const approvalsApi = {
   },
   count: async (): Promise<ApprovalsCount> => {
     const res = await call(approvalsEndpoints.count) as ApiResponse<{ data: ApprovalsCount }>;
+    if (res.error) throw apiError(res);
+    return res.data!.data;
+  },
+  route: async (kind: ApprovalKind, id: string): Promise<ApprovalRouting> => {
+    const res = await call(approvalsEndpoints.route, { kind, id }) as ApiResponse<{ data: ApprovalRouting }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },

@@ -10839,6 +10839,30 @@
       "URGENT": "Dringend"
     },
     "gone": "Darüber wurde bereits entschieden, oder es liegt nicht mehr bei Ihnen.",
-    "readOnly": "Sie können dies sehen. Für die Entscheidung fehlt Ihnen hier eine Berechtigung."
+    "readOnly": "Sie können dies sehen. Für die Entscheidung fehlt Ihnen hier eine Berechtigung.",
+    "why": {
+      "title": "Warum Sie das sehen",
+      "ADMIN": "Sie sind Administrator.",
+      "ORG": "Ihre Rolle erlaubt Ihnen diese Entscheidung überall.",
+      "SPACE": "Sie entscheiden das in {{space}}.",
+      "SPACE_any": "Sie entscheiden das in Ihrem Arbeitsbereich.",
+      "ASSIGNED": "Es wurde Ihnen übergeben.",
+      "DELEGATED": "{{name}} hat Ihnen die Entscheidungen übergeben."
+    },
+    "route": {
+      "title": "Wer noch entscheiden kann",
+      "told": "Ebenfalls über {{name}} informiert",
+      "onlyYou": "Niemand sonst kann das entscheiden.",
+      "onLeave": "Heute abwesend",
+      "more": "+{{count}} weitere",
+      "loading": "Suche, wer noch…",
+      "via": {
+        "ADMIN": "Administrator",
+        "ORG": "Überall",
+        "SPACE": "Dieser Arbeitsbereich",
+        "ASSIGNED": "Übergeben",
+        "DELEGATED": "Vertretung"
+      }
+    }
   }
 }

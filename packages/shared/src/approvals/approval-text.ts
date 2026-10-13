@@ -145,3 +145,12 @@ export function describeApproval(item: ApprovalItem, t: ApprovalT, locale: strin
       return { headline: str(d.title) ?? t('approvals.kinds.guestRequest'), facts }
   }
 }
+
+/** "Why you see this", one sentence — from the item's `why` (absent → nothing to say). */
+export function approvalWhyText(item: ApprovalItem, t: ApprovalT): string | null {
+  const why = item.why;
+  if (!why) return null;
+  if (why.via === 'SPACE') return item.space ? t('approvals.why.SPACE', { space: item.space.name }) : t('approvals.why.SPACE_any');
+  if (why.via === 'DELEGATED') return t('approvals.why.DELEGATED', { name: why.fromName ?? '' });
+  return t(`approvals.why.${why.via}`);
+}

@@ -19,6 +19,7 @@ import { AText, GhostButton, GlassInput, Ground, HeaderBack, PrimaryButton, Scre
 import { centeredContent } from '../screen-container';
 import { JobSheet, Pill, SectionLabel } from '../job/job-ui';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
+import { WhoElse } from './who-else';
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -142,6 +143,7 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
             </View>
           ))}
         </View>
+        <WhoElse item={item} />
         {pageOnly ? <AText variant="caption" tone="onGlass">{t(`approvals.needsPage.${item.kind}`)}</AText> : null}
         {!item.canDecide ? <AText variant="caption" tone="onGlass">{t('approvals.readOnly')}</AText> : null}
       </ScrollView>
