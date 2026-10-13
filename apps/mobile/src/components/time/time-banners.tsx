@@ -55,6 +55,8 @@ export function TimeBanners({
   const { formatClock: formatTime } = useTimeFormat();
   const [explain, setExplain] = useState(false);
   const [forgot, setForgot] = useState(false);
+  /* "I'm still working" on a session with no shift: hidden until the server's next hourly reminder. */
+  const [stillWorkingAt, setStillWorkingAt] = useState<number | null>(null);
 
   const entry = status?.isClockedIn ? status.currentEntry : null;
   const tz = entry?.timezone ?? entry?.location?.timezone ?? undefined;
@@ -66,7 +68,17 @@ export function TimeBanners({
   const reminder = entry?.reminderState ?? 'NONE';
   const end = entry?.expectedClockOutAt ? new Date(entry.expectedClockOutAt) : null;
   const ended = !!end && end.getTime() <= now.getTime();
-  const askEnded = !!entry && (reminder === 'REMINDED' || reminder === 'ESCALATED' || (reminder === 'NONE' && ended));
+  /*
+    ⚠️ NO PLANNED SHIFT is its own case. The server's safety net reminds anybody
+    still clocked in 8 hours into a session with no shift (hourly after), and
+    the card used to say "Your shift has ended" and offer extra time — for a
+    shift that never existed. It says how long they have been on the clock
+    instead, and "still working" only quiets it until the next reminder.
+  */
+  const unscheduled = !end;
+  const hoursOpen = entry ? Math.max(1, Math.floor((now.getTime() - new Date(entry.clockInAt).getTime()) / 3_600_000)) : 0;
+  const quieted = unscheduled && stillWorkingAt !== null && stillWorkingAt === (entry?.reminderCount ?? 0);
+  const askEnded = !!entry && !quieted && (reminder === 'REMINDED' || reminder === 'ESCALATED' || (reminder === 'NONE' && ended));
   const limitLeft = entry?.endIsDailyLimit && end ? Math.ceil((end.getTime() - now.getTime()) / 60_000) : null;
 
   // Workspaces that limit clocking in with no shift, and what they allow now.
@@ -115,14 +127,19 @@ export function TimeBanners({
       {askEnded ? (
         <View style={{ borderRadius: 18, padding: amazen.space(3.5), gap: amazen.space(2.5), backgroundColor: amazen.color.warnTint }}>
           <View style={{ gap: 2 }}>
-            <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{t('shiftReminder.shiftEndedTitle')}</AText>
+            <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>
+              {unscheduled ? t('shiftReminder.unscheduledTitle', { count: hoursOpen }) : t('shiftReminder.shiftEndedTitle')}
+            </AText>
             <AText variant="caption" tone="warn" style={{ fontSize: 13, lineHeight: 18 }}>
-              {end ? `${t('shiftReminder.shiftEndedAt', { time: formatTime(end.toISOString(), tz) })} · ` : ''}{t('shiftReminder.shiftEndedSubtitle')}
+              {end ? `${t('shiftReminder.shiftEndedAt', { time: formatTime(end.toISOString(), tz) })} · ` : ''}
+              {unscheduled ? t('shiftReminder.unscheduledSubtitle') : t('shiftReminder.shiftEndedSubtitle')}
             </AText>
           </View>
           <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
             <View style={{ flex: 1 }}><QuietButton label={t('shiftReminder.forgotClockOut')} onPress={() => setForgot(true)} disabled={busy} /></View>
-            {hasShiftScheduling ? (
+            {unscheduled ? (
+              <View style={{ flex: 1 }}><QuietButton tone="accent" label={t('shiftReminder.stillWorking')} onPress={() => setStillWorkingAt(entry?.reminderCount ?? 0)} disabled={busy} /></View>
+            ) : hasShiftScheduling ? (
               <View style={{ flex: 1 }}><QuietButton tone="accent" label={t('shiftReminder.workingExtra')} onPress={onRequestExtra} disabled={busy} /></View>
             ) : null}
           </View>

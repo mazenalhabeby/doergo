@@ -2049,7 +2049,11 @@
     "noPending": "Aucune demande en attente",
     "noPendingDesc": "Tout est à jour : rien à valider pour le moment.",
     "loadFailed": "Impossible de charger les demandes. Tirez pour actualiser.",
-    "unknownWorker": "Personne inconnue"
+    "unknownWorker": "Personne inconnue",
+    "unscheduledTitle_one": "Vous êtes pointé depuis {{count}} heure",
+    "unscheduledTitle_other": "Vous êtes pointé depuis {{count}} heures",
+    "unscheduledSubtitle": "Aucun créneau n’était prévu aujourd’hui. Avez-vous oublié de pointer la sortie ?",
+    "stillWorking": "Je travaille encore"
   },
   "billing": {
     "locked": {

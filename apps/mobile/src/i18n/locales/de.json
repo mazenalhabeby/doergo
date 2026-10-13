@@ -2049,7 +2049,11 @@
     "noPending": "Keine offenen Anfragen",
     "noPendingDesc": "Alles erledigt – aktuell gibt es nichts zu genehmigen.",
     "loadFailed": "Anfragen konnten nicht geladen werden. Zum Aktualisieren ziehen.",
-    "unknownWorker": "Unbekannte Person"
+    "unknownWorker": "Unbekannte Person",
+    "unscheduledTitle_one": "Sie sind seit {{count}} Stunde eingestempelt",
+    "unscheduledTitle_other": "Sie sind seit {{count}} Stunden eingestempelt",
+    "unscheduledSubtitle": "Für heute war keine Schicht geplant. Haben Sie vergessen auszustempeln?",
+    "stillWorking": "Ich arbeite noch"
   },
   "billing": {
     "locked": {

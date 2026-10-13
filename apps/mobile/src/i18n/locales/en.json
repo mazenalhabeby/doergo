@@ -2049,7 +2049,11 @@
     "noPending": "No pending requests",
     "noPendingDesc": "You're all caught up — nothing to approve right now.",
     "loadFailed": "Couldn't load requests. Pull to refresh.",
-    "unknownWorker": "Unknown worker"
+    "unknownWorker": "Unknown worker",
+    "unscheduledTitle_one": "You've been clocked in for {{count}} hour",
+    "unscheduledTitle_other": "You've been clocked in for {{count}} hours",
+    "unscheduledSubtitle": "There was no shift planned today. Did you forget to clock out?",
+    "stillWorking": "I'm still working"
   },
   "route": {
     "planRoute": "Plan my route",

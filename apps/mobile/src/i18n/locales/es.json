@@ -2049,7 +2049,11 @@
     "noPending": "Sin solicitudes pendientes",
     "noPendingDesc": "Todo al día: no hay nada que aprobar ahora mismo.",
     "loadFailed": "No se pudieron cargar las solicitudes. Desliza para actualizar.",
-    "unknownWorker": "Persona desconocida"
+    "unknownWorker": "Persona desconocida",
+    "unscheduledTitle_one": "Llevas {{count}} hora fichado",
+    "unscheduledTitle_other": "Llevas {{count}} horas fichado",
+    "unscheduledSubtitle": "Hoy no había ningún turno previsto. ¿Olvidaste fichar la salida?",
+    "stillWorking": "Sigo trabajando"
   },
   "billing": {
     "locked": {

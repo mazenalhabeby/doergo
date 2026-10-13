@@ -2049,7 +2049,11 @@
     "noPending": "Nessuna richiesta in sospeso",
     "noPendingDesc": "Tutto in ordine: al momento non c'è nulla da approvare.",
     "loadFailed": "Impossibile caricare le richieste. Trascina per aggiornare.",
-    "unknownWorker": "Persona sconosciuta"
+    "unknownWorker": "Persona sconosciuta",
+    "unscheduledTitle_one": "Sei timbrato da {{count}} ora",
+    "unscheduledTitle_other": "Sei timbrato da {{count}} ore",
+    "unscheduledSubtitle": "Oggi non era previsto nessun turno. Hai dimenticato di timbrare l’uscita?",
+    "stillWorking": "Sto ancora lavorando"
   },
   "billing": {
     "locked": {
