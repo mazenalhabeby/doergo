@@ -8,6 +8,7 @@ import {
   type PermissionSet,
   type BillByValue,
   type RoleKindValue,
+  ownAccess,
 } from '@hbcfield/shared';
 import {
   assertMayGrant,
@@ -139,7 +140,7 @@ export class SpaceRolesController {
       // The ceiling also applies to what the role ALREADY grants: editing a role
       // you could not have authored would otherwise let you rename it, hand it
       // out, and keep every permission you were never allowed to give.
-      requesterPerms: isAdmin(req.user) ? null : (req.user?.access?.org ?? {}),
+      requesterPerms: isAdmin(req.user) ? null : (ownAccess(req.user?.access)?.org ?? {}),
     }));
   }
 

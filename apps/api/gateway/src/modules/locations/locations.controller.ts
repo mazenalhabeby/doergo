@@ -20,7 +20,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { RequirePermission, RequirePermissionInSpace } from '../../common/decorators';
-import { getSpaceScope, spacesGranting, isAdmin, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms, stripWorkspaceTerms, type SpaceScope } from '@hbcfield/shared';
+import { getSpaceScope, spacesGranting, isAdmin, ownAccess, accessAllows, clampListLimit, mayViewSpaceRoster, mayManageSpaceMembers, stripSpaceTerms, stripWorkspaceTerms, type SpaceScope } from '@hbcfield/shared';
 import { RebillService } from '../../common/billing/rebill.service';
 import { outrankCeiling, spaceMemberAuthority } from '../space-roles/space-member-access';
 import { SpaceModulesService } from '../../common/space-modules.service';
@@ -396,7 +396,8 @@ export class LocationsController {
       locationId,
       requestingUserId: req.user.id,
       organizationId: req.user.organizationId,
-      access: req.user.access, // server-authoritative; service enforces the real space
+      // server-authoritative; service enforces the real space. OWN access: it is also a grant ceiling.
+      access: ownAccess(req.user.access),
     });
     /*
       A space assignment carries a ROLE, and an external member's seat price is

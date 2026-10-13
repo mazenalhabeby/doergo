@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query"
-import { AlertTriangle, ChevronLeft, Inbox, RefreshCw } from "lucide-react"
+import dynamic from "next/dynamic"
+import { AlertTriangle, ChevronLeft, Inbox, RefreshCw, UserRoundCheck } from "lucide-react"
 import {
   APPROVAL_GROUPS,
   APPROVAL_KINDS,
@@ -27,6 +28,9 @@ import { PAGE_SHELL } from "@/components/ui/page-width"
 import { ListTableError } from "@/components/list-page"
 import { UserAvatar } from "@/components/user-avatar"
 import { DecisionPanel } from "./_components/decision-panel"
+
+// Opened by a button: never part of the first load.
+const StandInDialog = dynamic(() => import("./_components/stand-in-dialog").then((m) => m.StandInDialog), { ssr: false })
 import { nameParts } from "./_components/name-parts"
 
 type Filter = ApprovalKind | "all"
@@ -62,6 +66,7 @@ export default function ApprovalsPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState<Filter>("all")
   const [selected, setSelected] = useState<string | null>(null)
+  const [standInOpen, setStandInOpen] = useState(false)
 
   const { data, isLoading, isError, error, refetch, isFetching, dataUpdatedAt } = useQuery({
     queryKey: keys.approvals.list(),
@@ -127,6 +132,11 @@ export default function ApprovalsPage() {
 
   const onDecide = useCallback((d: ApprovalDecision) => decide.mutate(d), [decide])
   const unavailable = data?.unavailable ?? []
+  // Whose decisions the reader covers today — said once, above the list.
+  const covering = useMemo(
+    () => [...new Set(items.filter((i) => i.why?.via === "DELEGATED" && i.why.fromName).map((i) => i.why!.fromName!))],
+    [items],
+  )
 
   return (
     <div className={PAGE_SHELL}>
@@ -141,6 +151,10 @@ export default function ApprovalsPage() {
               {t("approvals.updated", { time: formatTimeAgo(dataUpdatedAt) })}
             </span>
           )}
+          <Button variant="outline" className="h-10 rounded-xl" onClick={() => setStandInOpen(true)}>
+            <UserRoundCheck className="size-4" />
+            {t("approvals.standIn.open")}
+          </Button>
           <Button
             variant="outline"
             size="icon"
@@ -153,6 +167,13 @@ export default function ApprovalsPage() {
           </Button>
         </div>
       </div>
+
+      {covering.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
+          <UserRoundCheck className="size-4 shrink-0 text-primary" />
+          {t("approvals.standIn.covering", { names: covering.join(", ") })}
+        </div>
+      )}
 
       {unavailable.length > 0 && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
@@ -260,6 +281,7 @@ export default function ApprovalsPage() {
           </aside>
         </div>
       )}
+      {standInOpen && <StandInDialog open={standInOpen} onOpenChange={setStandInOpen} />}
     </div>
   )
 }

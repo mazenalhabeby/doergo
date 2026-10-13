@@ -76,3 +76,66 @@ export function sortDeciders(list: ApprovalDecider[]): ApprovalDecider[] {
   return [...list].sort((a, b) =>
     Number(a.onLeave) - Number(b.onLeave) || rank[a.via] - rank[b.via] || a.name.localeCompare(b.name));
 }
+
+/** The longest single hand-over — a holiday, not a reorganization. */
+export const DELEGATION_MAX_DAYS = 60;
+
+/** One hand-over of approval decisions, as the screens list it. */
+export interface StandInView {
+  id: string;
+  from: { id: string; name: string };
+  to: { id: string; name: string };
+  /** Whole days, YYYY-MM-DD, inclusive, the organization's days. */
+  startsOn: string;
+  endsOn: string;
+  note: string | null;
+  /** Running today. */
+  active: boolean;
+  /** May the reader end it (the leader, the stand-in, or somebody who manages people). */
+  canEnd: boolean;
+}
+
+export interface StandInsResponse {
+  /** The reader's own hand-overs (they are away). */
+  given: StandInView[];
+  /** Hand-overs to the reader (they cover). */
+  received: StandInView[];
+  /** Everybody else's, for somebody who manages people — current and upcoming. */
+  others: StandInView[];
+  /** May the reader hand over their own decisions (they hold at least one approval permission)? */
+  mayHandOver: boolean;
+  /** May the reader set one up for somebody else? */
+  mayArrange: boolean;
+  /**
+   * Who may be chosen: the colleagues who share a workspace with the reader
+   * (everybody internal, for somebody who manages people). Never external members.
+   */
+  candidates: Array<{ id: string; name: string }>;
+  /** Leaders the reader may arrange for (people managers only): everybody holding an approval permission. */
+  leaders: Array<{ id: string; name: string }>;
+}
+
+export interface StandInInput {
+  toUserId: string;
+  startsOn: string;
+  endsOn: string;
+  note?: string | null;
+  /** Somebody else's decisions — only for whoever manages people. */
+  fromUserId?: string | null;
+}
+
+/**
+ * The dates of a hand-over, checked the same on both ends. `today` is the
+ * organization's day (YYYY-MM-DD). Null = fine, else the refusal code.
+ */
+export function standInDatesProblem(startsOn: string, endsOn: string, today: string, maxDays: number):
+  | null | 'STAND_IN_DATES_INVALID' | 'STAND_IN_IN_THE_PAST' | 'STAND_IN_TOO_LONG' {
+  const iso = /^\d{4}-\d{2}-\d{2}$/;
+  if (!iso.test(startsOn) || !iso.test(endsOn)) return 'STAND_IN_DATES_INVALID';
+  const s = Date.parse(`${startsOn}T00:00:00Z`);
+  const e = Date.parse(`${endsOn}T00:00:00Z`);
+  if (Number.isNaN(s) || Number.isNaN(e) || e < s) return 'STAND_IN_DATES_INVALID';
+  if (endsOn < today) return 'STAND_IN_IN_THE_PAST';
+  if ((e - s) / 86_400_000 + 1 > maxDays) return 'STAND_IN_TOO_LONG';
+  return null;
+}

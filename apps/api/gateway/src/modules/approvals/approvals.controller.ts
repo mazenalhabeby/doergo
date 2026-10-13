@@ -1,9 +1,11 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, HttpException, Post, Query, Request } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpException, Param, Post, Query, Request } from '@nestjs/common';
 import { isApprovalKind } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
 import { ApprovalsService } from './approvals.service';
 import { ApprovalRouteService } from './approval-route.service';
+import { StandInsService } from './stand-ins.service';
+import { CreateStandInDto } from './dto/stand-in.dto';
 
 /**
  * Everything waiting for the caller to decide, in one place — see
@@ -18,6 +20,7 @@ export class ApprovalsController {
   constructor(
     private readonly approvals: ApprovalsService,
     private readonly routes: ApprovalRouteService,
+    private readonly standIns: StandInsService,
   ) {}
 
   @Get()
@@ -37,6 +40,26 @@ export class ApprovalsController {
   async route(@Query('kind') kind: string, @Query('id') id: string, @Request() req: any) {
     if (!isApprovalKind(kind) || typeof id !== 'string' || !id || id.length > 128) throw new BadRequestException('kind and id are required');
     return { success: true, data: await this.routes.route(caller(req), kind, id) };
+  }
+
+  @Get('stand-ins')
+  @ApiOperation({ summary: 'Stand-ins: mine (I am away), for me (I cover), and — for people managers — everybody else' })
+  async listStandIns(@Request() req: any) {
+    return { success: true, data: await this.standIns.list(req.user) };
+  }
+
+  @Post('stand-ins')
+  @ApiOperation({ summary: 'Hand approval decisions to a stand-in for whole days (yours, or anybody\'s if you manage people)' })
+  async createStandIn(@Body() dto: CreateStandInDto, @Request() req: any) {
+    return { success: true, data: await this.standIns.create(req.user, dto) };
+  }
+
+  @Post('stand-ins/:id/end')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'End a stand-in now (the leader, the stand-in, or a people manager)' })
+  async endStandIn(@Param('id') id: string, @Request() req: any) {
+    if (!id || id.length > 128) throw new BadRequestException('id is required');
+    return { success: true, data: await this.standIns.end(req.user, id) };
   }
 
   @Post('decide')

@@ -1,3 +1,4 @@
+import { sessionAccess } from './stand-in';
 import {
   readAssignedHome,
   normalizeRole,
@@ -185,7 +186,12 @@ export class TokenValidationService {
 
       // Resolve the member's access ONCE here (server-side, from their own
       // roles/assignments + any cross-org shares). Cached with the validated user.
-      const access = memberAccessOf({ ...userData, memberRole, spaceAssignments }, { sharedSpaces });
+      const access = await sessionAccess(
+        this.prisma,
+        user,
+        organization?.timezone,
+        memberAccessOf({ ...userData, memberRole, spaceAssignments }, { sharedSpaces }),
+      );
       return {
         valid: true,
         user: {

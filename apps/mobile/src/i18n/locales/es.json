@@ -5181,6 +5181,31 @@
         "ASSIGNED": "Asignado",
         "DELEGATED": "Sustituye"
       }
+    },
+    "standIn": {
+      "title": "Sustituto",
+      "open": "Sustituto",
+      "intro": "¿Se va? Pase sus aprobaciones a un compañero esos días. Decide horas, tiempo extra, horas extra, permisos y solicitudes en sus espacios — nunca dinero, documentos, personas nuevas ni clientes, y nunca sobre usted.",
+      "who": "Quién le sustituye",
+      "whose": "Aprobaciones de",
+      "me": "Las mías",
+      "firstDay": "Primer día",
+      "lastDay": "Último día",
+      "note": "Nota (opcional)",
+      "save": "Pasar",
+      "yours": "Usted está fuera",
+      "forYou": "Usted sustituye",
+      "others": "Otros sustitutos",
+      "now": "Ahora",
+      "from": "{{from}} – {{to}}",
+      "end": "Terminar",
+      "none": "No hay sustitutos.",
+      "created": "{{name}} le sustituye del {{from}} al {{to}}.",
+      "ended": "Sustitución terminada.",
+      "nothing": "No tiene aprobaciones que pasar.",
+      "covering": "Sustituye a {{names}} — sus aprobaciones están en su lista.",
+      "pickPerson": "Elija una persona",
+      "maxDays": "Como máximo {{count}} días seguidos."
     }
   }
 }

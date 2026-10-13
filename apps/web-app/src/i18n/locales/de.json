@@ -9423,7 +9423,17 @@
     "CANNOT_CHANGE_OWN": "Sie können Ihre eigenen Berechtigungen in diesem Arbeitsbereich nicht ändern.",
     "ASSIGNMENT_NOT_FOUND": "Diese Person ist nicht mehr in diesem Arbeitsbereich.",
     "ROLE_NOT_FOUND": "Diese Rolle existiert nicht mehr.",
-    "PERMISSIONS_CHOICE_INVALID": "Wählen Sie entweder eine Rolle oder eine Auswahl an Berechtigungen."
+    "PERMISSIONS_CHOICE_INVALID": "Wählen Sie entweder eine Rolle oder eine Auswahl an Berechtigungen.",
+    "STAND_IN_FOR_SUBJECT": "Sie vertreten diese Person — ihre eigenen Anträge gehen an jemand anderen.",
+    "STAND_IN_SELF": "Wählen Sie eine andere Person als Vertretung.",
+    "STAND_IN_DATES_INVALID": "Wählen Sie einen ersten und letzten Tag; der letzte nicht vor dem ersten.",
+    "STAND_IN_IN_THE_PAST": "Diese Tage sind vorbei.",
+    "STAND_IN_TOO_LONG": "Eine Vertretung umfasst höchstens {{maxDays}} Tage am Stück.",
+    "STAND_IN_OVERLAP": "Für einige dieser Tage gibt es bereits eine Vertretung. Beenden Sie diese zuerst.",
+    "STAND_IN_NOTHING_TO_HAND_OVER": "Es gibt keine Freigaben zu übergeben.",
+    "STAND_IN_EXTERNAL": "Ein externes Mitglied kann keine Führungskraft vertreten.",
+    "STAND_IN_NOT_A_COLLEAGUE": "Wählen Sie jemanden aus einem Ihrer Arbeitsbereiche.",
+    "STAND_IN_NOT_YOURS": "Nur wer Personen verwaltet, kann eine Vertretung für andere einrichten."
   },
   "signLink": {
     "tabs": {
@@ -10863,6 +10873,31 @@
         "ASSIGNED": "Übergeben",
         "DELEGATED": "Vertretung"
       }
+    },
+    "standIn": {
+      "title": "Vertretung",
+      "open": "Vertretung",
+      "intro": "Sie sind weg? Übergeben Sie Ihre Freigaben für diese Tage an eine Kollegin oder einen Kollegen. Die Vertretung entscheidet Stunden, Mehrzeit, Überstunden, Urlaub und Anträge in Ihren Arbeitsbereichen — nie Geld, Dokumente, neue Personen oder Kunden, und nie über Sie.",
+      "who": "Wer vertritt",
+      "whose": "Wessen Freigaben",
+      "me": "Meine",
+      "firstDay": "Erster Tag",
+      "lastDay": "Letzter Tag",
+      "note": "Notiz (optional)",
+      "save": "Übergeben",
+      "yours": "Sie sind weg",
+      "forYou": "Sie vertreten",
+      "others": "Weitere Vertretungen",
+      "now": "Jetzt",
+      "from": "{{from}} – {{to}}",
+      "end": "Beenden",
+      "none": "Keine Vertretungen.",
+      "created": "{{name}} vertritt vom {{from}} bis {{to}}.",
+      "ended": "Vertretung beendet.",
+      "nothing": "Sie haben keine Freigaben zu übergeben.",
+      "covering": "Sie vertreten {{names}} — deren Freigaben stehen in Ihrer Liste.",
+      "pickPerson": "Person wählen",
+      "maxDays": "Höchstens {{count}} Tage am Stück."
     }
   }
 }

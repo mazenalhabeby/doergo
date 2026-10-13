@@ -5181,6 +5181,31 @@
         "ASSIGNED": "Confié",
         "DELEGATED": "Remplaçant"
       }
+    },
+    "standIn": {
+      "title": "Remplaçant",
+      "open": "Remplaçant",
+      "intro": "Vous partez ? Confiez vos validations à un collègue pour ces jours. Il décide des heures, du temps en plus, des heures supplémentaires, des congés et des demandes dans vos espaces — jamais d’argent, de documents, de nouvelles personnes ni de clients, et jamais à votre sujet.",
+      "who": "Qui vous remplace",
+      "whose": "Validations de",
+      "me": "Les miennes",
+      "firstDay": "Premier jour",
+      "lastDay": "Dernier jour",
+      "note": "Note (facultatif)",
+      "save": "Confier",
+      "yours": "Vous êtes absent",
+      "forYou": "Vous remplacez",
+      "others": "Autres remplacements",
+      "now": "En cours",
+      "from": "{{from}} – {{to}}",
+      "end": "Terminer",
+      "none": "Aucun remplacement.",
+      "created": "{{name}} vous remplace du {{from}} au {{to}}.",
+      "ended": "Remplacement terminé.",
+      "nothing": "Vous n’avez aucune validation à confier.",
+      "covering": "Vous remplacez {{names}} — leurs validations sont dans votre liste.",
+      "pickPerson": "Choisir une personne",
+      "maxDays": "Au plus {{count}} jours d’affilée."
     }
   }
 }

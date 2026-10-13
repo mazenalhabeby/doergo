@@ -27,17 +27,48 @@ export interface SelfDecisionPrisma {
       select: { id: true };
     }): Promise<{ id: string } | null>;
   };
+  /** Present on the real client; a test double without it skips the stand-in rule. */
+  approvalDelegation?: { findFirst(args: any): Promise<{ id: string } | null> };
 }
 
 export async function assertNotSelfDecision(
   prisma: SelfDecisionPrisma,
   params: { deciderId: string | null | undefined; subjectId: string | null | undefined; organizationId: string; message: string },
 ): Promise<void> {
-  if (!params.deciderId || !params.subjectId || params.deciderId !== params.subjectId) return;
+  if (!params.deciderId || !params.subjectId) return;
+  if (params.deciderId !== params.subjectId) {
+    await assertNotStandingInFor(prisma, params.deciderId, params.subjectId, params.organizationId);
+    return;
+  }
   const owner = await prisma.user.findFirst({
     where: { id: params.deciderId, organizationId: params.organizationId, isActive: true, role: 'ADMIN' },
     select: { id: true },
   });
   if (owner) return;
   throw new ForbiddenException({ message: params.message, code: 'SELF_DECISION' });
+}
+
+/**
+ * A stand-in never decides about the person they cover: the leader is on leave
+ * and their OWN requests go to somebody else, or a leader could pick the person
+ * who signs their overtime. Judged with a day either side (no time zone lookup
+ * on every decision) — it refuses slightly more, never less.
+ */
+async function assertNotStandingInFor(prisma: SelfDecisionPrisma, deciderId: string, subjectId: string, organizationId: string): Promise<void> {
+  if (!prisma.approvalDelegation) return;
+  const now = Date.now();
+  const covering = await prisma.approvalDelegation.findFirst({
+    where: {
+      organizationId,
+      fromUserId: subjectId,
+      toUserId: deciderId,
+      revokedAt: null,
+      startsOn: { lte: new Date(now + 86_400_000) },
+      endsOn: { gte: new Date(now - 86_400_000) },
+    },
+    select: { id: true },
+  });
+  if (covering) {
+    throw new ForbiddenException({ message: 'You are standing in for this person — their own requests go to someone else.', code: 'STAND_IN_FOR_SUBJECT' });
+  }
 }

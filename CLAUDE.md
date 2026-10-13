@@ -474,6 +474,24 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ Every `approvals.*` key the shared wording asks for must exist in BOTH apps in all five languages — `apps/mobile/src/components/approvals/__tests__/approval-catalogue.spec.ts`.
 
+### Approvals: why, who else, stand-ins (`/approvals/route`, `/approvals/stand-ins`)
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| GET | `/approvals/route?kind&id` | Who else can decide ONE item of the caller's inbox (via ADMIN/ORG/SPACE/DELEGATED, on leave today) + who is told about the person | the item must be in the caller's own inbox (404 otherwise) |
+| GET | `/approvals/stand-ins` | `{ given, received, others, mayHandOver, mayArrange, candidates, leaders }` | any member; `others`/`leaders` only for people managers |
+| POST | `/approvals/stand-ins` `{toUserId, startsOn, endsOn, note?, fromUserId?}` | Hand approval decisions to a stand-in for whole days | the leader (holding an approval key), or a people manager for anybody |
+| POST | `/approvals/stand-ins/:id/end` | End now | the leader, the stand-in, or a people manager (404 otherwise) |
+
+> ⚠️ **A stand-in is REAL authority, narrow on purpose** (`ApprovalDelegation`, migration `20261014090000_approval_delegations`, additive; rules `packages/shared/src/access/delegation.ts`). For the days, the stand-in holds the leader's OWN `DELEGATABLE_KEYS` (approve hours, approve overtime, rota/leave, correct hours + view the leaders' lists) in the leader's own scope — never money, documents, new people, clients or workspaces, never chained (computed from the leader's own access).
+>
+> ⚠️ **Added in all THREE session builders** (login, refresh, validate — `auth-service/.../auth/stand-in.ts`) and in the three places that check approval keys in the DATABASE (`extra-time.service` list + `userCanApproveOvertime`, `overtime.service` signer) via `task-service/common/stand-in.ts`. A new direct DB check of an approval key must ask `standInGrant` too.
+>
+> ⚠️ **NEVER A GRANT CEILING**: the session keeps `access.own`; every ceiling reads `ownAccess(...)` (`actorPermsForSpace`, `assertMayGrant`, role authoring, `assignMember`'s access). Tested in `approvals.spec.ts`.
+>
+> ⚠️ **Never about the leader they cover**: `assertNotSelfDecision` refuses `STAND_IN_FOR_SUBJECT` (a day either side); the inbox hides those items. Creating/ending is audited (`APPROVAL_STAND_IN_CREATED/ENDED`); only `/approvals/decide` is skipped by the audit interceptor (audited at the kind's route). The stand-in's cached session is dropped on change.
+>
+> E2E: `python3 tools/approvals-e2e.py` (LOCAL, creates and ends a stand-in).
+
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.
 

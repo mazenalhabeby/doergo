@@ -5181,6 +5181,31 @@
         "ASSIGNED": "Übergeben",
         "DELEGATED": "Vertretung"
       }
+    },
+    "standIn": {
+      "title": "Vertretung",
+      "open": "Vertretung",
+      "intro": "Sie sind weg? Übergeben Sie Ihre Freigaben für diese Tage an eine Kollegin oder einen Kollegen. Die Vertretung entscheidet Stunden, Mehrzeit, Überstunden, Urlaub und Anträge in Ihren Arbeitsbereichen — nie Geld, Dokumente, neue Personen oder Kunden, und nie über Sie.",
+      "who": "Wer vertritt",
+      "whose": "Wessen Freigaben",
+      "me": "Meine",
+      "firstDay": "Erster Tag",
+      "lastDay": "Letzter Tag",
+      "note": "Notiz (optional)",
+      "save": "Übergeben",
+      "yours": "Sie sind weg",
+      "forYou": "Sie vertreten",
+      "others": "Weitere Vertretungen",
+      "now": "Jetzt",
+      "from": "{{from}} – {{to}}",
+      "end": "Beenden",
+      "none": "Keine Vertretungen.",
+      "created": "{{name}} vertritt vom {{from}} bis {{to}}.",
+      "ended": "Vertretung beendet.",
+      "nothing": "Sie haben keine Freigaben zu übergeben.",
+      "covering": "Sie vertreten {{names}} — deren Freigaben stehen in Ihrer Liste.",
+      "pickPerson": "Person wählen",
+      "maxDays": "Höchstens {{count}} Tage am Stück."
     }
   }
 }

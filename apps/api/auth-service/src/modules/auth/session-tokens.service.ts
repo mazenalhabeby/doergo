@@ -1,3 +1,4 @@
+import { sessionAccess } from './stand-in';
 import {
   readAssignedHome,
   DEFAULT_REFRESH_TOKEN_TTL,
@@ -251,7 +252,7 @@ export class SessionTokensService {
       return { success: false, statusCode: HttpStatus.FORBIDDEN, message: ORG_SUSPENDED_MESSAGE };
     }
 
-    const access = memberAccessOf(user);
+    const access = await sessionAccess(this.prisma, user, user.organization?.timezone, memberAccessOf(user));
 
     return this.buildSession(user, access, opts);
   }

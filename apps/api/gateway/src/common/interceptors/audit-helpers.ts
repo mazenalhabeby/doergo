@@ -37,6 +37,9 @@ export const SENSITIVE_KEY = /pass|token|secret|otp|code|hash|authorization/i;
 // Known routes → semantic action labels. Anything unlisted falls back to
 // `${RESOURCE}_${VERB}` (e.g. LOCATIONS_UPDATED), so coverage is total.
 export const ROUTE_ACTIONS: Record<string, string> = {
+  // A leader's approval decisions handed to a stand-in for some days (approvals/stand-ins).
+  'POST /approvals/stand-ins': 'APPROVAL_STAND_IN_CREATED',
+  'POST /approvals/stand-ins/:id/end': 'APPROVAL_STAND_IN_ENDED',
   // Calendar (shared calendar/*): appointments, answers, and the holiday/weekend settings.
   'POST /calendar/events': 'CALENDAR_EVENT_CREATED',
   'PATCH /calendar/events/:id': 'CALENDAR_EVENT_UPDATED',

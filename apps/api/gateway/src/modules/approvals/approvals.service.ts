@@ -7,6 +7,9 @@ import {
   countApprovals,
   dedupeApprovals,
   isAdmin,
+  orgFlagFields,
+  ownAccess,
+  spacesGranting,
   sortApprovals,
   toApproval,
   type AccessPermissionKey,
@@ -130,8 +133,12 @@ export class ApprovalsService {
       }
     });
     // Never your own: every kind refuses deciding about yourself (SELF_DECISION), so it is not yours to see here.
-    const decidable = sortApprovals(dedupeApprovals(items).filter((i) => i.canDecide && i.subject.id !== user.id));
-    for (const i of decidable) i.why = { via: whyCallerDecides(user, i) };
+    // Nor about the leader they stand in for: every kind refuses that (STAND_IN_FOR_SUBJECT).
+    const covering = new Set<string>(((user.access?.standingInFor ?? []) as Array<{ userId: string }>).map((f) => f.userId));
+    const decidable = sortApprovals(
+      dedupeApprovals(items).filter((i) => i.canDecide && i.subject.id !== user.id && !(i.subject.id && covering.has(i.subject.id))),
+    );
+    for (const i of decidable) i.why = whyCallerDecides(user, i);
     this.counts.set(user.id, { at: Date.now(), value: countApprovals(decidable) });
     if (this.known.size > 2000) this.known.clear();
     this.known.set(user.id, { at: Date.now(), items: new Map(decidable.map((i) => [`${i.kind}:${i.id}`, i])) });
@@ -232,10 +239,28 @@ export function mayDecide(user: any, kind: ApprovalKind, spaceId: string | null)
   return scope.includes(spaceId);
 }
 
-/** Why the caller may decide this item — said on the item ("you approve hours at Binderholz"). */
-export function whyCallerDecides(user: any, item: ApprovalItem): 'ADMIN' | 'ORG' | 'SPACE' | 'ASSIGNED' {
-  if (isAdmin(user)) return 'ADMIN';
-  if (scopeFor(user, APPROVAL_KIND_SPECS[item.kind].decideKey) === null) return 'ORG';
-  if (item.kind === 'issue' && !mayDecide(user, item.kind, item.space?.id ?? null)) return 'ASSIGNED';
-  return 'SPACE';
+/** Why the caller may decide this item — said on the item ("you approve hours at Binderholz", "covering for Anna"). */
+export function whyCallerDecides(user: any, item: ApprovalItem): NonNullable<ApprovalItem['why']> {
+  if (isAdmin(user)) return { via: 'ADMIN' };
+  const spec = APPROVAL_KIND_SPECS[item.kind];
+  const spaceId = item.space?.id ?? null;
+  // Through their OWN access first; a stand-in's borrowed keys only explain what is left.
+  const own = scopeForOwn(user, spec.decideKey);
+  if (own === null) return { via: 'ORG' };
+  if (!spec.orgWide && (spaceId ? own.includes(spaceId) : own.length > 0)) return { via: 'SPACE' };
+  if (item.kind === 'issue' && !mayDecide(user, item.kind, spaceId)) return { via: 'ASSIGNED' };
+  const from = (user.access?.standingInFor ?? []) as Array<{ name: string }>;
+  return from.length ? { via: 'DELEGATED', fromName: from.map((f) => f.name).join(', ') } : { via: 'SPACE' };
+}
+
+/** `scopeFor` on the caller's OWN access (the org flag is the merged one; re-derive it from own access). */
+function scopeForOwn(user: any, key: string): string[] | null {
+  const own = ownAccess(user.access);
+  if (own === user.access) return scopeFor(user, key as never);
+  return holdsOrgWideOwn(own, key) ? null : (spacesGranting(own, key as never) ?? []);
+}
+
+function holdsOrgWideOwn(access: any, key: string): boolean {
+  const flags = orgFlagFields(access) as Record<string, boolean>;
+  return flags[key] === true;
 }

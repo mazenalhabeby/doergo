@@ -1,3 +1,5 @@
+import { standInGrant } from '../../common/stand-in';
+import { grantHolds } from '@hbcfield/shared';
 import type { Prisma } from '@prisma/client';
 import {
   Injectable,
@@ -476,8 +478,13 @@ export class ExtraTimeService {
       const spaceIds = assignments
         .filter((a) => (a.role?.permissions as any)?.canApproveOvertime === true)
         .map((a) => a.spaceId);
-      if (spaceIds.length === 0) return success([], 'No pending extra-time requests');
-      spaceFilter = { locationId: { in: spaceIds } };
+      // A stand-in decides where the leader they cover does — everywhere, or in those workspaces.
+      const standIn = await standInGrant(this.prisma, data.userId, data.organizationId);
+      if (!standIn.org.canApproveOvertime) {
+        for (const [spaceId, keys] of Object.entries(standIn.perSpace)) if (keys.canApproveOvertime) spaceIds.push(spaceId);
+        if (spaceIds.length === 0) return success([], 'No pending extra-time requests');
+        spaceFilter = { locationId: { in: [...new Set(spaceIds)] } };
+      }
     }
 
     const entries = await this.prisma.timeEntry.findMany({
@@ -542,6 +549,8 @@ export class ExtraTimeService {
       include: { role: { select: { permissions: true } } },
     });
     if ((assignment?.role?.permissions as any)?.canApproveOvertime === true) return true;
+    // Standing in for a leader who approves overtime here (or everywhere) today.
+    if (grantHolds(await standInGrant(this.prisma, userId, organizationId), 'canApproveOvertime', spaceId)) return true;
     // Org admins / user managers can always approve.
     const admin = await this.prisma.user.findFirst({
       where: {

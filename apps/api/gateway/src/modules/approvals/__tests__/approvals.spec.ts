@@ -170,3 +170,34 @@ describe('why you see it, and who else could decide', () => {
       .toEqual(['Ben', 'Cy', 'Zoe', 'Ali']);
   });
 });
+
+describe('a stand-in', () => {
+  const { withStandIn, ownAccess, delegatedGrant, standInDatesProblem } = jest.requireActual('@hbcfield/shared');
+  const { whyCallerDecides } = jest.requireActual('../approvals.service');
+  const { actorPermsForSpace } = jest.requireActual('../../space-roles/space-member-access');
+  const leader = { org: {}, perSpace: { s1: { canApproveAttendance: true, canManageAssets: true, canGrantSpaceRoles: true } } };
+  const grant = delegatedGrant(leader, false);
+  const deputyOwn = { org: {}, perSpace: { s2: { canViewAllTasks: true } } };
+  const deputy = { id: 'd', role: 'EMPLOYEE', access: withStandIn(deputyOwn, grant, [{ userId: 'lea', name: 'Lea Lang' }]) };
+
+  it('carries only the approval keys, where the leader holds them — never money or role-giving', () => {
+    expect(grant).toEqual({ org: {}, perSpace: { s1: { canApproveAttendance: true } } });
+  });
+
+  it('is never a grant ceiling: what they may hand on is their own', () => {
+    expect(actorPermsForSpace(deputy, 's1')).toEqual({});
+    expect(ownAccess(deputy.access)).toMatchObject({ org: {}, perSpace: deputyOwn.perSpace });
+  });
+
+  it('their items say whose decisions they cover', () => {
+    const item: any = { kind: 'hours', id: 'e', space: { id: 's1', name: 'A' }, subject: { id: 'x', name: 'X' } };
+    expect(whyCallerDecides(deputy, item)).toEqual({ via: 'DELEGATED', fromName: 'Lea Lang' });
+  });
+
+  it('days: whole days, not over, at most the limit', () => {
+    expect(standInDatesProblem('2026-10-20', '2026-10-24', '2026-10-13', 60)).toBeNull();
+    expect(standInDatesProblem('2026-10-24', '2026-10-20', '2026-10-13', 60)).toBe('STAND_IN_DATES_INVALID');
+    expect(standInDatesProblem('2026-10-01', '2026-10-05', '2026-10-13', 60)).toBe('STAND_IN_IN_THE_PAST');
+    expect(standInDatesProblem('2026-10-13', '2027-01-01', '2026-10-13', 60)).toBe('STAND_IN_TOO_LONG');
+  });
+});

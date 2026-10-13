@@ -7,6 +7,7 @@ import {
   mayAddSpaceMembers,
   mayGrantSpaceRoles,
   mayManageSpaceMembers,
+  ownAccess,
   type PermissionSet,
   type ResolvedAccess,
 } from '@hbcfield/shared';
@@ -27,7 +28,8 @@ import {
  * may hand to somebody else.
  */
 export function actorPermsForSpace(user: any, spaceId: string): PermissionSet {
-  const access = user?.access as ResolvedAccess | undefined;
+  // OWN access: a stand-in's borrowed approval keys are never something to hand on.
+  const access = ownAccess(user?.access as ResolvedAccess | undefined);
   return { ...(access?.org ?? {}), ...(access?.perSpace?.[spaceId] ?? {}) };
 }
 
@@ -44,7 +46,7 @@ export function grantCeiling(user: any, spaceId: string): PermissionSet | null {
  */
 export function assertMayGrant(user: any, rolePerms: unknown, spaceId?: string) {
   if (isAdmin(user)) return;
-  const ceiling = spaceId ? actorPermsForSpace(user, spaceId) : (user?.access?.org ?? {});
+  const ceiling = spaceId ? actorPermsForSpace(user, spaceId) : (ownAccess(user?.access as ResolvedAccess | undefined)?.org ?? {});
   if (permissionsExceed(ceiling, permissionsFromOrgRole(rolePerms))) {
     throw new ForbiddenException('You cannot grant permissions beyond your own');
   }

@@ -9423,7 +9423,17 @@
     "CANNOT_CHANGE_OWN": "You cannot change your own permissions in this workspace.",
     "ASSIGNMENT_NOT_FOUND": "This person is no longer in this workspace.",
     "ROLE_NOT_FOUND": "That role no longer exists.",
-    "PERMISSIONS_CHOICE_INVALID": "Choose either a role or a set of permissions."
+    "PERMISSIONS_CHOICE_INVALID": "Choose either a role or a set of permissions.",
+    "STAND_IN_FOR_SUBJECT": "You are standing in for this person — their own requests go to someone else.",
+    "STAND_IN_SELF": "Choose somebody else to stand in.",
+    "STAND_IN_DATES_INVALID": "Choose a first and a last day, the last not before the first.",
+    "STAND_IN_IN_THE_PAST": "These days are over.",
+    "STAND_IN_TOO_LONG": "A stand-in can cover at most {{maxDays}} days at a time.",
+    "STAND_IN_OVERLAP": "There is already a stand-in for some of these days. End it first.",
+    "STAND_IN_NOTHING_TO_HAND_OVER": "There are no approval decisions to hand over.",
+    "STAND_IN_EXTERNAL": "An external member cannot stand in for one of your leaders.",
+    "STAND_IN_NOT_A_COLLEAGUE": "Choose somebody who works in one of your workspaces.",
+    "STAND_IN_NOT_YOURS": "Only somebody who manages people can arrange a stand-in for someone else."
   },
   "signLink": {
     "tabs": {
@@ -10863,6 +10873,31 @@
         "ASSIGNED": "Given to them",
         "DELEGATED": "Covering"
       }
+    },
+    "standIn": {
+      "title": "Stand-in",
+      "open": "Stand-in",
+      "intro": "Going away? Hand your approvals to a colleague for those days. They decide hours, extra time, overtime, leave and requests in your workspaces — never money, documents, new people or clients, and never about you.",
+      "who": "Who stands in",
+      "whose": "Whose approvals",
+      "me": "Mine",
+      "firstDay": "First day",
+      "lastDay": "Last day",
+      "note": "Note (optional)",
+      "save": "Hand over",
+      "yours": "You're away",
+      "forYou": "You're covering",
+      "others": "Other stand-ins",
+      "now": "Now",
+      "from": "{{from}} – {{to}}",
+      "end": "End",
+      "none": "No stand-ins.",
+      "created": "{{name}} stands in from {{from}} to {{to}}.",
+      "ended": "Stand-in ended.",
+      "nothing": "You have no approvals to hand over.",
+      "covering": "You're covering for {{names}} — their approvals are in your list.",
+      "pickPerson": "Choose a person",
+      "maxDays": "At most {{count}} days at a time."
     }
   }
 }

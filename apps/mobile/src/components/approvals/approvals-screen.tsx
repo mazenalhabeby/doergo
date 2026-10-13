@@ -11,6 +11,7 @@ import { centeredContent } from '../screen-container';
 import { SectionLabel } from '../job/job-ui';
 import { WellRow } from '../register/well-row';
 import { approvalKey, loadApprovals } from './approvals-store';
+import { StandInSheet } from './stand-in-sheet';
 
 type Filter = ApprovalKind | 'all';
 
@@ -32,6 +33,7 @@ export function ApprovalsScreen() {
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
+  const [standIn, setStandIn] = useState(false);
 
   const load = useCallback(async (mode: 'first' | 'refresh') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -62,6 +64,11 @@ export function ApprovalsScreen() {
   );
 
   const tt = t as unknown as ApprovalT;
+  // Whose decisions this member covers today — from the items themselves.
+  const covering = useMemo(
+    () => [...new Set((items ?? []).filter((i) => i.why?.via === 'DELEGATED' && i.why.fromName).map((i) => i.why!.fromName!))],
+    [items],
+  );
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href));
 
   const header = (
@@ -73,6 +80,9 @@ export function ApprovalsScreen() {
             <FilterPill key={k} label={`${t(`approvals.kinds.${k}`)} ${counts.get(k)}`} on={filter === k} onPress={() => setFilter(k)} />
           ))}
         </FilterRow>
+      ) : null}
+      {covering.length ? (
+        <AText variant="caption" tone="accent">{t('approvals.standIn.covering', { names: covering.join(', ') })}</AText>
       ) : null}
       {unavailable.length || failed ? (
         <AText variant="caption" tone="warn">
@@ -86,7 +96,12 @@ export function ApprovalsScreen() {
 
   return (
     <Ground style={{ flex: 1 }}>
-      <ScreenHeader title={t('approvals.title')} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
+      <ScreenHeader
+        title={t('approvals.title')}
+        leading={<HeaderBack onPress={back} />}
+        actions={[{ label: t('approvals.standIn.open'), onPress: () => setStandIn(true) }]}
+        style={wide ?? undefined}
+      />
       <SectionList
         sections={items ? sections : []}
         keyExtractor={(x) => approvalKey(x)}
@@ -125,6 +140,7 @@ export function ApprovalsScreen() {
           );
         }}
       />
+      <StandInSheet visible={standIn} onClose={() => setStandIn(false)} onChanged={() => void load('refresh')} />
     </Ground>
   );
 }

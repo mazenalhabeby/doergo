@@ -5181,6 +5181,31 @@
         "ASSIGNED": "Affidato",
         "DELEGATED": "Sostituto"
       }
+    },
+    "standIn": {
+      "title": "Sostituto",
+      "open": "Sostituto",
+      "intro": "Va via? Affidi le sue approvazioni a un collega per quei giorni. Decide ore, tempo in più, straordinari, ferie e richieste nei suoi spazi — mai denaro, documenti, nuove persone o clienti, e mai su di lei.",
+      "who": "Chi la sostituisce",
+      "whose": "Approvazioni di",
+      "me": "Le mie",
+      "firstDay": "Primo giorno",
+      "lastDay": "Ultimo giorno",
+      "note": "Nota (facoltativa)",
+      "save": "Affida",
+      "yours": "Lei è via",
+      "forYou": "Lei sostituisce",
+      "others": "Altri sostituti",
+      "now": "Adesso",
+      "from": "{{from}} – {{to}}",
+      "end": "Termina",
+      "none": "Nessun sostituto.",
+      "created": "{{name}} la sostituisce dal {{from}} al {{to}}.",
+      "ended": "Sostituzione terminata.",
+      "nothing": "Non ha approvazioni da affidare.",
+      "covering": "Sostituisce {{names}} — le loro approvazioni sono nella sua lista.",
+      "pickPerson": "Scelga una persona",
+      "maxDays": "Al massimo {{count}} giorni di fila."
     }
   }
 }

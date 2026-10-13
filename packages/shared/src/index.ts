@@ -208,6 +208,8 @@ export * from './access/personal-role';
 export * from './access/assignment-permissions';
 // A member's org-wide access from their row, resolved like the session (access/org-access.ts).
 export * from './access/org-access';
+// A stand-in: a leader's approval decisions handed over for whole days (access/delegation.ts).
+export * from './access/delegation';
 // What a member may upload, and how big — one definition (constants/upload-rules.ts).
 export * from './constants/upload-rules';
 

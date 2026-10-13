@@ -9432,7 +9432,17 @@
     "CANNOT_CHANGE_OWN": "Vous ne pouvez pas modifier vos propres autorisations dans cet espace de travail.",
     "ASSIGNMENT_NOT_FOUND": "Cette personne ne fait plus partie de cet espace de travail.",
     "ROLE_NOT_FOUND": "Ce rôle n'existe plus.",
-    "PERMISSIONS_CHOICE_INVALID": "Choisissez soit un rôle, soit un ensemble d'autorisations."
+    "PERMISSIONS_CHOICE_INVALID": "Choisissez soit un rôle, soit un ensemble d'autorisations.",
+    "STAND_IN_FOR_SUBJECT": "Vous remplacez cette personne — ses propres demandes vont à quelqu’un d’autre.",
+    "STAND_IN_SELF": "Choisissez une autre personne comme remplaçant.",
+    "STAND_IN_DATES_INVALID": "Choisissez un premier et un dernier jour, le dernier pas avant le premier.",
+    "STAND_IN_IN_THE_PAST": "Ces jours sont passés.",
+    "STAND_IN_TOO_LONG": "Un remplacement couvre au plus {{maxDays}} jours d’affilée.",
+    "STAND_IN_OVERLAP": "Il y a déjà un remplaçant pour certains de ces jours. Terminez-le d’abord.",
+    "STAND_IN_NOTHING_TO_HAND_OVER": "Il n’y a aucune validation à confier.",
+    "STAND_IN_EXTERNAL": "Un membre externe ne peut pas remplacer l’un de vos responsables.",
+    "STAND_IN_NOT_A_COLLEAGUE": "Choisissez quelqu’un qui travaille dans l’un de vos espaces.",
+    "STAND_IN_NOT_YOURS": "Seule une personne qui gère les personnes peut organiser un remplacement pour autrui."
   },
   "signLink": {
     "tabs": {
@@ -10872,6 +10882,31 @@
         "ASSIGNED": "Confié",
         "DELEGATED": "Remplaçant"
       }
+    },
+    "standIn": {
+      "title": "Remplaçant",
+      "open": "Remplaçant",
+      "intro": "Vous partez ? Confiez vos validations à un collègue pour ces jours. Il décide des heures, du temps en plus, des heures supplémentaires, des congés et des demandes dans vos espaces — jamais d’argent, de documents, de nouvelles personnes ni de clients, et jamais à votre sujet.",
+      "who": "Qui vous remplace",
+      "whose": "Validations de",
+      "me": "Les miennes",
+      "firstDay": "Premier jour",
+      "lastDay": "Dernier jour",
+      "note": "Note (facultatif)",
+      "save": "Confier",
+      "yours": "Vous êtes absent",
+      "forYou": "Vous remplacez",
+      "others": "Autres remplacements",
+      "now": "En cours",
+      "from": "{{from}} – {{to}}",
+      "end": "Terminer",
+      "none": "Aucun remplacement.",
+      "created": "{{name}} vous remplace du {{from}} au {{to}}.",
+      "ended": "Remplacement terminé.",
+      "nothing": "Vous n’avez aucune validation à confier.",
+      "covering": "Vous remplacez {{names}} — leurs validations sont dans votre liste.",
+      "pickPerson": "Choisir une personne",
+      "maxDays": "Au plus {{count}} jours d’affilée."
     }
   }
 }

@@ -9423,7 +9423,17 @@
     "CANNOT_CHANGE_OWN": "No puede cambiar sus propios permisos en este espacio de trabajo.",
     "ASSIGNMENT_NOT_FOUND": "Esta persona ya no está en este espacio de trabajo.",
     "ROLE_NOT_FOUND": "Ese rol ya no existe.",
-    "PERMISSIONS_CHOICE_INVALID": "Elija un rol o un conjunto de permisos."
+    "PERMISSIONS_CHOICE_INVALID": "Elija un rol o un conjunto de permisos.",
+    "STAND_IN_FOR_SUBJECT": "Usted sustituye a esta persona — sus propias solicitudes van a otra persona.",
+    "STAND_IN_SELF": "Elija a otra persona como sustituto.",
+    "STAND_IN_DATES_INVALID": "Elija un primer y un último día; el último no antes del primero.",
+    "STAND_IN_IN_THE_PAST": "Esos días ya pasaron.",
+    "STAND_IN_TOO_LONG": "Una sustitución cubre como máximo {{maxDays}} días seguidos.",
+    "STAND_IN_OVERLAP": "Ya hay un sustituto para algunos de esos días. Termínelo primero.",
+    "STAND_IN_NOTHING_TO_HAND_OVER": "No hay aprobaciones que pasar.",
+    "STAND_IN_EXTERNAL": "Un miembro externo no puede sustituir a uno de sus responsables.",
+    "STAND_IN_NOT_A_COLLEAGUE": "Elija a alguien que trabaje en uno de sus espacios.",
+    "STAND_IN_NOT_YOURS": "Solo quien gestiona personas puede organizar un sustituto para otra persona."
   },
   "signLink": {
     "tabs": {
@@ -10863,6 +10873,31 @@
         "ASSIGNED": "Asignado",
         "DELEGATED": "Sustituye"
       }
+    },
+    "standIn": {
+      "title": "Sustituto",
+      "open": "Sustituto",
+      "intro": "¿Se va? Pase sus aprobaciones a un compañero esos días. Decide horas, tiempo extra, horas extra, permisos y solicitudes en sus espacios — nunca dinero, documentos, personas nuevas ni clientes, y nunca sobre usted.",
+      "who": "Quién le sustituye",
+      "whose": "Aprobaciones de",
+      "me": "Las mías",
+      "firstDay": "Primer día",
+      "lastDay": "Último día",
+      "note": "Nota (opcional)",
+      "save": "Pasar",
+      "yours": "Usted está fuera",
+      "forYou": "Usted sustituye",
+      "others": "Otros sustitutos",
+      "now": "Ahora",
+      "from": "{{from}} – {{to}}",
+      "end": "Terminar",
+      "none": "No hay sustitutos.",
+      "created": "{{name}} le sustituye del {{from}} al {{to}}.",
+      "ended": "Sustitución terminada.",
+      "nothing": "No tiene aprobaciones que pasar.",
+      "covering": "Sustituye a {{names}} — sus aprobaciones están en su lista.",
+      "pickPerson": "Elija una persona",
+      "maxDays": "Como máximo {{count}} días seguidos."
     }
   }
 }

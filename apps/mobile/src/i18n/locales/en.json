@@ -5181,6 +5181,31 @@
         "ASSIGNED": "Given to them",
         "DELEGATED": "Covering"
       }
+    },
+    "standIn": {
+      "title": "Stand-in",
+      "open": "Stand-in",
+      "intro": "Going away? Hand your approvals to a colleague for those days. They decide hours, extra time, overtime, leave and requests in your workspaces — never money, documents, new people or clients, and never about you.",
+      "who": "Who stands in",
+      "whose": "Whose approvals",
+      "me": "Mine",
+      "firstDay": "First day",
+      "lastDay": "Last day",
+      "note": "Note (optional)",
+      "save": "Hand over",
+      "yours": "You're away",
+      "forYou": "You're covering",
+      "others": "Other stand-ins",
+      "now": "Now",
+      "from": "{{from}} – {{to}}",
+      "end": "End",
+      "none": "No stand-ins.",
+      "created": "{{name}} stands in from {{from}} to {{to}}.",
+      "ended": "Stand-in ended.",
+      "nothing": "You have no approvals to hand over.",
+      "covering": "You're covering for {{names}} — their approvals are in your list.",
+      "pickPerson": "Choose a person",
+      "maxDays": "At most {{count}} days at a time."
     }
   }
 }

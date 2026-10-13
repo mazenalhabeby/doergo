@@ -431,6 +431,7 @@ enum SprintStatus {
 // Table dropped in migration 20260807150000_drop_legacy_orgrole.
 
 model Organization {
+  approvalDelegations ApprovalDelegation[]
   /// The legal companies inside this organization (docs/plans/companies-legal-entities.md).
   legalEntities LegalEntity[]
   id        String   @id @default(cuid())
@@ -787,6 +788,8 @@ model SpaceShareRequest {
 }
 
 model User {
+  delegationsGiven    ApprovalDelegation[] @relation("DelegationFrom")
+  delegationsReceived ApprovalDelegation[] @relation("DelegationTo")
   id           String @id @default(cuid())
   /// The legal company that employs this person — contracts and certificates carry its name.
   employerEntityId String?
@@ -2620,6 +2623,36 @@ model CompanyLocation {
 // replacement for it — this comment said "replace" long after the resolver
 // started merging the two (NotificationRoutingService.computeWatchers). Neither
 // configured → nobody is told; there is no fallback to the org's admins.
+/// A leader on leave hands their APPROVAL decisions to a stand-in for whole days
+/// (startsOn..endsOn inclusive, the organization's days). The stand-in holds the
+/// leader's own approval keys (DELEGATABLE_KEYS in shared access/delegation.ts),
+/// in the leader's own scope, for those days only — added to the session, never
+/// counted when granting roles. Revoked rows stay for the record.
+model ApprovalDelegation {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  fromUserId String
+  fromUser   User   @relation("DelegationFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User   @relation("DelegationTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  startsOn DateTime @db.Date
+  endsOn   DateTime @db.Date
+  note     String?
+
+  createdById String
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  revokedById String?
+
+  @@index([toUserId, endsOn])
+  @@index([fromUserId, endsOn])
+  @@index([organizationId])
+  @@map("approval_delegations")
+}
+
 model NotificationWatch {
   id             String       @id @default(cuid())
   organizationId String

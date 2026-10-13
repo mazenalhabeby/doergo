@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
   ABSENCE_WHERE,
+  APPROVAL_KIND_SPECS,
+  delegationDay,
+  grantHolds,
+  standInsOn,
   ORG_ACCESS_SELECT,
   decideVia,
   isApprovalKind,
@@ -70,9 +74,21 @@ export class ApprovalRouteService {
         : Promise.resolve({ ids: [] as string[], emails: [] }),
     ]);
 
+    // Today's stand-ins: they decide where the leader they cover does — never about that leader.
+    const org = await this.prisma.organization.findUnique({ where: { id: input.organizationId }, select: { timezone: true } });
+    const standIns = await standInsOn(this.prisma as never, input.organizationId, delegationDay(now, org?.timezone)).catch(() => new Map());
+    const key = APPROVAL_KIND_SPECS[input.kind].decideKey;
+
     const deciders: ApprovalDecider[] = [];
     for (const m of members) {
-      const via = decideVia({ isAdmin: m.role === 'ADMIN', access: memberAccessOf(m as never) }, input.kind, input.spaceId);
+      let via: ApprovalDecider['via'] | null = decideVia({ isAdmin: m.role === 'ADMIN', access: memberAccessOf(m as never) }, input.kind, input.spaceId);
+      const standIn = standIns.get(m.id);
+      if (!via && standIn && !standIn.from.some((f: { userId: string }) => f.userId === input.subjectUserId)) {
+        const covers = APPROVAL_KIND_SPECS[input.kind].orgWide
+          ? !!standIn.grant.org[key as never]
+          : grantHolds(standIn.grant, key as never, input.spaceId);
+        if (covers) via = 'DELEGATED';
+      }
       if (via) deciders.push({ id: m.id, name: personName(m), avatarUrl: m.avatarUrl ?? null, via, onLeave: false });
     }
 

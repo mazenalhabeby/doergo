@@ -9432,7 +9432,17 @@
     "CANNOT_CHANGE_OWN": "Non potete modificare le vostre autorizzazioni in questo spazio di lavoro.",
     "ASSIGNMENT_NOT_FOUND": "Questa persona non è più in questo spazio di lavoro.",
     "ROLE_NOT_FOUND": "Quel ruolo non esiste più.",
-    "PERMISSIONS_CHOICE_INVALID": "Scegliete un ruolo oppure un insieme di autorizzazioni."
+    "PERMISSIONS_CHOICE_INVALID": "Scegliete un ruolo oppure un insieme di autorizzazioni.",
+    "STAND_IN_FOR_SUBJECT": "Lei sostituisce questa persona — le sue richieste vanno a qualcun altro.",
+    "STAND_IN_SELF": "Scelga un’altra persona come sostituto.",
+    "STAND_IN_DATES_INVALID": "Scelga un primo e un ultimo giorno, l’ultimo non prima del primo.",
+    "STAND_IN_IN_THE_PAST": "Quei giorni sono passati.",
+    "STAND_IN_TOO_LONG": "Una sostituzione copre al massimo {{maxDays}} giorni di fila.",
+    "STAND_IN_OVERLAP": "C’è già un sostituto per alcuni di quei giorni. Lo termini prima.",
+    "STAND_IN_NOTHING_TO_HAND_OVER": "Non ci sono approvazioni da affidare.",
+    "STAND_IN_EXTERNAL": "Un membro esterno non può sostituire uno dei suoi responsabili.",
+    "STAND_IN_NOT_A_COLLEAGUE": "Scelga qualcuno che lavora in uno dei suoi spazi.",
+    "STAND_IN_NOT_YOURS": "Solo chi gestisce le persone può organizzare un sostituto per altri."
   },
   "signLink": {
     "tabs": {
@@ -10872,6 +10882,31 @@
         "ASSIGNED": "Affidato",
         "DELEGATED": "Sostituto"
       }
+    },
+    "standIn": {
+      "title": "Sostituto",
+      "open": "Sostituto",
+      "intro": "Va via? Affidi le sue approvazioni a un collega per quei giorni. Decide ore, tempo in più, straordinari, ferie e richieste nei suoi spazi — mai denaro, documenti, nuove persone o clienti, e mai su di lei.",
+      "who": "Chi la sostituisce",
+      "whose": "Approvazioni di",
+      "me": "Le mie",
+      "firstDay": "Primo giorno",
+      "lastDay": "Ultimo giorno",
+      "note": "Nota (facoltativa)",
+      "save": "Affida",
+      "yours": "Lei è via",
+      "forYou": "Lei sostituisce",
+      "others": "Altri sostituti",
+      "now": "Adesso",
+      "from": "{{from}} – {{to}}",
+      "end": "Termina",
+      "none": "Nessun sostituto.",
+      "created": "{{name}} la sostituisce dal {{from}} al {{to}}.",
+      "ended": "Sostituzione terminata.",
+      "nothing": "Non ha approvazioni da affidare.",
+      "covering": "Sostituisce {{names}} — le loro approvazioni sono nella sua lista.",
+      "pickPerson": "Scelga una persona",
+      "maxDays": "Al massimo {{count}} giorni di fila."
     }
   }
 }

@@ -26,7 +26,7 @@ const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 // route and audited there, as the action it is. Auditing the carrier too would
 // record every offline action twice.
 // `/approvals/decide` is a carrier too: the decision is replayed against the kind's own route, audited there.
-const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token', '/sync', '/approvals'];
+const SKIP_PREFIXES = ['/tracking', '/auth', '/users/push-token', '/sync', '/approvals/decide'];
 
 // Routes whose service writes its own, richer audit rows in the same
 // transaction as the change (titles, member, what was lost). A second, generic

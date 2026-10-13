@@ -1,3 +1,5 @@
+import { standInGrant } from '../../common/stand-in';
+import { grantHolds } from '@hbcfield/shared';
 import {
   Injectable,
   Inject,
@@ -239,7 +241,11 @@ export class OvertimeService {
       approver.role === 'ADMIN' ||
       (approver.memberRole?.permissions as Record<string, unknown> | null)?.canApproveOvertime === true;
 
-    if (!orgWide) {
+    // Standing in for a leader who approves overtime everywhere / here today.
+    const standIn = orgWide ? null : await standInGrant(this.prisma, approver.id, data.organizationId);
+    // A request with no workspace needs the org-wide grant, never "some workspace".
+    const coveredByStandIn = !!standIn && (request.locationId ? grantHolds(standIn, 'canApproveOvertime', request.locationId) : !!standIn.org.canApproveOvertime);
+    if (!orgWide && !coveredByStandIn) {
       // Does a space role grant it where this overtime actually happened?
       const grantedHere = request.locationId
         ? await this.prisma.spaceAssignment.findFirst({

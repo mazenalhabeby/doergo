@@ -1,3 +1,4 @@
+import { sessionAccess } from './stand-in';
 import {
   readAssignedHome,
   REFRESH_TOKEN_GRACE_PERIOD_SECONDS,
@@ -336,7 +337,7 @@ export class SessionsService {
         // was previously used but is lost on restart/crash, orphaning rows.
       }
 
-      const refreshAccess = memberAccessOf(storedToken.user);
+      const refreshAccess = await sessionAccess(this.prisma, storedToken.user, storedToken.user.organization?.timezone, memberAccessOf(storedToken.user));
 
       return {
         success: true,

@@ -239,6 +239,7 @@ const approvalsKeys = {
   list: () => named("approvals", ["list"]),
   count: () => named("approvals", ["count"]),
   route: (kind: string, id: string) => named("approvals", ["route", kind, id]),
+  standIns: () => named("approvals", ["stand-ins"]),
 } as const
 
 const shiftIssuesKeys = {

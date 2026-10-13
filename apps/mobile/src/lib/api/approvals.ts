@@ -4,7 +4,7 @@
  * queued, because somebody else may make it first.
  */
 import { call, E } from './client';
-import type { ApprovalDecision, ApprovalKind, ApprovalRouting, ApprovalsCount, ApprovalsResponse } from '@hbcfield/shared/client';
+import type { ApprovalDecision, ApprovalKind, ApprovalRouting, ApprovalsCount, ApprovalsResponse, StandInInput, StandInView, StandInsResponse } from '@hbcfield/shared/client';
 
 export const approvalsApi = {
   list: async (): Promise<ApprovalsResponse> => {
@@ -18,6 +18,17 @@ export const approvalsApi = {
   route: async (kind: ApprovalKind, id: string): Promise<ApprovalRouting> => {
     const r = await call(E.approvals.route, { kind, id });
     return (Array.isArray(r?.deciders) ? r : r?.data) ?? { deciders: [], moreDeciders: 0, told: [] };
+  },
+  standIns: async (): Promise<StandInsResponse> => {
+    const r = await call(E.approvals.standIns);
+    return Array.isArray(r?.given) ? r : r?.data;
+  },
+  createStandIn: async (input: StandInInput): Promise<StandInView> => {
+    const r = await call(E.approvals.createStandIn, undefined, { body: input });
+    return r?.id ? r : r?.data;
+  },
+  endStandIn: async (id: string): Promise<void> => {
+    await call(E.approvals.endStandIn, { id }, { body: {} });
   },
   decide: async (decision: ApprovalDecision): Promise<void> => {
     await call(E.approvals.decide, undefined, { body: decision });
