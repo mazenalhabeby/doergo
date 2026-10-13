@@ -169,10 +169,13 @@ export default function ApprovalsPage() {
               {t("approvals.rules.open")}
             </Button>
           )}
-          <Button variant="outline" className="h-10 rounded-xl" onClick={() => setStandInOpen(true)}>
-            <UserRoundCheck className="size-4" />
-            {t("approvals.standIn.open")}
-          </Button>
+          {/* An external member never hands their decisions on (the server refuses STAND_IN_EXTERNAL). */}
+          {!user?.isExternal && (
+            <Button variant="outline" className="h-10 rounded-xl" onClick={() => setStandInOpen(true)}>
+              <UserRoundCheck className="size-4" />
+              {t("approvals.standIn.open")}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="icon"

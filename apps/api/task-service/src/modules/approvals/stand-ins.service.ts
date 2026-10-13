@@ -78,7 +78,7 @@ export class StandInsService {
       given: all.filter((v) => v.from.id === caller.userId),
       received: all.filter((v) => v.to.id === caller.userId),
       others: all.filter((v) => v.from.id !== caller.userId && v.to.id !== caller.userId),
-      mayHandOver: await this.holdsSomethingToHandOver(caller.userId, caller.organizationId),
+      mayHandOver: !(await this.isExternal(caller.userId)) && (await this.holdsSomethingToHandOver(caller.userId, caller.organizationId)),
       mayArrange: caller.managesPeople,
       candidates: await this.candidates(caller),
       leaders: caller.managesPeople ? await this.leaders(caller.organizationId) : [],
@@ -142,7 +142,7 @@ export class StandInsService {
     const startsOn = input.startsOn < today ? today : input.startsOn;
 
     const [from, to] = await Promise.all([
-      this.prisma.user.findFirst({ where: { id: fromUserId, organizationId: caller.organizationId, isActive: true }, select: { id: true } }),
+      this.prisma.user.findFirst({ where: { id: fromUserId, organizationId: caller.organizationId, isActive: true }, select: { id: true, isExternal: true } }),
       this.prisma.user.findFirst({
         where: { id: input.toUserId, organizationId: caller.organizationId, isActive: true },
         select: { id: true, isExternal: true },
@@ -152,6 +152,10 @@ export class StandInsService {
     // A leader hands over to somebody they work with; a people manager may choose anybody internal.
     if (!caller.managesPeople && !(await this.candidates(caller)).some((c) => c.id === input.toUserId)) {
       throw new BadRequestException({ message: 'Choose somebody who works in one of your workspaces.', code: 'STAND_IN_NOT_A_COLLEAGUE' });
+    }
+    // An external member's authority is held for a client's site; it is never handed on.
+    if (from.isExternal) {
+      throw new BadRequestException({ message: 'An external member cannot hand their decisions to a stand-in.', code: 'STAND_IN_EXTERNAL' });
     }
     if (to.isExternal) {
       throw new BadRequestException({ message: 'An external member cannot stand in for one of your leaders.', code: 'STAND_IN_EXTERNAL' });
@@ -230,6 +234,10 @@ export class StandInsService {
       },
     });
     return u;
+  }
+
+  private async isExternal(userId: string): Promise<boolean> {
+    return !!(await this.prisma.user.findUnique({ where: { id: userId }, select: { isExternal: true } }))?.isExternal;
   }
 
   private async today(organizationId: string): Promise<string> {

@@ -4,6 +4,8 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { APPROVAL_GROUPS, APPROVAL_KINDS, describeApproval, type ApprovalItem, type ApprovalKind, type ApprovalT } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
+import { useAuth } from '../../contexts/auth-context';
+import { isExternalMember } from '../../lib/member-reach';
 import { formatDay } from '../../lib/money';
 import { useResponsive } from '../../lib/responsive';
 import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader } from '../amazen';
@@ -34,6 +36,9 @@ export function ApprovalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Filter>('all');
   const [standIn, setStandIn] = useState(false);
+  // An external member decides only in their workspace and never hands it on (the server refuses STAND_IN_EXTERNAL).
+  const { user } = useAuth();
+  const external = isExternalMember(user as never);
 
   const load = useCallback(async (mode: 'first' | 'refresh') => {
     if (mode === 'refresh') setRefreshing(true);
@@ -99,7 +104,7 @@ export function ApprovalsScreen() {
       <ScreenHeader
         title={t('approvals.title')}
         leading={<HeaderBack onPress={back} />}
-        actions={[{ label: t('approvals.standIn.open'), onPress: () => setStandIn(true) }]}
+        actions={external ? [] : [{ label: t('approvals.standIn.open'), onPress: () => setStandIn(true) }]}
         style={wide ?? undefined}
       />
       <SectionList
