@@ -79,8 +79,67 @@ const N107: Record<SupportedLocale, ReleaseNote> = {
   },
 };
 
+const N108: Record<SupportedLocale, ReleaseNote> = {
+  en: {
+    title: 'A better HBCField is ready',
+    lead: 'Update on {{store}}. It takes about a minute and nothing you saved is lost.',
+    points: [
+      { icon: 'scan', title: 'Clients from your contacts', body: 'Pick people from your phone’s address book. The ones already in your client book are marked.' },
+      { icon: 'clock', title: 'The automatic clock', body: 'Where your workspace has it on, you are clocked in when you arrive and out when you leave.' },
+      { icon: 'calendar', title: 'Requests and your leave balance', body: 'Ask for any kind of time off and see your balance line by line before you send.' },
+      { icon: 'role', title: 'More for site supervisors', body: 'Your workspace’s equipment and client requests, right on the phone.' },
+    ],
+    footer: 'New features come to this version first.',
+  },
+  de: {
+    title: 'Ein besseres HBCField ist da',
+    lead: 'Aktualisieren Sie über {{store}}. Das dauert etwa eine Minute, und nichts Gespeichertes geht verloren.',
+    points: [
+      { icon: 'scan', title: 'Kunden aus Ihren Kontakten', body: 'Wählen Sie Personen aus dem Adressbuch Ihres Telefons. Wer schon Kunde ist, ist markiert.' },
+      { icon: 'clock', title: 'Die automatische Stempeluhr', body: 'Wo Ihr Arbeitsbereich sie eingeschaltet hat, werden Sie beim Ankommen ein- und beim Gehen ausgestempelt.' },
+      { icon: 'calendar', title: 'Anträge und Ihr Urlaubskonto', body: 'Beantragen Sie jede Art von Abwesenheit und sehen Sie Ihr Konto Zeile für Zeile, bevor Sie senden.' },
+      { icon: 'role', title: 'Mehr für Bauleiter', body: 'Die Ausstattung und die Kundenanfragen Ihres Arbeitsbereichs direkt auf dem Telefon.' },
+    ],
+    footer: 'Neue Funktionen kommen zuerst in diese Version.',
+  },
+  es: {
+    title: 'Un HBCField mejor está listo',
+    lead: 'Actualiza en {{store}}. Tarda un minuto y no pierdes nada de lo guardado.',
+    points: [
+      { icon: 'scan', title: 'Clientes desde tus contactos', body: 'Elige personas de la agenda de tu teléfono. Las que ya son clientes aparecen marcadas.' },
+      { icon: 'clock', title: 'El fichaje automático', body: 'Donde tu espacio lo tiene activado, fichas al llegar y al salir sin tocar nada.' },
+      { icon: 'calendar', title: 'Solicitudes y tu saldo de vacaciones', body: 'Pide cualquier tipo de ausencia y mira tu saldo línea por línea antes de enviar.' },
+      { icon: 'role', title: 'Más para los encargados de obra', body: 'Los equipos y las solicitudes de clientes de tu espacio, en el teléfono.' },
+    ],
+    footer: 'Las novedades llegan primero a esta versión.',
+  },
+  fr: {
+    title: 'Un meilleur HBCField est prêt',
+    lead: 'Mettez à jour sur {{store}}. Cela prend une minute et rien de ce que vous avez enregistré n’est perdu.',
+    points: [
+      { icon: 'scan', title: 'Des clients depuis vos contacts', body: 'Choisissez des personnes dans le carnet d’adresses du téléphone. Celles déjà clientes sont signalées.' },
+      { icon: 'clock', title: 'Le pointage automatique', body: 'Là où votre espace l’a activé, vous pointez à l’arrivée et au départ sans rien toucher.' },
+      { icon: 'calendar', title: 'Demandes et solde de congés', body: 'Demandez tout type d’absence et voyez votre solde ligne par ligne avant d’envoyer.' },
+      { icon: 'role', title: 'Plus pour les chefs de site', body: 'Les équipements et les demandes clients de votre espace, sur le téléphone.' },
+    ],
+    footer: 'Les nouveautés arrivent d’abord dans cette version.',
+  },
+  it: {
+    title: 'Un HBCField migliore è pronto',
+    lead: 'Aggiorna su {{store}}. Ci vuole un minuto e non perdi nulla di quanto salvato.',
+    points: [
+      { icon: 'scan', title: 'Clienti dai tuoi contatti', body: 'Scegli persone dalla rubrica del telefono. Quelle già clienti sono segnate.' },
+      { icon: 'clock', title: 'La timbratura automatica', body: 'Dove il tuo spazio l’ha attivata, timbri all’arrivo e all’uscita senza toccare nulla.' },
+      { icon: 'calendar', title: 'Richieste e saldo ferie', body: 'Chiedi qualsiasi tipo di assenza e vedi il tuo saldo riga per riga prima di inviare.' },
+      { icon: 'role', title: 'Di più per i capocantiere', body: 'Le attrezzature e le richieste dei clienti del tuo spazio, sul telefono.' },
+    ],
+    footer: 'Le novità arrivano prima in questa versione.',
+  },
+};
+
 export const RELEASE_NOTES: Record<string, Record<SupportedLocale, ReleaseNote>> = {
   '1.0.7': N107,
+  '1.0.8': N108,
 };
 
 /** The note for a version in a language (English when that language has none); null when there is no note. */
