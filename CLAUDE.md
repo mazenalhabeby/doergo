@@ -435,6 +435,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 
 > ⚠️ **ON = workspace `enabled` ∧ member chosen ∧ member's consent ∧ not external** (`autoClockActive`). Missing any one → the plan is empty and every AUTO step is an ordinary one.
 >
+> ⚠️ **The switch is OFFERED, not shown to everyone**: the plan carries `offered`/`offeredIn` (where the office chose them, consent aside — `autoClockOffered`); the phone shows it only then or once agreed (`showAutoClockSwitch`), naming the workspaces. Choosing a member, or switching a workspace on with members chosen, pushes `auto_clock_offered` to those who have not agreed.
+>
 > ⚠️ **AUTO is a claim, never an authority — and never a refusal.** Clock-in: marked `AUTO_CLOCK_IN` only when ON, inside the ring and inside the window (`autoClockInWithinWindow`: from `leadMinutes` before the shift start, before its end). Clock-out: `AUTO_CLOCK_OUT` only at/after the planned end (`autoClockOutAfterEnd`). Otherwise recorded as a manual step with the ordinary rules (late, early, geofence) — the person really arrived/left. All three AUTO flags are informational.
 >
 > ⚠️ **Undo window = clock-in + dwell + `AUTO_CLOCK_UNDO_MINUTES` (10) + 2 min slack**, judged at the TAP (`evidence`) so an offline undo counts when made. Refused (`AUTO_CLOCK_UNDO_NOT_ALLOWED`, `params.why` NOT_AUTOMATIC | CLOSED | WORK_RECORDED | TOO_LATE) once a rest, a work-log note or a job step/join exists. A replay finds the audit row → `{undone:true}`; a RESEND of the undone clock-in → 409 `AUTO_CLOCK_UNDONE` (never a second shift).
