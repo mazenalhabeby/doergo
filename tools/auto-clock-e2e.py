@@ -436,10 +436,11 @@ try:
           and (pl.get('presence') or {}).get('noShiftMinutes') == 480 and (pl.get('presence') or {}).get('timezone') == TZ, pl)
 
     P1 = str(uuid.uuid4())
-    arrived = now() - timedelta(seconds=20)  # after his last step (a step dated before it is out of order)
+    arrived = now()  # after his last step (a step dated before it is out of order)
     s, r = clock_in(mike, P1, at=arrived)
     e = entry(P1)
-    check('AUTO clock-in inside the usual hours with no shift is marked automatic', s in (200, 201) and e and 'AUTO_CLOCK_IN' in e['flags'], (s, r, e))
+    check('AUTO clock-in inside the usual hours with no shift is marked automatic — and not sent to review as an unscheduled day',
+          s in (200, 201) and e and 'AUTO_CLOCK_IN' in e['flags'] and 'UNSCHEDULED_DAY' not in e['flags'], (s, r, e))
     check('…the leader is due at arrival + the workspace hours + leaderAfter (no worker nudge)',
           e and e['nextRemindAt'] and abs((ts(e['nextRemindAt']) - (ts(e['in']) + timedelta(minutes=480 + 25))).total_seconds()) < 5, e)
 

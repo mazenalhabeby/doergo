@@ -4090,7 +4090,7 @@
     },
     "autoClock": {
       "title": "Pointage automatique",
-      "subtitle": "Les membres sont pointés à leur arrivée sur cet espace de travail et à leur départ après leur service.",
+      "subtitle": "Les membres sont pointés à leur arrivée dans cet espace de travail et dépointés à leur départ — après leur poste ou, pour les personnes sans poste fixe, dès qu’elles partent.",
       "enable": "Pointer automatiquement ici",
       "enableHint": "Choisissez ensuite sur la page Membres à qui cela s’applique.",
       "noCoordinates": "Cet espace de travail n’a pas de point sur la carte : il n’y a donc pas de zone où arriver ni d’où partir. Renseignez son adresse ou son point sur la carte dans l’onglet Général pour utiliser le pointage automatique.",
@@ -4100,7 +4100,7 @@
       "errorAfterLeader": "Doit être plus tard que l’avis au responsable.",
       "badge": "Pointage automatique",
       "memberSwitch": "Pointer automatiquement",
-      "memberSwitchHint": "À l’arrivée et au départ après le service.",
+      "memberSwitchHint": "À l’arrivée et au départ — selon le poste, ou à l’arrivée et au départ.",
       "consentAgreed": "Accepté dans l’application le {{date}}",
       "consentMissing": "Pas encore accepté — rien ne se passe tant qu’il n’a pas accepté dans l’application.",
       "fields": {

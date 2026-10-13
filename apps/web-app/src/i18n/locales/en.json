@@ -4090,7 +4090,7 @@
     },
     "autoClock": {
       "title": "Automatic clock",
-      "subtitle": "Members are clocked in when they arrive at this workspace and out when they leave after their shift.",
+      "subtitle": "Members are clocked in when they arrive at this workspace and out when they leave — after their shift, or, for people with no fixed shift, whenever they leave.",
       "enable": "Clock in and out automatically here",
       "enableHint": "Then choose on the Members page who it applies to.",
       "noCoordinates": "This workspace has no map point, so there is no area to arrive in or leave. Set its address or map point on the General tab to use the automatic clock.",
@@ -4100,7 +4100,7 @@
       "errorAfterLeader": "Must be later than telling the leader.",
       "badge": "Automatic clock",
       "memberSwitch": "Clock in and out automatically",
-      "memberSwitchHint": "When they arrive and when they leave after their shift.",
+      "memberSwitchHint": "When they arrive and when they leave — by their shift, or by arriving and leaving.",
       "consentAgreed": "Agreed in the app on {{date}}",
       "consentMissing": "Not agreed yet — nothing happens until they agree in the app.",
       "fields": {

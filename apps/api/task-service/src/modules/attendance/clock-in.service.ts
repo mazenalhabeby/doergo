@@ -866,6 +866,18 @@ export class ClockInService {
     // An agreed start on a day with no shift IS the plan for that day.
     const agreedPlan = !scheduled && requestShaped.startMoved;
 
+    const autoSettings = autoClockActive({
+      consentAt: user.autoClockConsentAt,
+      settings: location.autoClock,
+      assignmentAutoClock: assignment.autoClock,
+      isExternal: user.isExternal,
+      mode: assignment.autoClockMode,
+      startWindow: assignment.autoClockStartWindow,
+      noShiftDailyMinutes: location.noShiftDailyMinutes,
+      noShiftPolicy: location.noShiftPolicy,
+    });
+    // No shift here today and clocked by arriving and leaving: the session's course is the workspace's hours.
+    const byPresence = clocksByPresence(autoSettings, stampCols);
     // Smart flags: matched shift/rota → LATE_ARRIVAL if past the start beyond the
     // shift's tolerance; no matched shift → UNSCHEDULED_DAY. Late detection is the
     // shared computeScheduleFlags (same logic as clock-out + edit).
@@ -874,7 +886,8 @@ export class ClockInService {
     // today". At a workspace that schedules nothing (workModel NONE, the default)
     // every clock-in was flagged, sent to review and pushed as pending approval.
     if (!scheduled && !agreedPlan) {
-      if (workspaceSchedulesShifts(location.workModel)) flagReasons.push('UNSCHEDULED_DAY');
+      // Clocked by arriving and leaving: no shift is the arrangement, not something to review.
+      if (workspaceSchedulesShifts(location.workModel) && !byPresence) flagReasons.push('UNSCHEDULED_DAY');
     } else {
       flagReasons.push(
         ...computeScheduleFlags({
@@ -897,18 +910,6 @@ export class ClockInService {
           Otherwise it stays an ordinary clock-in with the ordinary rules —
           never refused: the person really is here.
     */
-    const autoSettings = autoClockActive({
-      consentAt: user.autoClockConsentAt,
-      settings: location.autoClock,
-      assignmentAutoClock: assignment.autoClock,
-      isExternal: user.isExternal,
-      mode: assignment.autoClockMode,
-      startWindow: assignment.autoClockStartWindow,
-      noShiftDailyMinutes: location.noShiftDailyMinutes,
-      noShiftPolicy: location.noShiftPolicy,
-    });
-    // No shift here today and clocked by arriving and leaving: the session's course is the workspace's hours.
-    const byPresence = clocksByPresence(autoSettings, stampCols);
     const autoPlannedEnd = stampCols.expectedClockOutAt ?? (byPresence && autoSettings ? presenceSessionEnd(clockInTime, autoSettings) : null);
     if (autoSettings && autoPlannedEnd) {
       const leaderAt = autoPlannedEnd.getTime() + autoSettings.leaderAfterMinutes * 60_000;

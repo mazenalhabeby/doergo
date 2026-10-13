@@ -4090,7 +4090,7 @@
     },
     "autoClock": {
       "title": "Fichaje automático",
-      "subtitle": "Los miembros fichan la entrada al llegar a este espacio de trabajo y la salida al irse después de su turno.",
+      "subtitle": "Se ficha la entrada al llegar a este espacio de trabajo y la salida al irse: después del turno o, para quien no tiene turno fijo, cuando se vaya.",
       "enable": "Fichar entrada y salida automáticamente aquí",
       "enableHint": "Después elija en la página Miembros a quién se aplica.",
       "noCoordinates": "Este espacio de trabajo no tiene punto en el mapa, así que no hay una zona a la que llegar o de la que salir. Indique su dirección o punto en el mapa en la pestaña General para usar el fichaje automático.",
@@ -4100,7 +4100,7 @@
       "errorAfterLeader": "Debe ser posterior al aviso al responsable.",
       "badge": "Fichaje automático",
       "memberSwitch": "Fichar entrada y salida automáticamente",
-      "memberSwitchHint": "Al llegar y al irse después del turno.",
+      "memberSwitchHint": "Al llegar y al irse: por su turno o al llegar y al irse.",
       "consentAgreed": "Aceptado en la app el {{date}}",
       "consentMissing": "Aún no aceptado — no ocurre nada hasta que lo acepte en la app.",
       "fields": {

@@ -4090,7 +4090,7 @@
     },
     "autoClock": {
       "title": "Automatische Zeiterfassung",
-      "subtitle": "Mitglieder werden beim Ankommen an diesem Arbeitsort eingestempelt und beim Verlassen nach ihrer Schicht ausgestempelt.",
+      "subtitle": "Mitglieder werden beim Ankommen an diesem Arbeitsbereich eingestempelt und beim Gehen ausgestempelt — nach ihrer Schicht oder, bei Personen ohne feste Schicht, wann immer sie gehen.",
       "enable": "Hier automatisch ein- und ausstempeln",
       "enableHint": "Legen Sie danach auf der Seite „Mitglieder“ fest, für wen es gilt.",
       "noCoordinates": "Dieser Arbeitsort hat keinen Kartenpunkt, daher gibt es keinen Bereich zum Ankommen oder Verlassen. Hinterlegen Sie Adresse oder Kartenpunkt im Reiter „Allgemein“, um die automatische Zeiterfassung zu nutzen.",
@@ -4100,7 +4100,7 @@
       "errorAfterLeader": "Muss später sein als die Benachrichtigung der Leitung.",
       "badge": "Automatische Zeiterfassung",
       "memberSwitch": "Automatisch ein- und ausstempeln",
-      "memberSwitchHint": "Beim Ankommen und beim Verlassen nach der Schicht.",
+      "memberSwitchHint": "Beim Ankommen und beim Gehen — nach Schicht oder nach Ankommen und Gehen.",
       "consentAgreed": "In der App zugestimmt am {{date}}",
       "consentMissing": "Noch nicht zugestimmt — es geschieht nichts, bis in der App zugestimmt wird.",
       "fields": {

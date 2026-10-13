@@ -4090,7 +4090,7 @@
     },
     "autoClock": {
       "title": "Timbratura automatica",
-      "subtitle": "I membri timbrano l’entrata quando arrivano in questo spazio di lavoro e l’uscita quando se ne vanno dopo il turno.",
+      "subtitle": "I membri timbrano l’entrata quando arrivano in questo spazio di lavoro e l’uscita quando se ne vanno: dopo il turno o, per chi non ha un turno fisso, quando se ne va.",
       "enable": "Timbrare entrata e uscita automaticamente qui",
       "enableHint": "Poi scelga nella pagina Membri a chi si applica.",
       "noCoordinates": "Questo spazio di lavoro non ha un punto sulla mappa, quindi non c’è un’area in cui arrivare o da cui uscire. Imposti l’indirizzo o il punto sulla mappa nella scheda Generale per usare la timbratura automatica.",
@@ -4100,7 +4100,7 @@
       "errorAfterLeader": "Deve essere dopo l’avviso al responsabile.",
       "badge": "Timbratura automatica",
       "memberSwitch": "Timbrare entrata e uscita automaticamente",
-      "memberSwitchHint": "All’arrivo e all’uscita dopo il turno.",
+      "memberSwitchHint": "All’arrivo e all’uscita: in base al turno, oppure all’arrivo e all’uscita.",
       "consentAgreed": "Accettato nell’app il {{date}}",
       "consentMissing": "Non ancora accettato — non succede nulla finché non accetta nell’app.",
       "fields": {
