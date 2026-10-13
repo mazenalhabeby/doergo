@@ -1,3 +1,4 @@
+import type { RequestPrecheck } from '@hbcfield/shared/client';
 import type { RequestKindOptions } from '@hbcfield/shared/client';
 import {
   ApiError, requestKindsOffered,
@@ -65,6 +66,15 @@ export const OPTIONS_BEFORE_REQUESTS: RequestOptions = {
 };
 
 export const requestsApi = {
+  /** What a leader would check, before sending (advice only — online; null when it cannot be asked). */
+  precheck: async (body: Record<string, unknown>): Promise<RequestPrecheck | null> => {
+    try {
+      const r = await call(E.timeOff.requestPrecheck, undefined, { body });
+      return Array.isArray(r?.clashes) ? r : r?.data ?? null;
+    } catch {
+      return null;
+    }
+  },
   myOptions: async (): Promise<RequestOptions> => {
     try {
       const r = await call(E.timeOff.requestOptions);

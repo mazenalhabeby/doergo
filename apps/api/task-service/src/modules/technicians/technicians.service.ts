@@ -610,17 +610,7 @@ export class TechniciansService {
       the same day (two answers to one question) — and with leave: a remote day, changed hours
       or overtime on a day off asks to work on a day the person will not be working.
     */
-    const clashes = await this.prisma.timeOff.findMany({
-      where: {
-        technicianId,
-        status: { in: ['PENDING', 'APPROVED'] },
-        kind: { in: leave ? ['LEAVE'] : [value.kind as never, 'LEAVE'] },
-        startDate: { lte: end },
-        endDate: { gte: start },
-      },
-      select: { kind: true, startDate: true, endDate: true, status: true },
-      take: 5,
-    });
+    const clashes = await this.requestClashes(technicianId, value.kind, start, end);
     const sameKind = clashes.find((c) => c.kind === value.kind);
     if (sameKind) {
       throw new BadRequestException({
@@ -860,6 +850,31 @@ export class TechniciansService {
    * a weekend is a mistake the person should see now, not a zero-day row in the manager's queue.
    * `lenient` (a decision on an existing request) never refuses; it records what the range costs.
    */
+  /**
+   * What a request would collide with — the ONE overlap reader, for sending and
+   * for the pre-check before sending. Leave collides only with leave; any other
+   * kind with the same kind and with leave.
+   */
+  async requestClashes(technicianId: string, kind: string, start: Date, end: Date) {
+    const leave = isAbsence(kind);
+    return this.prisma.timeOff.findMany({
+      where: {
+        technicianId,
+        status: { in: ['PENDING', 'APPROVED'] },
+        kind: { in: leave ? ['LEAVE'] : [kind as never, 'LEAVE'] },
+        startDate: { lte: end },
+        endDate: { gte: start },
+      },
+      select: { kind: true, startDate: true, endDate: true, status: true },
+      take: 5,
+    });
+  }
+
+  /** Working days a range costs this member (weekend, holidays and their rota left out). */
+  countWorkingDays(organizationId: string, userId: string, start: Date, end: Date): Promise<number> {
+    return this.workingDaysOf(organizationId, userId, start, end);
+  }
+
   private async workingDaysOf(organizationId: string, userId: string, start: Date, end: Date, lenient = false): Promise<number> {
     const count = await this.calendarRules.countLeaveFor(
       organizationId, userId, toISODateString(start), toISODateString(end),
@@ -1434,7 +1449,7 @@ export function availabilityDays(q: { date?: string; startDate?: string; endDate
 const SPACE_BRIEF = { id: true, name: true } as const;
 
 /** English fallbacks for the shared parser's coded refusals; clients translate by `code`. */
-const REQUEST_REFUSALS: Record<RequestInputError, string> = {
+export const REQUEST_REFUSALS: Record<RequestInputError, string> = {
   REQUEST_KIND_INVALID: 'That is not a kind of request.',
   REQUEST_DATES_INVALID: 'Choose a start day on or before the end day.',
   REQUEST_TYPE_INVALID: 'That is not a kind of leave.',

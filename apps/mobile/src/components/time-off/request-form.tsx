@@ -6,7 +6,9 @@ import { useAuth } from '../../contexts/auth-context';
 import { AText, PrimaryButton, Sunken, Well } from '../amazen';
 import { JobField, QuietButton, ReceiptRow, SectionLabel } from '../job/job-ui';
 import { LeaveTypePicker, useRequestWords } from '../requests/request-parts';
-import { balancePreview } from '../requests/request-model';
+import { balancePreview, draftToBody } from '../requests/request-model';
+import { PrecheckCard } from '../requests/precheck-card';
+import { useRequestPrecheck } from '../requests/use-request-precheck';
 import { useLeaveBalance, useLeaveCost } from '../requests/use-leave-preview';
 import { LeaveBalanceCard } from '../requests/leave-balance-card';
 import { toDateString } from './helpers';
@@ -55,6 +57,9 @@ export function TimeOffRequestForm({
   const days = cost ? cost.counted : rangeDays;
   // A current server sends the ledger lines: the card shows them and this request's before → after.
   const ledger = leaveType === 'VACATION' && !!balance?.lines;
+  // What a leader would check: an overlap with your own requests, cover, a second approval.
+  const built = draftToBody({ kind: 'LEAVE', startDate: from, endDate: to, type: leaveType, reason: '' });
+  const precheck = useRequestPrecheck(built.ok ? (built.body as unknown as Record<string, unknown>) : null);
 
   return (
     <Well style={{ padding: amazen.space(4), gap: amazen.space(3) }}>
@@ -84,6 +89,8 @@ export function TimeOffRequestForm({
       </Sunken>
 
       {ledger ? <LeaveBalanceCard balance={balance} preview={preview} requestDays={days} /> : null}
+
+      <PrecheckCard precheck={precheck} kind="LEAVE" />
 
       <JobField
         value={notes}

@@ -4889,6 +4889,42 @@
       "carryExpires_other": "{{days}} días traspasados se pueden usar hasta el {{date}}",
       "thisRequest_one": "Esta solicitud · {{days}} día laborable",
       "thisRequest_other": "Esta solicitud · {{days}} días laborables"
+    },
+    "precheck": {
+      "title": "Antes de enviar",
+      "clash": "Ya pidió del {{from}} al {{to}}. Esto se rechazaría.",
+      "negative": "Su saldo de vacaciones quedaría en {{after}} días.",
+      "cover": {
+        "short": "Quedarían muy pocas personas esos días — la oficina podría decir que no.",
+        "skill": "Faltaría una habilidad necesaria esos días — la oficina podría decir que no.",
+        "tight": "La cobertura queda justa esos días."
+      },
+      "dailyLimit": "Con su turno son {{total}} en un día — más de {{limit}}.",
+      "second": "Esto necesita una segunda aprobación de {{role}}.",
+      "fine": "Nada lo impide.",
+      "fineLeave": "Nada lo impide — quedan suficientes personas."
+    },
+    "detect": {
+      "title": "Parece",
+      "use": "Usar esto",
+      "kind": {
+        "LEAVE": "Ausencia",
+        "REMOTE": "Un día en remoto",
+        "HOURS": "Otro horario",
+        "OVERTIME": "Horas extra acordadas",
+        "EXTRA_TIME": "Más tiempo hoy",
+        "EXPENSE": "Un gasto"
+      },
+      "leaveType": {
+        "VACATION": "Vacaciones",
+        "SICK": "Enfermedad",
+        "FAMILY": "Familia",
+        "OTHER": "Otro"
+      },
+      "from": "desde las {{time}}",
+      "until": "hasta las {{time}}",
+      "askOnClock": "Pida más tiempo para su turno desde el reloj.",
+      "notOffered": "Ese tipo de solicitud no está disponible para usted — déjelo como Otro."
     }
   },
   "autoClock": {

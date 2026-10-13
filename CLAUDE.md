@@ -500,6 +500,15 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > E2E: `python3 tools/approvals-e2e.py` (LOCAL, creates and ends a stand-in; adds and removes a rule, leaves the request untouched).
 
+### Requests: what is asked, and what a leader would check (phase 3)
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| POST | `/employees/me/requests/precheck` | The caller's OWN request body (same parser as sending) → `{ workingDays, balance{before,after}, clashes, cover (LEVEL only), dailyLimit, secondApproval }` | `time_off` access module; not audited (a read) |
+
+> **Detection** (`packages/shared/src/requests/request-detect.ts`, `detectRequest`): the member's words in "Other" → LEAVE (+type) / REMOTE / HOURS / OVERTIME / EXTRA_TIME / EXPENSE with dates, times, minutes, amount — five languages, ON THE PHONE, no AI service. A suggestion is SHOWN ("This looks like…"), never applied; "Use this" opens that form filled in (leave → the calendar range; extra time today → the clock; an expense → Log expense). "next <weekday>" = that day in NEXT week. Tests: `apps/mobile/src/components/requests/__tests__/request-detect.spec.ts`.
+>
+> **Pre-check** (`request-precheck.ts` + task-service `RequestPrecheckService`): every answer is an existing reader — `requestClashes` (the ONE overlap reader, shared with sending), the working-day count, the leave ledger, the wallchart's `CoverService` (the member gets the LEVEL, never who is off), the planned shift (`plannedWindows`) against `DAILY_WORK_GUIDE_MINUTES` (600, a warning), and the office rules (`secondStepFor`). Advice only — sending still runs every rule. Phone: `PrecheckCard` on the leave form and every request form (asked 450 ms after the form settles; the reason is not part of the key).
+
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.
 

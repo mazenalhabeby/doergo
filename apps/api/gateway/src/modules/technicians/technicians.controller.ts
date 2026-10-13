@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  HttpCode,
   Patch,
   Delete,
   Param,
@@ -162,6 +163,19 @@ export class EmployeesController {
     // Only the caller's own options: the ids come from the token, never the request.
     return firstValueFrom(
       this.taskClient.send({ cmd: 'get_request_options' }, { userId: user.id, organizationId: user.organizationId }),
+    );
+  }
+
+  @Post('me/requests/precheck')
+  @HttpCode(200)
+  // Asked before sending a request: the same tab as making one.
+  @RequireAccessModule('time_off')
+  @ApiOperation({ summary: 'What a leader would check, for the caller\'s own request before it is sent (advice only)' })
+  @Roles(Role.ADMIN, Role.EMPLOYEE)
+  async precheckRequest(@CurrentUser() user: CurrentUserData, @Body() body: Record<string, unknown>) {
+    // Only the caller's own request: the person comes from the token, the body is read by the same parser as sending.
+    return firstValueFrom(
+      this.taskClient.send({ cmd: 'request_precheck' }, { userId: user.id, organizationId: user.organizationId, body }),
     );
   }
 

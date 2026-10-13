@@ -4889,6 +4889,42 @@
       "carryExpires_other": "{{days}} giorni riportati utilizzabili fino al {{date}}",
       "thisRequest_one": "Questa richiesta · {{days}} giorno lavorativo",
       "thisRequest_other": "Questa richiesta · {{days}} giorni lavorativi"
+    },
+    "precheck": {
+      "title": "Prima di inviare",
+      "clash": "Ha già chiesto dal {{from}} al {{to}}. Verrebbe rifiutato.",
+      "negative": "Il suo saldo ferie scenderebbe a {{after}} giorni.",
+      "cover": {
+        "short": "Resterebbero troppe poche persone in quei giorni — l’ufficio potrebbe dire di no.",
+        "skill": "In quei giorni mancherebbe una competenza necessaria — l’ufficio potrebbe dire di no.",
+        "tight": "La copertura è stretta in quei giorni."
+      },
+      "dailyLimit": "Con il suo turno sono {{total}} in un giorno — più di {{limit}}.",
+      "second": "Serve una seconda approvazione da {{role}}.",
+      "fine": "Nulla lo impedisce.",
+      "fineLeave": "Nulla lo impedisce — restano abbastanza persone."
+    },
+    "detect": {
+      "title": "Sembra",
+      "use": "Usa questo",
+      "kind": {
+        "LEAVE": "Un’assenza",
+        "REMOTE": "Un giorno da remoto",
+        "HOURS": "Orari diversi",
+        "OVERTIME": "Straordinari concordati",
+        "EXTRA_TIME": "Più tempo oggi",
+        "EXPENSE": "Una spesa"
+      },
+      "leaveType": {
+        "VACATION": "Ferie",
+        "SICK": "Malattia",
+        "FAMILY": "Famiglia",
+        "OTHER": "Altro"
+      },
+      "from": "dalle {{time}}",
+      "until": "fino alle {{time}}",
+      "askOnClock": "Chieda più tempo per il turno dall’orologio.",
+      "notOffered": "Questo tipo di richiesta non è aperto per lei — lo lasci come Altro."
     }
   },
   "autoClock": {

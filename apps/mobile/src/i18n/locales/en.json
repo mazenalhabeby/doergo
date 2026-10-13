@@ -4889,6 +4889,42 @@
       "carryExpires_other": "{{days}} carried days can be used until {{date}}",
       "thisRequest_one": "This request · {{days}} working day",
       "thisRequest_other": "This request · {{days}} working days"
+    },
+    "precheck": {
+      "title": "Before you send",
+      "clash": "You already asked for {{from}} – {{to}}. Sending this would be refused.",
+      "negative": "This would take your vacation balance to {{after}} days.",
+      "cover": {
+        "short": "Too few people would be left on those days — the office may say no.",
+        "skill": "A needed skill would be missing on those days — the office may say no.",
+        "tight": "Cover gets tight on those days."
+      },
+      "dailyLimit": "With your shift that is {{total}} in one day — more than {{limit}}.",
+      "second": "This needs a second approval by {{role}}.",
+      "fine": "Nothing stands in the way.",
+      "fineLeave": "Nothing stands in the way — enough people stay."
+    },
+    "detect": {
+      "title": "This looks like",
+      "use": "Use this",
+      "kind": {
+        "LEAVE": "Time off",
+        "REMOTE": "A remote day",
+        "HOURS": "Different hours",
+        "OVERTIME": "Overtime agreed in advance",
+        "EXTRA_TIME": "More time today",
+        "EXPENSE": "An expense"
+      },
+      "leaveType": {
+        "VACATION": "Vacation",
+        "SICK": "Sick",
+        "FAMILY": "Family",
+        "OTHER": "Other"
+      },
+      "from": "from {{time}}",
+      "until": "until {{time}}",
+      "askOnClock": "Ask for more time on your shift, from the clock.",
+      "notOffered": "That kind of request is not open to you — keep it as Other."
     }
   },
   "autoClock": {

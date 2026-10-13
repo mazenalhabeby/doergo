@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { REQUEST_LIMITS, formatDuration, localDateKey, type RequestKind } from '@hbcfield/shared/client';
+import { REQUEST_LIMITS, detectRequest, formatDuration, localDateKey, type DetectedRequest, type RequestKind } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, FilterPill, FilterRow, PrimaryButton, Well } from '../amazen';
 import { JobField, QuietButton, SectionLabel } from '../job/job-ui';
 import { DaySheet, TimeSheet } from '../new-job/when-sheets';
 import type { RequestOptions } from '../../lib/api/technicians';
 import { RequestKindGlyph } from './request-glyphs';
+import { PrecheckCard } from './precheck-card';
+import { SuggestionCard } from './suggestion-card';
+import { useRequestPrecheck } from './use-request-precheck';
 import { OVERTIME_PRESETS, draftToBody, kindEffectKey, kindLabelKey, stepOvertime, type RequestBody } from './request-model';
 
 type Picker = 'start' | 'end' | 'startTime' | 'endTime' | null;
@@ -30,7 +33,13 @@ export function RequestFormCard({
   busy,
   onClose,
   onSubmit,
+  initial,
+  onSuggest,
 }: {
+  /** Filled in from a suggestion ("This looks like…"); the member still checks and sends. */
+  initial?: { start?: string; end?: string; startTime?: string; endTime?: string; minutes?: number; reason?: string } | null;
+  /** "Other" words that read as another kind: the screen switches to it. */
+  onSuggest?: (s: DetectedRequest, words: string) => void;
   /** LEAVE never opens here. */
   kind: Exclude<RequestKind, 'LEAVE'>;
   options: RequestOptions | null;
@@ -55,10 +64,14 @@ export function RequestFormCard({
   const spaces = options?.remoteSpaces ?? [];
   // A fresh form for every kind; one workspace is chosen for the member.
   useEffect(() => {
-    setStart(today); setEnd(null); setStartTime(''); setEndTime(''); setMinutes(60); setReason(''); setTried(false);
+    setStart(initial?.start && initial.start >= today ? initial.start : today);
+    setEnd(initial?.end ?? null);
+    setStartTime(initial?.startTime ?? ''); setEndTime(initial?.endTime ?? '');
+    setMinutes(initial?.minutes ? Math.min(REQUEST_LIMITS.OVERTIME_MAX_MINUTES, Math.max(REQUEST_LIMITS.OVERTIME_MIN_MINUTES, initial.minutes)) : 60);
+    setReason(initial?.reason ?? ''); setTried(false);
     setSpaceId(spaces.length === 1 ? spaces[0]!.id : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, spaces.length]);
+  }, [kind, spaces.length, initial]);
 
   const range = kind === 'REMOTE' || kind === 'OTHER';
   const built = draftToBody({
@@ -70,6 +83,10 @@ export function RequestFormCard({
     reason,
   });
   const noSpace = kind === 'REMOTE' && spaces.length === 0;
+  // What a leader would check, once the form is complete enough to send.
+  const precheck = useRequestPrecheck(built.ok ? (built.body as unknown as Record<string, unknown>) : null);
+  // "Other" in words that ask for something the app has a form for.
+  const suggestion = useMemo(() => (kind === 'OTHER' && onSuggest ? detectRequest(reason) : null), [kind, reason, onSuggest]);
   const effect = kindEffectKey(kind);
   const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
   const send = () => {
@@ -160,6 +177,10 @@ export function RequestFormCard({
           <AText variant="caption" tone="accent" style={{ fontSize: 13, lineHeight: 18 }}>{t(effect)}</AText>
         </View>
       ) : null}
+
+      {suggestion ? <SuggestionCard suggestion={suggestion} onUse={() => onSuggest?.(suggestion, reason)} /> : null}
+
+      {built.ok ? <PrecheckCard precheck={precheck} kind={kind} /> : null}
 
       {tried && !built.ok ? (
         <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>{t(`offline.errors.${built.code}`)}</AText>

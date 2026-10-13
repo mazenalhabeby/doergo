@@ -1,3 +1,4 @@
+import { RequestPrecheckService } from './request-precheck.service';
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { PrismaModule, SERVICE_NAMES, createClientOptions } from '@hbcfield/shared';
@@ -19,7 +20,7 @@ import { CalendarRulesModule } from '../calendar/calendar-rules.module';
     ClientsModule.registerAsync([createClientOptions(SERVICE_NAMES.NOTIFICATION)]),
   ],
   controllers: [TechniciansController],
-  providers: [TechniciansService, CoverService, LeaveLedgerService, LeaveCarryOverService],
+  providers: [TechniciansService, CoverService, LeaveLedgerService, LeaveCarryOverService, RequestPrecheckService],
   exports: [TechniciansService, CoverService, LeaveLedgerService],
 })
 export class TechniciansModule {}

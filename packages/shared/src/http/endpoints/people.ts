@@ -3,6 +3,7 @@
  * "technicians"), time off, the rota and shifts.
  * Gateway: modules/employees, modules/shifts.
  */
+import type { RequestPrecheck } from '../../requests/request-precheck';
 import type {
   CreateEmployeeInput,
   EmployeeListItem,
@@ -122,6 +123,8 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
   }),
   /** What the caller may request (kinds) and at which workspaces a remote day. Only their own. */
   requestOptions: endpoint<void, RequestKindOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
+  /** What a leader would check, for the caller's own request before it is sent. Online only (advice, never kept). */
+  requestPrecheck: endpoint<void, RequestPrecheck, Record<string, unknown>>({ method: 'POST', path: () => '/employees/me/requests/precheck' }),
   /** What a leave range COSTS in working days (≤ 1 year); `byLeaveYear` is keyed by leave-year start. */
   count: endpoint<{ employeeId: string; from: string; to: string }, LeaveCount & { byLeaveYear?: Record<string, number> }>({
     method: 'GET',

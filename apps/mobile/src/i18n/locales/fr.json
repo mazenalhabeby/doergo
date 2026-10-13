@@ -4889,6 +4889,42 @@
       "carryExpires_other": "{{days}} jours reportés utilisables jusqu’au {{date}}",
       "thisRequest_one": "Cette demande · {{days}} jour ouvré",
       "thisRequest_other": "Cette demande · {{days}} jours ouvrés"
+    },
+    "precheck": {
+      "title": "Avant d’envoyer",
+      "clash": "Vous avez déjà demandé du {{from}} au {{to}}. Ce serait refusé.",
+      "negative": "Votre solde de congés passerait à {{after}} jours.",
+      "cover": {
+        "short": "Il resterait trop peu de personnes ces jours-là — le bureau pourrait refuser.",
+        "skill": "Une compétence nécessaire manquerait ces jours-là — le bureau pourrait refuser.",
+        "tight": "L’effectif devient juste ces jours-là."
+      },
+      "dailyLimit": "Avec votre poste, cela fait {{total}} dans la journée — plus que {{limit}}.",
+      "second": "Cela demande une seconde validation par {{role}}.",
+      "fine": "Rien ne s’y oppose.",
+      "fineLeave": "Rien ne s’y oppose — il reste assez de monde."
+    },
+    "detect": {
+      "title": "Cela ressemble à",
+      "use": "Utiliser",
+      "kind": {
+        "LEAVE": "Une absence",
+        "REMOTE": "Une journée à distance",
+        "HOURS": "D’autres horaires",
+        "OVERTIME": "Heures sup. convenues",
+        "EXTRA_TIME": "Plus de temps aujourd’hui",
+        "EXPENSE": "Une dépense"
+      },
+      "leaveType": {
+        "VACATION": "Vacances",
+        "SICK": "Maladie",
+        "FAMILY": "Famille",
+        "OTHER": "Autre"
+      },
+      "from": "à partir de {{time}}",
+      "until": "jusqu’à {{time}}",
+      "askOnClock": "Demandez plus de temps pour votre poste depuis la pointeuse.",
+      "notOffered": "Ce type de demande ne vous est pas ouvert — gardez-le en Autre."
     }
   },
   "autoClock": {

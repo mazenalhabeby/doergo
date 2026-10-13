@@ -4889,6 +4889,42 @@
       "carryExpires_other": "{{days}} übertragene Tage sind bis {{date}} nutzbar",
       "thisRequest_one": "Dieser Antrag · {{days}} Arbeitstag",
       "thisRequest_other": "Dieser Antrag · {{days}} Arbeitstage"
+    },
+    "precheck": {
+      "title": "Bevor Sie senden",
+      "clash": "Für {{from}} – {{to}} haben Sie schon angefragt. Das würde abgelehnt.",
+      "negative": "Damit ginge Ihr Urlaubsguthaben auf {{after}} Tage.",
+      "cover": {
+        "short": "An diesen Tagen blieben zu wenige Personen — das Büro könnte ablehnen.",
+        "skill": "An diesen Tagen würde eine nötige Qualifikation fehlen — das Büro könnte ablehnen.",
+        "tight": "Die Besetzung wird an diesen Tagen knapp."
+      },
+      "dailyLimit": "Mit Ihrer Schicht sind das {{total}} an einem Tag — mehr als {{limit}}.",
+      "second": "Das braucht eine zweite Freigabe durch {{role}}.",
+      "fine": "Nichts spricht dagegen.",
+      "fineLeave": "Nichts spricht dagegen — es bleiben genug Personen."
+    },
+    "detect": {
+      "title": "Das klingt nach",
+      "use": "Übernehmen",
+      "kind": {
+        "LEAVE": "Abwesenheit",
+        "REMOTE": "Ein Remote-Tag",
+        "HOURS": "Andere Zeiten",
+        "OVERTIME": "Vorab vereinbarte Überstunden",
+        "EXTRA_TIME": "Heute mehr Zeit",
+        "EXPENSE": "Eine Ausgabe"
+      },
+      "leaveType": {
+        "VACATION": "Urlaub",
+        "SICK": "Krank",
+        "FAMILY": "Familie",
+        "OTHER": "Sonstiges"
+      },
+      "from": "ab {{time}}",
+      "until": "bis {{time}}",
+      "askOnClock": "Mehr Zeit für Ihre Schicht erbitten Sie an der Stempeluhr.",
+      "notOffered": "Diese Antragsart steht Ihnen nicht offen — lassen Sie es als Sonstiges."
     }
   },
   "autoClock": {

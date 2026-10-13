@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import type { LeaveType, RequestKind } from '@hbcfield/shared/client';
+import { hasAccessModule, moduleAnywhere, type DetectedRequest, type LeaveType, type RequestKind } from '@hbcfield/shared/client';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { mayReadTeamAvailability } from '../../../src/lib/permissions';
 import { useToast } from '../../../src/island/island-context';
@@ -109,6 +109,8 @@ export default function RequestsScreen() {
   // Any other kind: chosen in the sheet, filled in on the page.
   const [chooserOpen, setChooserOpen] = useState(false);
   const [formKind, setFormKind] = useState<Exclude<RequestKind, 'LEAVE'> | null>(null);
+  // Filled in from "This looks like…" — the member still checks and sends.
+  const [formInitial, setFormInitial] = useState<{ start?: string; end?: string; startTime?: string; endTime?: string; minutes?: number; reason?: string } | null>(null);
 
   // The list
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');
@@ -272,10 +274,46 @@ export default function RequestsScreen() {
     void send(built.body, clearSelection);
   };
 
+  /**
+   * "Other" words that read as something the app has a form for: open THAT
+   * form with what was read, the words kept as the reason. Nothing is sent.
+   */
+  const applySuggestion = (sug: DetectedRequest, words: string) => {
+    const reason = words.trim();
+    const offeredKind = (k: RequestKind) => !offered || offered.includes(k);
+    if (sug.kind === 'LEAVE' && leaveOffered) {
+      setFormKind(null); setFormInitial(null);
+      const first = sug.startDate ?? toDateString(today);
+      setRangeStart(new Date(`${first}T12:00:00`));
+      setRangeEnd(new Date(`${sug.endDate ?? first}T12:00:00`));
+      setIsSelecting(false);
+      setLeaveType(sug.leaveType ?? 'VACATION');
+      setNotes(reason);
+      return;
+    }
+    if (sug.kind === 'EXPENSE' && moduleAnywhere(user as never, 'assets')) {
+      router.push('/(app)/asset-expense' as never);
+      return;
+    }
+    // More time today is asked on the running shift, from the clock.
+    if (sug.kind === 'EXTRA_TIME' && hasAccessModule(user as never, 'clock')) {
+      toast.info(t('requests.detect.askOnClock'));
+      router.navigate('/(app)/(tabs)/attendance' as never);
+      return;
+    }
+    const kind = sug.kind === 'EXTRA_TIME' ? 'OVERTIME' : sug.kind;
+    if (kind === 'REMOTE' || kind === 'HOURS' || kind === 'OVERTIME') {
+      if (!offeredKind(kind)) { toast.info(t('requests.detect.notOffered')); return; }
+      setFormInitial({ start: sug.startDate, end: sug.endDate, startTime: sug.startTime, endTime: sug.endTime, minutes: sug.minutes, reason });
+      setFormKind(kind);
+    }
+  };
+
   const pickKind = (kind: RequestKind) => {
     setChooserOpen(false);
     if (kind === 'LEAVE') { setFormKind(null); return; }
     clearSelection();
+    setFormInitial(null);
     setFormKind(kind);
   };
 
@@ -324,8 +362,10 @@ export default function RequestsScreen() {
               kind={formKind}
               options={options}
               busy={isSubmitting}
-              onClose={() => setFormKind(null)}
-              onSubmit={(body) => void send(body, () => setFormKind(null))}
+              onClose={() => { setFormKind(null); setFormInitial(null); }}
+              onSubmit={(body) => void send(body, () => { setFormKind(null); setFormInitial(null); })}
+              initial={formInitial}
+              onSuggest={applySuggestion}
             />
           ) : leaveOffered ? (
             <TimeOffCalendarCard

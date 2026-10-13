@@ -1,3 +1,4 @@
+import { RequestPrecheckService } from './request-precheck.service';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { success } from '@hbcfield/shared';
@@ -24,6 +25,7 @@ export class TechniciansController {
     private readonly techniciansService: TechniciansService,
     private readonly coverService: CoverService,
     private readonly leaveLedger: LeaveLedgerService,
+    private readonly precheck: RequestPrecheckService,
   ) {}
 
   // ========================================================================
@@ -103,6 +105,12 @@ export class TechniciansController {
   }
 
   /** What the caller may request, and at which workspaces a remote day (requests/request-kinds.ts). */
+  /** What a leader would check, for the member's OWN request before sending (advice only). */
+  @MessagePattern({ cmd: 'request_precheck' })
+  requestPrecheck(@Payload() data: { userId: string; organizationId: string; body: unknown }) {
+    return this.precheck.precheck(data);
+  }
+
   @MessagePattern({ cmd: 'get_request_options' })
   async getRequestOptions(@Payload() data: { userId: string; organizationId: string }) {
     return this.techniciansService.requestOptions(data);

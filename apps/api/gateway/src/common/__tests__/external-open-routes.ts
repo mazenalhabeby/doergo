@@ -114,6 +114,7 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'EmployeesController.getEmployeeTimeOff': 'EmployeesController',
   'EmployeesController.getLeaveBalance': 'EmployeesController',
   'EmployeesController.getRequestOptions': 'EmployeesController',
+  'EmployeesController.precheckRequest': 'EmployeesController',
   'EmployeesController.listLeaveAdjustments': 'EmployeesController',
   'EmployeesController.requestTimeOff': 'EmployeesController',
   // GeoController: timezone lookup for a point — no organization data

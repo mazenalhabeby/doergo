@@ -111,6 +111,18 @@ export class ApprovalRulesService {
     return { finalize: true, ...(minutes != null ? { minutes } : {}) };
   }
 
+  /** Would a decision like this need a second approval, and by which role? For the member's pre-check. */
+  async secondStepFor(organizationId: string, kind: RuleKind, facts: RuleFacts): Promise<string | null> {
+    const rules = await this.prisma.approvalRule.findMany({ where: { organizationId, kind, isActive: true, secondRoleId: { not: null } } });
+    const rule = pickRule(rules as never[], facts) as (typeof rules)[number] | null;
+    return rule?.secondRoleId ? this.roleName(rule.secondRoleId) : null;
+  }
+
+  /** Does any active rule of this kind ask about cover? (Cover is only computed then.) */
+  async asksAboutCover(organizationId: string): Promise<boolean> {
+    return (await this.prisma.approvalRule.count({ where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true } })) > 0;
+  }
+
   /** A rejection — by anybody who may decide — ends the two-step for this item. */
   async clear(organizationId: string, kind: RuleKind, itemId: string): Promise<void> {
     await this.prisma.approvalStep.updateMany({ where: { organizationId, kind, itemId, consumedAt: null }, data: { consumedAt: new Date() } });
