@@ -1,6 +1,6 @@
 # HBCFIELD - Project Reference Document
 > **Purpose**: Single source of truth for AI assistants. Read this first before any task.
-> **Last Updated**: 2026-10-13 (external role builder — PROD 15949851 + OTA 1.0.8)
+> **Last Updated**: 2026-10-13 (approvals inbox, phase 1 — local, not deployed)
 
 ---
 
@@ -452,6 +452,27 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 > ⚠️ **Still inside after the end** reuses the existing sweeps with the workspace's thresholds: the leader at planned end + `leaderAfterMinutes` (the reminder is ARMED for that at clock-in; no worker nudges — the phone asks; routing as any escalation, never every admin), a provisional close at + `closeAfterMinutes` through `closeProvisionally` — the phone's later AUTO clock-out replaces it like any real one. "Is this member automatic" for a sweep's batch is ONE query (`settingsForEntries`).
 >
 > ⚠️ **The plan is a FIXED number of queries** whatever the workspaces (`ShiftResolverService.plannedWindows` — the shared `rotaFor` + legacy schedule, two queries). Radius = `geofenceArmRadius` (a drawn boundary → its enclosing circle; the decision is still `isAtSite`).
+
+### The approvals inbox (`/approvals`) — every decision waiting for the caller, in one place
+> Thirteen kinds (hours, away, extra time, overtime, requests, no-shows, shift issues, expenses, asset papers, documents, join requests, client requests, guest workspaces) lived on nine pages. Rules + wording: `packages/shared/src/approvals/` (`approval-kinds.ts` specs/routes, `approval-items.ts` normalizers, `approval-text.ts` the words — ONE module for web and phone); gateway `modules/approvals/` (aggregator via `common/self-dispatch.ts`). Web `/approvals` + the inbox count beside the bell; phone More → Approvals (`/(app)/approvals`, `/(app)/approval/[key]`).
+
+| Method | Endpoint | Description | Gate |
+|---|---|---|---|
+| GET | `/approvals` | `{ items, unavailable, generatedAt }` — only items the caller may decide, NOW / TODAY / LATER | any member; each kind's list is asked only if its decide key is held |
+| GET | `/approvals/count` | `{ total, now, byKind }` (cached ~20 s per user, cleared by a decision) | same |
+| POST | `/approvals/decide` | `{ kind, id, action, reason?, minutes?, expiresOn?, spaceId? }` → the kind's OWN route | the kind's own guard, run as the caller |
+
+> ⚠️ **It reads and decides through each kind's EXISTING route, as the caller** (self-dispatch on 127.0.0.1 with the per-process `x-internal-dispatch` header; every guard runs again). Nothing about who may see or decide is decided twice — never add a direct DB read here.
+>
+> ⚠️ **`/approvals` is a carrier: not audited** (`SKIP_PREFIXES`) — the kind's own route writes the audit row. On `EXTERNAL_OPEN_ROUTES` with that reason.
+>
+> ⚠️ **The id is `encodeURIComponent`-ed into the kind's path** and the DTO allow-lists `kind`; a reason is cut to 500. The caller's OWN items are never listed (every kind refuses SELF_DECISION).
+>
+> ⚠️ **A failing kind never fails the inbox** (8 s per source; 402/403/404 = empty; anything else → `unavailable`, shown as a line). A kind whose decision needs a form the inbox lacks (`needsPage`: an asset proposal with no kind, a client request with no workspace) offers only "Open the full page".
+>
+> ⚠️ **Live**: the web refreshes on the socket events that add or settle a decision (`APPROVAL_EVENTS` in `use-realtime-sync.ts`) — deliberately NOT task.updated or clock-in (the inbox is a fan-out read). The phone reads on focus; both reads are ONLINE_ONLY.
+>
+> ⚠️ Every `approvals.*` key the shared wording asks for must exist in BOTH apps in all five languages — `apps/mobile/src/components/approvals/__tests__/approval-catalogue.spec.ts`.
 
 ### Documents — the personnel file (`/documents`)
 > The whole filing cabinet: what the organization ISSUES to a member (contracts, payslips) and what a member SUPPLIES to it (passport, licence). Types are configuration; documents are records; signatures are evidence.

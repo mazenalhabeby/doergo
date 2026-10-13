@@ -5,7 +5,7 @@ import {
   SignGlyph, MyEquipmentGlyph, SyncGlyph, OvertimeGlyph, NewJobGlyph, ScanCardGlyph, AddClientGlyph,
   EquipmentLogGlyph, MembersGlyph, ClientsGlyph, InvitationsGlyph, SchedulesGlyph, RegisterGlyph, ClientRequestsGlyph,
 } from '../glyphs/tile-glyphs';
-import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph } from '../glyphs/queue-glyphs';
+import { ExpenseQueueGlyph, LeaveQueueGlyph, JoinQueueGlyph, ApprovalsGlyph } from '../glyphs/queue-glyphs';
 import { PlanRouteGlyph } from '../glyphs/route-glyphs';
 import { RosterGlyph, HoursWaitingGlyph } from '../glyphs/crew-glyphs';
 import { IssueNewGlyph } from '../glyphs/shift-glyphs';
@@ -32,6 +32,7 @@ export const SHORTCUT_GLYPHS: Record<string, React.ComponentType<GlyphProps>> = 
   'shortcuts.planRoute': PlanRouteGlyph,
   'shortcuts.support': SupportGlyph,
   'shortcuts.equipmentLog': EquipmentLogGlyph,
+  'manage.approvals.label': ApprovalsGlyph,
   'manage.attendance.label': RosterGlyph,
   'manage.extraTime.label': HoursWaitingGlyph,
   'manage.timeOff.label': LeaveQueueGlyph,

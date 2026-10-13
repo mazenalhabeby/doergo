@@ -35,6 +35,7 @@ describe('Shortcuts widget — every persona', () => {
   */
   const EXPECTED: Record<string, string[]> = {
     client: [
+      'manage.approvals.label',
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
       // The workspace's register and client requests — the owner holds everything and the org runs both.
       'manage.equipment.label', 'manage.clientRequests.label',
@@ -43,6 +44,7 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     manager: [
+      'manage.approvals.label',
       // Clients: the org-wide legacy bridge (canManageUsers/canViewAllTasks) reads as CRM on the
       // server's reach too (crmReachOfRow → memberAccessOf); `holds('crmViewOwn')` used to miss it.
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.members.label', 'manage.customers.label',
@@ -51,10 +53,12 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.newJob', 'shortcuts.scanCard', 'shortcuts.addClient', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     dana: [
+      'manage.approvals.label',
       'shortcuts.documents', 'shortcuts.sign', 'shortcuts.myEquipment', 'shortcuts.sync', 'shortcuts.overtime', 'shortcuts.logExpense',
       'shortcuts.planRoute', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     mike: [
+      'manage.approvals.label',
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.customers.label',
     // Schedules follows canViewSpaceAttendance (in a space) — the leader permission Attendance uses.
     'manage.schedules.label',
@@ -68,6 +72,7 @@ describe('Shortcuts widget — every persona', () => {
       'shortcuts.logExpense', 'shortcuts.newJob', 'shortcuts.support', 'shortcuts.equipmentLog',
     ],
     'a.test': [
+      'manage.approvals.label',
       // An external supervisor sees their ONE workspace's schedule — the server narrows /rota/week to it.
       'manage.attendance.label', 'manage.extraTime.label', 'manage.timeOff.label', 'manage.schedules.label',
       'shortcuts.sign', 'shortcuts.sync', 'shortcuts.newJob', 'shortcuts.support',

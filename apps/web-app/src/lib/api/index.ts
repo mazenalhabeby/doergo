@@ -12,6 +12,7 @@ export { API_BASE_URL } from '../endpoints';
 export type { ApiResponse, RequestOptions } from '../http-client';
 export { authApi } from './auth';
 export { analyticsApi } from './analytics';
+export { approvalsApi } from './approvals';
 export { assetsApi } from './assets';
 export { attendanceApi } from './attendance';
 export { billingApi } from './billing';

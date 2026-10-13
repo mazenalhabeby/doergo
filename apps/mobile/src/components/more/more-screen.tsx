@@ -10,7 +10,7 @@ import { manageRowsFor, type ManageRow } from '../../lib/manage-rows';
 import { holds } from '../../lib/permissions';
 import { splitTabs, tabAccessFor, tabVisible, TAB_TITLE_KEY } from '../../lib/tab-layout';
 import { attendanceApi } from '../../lib/api/attendance';
-import { joinRequestsApi, timeOffApi } from '../../lib/api';
+import { approvalsApi, joinRequestsApi, timeOffApi } from '../../lib/api';
 import { AText, Ground, ScreenHeader, Well, WellDivider, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { SectionLabel } from '../job/job-ui';
@@ -61,13 +61,19 @@ export function MoreScreen() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const has = (route: string) => rows.some((x) => x.route === route);
   const loadCounts = useCallback(async () => {
-    const asks: Array<[string, Promise<unknown[]>]> = [];
+    const asks: Array<[string, Promise<unknown[] | number>]> = [];
+    // One number for everything waiting (the server caches it ~20 s).
+    if (has('/(app)/approvals')) asks.push(['/(app)/approvals', approvalsApi.count().then((x) => x.total)]);
     if (has('/(app)/extra-time')) asks.push(['/(app)/extra-time', attendanceApi.getPendingExtraTime()]);
     if (has('/(app)/manage/time-off-requests')) asks.push(['/(app)/manage/time-off-requests', timeOffApi.listOrg('PENDING')]);
     if (has('/(app)/manage/join-requests')) asks.push(['/(app)/manage/join-requests', joinRequestsApi.list({ status: 'PENDING' })]);
     const done = await Promise.allSettled(asks.map(([, p]) => p));
     const next: Record<string, number> = {};
-    done.forEach((d, i) => { if (d.status === 'fulfilled' && Array.isArray(d.value)) next[asks[i][0]] = d.value.length; });
+    done.forEach((d, i) => {
+      if (d.status !== 'fulfilled') return;
+      if (typeof d.value === 'number') next[asks[i][0]] = d.value;
+      else if (Array.isArray(d.value)) next[asks[i][0]] = d.value.length;
+    });
     setCounts(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows]);

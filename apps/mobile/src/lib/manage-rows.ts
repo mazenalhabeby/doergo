@@ -1,4 +1,4 @@
-import { hasAccessModule, moduleAnywhere, orgHasAddOn, type MobileModule } from '@hbcfield/shared/client';
+import { APPROVAL_KIND_SPECS, hasAccessModule, moduleAnywhere, orgHasAddOn, type MobileModule } from '@hbcfield/shared/client';
 import { holds, holdsOrgWide } from './permissions';
 import { crmCapsOf, drivesRoutes, isExternalMember } from './member-reach';
 
@@ -25,6 +25,12 @@ import { crmCapsOf, drivesRoutes, isExternalMember } from './member-reach';
  * everyone whose authority comes from a space.
  */
 export const MANAGE_ROWS = [
+  /*
+    Approvals first: everything below that waits for a decision, in one list
+    (packages/shared/src/approvals). Offered to whoever can decide ONE kind,
+    asked the way that kind's route asks it — the server lists only those.
+  */
+  { icon: 'file-tray-full', labelKey: 'manage.approvals.label', descKey: 'manage.approvals.desc', route: '/(app)/approvals', color: '#dc2626', permission: '', orgWide: false, gate: { decides: true } },
   { icon: 'stopwatch', labelKey: 'manage.attendance.label', descKey: 'manage.attendance.desc', route: '/(app)/manage/attendance', color: '#0ea5e9', permission: 'canViewSpaceAttendance', orgWide: false },
   { icon: 'timer', labelKey: 'manage.extraTime.label', descKey: 'manage.extraTime.desc', route: '/(app)/extra-time', color: '#a855f7', permission: 'canApproveOvertime', orgWide: false },
   { icon: 'calendar', labelKey: 'manage.timeOff.label', descKey: 'manage.timeOff.desc', route: '/(app)/manage/time-off-requests', color: '#f59e0b', permission: 'canViewAllTasks', orgWide: false },
@@ -121,7 +127,9 @@ export type ExtraGate =
   /** They drive a route — the same rule as the Today's route widget (`lib/member-reach.ts`). */
   | { drives: true }
   /** A SECOND permission the screen's own first read needs (in any space). */
-  | { alsoHolds: string };
+  | { alsoHolds: string }
+  /** Can decide at least one kind of approval (the approvals inbox). */
+  | { decides: true };
 
 export interface Destination {
   icon: string;
@@ -269,6 +277,12 @@ type ManageSubject =
  * comes to see Clients on the web and not on the phone.
  */
 
+/** Can this member decide any kind of approval — each kind asked the way its route asks it? */
+export function decidesAnything(user: Parameters<typeof holds>[0]): boolean {
+  return Object.values(APPROVAL_KIND_SPECS).some((k) =>
+    k.orgWide ? holdsOrgWide(user, k.decideKey) : holds(user, k.decideKey));
+}
+
 /** The rows this member can actually open. */
 export function manageRowsFor(user: ManageSubject): ManageRow[] {
   return MANAGE_ROWS.filter((row) => opens(user, asDestination(row)));
@@ -302,6 +316,7 @@ function passesGate(user: DestinationSubject, gate: ExtraGate | undefined): bool
   if ('offline' in gate) return user?.offlineMode === true;
   if ('drives' in gate) return drivesRoutes(user as never);
   if ('alsoHolds' in gate) return holds(user as never, gate.alsoHolds);
+  if ('decides' in gate) return decidesAnything(user);
   const caps = crmCapsOf(user as never);
   return caps[gate.crmCap] === true;
 }

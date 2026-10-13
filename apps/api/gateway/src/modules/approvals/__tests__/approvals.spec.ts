@@ -1,0 +1,144 @@
+/**
+ * The approvals inbox (packages/shared/src/approvals + ApprovalsService): it
+ * READS the existing pending lists and DECIDES through their existing routes,
+ * as the caller — so these pin the mapping, the grouping, and that nothing is
+ * asked for, shown or pressed that the caller may not.
+ */
+import {
+  approvalActionsFor,
+  approvalRoute,
+  dedupeApprovals,
+  sortApprovals,
+  toApproval,
+  type ApprovalContext,
+  type ApprovalItem,
+} from '@hbcfield/shared';
+import { ApprovalsService, mayDecide } from '../approvals.service';
+
+const now = new Date('2026-10-13T12:00:00Z');
+const ctx = (decide = true): ApprovalContext => ({ now, me: 'me', mayDecide: () => decide });
+const H = 3_600_000;
+const at = (h: number) => new Date(now.getTime() + h * H).toISOString();
+
+describe('which existing route a decision calls', () => {
+  it('maps every kind to its own route and body', () => {
+    expect(approvalRoute({ kind: 'hours', id: 'e1', action: 'approve' })).toEqual({ ok: true, method: 'POST', path: '/attendance/approvals/e1/approve', body: {} });
+    expect(approvalRoute({ kind: 'request', id: 't1', action: 'reject', reason: 'cover' })).toMatchObject({ method: 'PATCH', path: '/employees/time-off/t1/approve', body: { approved: false, rejectionReason: 'cover' } });
+    expect(approvalRoute({ kind: 'extraTime', id: 'e2', action: 'approve', minutes: 45 })).toMatchObject({ path: '/attendance/extra-time/e2/approve', body: { minutes: 45 } });
+    expect(approvalRoute({ kind: 'expense', id: 'x', action: 'reject', reason: 'no receipt' })).toMatchObject({ path: '/assets/expenses/x/review', body: { decision: 'reject', note: 'no receipt' } });
+    expect(approvalRoute({ kind: 'guestRequest', id: 'g', action: 'reject' })).toMatchObject({ method: 'PATCH', path: '/share-requests/g/resolve', body: { approve: false } });
+    expect(approvalRoute({ kind: 'clientRequest', id: 'c', action: 'approve', spaceId: 's1' })).toMatchObject({ path: '/portal/admin/requests/c/triage', body: { spaceId: 's1' } });
+  });
+  it('refuses what the route would refuse anyway, before calling it', () => {
+    expect(approvalRoute({ kind: 'hours', id: 'e1', action: 'reject' })).toEqual({ ok: false, code: 'APPROVAL_INVALID', field: 'reason' });
+    expect(approvalRoute({ kind: 'overtime', id: 'o', action: 'approve' })).toMatchObject({ ok: false, field: 'minutes' });
+    expect(approvalRoute({ kind: 'noShow', id: 'n', action: 'reject' })).toMatchObject({ ok: false, field: 'action' });
+    expect(approvalRoute({ kind: 'clientRequest', id: 'c', action: 'approve' })).toMatchObject({ ok: false, field: 'spaceId' });
+  });
+  it('an id is a path segment, never a path', () => {
+    expect(approvalRoute({ kind: 'hours', id: '../../users/x', action: 'approve' })).toMatchObject({ path: '/attendance/approvals/..%2F..%2Fusers%2Fx/approve' });
+  });
+});
+
+describe('what comes first', () => {
+  it('somebody away from site, or still working past their shift, is NOW', () => {
+    expect(toApproval.away({ id: 'a', user: { firstName: 'J' } }, ctx()).group).toBe('NOW');
+    expect(toApproval.extraTime({ id: 'e', status: 'CLOCKED_IN' }, ctx()).group).toBe('NOW');
+    expect(toApproval.extraTime({ id: 'e', status: 'CLOCKED_OUT' }, ctx()).group).toBe('TODAY');
+  });
+  it('a no-show is NOW while the shift runs, TODAY just after, LATER from last week', () => {
+    expect(toApproval.noShow({ id: 'n', expectedClockOutAt: at(2) }, ctx()).group).toBe('NOW');
+    expect(toApproval.noShow({ id: 'n', expectedClockOutAt: at(-3) }, ctx()).group).toBe('TODAY');
+    expect(toApproval.noShow({ id: 'n', expectedClockOutAt: at(-72) }, ctx()).group).toBe('LATER');
+  });
+  it('leave starting within two days is TODAY, next month is LATER', () => {
+    expect(toApproval.request({ id: 't', startDate: at(30) }, ctx()).group).toBe('TODAY');
+    expect(toApproval.request({ id: 't', startDate: at(24 * 20) }, ctx()).group).toBe('LATER');
+  });
+  it('sorts NOW, TODAY, LATER — then what runs out first, then the oldest', () => {
+    const mk = (id: string, group: ApprovalItem['group'], dueAt: string | null, raisedAt: string): ApprovalItem =>
+      ({ kind: 'hours', id, group, dueAt, raisedAt, subject: { id: null, name: '' }, space: null, canDecide: true, data: {} });
+    const out = sortApprovals([mk('l', 'LATER', null, at(-1)), mk('t2', 'TODAY', null, at(-5)), mk('n', 'NOW', null, at(-1)), mk('t1', 'TODAY', at(1), at(-1))]);
+    expect(out.map((i) => i.id)).toEqual(['n', 't1', 't2', 'l']);
+  });
+});
+
+describe('each shift once', () => {
+  it('the live extra-time item wins over the overtime row of the same shift', () => {
+    const extra = toApproval.extraTime({ id: 'entry-1', status: 'CLOCKED_IN' }, ctx());
+    const ot = toApproval.overtime({ id: 'ot-1', timeEntryId: 'entry-1' }, ctx());
+    const other = toApproval.overtime({ id: 'ot-2', timeEntryId: 'entry-2' }, ctx());
+    expect(dedupeApprovals([extra, ot, other]).map((i) => i.id)).toEqual(['entry-1', 'ot-2']);
+  });
+});
+
+describe('buttons', () => {
+  it('none for an item the caller may not decide, or one that needs its page', () => {
+    expect(approvalActionsFor(toApproval.hours({ id: 'e' }, ctx(false)))).toEqual([]);
+    expect(approvalActionsFor(toApproval.assetProposal({ id: 'p', categoryId: null }, ctx()))).toEqual([]);
+    expect(approvalActionsFor(toApproval.assetProposal({ id: 'p', categoryId: 'k1' }, ctx())).map((a) => a.id)).toEqual(['approve', 'reject']);
+  });
+});
+
+describe('mayDecide — the rule the action route guard reads', () => {
+  const user = (over: any) => ({ id: 'me', role: 'EMPLOYEE', access: { org: {}, perSpace: {} }, ...over });
+  it('org-wide holder: everywhere; workspace holder: only there; nobody else', () => {
+    expect(mayDecide(user({ canApproveAttendance: true }), 'hours', 's9')).toBe(true);
+    const sp = user({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } });
+    expect(mayDecide(sp, 'hours', 's1')).toBe(true);
+    expect(mayDecide(sp, 'hours', 's2')).toBe(false);
+    expect(mayDecide(user({}), 'hours', 's1')).toBe(false);
+  });
+  it('an org-wide kind is never decided through a workspace grant', () => {
+    expect(mayDecide(user({ access: { org: {}, perSpace: { s1: { canIssueDocuments: true } } } }), 'document', null)).toBe(false);
+    expect(mayDecide(user({ role: 'ADMIN' }), 'document', null)).toBe(true);
+  });
+});
+
+describe('ApprovalsService — reads as the caller, asks only what they could decide', () => {
+  const realFetch = global.fetch;
+  afterEach(() => { global.fetch = realFetch; });
+  const config = { get: (k: string) => (k === 'PORT' ? '4000' : undefined) } as any;
+  const caller = (user: any) => ({ user: { id: 'me', role: 'EMPLOYEE', access: { org: {}, perSpace: {} }, ...user }, headers: { authorization: 'Bearer t' } });
+  const json = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body }) as any;
+
+  it('a member with no decision rights: not one list is asked for', async () => {
+    const f = jest.fn();
+    global.fetch = f as any;
+    const res = await new ApprovalsService(config).list(caller({}));
+    expect(f).not.toHaveBeenCalled();
+    expect(res.items).toEqual([]);
+  });
+
+  it('asks the caller\'s lists with the caller\'s token, keeps only what they may decide, survives one failing list', async () => {
+    const calls: string[] = [];
+    global.fetch = jest.fn(async (url: string, init: any) => {
+      calls.push(String(url).replace('http://127.0.0.1:4000/api/v1', ''));
+      expect(init.headers.authorization).toBe('Bearer t');
+      if (String(url).includes('/attendance/approvals/pending')) return json({ data: [{ id: 'e1', location: { id: 's1', name: 'A' }, clockOutAt: at(-2) }, { id: 'e2', location: { id: 's2', name: 'B' }, clockOutAt: at(-2) }] });
+      if (String(url).includes('/attendance/excursions')) return json({}, 500);
+      return json({ data: [] });
+    }) as any;
+    const svc = new ApprovalsService(config);
+    const res = await svc.list(caller({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } }));
+    expect(res.items.map((i) => i.id)).toEqual(['e1']); // s2 is not theirs to decide
+    expect(res.unavailable).toContain('away');
+    expect(calls.some((c) => c.startsWith('/documents'))).toBe(false); // holds nothing there
+    expect((await svc.count(caller({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } }))).total).toBe(1);
+  });
+
+  it('never lists the caller\'s own item — every kind refuses deciding about yourself', async () => {
+    global.fetch = jest.fn(async (url: string) =>
+      String(url).includes('/attendance/approvals/pending')
+        ? json({ data: [{ id: 'mine', user: { id: 'me' }, location: { id: 's1', name: 'A' }, clockOutAt: at(-2) }, { id: 'theirs', user: { id: 'u2' }, location: { id: 's1', name: 'A' }, clockOutAt: at(-2) }] })
+        : json({ data: [] })) as any;
+    const res = await new ApprovalsService(config).list(caller({ access: { org: {}, perSpace: { s1: { canApproveAttendance: true } } } }));
+    expect(res.items.map((i) => i.id)).toEqual(['theirs']);
+  });
+
+  it('a refusal from the kind\'s own route comes back as it was', async () => {
+    global.fetch = jest.fn(async () => json({ code: 'SELF_APPROVAL', message: 'You cannot approve your own' }, 403)) as any;
+    const r = await new ApprovalsService(config).decide(caller({}), { kind: 'hours', id: 'e1', action: 'approve' });
+    expect(r).toMatchObject({ ok: false, status: 403, code: 'SELF_APPROVAL' });
+  });
+});

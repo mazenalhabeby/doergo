@@ -115,3 +115,22 @@ export function JoinQueueGlyph({ size = 24, color, contrast = '#0b0f12' }: Glyph
     </Svg>
   );
 }
+
+/**
+ * Approvals — a tray with a tick punched out of it: everything waiting for a
+ * decision, in one place. A TRAY so it reads apart from the page (leave), the
+ * strip (expenses) and the figure (joiners) it sits beside.
+ */
+export function ApprovalsGlyph({ size = 24, color, contrast = '#0b0f12' }: GlyphProps) {
+  return (
+    <Svg {...svg(size)}>
+      <Rect x={4.5} y={2.5} width={15} height={10} rx={2} fill={color} fillOpacity={0.34} />
+      <Path
+        d="M2.5 13.2 4.6 9.4c.3-.6.9-.9 1.6-.9h11.6c.7 0 1.3.3 1.6.9l2.1 3.8v6.3c0 1.1-.9 2-2 2h-15c-1.1 0-2-.9-2-2v-6.3Z"
+        fill={color}
+        fillOpacity={0.95}
+      />
+      <Path d="M8.6 15.4l2.4 2.3 4.4-4.6" fill="none" stroke={contrast} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}

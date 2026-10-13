@@ -7,20 +7,14 @@ import {
   type SyncOperationResult,
   type SyncPushResponse,
 } from '@hbcfield/shared';
-import { INTERNAL_DISPATCH_HEADER, internalDispatchSecret } from '../../common/throttler/internal-dispatch';
-
-/** Headers of the original request carried onto each replay. */
-const FORWARDED_HEADERS = ['authorization', 'x-client-platform', 'x-app-version', 'accept-language', 'user-agent'] as const;
+import { selfDispatchBase, selfDispatchHeaders, type SelfDispatchCaller } from '../../common/self-dispatch';
 
 /** Stop starting new operations after this long; the rest come back as `retry`. */
 const TIME_BUDGET_MS = 25_000;
 /** One replay may take this long before it counts as a transient failure. */
 const OPERATION_TIMEOUT_MS = 20_000;
 
-interface PushCaller {
-  headers: Record<string, string | string[] | undefined>;
-  ip?: string;
-}
+type PushCaller = SelfDispatchCaller;
 
 /**
  * Applies a phone's queued operations by replaying each against the gateway's
@@ -41,9 +35,7 @@ export class SyncPushService {
   private readonly base: string;
 
   constructor(config: ConfigService) {
-    const port = Number(config.get('PORT')) || 4000;
-    const prefix = String(config.get('API_PREFIX') || 'api/v1').replace(/^\/+|\/+$/g, '');
-    this.base = `http://127.0.0.1:${port}/${prefix}`;
+    this.base = selfDispatchBase(config);
   }
 
   async push(caller: PushCaller, operations: SyncOperation[]): Promise<SyncPushResponse> {
@@ -119,17 +111,7 @@ export class SyncPushService {
     const route = resolveSyncOperationPath(op.op, payload.params);
     if (!route.ok) return { id: op.id, status: 'rejected', code: 'INVALID_PARAMS', message: route.message };
 
-    const headers: Record<string, string> = {
-      'content-type': 'application/json',
-      'idempotency-key': op.id,
-      [INTERNAL_DISPATCH_HEADER]: internalDispatchSecret(),
-    };
-    for (const h of FORWARDED_HEADERS) {
-      const v = caller.headers[h];
-      if (typeof v === 'string') headers[h] = v;
-    }
-    // Audit and geolocation see the phone, not 127.0.0.1.
-    if (caller.ip) headers['x-forwarded-for'] = caller.ip;
+    const headers = selfDispatchHeaders(caller, { 'idempotency-key': op.id });
 
     let res: Response;
     try {

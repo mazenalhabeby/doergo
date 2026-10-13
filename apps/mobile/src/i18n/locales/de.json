@@ -1225,6 +1225,10 @@
     "clientRequests": {
       "label": "Kundenanfragen",
       "desc": "Was Bewohner über das Portal gesendet haben"
+    },
+    "approvals": {
+      "label": "Freigaben",
+      "desc": "Alles, was auf Ihre Entscheidung wartet"
     }
   },
   "components": {
@@ -5009,5 +5013,150 @@
     "createJob": "Auftrag anlegen",
     "jobCreated": "Auftrag angelegt",
     "residentSees": "Der Bewohner sieht in seiner App, dass es weitergeht."
+  },
+  "approvals": {
+    "title": "Freigaben",
+    "subtitle": "Alles, was auf Ihre Entscheidung wartet, an einem Ort.",
+    "navLabel": "Freigaben — {{count}} offen",
+    "all": "Alle",
+    "refresh": "Aktualisieren",
+    "updated": "Aktualisiert {{time}}",
+    "loadFailed": "Ihre Freigaben konnten nicht geladen werden",
+    "groups": {
+      "NOW": "Kann nicht warten",
+      "TODAY": "Heute",
+      "LATER": "Wenn Sie Zeit haben"
+    },
+    "kinds": {
+      "hours": "Stunden",
+      "away": "Abwesend vom Standort",
+      "extraTime": "Mehr Zeit",
+      "overtime": "Überstunden",
+      "request": "Anträge",
+      "noShow": "Nicht eingestempelt",
+      "issue": "Schichtprobleme",
+      "expense": "Ausgaben",
+      "assetProposal": "Anlagen-Dokumente",
+      "document": "Dokumente",
+      "join": "Beitrittsanfragen",
+      "clientRequest": "Kundenanfragen",
+      "guestRequest": "Gast-Arbeitsbereiche"
+    },
+    "headline": {
+      "hours": "Stunden zur Freigabe",
+      "away": "Möchte den Standort verlassen",
+      "extraTime": "Bittet um mehr Zeit",
+      "overtime": "Überstunden zur Freigabe",
+      "noShow": "Hat sich nicht zur Schicht eingestempelt",
+      "assetProposal": "Hat ein Dokument für eine neue Anlage eingereicht",
+      "join": "Möchte der Organisation beitreten"
+    },
+    "fact": {
+      "workspace": "Arbeitsbereich",
+      "raised": "Gesendet",
+      "shift": "Schicht",
+      "worked": "Gearbeitet",
+      "flags": "Hinweise",
+      "left": "Standort verlassen",
+      "asked": "Beantragt",
+      "distance": "Entfernung",
+      "reason": "Grund",
+      "clockedIn": "Eingestempelt",
+      "plannedEnd": "Geplantes Ende",
+      "status": "Status",
+      "from": "Ab",
+      "round": "Runde",
+      "period": "Zeitraum",
+      "hours": "Uhrzeit",
+      "days": "Arbeitstage",
+      "cover": "Besetzung",
+      "expected": "Erwartet um",
+      "shiftEnds": "Schichtende",
+      "severity": "Dringlichkeit",
+      "assignee": "Zugewiesen an",
+      "amount": "Betrag",
+      "category": "Kategorie",
+      "date": "Datum",
+      "receipt": "Beleg",
+      "asset": "Anlage",
+      "plate": "Kennzeichen",
+      "holder": "Für",
+      "type": "Art",
+      "expires": "Gültig bis",
+      "email": "E-Mail",
+      "message": "Nachricht",
+      "reference": "Referenz",
+      "unit": "Einheit",
+      "priority": "Priorität"
+    },
+    "cover": {
+      "ok": "Genug Personen bleiben",
+      "tight": "Besetzung wird knapp",
+      "short": "Zu wenige Personen übrig",
+      "skill": "Eine Qualifikation würde fehlen",
+      "line": "{{worst}} am schwierigsten Tag da, {{floor}} benötigt"
+    },
+    "actions": {
+      "approve": "Freigeben",
+      "reject": "Ablehnen",
+      "allow": "Erlauben",
+      "notAllowed": "Nicht erlauben",
+      "give": "Zeit geben",
+      "excuse": "Entschuldigen",
+      "acknowledge": "Übernehmen",
+      "accept": "Annehmen",
+      "verify": "Bestätigen",
+      "turnIntoJob": "Zu einem Auftrag machen"
+    },
+    "needsPage": {
+      "assetProposal": "Beim Annehmen entsteht eine Anlage — wählen Sie ihre Art auf der vollständigen Seite.",
+      "clientRequest": "Wählen Sie den Arbeitsbereich für den Auftrag auf der vollständigen Seite."
+    },
+    "reasonRequired": "Grund (erforderlich)",
+    "reasonOptional": "Grund (optional)",
+    "minutes": "Minuten",
+    "expiresOn": "Gültig bis",
+    "openPage": "Vollständige Seite öffnen",
+    "decided": "Erledigt — {{name}}",
+    "someone": "Jemand",
+    "empty": "Nichts wartet auf Sie",
+    "emptyHint": "Neue Anfragen erscheinen hier, sobald sie eingehen.",
+    "pick": "Wählen Sie einen Eintrag, um die Details zu sehen",
+    "unavailable": "Nicht geladen: {{kinds}}. Bitte aktualisieren.",
+    "yes": "Ja",
+    "no": "Nein",
+    "stillWorking": "Noch eingestempelt",
+    "blocksWork": "Wird vor Arbeitsbeginn benötigt",
+    "back": "Zurück",
+    "flag": {
+      "overtime": "Überstunden",
+      "missedClockOut": "Ausstempeln verpasst",
+      "outsideGeofence": "Außerhalb des Geofence",
+      "lateArrival": "Verspäteter Beginn",
+      "earlyDeparture": "Vorzeitiger Feierabend",
+      "unscheduledDay": "Ungeplanter Tag",
+      "needsReview": "Zu prüfen"
+    },
+    "leave": {
+      "VACATION": "Urlaub",
+      "SICK": "Krank",
+      "FAMILY": "Familie",
+      "OTHER": "Sonstiges"
+    },
+    "requestKind": {
+      "LEAVE": "Abwesenheit",
+      "REMOTE": "Remote-Tag",
+      "HOURS": "Andere Arbeitszeit",
+      "OVERTIME": "Überstunden",
+      "OTHER": "Sonstiges"
+    },
+    "priority": {
+      "LOW": "Niedrig",
+      "MEDIUM": "Mittel",
+      "HIGH": "Hoch",
+      "URGENT": "Dringend"
+    },
+    "gone": "Darüber wurde bereits entschieden, oder es liegt nicht mehr bei Ihnen.",
+    "readOnly": "Sie können dies sehen. Für die Entscheidung fehlt Ihnen hier eine Berechtigung."
   }
 }

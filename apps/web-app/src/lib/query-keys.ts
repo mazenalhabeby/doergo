@@ -233,6 +233,13 @@ const schedulesKeys = {
   rotaPeople: () => named("employees-for-rota"),
 } as const
 
+/** The approvals inbox (/approvals) and the count beside the bell. */
+const approvalsKeys = {
+  all: () => named("approvals"),
+  list: () => named("approvals", ["list"]),
+  count: () => named("approvals", ["count"]),
+} as const
+
 const shiftIssuesKeys = {
   list: () => named("shift-issues"),
   detail: (id: string | null) => named("shift-issue", [id]),
@@ -455,6 +462,7 @@ export const keys = {
   timeOff: timeOffKeys,
   schedules: schedulesKeys,
   shiftIssues: shiftIssuesKeys,
+  approvals: approvalsKeys,
   memberRecord: memberRecordKeys,
   employees: employeesKeys,
   documents: documentsKeys,

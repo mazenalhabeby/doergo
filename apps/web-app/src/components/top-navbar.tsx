@@ -24,6 +24,7 @@ import { isActive } from "./top-navbar/nav-active"
 import { navItemBase, navItemInactive, navItemActiveStyle, bottomIndicator } from "./top-navbar/nav-styles"
 import { usePrefetchRoutes } from "./top-navbar/use-prefetch-routes"
 import { CommandPaletteButton } from "./top-navbar/command-palette-button"
+import { ApprovalsButton } from "./top-navbar/approvals-button"
 import { TeamDropdown } from "./top-navbar/team-dropdown"
 import { DocumentsDropdown } from "./top-navbar/documents-dropdown"
 import { MeDropdown } from "./top-navbar/me-dropdown"
@@ -145,6 +146,7 @@ export function TopNavbar() {
         <span data-tour="nav-support" className="inline-flex"><SupportButton /></span>
         <span className="mx-1 h-5 w-px bg-border" aria-hidden />
         <ClockWidget />
+        <span data-tour="nav-approvals" className="inline-flex"><ApprovalsButton /></span>
         <span data-tour="nav-notifications" className="inline-flex"><NotificationBell /></span>
         <span data-tour="nav-profile" className="inline-flex"><UserDropdown
           user={user}

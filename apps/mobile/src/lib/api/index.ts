@@ -116,3 +116,4 @@ export type { MobileCustomFieldDefinition, MobileCustomFieldValue, MobileCustomF
 export * from './documents';
 export { calendarApi } from './calendar';
 export type { CalendarRange, CalendarEventDetail, CalendarEventInput, CalendarPerson, LeaveCount } from './calendar';
+export * from './approvals';

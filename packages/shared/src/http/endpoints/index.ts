@@ -8,6 +8,7 @@
  * routes are the one exception: `platform-admin.ts` exports its own registry,
  * `platformEndpoints` (an operator token, never a member's).
  */
+import { approvalsEndpoints } from './approvals';
 import { assetCategoriesEndpoints, assetsEndpoints } from './assets';
 import { attendanceEndpoints, overtimeEndpoints, shiftIssuesEndpoints, worklogEndpoints } from './attendance';
 import { calendarEndpoints } from './calendar';
@@ -53,10 +54,12 @@ export * from './platform';
 export * from './platform-admin';
 export * from './portal';
 export * from './tasks';
+export * from './approvals';
 export * from './web';
 
 /** Every domain by name — `apiEndpoints.tasks.get`, and what the tests walk. */
 export const apiEndpoints = {
+  approvals: approvalsEndpoints,
   auth: authEndpoints,
   users: usersEndpoints,
   notifications: notificationsEndpoints,

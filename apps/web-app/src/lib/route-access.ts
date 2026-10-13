@@ -40,6 +40,7 @@ import {
   crmReachOf,
   crmCanAccess,
   hasAccessModule,
+  APPROVAL_KIND_SPECS,
 } from "@hbcfield/shared/client"
 
 // ─── The subject ────────────────────────────────────────────────────────────
@@ -126,6 +127,10 @@ export function evaluateRule(rule: AccessRule, ctx: AccessContext): AccessVerdic
 }
 
 // ─── Shared conditions ──────────────────────────────────────────────────────
+
+const APPROVAL_DECIDE_GRANTS: readonly Grant[] = [
+  ...new Set(Object.values(APPROVAL_KIND_SPECS).map((k): Grant => `${k.orgWide ? "org" : "any"}:${k.decideKey}`)),
+]
 
 /**
  * CRM reach, as the server resolves it: the org role's caps, plus the crm* keys
@@ -240,6 +245,14 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
     denyExternal: true,
     need: ["any:canManageRota"],
     why: "GET/POST /employees/leave-opening — @RequirePermissionInSpace('canManageRota'); the service narrows to the caller's workspaces",
+  },
+
+  // ── Decisions ──
+  "/approvals": {
+    // Any ONE kind it can decide: every kind's own decide permission, asked the
+    // way its route asks it (org-wide for documents, joiners, guest workspaces).
+    need: [APPROVAL_DECIDE_GRANTS],
+    why: "GET /approvals — open to every member, but it lists only what the caller can decide (each kind's own guard, run as them)",
   },
 
   // ── Time ──

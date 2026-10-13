@@ -12,6 +12,7 @@ export interface MoreGroup { key: MoreGroupKey; rows: ManageRow[] }
  * under the broadest heading until somebody places it.
  */
 const GROUP_OF: Record<string, MoreGroupKey> = {
+  '/(app)/approvals': 'time',
   '/(app)/manage/attendance': 'time',
   '/(app)/extra-time': 'time',
   '/(app)/manage/time-off-requests': 'time',

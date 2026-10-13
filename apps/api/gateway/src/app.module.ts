@@ -70,6 +70,7 @@ import { RebillModule } from './common/billing/rebill.service';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AppVersionInterceptor } from './common/interceptors/app-version.interceptor';
 import { SyncModule } from './modules/sync/sync.module';
+import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { IdempotencyModule } from './common/idempotency/idempotency.module';
 import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor';
 import { StorageModule } from './common/storage/storage.module';
@@ -81,6 +82,7 @@ import { StorageModule } from './common/storage/storage.module';
     StorageModule,
     IdempotencyModule,
     SyncModule,
+    ApprovalsModule,
     AuthCacheModule,
     // Global: ModuleGuard is an APP_GUARD, so it is constructed in every
     // module's injector and its dependency has to be reachable from all of them.

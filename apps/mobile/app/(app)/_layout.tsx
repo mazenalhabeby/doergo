@@ -73,6 +73,9 @@ const OWN_HEADER_SCREENS = [
   'equipment/[id]',
   'client-requests',
   'client-request/[id]',
+  // Everything waiting for a decision, and one decision.
+  'approvals',
+  'approval/[key]',
   // Clients from the phone's address book — draws its own header.
   'import-contacts',
   'send-document',

@@ -191,6 +191,10 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
   'SupportController.listMine': 'SupportController',
   'SupportController.readMine': 'SupportController',
   'SupportController.reply': 'SupportController',
+  // ApprovalsController: reads the existing pending lists and calls their existing actions AS the caller — every guard re-runs
+  'ApprovalsController.count': 'ApprovalsController',
+  'ApprovalsController.decide': 'ApprovalsController',
+  'ApprovalsController.list': 'ApprovalsController',
   // SyncController: the phone's own offline sync, filtered to what the caller can read
   'SyncController.mediaLinks': 'SyncController',
   'SyncController.pull': 'SyncController',
@@ -242,6 +246,7 @@ export const EXTERNAL_OPEN_ROUTES: Record<string, string> = {
 
 /** Why each controller's open routes are safe — the reason the list above points at. */
 export const EXTERNAL_OPEN_REASONS: Record<string, string> = {
+  ApprovalsController: 'the inbox reads the thirteen existing pending lists and decides through their existing actions by calling those routes AS the caller (self-dispatch) — each route\'s own guard and workspace scope decide what an external member gets',
   AssetsController: "the logbook — custody, or canLogAssets / canManageAssets in the record's workspace, decided in the service",
   AttendanceController: "the caller's OWN clock, shifts, breaks and work log (an external holds no clock — the clock module refuses them in the service)",
   AuthController: 'signing in and out, own session',

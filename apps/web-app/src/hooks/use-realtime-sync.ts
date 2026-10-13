@@ -308,6 +308,25 @@ const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
 
 }
 
+/*
+  The approvals inbox reads every kind's own list, so it goes stale on exactly
+  the events that add or settle one of them. NOT on task.updated or a clock-in:
+  the inbox is a fan-out read, and those fire all day.
+*/
+const APPROVAL_EVENTS: string[] = [
+  Events.TASK_CREATED, // a portal request arrives as a task
+  Events.CLOCK_OUT, Events.ATTENDANCE_CHANGED,
+  Events.EXCURSION_REQUESTED, Events.EXCURSION_APPROVED, Events.EXCURSION_REJECTED,
+  Events.EXCURSION_RETURNED, Events.EXCURSION_EXPIRED,
+  Events.JOIN_REQUEST_SUBMITTED, Events.MEMBER_CHANGED,
+  Events.TIME_OFF_REQUESTED, Events.TIME_OFF_DECIDED,
+  Events.ASSET_EXPENSES_CHANGED,
+  Events.NOSHOW_ESCALATION, Events.NOSHOW_RESOLVED,
+]
+for (const e of APPROVAL_EVENTS) {
+  EVENT_INVALIDATIONS[e] = [...(EVENT_INVALIDATIONS[e] ?? []), keys.approvals.all()]
+}
+
 export function useRealtimeSync() {
   const queryClient = useQueryClient()
   const { isConnected, subscribe } = useSocketContext()
