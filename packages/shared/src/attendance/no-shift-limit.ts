@@ -118,6 +118,20 @@ export function clampDailyMinutes(minutes: number | null | undefined): number {
   return Math.min(NO_SHIFT_LIMIT.MAX_MINUTES, Math.max(NO_SHIFT_LIMIT.MIN_MINUTES, m));
 }
 
+/**
+ * Whose "today" a no-shift limit counts: the MEMBER's — their own zone, else the
+ * organization's, else the workspace's. ONE day for the person at every workspace.
+ *
+ * ⚠️ Not each workspace's own zone. Counting "today" per workspace split one
+ * session differently everywhere: a shift ending 06:10 in Vienna read as 6h 11m
+ * at a Vienna workspace, 11m at a New York one and 12h at a Chicago one — three
+ * contradicting answers on one screen, and a refusal at one workspace while the
+ * next said hours were left.
+ */
+export function memberDayZone(userTz: string | null | undefined, orgTz: string | null | undefined, fallback?: string | null): string {
+  return userTz || orgTz || fallback || 'UTC';
+}
+
 /** Local midnight of the day `at` falls on, in `tz`, as an instant. */
 export function startOfDayIn(at: Date, tz: string): Date {
   return zonedWallTimeToUtc(localPartsIn(at, tz).dateStr, 0, 0, tz);
@@ -173,7 +187,7 @@ export interface NoShiftTag {
   hasShiftNow: boolean;
   /** Counted minutes today, at any workspace, when this was read. */
   workedTodayMinutes: number;
-  /** End of that day in the workspace's time zone — after it, nothing is used up yet. */
+  /** End of that day in the MEMBER's zone (`memberDayZone`) — after it, nothing is used up yet. */
   dayEndsAt: string;
 }
 

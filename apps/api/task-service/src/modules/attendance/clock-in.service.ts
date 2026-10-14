@@ -18,6 +18,7 @@ import {
   SERVICE_NAMES,
   mayClockInRemotely as canClockInRemotely,
   noShiftAllowance,
+  memberDayZone,
   effectiveNoShiftPolicy,
   workspaceSchedulesShifts,
   countedMinutesBetween,
@@ -148,7 +149,17 @@ export class ClockInService {
     now: Date,
     primarySpaceIds: ReadonlySet<string>,
   ): Promise<(T & { noShift: NoShiftTag | null; shiftToday: boolean; isPrimary: boolean })[]> {
-    const worked = new Map<string, Promise<number>>();
+    /*
+      ONE day for the person, whichever workspace asks (memberDayZone): today's
+      hours are read once, in their zone, and only if some workspace limits them.
+    */
+    let dayTz: Promise<string> | null = null;
+    let worked: Promise<number> | null = null;
+    // Asked by every workspace at once (Promise.all), so the promise is shared, not the answer.
+    const memberDay = (fallback: string): Promise<string> =>
+      (dayTz ??= this.prisma.user
+        .findUnique({ where: { id: userId }, select: { timezone: true, organization: { select: { timezone: true } } } })
+        .then((u) => memberDayZone(u?.timezone, u?.organization?.timezone, fallback)));
     return Promise.all(
       spaces.map(async (space) => {
         const tz = space.timezone || 'UTC';
@@ -170,19 +181,18 @@ export class ClockInService {
           : false;
         const isPrimary = primarySpaceIds.has(space.id);
         if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
+        const day = await memberDay(tz);
         let workedTodayMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {
-          if (!worked.has(tz)) {
-            worked.set(tz, this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel }, now, tz).then((a) => a.workedTodayMinutes));
-          }
-          workedTodayMinutes = await worked.get(tz)!;
+          worked ??= this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel }, now, day).then((a) => a.workedTodayMinutes);
+          workedTodayMinutes = await worked;
         }
         const noShift: NoShiftTag = {
           policy,
           dailyMinutes: space.noShiftDailyMinutes ?? 480,
           hasShiftNow,
           workedTodayMinutes,
-          dayEndsAt: endOfDayIn(now, tz).toISOString(),
+          dayEndsAt: endOfDayIn(now, day).toISOString(),
         };
         return { ...space, noShift, shiftToday: hasShiftNow, isPrimary };
       }),
@@ -496,6 +506,8 @@ export class ClockInService {
         allowRemote: true,
         role: true,
         organization: { select: { timezone: true } },
+        // The member's own day, for the no-shift limit (memberDayZone).
+        timezone: true,
         // The automatic clock: their consent, and that they are not external (who hold no clock).
         autoClockConsentAt: true,
         isExternal: true,
@@ -838,7 +850,7 @@ export class ClockInService {
     */
     let endIsDailyLimit = false;
     if (!scheduled) {
-      const allowance = await this.noShiftAllowanceFor(data.userId, location, clockInTime, location.timezone || workerTz || orgTz);
+      const allowance = await this.noShiftAllowanceFor(data.userId, location, clockInTime, memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz));
       if (allowance.kind === 'refused' && !flagReasons.includes('RECORDED_OFFLINE')) {
         throw noShiftRefusal(allowance, location.name);
       }

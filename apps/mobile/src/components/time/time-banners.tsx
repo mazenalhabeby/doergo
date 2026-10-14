@@ -163,7 +163,7 @@ export function TimeBanners({
             ? `${t('attendance.noShift.title', { location: location.name })}. ${t('attendance.noShift.left', {
                 worked: formatDuration(location.noShift?.workedTodayMinutes ?? 0),
                 left: formatDuration(allowance.remainingMinutes),
-                time: formatTime(allowance.until.toISOString(), location.timezone),
+                time: formatTime(allowance.until.toISOString(), tz),
               })}`
             : allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY'
               ? `${t('attendance.noShift.shiftOnlyTitle')}. ${t('attendance.noShift.shiftOnlyBody', { location: location.name })}`
