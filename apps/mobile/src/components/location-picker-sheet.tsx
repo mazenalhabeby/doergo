@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { rankClockInLocations } from '@hbcfield/shared/client';
+import { parseClockInPick, rankClockInLocations } from '@hbcfield/shared/client';
+import { useAuth } from '../contexts/auth-context';
 import {
   View,
   Text,
@@ -56,6 +57,8 @@ export function LocationPickerSheet({
 }: LocationPickerSheetProps) {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  // Somebody who chose "let me choose every time" is told why the list opened at the office too.
+  const asked = parseClockInPick(useAuth().user?.clockInPick) === 'ASK';
   // The shared order: inside an area, a shift today, primary, nearest — the same as the web.
   const ranked = useMemo(() => rankClockInLocations(locations, fix), [locations, fix]);
 
@@ -74,7 +77,7 @@ export function LocationPickerSheet({
     <BlurSheet visible={visible} onClose={onClose}>
       <SheetPanel title={t('attendance.picker.title')} onClose={onClose}>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            {t('attendance.picker.subtitle')}
+            {asked ? t('settings.clockIn.sheetAsked') : t('attendance.picker.subtitle')}
           </Text>
 
           {/* Location list */}

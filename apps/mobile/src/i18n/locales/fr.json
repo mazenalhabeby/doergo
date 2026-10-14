@@ -1003,7 +1003,8 @@
       "language": "Langue",
       "timeFormat": "Format de l'heure",
       "guidedTour": "Visites guidées",
-      "sync": "Synchronisation"
+      "sync": "Synchronisation",
+      "clockIn": "Pointage"
     },
     "language": {
       "choosePreferred": "Choisissez votre langue préférée",
@@ -4511,6 +4512,20 @@
       "forSupport": "Pour le support",
       "copy": "Copier pour le support",
       "updateShort": "Mise à jour prête"
+    },
+    "clockIn": {
+      "title": "Pointage",
+      "question": "Quand je suis sur l'un de mes espaces de travail",
+      "autoTitle": "Me pointer là",
+      "autoHint": "Vous êtes dans un espace de travail ? Le pointage s'y fait directement, sans liste.",
+      "askTitle": "Me laisser choisir à chaque fois",
+      "askHint": "Toujours afficher mes espaces de travail, celui où je suis en premier, et je choisis.",
+      "workspaces": "Vous travaillez dans {{n}} espaces de travail : {{names}}.",
+      "footnote": "Enregistré pour vous sur le web et sur votre téléphone. Les lieux où vous pouvez pointer restent les mêmes.",
+      "failed": "Impossible d'enregistrer votre choix",
+      "sheetAsked": "Vous avez demandé à choisir à chaque fois.",
+      "autoShort": "Là où je suis",
+      "askShort": "Je choisis"
     }
   },
   "jobsStrip": {

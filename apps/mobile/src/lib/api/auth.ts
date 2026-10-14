@@ -83,6 +83,10 @@ export const userApi = {
   setTimeFormat: async (timeFormat: '12h' | '24h'): Promise<void> => {
     return call(E.users.updateMe, undefined, { body: { timeFormat } });
   },
+  // Several workspaces: clock in where they stand ('AUTO') or always choose ('ASK').
+  setClockInPick: async (clockInPick: 'AUTO' | 'ASK'): Promise<void> => {
+    return call(E.users.updateMe, undefined, { body: { clockInPick } });
+  },
   // The language the server writes this member's notifications in. Pushes are
   // composed on the server while the app is closed, so the choice has to live
   // there as well as on the phone.

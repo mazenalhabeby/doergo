@@ -1003,7 +1003,8 @@
       "language": "Idioma",
       "timeFormat": "Formato de hora",
       "guidedTour": "Tours guiados",
-      "sync": "Sincronización"
+      "sync": "Sincronización",
+      "clockIn": "Fichar"
     },
     "language": {
       "choosePreferred": "Elige tu idioma preferido",
@@ -4511,6 +4512,20 @@
       "forSupport": "Para soporte",
       "copy": "Copiar para soporte",
       "updateShort": "Actualización lista"
+    },
+    "clockIn": {
+      "title": "Fichar",
+      "question": "Cuando estoy en uno de mis espacios de trabajo",
+      "autoTitle": "Ficharme allí",
+      "autoHint": "¿Está dentro de un espacio de trabajo? Fichar va directo allí, sin lista.",
+      "askTitle": "Dejarme elegir siempre",
+      "askHint": "Mostrar siempre mis espacios de trabajo, primero en el que estoy, y elijo yo.",
+      "workspaces": "Trabaja en {{n}} espacios de trabajo: {{names}}.",
+      "footnote": "Se guarda para usted en la web y en el teléfono. Dónde puede fichar no cambia.",
+      "failed": "No se pudo guardar su elección",
+      "sheetAsked": "Ha pedido elegir siempre.",
+      "autoShort": "Donde estoy",
+      "askShort": "Elijo yo"
     }
   },
   "jobsStrip": {

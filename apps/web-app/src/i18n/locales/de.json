@@ -3146,7 +3146,8 @@
       "security": "Passwort & Sicherheit",
       "myEmails": "E-Mail-Benachrichtigungen",
       "holidays": "Feiertage & Wochenenden",
-      "companies": "Firmen"
+      "companies": "Firmen",
+      "clockIn": "Einstempeln"
     },
     "changeEmail": {
       "title": "E-Mail ändern",
@@ -3203,6 +3204,19 @@
       "label": "Tage pro Jahr",
       "saved": "Urlaubsanspruch aktualisiert",
       "hint": "Gilt für alle ohne eigenen Anspruch. Einen abweichenden Wert legen Sie auf der Mitgliederseite fest. Wer unterjährig eintritt, erhält einen anteiligen Anspruch ab dem Eintrittsdatum."
+    },
+    "clockIn": {
+      "title": "Einstempeln",
+      "question": "Wenn ich an einem meiner Arbeitsbereiche bin",
+      "autoTitle": "Dort einstempeln",
+      "autoHint": "Sie stehen in einem Arbeitsbereich? Einstempeln geht direkt dorthin, ohne Liste.",
+      "askTitle": "Jedes Mal selbst wählen",
+      "askHint": "Immer meine Arbeitsbereiche zeigen, den aktuellen zuerst, und ich wähle.",
+      "workspaces": "Sie arbeiten in {{n}} Arbeitsbereichen: {{names}}.",
+      "oneWorkspace": "Sie arbeiten in einem Arbeitsbereich, es gibt also nichts zu wählen.",
+      "footnote": "Gilt für Sie im Web und auf dem Telefon. Wo Sie einstempeln dürfen, bleibt gleich.",
+      "saved": "Gespeichert",
+      "failed": "Ihre Auswahl konnte nicht gespeichert werden"
     }
   },
   "profile": {

@@ -7,13 +7,14 @@ import {
   Clock,
   CalendarDays,
   Landmark,
+  MapPin,
 } from "lucide-react"
 
 export type SettingsSection =
   // Organization
   | "general" | "members" | "audit-log" | "holidays" | "companies"
   // Personal
-  | "profile" | "security" | "notifications" | "my-emails"
+  | "profile" | "security" | "notifications" | "my-emails" | "clock-in"
 
 export interface NavItem {
   key: SettingsSection
@@ -42,6 +43,8 @@ export const ORG_NAV_ITEMS: NavItem[] = [
 export const PERSONAL_NAV_ITEMS: NavItem[] = [
   { key: "profile", icon: Users, labelKey: "settings.nav.profile" },
   { key: "security", icon: Key, labelKey: "settings.nav.security" },
+  // Clock in where I stand, or always choose. Listed only with 2+ workspaces (the page asks).
+  { key: "clock-in", icon: MapPin, labelKey: "settings.nav.clockIn" },
   // The member's own email opt-outs. Separate from "Notifications" above, which
   // is the organization's policy and admin-only.
   { key: "my-emails", icon: Mail, labelKey: "settings.nav.myEmails" },

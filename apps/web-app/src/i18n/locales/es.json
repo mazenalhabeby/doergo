@@ -3146,7 +3146,8 @@
       "security": "Contraseña y seguridad",
       "myEmails": "Notificaciones por correo",
       "holidays": "Festivos y fines de semana",
-      "companies": "Empresas"
+      "companies": "Empresas",
+      "clockIn": "Fichar"
     },
     "changeEmail": {
       "title": "Cambiar correo electrónico",
@@ -3203,6 +3204,19 @@
       "label": "Días por año",
       "saved": "Días de vacaciones actualizados",
       "hint": "Se aplica a quienes no tengan un valor propio. Puede fijar otro número en la página del miembro. Quien se incorpore a mitad de año recibe la parte proporcional desde su fecha de inicio."
+    },
+    "clockIn": {
+      "title": "Fichar",
+      "question": "Cuando estoy en uno de mis espacios de trabajo",
+      "autoTitle": "Ficharme allí",
+      "autoHint": "¿Está dentro de un espacio de trabajo? Fichar va directo allí, sin lista.",
+      "askTitle": "Dejarme elegir siempre",
+      "askHint": "Mostrar siempre mis espacios de trabajo, primero en el que estoy, y elijo yo.",
+      "workspaces": "Trabaja en {{n}} espacios de trabajo: {{names}}.",
+      "oneWorkspace": "Trabaja en un solo espacio de trabajo, así que no hay nada que elegir.",
+      "footnote": "Se guarda para usted en la web y en el teléfono. Dónde puede fichar no cambia.",
+      "saved": "Guardado",
+      "failed": "No se pudo guardar su elección"
     }
   },
   "profile": {

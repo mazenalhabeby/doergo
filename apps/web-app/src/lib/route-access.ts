@@ -328,7 +328,7 @@ export const ROUTE_RULES: Readonly<Record<string, AccessRule>> = {
 
 type SettingsSectionKey =
   | "general" | "members" | "companies" | "notifications" | "holidays" | "audit-log"
-  | "profile" | "security" | "my-emails"
+  | "profile" | "security" | "my-emails" | "clock-in"
 
 export const SETTINGS_SECTION_RULES: Readonly<Record<SettingsSectionKey, AccessRule & { group: "org" | "personal" }>> = {
   general: { group: "org", need: ["admin"], why: "GET /organizations/profile — @Roles(ADMIN)" },
@@ -346,6 +346,10 @@ export const SETTINGS_SECTION_RULES: Readonly<Record<SettingsSectionKey, AccessR
   profile: { group: "personal", why: "the member's own profile" },
   security: { group: "personal", why: "the member's own password and sessions" },
   "my-emails": { group: "personal", why: "the member's own email opt-outs" },
+  "clock-in": {
+    group: "personal", denyExternal: true,
+    why: "PATCH /users/me {clockInPick} — the member's own choice; an external member holds no clock",
+  },
 }
 
 /** The sections this member may open, in the order they are listed. */

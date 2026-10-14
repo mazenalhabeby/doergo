@@ -3146,7 +3146,8 @@
       "security": "Password e sicurezza",
       "myEmails": "Notifiche email",
       "holidays": "Festività e weekend",
-      "companies": "Società"
+      "companies": "Società",
+      "clockIn": "Timbratura"
     },
     "changeEmail": {
       "title": "Cambia email",
@@ -3203,6 +3204,19 @@
       "label": "Giorni all’anno",
       "saved": "Ferie aggiornate",
       "hint": "Vale per chi non ha un valore proprio. Puoi impostarne uno diverso nella pagina del membro. Chi entra a metà anno riceve una quota calcolata dalla data di inizio."
+    },
+    "clockIn": {
+      "title": "Timbratura",
+      "question": "Quando sono in uno dei miei spazi di lavoro",
+      "autoTitle": "Timbrami lì",
+      "autoHint": "Sei dentro uno spazio di lavoro? La timbratura va direttamente lì, senza elenco.",
+      "askTitle": "Fammi scegliere ogni volta",
+      "askHint": "Mostra sempre i miei spazi di lavoro, prima quello in cui sono, e scelgo io.",
+      "workspaces": "Lavori in {{n}} spazi di lavoro: {{names}}.",
+      "oneWorkspace": "Lavori in un solo spazio di lavoro, quindi non c'è nulla da scegliere.",
+      "footnote": "Salvato per te sul web e sul telefono. Dove puoi timbrare resta uguale.",
+      "saved": "Salvato",
+      "failed": "Impossibile salvare la scelta"
     }
   },
   "profile": {

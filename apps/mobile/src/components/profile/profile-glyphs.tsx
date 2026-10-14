@@ -102,7 +102,18 @@ function DownloadGlyph({ size = 24, color }: GlyphProps) {
   );
 }
 
+/** Clock in: a place mark. */
+function ClockInPlaceGlyph({ size = 24, color }: GlyphProps) {
+  return (
+    <Svg {...box(size)}>
+      <Path d="M12 21.5s-6.5-6.1-6.5-11a6.5 6.5 0 0 1 13 0c0 4.9-6.5 11-6.5 11z" fill={color} fillOpacity={0.18} />
+      <Circle cx={12} cy={10.5} r={2.6} fill={color} />
+    </Svg>
+  );
+}
+
 export const PROFILE_GLYPHS = {
+  clockIn: ClockInPlaceGlyph,
   equipment: MyEquipmentGlyph,
   documents: DocumentsGlyph,
   sync: SyncGlyph,

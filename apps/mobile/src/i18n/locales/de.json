@@ -1003,7 +1003,8 @@
       "language": "Sprache",
       "timeFormat": "Zeitformat",
       "guidedTour": "Geführte Touren",
-      "sync": "Synchronisierung"
+      "sync": "Synchronisierung",
+      "clockIn": "Einstempeln"
     },
     "language": {
       "choosePreferred": "Wählen Sie Ihre bevorzugte Sprache",
@@ -4511,6 +4512,20 @@
       "forSupport": "Für den Support",
       "copy": "Für den Support kopieren",
       "updateShort": "Update bereit"
+    },
+    "clockIn": {
+      "title": "Einstempeln",
+      "question": "Wenn ich an einem meiner Arbeitsbereiche bin",
+      "autoTitle": "Dort einstempeln",
+      "autoHint": "Sie stehen in einem Arbeitsbereich? Einstempeln geht direkt dorthin, ohne Liste.",
+      "askTitle": "Jedes Mal selbst wählen",
+      "askHint": "Immer meine Arbeitsbereiche zeigen, den aktuellen zuerst, und ich wähle.",
+      "workspaces": "Sie arbeiten in {{n}} Arbeitsbereichen: {{names}}.",
+      "footnote": "Gilt für Sie im Web und auf dem Telefon. Wo Sie einstempeln dürfen, bleibt gleich.",
+      "failed": "Ihre Auswahl konnte nicht gespeichert werden",
+      "sheetAsked": "Sie möchten jedes Mal selbst wählen.",
+      "autoShort": "Wo ich bin",
+      "askShort": "Ich wähle"
     }
   },
   "jobsStrip": {

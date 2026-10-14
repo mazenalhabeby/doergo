@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/auth-context';
 import { useToast } from '../island/island-context';
 import { startBackgroundHeartbeat } from '../services/background-heartbeat';
 import { startGeofenceForSpace } from '../services/background-geofence';
-import { chooseClockInLocation, haversineDistance, mayClockInRemotely } from '@hbcfield/shared/client';
+import { chooseClockInLocation, haversineDistance, mayClockInRemotely, parseClockInPick } from '@hbcfield/shared/client';
 import { connectivity } from '../offline/offline-context';
 import { useShiftActions } from '../offline/attendance/use-shift';
 import { checkClockInLocally } from '../offline/attendance/clock-in-check';
@@ -148,7 +148,8 @@ export function useClockIn(opts: {
     if (isClockingIn) return;
     const fix = await getCurrentLocation();
     if (!fix) return;
-    const choice = chooseClockInLocation(opts.assignedLocations ?? [], fix);
+    // The member's own choice: clock in where they stand, or always choose (Profile › Clock in).
+    const choice = chooseClockInLocation(opts.assignedLocations ?? [], fix, parseClockInPick(user?.clockInPick));
     if (choice.kind === 'auto') {
       await clockInAt(choice.location, fix);
       return;

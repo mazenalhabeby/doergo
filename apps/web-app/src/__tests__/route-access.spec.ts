@@ -224,12 +224,12 @@ describe("settings sections", () => {
     expect(settingsSectionsFor(admin)).toEqual(Object.keys(SETTINGS_SECTION_RULES))
   })
   it("a manager without admin never lands on General (its profile read is ADMIN-only)", () => {
-    expect(settingsSectionsFor(manager)).toEqual(["profile", "security", "my-emails"])
+    expect(settingsSectionsFor(manager)).toEqual(["profile", "security", "my-emails", "clock-in"])
     expect(defaultSettingsSection(manager)).toBe("profile")
   })
   it("a member manager (canManageUsers) gets Members, not General", () => {
     const people = ctx({ canManageUsers: true })
-    expect(settingsSectionsFor(people)).toEqual(["members", "profile", "security", "my-emails"])
+    expect(settingsSectionsFor(people)).toEqual(["members", "profile", "security", "my-emails", "clock-in"])
     expect(defaultSettingsSection(people)).toBe("members")
   })
   it("a workspace administrator gets Holidays", () => {
@@ -246,9 +246,11 @@ describe("settings sections", () => {
     expect(settingsSectionsFor(noAudit)).not.toContain("audit-log")
   })
   it("dispatcher, observer and technician see only their own sections", () => {
-    for (const c of [dispatcher, observer, technician]) {
-      expect(settingsSectionsFor(c)).toEqual(["profile", "security", "my-emails"])
+    for (const c of [dispatcher, technician]) {
+      expect(settingsSectionsFor(c)).toEqual(["profile", "security", "my-emails", "clock-in"])
     }
+    // An external member holds no clock, so there is nothing to choose.
+    expect(settingsSectionsFor(observer)).toEqual(["profile", "security", "my-emails"])
   })
 })
 

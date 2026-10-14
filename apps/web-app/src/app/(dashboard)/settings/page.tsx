@@ -14,6 +14,8 @@ import { NotificationsSection } from "./_components/notifications-section"
 import { MyEmailNotificationsSection } from "./_components/my-emails-section"
 import { ProfileSection } from "./_components/profile-section"
 import { SecuritySection } from "./_components/security-section"
+import { ClockInSection } from "./_components/clock-in-section"
+import { useClockInPickOffered } from "./_components/use-clock-in-pick-offered"
 import { LazyAuditLog } from "./_components/lazy-audit-log"
 import { ORG_NAV_ITEMS, PERSONAL_NAV_ITEMS, type SettingsSection } from "./_lib/settings-nav"
 
@@ -51,7 +53,9 @@ export default function SettingsPage() {
   */
   const allowed = routeAccess.settingsSections
   const orgNavItems = ORG_NAV_ITEMS.filter((i) => allowed.includes(i.key))
-  const personalNavItems = PERSONAL_NAV_ITEMS.filter((i) => allowed.includes(i.key))
+  // "Clock in" only for somebody with more than one workspace to clock in at.
+  const clockInOffered = useClockInPickOffered(allowed.includes("clock-in"))
+  const personalNavItems = PERSONAL_NAV_ITEMS.filter((i) => allowed.includes(i.key) && (i.key !== "clock-in" || clockInOffered))
   const showOrgGroup = orgNavItems.length > 0
 
   // The first section this member may open; a ?section they may not open falls back to it.
@@ -179,6 +183,7 @@ export default function SettingsPage() {
             {activeSection === "profile" && <div data-tour="settings-profile"><ProfileSection /></div>}
             {activeSection === "security" && <div data-tour="settings-security"><SecuritySection /></div>}
             {activeSection === "my-emails" && <div data-tour="settings-my-emails"><MyEmailNotificationsSection /></div>}
+            {activeSection === "clock-in" && <div data-tour="settings-clock-in"><ClockInSection /></div>}
             </>}
           </div>
         </div>

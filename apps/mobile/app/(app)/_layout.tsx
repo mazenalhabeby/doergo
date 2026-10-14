@@ -88,7 +88,7 @@ const OWN_HEADER_SCREENS = [
 ] as const;
 
 /** The profile pages after About — likewise their own header. */
-const OWN_HEADER_PROFILE_SCREENS = ['profile/language', 'profile/appearance', 'profile/time-format'] as const;
+const OWN_HEADER_PROFILE_SCREENS = ['profile/language', 'profile/appearance', 'profile/time-format', 'profile/clock-in'] as const;
 
 function ownHeaderScreens(names: readonly string[]) {
   return names.map((name) => <Stack.Screen key={name} name={name} options={{ headerShown: false }} />);

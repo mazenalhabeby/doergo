@@ -7,6 +7,8 @@ interface OwnProfilePatch {
   lastName?: string;
   presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null;
   timeFormat?: '12h' | '24h';
+  /** Several workspaces: clock in where they stand, or always choose. */
+  clockInPick?: 'AUTO' | 'ASK';
   /** The language pushes are written in — see apps/api/notification-service/src/i18n. */
   locale?: string;
 }

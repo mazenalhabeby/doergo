@@ -92,6 +92,8 @@ export interface User {
   presence?: "AVAILABLE" | "BUSY" | "AWAY" | null;
   // Per-user clock display preference ("12h" | "24h"); display-only.
   timeFormat?: "12h" | "24h";
+  // Several workspaces: clock in where they stand ("AUTO") or always choose ("ASK").
+  clockInPick?: "AUTO" | "ASK";
   // One-time welcome-tour flag: false → auto-run the welcome guide once.
   guidesSeen?: boolean;
   // Access Profile (mobile tabs / web screens) — array or object form.

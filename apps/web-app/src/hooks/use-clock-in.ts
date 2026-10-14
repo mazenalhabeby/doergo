@@ -8,7 +8,7 @@ import type { TFunction } from "i18next"
 import type { TimeEntry } from "@hbcfield/shared"
 import { attendanceApi } from "@/lib/api"
 import { serverErrorMessage } from "@/lib/server-error"
-import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely, chooseClockInLocation } from "@hbcfield/shared/client"
+import { shortfallMinutes, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, mayClockInRemotely, chooseClockInLocation, parseClockInPick } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import { getBrowserPosition, GeolocationError, type GeolocationFailure } from "@/lib/geolocation"
 
@@ -283,7 +283,8 @@ export function useClockIn({
     } finally {
       setLocating(false)
     }
-    const choice = chooseClockInLocation(sites, pos)
+    // The member's own choice: clock in where they stand, or always choose (Settings › Clock in).
+    const choice = chooseClockInLocation(sites, pos, parseClockInPick(user?.clockInPick))
     if (choice.kind === "auto") {
       clock.mutate({ locationId: choice.location.id, pos, announce: true })
       return

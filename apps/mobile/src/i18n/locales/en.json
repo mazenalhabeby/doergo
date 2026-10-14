@@ -1003,7 +1003,8 @@
       "language": "Language",
       "timeFormat": "Time format",
       "guidedTour": "Guided tours",
-      "sync": "Sync"
+      "sync": "Sync",
+      "clockIn": "Clock in"
     },
     "language": {
       "choosePreferred": "Choose your preferred language",
@@ -4511,6 +4512,20 @@
       "forSupport": "For support",
       "copy": "Copy for support",
       "updateShort": "Update ready"
+    },
+    "clockIn": {
+      "title": "Clock in",
+      "question": "When I'm at one of my workspaces",
+      "autoTitle": "Clock me in there",
+      "autoHint": "Standing inside a workspace? Clock in goes straight there, no list.",
+      "askTitle": "Let me choose every time",
+      "askHint": "Always show my workspaces, the one I'm at first, and I pick.",
+      "workspaces": "You work in {{n}} workspaces: {{names}}.",
+      "footnote": "Saved for you on the web and on your phone. Where you may clock in stays the same either way.",
+      "failed": "Could not save your choice",
+      "sheetAsked": "You asked to choose every time.",
+      "autoShort": "Where I stand",
+      "askShort": "I choose"
     }
   },
   "jobsStrip": {

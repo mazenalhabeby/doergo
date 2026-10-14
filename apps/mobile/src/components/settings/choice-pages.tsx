@@ -11,6 +11,8 @@ import { changeLanguage, getCurrentLanguage, supportedLanguages } from '../../i1
 import { getAmazen } from '../../theme/amazen';
 import { AText } from '../amazen';
 import { ChoiceRow, SettingsPage } from './settings-ui';
+import { useShift } from '../../offline/attendance/use-shift';
+import { parseClockInPick, type ClockInPick } from '@hbcfield/shared/client';
 
 /* ─────────────────────────── Appearance ─────────────────────────── */
 
@@ -108,6 +110,63 @@ export function TimeFormatPage() {
         />
       ))}
       <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('profile.timeFormat.note')}</AText>
+    </SettingsPage>
+  );
+}
+
+/* ─────────────────────────── Clock in ─────────────────────────── */
+
+/**
+ * With several workspaces: clock in where I stand, or always choose
+ * (`User.clockInPick`, read by the Clock in button through the shared
+ * `chooseClockInLocation` — the web reads the same setting). Where the member MAY
+ * clock in is the server's either way.
+ */
+export function ClockInPickPage() {
+  const { t } = useTranslation();
+  const { user, refreshUser, patchUser } = useAuth();
+  const offline = useOffline();
+  const toast = useToast();
+  const places = useShift().status?.assignedLocations ?? [];
+  const current: ClockInPick = parseClockInPick(user?.clockInPick);
+  const [saving, setSaving] = useState(false);
+
+  const choose = async (value: ClockInPick) => {
+    if (value === current || saving) return;
+    setSaving(true);
+    try {
+      if (offline.engine && user?.id) {
+        const outcome = await updateOwnProfile(offline.engine, user.id, { clockInPick: value });
+        if (outcome.kind === 'refused') throw new Error(outcome.message);
+        patchUser({ clockInPick: value });
+        if (outcome.kind === 'queued') toast.success(t('offline.savedForLater'));
+        return;
+      }
+      await userApi.setClockInPick(value);
+      await refreshUser();
+    } catch {
+      toast.error(t('settings.clockIn.failed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const OPTIONS: { value: ClockInPick; title: string; sub: string }[] = [
+    { value: 'AUTO', title: t('settings.clockIn.autoTitle'), sub: t('settings.clockIn.autoHint') },
+    { value: 'ASK', title: t('settings.clockIn.askTitle'), sub: t('settings.clockIn.askHint') },
+  ];
+  return (
+    <SettingsPage title={t('settings.clockIn.title')}>
+      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.clockIn.question')}</AText>
+      {OPTIONS.map((o) => (
+        <ChoiceRow key={o.value} on={current === o.value} disabled={saving} onPress={() => void choose(o.value)} title={o.title} sub={o.sub} />
+      ))}
+      {places.length > 1 ? (
+        <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
+          {t('settings.clockIn.workspaces', { n: places.length, names: places.map((p) => p.name).join(', ') })}
+        </AText>
+      ) : null}
+      <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.clockIn.footnote')}</AText>
     </SettingsPage>
   );
 }

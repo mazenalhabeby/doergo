@@ -27,6 +27,8 @@ import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph } from '../job/job-glyphs';
 import { TourTarget, GuideSheet, useTourScroll } from '../tour';
 import { PROFILE_GLYPHS } from './profile-glyphs';
+import { useShift } from '../../offline/attendance/use-shift';
+import { offersClockInPick, parseClockInPick } from '@hbcfield/shared/client';
 import { hasUnsentLocalWork } from '../../lib/session/end-session';
 
 const THEME_MODE_I18N: Record<ThemeMode, string> = {
@@ -43,6 +45,8 @@ const THEME_MODE_I18N: Record<ThemeMode, string> = {
 export function ProfileScreen() {
   const { user, logout, refreshUser, patchUser } = useAuth();
   const offline = useOffline();
+  // "Clock in" means something only with more than one workspace to clock in at.
+  const clockInOffered = offersClockInPick(useShift().status?.assignedLocations?.length ?? 0);
   const { snapshot: syncSnapshot } = useSyncStatus();
   const [showUnsentConfirm, setShowUnsentConfirm] = useState(false);
   const { amazen, mode } = useTheme();
@@ -337,6 +341,9 @@ export function ProfileScreen() {
         <Group label={t('profile.group.settings', 'Settings')}>
           <Row glyph="notifications" label={t('profile.menu.notifications')} onPress={() => router.push('/profile/notifications' as Href)} />
           <Row glyph="appearance" label={t('profile.menu.appearance')} value={t(THEME_MODE_I18N[mode])} onPress={handleAppearancePress} />
+          {clockInOffered ? (
+            <Row glyph="clockIn" label={t('profile.menu.clockIn', 'Clock in')} value={t(parseClockInPick(user?.clockInPick) === 'ASK' ? 'settings.clockIn.askShort' : 'settings.clockIn.autoShort')} onPress={() => router.push('/profile/clock-in' as Href)} />
+          ) : null}
           <Row glyph="timeFormat" label={t('profile.menu.timeFormat')} value={t(`profile.timeFormat.${user?.timeFormat === '12h' ? '12h' : '24h'}`)} onPress={handleTimeFormatPress} />
           <Row glyph="language" label={t('profile.menu.language')} value={lang?.label} onPress={() => router.push('/profile/language' as Href)} />
           <Row glyph="account" label={t('profile.menu.accountSecurity')} onPress={() => router.push('/profile/account' as Href)} />

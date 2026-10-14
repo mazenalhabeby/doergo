@@ -3146,7 +3146,8 @@
       "security": "Password & Security",
       "myEmails": "Email notifications",
       "holidays": "Holidays & weekends",
-      "companies": "Companies"
+      "companies": "Companies",
+      "clockIn": "Clock in"
     },
     "changeEmail": {
       "title": "Change email",
@@ -3203,6 +3204,19 @@
       "label": "Days per year",
       "saved": "Vacation allowance updated",
       "hint": "Applies to everyone without their own allowance. Set a different number for one person on their member page. Someone who joins mid-year gets a share of this, counted from their start date."
+    },
+    "clockIn": {
+      "title": "Clock in",
+      "question": "When I'm at one of my workspaces",
+      "autoTitle": "Clock me in there",
+      "autoHint": "Standing inside a workspace? Clock in goes straight there, no list.",
+      "askTitle": "Let me choose every time",
+      "askHint": "Always show my workspaces, the one I'm at first, and I pick.",
+      "workspaces": "You work in {{n}} workspaces: {{names}}.",
+      "oneWorkspace": "You work in one workspace, so there is nothing to choose.",
+      "footnote": "Saved for you on the web and on your phone. Where you may clock in stays the same either way.",
+      "saved": "Saved",
+      "failed": "Could not save your choice"
     }
   },
   "profile": {

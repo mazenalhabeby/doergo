@@ -37,7 +37,7 @@ export const usersApi = {
   },
 
   // Update your OWN profile (any authenticated user — no admin permission).
-  updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null; timeFormat?: '12h' | '24h'; guidesSeen?: boolean; locale?: string }) => {
+  updateMe: async (data: { firstName?: string; lastName?: string; presence?: 'AVAILABLE' | 'BUSY' | 'AWAY' | null; timeFormat?: '12h' | '24h'; guidesSeen?: boolean; locale?: string; clockInPick?: 'AUTO' | 'ASK' }) => {
     const response = await call(usersEndpoints.updateMe, undefined, { body: data }) as ApiResponse<{ success: boolean; data: { id: string; firstName: string; lastName: string } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;

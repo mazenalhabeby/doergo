@@ -110,7 +110,7 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
   'src/components/time/use-my-time-off.ts': { calls: { 'timeOffApi.cancel': 1 }, why: FALLBACK },
   'src/components/profile/profile-screen.tsx': { calls: { 'userApi.setPresence': 1 }, why: FALLBACK },
   // Time format and language: both pages live in one file now.
-  'src/components/settings/choice-pages.tsx': { calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1 }, why: FALLBACK },
+  'src/components/settings/choice-pages.tsx': { calls: { 'userApi.setTimeFormat': 1, 'userApi.setLocale': 1, 'userApi.setClockInPick': 1 }, why: FALLBACK },
   // The client portal runs no offline layer: a client edits their name at home, not in a basement.
   'app/(customer)/edit-profile.tsx': { calls: { 'userApi.updateProfile': 1 }, why: 'the customer portal has no outbox' },
   // Same portal: its sync push is confined to portal requests, so a language change goes direct.

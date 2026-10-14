@@ -1003,7 +1003,8 @@
       "language": "Lingua",
       "timeFormat": "Formato dell'ora",
       "guidedTour": "Tour guidati",
-      "sync": "Sincronizzazione"
+      "sync": "Sincronizzazione",
+      "clockIn": "Timbratura"
     },
     "language": {
       "choosePreferred": "Scegli la tua lingua preferita",
@@ -4511,6 +4512,20 @@
       "forSupport": "Per l’assistenza",
       "copy": "Copia per l’assistenza",
       "updateShort": "Aggiornamento pronto"
+    },
+    "clockIn": {
+      "title": "Timbratura",
+      "question": "Quando sono in uno dei miei spazi di lavoro",
+      "autoTitle": "Timbrami lì",
+      "autoHint": "Sei dentro uno spazio di lavoro? La timbratura va direttamente lì, senza elenco.",
+      "askTitle": "Fammi scegliere ogni volta",
+      "askHint": "Mostra sempre i miei spazi di lavoro, prima quello in cui sono, e scelgo io.",
+      "workspaces": "Lavori in {{n}} spazi di lavoro: {{names}}.",
+      "footnote": "Salvato per te sul web e sul telefono. Dove puoi timbrare resta uguale.",
+      "failed": "Impossibile salvare la scelta",
+      "sheetAsked": "Hai chiesto di scegliere ogni volta.",
+      "autoShort": "Dove sono",
+      "askShort": "Scelgo io"
     }
   },
   "jobsStrip": {
