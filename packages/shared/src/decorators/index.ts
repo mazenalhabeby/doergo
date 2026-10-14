@@ -126,6 +126,8 @@ export interface CurrentUserData {
   };
   // Per-user clock display preference ("12h" | "24h"); display-only.
   timeFormat?: string;
+  // Several workspaces: 'AUTO' (inside one area clocks in there) | 'ASK' (always choose).
+  clockInPick?: string;
   // Customer portal: for role=CUSTOMER, the Customer they act as + default unit.
   // Null for staff. Portal endpoints scope every query to this customerId.
   customerId?: string | null;

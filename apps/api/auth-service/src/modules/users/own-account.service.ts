@@ -34,15 +34,17 @@ export class OwnAccountService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string },
+    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string; clockInPick?: string },
   ) {
-    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string } = {};
+    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string; clockInPick?: string } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
     // presence: a value sets the manual override; null clears it back to auto.
     if (dto.presence !== undefined) data.presence = dto.presence;
     // timeFormat: per-user clock display ("12h" | "24h"); ignore anything else.
     if (dto.timeFormat === '12h' || dto.timeFormat === '24h') data.timeFormat = dto.timeFormat;
+    // clockInPick: with several workspaces, clock in where they stand or always choose.
+    if (dto.clockInPick === 'AUTO' || dto.clockInPick === 'ASK') data.clockInPick = dto.clockInPick;
     // guidesSeen: one-time welcome-tour flag (only ever set to true by the client).
     if (dto.guidesSeen === true) data.guidesSeen = true;
     // locale: the language this member's pushes are written in. Only one the
@@ -62,6 +64,7 @@ export class OwnAccountService {
         role: true,
         presence: true,
         timeFormat: true,
+        clockInPick: true,
         guidesSeen: true,
         locale: true,
       },

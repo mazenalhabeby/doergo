@@ -67,6 +67,7 @@ export class TokenValidationService {
           profileBadges: true,
           // Per-user clock display preference ("24h" | "12h")
           timeFormat: true,
+          clockInPick: true,
           // One-time welcome-tour flag (carried on req.user → /auth/me → web).
           guidesSeen: true,
           enabledModules: true,

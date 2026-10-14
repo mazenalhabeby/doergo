@@ -81,13 +81,36 @@ export function rankClockInLocations<T extends ClockInCandidate>(
     .map(({ i: _i, ...rest }) => rest);
 }
 
+/**
+ * The member's own choice for a clock-in with SEVERAL workspaces (`User.clockInPick`):
+ * AUTO — standing inside exactly one area clocks in there without asking (the
+ * default); ASK — always show the list, best first and preselected, wherever they
+ * stand. One workspace never asks either way. Nothing about where they MAY clock
+ * in changes: the server checks the same rules for both.
+ */
+export const CLOCK_IN_PICK_MODES = ['AUTO', 'ASK'] as const;
+export type ClockInPick = (typeof CLOCK_IN_PICK_MODES)[number];
+export const DEFAULT_CLOCK_IN_PICK: ClockInPick = 'AUTO';
+
+/** A stored or sent value as a mode; anything unknown is the default. */
+export function parseClockInPick(value: unknown): ClockInPick {
+  return value === 'ASK' ? 'ASK' : DEFAULT_CLOCK_IN_PICK;
+}
+
+/** The setting exists only for somebody who has more than one place to clock in. */
+export function offersClockInPick(clockableWorkspaces: number): boolean {
+  return clockableWorkspaces > 1;
+}
+
 export function chooseClockInLocation<T extends ClockInCandidate>(
   locations: readonly T[],
   fix: { lat: number; lng: number; accuracy?: number | null } | null,
+  pick: ClockInPick = DEFAULT_CLOCK_IN_PICK,
 ): ClockInChoice<T> {
   if (locations.length === 0) return { kind: 'none' };
   if (locations.length === 1) return { kind: 'auto', location: locations[0]!, why: 'ONLY_ONE' };
   const ranked = rankClockInLocations(locations, fix);
+  if (pick === 'ASK') return { kind: 'ask', ranked };
   const inside = ranked.filter((r) => r.inside);
   // Exactly one area around them is certain. Two overlapping areas are not.
   if (inside.length === 1) return { kind: 'auto', location: inside[0]!.location, why: 'INSIDE_AREA' };

@@ -23,7 +23,7 @@ import { firstValueFrom } from 'rxjs';
 import { IsString, IsOptional, IsEmail, IsNotEmpty, IsIn, ValidateIf, IsBoolean, IsObject, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
 import { join } from 'path';
 import { mkdir, writeFile, unlink } from 'fs/promises';
-import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer, SUPPORTED_LOCALES, type SupportedLocale } from '@hbcfield/shared';
+import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer, SUPPORTED_LOCALES, type SupportedLocale, CLOCK_IN_PICK_MODES, type ClockInPick } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
@@ -87,6 +87,11 @@ class UpdateMeDto {
   @IsOptional()
   @IsIn(SUPPORTED_LOCALES)
   locale?: SupportedLocale;
+
+  // Several workspaces: clock in where they stand ('AUTO') or always choose ('ASK').
+  @IsOptional()
+  @IsIn(CLOCK_IN_PICK_MODES)
+  clockInPick?: ClockInPick;
 }
 
 class UpdateMyEmailDto {

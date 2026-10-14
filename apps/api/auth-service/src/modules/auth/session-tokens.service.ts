@@ -7,6 +7,7 @@ import {
   isAdmin,
   ORG_SUSPENDED_MESSAGE,
   memberAccessOf,
+  parseClockInPick,
 } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -172,6 +173,8 @@ export class SessionTokensService {
           profileBadges: resolveProfileBadges(user.profileBadges, user.organization?.profileBadges),
           // Per-user clock display preference ("24h" | "12h") — display-only.
           timeFormat: user.timeFormat ?? '24h',
+          // Several workspaces: clock in where they stand, or always choose.
+          clockInPick: parseClockInPick(user.clockInPick),
           // One-time welcome-tour flag (false = auto-run the welcome guide once).
           guidesSeen: user.guidesSeen ?? false,
           // Access Profile (mobile tabs / web screens) — per-user overrides org.
