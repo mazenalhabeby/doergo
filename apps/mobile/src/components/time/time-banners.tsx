@@ -83,6 +83,10 @@ export function TimeBanners({
   const hoursOpen = entry ? Math.max(1, Math.floor((now.getTime() - new Date(entry.clockInAt).getTime()) / 3_600_000)) : 0;
   const quieted = unscheduled && stillWorkingAt !== null && stillWorkingAt === (entry?.reminderCount ?? 0);
   const askEnded = !!entry && !quieted && (reminder === 'REMINDED' || reminder === 'ESCALATED' || (reminder === 'NONE' && ended));
+  // Approved: the one extra-time line says it with the new end, not a second line beside it.
+  const approvedLine = entry && reminder === 'OVERTIME_APPROVED'
+    ? `${t('shiftReminder.extraApprovedTitle')}${end ? ` · ${t('shiftReminder.extraApprovedSubtitle', { time: formatTime(end.toISOString(), tz) })}` : ''}`
+    : null;
   const limitLeft = entry?.endIsDailyLimit && end ? Math.ceil((end.getTime() - now.getTime()) / 60_000) : null;
 
 
@@ -106,7 +110,7 @@ export function TimeBanners({
       {overtime && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(overtime.status) ? (
         <Banner
           tone={overtime.status === 'APPROVED' ? 'accent' : 'warn'}
-          text={overtime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') : overtime.status === 'PENDING_APPROVAL' ? waitingText(overtime, t) : t('overtime.overtimeActive')}
+          text={overtime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') : overtime.status === 'PENDING_APPROVAL' ? waitingText(overtime, t) : approvedLine ?? t('overtime.overtimeActive')}
           action={{ label: t('time.banners.open', 'Open'), onPress: () => router.push(`/overtime/${overtime.id}` as Href) }}
         />
       ) : null}
@@ -147,7 +151,7 @@ export function TimeBanners({
       {entry && reminder === 'OVERTIME_PENDING' && overtime?.status !== 'PENDING_APPROVAL' ? (
         <Banner tone="neutral" text={`${t('shiftReminder.waitingApprovalTitle')}. ${t('shiftReminder.waitingApprovalSubtitle')}`} />
       ) : null}
-      {entry && reminder === 'OVERTIME_APPROVED' ? (
+      {entry && reminder === 'OVERTIME_APPROVED' && overtime?.status !== 'APPROVED' ? (
         <Banner tone="accent" text={`${t('shiftReminder.extraApprovedTitle')}${end ? ` · ${t('shiftReminder.extraApprovedSubtitle', { time: formatTime(end.toISOString(), tz) })}` : ''}`} />
       ) : null}
       {limitLeft != null && limitLeft > 0 && limitLeft <= 30 && end ? (

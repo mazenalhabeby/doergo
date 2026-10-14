@@ -26,6 +26,7 @@ import {
 import { ScreenContainer, ScreenHeader } from '../../../src/components';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
+import { waitingText } from '../../../src/components/time/time-logic';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -192,8 +193,8 @@ export default function OvertimeRequestScreen() {
           <View style={styles.section}>
             <View style={[styles.statusCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
               <ActivityIndicator size="small" color="#2563EB" />
-              <Text style={styles.statusTitle}>{t('overtime.waitingApproval')}</Text>
-              <Text style={styles.statusSub}>{t('overtime.waitingApprovalSub')}</Text>
+              <Text style={styles.statusTitle}>{waitingText(request, t)}</Text>
+              <Text style={styles.statusSub}>{request.askedOf?.names?.length ? t('overtime.waitingToldSub') : t('overtime.waitingApprovalSub')}</Text>
             </View>
 
             {/* Path B option — get leader signature on this device */}

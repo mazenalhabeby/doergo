@@ -913,7 +913,8 @@
     "signedAwaitingConfirm": "Signed — {{name}} confirms it on their own phone, then it counts",
     "waitingFor": "Waiting for {{name}} to approve your extra time",
     "waitingForOthers_one": "Waiting for {{name}} or {{count}} other to approve your extra time",
-    "waitingForOthers_other": "Waiting for {{name}} or {{count}} others to approve your extra time"
+    "waitingForOthers_other": "Waiting for {{name}} or {{count}} others to approve your extra time",
+    "waitingToldSub": "They have been told. Someone who may approve extra time can also sign on this device."
   },
   "timeOff": {
     "stats": {

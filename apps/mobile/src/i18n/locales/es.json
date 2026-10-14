@@ -913,7 +913,8 @@
     "signedAwaitingConfirm": "Firmado: {{name}} lo confirma en su propio teléfono y entonces cuenta",
     "waitingFor": "Esperando a que {{name}} apruebe tu tiempo extra",
     "waitingForOthers_one": "Esperando a que {{name}} u {{count}} persona más apruebe tu tiempo extra",
-    "waitingForOthers_other": "Esperando a que {{name}} u {{count}} personas más aprueben tu tiempo extra"
+    "waitingForOthers_other": "Esperando a que {{name}} u {{count}} personas más aprueben tu tiempo extra",
+    "waitingToldSub": "Ya se les ha avisado. Quien pueda aprobar tiempo extra también puede firmar en este dispositivo."
   },
   "timeOff": {
     "stats": {

@@ -913,7 +913,8 @@
     "signedAwaitingConfirm": "Signé — {{name}} le confirme sur son propre téléphone, puis il compte",
     "waitingFor": "En attente de l'accord de {{name}} pour votre temps supplémentaire",
     "waitingForOthers_one": "En attente de l'accord de {{name}} ou d'{{count}} autre personne pour votre temps supplémentaire",
-    "waitingForOthers_other": "En attente de l'accord de {{name}} ou de {{count}} autres personnes pour votre temps supplémentaire"
+    "waitingForOthers_other": "En attente de l'accord de {{name}} ou de {{count}} autres personnes pour votre temps supplémentaire",
+    "waitingToldSub": "Ils ont été prévenus. Une personne autorisée à approuver le temps supplémentaire peut aussi signer sur cet appareil."
   },
   "timeOff": {
     "stats": {
