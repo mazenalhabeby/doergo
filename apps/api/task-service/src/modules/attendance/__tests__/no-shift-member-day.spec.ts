@@ -17,6 +17,7 @@ describe('the no-shift limit counts the MEMBER\'s day', () => {
     const prisma = {
       user: { findUnique: jest.fn().mockResolvedValue({ timezone: memberTz, organization: { timezone: orgTz } }) },
       timeEntry: { findMany: jest.fn().mockResolvedValue([session]) },
+      timeOff: { findMany: jest.fn().mockResolvedValue([]) },
     };
     const self: any = Object.create(ClockInService.prototype);
     self.prisma = prisma;

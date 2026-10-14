@@ -164,6 +164,30 @@ describe('clocking in with no shift', () => {
     expect(prisma.timeEntry.create).not.toHaveBeenCalled();
   });
 
+  /*
+    "Ask for more time": overtime agreed in advance (an approved OVERTIME request) raises the
+    day's limit. It used to extend only a session that still had hours left — somebody already
+    at the limit was refused before the agreement was ever read.
+  */
+  const AGREED = (minutes: number) => [{ id: 'r1', kind: 'OVERTIME', spaceId: null, startTime: null, endTime: null, minutes, startDate: new Date('2026-09-15T00:00:00Z'), endDate: new Date('2026-09-15T00:00:00Z') }];
+
+  it('agreed overtime lets a member at the limit clock in, for exactly that time', async () => {
+    const { service, prisma } = await build({ worked: [{ ...MORNING[0], paidMinutes: 480 }] });
+    prisma.timeOff.findMany.mockResolvedValue(AGREED(60));
+    await service.clockIn(clockIn());
+    const data = prisma.timeEntry.create.mock.calls[0][0].data;
+    expect(data.expectedClockOutAt).toEqual(new Date(NOW.getTime() + 60 * MIN));
+  });
+
+  it('agreed overtime is added once, not to the limit and again to the end', async () => {
+    const { service, prisma } = await build({ worked: MORNING });
+    prisma.timeOff.findMany.mockResolvedValue(AGREED(60));
+    await service.clockIn(clockIn());
+    const data = prisma.timeEntry.create.mock.calls[0][0].data;
+    // 8h − 5h worked + 1h agreed = 4h from now.
+    expect(data.expectedClockOutAt).toEqual(new Date(NOW.getTime() + 240 * MIN));
+  });
+
   it('refuses when the workspace only allows clocking in with a shift', async () => {
     // A workspace that schedules shifts: at workModel NONE, SHIFT_ONLY reads as ALLOW.
     const { service, prisma } = await build({ space: { noShiftPolicy: 'SHIFT_ONLY', workModel: 'SHIFT' } });
@@ -254,7 +278,7 @@ describe('what the phone and web are told before the tap', () => {
     const res: any = await service.listClockInLocations({ userId: 'u1', organizationId: 'org-1' });
     const [main, warehouse] = res.data;
     expect(main.noShift).toEqual({
-      policy: 'LIMIT', dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 300, dayEndsAt: '2026-09-15T22:00:00.000Z',
+      policy: 'LIMIT', dailyMinutes: 480, hasShiftNow: false, workedTodayMinutes: 300, extraMinutes: 0, dayEndsAt: '2026-09-15T22:00:00.000Z',
     });
     expect(warehouse.noShift).toBeNull();
   });

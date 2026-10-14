@@ -858,7 +858,8 @@
       "countsUntil": "Counts until {{time}} · today's limit",
       "minutesLeft_one": "{{count}} min left today",
       "minutesLeft_other": "{{count}} min left today",
-      "afterLimit": "After {{time}}, your time counts only if your leader approves overtime."
+      "afterLimit": "After {{time}}, your time counts only if your leader approves overtime.",
+      "reachedShort": "{{location}} allows {{hours}} a day without a shift. You've reached it."
     },
     "picker": {
       "title": "Where are you clocking in?",
@@ -3370,7 +3371,10 @@
       "tellOffice": "Tell my office",
       "dismiss": "Dismiss",
       "clockInNow": "Clock in now"
-    }
+    },
+    "noShiftLeft": "At {{location}} · no shift · {{left}} left today",
+    "askMoreTime": "Ask for more time",
+    "askMoreTimeHint": "Your leader is asked. You can clock in once they agree."
   },
   "crew": {
     "onTheClock": "on the clock",
@@ -4173,7 +4177,10 @@
       "here": "You are here",
       "away": "{{distance}} away",
       "anywhere": "Clocks in anywhere",
-      "noFix": "Distance unknown"
+      "noFix": "Distance unknown",
+      "leftToday": "{{left}} left today",
+      "shiftOnly": "Shift only",
+      "limitReached": "Limit reached"
     },
     "today": {
       "title": "Today",

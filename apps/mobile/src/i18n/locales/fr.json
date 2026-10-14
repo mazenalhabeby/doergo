@@ -858,7 +858,8 @@
       "countsUntil": "Compte jusqu'à {{time}} · limite du jour",
       "minutesLeft_one": "Encore {{count}} min aujourd'hui",
       "minutesLeft_other": "Encore {{count}} min aujourd'hui",
-      "afterLimit": "Après {{time}}, votre temps ne compte que si votre responsable approuve des heures supplémentaires."
+      "afterLimit": "Après {{time}}, votre temps ne compte que si votre responsable approuve des heures supplémentaires.",
+      "reachedShort": "{{location}} autorise {{hours}} par jour sans poste. Vous l'avez atteint."
     },
     "picker": {
       "title": "Où pointez-vous ?",
@@ -3370,7 +3371,10 @@
       "tellOffice": "Prévenir mon bureau",
       "dismiss": "Ignorer",
       "clockInNow": "Pointer maintenant"
-    }
+    },
+    "noShiftLeft": "À {{location}} · sans poste · encore {{left}} aujourd'hui",
+    "askMoreTime": "Demander plus de temps",
+    "askMoreTimeHint": "Votre responsable est sollicité. Vous pourrez pointer dès son accord."
   },
   "crew": {
     "onTheClock": "pointés",
@@ -4173,7 +4177,10 @@
       "here": "Vous êtes ici",
       "away": "à {{distance}}",
       "anywhere": "Pointage partout",
-      "noFix": "Distance inconnue"
+      "noFix": "Distance inconnue",
+      "leftToday": "Encore {{left}} aujourd'hui",
+      "shiftOnly": "Avec poste uniquement",
+      "limitReached": "Limite atteinte"
     },
     "today": {
       "title": "Aujourd’hui",

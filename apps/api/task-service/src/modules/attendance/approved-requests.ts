@@ -60,6 +60,16 @@ export function requestsOnLocalDay(rows: readonly DayRequestRow[], at: Date, tz:
   };
 }
 
+/**
+ * Overtime agreed in advance for the local day of `at`, at this workspace (a request with no
+ * workspace counts everywhere). It raises a no-shift day's limit (`noShiftAllowance` extraMinutes).
+ */
+export function agreedOvertimeMinutes(rows: readonly DayRequestRow[], spaceId: string | null, at: Date, tz: string): number {
+  return requestsOnLocalDay(rows, at, tz).rows
+    .filter((r) => r.kind === 'OVERTIME' && (!r.spaceId || !spaceId || r.spaceId === spaceId))
+    .reduce((sum, r) => sum + (r.minutes ?? 0), 0);
+}
+
 /** Is a remote day approved at this workspace on the local date of `at`? */
 export function remoteApprovedAt(rows: readonly DayRequestRow[], spaceId: string, at: Date, tz: string): boolean {
   return requestsOnLocalDay(rows, at, tz).rows.some((r) => r.kind === 'REMOTE' && r.spaceId === spaceId);

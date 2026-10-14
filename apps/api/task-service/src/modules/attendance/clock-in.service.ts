@@ -38,7 +38,7 @@ import {
   type ClockTrigger,
 } from '@hbcfield/shared';
 import { clockEventEntry } from './clock-event';
-import { approvedRequestsAround, dayRequestEffect, remoteApprovedAt, type DayRequestRow } from './approved-requests';
+import { agreedOvertimeMinutes, approvedRequestsAround, dayRequestEffect, remoteApprovedAt, type DayRequestRow } from './approved-requests';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { fixOfTap, judgeOccurrence } from '../../common/occurrence.util';
 import { alreadyClockedIn, approvalFor, sameRecordOrRefuse } from './attendance-occurrence';
@@ -111,10 +111,12 @@ export class ClockInService {
     space: { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null; workModel: string | null | undefined },
     at: Date,
     tz: string,
+    /** Overtime agreed in advance for today — raises the limit. */
+    extraMinutes = 0,
   ): Promise<NoShiftAllowance & { workedTodayMinutes: number }> {
     const policy = effectiveNoShiftPolicy(space.noShiftPolicy, space.workModel);
     if (policy !== 'LIMIT') {
-      return { ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes: 0, at }), workedTodayMinutes: 0 };
+      return { ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes: 0, at, extraMinutes }), workedTodayMinutes: 0 };
     }
     const dayStart = startOfDayIn(at, tz);
     const entries = await this.prisma.timeEntry.findMany({
@@ -129,7 +131,7 @@ export class ClockInService {
     });
     const workedTodayMinutes = countedMinutesBetween(entries, dayStart, at);
     return {
-      ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes, at }),
+      ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes, at, extraMinutes }),
       workedTodayMinutes,
     };
   }
@@ -155,6 +157,7 @@ export class ClockInService {
     */
     let dayTz: Promise<string> | null = null;
     let worked: Promise<number> | null = null;
+    let overtimeRows: Promise<DayRequestRow[]> | null = null;
     // Asked by every workspace at once (Promise.all), so the promise is shared, not the answer.
     const memberDay = (fallback: string): Promise<string> =>
       (dayTz ??= this.prisma.user
@@ -183,7 +186,10 @@ export class ClockInService {
         if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
         const day = await memberDay(tz);
         let workedTodayMinutes = 0;
+        let extraMinutes = 0;
         if (policy === 'LIMIT' && !hasShiftNow) {
+          overtimeRows ??= approvedRequestsAround(this.prisma, userId, now, ['OVERTIME']);
+          extraMinutes = agreedOvertimeMinutes(await overtimeRows, space.id, now, day);
           worked ??= this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel }, now, day).then((a) => a.workedTodayMinutes);
           workedTodayMinutes = await worked;
         }
@@ -192,6 +198,7 @@ export class ClockInService {
           dailyMinutes: space.noShiftDailyMinutes ?? 480,
           hasShiftNow,
           workedTodayMinutes,
+          extraMinutes,
           dayEndsAt: endOfDayIn(now, day).toISOString(),
         };
         return { ...space, noShift, shiftToday: hasShiftNow, isPrimary };
@@ -849,8 +856,14 @@ export class ClockInService {
       limit still needs an approval like any overtime.
     */
     let endIsDailyLimit = false;
+    // Overtime agreed in advance raises a no-shift day's limit INSIDE the allowance — so a member
+    // already at the limit may clock in for it — and is then not added to the end a second time.
+    let shapingRequests = dayRequests;
     if (!scheduled) {
-      const allowance = await this.noShiftAllowanceFor(data.userId, location, clockInTime, memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz));
+      const dayTz = memberDayZone(user.timezone, user.organization?.timezone, location.timezone || workerTz);
+      const agreed = agreedOvertimeMinutes(dayRequests, location.id, clockInTime, dayTz);
+      const allowance = await this.noShiftAllowanceFor(data.userId, location, clockInTime, dayTz, agreed);
+      if (allowance.kind !== 'free' && agreed > 0) shapingRequests = dayRequests.filter((r) => r.kind !== 'OVERTIME');
       if (allowance.kind === 'refused' && !flagReasons.includes('RECORDED_OFFLINE')) {
         throw noShiftRefusal(allowance, location.name);
       }
@@ -869,7 +882,7 @@ export class ClockInService {
       rests and counted time all follow the agreed day through the existing rules — and agreed
       overtime is counted exactly as an approved extra-time round is: the planned end moved.
     */
-    const requestShaped = this.applyDayRequests(stampCols, dayRequests, {
+    const requestShaped = this.applyDayRequests(stampCols, shapingRequests, {
       spaceId: location.id,
       at: clockInTime,
       tz: location.timezone || workerTz || orgTz,

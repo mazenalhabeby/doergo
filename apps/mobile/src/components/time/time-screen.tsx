@@ -28,7 +28,7 @@ import { TimePickerModal } from '../time-picker-modal';
 import { TourTarget, useTourScroll } from '../tour';
 import { TimeBanners, TimeLink } from './time-banners';
 import { TimeHistory } from './time-history';
-import { placesView } from './time-logic';
+import { noShiftHere, placesView } from './time-logic';
 import { TimeOffSection } from './time-off-section';
 import { TimePlaces } from './time-places';
 import { TimeAutoClock } from './time-auto-clock';
@@ -148,6 +148,13 @@ export function TimeScreen() {
     [status?.assignedLocations, fix, entry?.location?.id, entry?.locationId],
   );
 
+  // The one workspace whose no-shift rule the page speaks of — the one they are at — never one per workspace.
+  const noShift = useMemo(() => noShiftHere(tiles, !!entry, now), [tiles, entry, now]);
+  // No hours left there: ask the leader for overtime today (the Requests form, filled in).
+  const askMoreTime = timeOffOn
+    ? () => router.push({ pathname: '/(app)/(tabs)/time-off', params: { ask: 'OVERTIME' } } as never)
+    : undefined;
+
   /* ---------------- answers the page owns ---------------- */
   const [busy, setBusy] = useState(false);
   const say = (o: { code?: string; message?: string; params?: Record<string, unknown> }, fallback: string) => refusalText(t, o, fallback);
@@ -254,6 +261,7 @@ export function TimeScreen() {
           onForgot={(at) => void resolveForgot(at)}
           onRequestExtra={() => void requestExtra()}
           onChanged={() => void shift.refresh()}
+          noShiftHere={noShift}
         />
 
         <TourTarget name="attendance-clock">
@@ -263,6 +271,8 @@ export function TimeScreen() {
             onSetRealTime={unconfirmed ? () => setLeavePicker(true) : undefined}
             openIssueId={issueId ?? null}
             totals={totals}
+            noShift={noShift}
+            onAskMoreTime={askMoreTime}
           />
         </TourTarget>
 

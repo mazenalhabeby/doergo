@@ -26,6 +26,8 @@ import { shiftDiscs } from './shift-clock/shift-discs';
 import { ShiftHero } from './shift-clock/shift-hero';
 import { ShiftProgress } from './shift-clock/shift-progress';
 import { RefusedShiftBanner } from './shift-clock/refused-banner';
+import { formatDuration } from '@hbcfield/shared/client';
+import type { NoShiftNote } from '../time/time-logic';
 
 /**
  * ONE GLASS SURFACE, IN EVERY STATE.
@@ -86,9 +88,16 @@ interface ShiftClockCardViewProps {
    * here so one screen makes one request, not one per reader.
    */
   totals?: ScheduleTotalsView;
+  /**
+   * The Time tab's one no-shift line: the workspace the member is at and its rule
+   * (`noShiftHere` in time-logic). Absent on the home card, which shows no rule.
+   */
+  noShift?: NoShiftNote | null;
+  /** With no hours left there: the button asks the leader for more time (an OVERTIME request). */
+  onAskMoreTime?: () => void;
 }
 
-export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealTime, openIssueId, totals: given }: ShiftClockCardViewProps) {
+export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime }: ShiftClockCardViewProps) {
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();
@@ -336,6 +345,12 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
     : c.lineField;
 
   const caption = shiftCaption(st, { t, clockOf, monthlyHourBudget: user?.monthlyHourBudget, live, resting });
+  // Off the clock only: what the workspace they are at still allows today, or that it allows nothing more.
+  const offClock = !live && !resting && st.kind !== 'unconfirmed';
+  const noShiftLine = offClock && noShift?.allowance.kind === 'limited'
+    ? t('shiftClock.noShiftLeft', { location: noShift.location.name, left: formatDuration(noShift.allowance.remainingMinutes), defaultValue: 'At {{location}} · no shift · {{left}} left today' })
+    : null;
+  const askMore = offClock && !!onAskMoreTime && noShift?.allowance.kind === 'refused' && noShift.allowance.reason === 'NO_HOURS_LEFT';
 
   return (
     <>
@@ -370,6 +385,12 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
                one §8 names as at risk. */
             <AText variant="caption" tone="onGlass" numberOfLines={2} style={{ marginTop: 2 }}>
               {caption}
+            </AText>
+          ) : null}
+
+          {noShiftLine ? (
+            <AText variant="caption" tone="onGlass" numberOfLines={2} style={{ marginTop: amazen.space(2) }}>
+              {noShiftLine}
             </AText>
           ) : null}
 
@@ -431,7 +452,7 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
           </DiscRow>
         ) : (
           <Pressable
-            onPress={clockIn.openClockInModal}
+            onPress={askMore ? onAskMoreTime : clockIn.openClockInModal}
             disabled={working}
             accessibilityRole="button"
             style={({ pressed }) => ({
@@ -444,7 +465,9 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
             })}
           >
             <AText variant="body" style={{ color: c.accentInk, fontFamily: amazen.font.sansMedium }}>
-              {refusedCopy?.canClockInNow
+              {askMore
+                ? t('shiftClock.askMoreTime', { defaultValue: 'Ask for more time' })
+                : refusedCopy?.canClockInNow
                 ? t('shiftClock.refused.clockInNow', { defaultValue: 'Clock in now' })
                 : st.kind === 'done'
                   ? t('shiftClock.clockInAgain', { defaultValue: 'Clock in again' })
@@ -452,6 +475,11 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
             </AText>
           </Pressable>
         )}
+        {askMore ? (
+          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', marginTop: amazen.space(2) }}>
+            {t('shiftClock.askMoreTimeHint', { defaultValue: 'Your leader is asked. You can clock in once they agree.' })}
+          </AText>
+        ) : null}
       </CardSurface>
 
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />

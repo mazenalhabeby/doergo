@@ -309,6 +309,21 @@ export default function RequestsScreen() {
     }
   };
 
+  /*
+    Opened from the Time tab's "Ask for more time" (`?ask=OVERTIME`): the overtime form for
+    today, filled in. Adopted once the options are known, then cleared.
+  */
+  const askParam = useLocalSearchParams<{ ask?: string | string[] }>().ask;
+  useEffect(() => {
+    if (askParam !== 'OVERTIME' || !options) return;
+    router.setParams({ ask: '' });
+    if (offered && !offered.includes('OVERTIME')) { toast.info(t('requests.detect.notOffered')); return; }
+    clearSelection();
+    setFormInitial({ start: toDateString(today), minutes: 60 });
+    setFormKind('OVERTIME');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askParam, options]);
+
   const pickKind = (kind: RequestKind) => {
     setChooserOpen(false);
     if (kind === 'LEAVE') { setFormKind(null); return; }

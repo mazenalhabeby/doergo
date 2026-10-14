@@ -1,7 +1,7 @@
 /**
  * The Time tab's rules — pure, so each is a test and none is a guess in JSX.
  */
-import { haversineDistance, isAtSite, localDateKey } from '@hbcfield/shared/client';
+import { haversineDistance, isAtSite, localDateKey, noShiftAllowanceNow, type NoShiftAllowance } from '@hbcfield/shared/client';
 import type { CompanyLocation } from '@hbcfield/shared/client';
 
 /* ------------------------------------------------------------------ */
@@ -61,6 +61,33 @@ export function placesView(
     || (a.metres ?? Infinity) - (b.metres ?? Infinity)
     || a.location.name.localeCompare(b.location.name),
   );
+}
+
+/** A workspace's no-shift rule for this member now — null where it allows it freely. */
+export function noShiftOf(location: CompanyLocation, now: Date): NoShiftAllowance | null {
+  const a = noShiftAllowanceNow(location.noShift, now);
+  return a.kind === 'free' ? null : a;
+}
+
+export interface NoShiftNote {
+  location: CompanyLocation;
+  allowance: NoShiftAllowance;
+}
+
+/**
+ * The ONE workspace whose no-shift rule the Time page talks about: the one the
+ * member is standing in (or their only one), and only while not clocked in.
+ *
+ * ⚠️ NEVER ONE MESSAGE PER WORKSPACE. The page stacked a banner for every
+ * workspace with a limit — ten workspaces, ten banners, pushing the clock card
+ * off the screen. The rest say their rule quietly on their own tile.
+ */
+export function noShiftHere(tiles: readonly PlaceTile[], clockedIn: boolean, now: Date): NoShiftNote | null {
+  if (clockedIn) return null;
+  const tile = tiles.find((t) => t.relation === 'here') ?? (tiles.length === 1 ? tiles[0] : undefined);
+  if (!tile) return null;
+  const allowance = noShiftOf(tile.location, now);
+  return allowance ? { location: tile.location, allowance } : null;
 }
 
 /* ------------------------------------------------------------------ */

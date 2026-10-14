@@ -858,7 +858,8 @@
       "countsUntil": "Cuenta hasta las {{time}} · límite de hoy",
       "minutesLeft_one": "Queda {{count}} min hoy",
       "minutesLeft_other": "Quedan {{count}} min hoy",
-      "afterLimit": "Después de las {{time}}, tu tiempo solo cuenta si tu responsable aprueba horas extra."
+      "afterLimit": "Después de las {{time}}, tu tiempo solo cuenta si tu responsable aprueba horas extra.",
+      "reachedShort": "{{location}} permite {{hours}} al día sin turno. Ya lo ha alcanzado."
     },
     "picker": {
       "title": "¿Dónde fichas la entrada?",
@@ -3370,7 +3371,10 @@
       "tellOffice": "Avisar a mi oficina",
       "dismiss": "Descartar",
       "clockInNow": "Marcar entrada ahora"
-    }
+    },
+    "noShiftLeft": "En {{location}} · sin turno · quedan {{left}} hoy",
+    "askMoreTime": "Pedir más tiempo",
+    "askMoreTimeHint": "Se pregunta a su responsable. Podrá fichar cuando lo apruebe."
   },
   "crew": {
     "onTheClock": "fichados",
@@ -4173,7 +4177,10 @@
       "here": "Estás aquí",
       "away": "a {{distance}}",
       "anywhere": "Ficha desde cualquier lugar",
-      "noFix": "Distancia desconocida"
+      "noFix": "Distancia desconocida",
+      "leftToday": "Quedan {{left}} hoy",
+      "shiftOnly": "Solo con turno",
+      "limitReached": "Límite alcanzado"
     },
     "today": {
       "title": "Hoy",

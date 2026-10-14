@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { noShiftAllowanceNow, type AttendanceStatus, type BreakPlanItem, type BreakStatus, type GeofenceExcursion, formatDuration } from '@hbcfield/shared/client';
+import { type AttendanceStatus, type BreakPlanItem, type BreakStatus, type GeofenceExcursion, formatDuration } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { formatDistance } from '../../lib/distance';
@@ -12,6 +12,7 @@ import { Banner, JobSheet, QuietButton, SheetOption } from '../job/job-ui';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { OutOfRingSheet } from '../out-of-ring-sheet';
 import { RestCard } from '../rest-card';
+import type { NoShiftNote } from './time-logic';
 
 /**
  * EVERYTHING THAT NEEDS THE MEMBER'S ATTENTION ABOUT THE SHIFT — one line each,
@@ -36,6 +37,7 @@ export function TimeBanners({
   onForgot,
   onRequestExtra,
   onChanged,
+  noShiftHere,
 }: {
   status: AttendanceStatus | null;
   breaks: BreakStatus | null;
@@ -48,6 +50,8 @@ export function TimeBanners({
   /** "I'm working extra" — ask a leader. */
   onRequestExtra: () => void;
   onChanged: () => void;
+  /** The workspace they are at and its no-shift rule (`noShiftHere` in time-logic) — the only one spoken of. */
+  noShiftHere?: NoShiftNote | null;
 }) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
@@ -81,12 +85,6 @@ export function TimeBanners({
   const askEnded = !!entry && !quieted && (reminder === 'REMINDED' || reminder === 'ESCALATED' || (reminder === 'NONE' && ended));
   const limitLeft = entry?.endIsDailyLimit && end ? Math.ceil((end.getTime() - now.getTime()) / 60_000) : null;
 
-  // Workspaces that limit clocking in with no shift, and what they allow now.
-  const noShift = !status?.isClockedIn
-    ? (status?.assignedLocations ?? [])
-        .map((location) => ({ location, allowance: noShiftAllowanceNow(location.noShift, now) }))
-        .filter((x) => x.allowance.kind !== 'free')
-    : [];
 
   return (
     <View style={{ gap: amazen.space(2) }}>
@@ -155,21 +153,15 @@ export function TimeBanners({
         <Banner tone="warn" text={`${t('attendance.noShift.minutesLeft', { count: limitLeft })} · ${t('attendance.noShift.afterLimit', { time: formatTime(end.toISOString(), tz) })}`} />
       ) : null}
 
-      {noShift.map(({ location, allowance }) => (
+      {/* One line, only when the workspace they are at refuses them — never one per workspace. */}
+      {noShiftHere?.allowance.kind === 'refused' ? (
         <Banner
-          key={location.id}
-          tone={allowance.kind === 'refused' ? 'critical' : 'neutral'}
-          text={allowance.kind === 'limited'
-            ? `${t('attendance.noShift.title', { location: location.name })}. ${t('attendance.noShift.left', {
-                worked: formatDuration(location.noShift?.workedTodayMinutes ?? 0),
-                left: formatDuration(allowance.remainingMinutes),
-                time: formatTime(allowance.until.toISOString(), tz),
-              })}`
-            : allowance.kind === 'refused' && allowance.reason === 'SHIFT_ONLY'
-              ? `${t('attendance.noShift.shiftOnlyTitle')}. ${t('attendance.noShift.shiftOnlyBody', { location: location.name })}`
-              : `${t('attendance.noShift.noHoursTitle')}. ${t('attendance.noShift.noHoursBody', { location: location.name, hours: formatDuration(location.noShift?.dailyMinutes ?? 0) })}`}
+          tone="critical"
+          text={noShiftHere.allowance.reason === 'SHIFT_ONLY'
+            ? t('attendance.noShift.shiftOnlyBody', { location: noShiftHere.location.name })
+            : t('attendance.noShift.reachedShort', { location: noShiftHere.location.name, hours: formatDuration(noShiftHere.allowance.dailyMinutes ?? 0) })}
         />
-      ))}
+      ) : null}
 
       <OutOfRingSheet
         visible={explain}

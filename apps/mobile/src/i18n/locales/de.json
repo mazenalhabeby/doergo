@@ -858,7 +858,8 @@
       "countsUntil": "Zählt bis {{time}} · Tageslimit",
       "minutesLeft_one": "Noch {{count}} Min. heute",
       "minutesLeft_other": "Noch {{count}} Min. heute",
-      "afterLimit": "Nach {{time}} zählt Ihre Zeit nur, wenn Ihre Leitung Überstunden genehmigt."
+      "afterLimit": "Nach {{time}} zählt Ihre Zeit nur, wenn Ihre Leitung Überstunden genehmigt.",
+      "reachedShort": "{{location}} erlaubt {{hours}} pro Tag ohne Schicht. Sie haben das erreicht."
     },
     "picker": {
       "title": "Wo stempeln Sie ein?",
@@ -3370,7 +3371,10 @@
       "tellOffice": "Büro informieren",
       "dismiss": "Ausblenden",
       "clockInNow": "Jetzt einstempeln"
-    }
+    },
+    "noShiftLeft": "Bei {{location}} · keine Schicht · noch {{left}} heute",
+    "askMoreTime": "Mehr Zeit anfragen",
+    "askMoreTimeHint": "Ihre Leitung wird gefragt. Sobald sie zustimmt, können Sie einstempeln."
   },
   "crew": {
     "onTheClock": "eingestempelt",
@@ -4173,7 +4177,10 @@
       "here": "Sie sind hier",
       "away": "{{distance}} entfernt",
       "anywhere": "Überall einstempeln",
-      "noFix": "Entfernung unbekannt"
+      "noFix": "Entfernung unbekannt",
+      "leftToday": "Noch {{left}} heute",
+      "shiftOnly": "Nur mit Schicht",
+      "limitReached": "Grenze erreicht"
     },
     "today": {
       "title": "Heute",

@@ -858,7 +858,8 @@
       "countsUntil": "Conta fino alle {{time}} · limite di oggi",
       "minutesLeft_one": "Ancora {{count}} min oggi",
       "minutesLeft_other": "Ancora {{count}} min oggi",
-      "afterLimit": "Dopo le {{time}}, il tuo tempo conta solo se il tuo responsabile approva gli straordinari."
+      "afterLimit": "Dopo le {{time}}, il tuo tempo conta solo se il tuo responsabile approva gli straordinari.",
+      "reachedShort": "{{location}} consente {{hours}} al giorno senza turno. L'hai raggiunto."
     },
     "picker": {
       "title": "Dove timbri?",
@@ -3370,7 +3371,10 @@
       "tellOffice": "Avvisa il mio ufficio",
       "dismiss": "Ignora",
       "clockInNow": "Timbra ora"
-    }
+    },
+    "noShiftLeft": "A {{location}} · senza turno · ancora {{left}} oggi",
+    "askMoreTime": "Chiedi più tempo",
+    "askMoreTimeHint": "Viene chiesto al tuo responsabile. Potrai timbrare quando approva."
   },
   "crew": {
     "onTheClock": "in servizio",
@@ -4173,7 +4177,10 @@
       "here": "Sei qui",
       "away": "a {{distance}}",
       "anywhere": "Timbra ovunque",
-      "noFix": "Distanza sconosciuta"
+      "noFix": "Distanza sconosciuta",
+      "leftToday": "Ancora {{left}} oggi",
+      "shiftOnly": "Solo con turno",
+      "limitReached": "Limite raggiunto"
     },
     "today": {
       "title": "Oggi",

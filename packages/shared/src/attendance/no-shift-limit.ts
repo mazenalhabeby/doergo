@@ -86,12 +86,14 @@ export function noShiftAllowance(input: {
   workedTodayMinutes: number;
   /** The moment of the clock-in. */
   at: Date;
+  /** Overtime agreed in advance for today (an approved OVERTIME request): it raises the day's limit. */
+  extraMinutes?: number | null;
 }): NoShiftAllowance {
   const policy = isNoShiftPolicy(input.policy) ? input.policy : DEFAULT_NO_SHIFT_POLICY;
   if (policy === 'ALLOW') return { kind: 'free' };
   if (policy === 'SHIFT_ONLY') return { kind: 'refused', reason: 'SHIFT_ONLY', dailyMinutes: null };
 
-  const daily = clampDailyMinutes(input.dailyMinutes);
+  const daily = clampDailyMinutes(input.dailyMinutes) + Math.max(0, Math.round(input.extraMinutes ?? 0));
   const remaining = Math.max(0, daily - Math.max(0, Math.round(input.workedTodayMinutes)));
   // Under a minute left is nothing left: a session that must end as it starts helps nobody.
   if (remaining < 1) return { kind: 'refused', reason: 'NO_HOURS_LEFT', dailyMinutes: daily };
@@ -187,6 +189,8 @@ export interface NoShiftTag {
   hasShiftNow: boolean;
   /** Counted minutes today, at any workspace, when this was read. */
   workedTodayMinutes: number;
+  /** Overtime agreed in advance for today: added to the limit. Absent on older servers. */
+  extraMinutes?: number;
   /** End of that day in the MEMBER's zone (`memberDayZone`) — after it, nothing is used up yet. */
   dayEndsAt: string;
 }
@@ -199,6 +203,7 @@ export function noShiftAllowanceNow(tag: NoShiftTag | null | undefined, now: Dat
     policy: tag.policy,
     dailyMinutes: tag.dailyMinutes,
     workedTodayMinutes: newDay ? 0 : tag.workedTodayMinutes,
+    extraMinutes: newDay ? 0 : tag.extraMinutes ?? 0,
     at: now,
   });
 }
