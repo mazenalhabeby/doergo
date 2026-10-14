@@ -378,7 +378,7 @@ export function NotificationBell() {
 
       // Join request events
       subscribe<JoinRequestEventPayload>("join_request_submitted", (d) => {
-        add("join_request", t("notifications.joinRequest"), d.userName || d.userEmail || "", "/join-requests")
+        add("join_request", t("notifications.joinRequest"), d.userName || d.userEmail || "", "/approvals?kind=join")
       }),
       subscribe<JoinRequestEventPayload>("join_request_approved", (d) => {
         add("join_approved", t("notifications.joinApproved"), d.organizationName || "", "/members")

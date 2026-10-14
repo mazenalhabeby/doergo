@@ -472,6 +472,8 @@ Route tracking: EN_ROUTE → ARRIVED (records distance, time, GPS points)
 >
 > ⚠️ **Live**: the web refreshes on the socket events that add or settle a decision (`APPROVAL_EVENTS` in `use-realtime-sync.ts`) — deliberately NOT task.updated or clock-in (the inbox is a fan-out read). The phone reads on focus; both reads are ONLINE_ONLY.
 >
+> ⚠️ **Approvals is the ONLY place a decision is made** (2026-10-14). The old pages are records: Overtime = history; Attendance = timesheet/breaks/no-shows (Reopen an excuse stays); Schedule drawer, member Time off tab, calendar, asset Money/Logbook, a workspace's Sharing requests and the phone's Manage → Attendance / Time-off requests show the facts and link "Decide in Approvals" (`/approvals?kind=…&id=…` opens that item). Join requests and Documents → Review redirect to Approvals; the phone's extra-time and join-request screens redirect too; notifications for hours / no-shows / extra time / requests / join land on Approvals with `kind`. A page that used to list decisions shows `DecideInApprovals` (web `components/approvals/decide-in-approvals.tsx`, reads the cached count). Exceptions, by design: the asset-paperwork queue and a client request's page (the inbox sends you there when the form is needed — `needsPage`), and the in-person overtime signature on the worker's phone (it becomes a request the leader confirms in Approvals). The inbox shows the paper itself (`View the document / receipt / page`).
+>
 > ⚠️ Every `approvals.*` key the shared wording asks for must exist in BOTH apps in all five languages — `apps/mobile/src/components/approvals/__tests__/approval-catalogue.spec.ts`.
 
 ### Approvals: why, who else, stand-ins (`/approvals/route`, `/approvals/stand-ins`)

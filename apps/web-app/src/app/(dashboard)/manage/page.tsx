@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Users, Mail, UserPlus, Calendar, MapPin, ChevronRight, Smartphone } from "lucide-react"
+import { Users, Mail, Calendar, MapPin, ChevronRight, Smartphone } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { useRouteAccess } from "@/hooks/use-route-access"
 
@@ -18,7 +18,6 @@ export default function ManagePage() {
     { href: "/members", label: t('manage.items.members.label'), desc: t('manage.items.members.desc'), icon: Users, show: offers("/members") },
     { href: "/members/phone-sync", label: t('manage.items.phoneSync.label'), desc: t('manage.items.phoneSync.desc'), icon: Smartphone, show: offers("/members/phone-sync") },
     { href: "/invitations", label: t('manage.items.invitations.label'), desc: t('manage.items.invitations.desc'), icon: Mail, show: offers("/invitations") },
-    { href: "/join-requests", label: t('manage.items.joinRequests.label'), desc: t('manage.items.joinRequests.desc'), icon: UserPlus, show: offers("/join-requests") },
     { href: "/schedule", label: t('manage.items.schedule.label'), desc: t('manage.items.schedule.desc'), icon: Calendar, show: offers("/schedule") },
     { href: "/locations", label: t('manage.items.spaces.label'), desc: t('manage.items.spaces.desc'), icon: MapPin, show: offers("/locations") },
     // No "Task types" entry: they belong to the space that runs them, so this

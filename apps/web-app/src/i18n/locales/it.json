@@ -3812,7 +3812,7 @@
     },
     "management": {
       "title": "Gestione delle presenze",
-      "subtitle": "Monitori le presenze, visualizzi i report e gestisca le approvazioni"
+      "subtitle": "Monitori le presenze e visualizzi i report"
     },
     "tabs": {
       "attendance": "Presenze",
@@ -5268,7 +5268,7 @@
   },
   "overtime": {
     "title": "Gestione degli straordinari",
-    "subtitle": "Rivedi e gestisci le richieste di straordinario dei dipendenti",
+    "subtitle": "Ogni turno di straordinario e come è finito",
     "tabsPending": "In sospeso",
     "tabsHistory": "Cronologia",
     "badges": {
@@ -10859,7 +10859,18 @@
       "lateArrival": "Arrivo in ritardo",
       "earlyDeparture": "Uscita anticipata",
       "unscheduledDay": "Giorno non pianificato",
-      "needsReview": "Da verificare"
+      "needsReview": "Da verificare",
+      "outsideGeofenceIn": "Entrata fuori sede",
+      "outsideGeofenceOut": "Uscita fuori sede",
+      "missedBreak": "Pausa saltata",
+      "autoClockIn": "Entrata auto",
+      "autoClockOut": "Uscita auto",
+      "autoRest": "Pausa auto",
+      "remoteWithWorkspace": "Da remoto con spazio assegnato",
+      "earlyArrival": "Arrivo anticipato",
+      "missingClockout": "Uscita non timbrata",
+      "clockOutProvisional": "Uscita impostata dal sistema",
+      "recordedOffline": "Registrato senza segnale"
     },
     "leave": {
       "VACATION": "Ferie",
@@ -10980,6 +10991,14 @@
       "escalateAfter": "Passa dopo (ore)",
       "escalateTo": "Passa a",
       "noAnswerHint": "I promemoria vanno a chi può decidere oggi (non a chi è in ferie). Lo passi a un ruolo che può decidere."
-    }
+    },
+    "decideThere_one": "{{count}} in attesa — decidi in",
+    "decideThere_other": "{{count}} in attesa — decidi in",
+    "viewFile": {
+      "document": "Vedi il documento",
+      "expense": "Vedi la ricevuta",
+      "assetProposal": "Vedi la pagina"
+    },
+    "decideInApprovals": "Decidi in Approvazioni"
   }
 }

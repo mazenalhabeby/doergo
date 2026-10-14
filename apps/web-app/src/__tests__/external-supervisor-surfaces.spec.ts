@@ -80,27 +80,24 @@ describe('canApproveOvertime', () => {
 });
 
 describe('canApproveAttendance', () => {
-  it('offers out-of-ring approval to whoever holds it, not only to admins', () => {
-    // PATCH /attendance/excursions/:id/{approve,reject} are both
-    // @RequirePermissionInSpace('canApproveAttendance'). Gating the panel on
-    // isAdmin left the grant unreachable; gating it on the correction grant
-    // would hide it from the supervisor who signs off and nothing else.
-    const tab = read('src/app/(dashboard)/attendance/_components/tracking-tab.tsx');
-    expect(tab).toContain('<OutOfRingPanel canApprove={canApprove} />');
-    expect(tab).not.toContain('<OutOfRingPanel canApprove={isAdmin} />');
-    expect(tab).not.toContain('<OutOfRingPanel canApprove={canReconcile} />');
+  it('time away from the site is decided in Approvals — the panel only shows agreed time', () => {
+    // PATCH /attendance/excursions/:id/{approve,reject} are asked from the inbox
+    // (kind "away"), as the caller, with canApproveAttendance.
+    const panel = read('src/app/(dashboard)/attendance/_components/out-of-ring-panel.tsx');
+    expect(panel).not.toMatch(/approveExcursion|rejectExcursion/);
+    expect(panel).toContain('DecideInApprovals kinds={["away"]}');
   });
 
   it('the page reads each of the three attendance decisions space-aware', () => {
     const page = read('src/app/(dashboard)/attendance/page.tsx');
-    expect(page).toContain('hasPermission("canApproveAttendance")');
     expect(page).toContain('hasPermission("canDeleteAttendance")');
     expect(page).toContain('hasPermission("canReconcileAttendance")');
   });
 
-  it('the approvals queue offers approve / reject only with the sign-off', () => {
-    const tab = read('src/app/(dashboard)/attendance/_components/approvals-tab.tsx');
-    expect(tab).toMatch(/\{canApprove && \(\s*<TableCell/);
+  it('hours are decided in Approvals, never on the attendance page', () => {
+    const page = read('src/app/(dashboard)/attendance/page.tsx');
+    expect(page).not.toMatch(/approveEntry|rejectEntry/);
+    expect(page).toContain('DecideInApprovals');
   });
 });
 

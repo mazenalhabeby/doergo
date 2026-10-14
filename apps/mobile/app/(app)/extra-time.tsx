@@ -1,6 +1,6 @@
-import { ExtraTimeScreen } from '../../src/components/time/extra-time-screen';
+import { Redirect, type Href } from 'expo-router';
 
-/** Extra time approvals — the screen lives in `src/components/time/`; this route only mounts it. */
+/** Decided in Approvals now — the one place every decision is made. Kept so old links and notifications still land. */
 export default function ExtraTimeRoute() {
-  return <ExtraTimeScreen />;
+  return <Redirect href={'/(app)/approvals?kind=extraTime' as Href} />;
 }

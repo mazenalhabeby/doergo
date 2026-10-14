@@ -28,10 +28,10 @@ import { useAuth } from "@/contexts/auth-context"
 import { useSpaceScope } from "@/hooks/use-space-scope"
 import { SpaceTabs } from "@/components/space-tabs"
 import { AssetsTab } from "../locations/[id]/_components/assets-tab"
-import { ExpenseQueue } from "@/components/assets/expense-queue"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { keys } from "@/lib/query-keys"
+import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -51,14 +51,10 @@ export default function AssetsPage() {
       </div>
 
       {/*
-        Receipts sent in from phones, waiting on somebody here. Above the
-        workspace tabs because it is ORG-WIDE — a queue filtered to the tab you
-        happen to be looking at is a queue that hides work.
-
-        Renders nothing at all when it is empty: a permanent empty panel teaches
-        people to stop looking at that part of the screen.
+        Receipts sent in from phones are decided in Approvals; this says how
+        many wait, and nothing at all when none do.
       */}
-      <ExpenseQueue />
+      <DecideInApprovals kinds={["expense"]} className="mb-6" />
 
       {scope.showTabs && (
         <SpaceTabs

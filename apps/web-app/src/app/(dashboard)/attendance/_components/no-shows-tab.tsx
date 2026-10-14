@@ -1,31 +1,26 @@
 "use client"
 
-import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { UserX, Check, RotateCcw, MapPin, MessageSquareText } from "lucide-react"
+import { Check, RotateCcw, MapPin, MessageSquareText } from "lucide-react"
 import { attendanceApi, type NoShowRow } from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { UserAvatar } from "@/components/user-avatar"
 import { notify } from "@/lib/toast"
-import { cn } from "@/lib/utils"
 import { useTimeFormat } from "@/hooks/use-time-format"
 import { keys } from "@/lib/query-keys"
+import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 const STATE_STYLE: Record<string, string> = {
   ESCALATED: "bg-red-500/10 text-red-600 dark:text-red-400",
   REMINDED: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   EXCUSED: "bg-slate-500/10 text-slate-500 dark:text-slate-400",
 }
-const EXCUSE_REASONS = ["Approved absence", "Sick leave", "Vacation", "Shift swapped", "Schedule error", "Personal emergency"]
 
 export function NoShowsTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const { formatDateTime } = useTimeFormat()
-  const [excuseId, setExcuseId] = useState<string | null>(null)
-  const [reason, setReason] = useState("")
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: keys.attendance.noShows(),
@@ -34,12 +29,14 @@ export function NoShowsTab() {
   })
 
   const resolveM = useMutation({
-    mutationFn: ({ id, action, reason }: { id: string; action: "excuse" | "reopen"; reason?: string }) => attendanceApi.resolveNoShow(id, action, reason),
-    onSuccess: () => { setExcuseId(null); setReason(""); qc.invalidateQueries({ queryKey: keys.attendance.noShows() }) },
+    mutationFn: ({ id }: { id: string; action: "reopen" }) => attendanceApi.resolveNoShow(id, "reopen"),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.attendance.noShows() }) },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
 
   return (
+    <>
+    <DecideInApprovals kinds={["noShow"]} className="mb-4" />
     <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
       <div className="border-b border-border/60 px-5 py-4">
         <h3 className="text-sm font-semibold text-foreground">{t("attendance.noShows.title", "No-shows")}</h3>
@@ -80,40 +77,19 @@ export function NoShowsTab() {
                 <span className={`text-[11px] font-semibold capitalize rounded-full px-2.5 py-1 shrink-0 ${STATE_STYLE[r.state] ?? ""}`}>
                   {r.state.toLowerCase()}
                 </span>
-                {r.state === "EXCUSED" ? (
+                {/* Excusing is decided in Approvals; undoing an excuse stays here, on the record. */}
+                {r.state === "EXCUSED" && (
                   <Button size="sm" variant="outline" className="gap-1.5" disabled={resolveM.isPending} onClick={() => resolveM.mutate({ id: r.id, action: "reopen" })}>
                     <RotateCcw className="size-3.5" />{t("attendance.noShows.reopen", "Reopen")}
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" className="gap-1.5" disabled={resolveM.isPending} onClick={() => { setExcuseId(excuseId === r.id ? null : r.id); setReason("") }}>
-                    <UserX className="size-3.5" />{t("attendance.noShows.excuse", "Excuse")}
                   </Button>
                 )}
               </div>
 
-              {/* Smart excuse: quick-pick reasons + free text */}
-              {excuseId === r.id && (
-                <div className="mt-3 rounded-xl border border-border bg-muted/30 p-3">
-                  <p className="mb-2 text-xs font-semibold text-muted-foreground">{t("attendance.noShows.reasonLabel", "Reason for excusing")}</p>
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    {EXCUSE_REASONS.map((rr) => (
-                      <button key={rr} type="button" onClick={() => setReason(rr)}
-                        className={cn("rounded-full border px-2.5 py-1 text-[11px] transition-colors", reason === rr ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-accent")}>{rr}</button>
-                    ))}
-                  </div>
-                  <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder={t("attendance.noShows.reasonPlaceholder", "Add a note (optional)…")} className="mb-2 resize-none text-sm" />
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => { setExcuseId(null); setReason("") }}>{t("common.cancel", "Cancel")}</Button>
-                    <Button size="sm" disabled={resolveM.isPending} onClick={() => resolveM.mutate({ id: r.id, action: "excuse", reason: reason.trim() || undefined })}>
-                      <UserX className="mr-1.5 size-3.5" />{t("attendance.noShows.excuse", "Excuse")}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
       )}
     </div>
+    </>
   )
 }

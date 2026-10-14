@@ -25,7 +25,6 @@ const SOURCES = [
   'src/app/(dashboard)/assets/[id]/page.tsx',
   'src/app/(dashboard)/locations/[id]/_components/log-types-editor.tsx',
   'src/components/assets/log-style.ts',
-  'src/components/assets/expense-queue.tsx',
 ];
 
 describe('asset logbook translations', () => {

@@ -2,18 +2,15 @@
 
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { useFormatDistance } from "@/hooks/use-format-distance"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { MapPin, Check, X, Timer, Loader2, Navigation } from "lucide-react"
-import { personName, GEOFENCE_EXCURSION, type GeofenceExcursion } from "@hbcfield/shared/client"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { MapPin, Timer, Navigation } from "lucide-react"
+import { personName, type GeofenceExcursion } from "@hbcfield/shared/client"
 
 import { attendanceApi } from "@/lib/api"
-import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { keys } from "@/lib/query-keys"
+import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 // Format remaining ms as "M:SS" / "H:MM:SS".
 function fmtRemaining(ms: number): string {
@@ -31,9 +28,9 @@ function fmtRemaining(ms: number): string {
  * Realtime refresh comes from use-realtime-sync invalidating ["geofence-excursions"].
  * Renders nothing when there's nothing to act on.
  */
-export function OutOfRingPanel({ canApprove }: { canApprove: boolean }) {
+/** Asking to be away is decided in Approvals; this panel shows who is out on agreed time. */
+export function OutOfRingPanel() {
   const { t } = useTranslation()
-  const queryClient = useQueryClient()
 
   const { data: excursions = [] } = useQuery({
     queryKey: keys.attendance.activeExcursions(),
@@ -49,37 +46,13 @@ export function OutOfRingPanel({ canApprove }: { canApprove: boolean }) {
     return () => clearInterval(id)
   }, [excursions])
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: keys.attendance.excursions() })
-    queryClient.invalidateQueries({ queryKey: keys.attendance.active() })
-    queryClient.invalidateQueries({ queryKey: keys.attendance.locationBatch() })
-  }
-
-  const approve = useMutation({
-    mutationFn: ({ id, minutes }: { id: string; minutes: number }) =>
-      attendanceApi.approveExcursion(id, minutes),
-    onSuccess: () => {
-      notify.success(t("attendance.outOfRing.approved", "Approved"))
-      invalidate()
-    },
-    onError: (err: Error) => notify.error(err.message),
-  })
-
-  const reject = useMutation({
-    mutationFn: (id: string) => attendanceApi.rejectExcursion(id),
-    onSuccess: () => {
-      notify.success(t("attendance.outOfRing.rejected", "Rejected — worker clocked out"))
-      invalidate()
-    },
-    onError: (err: Error) => notify.error(err.message),
-  })
-
-  if (excursions.length === 0) return null
-
-  const pending = excursions.filter((e) => e.status === "PENDING")
   const approved = excursions.filter((e) => e.status === "APPROVED")
+  const waiting = <DecideInApprovals kinds={["away"]} className="mb-4" />
+  if (approved.length === 0) return waiting
 
   return (
+    <>
+    {waiting}
     <div className="bg-card rounded-2xl border border-orange-200/60 dark:border-orange-500/25 shadow-sm mb-8 overflow-hidden">
       <div className="p-5 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
         <div className="flex items-center gap-3">
@@ -101,110 +74,13 @@ export function OutOfRingPanel({ canApprove }: { canApprove: boolean }) {
       </div>
 
       <div className="divide-y divide-orange-100 dark:divide-orange-500/15">
-        {/* PENDING — needs a decision */}
-        {pending.map((ex) => (
-          <PendingRow
-            key={ex.id}
-            ex={ex}
-            canApprove={canApprove}
-            busy={approve.isPending || reject.isPending}
-            onApprove={(minutes) => approve.mutate({ id: ex.id, minutes })}
-            onReject={() => reject.mutate(ex.id)}
-          />
-        ))}
-
         {/* APPROVED — live countdown */}
         {approved.map((ex) => (
           <ApprovedRow key={ex.id} ex={ex} />
         ))}
       </div>
     </div>
-  )
-}
-
-function PendingRow({
-  ex,
-  canApprove,
-  busy,
-  onApprove,
-  onReject,
-}: {
-  ex: GeofenceExcursion
-  canApprove: boolean
-  busy: boolean
-  onApprove: (minutes: number) => void
-  onReject: () => void
-}) {
-  const { t } = useTranslation()
-  const formatDistance = useFormatDistance()
-  const [minutes, setMinutes] = React.useState<number>(ex.requestedMinutes ?? GEOFENCE_EXCURSION.DURATION_PRESETS[0])
-  const name = personName(ex.user) || t("attendance.unknownWorker", "Worker")
-
-  return (
-    <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 justify-between hover:bg-orange-50/30 dark:hover:bg-orange-500/5">
-      <div className="flex items-start gap-3 min-w-0">
-        <UserAvatar firstName={ex.user?.firstName} lastName={ex.user?.lastName} seed={ex.userId} size="md" />
-        <div className="min-w-0">
-          <p className="font-medium text-foreground truncate">{name}</p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <MapPin className="size-3" />
-            {ex.space?.name ?? t("attendance.unknownLocation")}
-            {ex.lastDistanceM != null && ` · ${formatDistance(ex.lastDistanceM)} ${t("attendance.outOfRing.away", "away")}`}
-          </p>
-          {ex.reason && <p className="text-sm text-foreground/80 mt-1 italic">“{ex.reason}”</p>}
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {t("attendance.outOfRing.requested", "Requested")}: {ex.requestedMinutes ?? "?"} {t("attendance.outOfRing.min", "min")}
-          </p>
-        </div>
-      </div>
-
-      {canApprove ? (
-        <div className="flex items-center gap-2 shrink-0">
-          <Select value={String(minutes)} onValueChange={(v) => setMinutes(Number(v))}>
-            <SelectTrigger className="h-9 w-[110px] rounded-lg">
-              <Timer className="size-3.5 mr-1 text-muted-foreground" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {GEOFENCE_EXCURSION.DURATION_PRESETS.map((m) => (
-                <SelectItem key={m} value={String(m)}>
-                  {m} {t("attendance.outOfRing.min", "min")}
-                </SelectItem>
-              ))}
-              {/* Include the exact requested value if it isn't a preset. */}
-              {ex.requestedMinutes != null && !GEOFENCE_EXCURSION.DURATION_PRESETS.includes(ex.requestedMinutes) && (
-                <SelectItem value={String(ex.requestedMinutes)}>
-                  {ex.requestedMinutes} {t("attendance.outOfRing.min", "min")}
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            className="h-9 rounded-lg bg-green-600 hover:bg-green-700 text-white"
-            disabled={busy}
-            onClick={() => onApprove(minutes)}
-          >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-            <span className="ml-1">{t("common.approve", "Approve")}</span>
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-9 rounded-lg border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
-            disabled={busy}
-            onClick={onReject}
-          >
-            <X className="size-4" />
-            <span className="ml-1">{t("common.reject", "Reject")}</span>
-          </Button>
-        </div>
-      ) : (
-        <span className="text-xs text-muted-foreground italic shrink-0">
-          {t("attendance.outOfRing.awaitingApprover", "Awaiting a manager's decision")}
-        </span>
-      )}
-    </div>
+    </>
   )
 }
 

@@ -32,7 +32,7 @@ export const MANAGE_ROWS = [
   */
   { icon: 'file-tray-full', labelKey: 'manage.approvals.label', descKey: 'manage.approvals.desc', route: '/(app)/approvals', color: '#dc2626', permission: '', orgWide: false, gate: { decides: true } },
   { icon: 'stopwatch', labelKey: 'manage.attendance.label', descKey: 'manage.attendance.desc', route: '/(app)/manage/attendance', color: '#0ea5e9', permission: 'canViewSpaceAttendance', orgWide: false },
-  { icon: 'timer', labelKey: 'manage.extraTime.label', descKey: 'manage.extraTime.desc', route: '/(app)/extra-time', color: '#a855f7', permission: 'canApproveOvertime', orgWide: false },
+  // The team's requests as a record; deciding one is in Approvals.
   { icon: 'calendar', labelKey: 'manage.timeOff.label', descKey: 'manage.timeOff.desc', route: '/(app)/manage/time-off-requests', color: '#f59e0b', permission: 'canViewAllTasks', orgWide: false },
   { icon: 'people', labelKey: 'manage.members.label', descKey: 'manage.members.desc', route: '/(app)/manage/members', color: '#8b5cf6', permission: 'canManageUsers', orgWide: true },
   /*
@@ -59,7 +59,6 @@ export const MANAGE_ROWS = [
   */
   { icon: 'construct', labelKey: 'manage.equipment.label', descKey: 'manage.equipment.desc', route: '/(app)/equipment', color: '#0f766e', permission: 'canViewAssets', orgWide: false, module: 'assets' },
   { icon: 'chatbox-ellipses', labelKey: 'manage.clientRequests.label', descKey: 'manage.clientRequests.desc', route: '/(app)/client-requests', color: '#b45309', permission: 'canViewPortal', orgWide: false, module: 'b2c_portal' },
-  { icon: 'person-add', labelKey: 'manage.joinRequests.label', descKey: 'manage.joinRequests.desc', route: '/(app)/manage/join-requests', color: '#f97316', permission: 'canManageUsers', orgWide: true },
   { icon: 'mail', labelKey: 'manage.invitations.label', descKey: 'manage.invitations.desc', route: '/(app)/manage/invitations', color: '#06b6d4', permission: 'canManageUsers', orgWide: true },
   { icon: 'alert-circle', labelKey: 'manage.issues.label', descKey: 'manage.issues.desc', route: 'sheet:issues', color: '#ef4444', permission: 'canViewAllTasks', orgWide: false },
   /*

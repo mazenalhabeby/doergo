@@ -9,8 +9,6 @@ import {
   CalendarOff,
   Plus,
   MoreHorizontal,
-  Check,
-  X,
   CalendarDays,
 } from "lucide-react"
 import { notify } from "@/lib/toast"
@@ -20,7 +18,6 @@ import { useTimeFormat } from "@/hooks"
 
 import {
   employeesApi,
-  type TimeOffRequest,
   type TimeOffStatus,
 } from "@/lib/api"
 import { useRouteAccess } from "@/hooks/use-route-access"
@@ -44,7 +41,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   Select,
   SelectContent,
@@ -62,6 +58,8 @@ import { serverErrorMessage } from "@/lib/server-error"
 import { isAbsence, requestDetail } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
 import { LeaveLedgerPanel } from "@/components/leave/leave-ledger-panel"
+import Link from "next/link"
+import { Inbox } from "lucide-react"
 
 const STATUS_PILLS: Record<
   TimeOffStatus,
@@ -93,15 +91,10 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
   const canAdjust = useRouteAccess().holds("any:canManageRota")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [createOpen, setCreateOpen] = useState(false)
-  const [rejectTarget, setRejectTarget] = useState<TimeOffRequest | null>(null)
-  const [approveTarget, setApproveTarget] = useState<TimeOffRequest | null>(
-    null
-  )
 
   // Create form state
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [reason, setReason] = useState("")
-  const [rejectionReason, setRejectionReason] = useState("")
 
   const { data: timeOffRequests, isLoading } = useQuery({
     queryKey: keys.timeOff.member(employeeId, statusFilter === "all" ? undefined : statusFilter),
@@ -131,38 +124,6 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
     },
     onError: (error: Error) => {
       notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToSubmit'))
-    },
-  })
-
-  const approveMutation = useMutation({
-    mutationFn: (timeOffId: string) =>
-      employeesApi.approveTimeOff(timeOffId, true),
-    onSuccess: () => {
-      invalidateTimeOff(queryClient, employeeId)
-      setApproveTarget(null)
-      notify.success(t('technicians.timeOffTab.approvedSuccessfully'))
-    },
-    onError: (error: Error) => {
-      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToApprove'))
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: ({
-      timeOffId,
-      reason,
-    }: {
-      timeOffId: string
-      reason?: string
-    }) => employeesApi.approveTimeOff(timeOffId, false, reason),
-    onSuccess: () => {
-      invalidateTimeOff(queryClient, employeeId)
-      setRejectTarget(null)
-      setRejectionReason("")
-      notify.success(t('technicians.timeOffTab.rejectedSuccessfully'))
-    },
-    onError: (error: Error) => {
-      notify.error(serverErrorMessage(error, t) || t('technicians.timeOffTab.failedToReject'))
     },
   })
 
@@ -387,17 +348,12 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setApproveTarget(request)}
-                        >
-                          <Check className="h-4 w-4 mr-2 text-green-600" />
-                          {t('common.approved')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setRejectTarget(request)}
-                        >
-                          <X className="h-4 w-4 mr-2 text-red-600" />
-                          {t('common.rejected')}
+                        {/* Decided in Approvals — the one place. */}
+                        <DropdownMenuItem asChild>
+                          <Link href={`/approvals?kind=request&id=${encodeURIComponent(request.id)}`}>
+                            <Inbox className="h-4 w-4 mr-2" />
+                            {t('approvals.decideInApprovals')}
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
@@ -423,76 +379,6 @@ export function TimeOffTab({ employeeId, employeeName, canManage }: TimeOffTabPr
         )}
       </div>
 
-      {/* Approve Confirmation Dialog */}
-      <ConfirmDialog
-        open={!!approveTarget}
-        onOpenChange={(open) => !open && setApproveTarget(null)}
-        title={t('technicians.timeOffTab.approveDialog.title')}
-        description={approveTarget && t('technicians.timeOffTab.approveDialog.description', {
-          dates: `${format(new Date(approveTarget.startDate), "MMM d")} - ${format(new Date(approveTarget.endDate), "MMM d, yyyy")}`
-        })}
-        confirmLabel={approveMutation.isPending ? t('common.approving') : t('common.approved')}
-        onConfirm={() =>
-          approveTarget && approveMutation.mutate(approveTarget.id)
-        }
-        confirmDisabled={approveMutation.isPending}
-      />
-
-      {/* Reject Dialog */}
-      <Dialog
-        open={!!rejectTarget}
-        onOpenChange={(open) => {
-          if (!open) {
-            setRejectTarget(null)
-            setRejectionReason("")
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('technicians.timeOffTab.rejectDialog.title')}</DialogTitle>
-            <DialogDescription>
-              {rejectTarget && t('technicians.timeOffTab.rejectDialog.description', {
-                dates: `${format(new Date(rejectTarget.startDate), "MMM d")} - ${format(new Date(rejectTarget.endDate), "MMM d, yyyy")}`
-              })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label>{t('technicians.timeOffTab.rejectDialog.reasonLabel')}</Label>
-            <Textarea
-              placeholder={t('technicians.timeOffTab.rejectDialog.reasonPlaceholder')}
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              rows={3}
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setRejectTarget(null)
-                setRejectionReason("")
-              }}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() =>
-                rejectTarget &&
-                rejectMutation.mutate({
-                  timeOffId: rejectTarget.id,
-                  reason: rejectionReason || undefined,
-                })
-              }
-              disabled={rejectMutation.isPending}
-            >
-              {rejectMutation.isPending ? t('common.rejecting') : t('common.rejected')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 }

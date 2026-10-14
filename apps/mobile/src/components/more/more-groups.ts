@@ -14,13 +14,11 @@ export interface MoreGroup { key: MoreGroupKey; rows: ManageRow[] }
 const GROUP_OF: Record<string, MoreGroupKey> = {
   '/(app)/approvals': 'time',
   '/(app)/manage/attendance': 'time',
-  '/(app)/extra-time': 'time',
-  '/(app)/manage/time-off-requests': 'time',
   '/(app)/manage/schedules': 'time',
   'sheet:issues': 'time',
+  '/(app)/manage/time-off-requests': 'time',
   '/(app)/manage/members': 'people',
   '/(app)/manage/invitations': 'people',
-  '/(app)/manage/join-requests': 'people',
   '/(app)/customers': 'work',
 };
 

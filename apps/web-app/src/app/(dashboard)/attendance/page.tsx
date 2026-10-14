@@ -7,7 +7,7 @@ import dynamic from "next/dynamic"
 import { useState, useMemo, useEffect } from "react"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query"
-import { Clock, XCircle, ClipboardCheck, Coffee, UserX } from "lucide-react"
+import { Clock, XCircle, Coffee, UserX } from "lucide-react"
 import { format } from "date-fns"
 import { notify } from "@/lib/toast"
 
@@ -16,10 +16,10 @@ import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEnt
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 import { personName, workedMinutes } from "@hbcfield/shared/client"
+import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 // Lazy (audit AT-C1). Four tabs of which one shows, plus a dialog that renders on
 // a click — ~2,600 lines in the first paint. ssr:false: none renders on the server.
-const ApprovalsTab = dynamic(() => import("./_components/approvals-tab").then((m) => m.ApprovalsTab), { ssr: false })
 const BreaksTab = dynamic(() => import("./_components/breaks-tab").then((m) => m.BreaksTab), { ssr: false })
 const TrackingTab = dynamic(() => import("./_components/tracking-tab").then((m) => m.TrackingTab), { ssr: false })
 const NoShowsTab = dynamic(() => import("./_components/no-shows-tab").then((m) => m.NoShowsTab), { ssr: false })
@@ -33,15 +33,15 @@ export default function AttendancePage() {
   const queryClient = useQueryClient()
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"tracking" | "approvals" | "breaks" | "noshows">("tracking")
+  const [activeTab, setActiveTab] = useState<"tracking" | "breaks" | "noshows">("tracking")
 
   // Honor a ?tab= deep-link (e.g. the dashboard's "Pending Actions" reject link
   // → /attendance?tab=approvals). Read after mount to avoid a hydration mismatch.
   useEffect(() => {
     const tab = new URLSearchParams(window.location.search).get("tab")
-    if (tab === "approvals" || tab === "breaks" || tab === "tracking" || tab === "noshows") {
-      setActiveTab(tab)
-    }
+    // Hours are decided in Approvals now: an old link to this tab goes there.
+    if (tab === "approvals") window.location.replace("/approvals?kind=hours")
+    else if (tab === "breaks" || tab === "tracking" || tab === "noshows") setActiveTab(tab)
   }, [])
 
   // Filter states
@@ -96,12 +96,9 @@ export default function AttendancePage() {
   */
   const canReconcile = isAdmin || hasPermission("canReconcileAttendance")
   /*
-    Signing off and erasing are their own permissions, each asked by its own
-    route: approve / reject an entry or time away from the site is
-    `canApproveAttendance`, deleting an entry is `canDeleteAttendance`. A client's
-    supervisor approves our hours without being able to rewrite or erase them.
+    Erasing is its own permission (`canDeleteAttendance`). Signing hours off
+    (`canApproveAttendance`) happens in Approvals, not on this page.
   */
-  const canApprove = isAdmin || hasPermission("canApproveAttendance")
   const canDelete = isAdmin || hasPermission("canDeleteAttendance")
 
   // Fetch locations
@@ -190,15 +187,6 @@ export default function AttendancePage() {
 
   // Weekly/monthly reports moved to ReportsTab component
 
-  // Fetch pending approvals. Runs whenever the page is open (not just on the
-  // Approvals tab) so the tab's count badge is visible immediately on load.
-  const { data: pendingApprovalsData, isLoading: loadingApprovals, refetch: refetchApprovals } = useQuery({
-    queryKey: keys.attendance.approvals(),
-    queryFn: () => attendanceApi.getPendingApprovals({ limit: 50 }),
-    enabled: canAccess,
-    staleTime: 30_000,
-  })
-
   // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
   const { data: noShowRows = [] } = useQuery({
     queryKey: keys.attendance.noShows(),
@@ -260,33 +248,6 @@ export default function AttendancePage() {
   })
 
   // Export CSV moved to ReportsTab component
-
-  // Approve entry mutation
-  const approveEntry = useMutation({
-    mutationFn: (entryId: string) => attendanceApi.approveEntry(entryId),
-    onSuccess: () => {
-      notify.success(t('attendance.toast.entryApproved'))
-      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
-    },
-    onError: (error) => {
-      notify.error(error instanceof Error ? error.message : t('attendance.toast.approveFailed'))
-    },
-  })
-
-  // Reject entry mutation
-  const [rejectReason, setRejectReason] = useState("")
-  const rejectEntry = useMutation({
-    mutationFn: ({ entryId, reason }: { entryId: string; reason: string }) =>
-      attendanceApi.rejectEntry(entryId, reason),
-    onSuccess: () => {
-      notify.success(t('attendance.toast.entryRejected'))
-      setRejectReason("")
-      queryClient.invalidateQueries({ queryKey: keys.attendance.approvals() })
-    },
-    onError: (error) => {
-      notify.error(error instanceof Error ? error.message : t('attendance.toast.rejectFailed'))
-    },
-  })
 
   const entries = attendanceData?.data || []
   const meta = attendanceData?.meta
@@ -368,6 +329,9 @@ export default function AttendancePage() {
           </div>
         </div>
 
+        {/* Every decision about hours, time away and missed clock-ins is made in Approvals. */}
+        <DecideInApprovals kinds={["hours", "away", "noShow", "issue"]} className="mb-6" />
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as typeof activeTab)} className="mb-6">
           <TabsList data-tour="attendance-tabs" className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
@@ -377,20 +341,6 @@ export default function AttendancePage() {
             >
               <Clock className="size-3.5 mr-1.5" />
               {t('attendance.tabs.tracking')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="approvals"
-              data-tour="attendance-tab-approvals"
-              onClick={() => setActiveTab("approvals")}
-              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
-            >
-              <ClipboardCheck className="size-3.5 mr-1.5" />
-              {t('attendance.tabs.approvals')}
-              {pendingApprovalsData?.meta?.total ? (
-                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-amber-400 text-white rounded-full px-1">
-                  {pendingApprovalsData.meta.total}
-                </span>
-              ) : null}
             </TabsTrigger>
             <TabsTrigger
               value="breaks"
@@ -436,23 +386,8 @@ export default function AttendancePage() {
               page={page} setPage={setPage} limit={limit} daysOff={daysOff} locations={locations}
               isAdmin={isAdmin}
               canReconcile={canReconcile}
-              canApprove={canApprove}
               canDelete={canDelete}
               sort={sort} onSort={onSort}
-            />
-          </TabsContent>
-
-          {/* Approvals Tab */}
-          <TabsContent value="approvals" className="mt-6">
-            <ApprovalsTab
-              loading={loadingApprovals}
-              data={pendingApprovalsData}
-              onRefresh={refetchApprovals}
-              canApprove={canApprove}
-              onApprove={(id) => approveEntry.mutate(id)}
-              onReject={(id, reason) => rejectEntry.mutate({ entryId: id, reason })}
-              approving={approveEntry.isPending}
-              rejecting={rejectEntry.isPending}
             />
           </TabsContent>
 

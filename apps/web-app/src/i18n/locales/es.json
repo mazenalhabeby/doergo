@@ -3812,7 +3812,7 @@
     },
     "management": {
       "title": "Gestión de asistencia",
-      "subtitle": "Controla la asistencia, consulta informes y gestiona aprobaciones"
+      "subtitle": "Controla la asistencia y consulta informes"
     },
     "tabs": {
       "attendance": "Asistencia",
@@ -5259,7 +5259,7 @@
   },
   "overtime": {
     "title": "Gestión de horas extra",
-    "subtitle": "Revisa y gestiona las solicitudes de horas extra de los empleados",
+    "subtitle": "Cada ronda de horas extra y cómo terminó",
     "tabsPending": "Pendientes",
     "tabsHistory": "Historial",
     "badges": {
@@ -10850,7 +10850,18 @@
       "lateArrival": "Llegada tardía",
       "earlyDeparture": "Salida anticipada",
       "unscheduledDay": "Día no programado",
-      "needsReview": "Requiere revisión"
+      "needsReview": "Requiere revisión",
+      "outsideGeofenceIn": "Entrada fuera",
+      "outsideGeofenceOut": "Salida fuera",
+      "missedBreak": "Descanso perdido",
+      "autoClockIn": "Entrada auto",
+      "autoClockOut": "Salida auto",
+      "autoRest": "Descanso auto",
+      "remoteWithWorkspace": "Remoto con espacio asignado",
+      "earlyArrival": "Llegada anticipada",
+      "missingClockout": "Sin fichaje de salida",
+      "clockOutProvisional": "Salida fijada por el sistema",
+      "recordedOffline": "Registrado sin señal"
     },
     "leave": {
       "VACATION": "Vacaciones",
@@ -10971,6 +10982,14 @@
       "escalateAfter": "Pasar tras (horas)",
       "escalateTo": "Pasar a",
       "noAnswerHint": "Los recordatorios van a quien puede decidir hoy (no a quien está de permiso). Páselo a un rol que pueda decidir."
-    }
+    },
+    "decideThere_one": "{{count}} pendiente para ti — decide en",
+    "decideThere_other": "{{count}} pendientes para ti — decide en",
+    "viewFile": {
+      "document": "Ver el documento",
+      "expense": "Ver el recibo",
+      "assetProposal": "Ver la página"
+    },
+    "decideInApprovals": "Decidir en Aprobaciones"
   }
 }

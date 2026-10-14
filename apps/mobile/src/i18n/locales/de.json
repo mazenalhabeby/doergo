@@ -5204,7 +5204,18 @@
       "lateArrival": "Verspäteter Beginn",
       "earlyDeparture": "Vorzeitiger Feierabend",
       "unscheduledDay": "Ungeplanter Tag",
-      "needsReview": "Zu prüfen"
+      "needsReview": "Zu prüfen",
+      "outsideGeofenceIn": "Einstempeln außerhalb",
+      "outsideGeofenceOut": "Ausstempeln außerhalb",
+      "missedBreak": "Pause verpasst",
+      "autoClockIn": "Auto ein",
+      "autoClockOut": "Auto aus",
+      "autoRest": "Auto-Pause",
+      "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich",
+      "earlyArrival": "Früh angekommen",
+      "missingClockout": "Kein Ausstempeln",
+      "clockOutProvisional": "Ausstempeln vom System gesetzt",
+      "recordedOffline": "Ohne Empfang erfasst"
     },
     "leave": {
       "VACATION": "Urlaub",
@@ -5281,6 +5292,7 @@
       "mine": "Sie haben freigegeben. Jetzt braucht es {{role}}.",
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
       "short": "braucht {{role}}"
-    }
+    },
+    "decideInApprovals": "In Genehmigungen entscheiden"
   }
 }

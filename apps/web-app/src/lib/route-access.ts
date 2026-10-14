@@ -425,10 +425,11 @@ function offers(href: string, ctx: AccessContext): boolean {
   return extra ? extra(ctx) : true
 }
 
-const TEAM_MENU = ["/members", "/invitations", "/join-requests", "/team"] as const
+// Join requests and document checks are decided in Approvals (the old pages redirect there).
+const TEAM_MENU = ["/members", "/invitations", "/team"] as const
 const TIME_MENU = ["/attendance", "/issues", "/schedule", "/overtime"] as const
 const DOCUMENTS_MENU = [
-  "/documents", "/documents/all", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
+  "/documents", "/documents/all", "/documents/types", "/documents/templates", "/documents/compliance",
 ] as const
 
 /** Where a nav href actually lands, for hrefs that are redirects. */

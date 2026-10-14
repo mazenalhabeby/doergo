@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Check, Gauge, Loader2, Receipt, Trash2, X } from "lucide-react"
+import { AlertTriangle, Gauge, Loader2, Receipt, Trash2} from "lucide-react"
 
 import {
   formatCents, kindMeters, logTypesForKind, findLogType, personName, logValueLines,
@@ -15,11 +15,12 @@ import { useAuth } from "@/contexts/auth-context"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LogEntryDialog } from "./log-entry-dialog"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
+import Link from "next/link"
+import { Inbox } from "lucide-react"
 
 /** Every query this panel reads, so a write can refresh exactly them. */
 const logbookKeys = (assetId: string) => [
@@ -309,18 +310,11 @@ function EntryRow({
   onChanged: () => void
 }) {
   const { t } = useTranslation()
-  const [refusing, setRefusing] = useState(false)
-  const [reason, setReason] = useState("")
   const type = findLogType(shape, entry.logType)
   const color = logColor(type?.color)
   const waiting = entry.status === "SUBMITTED"
   const refused = entry.status === "REJECTED"
 
-  const review = useMutation({
-    mutationFn: (v: { decision: "accept" | "reject"; note?: string }) => assetsApi.reviewExpense(entry.id, v.decision, v.note),
-    onSuccess: () => { setRefusing(false); setReason(""); onChanged() },
-    onError: (e: Error) => notify.error(e.message),
-  })
   const remove = useMutation({
     mutationFn: () => assetsApi.removeLogEntry(assetId, entry.id),
     onSuccess: onChanged,
@@ -399,23 +393,15 @@ function EntryRow({
         )}
 
         {waiting && canManage ? (
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              onClick={() => setRefusing((v) => !v)}
-              className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
-              aria-label={t("expenses.reject", "Refuse")}
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => review.mutate({ decision: "accept" })}
-              disabled={review.isPending}
-              className="rounded p-1 text-muted-foreground transition-colors hover:text-emerald-600"
-              aria-label={t("expenses.accept", "Accept")}
-            >
-              <Check className="h-4 w-4" />
-            </button>
-          </div>
+          // Accepting or refusing is decided in Approvals — the one place.
+          <Link
+            href={`/approvals?kind=expense&id=${encodeURIComponent(entry.id)}`}
+            className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-primary"
+            aria-label={t("approvals.decideInApprovals")}
+            title={t("approvals.decideInApprovals")}
+          >
+            <Inbox className="h-4 w-4" />
+          </Link>
         ) : canRemove ? (
           <button
             onClick={() => remove.mutate()}
@@ -428,27 +414,6 @@ function EntryRow({
         ) : null}
       </div>
 
-      {/* A refusal carries its reason: the member reads it, and one with none teaches nothing. */}
-      {refusing && (
-        <div className="mt-2 flex items-center gap-2 pl-5">
-          <Input
-            autoFocus
-            value={reason}
-            maxLength={300}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder={t("assetLog.refuseReason", "Why is this refused?")}
-            className="h-8"
-          />
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={!reason.trim() || review.isPending}
-            onClick={() => review.mutate({ decision: "reject", note: reason.trim() })}
-          >
-            {t("expenses.reject", "Refuse")}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

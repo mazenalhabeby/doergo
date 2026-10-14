@@ -18,10 +18,11 @@ import { workedMinutes, personName, localDateKey, formatDuration } from '@hbcfie
 import { holds } from '../../../src/lib/permissions';
 import { FilterChip } from '../../../src/components/filter-chip';
 import {
-  Skeleton, ScreenContainer, BlurSheet, SheetPanel, AttendanceEditSheet,
+  Skeleton, ScreenContainer, AttendanceEditSheet,
 } from '../../../src/components';
 import { DatePickerModal } from '../../../src/components/date-picker-modal';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
+import { router, type Href } from 'expo-router';
 
 /**
  * Attendance review on the phone — the web `/attendance` page's working half.
@@ -42,10 +43,11 @@ import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../
  * where a mistake is easier to see and to undo.
  */
 
-type Segment = 'approvals' | 'records' | 'noshows';
+// Approving hours and excusing a missed clock-in are decided in Approvals; this screen is the record.
+type Segment = 'records' | 'noshows';
 type Period = 'today' | 'week' | 'month' | 'custom';
 
-const SEGMENTS: Segment[] = ['approvals', 'records', 'noshows'];
+const SEGMENTS: Segment[] = ['records', 'noshows'];
 const PERIODS: Period[] = ['today', 'week', 'month', 'custom'];
 /** One screenful and a bit — every list pages in as it is read. */
 const PAGE = 30;
@@ -88,10 +90,9 @@ export default function AttendanceReviewScreen() {
     Each button follows the grant its own route asks, so a supervisor who signs
     off our hours is never offered a correction the server would refuse.
   */
-  const canApprove = holds(user, 'canApproveAttendance');
   const canCorrect = holds(user, 'canReconcileAttendance');
 
-  const [segment, setSegment] = useState<Segment>('approvals');
+  const [segment, setSegment] = useState<Segment>('records');
   const [period, setPeriod] = useState<Period>('today');
   const [search, setSearch] = useState('');
   /* A range the reader picked themselves — two calendar days, inclusive. */
@@ -101,16 +102,12 @@ export default function AttendanceReviewScreen() {
   const [editing, setEditing] = useState<TimeEntry | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const [approvals, setApprovals] = useState<Feed<TimeEntry> | null>(null);
   const [records, setRecords] = useState<Feed<TimeEntry> | null>(null);
   const [noShows, setNoShows] = useState<Feed<NoShow> | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<TimeEntry | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
 
   /** One Date for the calendars, so they do not re-render on every keystroke. */
   const TODAY = useMemo(() => new Date(), []);
@@ -125,8 +122,8 @@ export default function AttendanceReviewScreen() {
   */
   const nextRangeStepRef = useRef<'to' | null>(null);
 
-  const lastLoadedRef = useRef<Record<Segment, number>>({ approvals: 0, records: 0, noshows: 0 });
-  const feedOf = { approvals, records, noshows: noShows }[segment];
+  const lastLoadedRef = useRef<Record<Segment, number>>({ records: 0, noshows: 0 });
+  const feedOf = { records, noshows: noShows }[segment];
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -152,7 +149,6 @@ export default function AttendanceReviewScreen() {
   }, [period, customFrom, customTo]);
 
   const fetchPage = useCallback(async (which: Segment, page: number) => {
-    if (which === 'approvals') return attendanceApi.getPendingApprovals({ page, limit: PAGE });
     if (which === 'records') {
       const range = rangeParams();
       if (!range) return [] as TimeEntry[];
@@ -168,8 +164,7 @@ export default function AttendanceReviewScreen() {
   }, [rangeParams, debouncedSearch]);
 
   const setFeed = useCallback((which: Segment, feed: Feed<any> | null) => {
-    if (which === 'approvals') setApprovals(feed);
-    else if (which === 'records') setRecords(feed);
+    if (which === 'records') setRecords(feed);
     else setNoShows(feed);
   }, []);
 
@@ -221,9 +216,9 @@ export default function AttendanceReviewScreen() {
 
   const show = useCallback((which: Segment) => {
     setSegment(which);
-    const feed = { approvals, records, noshows: noShows }[which];
+    const feed = { records, noshows: noShows }[which];
     if (feed === null) load(which);
-  }, [load, approvals, records, noShows]);
+  }, [load, records, noShows]);
 
   // A different window or a different name is a different question — ask it,
   // from the first page.
@@ -237,57 +232,6 @@ export default function AttendanceReviewScreen() {
     if (Date.now() - lastLoadedRef.current[segment] < 30000) return;
     load(segment);
   }, [segment, load]));
-
-  // ── Decisions ─────────────────────────────────────────────────────────────
-
-  /** Drop a decided row from every list holding it, without refetching. */
-  const forget = useCallback((id: string) => {
-    setApprovals((f) => (f ? { ...f, rows: f.rows.filter((e) => e.id !== id) } : f));
-  }, []);
-
-  const approve = useCallback(async (entry: TimeEntry) => {
-    setBusyId(entry.id);
-    try {
-      await attendanceApi.approveEntry(entry.id);
-      forget(entry.id);
-      toast.success(t('attendanceReview.approved'));
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('attendanceReview.failedToApprove'));
-    } finally {
-      setBusyId(null);
-    }
-  }, [forget, t, toast]);
-
-  const confirmReject = useCallback(async () => {
-    const entry = rejectTarget;
-    const reason = rejectReason.trim();
-    if (!entry || !reason) return;
-    setRejectTarget(null);
-    setRejectReason('');
-    setBusyId(entry.id);
-    try {
-      await attendanceApi.rejectEntry(entry.id, reason);
-      forget(entry.id);
-      toast.success(t('attendanceReview.rejected'));
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('attendanceReview.failedToReject'));
-    } finally {
-      setBusyId(null);
-    }
-  }, [rejectTarget, rejectReason, forget, t, toast]);
-
-  const excuse = useCallback(async (row: NoShow) => {
-    setBusyId(row.id);
-    try {
-      await attendanceApi.resolveNoShow(row.id, 'excuse');
-      setNoShows((f) => (f ? { ...f, rows: f.rows.filter((n) => n.id !== row.id) } : f));
-      toast.success(t('attendanceReview.excused'));
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('attendanceReview.failedToExcuse'));
-    } finally {
-      setBusyId(null);
-    }
-  }, [t, toast]);
 
   // ── Rows ──────────────────────────────────────────────────────────────────
 
@@ -337,10 +281,9 @@ export default function AttendanceReviewScreen() {
     );
   };
 
-  const EntryCard = ({ entry, decidable }: { entry: TimeEntry; decidable: boolean }) => {
+  const EntryCard = ({ entry }: { entry: TimeEntry }) => {
     const tz = zoneOf(entry);
     const open = !entry.clockOutAt;
-    const busy = busyId === entry.id;
     return (
       <View style={[s.card, { backgroundColor: colors.card }]}>
         <View style={s.cardTop}>
@@ -368,7 +311,7 @@ export default function AttendanceReviewScreen() {
         <View style={s.flagRow}>
           {/* History says how each shift ended; the queue is all pending by
               definition, so the badge would be the same word on every card. */}
-          {!decidable && segment === 'records' && <Outcome entry={entry} />}
+          {segment === 'records' && <Outcome entry={entry} />}
         </View>
         <Flags reasons={entry.flagReasons} />
 
@@ -388,32 +331,11 @@ export default function AttendanceReviewScreen() {
           </TouchableOpacity>
         )}
 
-        {decidable && (
-          <View style={s.actions}>
-            <TouchableOpacity
-              style={[s.actionBtn, s.rejectBtn, { borderColor: COLORS.error }]}
-              onPress={() => setRejectTarget(entry)}
-              disabled={busy}
-            >
-              <Ionicons name="close" size={16} color={COLORS.error} />
-              <Text style={[s.actionBtnText, { color: COLORS.error }]}>{t('common.reject')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.actionBtn, s.approveBtn]} onPress={() => approve(entry)} disabled={busy}>
-              {busy ? <ActivityIndicator size="small" color={COLORS.white} /> : (
-                <>
-                  <Ionicons name="checkmark" size={16} color={COLORS.white} />
-                  <Text style={[s.actionBtnText, { color: COLORS.white }]}>{t('common.approve')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     );
   };
 
   const NoShowCard = ({ row }: { row: NoShow }) => {
-    const busy = busyId === row.id;
     return (
       <View style={[s.card, { backgroundColor: colors.card }]}>
         <View style={s.cardTop}>
@@ -444,17 +366,12 @@ export default function AttendanceReviewScreen() {
           <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{row.excuseReason}</Text>
         )}
 
-        {canCorrect && row.state !== 'EXCUSED' && (
-          <View style={s.actions}>
-            <TouchableOpacity style={[s.actionBtn, s.approveBtn]} onPress={() => excuse(row)} disabled={busy}>
-              {busy ? <ActivityIndicator size="small" color={COLORS.white} /> : (
-                <>
-                  <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.white} />
-                  <Text style={[s.actionBtnText, { color: COLORS.white }]}>{t('attendanceReview.excuse')}</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+        {/* Excusing is decided in Approvals — the one place. */}
+        {row.state !== 'EXCUSED' && (
+          <TouchableOpacity style={s.editRow} onPress={() => router.push('/(app)/approvals?kind=noShow' as Href)} activeOpacity={0.7}>
+            <Ionicons name="file-tray-full-outline" size={15} color={COLORS.primary} />
+            <Text style={[s.editText, { color: COLORS.primary }]}>{t('approvals.decideInApprovals')}</Text>
+          </TouchableOpacity>
         )}
       </View>
     );
@@ -477,7 +394,6 @@ export default function AttendanceReviewScreen() {
 
   const searching = segment === 'records' && !!debouncedSearch;
   const emptyCopy = {
-    approvals: { icon: 'checkmark-done-outline' as const, text: t('attendanceReview.empty.approvals') },
     records: {
       icon: 'time-outline' as const,
       text: searching
@@ -488,9 +404,7 @@ export default function AttendanceReviewScreen() {
   }[segment];
 
   const segmentLabel = (seg: Segment) =>
-    seg === 'approvals' && approvals?.rows.length
-      ? `${t('attendanceReview.segments.approvals')} (${approvals.rows.length}${approvals.done ? '' : '+'})`
-      : t(`attendanceReview.segments.${seg}`);
+    t(`attendanceReview.segments.${seg}`);
 
   return (
     <View style={[s.container, { backgroundColor: colors.surface, paddingTop: insets.top }]}>
@@ -554,7 +468,7 @@ export default function AttendanceReviewScreen() {
             renderItem={({ item }) =>
               segment === 'noshows'
                 ? <NoShowCard row={item as NoShow} />
-                : <EntryCard entry={item as TimeEntry} decidable={canApprove && segment === 'approvals'} />
+                : <EntryCard entry={item as TimeEntry} />
             }
             contentContainerStyle={s.list}
             showsVerticalScrollIndicator={false}
@@ -586,31 +500,6 @@ export default function AttendanceReviewScreen() {
           />
         )}
       </ScreenContainer>
-
-      {/* Rejecting sends the entry back to the member, so it says why. */}
-      <BlurSheet visible={!!rejectTarget} onClose={() => setRejectTarget(null)}>
-        <SheetPanel title={t('attendanceReview.rejectTitle')} onClose={() => setRejectTarget(null)}>
-          <Text style={[s.sheetHint, { color: colors.textMuted }]}>
-            {t('attendanceReview.rejectHint', { name: rejectTarget ? memberName(rejectTarget) : '' })}
-          </Text>
-          <TextInput
-            style={[s.input, { color: colors.textPrimary, backgroundColor: colors.surface, borderColor: colors.border }]}
-            value={rejectReason}
-            onChangeText={setRejectReason}
-            placeholder={t('attendanceReview.rejectPlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            autoFocus
-          />
-          <TouchableOpacity
-            style={[s.sheetBtn, { backgroundColor: rejectReason.trim() ? COLORS.error : colors.border }]}
-            onPress={confirmReject}
-            disabled={!rejectReason.trim()}
-          >
-            <Text style={s.sheetBtnText}>{t('common.reject')}</Text>
-          </TouchableOpacity>
-        </SheetPanel>
-      </BlurSheet>
 
       {/* Correcting the shift itself. */}
       <AttendanceEditSheet

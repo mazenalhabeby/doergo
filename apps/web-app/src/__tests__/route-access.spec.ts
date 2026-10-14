@@ -259,8 +259,8 @@ describe("settings sections", () => {
 describe("the top bar", () => {
   it("an admin gets every menu", () => {
     const nav = navModelFor(admin)
-    expect(nav.team).toEqual(["/members", "/invitations", "/join-requests", "/team"])
-    expect(nav.documents).toEqual(["/documents", "/documents/all", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance"])
+    expect(nav.team).toEqual(["/members", "/invitations", "/team"])
+    expect(nav.documents).toEqual(["/documents", "/documents/all", "/documents/types", "/documents/templates", "/documents/compliance"])
     expect(nav).toMatchObject({ calendar: true, clients: true, assets: true, portals: true, spaces: true, reports: true, invoices: true, manage: false })
     expect(nav.time).toEqual(["/attendance", "/issues", "/schedule", "/overtime"])
   })

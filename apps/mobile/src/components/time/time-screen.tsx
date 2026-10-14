@@ -307,7 +307,7 @@ export function TimeScreen() {
               label={t('shiftReminder.openEntryPoint')}
               hint={t('shiftReminder.openEntryPointDesc')}
               badge={waiting}
-              onPress={() => router.push('/extra-time' as Href)}
+              onPress={() => router.push('/(app)/approvals?kind=extraTime' as Href)}
             />
           </Well>
         ) : null}

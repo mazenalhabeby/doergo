@@ -3812,7 +3812,7 @@
     },
     "management": {
       "title": "Gestion des présences",
-      "subtitle": "Suivez les présences, consultez les rapports et gérez les approbations"
+      "subtitle": "Suivez les présences et consultez les rapports"
     },
     "tabs": {
       "attendance": "Présence",
@@ -5268,7 +5268,7 @@
   },
   "overtime": {
     "title": "Gestion des heures supplémentaires",
-    "subtitle": "Examinez et gérez les demandes d'heures supplémentaires des employés",
+    "subtitle": "Chaque série d'heures supplémentaires et son issue",
     "tabsPending": "En attente",
     "tabsHistory": "Historique",
     "badges": {
@@ -10859,7 +10859,18 @@
       "lateArrival": "Arrivée tardive",
       "earlyDeparture": "Départ anticipé",
       "unscheduledDay": "Jour non planifié",
-      "needsReview": "À vérifier"
+      "needsReview": "À vérifier",
+      "outsideGeofenceIn": "Entrée hors zone",
+      "outsideGeofenceOut": "Sortie hors zone",
+      "missedBreak": "Pause manquée",
+      "autoClockIn": "Arrivée auto",
+      "autoClockOut": "Départ auto",
+      "autoRest": "Pause auto",
+      "remoteWithWorkspace": "À distance, a un espace",
+      "earlyArrival": "Arrivée en avance",
+      "missingClockout": "Pas de pointage de sortie",
+      "clockOutProvisional": "Sortie fixée par le système",
+      "recordedOffline": "Enregistré sans réseau"
     },
     "leave": {
       "VACATION": "Congés",
@@ -10980,6 +10991,14 @@
       "escalateAfter": "Transmettre après (heures)",
       "escalateTo": "Transmettre à",
       "noAnswerHint": "Les rappels vont à qui peut décider aujourd’hui (pas aux absents). Transmettez à un rôle qui peut décider."
-    }
+    },
+    "decideThere_one": "{{count}} en attente de votre décision — décidez dans",
+    "decideThere_other": "{{count}} en attente de votre décision — décidez dans",
+    "viewFile": {
+      "document": "Voir le document",
+      "expense": "Voir le reçu",
+      "assetProposal": "Voir la page"
+    },
+    "decideInApprovals": "Décider dans Approbations"
   }
 }

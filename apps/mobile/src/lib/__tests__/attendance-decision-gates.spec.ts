@@ -18,15 +18,14 @@ const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(
 const src = stripComments(fs.readFileSync(SCREEN, 'utf8'));
 
 describe('attendance review — which grant each control asks', () => {
-  it('approve / reject follow canApproveAttendance', () => {
-    expect(src).toContain("const canApprove = holds(user, 'canApproveAttendance')");
-    expect(src).toContain("decidable={canApprove && segment === 'approvals'}");
+  it('approving hours and excusing a missed clock-in are decided in Approvals, not here', () => {
+    expect(src).not.toMatch(/approveEntry|rejectEntry|resolveNoShow/);
+    expect(src).toContain("/(app)/approvals?kind=noShow");
   });
 
-  it('edit and excuse follow canReconcileAttendance', () => {
+  it('editing follows canReconcileAttendance', () => {
     expect(src).toContain("const canCorrect = holds(user, 'canReconcileAttendance')");
     expect(src).toContain("{canCorrect && segment === 'records' && (");
-    expect(src).toContain("{canCorrect && row.state !== 'EXCUSED' && (");
   });
 
   it('a supervisor who only signs off holds the one and not the other', () => {

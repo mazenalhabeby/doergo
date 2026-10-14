@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { ArrowUpRight, Check, Loader2, X } from "lucide-react"
+import { ArrowUpRight, Check, FileText, Loader2, X } from "lucide-react"
 import {
   approvalActionsFor,
   approvalWebPath,
@@ -14,6 +14,8 @@ import {
   type ApprovalText,
 } from "@hbcfield/shared/client"
 
+import { assetsApi, documentsApi } from "@/lib/api"
+import { notify } from "@/lib/toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -110,6 +112,8 @@ export function DecisionPanel({
         {item.raisedAt && <Fact label={t("approvals.fact.raised")} value={formatTimeAgo(item.raisedAt)} />}
       </dl>
 
+      <ViewFile item={item} />
+
       {item.step && (
         <p className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">
           {item.step.mine
@@ -195,13 +199,16 @@ export function DecisionPanel({
         <WhoElse item={item} />
       </div>
 
-      <Link
-        href={approvalWebPath(item)}
-        className="inline-flex items-center gap-1 self-start text-sm font-medium text-primary hover:underline"
-      >
-        {t("approvals.openPage")}
-        <ArrowUpRight className="size-3.5" />
-      </Link>
+      {/* Decisions are made here; a page is offered only where this one cannot finish it. */}
+      {pageOnly && (
+        <Link
+          href={approvalWebPath(item)}
+          className="inline-flex items-center gap-1 self-start text-sm font-medium text-primary hover:underline"
+        >
+          {t("approvals.openPage")}
+          <ArrowUpRight className="size-3.5" />
+        </Link>
+      )}
     </div>
   )
 }
@@ -223,3 +230,39 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: "wa
   )
 }
 
+/**
+ * The paper behind a decision — a document to verify, a receipt, a page sent in
+ * to become an asset. Nobody verifies what they cannot see. The link is minted
+ * on the tap (each kind's own POST, which is the "opened" record), never listed.
+ */
+function ViewFile({ item }: { item: ApprovalItem }) {
+  const { t } = useTranslation()
+  const [busy, setBusy] = useState(false)
+  const mint =
+    item.kind === "document" ? () => documentsApi.downloadUrl(item.id)
+    : item.kind === "expense" && item.data.hasReceipt ? () => assetsApi.getReceiptUrl(item.id)
+    : item.kind === "assetProposal" ? () => assetsApi.getProposalDocumentUrl(item.id)
+    : null
+  if (!mint) return null
+  const open = async () => {
+    // Opened before the await, or the browser treats the later window as a pop-up.
+    const tab = window.open("", "_blank")
+    setBusy(true)
+    try {
+      const res = await mint()
+      if (res?.url && tab) tab.location.href = res.url
+      else tab?.close()
+    } catch (e) {
+      tab?.close()
+      notify.error((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="outline" size="sm" className="self-start gap-2" onClick={open} disabled={busy}>
+      {busy ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+      {t(`approvals.viewFile.${item.kind}`)}
+    </Button>
+  )
+}

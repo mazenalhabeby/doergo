@@ -62,8 +62,6 @@ interface TrackingTabProps {
   /** May correct someone else's shift — edit times, add a break they could not
    *  record themselves. `canReconcileAttendance`, not "is an admin". */
   canReconcile: boolean
-  /** May sign off — approve / reject time away from the site. `canApproveAttendance`. */
-  canApprove: boolean
   /** May erase an entry. `canDeleteAttendance` — correcting never implies it. */
   canDelete: boolean
   sort: { key: string; dir: "asc" | "desc" } | null
@@ -75,7 +73,7 @@ export function TrackingTab({
   isError, error, refetch, meta,
   selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus,
   selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery,
-  page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canApprove, canDelete,
+  page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canDelete,
   sort, onSort,
 }: TrackingTabProps) {
   const { t } = useTranslation()
@@ -158,7 +156,7 @@ export function TrackingTab({
           isAdmin left the grant unreachable: a permission that exists, is
           granted, and can never be used is decorative.
         */}
-        <OutOfRingPanel canApprove={canApprove} />
+        <OutOfRingPanel />
 
         {/* Geofence Alerts Section */}
         {geofenceViolations.length > 0 && (

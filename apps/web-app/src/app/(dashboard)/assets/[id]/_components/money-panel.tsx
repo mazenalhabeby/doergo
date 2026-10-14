@@ -3,17 +3,18 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useMutation } from "@tanstack/react-query"
-import { Check, Loader2, Plus, Receipt, Trash2, X } from "lucide-react"
+import { Loader2, Plus, Receipt, Trash2} from "lucide-react"
 
 import { assetsApi, type AssetMoneyEntry, type CustodyPeriodDto } from "@/lib/api"
 import { personName, formatCents, attribute, type CustodyPeriod, type KindShape } from "@hbcfield/shared/client"
-import { ExpenseRefuseDialog } from "@/components/assets/expense-refuse-dialog"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dateLocale } from "@/lib/format-date"
+import Link from "next/link"
+import { Inbox } from "lucide-react"
 
 /**
  * What this thing has cost and earned.
@@ -78,13 +79,6 @@ export function MoneyPanel({
       heldBy?.id ? holderNames.get(heldBy.id) ?? "" : "",
     ]),
   )
-
-  const review = useMutation({
-    mutationFn: (v: { id: string; decision: "accept" | "reject"; note?: string }) =>
-      assetsApi.reviewExpense(v.id, v.decision, v.note),
-    onSuccess: onChanged,
-    onError: (e: Error) => notify.error(e.message),
-  })
 
   const parsed = parseFloat(amount.replace(",", "."))
   const canAdd = !!category && Number.isFinite(parsed) && parsed > 0 && !add.isPending
@@ -208,28 +202,15 @@ export function MoneyPanel({
               </span>
 
               {waiting && canManage ? (
-                <div className="flex shrink-0 items-center gap-1">
-                  {/* Refusing asks why — the member reads it under the entry. */}
-                  <ExpenseRefuseDialog
-                    pending={review.isPending}
-                    onRefuse={(note) => review.mutate({ id: e.id, decision: "reject", note })}
-                    trigger={
-                      <button
-                        className="rounded p-1 text-muted-foreground transition-colors hover:text-destructive"
-                        aria-label={t("expenses.reject", "Refuse")}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    }
-                  />
-                  <button
-                    onClick={() => review.mutate({ id: e.id, decision: "accept" })}
-                    className="rounded p-1 text-muted-foreground transition-colors hover:text-emerald-600"
-                    aria-label={t("expenses.accept", "Accept")}
-                  >
-                    <Check className="h-4 w-4" />
-                  </button>
-                </div>
+                // Accepting or refusing is decided in Approvals — the one place.
+                <Link
+                  href={`/approvals?kind=expense&id=${encodeURIComponent(e.id)}`}
+                  className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-primary"
+                  aria-label={t("approvals.decideInApprovals")}
+                  title={t("approvals.decideInApprovals")}
+                >
+                  <Inbox className="h-4 w-4" />
+                </Link>
               ) : (
                 <button
                   onClick={() => remove.mutate(e.id)}

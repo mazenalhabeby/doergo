@@ -9,8 +9,6 @@ import {
   Trash2,
   Loader2,
   Inbox,
-  Check,
-  X,
   Users,
   Clock3,
   MapPin,
@@ -45,6 +43,7 @@ import {
 import { ConfirmTargetDialog } from "@/components/confirm-dialog"
 import { SectionHeader, EmptyState } from "./section-header"
 import { keys } from "@/lib/query-keys"
+import Link from "next/link"
 
 const LEVELS: SpaceShareLevel[] = ["VIEW", "CONTRIBUTE", "CONTROL"]
 
@@ -355,21 +354,10 @@ function SharesSection({ spaceId }: { spaceId: string }) {
 
 function RequestsSection({ spaceId }: { spaceId: string }) {
   const { t, i18n } = useTranslation()
-  const queryClient = useQueryClient()
 
   const { data: requests, isLoading } = useQuery({
     queryKey: keys.spaces.shareRequests(spaceId),
     queryFn: () => spaceSharingApi.listShareRequests(spaceId, "PENDING"),
-  })
-
-  const resolveMutation = useMutation({
-    mutationFn: ({ requestId, approve }: { requestId: string; approve: boolean }) =>
-      spaceSharingApi.resolveRequest(requestId, approve),
-    onSuccess: (_res, { approve }) => {
-      queryClient.invalidateQueries({ queryKey: keys.spaces.shareRequests(spaceId) })
-      notify.success(approve ? t("spaceSharing.toast.requestApproved") : t("spaceSharing.toast.requestRejected"))
-    },
-    onError: (err: Error) => notify.error(err.message || t("spaceSharing.toast.requestFailed")),
   })
 
   const count = requests?.length || 0
@@ -417,28 +405,13 @@ function RequestsSection({ spaceId }: { spaceId: string }) {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5 text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950"
-                    onClick={() => resolveMutation.mutate({ requestId: req.id, approve: true })}
-                    disabled={resolveMutation.isPending}
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    {t("spaceSharing.requests.approve")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
-                    onClick={() => resolveMutation.mutate({ requestId: req.id, approve: false })}
-                    disabled={resolveMutation.isPending}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    {t("spaceSharing.requests.reject")}
-                  </Button>
-                </div>
+                {/* Decided in Approvals — the one place. */}
+                <Button asChild size="sm" variant="outline" className="h-8 shrink-0 gap-1.5 text-xs">
+                  <Link href={`/approvals?kind=guestRequest&id=${encodeURIComponent(req.id)}`}>
+                    <Inbox className="h-3.5 w-3.5" />
+                    {t("approvals.decideInApprovals")}
+                  </Link>
+                </Button>
               </div>
             </div>
           ))}

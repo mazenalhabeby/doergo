@@ -68,6 +68,17 @@ export default function ApprovalsPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState<Filter>("all")
   const [selected, setSelected] = useState<string | null>(null)
+  // Arriving from a page's "decide in Approvals" line: open on that kind.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search)
+    const kind = q.get("kind")
+    if (kind && (APPROVAL_KINDS as readonly string[]).includes(kind)) {
+      setFilter(kind as Filter)
+      // One item asked for by name (a page's "Decide in Approvals"): open it.
+      const id = q.get("id")
+      if (id) setSelected(`${kind}:${id}`)
+    }
+  }, [])
   const [standInOpen, setStandInOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
   // Office rules are the organization's own policy: people managers only (the server checks the same).

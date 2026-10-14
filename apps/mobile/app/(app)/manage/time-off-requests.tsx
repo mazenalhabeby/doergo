@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,8 +9,8 @@ import { useToast } from '../../../src/island/island-context';
 import { timeOffApi } from '../../../src/lib/api';
 import { useResponsive } from '../../../src/lib/responsive';
 import { centeredContent } from '../../../src/components/screen-container';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, useTabSafe } from '../../../src/components/amazen';
-import { Initials, JobSheet } from '../../../src/components/job/job-ui';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Well, useTabSafe } from '../../../src/components/amazen';
+import { Initials, QuietButton } from '../../../src/components/job/job-ui';
 import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
@@ -24,9 +24,9 @@ function byWaitingThenNewest(a: RequestRowData, b: RequestRowData): number {
 }
 
 /**
- * REQUESTS TO DECIDE — every kind (leave, remote, changed hours, overtime,
- * other), each with what it needs to be decided: who, what, when, where, how
- * long, and their words. Approve or reject, exactly as for leave.
+ * THE TEAM'S REQUESTS — every kind (leave, remote, changed hours, overtime,
+ * other): who, what, when, where, how long, their words, and how it ended.
+ * Deciding one happens in Approvals — the one place; a waiting row links there.
  *
  * One request for the whole list (`timeOffApi.listOrg`): the server answers
  * with the organization for an org-wide holder and with their own crew for a
@@ -44,9 +44,7 @@ export default function RequestsToDecideScreen() {
   const w = useRequestWords();
   const [requests, setRequests] = useState<RequestRowData[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<StatusFilter>('PENDING');
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [rejectTarget, setRejectTarget] = useState<RequestRowData | null>(null);
+  const [filter, setFilter] = useState<StatusFilter>('ALL');
 
   const load = useCallback(async () => {
     try {
@@ -61,25 +59,6 @@ export default function RequestsToDecideScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
-
-  const decide = async (request: RequestRowData, approved: boolean) => {
-    setActionLoading(request.id);
-    try {
-      await timeOffApi.approve(request.id, { approved });
-      await load();
-    } catch (err: unknown) {
-      toast.error(t('common.error'), (err as Error)?.message || t(approved ? 'manage.timeOffRequestsScreen.failedToApprove' : 'manage.timeOffRequestsScreen.failedToReject'));
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const confirmReject = async () => {
-    if (!rejectTarget) return;
-    const target = rejectTarget;
-    setRejectTarget(null);
-    await decide(target, false);
-  };
 
   const filtered = useMemo(() => (requests ?? []).filter((x) => filter === 'ALL' || x.status === filter), [requests, filter]);
   const filterLabel = (f: StatusFilter) => t(`manage.timeOffRequestsScreen.filters.${f.toLowerCase()}`);
@@ -129,17 +108,7 @@ export default function RequestsToDecideScreen() {
                 {note ? <AText variant="body" tone="ink" numberOfLines={4} style={{ fontSize: 13.5, lineHeight: 20 }}>{note}</AText> : null}
                 {item.rejectionReason ? <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>{item.rejectionReason}</AText> : null}
                 {pending ? (
-                  <View style={{ flexDirection: 'row', gap: amazen.space(2), marginTop: amazen.space(1) }}>
-                    <Pressable
-                      onPress={() => setRejectTarget(item)}
-                      disabled={actionLoading === item.id}
-                      accessibilityRole="button"
-                      style={({ pressed }) => ({ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(4.5), minHeight: amazen.layout.tapMin + 2, alignItems: 'center', justifyContent: 'center', backgroundColor: c.tile, opacity: pressed || actionLoading === item.id ? 0.6 : 1 })}
-                    >
-                      <AText variant="body" tone="ink" style={{ fontSize: 15 }}>{t('common.reject')}</AText>
-                    </Pressable>
-                    <PrimaryButton style={{ flex: 1 }} label={t('common.approve')} onPress={() => void decide(item, true)} loading={actionLoading === item.id} />
-                  </View>
+                  <QuietButton tone="accent" label={t('approvals.decideInApprovals')} onPress={() => router.push('/(app)/approvals?kind=request' as Href)} />
                 ) : null}
               </Well>
             );
@@ -147,13 +116,6 @@ export default function RequestsToDecideScreen() {
         )}
       </ScrollView>
 
-      <JobSheet visible={!!rejectTarget} onClose={() => setRejectTarget(null)} title={t('manage.timeOffRequestsScreen.rejectConfirmTitle')}>
-        <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('manage.timeOffRequestsScreen.rejectConfirmMessage')}</AText>
-        <PrimaryButton label={t('common.cancel')} onPress={() => setRejectTarget(null)} />
-        <Pressable onPress={() => void confirmReject()} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
-          <AText variant="body" tone="critical" style={{ fontSize: 14.5 }}>{t('common.reject')}</AText>
-        </Pressable>
-      </JobSheet>
     </Ground>
   );
 }

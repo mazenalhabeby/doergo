@@ -100,7 +100,6 @@ export function TopNavbar() {
   const docs = nav.documents
   const showIssueDocuments = docs.includes("/documents")
   const showAllDocuments = docs.includes("/documents/all")
-  const showReviewDocuments = docs.includes("/documents/review")
   const showDocumentTypes = docs.includes("/documents/types")
   const showDocumentTemplates = docs.includes("/documents/templates")
   const showDocumentCompliance = docs.includes("/documents/compliance")
@@ -394,7 +393,6 @@ export function TopNavbar() {
             pathname={pathname}
             showIssue={showIssueDocuments}
             showAllDocuments={showAllDocuments}
-            showReview={showReviewDocuments}
             showTypes={showDocumentTypes}
             showTemplates={showDocumentTemplates}
             showCompliance={showDocumentCompliance}

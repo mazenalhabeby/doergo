@@ -34,7 +34,6 @@ export function DocumentsDropdown({
   pathname,
   showIssue,
   showAllDocuments,
-  showReview,
   showTypes,
   showTemplates,
   showCompliance,
@@ -42,7 +41,6 @@ export function DocumentsDropdown({
   pathname: string
   showIssue: boolean
   showAllDocuments: boolean
-  showReview: boolean
   showTypes: boolean
   showTemplates: boolean
   showCompliance: boolean
@@ -80,7 +78,6 @@ export function DocumentsDropdown({
       signature is a different job from sending one.
     */
     { href: "/documents/all", label: t("nav.allDocuments"), show: showAllDocuments },
-    { href: "/documents/review", label: t("documents.review.title"), show: showReview },
     { href: "/documents/types", label: t("documents.types.title"), show: showTypes },
     { href: "/documents/templates", label: t("documents.templates.title"), show: showTemplates },
     { href: "/documents/compliance", label: t("documents.compliance.title"), show: showCompliance },

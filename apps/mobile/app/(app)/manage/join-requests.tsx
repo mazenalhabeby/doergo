@@ -1,6 +1,6 @@
-import { JoinRequestsScreen } from '../../../src/components/people/join-requests-screen';
+import { Redirect, type Href } from 'expo-router';
 
-/** The screen lives in `src/components/people/`; this route only mounts it. */
+/** Decided in Approvals now — the one place every decision is made. Kept so old links and notifications still land. */
 export default function JoinRequestsRoute() {
-  return <JoinRequestsScreen />;
+  return <Redirect href={'/(app)/approvals?kind=join' as Href} />;
 }

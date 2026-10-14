@@ -12,10 +12,8 @@ import { canManageSpace } from "@hbcfield/shared/client"
 import { useAuth } from "@/contexts/auth-context"
 import {
   locationsApi,
-  attendanceApi,
   type Task,
 } from "@/lib/api"
-import type { TimeEntry } from "@hbcfield/shared"
 import { AssignMemberDialog } from "@/components/assign-member-dialog"
 import { isAssignedTo } from "@/lib/task-assignment"
 import { notify } from "@/lib/toast"
@@ -62,10 +60,7 @@ function toRecentTask(tk: Task): RecentTask {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function ClientDashboard() {
-  const { user, hasPermission } = useAuth()
-  // The one-click approve is a sign-off: offered only to who may give it
-  // (`POST /attendance/approvals/:id/approve` asks canApproveAttendance).
-  const canApproveAttendance = hasPermission("canApproveAttendance")
+  const { user } = useAuth()
   const { t, i18n } = useTranslation()
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -275,31 +270,16 @@ export function ClientDashboard() {
 
   // ── Pending Actions ────────────────────────────────────────────────────────
 
-  // One-click approve straight from the panel; refresh the list so it drops off.
-  const handleApproveEntry = useCallback(
-    async (entryId: string) => {
-      try {
-        await attendanceApi.approveEntry(entryId)
-      } finally {
-        queryClient.invalidateQueries({ queryKey: keys.attendance.pendingApprovals() })
-        queryClient.invalidateQueries({ queryKey: keys.attendance.active() })
-        queryClient.invalidateQueries({ queryKey: keys.attendance.locationBatch() })
-      }
-    },
-    [queryClient],
-  )
-
   const pendingActions: PendingAction[] = useMemo(
     () =>
       buildPendingActions({
         tasks,
         onView: (id) => router.push(`/tasks/${id}`),
         approvals: pendingApprovals,
-        onApproveEntry: canApproveAttendance ? handleApproveEntry : undefined,
-        // Reject needs a reason → send them to the Approvals tab's reject dialog.
-        onReviewApproval: () => router.push("/attendance?tab=approvals"),
+        // Hours are decided in Approvals — the one place.
+        onReviewApproval: () => router.push("/approvals?kind=hours"),
       }),
-    [tasks, router, pendingApprovals, handleApproveEntry, canApproveAttendance, i18n.language],
+    [tasks, router, pendingApprovals, i18n.language],
   )
 
   // ── Guide example team ───────────────────────────────────────────────────────

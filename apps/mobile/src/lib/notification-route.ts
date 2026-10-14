@@ -35,6 +35,8 @@ const CLOCK: Resolve = () => to('/(app)/(tabs)/attendance');
 const TEAM_ATTENDANCE: Resolve = () => to('/(app)/manage/attendance');
 /** Somewhere the app already is — Home — said on purpose, with the reason next to it. */
 const HOME: Resolve = () => null;
+/** A decision of one kind — made in Approvals, the one place, filtered to that kind. */
+const DECIDE = (kind: string): Resolve => () => to('/(app)/approvals', { kind });
 
 /*
   A document push goes to Documents with the document named. The screen decides
@@ -99,19 +101,19 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
 
   // Somebody else's shift
   shift_escalation: TEAM_ATTENDANCE,
-  noshow_escalation: TEAM_ATTENDANCE,
+  noshow_escalation: DECIDE('noShow'),
   noshow_resolved: TEAM_ATTENDANCE,
   shift_escalation_resolved: TEAM_ATTENDANCE,
   attendance_left_early: TEAM_ATTENDANCE,
-  pending_approval: TEAM_ATTENDANCE,
+  pending_approval: DECIDE('hours'),
   geofence_alert: TEAM_ATTENDANCE,
   overtime_alert: TEAM_ATTENDANCE,
   // The approve / refuse card for an away-from-site request is on the supervisor's Home.
   'attendance.geofence_excursion_requested': HOME,
-  overtime_request: () => to('/(app)/extra-time'),
+  overtime_request: DECIDE('extraTime'),
 
   // Leave
-  time_off_request: () => to('/(app)/manage/time-off-requests'),
+  time_off_request: DECIDE('request'),
   time_off_response: () => to('/(app)/(tabs)/time-off'),
 
   // Conversations
@@ -157,7 +159,7 @@ export const NOTIFICATION_ROUTES: Record<string, Resolve> = {
   asset_log_due: () => to('/(app)/my-assets'),
 
   // Organization
-  join_request_submitted: () => to('/(app)/manage/join-requests'),
+  join_request_submitted: DECIDE('join'),
   // Sent to somebody still waiting on the onboarding screen, which checks by itself.
   join_request_approved: HOME,
   join_request_rejected: HOME,

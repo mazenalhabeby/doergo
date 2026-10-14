@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
@@ -11,12 +10,12 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { dateLocale } from "@/lib/format-date"
-import { calendarApi, employeesApi } from "@/lib/api"
-import { keys, invalidateTimeOff } from "@/lib/query-keys"
-import { Input } from "@/components/ui/input"
+import { calendarApi} from "@/lib/api"
+import { keys} from "@/lib/query-keys"
 import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
 import { fromKey } from "../_lib/layout"
+import { Inbox } from "lucide-react"
 
 interface Props {
   item: CalendarItem | null
@@ -76,23 +75,6 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
   })
 
   const timeOffId = item?.ref?.type === "timeOff" ? item.ref.id : null
-  const [declining, setDeclining] = useState(false)
-  const [reason, setReason] = useState("")
-  // A different leave is a different decision — never carry the last one's typing over.
-  useEffect(() => { setDeclining(false); setReason("") }, [timeOffId])
-  const decide = useMutation({
-    mutationFn: ({ approved, why }: { approved: boolean; why?: string }) => employeesApi.approveTimeOff(timeOffId!, approved, why),
-    onSuccess: (_, v) => {
-      toast.success(v.approved ? t("cover.decision.approved", "Approved — they are told now") : t("cover.decision.rejected", "Not approved — they are told now"))
-      invalidateTimeOff(qc)
-      qc.invalidateQueries({ queryKey: keys.calendar.all() })
-      qc.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
-      qc.invalidateQueries({ queryKey: keys.attendance.floorNow() })
-      onClose()
-    },
-    onError: (e) => toast.error(serverErrorMessage(e, t)),
-  })
-
   if (!item || !anchor) return null
   const othersLeave = item.kind === "leave" && !!item.personId && item.personId !== myId
   const mayDecide = othersLeave && item.status === "PENDING" && !!canDecideLeave && !!timeOffId
@@ -202,32 +184,13 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
           </div>
         )}
 
+        {/* Leave is decided in Approvals — the one place. */}
         {mayDecide && (
-          <div className="mt-3 space-y-2">
-            {declining && (
-              <Input
-                autoFocus
-                value={reason}
-                maxLength={500}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={t("calendar.declineReason")}
-                className="h-8 text-[13px]"
-              />
-            )}
-            <div className="flex gap-1.5">
-              {declining ? (
-                <>
-                  <Button size="sm" variant="ghost" className="flex-1" disabled={decide.isPending} onClick={() => setDeclining(false)}>{t("common.cancel", "Cancel")}</Button>
-                  <Button size="sm" variant="destructive" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => decide.mutate({ approved: false, why: reason.trim() || undefined })}><X className="h-3.5 w-3.5" />{t("calendar.declineLeave")}</Button>
-                </>
-              ) : (
-                <>
-                  <Button size="sm" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => decide.mutate({ approved: true })}><Check className="h-3.5 w-3.5" />{t("calendar.approveLeave")}</Button>
-                  <Button size="sm" variant="outline" className="flex-1 gap-1" disabled={decide.isPending} onClick={() => setDeclining(true)}><X className="h-3.5 w-3.5" />{t("calendar.declineLeave")}</Button>
-                </>
-              )}
-            </div>
-          </div>
+          <Button asChild size="sm" className="mt-3 w-full gap-1">
+            <Link href={`/approvals?kind=request&id=${encodeURIComponent(timeOffId!)}`}>
+              <Inbox className="h-3.5 w-3.5" />{t("approvals.decideInApprovals")}
+            </Link>
+          </Button>
         )}
 
         <div className="mt-3 flex gap-2 border-t pt-3">

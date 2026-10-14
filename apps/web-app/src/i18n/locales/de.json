@@ -3812,7 +3812,7 @@
     },
     "management": {
       "title": "Anwesenheitsverwaltung",
-      "subtitle": "Anwesenheit verfolgen, Berichte anzeigen und Genehmigungen verwalten"
+      "subtitle": "Anwesenheit verfolgen und Berichte anzeigen"
     },
     "tabs": {
       "attendance": "Anwesenheit",
@@ -5259,7 +5259,7 @@
   },
   "overtime": {
     "title": "Überstundenverwaltung",
-    "subtitle": "Überstundenanträge von Mitarbeitern prüfen und verwalten",
+    "subtitle": "Jede Überstundenrunde und wie sie ausging",
     "tabsPending": "Ausstehend",
     "tabsHistory": "Verlauf",
     "badges": {
@@ -10850,7 +10850,18 @@
       "lateArrival": "Verspäteter Beginn",
       "earlyDeparture": "Vorzeitiger Feierabend",
       "unscheduledDay": "Ungeplanter Tag",
-      "needsReview": "Zu prüfen"
+      "needsReview": "Zu prüfen",
+      "outsideGeofenceIn": "Einstempeln außerhalb",
+      "outsideGeofenceOut": "Ausstempeln außerhalb",
+      "missedBreak": "Pause verpasst",
+      "autoClockIn": "Auto ein",
+      "autoClockOut": "Auto aus",
+      "autoRest": "Auto-Pause",
+      "remoteWithWorkspace": "Auswärts trotz Arbeitsbereich",
+      "earlyArrival": "Früh angekommen",
+      "missingClockout": "Kein Ausstempeln",
+      "clockOutProvisional": "Ausstempeln vom System gesetzt",
+      "recordedOffline": "Ohne Empfang erfasst"
     },
     "leave": {
       "VACATION": "Urlaub",
@@ -10971,6 +10982,14 @@
       "escalateAfter": "Weitergeben nach (Stunden)",
       "escalateTo": "Weitergeben an",
       "noAnswerHint": "Erinnerungen gehen an alle, die heute entscheiden können (nicht an Abwesende). Geben Sie es an eine Rolle weiter, die entscheiden kann."
-    }
+    },
+    "decideThere_one": "{{count}} wartet auf Sie — entscheiden in",
+    "decideThere_other": "{{count}} warten auf Sie — entscheiden in",
+    "viewFile": {
+      "document": "Dokument ansehen",
+      "expense": "Beleg ansehen",
+      "assetProposal": "Seite ansehen"
+    },
+    "decideInApprovals": "In Genehmigungen entscheiden"
   }
 }

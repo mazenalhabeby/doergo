@@ -44,11 +44,11 @@ describe('who gets which tab — one answer', () => {
 describe('the Manage doors, grouped', () => {
   const row = (route: string) => ({ route, labelKey: route, descKey: route }) as never;
   it('by what they are for, in a fixed order; an unfiled door lands in Work, never nowhere', () => {
-    const g = groupManageRows([row('/(app)/manage/members'), row('/(app)/extra-time'), row('/(app)/new-thing'), row('sheet:issues')]);
+    const g = groupManageRows([row('/(app)/manage/members'), row('/(app)/manage/time-off-requests'), row('/(app)/new-thing'), row('sheet:issues')]);
     expect(g.map((x) => [x.key, x.rows.length])).toEqual([['time', 2], ['people', 1], ['work', 1]]);
   });
   it('no empty groups', () => {
-    expect(groupManageRows([row('/(app)/extra-time')]).map((x) => x.key)).toEqual(['time']);
+    expect(groupManageRows([row('/(app)/manage/time-off-requests')]).map((x) => x.key)).toEqual(['time']);
   });
 });
 

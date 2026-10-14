@@ -3812,7 +3812,7 @@
     },
     "management": {
       "title": "Attendance Management",
-      "subtitle": "Track attendance, view reports, and manage approvals"
+      "subtitle": "Track attendance and view reports"
     },
     "tabs": {
       "attendance": "Attendance",
@@ -5259,7 +5259,7 @@
   },
   "overtime": {
     "title": "Overtime Management",
-    "subtitle": "Review and manage employee overtime requests",
+    "subtitle": "Every overtime round and how it ended",
     "tabsPending": "Pending",
     "tabsHistory": "History",
     "badges": {
@@ -10850,7 +10850,18 @@
       "lateArrival": "Late arrival",
       "earlyDeparture": "Early departure",
       "unscheduledDay": "Unscheduled day",
-      "needsReview": "Needs review"
+      "needsReview": "Needs review",
+      "outsideGeofenceIn": "Off-site in",
+      "outsideGeofenceOut": "Off-site out",
+      "missedBreak": "Missed rest",
+      "autoClockIn": "Auto in",
+      "autoClockOut": "Auto out",
+      "autoRest": "Auto rest",
+      "remoteWithWorkspace": "Remote, has a workspace",
+      "earlyArrival": "Early arrival",
+      "missingClockout": "No clock-out",
+      "clockOutProvisional": "Clock-out set by the system",
+      "recordedOffline": "Recorded without signal"
     },
     "leave": {
       "VACATION": "Vacation",
@@ -10971,6 +10982,14 @@
       "escalateAfter": "Pass on after (hours)",
       "escalateTo": "Pass to",
       "noAnswerHint": "Reminders go to whoever can decide it today (not to anyone on leave). Pass it to a role that can decide it."
-    }
+    },
+    "decideThere_one": "{{count}} waiting for you — decide in",
+    "decideThere_other": "{{count}} waiting for you — decide in",
+    "viewFile": {
+      "document": "View the document",
+      "expense": "View the receipt",
+      "assetProposal": "View the page"
+    },
+    "decideInApprovals": "Decide in Approvals"
   }
 }

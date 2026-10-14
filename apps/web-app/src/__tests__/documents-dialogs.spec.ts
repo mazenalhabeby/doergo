@@ -63,7 +63,7 @@ describe('the personnel file uses one dialog', () => {
     expect({ file, handRolledOverlay: overlay }).toEqual({ file, handRolledOverlay: false });
   });
 
-  it.each(['documents/review/page.tsx', 'my/documents/_components/supply-document-dialog.tsx'])(
+  it.each(['my/documents/_components/supply-document-dialog.tsx'])(
     'builds %s on the shared Dialog',
     (suffix) => {
       const entry = files.find((f) => f.file.endsWith(suffix));

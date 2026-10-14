@@ -5204,7 +5204,18 @@
       "lateArrival": "Late arrival",
       "earlyDeparture": "Early departure",
       "unscheduledDay": "Unscheduled day",
-      "needsReview": "Needs review"
+      "needsReview": "Needs review",
+      "outsideGeofenceIn": "Off-site in",
+      "outsideGeofenceOut": "Off-site out",
+      "missedBreak": "Missed rest",
+      "autoClockIn": "Auto in",
+      "autoClockOut": "Auto out",
+      "autoRest": "Auto rest",
+      "remoteWithWorkspace": "Remote, has a workspace",
+      "earlyArrival": "Early arrival",
+      "missingClockout": "No clock-out",
+      "clockOutProvisional": "Clock-out set by the system",
+      "recordedOffline": "Recorded without signal"
     },
     "leave": {
       "VACATION": "Vacation",
@@ -5281,6 +5292,7 @@
       "mine": "You approved. It now needs {{role}}.",
       "waiting": "{{name}} approved. It needs {{role}} too.",
       "short": "needs {{role}}"
-    }
+    },
+    "decideInApprovals": "Decide in Approvals"
   }
 }

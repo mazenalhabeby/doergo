@@ -1,14 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Pressable, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CALENDAR_LAYERS, type CalendarItem, type CalendarLayer } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { useToast } from '../../island/island-context';
 import { AText, PrimaryButton } from '../amazen';
-import { JobField, JobSheet, QuietButton, SectionLabel } from '../job/job-ui';
-import { timeOffApi } from '../../lib/api';
-import { calendarError } from './errors';
+import { JobSheet, QuietButton, SectionLabel } from '../job/job-ui';
 
 const LAYER_COLOR: Record<CalendarLayer, string> = {
   jobs: '#7cb4ff', events: '#c4b5fd', crm: '#f0abfc', shifts: '#6ee7b7', leave: '#fcd34d', holidays: '#fda4af', documents: '#cbd5e1',
@@ -80,51 +77,24 @@ export function FiltersSheet({
 
 /**
  * A leave on the calendar. Somebody's own: where it stands. A colleague's PENDING request, for
- * somebody who decides leave: Approve / Decline with an optional reason — the same route the
- * manage screen uses, which narrows it to the people they lead.
+ * somebody who decides leave: the way to Approvals, where it is decided — the one place.
  */
 export function LeaveSheet({ item, mine, canDecide, onClose, onChanged }: { item: CalendarItem | null; mine: boolean; canDecide: boolean; onClose: () => void; onChanged: () => void }) {
   const { t, i18n } = useTranslation();
-  const toast = useToast();
-  const [reason, setReason] = useState('');
-  const [declining, setDeclining] = useState(false);
-  const [busy, setBusy] = useState(false);
-  useEffect(() => { setReason(''); setDeclining(false); }, [item?.id]);
   if (!item) return null;
   const s = new Date(`${item.start}T12:00:00`), e = new Date(`${item.end}T12:00:00`);
   const fmt = (d: Date) => d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
   const decide = !mine && canDecide && item.status === 'PENDING' && item.ref?.type === 'timeOff';
-  const act = async (approved: boolean) => {
-    if (busy || !item.ref) return;
-    setBusy(true);
-    try {
-      await timeOffApi.approve(item.ref.id, { approved, ...(approved || !reason.trim() ? {} : { rejectionReason: reason.trim() }) });
-      toast.success(approved ? t('calendar.leaveApproved', 'Approved — they are told now') : t('calendar.leaveDeclined', 'Not approved — they are told now'));
-      onChanged();
-      onClose();
-    } catch (err) {
-      toast.error(t('common.error', 'Error'), calendarError(err, t));
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
     <JobSheet
       visible={!!item}
       onClose={onClose}
-      busy={busy}
       eyebrow={`${t(`calendar.leaveType.${item.note ?? 'VACATION'}`, item.note ?? '')}${item.status === 'PENDING' ? ` · ${t('calendar.requested', 'requested')}` : ''}`}
       title={item.title}
     >
       <AText variant="body" tone="ink">{item.start === item.end ? fmt(s) : `${fmt(s)} – ${fmt(e)}`}</AText>
       {decide ? (
-        <>
-          {declining ? <JobField value={reason} onChangeText={setReason} maxLength={500} placeholder={t('calendar.declineReason', 'Reason (optional)')} /> : null}
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}><QuietButton label={t('calendar.declineLeave', 'Decline')} tone="critical" disabled={busy} onPress={() => (declining ? act(false) : setDeclining(true))} /></View>
-            {!declining ? <View style={{ flex: 1 }}><PrimaryButton label={t('calendar.approveLeave', 'Approve')} onPress={() => act(true)} disabled={busy} loading={busy} /></View> : null}
-          </View>
-        </>
+        <PrimaryButton label={t('approvals.decideInApprovals')} onPress={() => { onClose(); router.push('/(app)/approvals?kind=request' as Href); }} />
       ) : null}
       <QuietButton
         label={mine ? t('calendar.openTimeOff', 'My time off') : t('calendar.openSchedule', 'Open in Schedule')}

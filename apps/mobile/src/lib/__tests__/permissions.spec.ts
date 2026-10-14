@@ -82,7 +82,8 @@ describe('what Manage offers', () => {
   it('gives a space supervisor the space-scoped rows, and only those', () => {
     const rows = keys(supervisor);
     expect(rows).toContain('manage.attendance.label');
-    expect(rows).toContain('manage.extraTime.label');
+    // Extra time is decided in Approvals — no row of its own.
+    expect(rows).not.toContain('manage.extraTime.label');
     expect(rows).toContain('manage.issues.label');
     // Members, invitations and join requests are org-wide columns: the server
     // refuses a space role however senior, so the row must not be offered.

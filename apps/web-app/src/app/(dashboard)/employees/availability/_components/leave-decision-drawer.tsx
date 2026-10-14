@@ -1,25 +1,21 @@
 "use client"
 
 import { personName } from "@hbcfield/shared/client"
-import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery} from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { format, parseISO, differenceInCalendarDays } from "date-fns"
-import { Check, Loader2, X } from "lucide-react"
 
 import { employeesApi, type OrgTimeOffRequest } from "@/lib/api"
-import { notify } from "@/lib/toast"
-import { keys, invalidateTimeOff } from "@/lib/query-keys"
-import { serverErrorMessage } from "@/lib/server-error"
+import { keys} from "@/lib/query-keys"
 import { isAbsence, requestDetail, requestKindEffectKey, requestKindOf, formatRequestMinutes } from "@/lib/requests"
 import { RequestKindChip } from "@/components/requests/request-kind"
 import { LeaveBalanceBreakdown } from "@/components/leave/leave-balance-breakdown"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { COVER_TONE, coverDetail, coverTitle } from "../_lib/cover-labels"
+import { Inbox } from "lucide-react"
 
 /**
  * The decision, with the reason to make it — for ANY kind of request.
@@ -44,84 +40,20 @@ export function LeaveDecisionDrawer({
   canManage: boolean
   onClose: () => void
 }) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const [rejecting, setRejecting] = useState(false)
-  const [reason, setReason] = useState("")
-
-  // A fresh request is a fresh decision — never inherit the last one's typing.
-  useEffect(() => {
-    setRejecting(false)
-    setReason("")
-  }, [request?.id])
-
-  const decide = useMutation({
-    mutationFn: ({ approved, why }: { approved: boolean; why?: string }) =>
-      employeesApi.approveTimeOff(request!.id, approved, why),
-    onSuccess: (_, vars) => {
-      notify.success(
-        vars.approved
-          ? t("cover.decision.approved", "Approved — they are told now")
-          : t("cover.decision.rejected", "Not approved — they are told now"),
-      )
-      invalidateTimeOff(queryClient)
-      queryClient.invalidateQueries({ queryKey: keys.timeOff.myBalance() })
-      // The chart footer, the live panel and the calendar all move with it.
-      queryClient.invalidateQueries({ queryKey: keys.timeOff.coverRange() })
-      queryClient.invalidateQueries({ queryKey: keys.attendance.floorNow() })
-      queryClient.invalidateQueries({ queryKey: keys.calendar.all() })
-      onClose()
-    },
-    onError: (e: Error) => notify.error(serverErrorMessage(e, t) || t("technicians.availabilityPage.failedToProcess")),
-  })
-
   const open = !!request
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col gap-0 p-0">
         {request && (
-          <DrawerBody
-            request={request}
-            canManage={canManage}
-            rejecting={rejecting}
-            reason={reason}
-            setReason={setReason}
-            onApprove={() => decide.mutate({ approved: true })}
-            onReject={() => {
-              if (!rejecting) {
-                setRejecting(true)
-                return
-              }
-              decide.mutate({ approved: false, why: reason.trim() || undefined })
-            }}
-            pending={decide.isPending}
-          />
+          <DrawerBody request={request} canManage={canManage} />
         )}
       </SheetContent>
     </Sheet>
   )
 }
 
-function DrawerBody({
-  request,
-  canManage,
-  rejecting,
-  reason,
-  setReason,
-  onApprove,
-  onReject,
-  pending,
-}: {
-  request: OrgTimeOffRequest
-  canManage: boolean
-  rejecting: boolean
-  reason: string
-  setReason: (v: string) => void
-  onApprove: () => void
-  onReject: () => void
-  pending: boolean
-}) {
+function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canManage: boolean }) {
   const { t } = useTranslation()
   const kind = requestKindOf(request.kind)
   const leave = isAbsence(kind)
@@ -381,30 +313,15 @@ function DrawerBody({
         )}
       </div>
 
+      {/* What it costs is read here; the decision is made in Approvals — the one place. */}
       {canManage && request.status === "PENDING" && (
-        <div className="flex flex-col gap-2.5 border-t border-border px-5 py-3.5">
-          {rejecting && (
-            <Textarea
-              autoFocus
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="min-h-[4.2rem] text-[13px]"
-              placeholder={t(
-                "cover.drawer.reasonPlaceholder",
-                "Why not? This is sent to them with the refusal — a reason beats a bare “rejected”.",
-              )}
-            />
-          )}
-          <div className="flex gap-2">
-            <Button className="flex-1" onClick={onApprove} disabled={pending}>
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {t("technicians.availabilityPage.approve")}
-            </Button>
-            <Button variant="outline" className="flex-1" onClick={onReject} disabled={pending}>
-              <X className="h-4 w-4" />
-              {rejecting ? t("cover.drawer.confirmRefusal", "Confirm refusal") : t("technicians.availabilityPage.reject")}
-            </Button>
-          </div>
+        <div className="border-t border-border px-5 py-3.5">
+          <Button asChild className="w-full">
+            <Link href={`/approvals?kind=request&id=${encodeURIComponent(request.id)}`}>
+              <Inbox className="h-4 w-4" />
+              {t("approvals.decideInApprovals")}
+            </Link>
+          </Button>
         </div>
       )}
     </>

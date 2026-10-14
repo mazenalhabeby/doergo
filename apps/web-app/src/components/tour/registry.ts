@@ -312,7 +312,6 @@ export const TOURS: TourDef[] = [
   },
   ...pageTour("pageInvitations", "invitations", "invite", "/invitations", "page-invitations", (c) => c.hasPermission("canManageUsers")),
   ...pageTour("pageOvertime", "overtime", "attendance", "/overtime", "page-overtime", (c) => c.hasPermission("canApproveOvertime") || c.hasPermission("canViewAllTasks")),
-  ...pageTour("pageJoinRequests", "joinRequests", "invite", "/join-requests", "page-join-requests", (c) => c.hasPermission("canViewAllTasks")),
   ...pageTour("pageManage", "manage", "settings", "/manage", "page-manage"),
   // Settings — Organization + Personal sections (org steps skip for non-admins).
   {

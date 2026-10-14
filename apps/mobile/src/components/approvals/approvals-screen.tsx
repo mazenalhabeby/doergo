@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, View } from 'react-native';
-import { router, useFocusEffect, type Href } from 'expo-router';
+import { router, useFocusEffect, type Href, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { APPROVAL_GROUPS, APPROVAL_KINDS, describeApproval, type ApprovalItem, type ApprovalKind, type ApprovalT } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
@@ -34,7 +34,10 @@ export function ApprovalsScreen() {
   const [unavailable, setUnavailable] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState<Filter>('all');
+  // Arriving with ?kind= (a notification, or a screen that used to decide it): open on that kind.
+  const { kind } = useLocalSearchParams<{ kind?: string }>();
+  const [filter, setFilter] = useState<Filter>(() =>
+    kind && (APPROVAL_KINDS as readonly string[]).includes(kind) ? (kind as ApprovalKind) : 'all');
   const [standIn, setStandIn] = useState(false);
   // An external member decides only in their workspace and never hands it on (the server refuses STAND_IN_EXTERNAL).
   const { user } = useAuth();

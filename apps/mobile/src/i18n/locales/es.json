@@ -5204,7 +5204,18 @@
       "lateArrival": "Llegada tardía",
       "earlyDeparture": "Salida anticipada",
       "unscheduledDay": "Día no programado",
-      "needsReview": "Requiere revisión"
+      "needsReview": "Requiere revisión",
+      "outsideGeofenceIn": "Entrada fuera",
+      "outsideGeofenceOut": "Salida fuera",
+      "missedBreak": "Descanso perdido",
+      "autoClockIn": "Entrada auto",
+      "autoClockOut": "Salida auto",
+      "autoRest": "Descanso auto",
+      "remoteWithWorkspace": "Remoto con espacio asignado",
+      "earlyArrival": "Llegada anticipada",
+      "missingClockout": "Sin fichaje de salida",
+      "clockOutProvisional": "Salida fijada por el sistema",
+      "recordedOffline": "Registrado sin señal"
     },
     "leave": {
       "VACATION": "Vacaciones",
@@ -5281,6 +5292,7 @@
       "mine": "Usted aprobó. Ahora necesita a {{role}}.",
       "waiting": "{{name}} aprobó. También necesita a {{role}}.",
       "short": "necesita a {{role}}"
-    }
+    },
+    "decideInApprovals": "Decidir en Aprobaciones"
   }
 }
