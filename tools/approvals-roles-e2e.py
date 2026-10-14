@@ -17,6 +17,7 @@ Noor asks for leave three times — one is refused with a reason, one approved,
 one approved through an office rule's two steps; the rule is removed after.
 Klaus approves one of the two shifts the seed left for him.
 """
+import atexit
 import json
 import statistics
 import sys
@@ -66,6 +67,18 @@ def check(label, ok, detail=None):
 
 
 _tokens = {}
+# Every sign-in is a SESSION on that account, and an account keeps only its newest
+# five (MAX_SESSIONS_PER_USER): runs that never sign out push the person's real
+# phone and browser sessions out. So every session this run opens is closed at exit.
+_sessions = []
+
+
+def _sign_out_all():
+    for access, refresh in _sessions:
+        call('POST', '/auth/logout', access, {'refreshToken': refresh})
+
+
+atexit.register(_sign_out_all)
 
 # Every run asks for days nobody asked for before (the overlap rule would rightly refuse a repeat).
 import random
@@ -83,6 +96,8 @@ def login(email, password=PASSWORD):
     for _ in range(10):
         s, b = call('POST', '/auth/login', None, {'email': email, 'password': password})
         tok = data(b).get('accessToken') if isinstance(data(b), dict) else None
+        if tok and data(b).get('refreshToken'):
+            _sessions.append((tok, data(b)['refreshToken']))
         if tok:
             _tokens[email] = tok
             return tok

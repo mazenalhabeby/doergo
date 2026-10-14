@@ -19,6 +19,7 @@ Covers:
      refused, removing the rule closes the half-done step (the leave request
      stays exactly as it was)
 """
+import atexit
 import json
 import sys
 import time
@@ -61,6 +62,18 @@ def check(label, ok, detail=None):
 
 
 _tokens = {}
+# Every sign-in is a SESSION on that account, and an account keeps only its newest
+# five (MAX_SESSIONS_PER_USER): runs that never sign out push the person's real
+# phone and browser sessions out. So every session this run opens is closed at exit.
+_sessions = []
+
+
+def _sign_out_all():
+    for access, refresh in _sessions:
+        call('POST', '/auth/logout', access, {'refreshToken': refresh})
+
+
+atexit.register(_sign_out_all)
 
 
 def login(name):
@@ -70,6 +83,8 @@ def login(name):
     for _ in range(8):
         status, body = call('POST', '/auth/login', None, {'email': f'{name}@example.com', 'password': PASSWORD})
         tok = data(body).get('accessToken') if isinstance(data(body), dict) else None
+        if tok and data(body).get('refreshToken'):
+            _sessions.append((tok, data(body)['refreshToken']))
         if tok:
             _tokens[name] = tok
             return tok
