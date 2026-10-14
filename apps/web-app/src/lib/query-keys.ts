@@ -199,7 +199,9 @@ const attendanceKeys = {
 
 const overtimeKeys = {
   pending: () => named("overtime-pending"),
-  history: (...a: [status?: string, page?: number]) => named("overtime-history", a),
+  history: (...a: unknown[]) => named("overtime-history", a),
+  summary: (...a: unknown[]) => named("overtime-summary", a),
+  round: (id: string) => named("overtime-round", [id]),
 } as const
 
 const timeOffKeys = {

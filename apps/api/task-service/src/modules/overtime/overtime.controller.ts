@@ -1,10 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OvertimeService } from './overtime.service';
+import { OvertimeRecordService } from './overtime-record.service';
 
 @Controller()
 export class OvertimeController {
-  constructor(private readonly overtimeService: OvertimeService) {}
+  constructor(
+    private readonly overtimeService: OvertimeService,
+    private readonly record: OvertimeRecordService,
+  ) {}
 
   @MessagePattern({ cmd: 'get_active_overtime' })
   async getActive(@Payload() data: { userId: string }) {
@@ -18,6 +22,16 @@ export class OvertimeController {
 
   @MessagePattern({ cmd: 'get_overtime_history' })
   async getHistory(@Payload() data: any) {
-    return this.overtimeService.getHistory(data);
+    return this.record.history(data);
+  }
+
+  @MessagePattern({ cmd: 'get_overtime_summary' })
+  async getSummary(@Payload() data: any) {
+    return this.record.summary(data);
+  }
+
+  @MessagePattern({ cmd: 'get_overtime_round' })
+  async getRound(@Payload() data: any) {
+    return this.record.round(data);
   }
 }

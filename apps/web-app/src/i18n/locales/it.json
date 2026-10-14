@@ -11059,5 +11059,123 @@
       "save": "Salva",
       "fixRota": "Correggi il turno"
     }
+  },
+  "overtimePage": {
+    "title": "Straordinari",
+    "explain": "Tempo lavorato dopo la fine prevista del turno. Il telefono chiede a fine turno, la persona dice perché le serve più tempo e un responsabile accetta dei minuti in Approvazioni. Questa pagina ne è lo storico.",
+    "step1": "Il turno finisce, il telefono chiede",
+    "step2": "La persona chiede più tempo",
+    "step3": "Un responsabile accetta in Approvazioni o firma sul suo telefono",
+    "step4": "Il tempo extra conta fino alla timbratura di uscita",
+    "periodLabel": "Periodo",
+    "period": {
+      "week": "Questa settimana",
+      "lastWeek": "La settimana scorsa",
+      "month": "Questo mese"
+    },
+    "allWorkspaces": "Tutti gli spazi",
+    "everyone": "Tutti",
+    "num": {
+      "worked": "Straordinari lavorati · {{period}}",
+      "rounds": "Turni accettati · {{count}} persone",
+      "rounds_one": "Turni accettati · 1 persona",
+      "running": "In corso ora",
+      "noAnswer": "Nessuno ha risposto in tempo"
+    },
+    "someone": "Qualcuno",
+    "round": "turno {{n}}",
+    "overBy": "{{minutes}} in più",
+    "ofAgreed": "su {{minutes}} accettati",
+    "until": "fino alle {{time}}",
+    "wasUntil": "era fino alle {{time}}",
+    "running": {
+      "title": "In corso ora",
+      "sub": "Conta fino all’uscita o alla fine del tempo accettato"
+    },
+    "byPerson": {
+      "title": "Per persona",
+      "empty": "Nessuno straordinario in questo periodo.",
+      "person": "Persona",
+      "rounds": "Turni",
+      "agreed": "Accettato",
+      "worked": "Lavorato"
+    },
+    "list": {
+      "title": "Ogni turno",
+      "sub": "I più recenti prima · clicca per vedere cosa è successo",
+      "empty": "Nessuno straordinario richiesto in questo periodo.",
+      "askedAt": "Chiesto {{time}}"
+    },
+    "line": {
+      "given": "{{name}} ha avuto {{minutes}} in più a {{place}}.",
+      "worked": "{{name}} ha lavorato {{minutes}} in più a {{place}}.",
+      "asked": "È stato chiesto a {{name}} a {{place}} se serve più tempo.",
+      "waiting": "{{name}} ha chiesto più tempo a {{place}}. In attesa di una decisione.",
+      "noAnswer": "{{name}} ha chiesto più tempo a {{place}}. Nessuno ha risposto in tempo.",
+      "refused": "{{name}} ha chiesto più tempo. Un responsabile ha detto di no.",
+      "declined": "{{name}} ha detto di non aver bisogno di più tempo.",
+      "noReply": "{{name}} non ha risposto alla domanda."
+    },
+    "method": {
+      "signed": "accettato da {{name}}, firmato sul suo telefono",
+      "automatic": "approvato automaticamente (unico amministratore)",
+      "office": "aggiunto da {{name}} in ufficio",
+      "approvals": "accettato da {{name}} in Approvazioni"
+    },
+    "state": {
+      "RUNNING": "In corso",
+      "OVER": "Oltre il tempo accettato",
+      "DONE": "Concluso",
+      "WAITING_PERSON": "In attesa della persona",
+      "WAITING_DECISION": "In attesa di decisione",
+      "NO_ANSWER": "Nessuno ha risposto",
+      "NOT_NEEDED": "Non necessario",
+      "REFUSED": "Rifiutato"
+    },
+    "legend": {
+      "title": "Cosa significano le etichette",
+      "RUNNING": "Accettato, sta ancora contando",
+      "OVER": "Ancora in servizio oltre la fine accettata; quella parte non conta",
+      "DONE": "Concluso, conteggiato nella giornata",
+      "WAITING_PERSON": "Il telefono ha chiesto; nessuna risposta ancora",
+      "WAITING_DECISION": "Aperto in Approvazioni",
+      "NO_ANSWER": "Nessun responsabile ha deciso in tempo",
+      "NOT_NEEDED": "La persona ha detto di no o non ha risposto",
+      "REFUSED": "Un responsabile ha detto di no"
+    },
+    "panel": {
+      "pick": "Clicca un turno per vedere cosa è successo, passo per passo.",
+      "shift": "Turno",
+      "shiftValue": "{{from}} – {{to}} fine prevista",
+      "agreed": "Accettato",
+      "agreedValue": "{{minutes}}, fino alle {{time}}",
+      "workedSoFar": "Lavorato finora",
+      "worked": "Lavorato",
+      "pastAgreed": "Oltre la fine accettata",
+      "notCounted": "{{minutes}}, non conteggiato",
+      "thisShift": "Questo turno",
+      "thisShiftValue": "{{count}} turni · {{minutes}}",
+      "now": "ora",
+      "signatureAlt": "Firma di {{name}}",
+      "signedBy": "Firmato da {{name}}",
+      "takeOff": "Togli questo straordinario",
+      "takeOffHelp": "Lo toglie come se non ci fosse mai stato: il turno torna a finire alle {{time}} e la giornata viene ricontata."
+    },
+    "step": {
+      "plannedEnd": "Fine prevista del turno",
+      "declined": "{{name}} ha detto che non serviva più tempo",
+      "askedWhy": "{{name}} ha chiesto più tempo: «{{reason}}»",
+      "asked": "{{name}} ha chiesto più tempo",
+      "phoneAsked": "Il telefono ha chiesto a {{name}} se serve più tempo",
+      "noReply": "{{name}} non ha risposto",
+      "agreed": "{{minutes}} accettati",
+      "refusedWhy": "{{by}} ha detto di no: «{{reason}}»",
+      "refused": "{{by}} ha detto di no",
+      "noAnswer": "Nessuno ha risposto in tempo",
+      "clockedOut": "{{name}} ha timbrato l’uscita",
+      "counting": "Sta contando: fino alla fine accettata o all’uscita",
+      "over": "Ancora in servizio, {{minutes}} oltre la fine accettata (non conta)",
+      "agreedHow": "{{how}}: {{minutes}}"
+    }
   }
 }

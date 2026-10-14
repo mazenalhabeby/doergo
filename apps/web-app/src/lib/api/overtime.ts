@@ -1,7 +1,7 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { OvertimeRequest, PaginationMeta } from './types/overtime';
-import { attendanceEndpoints, overtimeEndpoints } from '@hbcfield/shared/client';
+import type { OvertimeRequest, OvertimeRoundDetail, PaginationMeta } from './types/overtime';
+import { attendanceEndpoints, overtimeEndpoints, type OvertimeSummary } from '@hbcfield/shared/client';
 
 export const overtimeApi = {
   getPendingApprovals: async () => {
@@ -28,14 +28,31 @@ export const overtimeApi = {
     return response.data;
   },
 
-  getHistory: async (params?: { technicianId?: string; status?: string; page?: number; limit?: number }) => {
+  getHistory: async (params?: { technicianId?: string; spaceId?: string; status?: string; from?: string; to?: string; page?: number; limit?: number }) => {
     const response = await call(overtimeEndpoints.history, undefined, { query: {
       technicianId: params?.technicianId,
+      spaceId: params?.spaceId,
       status: params?.status,
+      from: params?.from,
+      to: params?.to,
       page: params?.page,
       limit: params?.limit,
     } }) as ApiResponse<{ success: boolean; data: { data: OvertimeRequest[]; meta: PaginationMeta } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
+  },
+
+  /** The period's numbers, who is running now, and per person. */
+  getSummary: async (params: { from: string; to: string; spaceId?: string; technicianId?: string }) => {
+    const response = await call(overtimeEndpoints.summary, undefined, { query: params }) as ApiResponse<{ success: boolean; data: OvertimeSummary }>;
+    if (response.error) throw apiError(response);
+    return response.data?.data as OvertimeSummary;
+  },
+
+  /** One round in full, with its signature. */
+  getRound: async (id: string) => {
+    const response = await call(overtimeEndpoints.round, { id }) as ApiResponse<{ success: boolean; data: OvertimeRoundDetail }>;
+    if (response.error) throw apiError(response);
+    return response.data?.data as OvertimeRoundDetail;
   },
 };

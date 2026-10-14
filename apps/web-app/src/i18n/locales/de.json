@@ -11050,5 +11050,123 @@
       "save": "Speichern",
       "fixRota": "Dienstplan korrigieren"
     }
+  },
+  "overtimePage": {
+    "title": "Überstunden",
+    "explain": "Zeit nach dem geplanten Schichtende. Das Handy fragt zum Schichtende, die Person sagt, warum sie länger braucht, und eine Leitung stimmt in Freigaben einer Anzahl Minuten zu. Diese Seite ist der Verlauf davon.",
+    "step1": "Schicht endet, das Handy fragt",
+    "step2": "Die Person bittet um mehr Zeit",
+    "step3": "Eine Leitung stimmt in Freigaben zu oder unterschreibt am Handy",
+    "step4": "Die Zusatzzeit zählt bis zum Ausstempeln",
+    "periodLabel": "Zeitraum",
+    "period": {
+      "week": "Diese Woche",
+      "lastWeek": "Letzte Woche",
+      "month": "Dieser Monat"
+    },
+    "allWorkspaces": "Alle Arbeitsbereiche",
+    "everyone": "Alle",
+    "num": {
+      "worked": "Überstunden gearbeitet · {{period}}",
+      "rounds": "Vereinbarte Runden · {{count}} Personen",
+      "rounds_one": "Vereinbarte Runden · 1 Person",
+      "running": "Läuft gerade",
+      "noAnswer": "Niemand hat rechtzeitig geantwortet"
+    },
+    "someone": "Jemand",
+    "round": "Runde {{n}}",
+    "overBy": "{{minutes}} drüber",
+    "ofAgreed": "von {{minutes}} vereinbart",
+    "until": "bis {{time}}",
+    "wasUntil": "war bis {{time}}",
+    "running": {
+      "title": "Läuft gerade",
+      "sub": "Zählt bis zum Ausstempeln oder bis die vereinbarte Zeit um ist"
+    },
+    "byPerson": {
+      "title": "Nach Person",
+      "empty": "Keine Überstunden in diesem Zeitraum.",
+      "person": "Person",
+      "rounds": "Runden",
+      "agreed": "Vereinbart",
+      "worked": "Gearbeitet"
+    },
+    "list": {
+      "title": "Jede Runde",
+      "sub": "Neueste zuerst · anklicken, um zu sehen, was passiert ist",
+      "empty": "In diesem Zeitraum wurden keine Überstunden angefragt.",
+      "askedAt": "Angefragt {{time}}"
+    },
+    "line": {
+      "given": "{{name}} hat {{minutes}} mehr bei {{place}} bekommen.",
+      "worked": "{{name}} hat {{minutes}} länger bei {{place}} gearbeitet.",
+      "asked": "{{name}} wurde bei {{place}} gefragt, ob mehr Zeit nötig ist.",
+      "waiting": "{{name}} hat bei {{place}} um mehr Zeit gebeten. Wartet auf eine Entscheidung.",
+      "noAnswer": "{{name}} hat bei {{place}} um mehr Zeit gebeten. Niemand hat rechtzeitig geantwortet.",
+      "refused": "{{name}} hat um mehr Zeit gebeten. Die Leitung hat abgelehnt.",
+      "declined": "{{name}} brauchte keine zusätzliche Zeit.",
+      "noReply": "{{name}} hat auf die Frage nicht geantwortet."
+    },
+    "method": {
+      "signed": "zugestimmt von {{name}}, am Handy unterschrieben",
+      "automatic": "automatisch genehmigt (einzige Administration)",
+      "office": "von {{name}} im Büro eingetragen",
+      "approvals": "von {{name}} in Freigaben zugestimmt"
+    },
+    "state": {
+      "RUNNING": "Läuft",
+      "OVER": "Über der vereinbarten Zeit",
+      "DONE": "Erledigt",
+      "WAITING_PERSON": "Wartet auf die Person",
+      "WAITING_DECISION": "Wartet auf Entscheidung",
+      "NO_ANSWER": "Niemand hat geantwortet",
+      "NOT_NEEDED": "Nicht nötig",
+      "REFUSED": "Abgelehnt"
+    },
+    "legend": {
+      "title": "Was die Bezeichnungen bedeuten",
+      "RUNNING": "Vereinbart, zählt noch",
+      "OVER": "Nach dem vereinbarten Ende noch eingestempelt – dieser Teil zählt nicht",
+      "DONE": "Beendet, im Tag gezählt",
+      "WAITING_PERSON": "Das Handy hat gefragt; noch keine Antwort",
+      "WAITING_DECISION": "Offen in Freigaben",
+      "NO_ANSWER": "Keine Leitung hat rechtzeitig entschieden",
+      "NOT_NEEDED": "Die Person hat abgelehnt oder nicht geantwortet",
+      "REFUSED": "Eine Leitung hat abgelehnt"
+    },
+    "panel": {
+      "pick": "Eine Runde anklicken, um Schritt für Schritt zu sehen, was passiert ist.",
+      "shift": "Schicht",
+      "shiftValue": "{{from}} – {{to}} geplantes Ende",
+      "agreed": "Vereinbart",
+      "agreedValue": "{{minutes}}, bis {{time}}",
+      "workedSoFar": "Bisher gearbeitet",
+      "worked": "Gearbeitet",
+      "pastAgreed": "Nach dem vereinbarten Ende",
+      "notCounted": "{{minutes}}, nicht gezählt",
+      "thisShift": "Diese Schicht",
+      "thisShiftValue": "{{count}} Runden · {{minutes}}",
+      "now": "jetzt",
+      "signatureAlt": "Unterschrift von {{name}}",
+      "signedBy": "Unterschrieben von {{name}}",
+      "takeOff": "Diese Überstunden entfernen",
+      "takeOffHelp": "Entfernt sie, als hätte es sie nie gegeben: Die Schicht endet wieder um {{time}}, der Tag wird neu gezählt."
+    },
+    "step": {
+      "plannedEnd": "Geplantes Schichtende",
+      "declined": "{{name}} brauchte keine zusätzliche Zeit",
+      "askedWhy": "{{name}} bat um mehr Zeit: „{{reason}}“",
+      "asked": "{{name}} bat um mehr Zeit",
+      "phoneAsked": "Das Handy fragte {{name}}, ob mehr Zeit nötig ist",
+      "noReply": "{{name}} hat nicht geantwortet",
+      "agreed": "{{minutes}} vereinbart",
+      "refusedWhy": "{{by}} hat abgelehnt: „{{reason}}“",
+      "refused": "{{by}} hat abgelehnt",
+      "noAnswer": "Niemand hat rechtzeitig geantwortet",
+      "clockedOut": "{{name}} hat ausgestempelt",
+      "counting": "Zählt – bis zum vereinbarten Ende oder zum Ausstempeln",
+      "over": "Noch eingestempelt, {{minutes}} nach dem vereinbarten Ende (zählt nicht)",
+      "agreedHow": "{{how}}: {{minutes}}"
+    }
   }
 }

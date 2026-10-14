@@ -21,4 +21,12 @@ export class OvertimeGatewayService extends BaseGatewayService {
   async getHistory(data: any) {
     return this.send({ cmd: 'get_overtime_history' }, data);
   }
+
+  async getSummary(data: any) {
+    return this.send({ cmd: 'get_overtime_summary' }, data);
+  }
+
+  async getRound(data: any) {
+    return this.send({ cmd: 'get_overtime_round' }, data);
+  }
 }

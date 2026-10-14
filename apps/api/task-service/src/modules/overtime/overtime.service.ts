@@ -506,47 +506,6 @@ export class OvertimeService {
     return success(requests, `${requests.length} pending approvals`);
   }
 
-  /**
-   * Get overtime history
-   */
-  async getHistory(data: {
-    /** Spaces the caller may act in; null = org-wide, [] = none. */
-    scopeSpaceIds?: SpaceScopeIds;
-    organizationId: string;
-    technicianId?: string;
-    status?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const page = clampListPage(data.page);
-    const limit = clampListLimit(data.limit, 20);
-    const where: any = { organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) };
-    if (data.technicianId) where.technicianId = data.technicianId;
-    if (data.status) where.status = data.status;
-
-    const [requests, total] = await Promise.all([
-      this.prisma.overtimeRequest.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        include: {
-          technician: { select: { id: true, firstName: true, lastName: true } },
-          location: { select: { id: true, name: true } },
-          approvedBy: { select: { id: true, firstName: true, lastName: true } },
-          // So history can say how much overtime was actually worked, rather
-          // than only that it happened.
-          timeEntry: { select: { clockInAt: true, clockOutAt: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.overtimeRequest.count({ where }),
-    ]);
-
-    // The shared meta (`paginated`), nested under `data` as this route always answered.
-    const { data: rows, meta } = paginated(requests, { page, limit, total });
-    return success({ data: rows, meta });
-  }
-
   // =========================================================================
   // PRIVATE HELPERS
   // =========================================================================

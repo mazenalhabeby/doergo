@@ -23,6 +23,7 @@ import type { OccurrenceEvidence } from '../../sync/occurrence';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
 import type { NoShowPersonSummary } from '../../attendance/no-show';
+import type { OvertimeSummary } from '../../attendance/overtime-round';
 import type { OvertimeRequest, PresignedUpload, ShiftIssue, ShiftIssueEvent, WorkLogAttachment, WorkLogNote } from '../types';
 
 type Id = { id: string };
@@ -251,9 +252,20 @@ export const overtimeEndpoints = defineEndpoints('overtime', {
   >({ method: 'POST', path: (a) => path`/overtime/${a.id}/approve-signature` }),
   reject: endpoint<Id, unknown, { reason: string }>({ method: 'POST', path: (a) => path`/overtime/${a.id}/reject` }),
   pendingApprovals: endpoint<void, OvertimeRequest[]>({ method: 'GET', path: () => '/overtime/pending-approvals', keep: true }),
-  history: endpoint<{ technicianId?: string; status?: string; page?: number; limit?: number } | void, OvertimeRequest[]>({
+  history: endpoint<
+    { technicianId?: string; spaceId?: string; status?: string; from?: string; to?: string; page?: number; limit?: number } | void,
+    OvertimeRequest[]
+  >({
     method: 'GET',
     path: (q) => withQuery('/overtime/history', q || undefined),
     keep: true,
   }),
+  /** The period's numbers, who is running now, and per person (attendance/overtime-round.ts). */
+  summary: endpoint<{ from?: string; to?: string; spaceId?: string; technicianId?: string } | void, OvertimeSummary>({
+    method: 'GET',
+    path: (q) => withQuery('/overtime/summary', q || undefined),
+    keep: false,
+  }),
+  /** One round in full, with its signature. */
+  round: endpoint<Id, unknown>({ method: 'GET', path: (a) => path`/overtime/${a.id}`, keep: false }),
 });

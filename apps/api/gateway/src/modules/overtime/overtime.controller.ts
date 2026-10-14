@@ -126,9 +126,12 @@ export class OvertimeController {
 
   @Get('history')
   @RequirePermissionInSpace('canApproveOvertime')
-  @ApiOperation({ summary: 'Get overtime history' })
+  @ApiOperation({ summary: 'Every round of overtime, newest first (optionally in a period, a workspace, for one person)' })
   @ApiQuery({ name: 'technicianId', required: false })
+  @ApiQuery({ name: 'spaceId', required: false })
   @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getHistory(
@@ -137,14 +140,56 @@ export class OvertimeController {
     @Query('status') status?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('spaceId') spaceId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     return this.overtimeService.getHistory({
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
       technicianId,
+      spaceId: spaceId || undefined,
       status,
+      from: from || undefined,
+      to: to || undefined,
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
+    });
+  }
+
+  @Get('summary')
+  @RequirePermissionInSpace('canApproveOvertime')
+  @ApiOperation({ summary: "The period's overtime: totals, who is running now, and per person" })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'spaceId', required: false })
+  @ApiQuery({ name: 'technicianId', required: false })
+  async getSummary(
+    @Request() req: any,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('spaceId') spaceId?: string,
+    @Query('technicianId') technicianId?: string,
+  ) {
+    return this.overtimeService.getSummary({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
+      from: from || undefined,
+      to: to || undefined,
+      spaceId: spaceId || undefined,
+      technicianId: technicianId || undefined,
+    });
+  }
+
+  // ⚠️ LAST: a parameter route declared before 'history', 'summary' or 'active' would swallow them.
+  @Get(':id')
+  @RequirePermissionInSpace('canApproveOvertime')
+  @ApiOperation({ summary: "One round in full: its shift's other rounds and the signature" })
+  async getRound(@Param('id') id: string, @Request() req: any) {
+    return this.overtimeService.getRound({
+      id,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
 }

@@ -70,7 +70,7 @@ export type { Invoice, InvoiceItem, InvoiceItemInput, InvoiceStatus } from './ty
 export type { LegalEntity, LegalEntityBankAccount, LegalEntityInput } from './types/legal-entities';
 export type { CreateLocationInput, LocationAssignment, UpdateLocationInput } from './types/locations';
 export type { AccessRole, MemberStatement, OrgMember, OrganizationProfile, UpdateMemberInput } from './types/organizations';
-export type { OvertimeRequest, PaginationMeta } from './types/overtime';
+export type { OvertimeRequest, OvertimeRoundDetail, PaginationMeta } from './types/overtime';
 export type { Phase } from './types/phases';
 export type { PortalCategoryInput, PortalRequestView } from './types/portal-admin';
 export type { RecurringFrequency, RecurringTaskTemplate } from './types/recurring-tasks';

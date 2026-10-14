@@ -1,0 +1,232 @@
+<title>Overtime Page Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout: the page as it would render on :3000 — explanation, filters, numbers for the period, running now, by person, the day-by-day record, and one round opened in a side panel. */
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --sunk:#eef2f6; --line:#dfe5ec;
+  --fg:#111827; --muted:#5b6676; --accent:#2563eb; --accent-soft:#e3ecfd;
+  --run:#047857; --run-soft:#dcf3e8; --warn:#b45309; --warn-soft:#fdf0d8; --bad:#b91c1c; --bad-soft:#fde4e4; --quiet:#6b7280; --quiet-soft:#eceff3;
+  --display:'Inter Tight',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0c10; --surface:#14171d; --sunk:#0f1217; --line:#262b34;
+  --fg:#e9edf2; --muted:#98a2b1; --accent:#6d9cff; --accent-soft:#18243d;
+  --run:#4ade9a; --run-soft:#11291d; --warn:#f2b552; --warn-soft:#2e2410; --bad:#f58b8b; --bad-soft:#341617; --quiet:#9aa3af; --quiet-soft:#1d2129; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0c10; --surface:#14171d; --sunk:#0f1217; --line:#262b34;
+  --fg:#e9edf2; --muted:#98a2b1; --accent:#6d9cff; --accent-soft:#18243d;
+  --run:#4ade9a; --run-soft:#11291d; --warn:#f2b552; --warn-soft:#2e2410; --bad:#f58b8b; --bad-soft:#341617; --quiet:#9aa3af; --quiet-soft:#1d2129; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5}
+.note{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 0;color:var(--muted);font-size:13px}
+.note b{color:var(--fg)}
+.page{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+@media (max-width:980px){.page{grid-template-columns:1fr}}
+.main{display:flex;flex-direction:column;gap:22px;min-width:0}
+h1{font-family:var(--display);font-size:30px;font-weight:800;margin:0;letter-spacing:-.01em}
+h2{font-family:var(--display);font-size:16px;font-weight:700;margin:0}
+p{margin:0}
+.lede{color:var(--muted);max-width:70ch;margin-top:4px}
+.how{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.how span{font-size:12.5px;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--muted)}
+.how span b{color:var(--fg);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{font:inherit;font-size:13px;border:0;background:transparent;color:var(--muted);padding:5px 11px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--fg);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.select{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:6px 10px}
+.nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.nums{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.num{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.num .v{font-family:var(--display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.num .l{font-size:12px;color:var(--muted)}
+.num.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.num.warn .v{color:var(--warn)}
+.num.run .v{color:var(--run)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.head .sub{font-size:12.5px;color:var(--muted)}
+.live{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px}
+@media (max-width:640px){.live{grid-template-columns:1fr}}
+.liveCard{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.who{display:flex;align-items:center;gap:10px}
+.av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
+.name{font-weight:600}
+.sub{color:var(--muted);font-size:12.5px}
+.meter{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--run);border-radius:999px}
+.meter.over i{background:var(--warn)}
+.row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.row b{color:var(--fg);font-weight:600}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:9px 16px}
+td{padding:10px 16px;border-top:1px solid var(--line);vertical-align:middle}
+td.n{text-align:right} th.n{text-align:right}
+.scroll{overflow-x:auto}
+.spark{display:flex;gap:3px;align-items:flex-end;height:26px}
+.spark i{width:9px;border-radius:2px;background:var(--accent);opacity:.85;display:block}
+.spark i.z{height:3px!important;background:var(--line)}
+.day{padding:8px 16px;font-size:12px;font-weight:600;color:var(--muted);background:var(--sunk);border-top:1px solid var(--line)}
+.entry{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-top:1px solid var(--line);cursor:pointer}
+.entry:hover{background:var(--sunk)}
+.entry.sel{background:var(--accent-soft)}
+.entry .txt{flex:1;min-width:0}
+.entry .txt p{font-size:13.5px}
+.entry .txt .sub{margin-top:2px}
+.pill{font-size:11.5px;font-weight:600;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.p-run{color:var(--run);background:var(--run-soft)} .p-done{color:var(--fg);background:var(--quiet-soft)}
+.p-wait{color:var(--accent);background:var(--accent-soft)} .p-warn{color:var(--warn);background:var(--warn-soft)}
+.p-bad{color:var(--bad);background:var(--bad-soft)} .p-quiet{color:var(--quiet);background:var(--quiet-soft)}
+.hrs{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.side{position:sticky;top:16px;display:flex;flex-direction:column;gap:12px}
+.panel{padding:16px;display:flex;flex-direction:column;gap:14px}
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:52px 14px 1fr;gap:8px;font-size:13px;min-height:44px}
+.tl time{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:1px}
+.tl .dot{position:relative}
+.tl .dot::before{content:"";position:absolute;left:4px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.tl .dot::after{content:"";position:absolute;left:7.5px;top:15px;bottom:-2px;width:1px;background:var(--line)}
+.tl li:last-child .dot::after{display:none}
+.tl li.end .dot::before{background:var(--run)}
+.sig{border:1px dashed var(--line);border-radius:10px;height:70px;display:grid;place-items:center;color:var(--muted);font-family:'Brush Script MT',cursive;font-size:28px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px}
+.facts dt{color:var(--muted)} .facts dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.btn{font:inherit;font-size:13px;font-weight:600;border-radius:10px;padding:7px 12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.danger{color:var(--bad)}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:12.5px;color:var(--muted);align-items:center}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="note"><b>Mockup · not built.</b> Example people, times and hours. This is how the Overtime page would look on the web.</div>
+
+<div class="page">
+  <div class="main">
+    <header>
+      <h1>Overtime</h1>
+      <p class="lede">Time worked after a shift's planned end. The phone asks the person when their shift ends, they say why they need longer, and a leader agrees to a number of minutes in Approvals. This page is the record of it.</p>
+      <div class="how">
+        <span><b>1</b> Shift ends, the phone asks</span>
+        <span><b>2</b> They ask for more time</span>
+        <span><b>3</b> A leader agrees in Approvals (or signs on their phone)</span>
+        <span><b>4</b> The extra time counts until they clock out</span>
+      </div>
+    </header>
+
+    <div class="bar">
+      <div class="seg" role="tablist" aria-label="Period">
+        <button id="p-week" class="on">This week</button><button id="p-last">Last week</button><button id="p-month">This month</button>
+      </div>
+      <select class="select" id="ws" aria-label="Workspace"><option>All workspaces</option><option>Main Office</option><option>Warehouse</option></select>
+      <select class="select" id="who" aria-label="Person"><option>Everyone</option><option>Mike Weber</option><option>Lisa Adler</option></select>
+    </div>
+
+    <div class="nums">
+      <div class="num"><div class="v">11h 40m</div><div class="l">Overtime worked this week</div></div>
+      <div class="num"><div class="v">9</div><div class="l">Rounds agreed · 5 people</div></div>
+      <div class="num run"><div class="v">2</div><div class="l">Running right now</div></div>
+      <div class="num warn"><div class="v">1</div><div class="l">Nobody answered in time</div></div>
+    </div>
+
+    <section class="card">
+      <div class="head"><h2>Running now</h2><span class="sub">Counting until they clock out or the agreed time is up</span></div>
+      <div class="live">
+        <div class="liveCard">
+          <div class="who"><span class="av" style="background:#0e7490">MW</span><div><div class="name">Mike Weber</div><div class="sub">Main Office · round 2 today</div></div><span class="pill p-run" style="margin-left:auto">Running</span></div>
+          <div class="meter"><i style="width:62%"></i></div>
+          <div class="row"><span><b>56 min</b> of 90 agreed</span><span>until 19:30</span></div>
+        </div>
+        <div class="liveCard">
+          <div class="who"><span class="av" style="background:#7c3aed">LA</span><div><div class="name">Lisa Adler</div><div class="sub">Warehouse · round 1</div></div><span class="pill p-warn" style="margin-left:auto">Over by 6 min</span></div>
+          <div class="meter over"><i style="width:100%"></i></div>
+          <div class="row"><span><b>66 min</b> of 60 agreed</span><span>was until 18:45</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h2>By person</h2><span class="sub">This week</span></div>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Person</th><th>Mon – Sun</th><th class="n">Rounds</th><th class="n">Agreed</th><th class="n">Worked</th></tr></thead>
+          <tbody>
+            <tr><td><span class="name">Mike Weber</span><div class="sub">Main Office</div></td><td><div class="spark"><i style="height:60%"></i><i class="z"></i><i style="height:90%"></i><i style="height:40%"></i><i style="height:100%"></i><i class="z"></i><i class="z"></i></div></td><td class="n">4</td><td class="n">5h 30m</td><td class="n"><span class="hrs">5h 06m</span></td></tr>
+            <tr><td><span class="name">Lisa Adler</span><div class="sub">Warehouse</div></td><td><div class="spark"><i class="z"></i><i style="height:50%"></i><i class="z"></i><i style="height:45%"></i><i style="height:35%"></i><i class="z"></i><i class="z"></i></div></td><td class="n">3</td><td class="n">3h 00m</td><td class="n"><span class="hrs">3h 12m</span></td></tr>
+            <tr><td><span class="name">Karim Ahmad</span><div class="sub">Service Center</div></td><td><div class="spark"><i style="height:70%"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i></div></td><td class="n">1</td><td class="n">2h 00m</td><td class="n"><span class="hrs">1h 52m</span></td></tr>
+            <tr><td><span class="name">Noor Shah</span><div class="sub">Main Office</div></td><td><div class="spark"><i class="z"></i><i class="z"></i><i style="height:30%"></i><i class="z"></i><i class="z"></i><i class="z"></i><i class="z"></i></div></td><td class="n">1</td><td class="n">1h 30m</td><td class="n"><span class="hrs">1h 30m</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="head"><h2>Every round</h2><span class="sub">Newest first · click one to see what happened</span></div>
+      <div class="day">Today · Wed Oct 14</div>
+      <div class="entry sel" role="button" tabindex="0">
+        <span class="av" style="background:#0e7490">MW</span>
+        <div class="txt"><p><b>Mike Weber</b> was given 90 min more at Main Office, after a 9h 05m shift.</p><div class="sub">Asked 18:02 · “finishing the pump at the Gmunden site” · agreed by Anna Müller, signed on his phone</div></div>
+        <span class="hrs">56m</span><span class="pill p-run">Running</span>
+      </div>
+      <div class="entry" role="button" tabindex="0">
+        <span class="av" style="background:#7c3aed">LA</span>
+        <div class="txt"><p><b>Lisa Adler</b> was given 60 min more at Warehouse.</p><div class="sub">Asked 17:41 · agreed by John Owner in Approvals</div></div>
+        <span class="hrs">1h 06m</span><span class="pill p-warn">Over the agreed time</span>
+      </div>
+      <div class="entry" role="button" tabindex="0">
+        <span class="av" style="background:#be123c">DP</span>
+        <div class="txt"><p><b>Dana Pichler</b> asked for 45 min more. Nobody answered within 10 minutes.</p><div class="sub">Asked 16:20 · the request went to Anna Müller and John Owner</div></div>
+        <span class="hrs">—</span><span class="pill p-warn">Nobody answered</span>
+      </div>
+      <div class="day">Yesterday · Tue Oct 13</div>
+      <div class="entry" role="button" tabindex="0">
+        <span class="av" style="background:#0e7490">MW</span>
+        <div class="txt"><p><b>Mike Weber</b> worked 2h 10m more at Main Office, in two rounds.</p><div class="sub">Round 1: 90 min · round 2: 40 min · agreed by Anna Müller</div></div>
+        <span class="hrs">2h 10m</span><span class="pill p-done">Done</span>
+      </div>
+      <div class="entry" role="button" tabindex="0">
+        <span class="av" style="background:#15803d">KA</span>
+        <div class="txt"><p><b>Karim Ahmad</b> said he did not need more time.</p><div class="sub">Asked 17:00 · clocked out 17:04</div></div>
+        <span class="hrs">—</span><span class="pill p-quiet">Not needed</span>
+      </div>
+      <div class="entry" role="button" tabindex="0">
+        <span class="av" style="background:#b45309">NS</span>
+        <div class="txt"><p><b>Noor Shah</b> asked for 2h more. Refused by Anna Müller.</p><div class="sub">“Finish tomorrow, the client is closed”</div></div>
+        <span class="hrs">—</span><span class="pill p-bad">Refused</span>
+      </div>
+    </section>
+  </div>
+
+  <aside class="side">
+    <section class="card"><div class="panel">
+      <div class="who"><span class="av" style="background:#0e7490">MW</span><div><div class="name">Mike Weber · round 2</div><div class="sub">Main Office · Wed Oct 14</div></div></div>
+      <dl class="facts">
+        <dt>Shift</dt><dd>08:55 – 18:00 planned</dd>
+        <dt>Agreed</dt><dd>90 min, until 19:30</dd>
+        <dt>Worked so far</dt><dd><b>56 min</b></dd>
+        <dt>Today in total</dt><dd>2 rounds · 1h 26m</dd>
+      </dl>
+      <ol class="tl">
+        <li><time>18:00</time><span class="dot"></span><span>Shift's planned end. The phone asked Mike.</span></li>
+        <li><time>18:02</time><span class="dot"></span><span>Mike asked for 90 min: “finishing the pump at the Gmunden site”.</span></li>
+        <li><time>18:03</time><span class="dot"></span><span>Anna Müller agreed and signed on his phone.</span></li>
+        <li class="end"><time>now</time><span class="dot"></span><span>Counting. Ends at 19:30, or when he clocks out.</span></li>
+      </ol>
+      <div class="sig" aria-label="Anna Müller's signature">Anna Müller</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="open-shift">Open the shift</button><button class="btn danger" id="take-off">Take this overtime off</button></div>
+      <p class="sub">“Take off” removes it as if it never was: the shift's end goes back to 18:00 and the day is counted again.</p>
+    </div></section>
+
+    <section class="card"><div class="panel">
+      <h2>What the labels mean</h2>
+      <div class="legend">
+        <span class="pill p-run">Running</span><span>Agreed, still counting</span>
+        <span class="pill p-done">Done</span><span>Finished, counted in the day</span>
+        <span class="pill p-wait">Waiting for a decision</span><span>Open in Approvals</span>
+        <span class="pill p-warn">Over the agreed time</span><span>Still on the clock past the agreed end</span>
+        <span class="pill p-warn">Nobody answered</span><span>No leader decided in time</span>
+        <span class="pill p-quiet">Not needed</span><span>The person said no, or did not reply</span>
+        <span class="pill p-bad">Refused</span><span>A leader said no</span>
+      </div>
+    </div></section>
+  </aside>
+</div>

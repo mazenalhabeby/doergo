@@ -11050,5 +11050,123 @@
       "save": "Save",
       "fixRota": "Fix the rota"
     }
+  },
+  "overtimePage": {
+    "title": "Overtime",
+    "explain": "Time worked after a shift's planned end. The phone asks when the shift ends, the person says why they need longer, and a leader agrees to a number of minutes in Approvals. This page is the record of it.",
+    "step1": "Shift ends, the phone asks",
+    "step2": "They ask for more time",
+    "step3": "A leader agrees in Approvals, or signs on their phone",
+    "step4": "The extra time counts until they clock out",
+    "periodLabel": "Period",
+    "period": {
+      "week": "This week",
+      "lastWeek": "Last week",
+      "month": "This month"
+    },
+    "allWorkspaces": "All workspaces",
+    "everyone": "Everyone",
+    "num": {
+      "worked": "Overtime worked · {{period}}",
+      "rounds": "Rounds agreed · {{count}} people",
+      "rounds_one": "Rounds agreed · 1 person",
+      "running": "Running right now",
+      "noAnswer": "Nobody answered in time"
+    },
+    "someone": "Someone",
+    "round": "round {{n}}",
+    "overBy": "Over by {{minutes}}",
+    "ofAgreed": "of {{minutes}} agreed",
+    "until": "until {{time}}",
+    "wasUntil": "was until {{time}}",
+    "running": {
+      "title": "Running now",
+      "sub": "Counting until they clock out or the agreed time is up"
+    },
+    "byPerson": {
+      "title": "By person",
+      "empty": "No overtime in this period.",
+      "person": "Person",
+      "rounds": "Rounds",
+      "agreed": "Agreed",
+      "worked": "Worked"
+    },
+    "list": {
+      "title": "Every round",
+      "sub": "Newest first · click one to see what happened",
+      "empty": "No overtime asked for in this period.",
+      "askedAt": "Asked {{time}}"
+    },
+    "line": {
+      "given": "{{name}} was given {{minutes}} more at {{place}}.",
+      "worked": "{{name}} worked {{minutes}} more at {{place}}.",
+      "asked": "{{name}} was asked at {{place}} whether they need more time.",
+      "waiting": "{{name}} asked for more time at {{place}}. Waiting for a decision.",
+      "noAnswer": "{{name}} asked for more time at {{place}}. Nobody answered in time.",
+      "refused": "{{name}} asked for more time. A leader said no.",
+      "declined": "{{name}} said they did not need more time.",
+      "noReply": "{{name}} did not answer when asked."
+    },
+    "method": {
+      "signed": "agreed by {{name}}, signed on their phone",
+      "automatic": "approved automatically (the only administrator)",
+      "office": "added by {{name}} in the office",
+      "approvals": "agreed by {{name}} in Approvals"
+    },
+    "state": {
+      "RUNNING": "Running",
+      "OVER": "Over the agreed time",
+      "DONE": "Done",
+      "WAITING_PERSON": "Waiting for them",
+      "WAITING_DECISION": "Waiting for a decision",
+      "NO_ANSWER": "Nobody answered",
+      "NOT_NEEDED": "Not needed",
+      "REFUSED": "Refused"
+    },
+    "legend": {
+      "title": "What the labels mean",
+      "RUNNING": "Agreed, still counting",
+      "OVER": "Still on the clock past the agreed end — that part is not counted",
+      "DONE": "Finished, counted in the day",
+      "WAITING_PERSON": "The phone asked; no reply yet",
+      "WAITING_DECISION": "Open in Approvals",
+      "NO_ANSWER": "No leader decided in time",
+      "NOT_NEEDED": "The person said no, or did not reply",
+      "REFUSED": "A leader said no"
+    },
+    "panel": {
+      "pick": "Click a round to see what happened, step by step.",
+      "shift": "Shift",
+      "shiftValue": "{{from}} – {{to}} planned end",
+      "agreed": "Agreed",
+      "agreedValue": "{{minutes}}, until {{time}}",
+      "workedSoFar": "Worked so far",
+      "worked": "Worked",
+      "pastAgreed": "Past the agreed end",
+      "notCounted": "{{minutes}}, not counted",
+      "thisShift": "This shift",
+      "thisShiftValue": "{{count}} rounds · {{minutes}}",
+      "now": "now",
+      "signatureAlt": "Signature of {{name}}",
+      "signedBy": "Signed by {{name}}",
+      "takeOff": "Take this overtime off",
+      "takeOffHelp": "Removes it as if it never was: the shift ends again at {{time}} and the day is counted again."
+    },
+    "step": {
+      "plannedEnd": "The shift's planned end",
+      "declined": "{{name}} said no more time was needed",
+      "askedWhy": "{{name}} asked for more time: “{{reason}}”",
+      "asked": "{{name}} asked for more time",
+      "phoneAsked": "The phone asked {{name}} whether they need more time",
+      "noReply": "{{name}} did not answer",
+      "agreed": "{{minutes}} agreed",
+      "refusedWhy": "{{by}} said no: “{{reason}}”",
+      "refused": "{{by}} said no",
+      "noAnswer": "Nobody answered in time",
+      "clockedOut": "{{name}} clocked out",
+      "counting": "Counting — until the agreed end or the clock-out",
+      "over": "Still on the clock, {{minutes}} past the agreed end (not counted)",
+      "agreedHow": "{{how}}: {{minutes}}"
+    }
   }
 }

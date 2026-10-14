@@ -11050,5 +11050,123 @@
       "save": "Guardar",
       "fixRota": "Corregir el cuadrante"
     }
+  },
+  "overtimePage": {
+    "title": "Horas extra",
+    "explain": "Tiempo trabajado después del fin previsto del turno. El móvil pregunta al terminar el turno, la persona dice por qué necesita más y un responsable acepta unos minutos en Aprobaciones. Esta página es el historial.",
+    "step1": "Termina el turno, el móvil pregunta",
+    "step2": "La persona pide más tiempo",
+    "step3": "Un responsable acepta en Aprobaciones o firma en su móvil",
+    "step4": "El tiempo extra cuenta hasta que fichan la salida",
+    "periodLabel": "Periodo",
+    "period": {
+      "week": "Esta semana",
+      "lastWeek": "La semana pasada",
+      "month": "Este mes"
+    },
+    "allWorkspaces": "Todos los espacios",
+    "everyone": "Todos",
+    "num": {
+      "worked": "Horas extra trabajadas · {{period}}",
+      "rounds": "Rondas aceptadas · {{count}} personas",
+      "rounds_one": "Rondas aceptadas · 1 persona",
+      "running": "En curso ahora",
+      "noAnswer": "Nadie respondió a tiempo"
+    },
+    "someone": "Alguien",
+    "round": "ronda {{n}}",
+    "overBy": "{{minutes}} de más",
+    "ofAgreed": "de {{minutes}} aceptados",
+    "until": "hasta las {{time}}",
+    "wasUntil": "era hasta las {{time}}",
+    "running": {
+      "title": "En curso ahora",
+      "sub": "Cuenta hasta que fichan la salida o se acaba el tiempo aceptado"
+    },
+    "byPerson": {
+      "title": "Por persona",
+      "empty": "Sin horas extra en este periodo.",
+      "person": "Persona",
+      "rounds": "Rondas",
+      "agreed": "Aceptado",
+      "worked": "Trabajado"
+    },
+    "list": {
+      "title": "Cada ronda",
+      "sub": "Lo más reciente primero · pulsa una para ver qué pasó",
+      "empty": "No se pidieron horas extra en este periodo.",
+      "askedAt": "Pedido {{time}}"
+    },
+    "line": {
+      "given": "{{name}} recibió {{minutes}} más en {{place}}.",
+      "worked": "{{name}} trabajó {{minutes}} más en {{place}}.",
+      "asked": "Se preguntó a {{name}} en {{place}} si necesita más tiempo.",
+      "waiting": "{{name}} pidió más tiempo en {{place}}. Esperando una decisión.",
+      "noAnswer": "{{name}} pidió más tiempo en {{place}}. Nadie respondió a tiempo.",
+      "refused": "{{name}} pidió más tiempo. Un responsable dijo que no.",
+      "declined": "{{name}} dijo que no necesitaba más tiempo.",
+      "noReply": "{{name}} no respondió cuando se le preguntó."
+    },
+    "method": {
+      "signed": "aceptado por {{name}}, firmado en su móvil",
+      "automatic": "aprobado automáticamente (único administrador)",
+      "office": "añadido por {{name}} en la oficina",
+      "approvals": "aceptado por {{name}} en Aprobaciones"
+    },
+    "state": {
+      "RUNNING": "En curso",
+      "OVER": "Pasado del tiempo aceptado",
+      "DONE": "Terminado",
+      "WAITING_PERSON": "Esperando a la persona",
+      "WAITING_DECISION": "Esperando una decisión",
+      "NO_ANSWER": "Nadie respondió",
+      "NOT_NEEDED": "No hizo falta",
+      "REFUSED": "Rechazado"
+    },
+    "legend": {
+      "title": "Qué significan las etiquetas",
+      "RUNNING": "Aceptado, sigue contando",
+      "OVER": "Sigue fichado pasado el fin aceptado; esa parte no cuenta",
+      "DONE": "Terminado, contado en el día",
+      "WAITING_PERSON": "El móvil preguntó; aún sin respuesta",
+      "WAITING_DECISION": "Abierto en Aprobaciones",
+      "NO_ANSWER": "Ningún responsable decidió a tiempo",
+      "NOT_NEEDED": "La persona dijo que no o no respondió",
+      "REFUSED": "Un responsable dijo que no"
+    },
+    "panel": {
+      "pick": "Pulsa una ronda para ver qué pasó, paso a paso.",
+      "shift": "Turno",
+      "shiftValue": "{{from}} – {{to}} fin prevista",
+      "agreed": "Aceptado",
+      "agreedValue": "{{minutes}}, hasta las {{time}}",
+      "workedSoFar": "Trabajado hasta ahora",
+      "worked": "Trabajado",
+      "pastAgreed": "Pasado el fin aceptado",
+      "notCounted": "{{minutes}}, no cuenta",
+      "thisShift": "Este turno",
+      "thisShiftValue": "{{count}} rondas · {{minutes}}",
+      "now": "ahora",
+      "signatureAlt": "Firma de {{name}}",
+      "signedBy": "Firmado por {{name}}",
+      "takeOff": "Quitar estas horas extra",
+      "takeOffHelp": "La quita como si nunca hubiera existido: el turno vuelve a terminar a las {{time}} y el día se vuelve a contar."
+    },
+    "step": {
+      "plannedEnd": "Fin previsto del turno",
+      "declined": "{{name}} dijo que no necesitaba más tiempo",
+      "askedWhy": "{{name}} pidió más tiempo: «{{reason}}»",
+      "asked": "{{name}} pidió más tiempo",
+      "phoneAsked": "El móvil preguntó a {{name}} si necesita más tiempo",
+      "noReply": "{{name}} no respondió",
+      "agreed": "{{minutes}} aceptados",
+      "refusedWhy": "{{by}} dijo que no: «{{reason}}»",
+      "refused": "{{by}} dijo que no",
+      "noAnswer": "Nadie respondió a tiempo",
+      "clockedOut": "{{name}} fichó la salida",
+      "counting": "Contando: hasta el fin aceptado o la salida",
+      "over": "Sigue fichado, {{minutes}} pasado el fin aceptado (no cuenta)",
+      "agreedHow": "{{how}}: {{minutes}}"
+    }
   }
 }

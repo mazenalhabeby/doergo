@@ -11059,5 +11059,123 @@
       "save": "Enregistrer",
       "fixRota": "Corriger le planning"
     }
+  },
+  "overtimePage": {
+    "title": "Heures supplémentaires",
+    "explain": "Temps travaillé après la fin prévue du service. Le téléphone demande à la fin du service, la personne dit pourquoi il lui faut plus de temps, et un responsable accepte un nombre de minutes dans Validations. Cette page en est l’historique.",
+    "step1": "Le service se termine, le téléphone demande",
+    "step2": "La personne demande plus de temps",
+    "step3": "Un responsable accepte dans Validations ou signe sur son téléphone",
+    "step4": "Le temps en plus compte jusqu’au pointage de sortie",
+    "periodLabel": "Période",
+    "period": {
+      "week": "Cette semaine",
+      "lastWeek": "La semaine dernière",
+      "month": "Ce mois-ci"
+    },
+    "allWorkspaces": "Tous les espaces",
+    "everyone": "Tout le monde",
+    "num": {
+      "worked": "Heures sup. travaillées · {{period}}",
+      "rounds": "Tours acceptés · {{count}} personnes",
+      "rounds_one": "Tours acceptés · 1 personne",
+      "running": "En cours",
+      "noAnswer": "Personne n’a répondu à temps"
+    },
+    "someone": "Quelqu’un",
+    "round": "tour {{n}}",
+    "overBy": "{{minutes}} de plus",
+    "ofAgreed": "sur {{minutes}} acceptés",
+    "until": "jusqu’à {{time}}",
+    "wasUntil": "était jusqu’à {{time}}",
+    "running": {
+      "title": "En cours",
+      "sub": "Compte jusqu’au pointage de sortie ou la fin du temps accepté"
+    },
+    "byPerson": {
+      "title": "Par personne",
+      "empty": "Aucune heure sup. sur cette période.",
+      "person": "Personne",
+      "rounds": "Tours",
+      "agreed": "Accepté",
+      "worked": "Travaillé"
+    },
+    "list": {
+      "title": "Chaque tour",
+      "sub": "Les plus récents d’abord · cliquez pour voir ce qui s’est passé",
+      "empty": "Aucune heure sup. demandée sur cette période.",
+      "askedAt": "Demandé {{time}}"
+    },
+    "line": {
+      "given": "{{name}} a eu {{minutes}} de plus à {{place}}.",
+      "worked": "{{name}} a travaillé {{minutes}} de plus à {{place}}.",
+      "asked": "On a demandé à {{name}} à {{place}} s’il lui faut plus de temps.",
+      "waiting": "{{name}} a demandé plus de temps à {{place}}. En attente d’une décision.",
+      "noAnswer": "{{name}} a demandé plus de temps à {{place}}. Personne n’a répondu à temps.",
+      "refused": "{{name}} a demandé plus de temps. Un responsable a refusé.",
+      "declined": "{{name}} a dit ne pas avoir besoin de plus de temps.",
+      "noReply": "{{name}} n’a pas répondu à la question."
+    },
+    "method": {
+      "signed": "accepté par {{name}}, signé sur son téléphone",
+      "automatic": "approuvé automatiquement (seul administrateur)",
+      "office": "ajouté par {{name}} au bureau",
+      "approvals": "accepté par {{name}} dans Validations"
+    },
+    "state": {
+      "RUNNING": "En cours",
+      "OVER": "Au-delà du temps accepté",
+      "DONE": "Terminé",
+      "WAITING_PERSON": "En attente de la personne",
+      "WAITING_DECISION": "En attente de décision",
+      "NO_ANSWER": "Personne n’a répondu",
+      "NOT_NEEDED": "Pas nécessaire",
+      "REFUSED": "Refusé"
+    },
+    "legend": {
+      "title": "Ce que veulent dire les libellés",
+      "RUNNING": "Accepté, compte encore",
+      "OVER": "Toujours pointé après la fin acceptée ; cette partie ne compte pas",
+      "DONE": "Terminé, compté dans la journée",
+      "WAITING_PERSON": "Le téléphone a demandé ; pas encore de réponse",
+      "WAITING_DECISION": "Ouvert dans Validations",
+      "NO_ANSWER": "Aucun responsable n’a décidé à temps",
+      "NOT_NEEDED": "La personne a dit non ou n’a pas répondu",
+      "REFUSED": "Un responsable a refusé"
+    },
+    "panel": {
+      "pick": "Cliquez sur un tour pour voir ce qui s’est passé, étape par étape.",
+      "shift": "Service",
+      "shiftValue": "{{from}} – {{to}} fin prévue",
+      "agreed": "Accepté",
+      "agreedValue": "{{minutes}}, jusqu’à {{time}}",
+      "workedSoFar": "Travaillé jusqu’ici",
+      "worked": "Travaillé",
+      "pastAgreed": "Après la fin acceptée",
+      "notCounted": "{{minutes}}, non compté",
+      "thisShift": "Ce service",
+      "thisShiftValue": "{{count}} tours · {{minutes}}",
+      "now": "maint.",
+      "signatureAlt": "Signature de {{name}}",
+      "signedBy": "Signé par {{name}}",
+      "takeOff": "Retirer ces heures sup.",
+      "takeOffHelp": "La retire comme si elle n’avait jamais existé : le service se termine de nouveau à {{time}} et la journée est recomptée."
+    },
+    "step": {
+      "plannedEnd": "Fin prévue du service",
+      "declined": "{{name}} a dit ne pas avoir besoin de plus de temps",
+      "askedWhy": "{{name}} a demandé plus de temps : « {{reason}} »",
+      "asked": "{{name}} a demandé plus de temps",
+      "phoneAsked": "Le téléphone a demandé à {{name}} s’il lui faut plus de temps",
+      "noReply": "{{name}} n’a pas répondu",
+      "agreed": "{{minutes}} acceptés",
+      "refusedWhy": "{{by}} a refusé : « {{reason}} »",
+      "refused": "{{by}} a refusé",
+      "noAnswer": "Personne n’a répondu à temps",
+      "clockedOut": "{{name}} a pointé sa sortie",
+      "counting": "Compte — jusqu’à la fin acceptée ou la sortie",
+      "over": "Toujours pointé, {{minutes}} après la fin acceptée (non compté)",
+      "agreedHow": "{{how}} : {{minutes}}"
+    }
   }
 }
