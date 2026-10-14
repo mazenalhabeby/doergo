@@ -914,7 +914,14 @@
     "waitingFor": "Esperando a que {{name}} apruebe tu tiempo extra",
     "waitingForOthers_one": "Esperando a que {{name}} u {{count}} persona más apruebe tu tiempo extra",
     "waitingForOthers_other": "Esperando a que {{name}} u {{count}} personas más aprueben tu tiempo extra",
-    "waitingToldSub": "Ya se les ha avisado. Quien pueda aprobar tiempo extra también puede firmar en este dispositivo."
+    "waitingToldSub": "Ya se les ha avisado. Quien pueda aprobar tiempo extra también puede firmar en este dispositivo.",
+    "place": {
+      "approvedUntil": "Tiempo extra aprobado hasta las {{time}}",
+      "clockedOutAt": "Salida fichada a las {{time}}",
+      "shiftEndedAt": "El turno terminó a las {{time}}",
+      "shiftEndsAt": "El turno termina a las {{time}}",
+      "onClockSince": "Sin turno previsto · fichado desde las {{time}}"
+    }
   },
   "timeOff": {
     "stats": {

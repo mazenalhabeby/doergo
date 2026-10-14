@@ -914,7 +914,14 @@
     "waitingFor": "Warten, bis {{name}} Ihre Mehrzeit genehmigt",
     "waitingForOthers_one": "Warten, bis {{name}} oder {{count}} weitere Person Ihre Mehrzeit genehmigt",
     "waitingForOthers_other": "Warten, bis {{name}} oder {{count}} weitere Personen Ihre Mehrzeit genehmigen",
-    "waitingToldSub": "Sie wurden benachrichtigt. Wer Mehrzeit genehmigen darf, kann auch auf diesem Gerät unterschreiben."
+    "waitingToldSub": "Sie wurden benachrichtigt. Wer Mehrzeit genehmigen darf, kann auch auf diesem Gerät unterschreiben.",
+    "place": {
+      "approvedUntil": "Mehrzeit genehmigt bis {{time}}",
+      "clockedOutAt": "Ausgestempelt um {{time}}",
+      "shiftEndedAt": "Schicht endete um {{time}}",
+      "shiftEndsAt": "Schicht endet um {{time}}",
+      "onClockSince": "Keine geplante Schicht · eingestempelt seit {{time}}"
+    }
   },
   "timeOff": {
     "stats": {

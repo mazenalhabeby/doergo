@@ -281,3 +281,25 @@ export function waitingText(overtime: { askedOf?: { names: string[]; more: numbe
   const others = names.length - 1 + (overtime.askedOf?.more ?? 0);
   return others > 0 ? t('overtime.waitingForOthers', { name: names[0], count: others }) : t('overtime.waitingFor', { name: names[0] });
 }
+
+/**
+ * The line under the workspace on the extra-time page — what is TRUE of this
+ * shift, never "Your shift has ended" for a session that had no shift.
+ */
+export type OvertimePlaceLine =
+  | { key: 'approvedUntil' | 'clockedOutAt' | 'shiftEndedAt' | 'shiftEndsAt' | 'onClockSince'; at: string }
+  | null;
+
+export function overtimePlaceLine(
+  req: { status: string; overtimeEndAt?: string | null; timeEntry?: { clockInAt: string; clockOutAt: string | null; expectedClockOutAt: string | null } | null },
+  now: Date,
+): OvertimePlaceLine {
+  if (req.status === 'APPROVED' && req.overtimeEndAt) return { key: 'approvedUntil', at: req.overtimeEndAt };
+  const e = req.timeEntry;
+  if (!e) return null;
+  if (e.clockOutAt) return { key: 'clockedOutAt', at: e.clockOutAt };
+  if (!e.expectedClockOutAt) return { key: 'onClockSince', at: e.clockInAt };
+  return new Date(e.expectedClockOutAt).getTime() <= now.getTime()
+    ? { key: 'shiftEndedAt', at: e.expectedClockOutAt }
+    : { key: 'shiftEndsAt', at: e.expectedClockOutAt };
+}

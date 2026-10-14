@@ -184,8 +184,10 @@ export interface OvertimeRequest {
   createdAt: string;
   updatedAt?: string;
   technician?: { id: string; firstName: string; lastName: string; email?: string };
-  location?: { id: string; name: string };
+  location?: { id: string; name: string; timezone?: string | null };
   approvedBy?: { id: string; firstName: string; lastName: string };
+  /** The member's own read: the shift it belongs to. */
+  timeEntry?: { clockInAt: string; clockOutAt: string | null; expectedClockOutAt: string | null };
   /** PENDING_APPROVAL (the member's own read): who it waits for — first names, and how many more. */
   askedOf?: { names: string[]; more: number };
 }

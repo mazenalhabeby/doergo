@@ -26,7 +26,8 @@ import {
 import { ScreenContainer, ScreenHeader } from '../../../src/components';
 import { useQueuedCreate } from '../../../src/offline/actions/queued-create';
 import { formatDuration } from '@hbcfield/shared/client';
-import { waitingText } from '../../../src/components/time/time-logic';
+import { overtimePlaceLine, waitingText } from '../../../src/components/time/time-logic';
+import { useTimeFormat } from '../../../src/hooks/useTimeFormat';
 
 export default function OvertimeRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,6 +62,8 @@ export default function OvertimeRequestScreen() {
   // Countdown for approved overtime — derived from the clock, which pauses in the background.
   const counting = request?.status === 'APPROVED' && !!request.overtimeEndAt;
   const nowMs = useNow(30_000, counting);
+  const { formatClock } = useTimeFormat();
+  const placeLine = request ? overtimePlaceLine(request, new Date()) : null;
   const remainingMinutes = counting
     ? Math.max(0, Math.round((new Date(request!.overtimeEndAt!).getTime() - nowMs) / 60000))
     : null;
@@ -137,7 +140,7 @@ export default function OvertimeRequestScreen() {
               {request.location?.name || t('common.unknownLocation')}
             </Text>
             <Text style={[styles.locationSub, { color: colors.textSecondary }]}>
-              {t('overtime.shiftEnded')}
+              {placeLine ? t(`overtime.place.${placeLine.key}`, { time: formatClock(placeLine.at, request.location?.timezone ?? undefined) }) : null}
             </Text>
           </View>
         </View>

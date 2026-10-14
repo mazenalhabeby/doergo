@@ -446,8 +446,10 @@ export class OvertimeService {
         status: { in: ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'] },
       },
       include: {
-        location: { select: { id: true, name: true } },
+        location: { select: { id: true, name: true, timezone: true } },
         approvedBy: { select: { id: true, firstName: true, lastName: true } },
+        // What the page says under the workspace: the shift's end, or that there was none.
+        timeEntry: { select: { clockInAt: true, clockOutAt: true, expectedClockOutAt: true } },
       },
       orderBy: { createdAt: 'desc' },
     });

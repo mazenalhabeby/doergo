@@ -914,7 +914,14 @@
     "waitingFor": "Waiting for {{name}} to approve your extra time",
     "waitingForOthers_one": "Waiting for {{name}} or {{count}} other to approve your extra time",
     "waitingForOthers_other": "Waiting for {{name}} or {{count}} others to approve your extra time",
-    "waitingToldSub": "They have been told. Someone who may approve extra time can also sign on this device."
+    "waitingToldSub": "They have been told. Someone who may approve extra time can also sign on this device.",
+    "place": {
+      "approvedUntil": "Extra time approved until {{time}}",
+      "clockedOutAt": "Clocked out at {{time}}",
+      "shiftEndedAt": "Shift ended at {{time}}",
+      "shiftEndsAt": "Shift ends at {{time}}",
+      "onClockSince": "No planned shift · on the clock since {{time}}"
+    }
   },
   "timeOff": {
     "stats": {
