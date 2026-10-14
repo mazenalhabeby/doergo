@@ -12,7 +12,7 @@ import { Banner, JobSheet, QuietButton, SheetOption } from '../job/job-ui';
 import { AlwaysLocationNudge } from '../always-location-nudge';
 import { OutOfRingSheet } from '../out-of-ring-sheet';
 import { RestCard } from '../rest-card';
-import type { NoShiftNote } from './time-logic';
+import { waitingText, type NoShiftNote } from './time-logic';
 
 /**
  * EVERYTHING THAT NEEDS THE MEMBER'S ATTENTION ABOUT THE SHIFT — one line each,
@@ -106,7 +106,7 @@ export function TimeBanners({
       {overtime && ['PENDING_TECHNICIAN', 'PENDING_APPROVAL', 'APPROVED'].includes(overtime.status) ? (
         <Banner
           tone={overtime.status === 'APPROVED' ? 'accent' : 'warn'}
-          text={overtime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') : overtime.status === 'PENDING_APPROVAL' ? t('overtime.waitingApproval') : t('overtime.overtimeActive')}
+          text={overtime.status === 'PENDING_TECHNICIAN' ? t('overtime.promptTitle') : overtime.status === 'PENDING_APPROVAL' ? waitingText(overtime, t) : t('overtime.overtimeActive')}
           action={{ label: t('time.banners.open', 'Open'), onPress: () => router.push(`/overtime/${overtime.id}` as Href) }}
         />
       ) : null}
@@ -143,7 +143,8 @@ export function TimeBanners({
           </View>
         </View>
       ) : null}
-      {entry && reminder === 'OVERTIME_PENDING' ? (
+      {/* The same wait as the extra-time line above — said once, with a name, when that line is shown. */}
+      {entry && reminder === 'OVERTIME_PENDING' && overtime?.status !== 'PENDING_APPROVAL' ? (
         <Banner tone="neutral" text={`${t('shiftReminder.waitingApprovalTitle')}. ${t('shiftReminder.waitingApprovalSubtitle')}`} />
       ) : null}
       {entry && reminder === 'OVERTIME_APPROVED' ? (
@@ -204,3 +205,4 @@ export function TimeLink({ label, hint, badge, onPress, Glyph }: { label: string
     </Pressable>
   );
 }
+

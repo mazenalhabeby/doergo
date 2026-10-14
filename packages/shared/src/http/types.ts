@@ -186,6 +186,8 @@ export interface OvertimeRequest {
   technician?: { id: string; firstName: string; lastName: string; email?: string };
   location?: { id: string; name: string };
   approvedBy?: { id: string; firstName: string; lastName: string };
+  /** PENDING_APPROVAL (the member's own read): who it waits for — first names, and how many more. */
+  askedOf?: { names: string[]; more: number };
 }
 
 // ── people & places ──────────────────────────────────────────────────────────

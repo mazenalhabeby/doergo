@@ -14,6 +14,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { AttendanceService } from '../attendance/attendance.service';
 import { ClockOutService } from '../attendance/clock-out.service';
 import { assertNotSelfDecision } from '../attendance/self-decision';
+import { askAboutOwnRequest } from '../../common/own-request-route';
 import {
   success,
   SERVICE_NAMES,
@@ -450,8 +451,32 @@ export class OvertimeService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    if (!request || request.status !== 'PENDING_APPROVAL') {
+      return success(request, request ? 'Active overtime request found' : 'No active overtime');
+    }
 
-    return success(request, request ? 'Active overtime request found' : 'No active overtime');
+    /*
+      WHO it waits for, so the phone can say "Waiting for Anna to approve your
+      extra time" instead of "your leader" — the same answer the request was
+      sent with (the own-request rule over the workspace's routing).
+    */
+    const ask = await askAboutOwnRequest(this.prisma, {
+      organizationId: request.organizationId,
+      subjectId: request.technicianId,
+      kind: 'extraTime',
+      spaceIds: [request.locationId],
+      usual: await this.attendance.notifyTargetsFor(
+        { locationId: request.locationId, organizationId: request.organizationId, userId: request.technicianId },
+        'canApproveOvertime',
+      ),
+    });
+    const people = ask.ids.length
+      ? await this.prisma.user.findMany({ where: { id: { in: ask.ids.slice(0, 3) } }, select: { firstName: true, lastName: true }, orderBy: { firstName: 'asc' } })
+      : [];
+    return success(
+      { ...request, askedOf: { names: people.map((p) => p.firstName || personName(p)), more: Math.max(0, ask.ids.length - people.length) } },
+      'Active overtime request found',
+    );
   }
 
   /**

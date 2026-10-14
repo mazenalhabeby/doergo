@@ -378,6 +378,7 @@ enum OvertimeApprovalMethod {
   REMOTE // Team leader approved via push notification on their device
   SIGNATURE // Team leader signed on the technician's phone
   MANAGER // Added by a manager to a closed shift, without a request from the member
+  AUTOMATIC // The only administrator's own: nobody is above the owner (shared approvals/own-request.ts)
 }
 
 // Task creation scope — controls who the user can create tasks for
@@ -3658,6 +3659,8 @@ model TimeOff {
   approvedBy      User?     @relation("TimeOffApprover", fields: [approvedById], references: [id])
   approvedAt      DateTime?
   rejectionReason String? // If rejected, reason why
+  /// The only administrator's own request: approved when asked, nobody above the owner (approvals/own-request.ts).
+  autoApproved    Boolean   @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

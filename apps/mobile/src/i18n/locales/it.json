@@ -910,7 +910,10 @@
     "approveOvertime": "Approva straordinario",
     "approvedSuccess": "Straordinario approvato con successo",
     "failedToApprove": "Impossibile approvare lo straordinario",
-    "signedAwaitingConfirm": "Firmato: {{name}} lo conferma sul proprio telefono, poi conta"
+    "signedAwaitingConfirm": "Firmato: {{name}} lo conferma sul proprio telefono, poi conta",
+    "waitingFor": "In attesa che {{name}} approvi il tuo tempo extra",
+    "waitingForOthers_one": "In attesa che {{name}} o {{count}} altra persona approvi il tuo tempo extra",
+    "waitingForOthers_other": "In attesa che {{name}} o altre {{count}} persone approvino il tuo tempo extra"
   },
   "timeOff": {
     "stats": {

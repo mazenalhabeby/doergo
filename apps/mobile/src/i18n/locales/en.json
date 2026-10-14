@@ -910,7 +910,10 @@
     "approveOvertime": "Approve Overtime",
     "approvedSuccess": "Overtime approved successfully",
     "failedToApprove": "Failed to approve overtime",
-    "signedAwaitingConfirm": "Signed — {{name}} confirms it on their own phone, then it counts"
+    "signedAwaitingConfirm": "Signed — {{name}} confirms it on their own phone, then it counts",
+    "waitingFor": "Waiting for {{name}} to approve your extra time",
+    "waitingForOthers_one": "Waiting for {{name}} or {{count}} other to approve your extra time",
+    "waitingForOthers_other": "Waiting for {{name}} or {{count}} others to approve your extra time"
   },
   "timeOff": {
     "stats": {

@@ -910,7 +910,10 @@
     "approveOvertime": "Überstunden genehmigen",
     "approvedSuccess": "Überstunden erfolgreich genehmigt",
     "failedToApprove": "Genehmigung der Überstunden fehlgeschlagen",
-    "signedAwaitingConfirm": "Unterschrieben — {{name}} bestätigt es auf dem eigenen Telefon, dann zählt es"
+    "signedAwaitingConfirm": "Unterschrieben — {{name}} bestätigt es auf dem eigenen Telefon, dann zählt es",
+    "waitingFor": "Warten, bis {{name}} Ihre Mehrzeit genehmigt",
+    "waitingForOthers_one": "Warten, bis {{name}} oder {{count}} weitere Person Ihre Mehrzeit genehmigt",
+    "waitingForOthers_other": "Warten, bis {{name}} oder {{count}} weitere Personen Ihre Mehrzeit genehmigen"
   },
   "timeOff": {
     "stats": {

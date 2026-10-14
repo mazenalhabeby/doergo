@@ -17,6 +17,20 @@ import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { CountedTimeService } from './counted-time.service';
 import { AttendanceRoutingService } from './attendance-routing.service';
+import { askAboutOwnRequest, type OwnRequestAsk } from '../../common/own-request-route';
+import { endOfLocalDay } from '@hbcfield/shared';
+
+interface ExtraTimeDecision {
+  /** Spaces the caller may act in; null = org-wide, [] = none. */
+  scopeSpaceIds?: AttendanceScope;
+  approverId: string;
+  entryId: string;
+  minutes: number;
+  organizationId: string;
+  /** base64 PNG, when the leader signed rather than tapping approve. */
+  signature?: string | null;
+  notes?: string | null;
+}
 
 /** How long after its clock-out a shift's extra time may still be decided. */
 const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -95,17 +109,23 @@ export class ExtraTimeService {
       }),
     ]);
 
-    const leaderIds = await this.routing.notifyTargetsFor(
-      { ...entry, organizationId: data.organizationId },
-      'canApproveOvertime',
-    );
+    const ask = await this.askFor({ ...entry, organizationId: data.organizationId });
+    if (ask.route === 'AUTOMATIC') {
+      // The only administrator: approved at once, for the rest of the workspace's day — the
+      // real clock-out still caps the counted time.
+      const from = entry.expectedClockOutAt ?? respondedAt(data.occurredAt, entry.clockInAt);
+      const dayEnd = endOfLocalDay(from, entry.location?.timezone || 'UTC');
+      const minutes = Math.max(1, Math.min(1440, Math.round((dayEnd.getTime() - from.getTime()) / 60_000)));
+      await this.decide({ approverId: entry.userId, entryId: entry.id, minutes, organizationId: data.organizationId }, true);
+      return success({ entryId: entry.id, status: 'OVERTIME_APPROVED', cycle, automatic: true }, 'Extra time approved automatically');
+    }
     this.notificationClient.emit('attendance_overtime_request', {
       entryId: entry.id,
       userId: entry.userId,
       userName: `${entry.user.firstName} ${entry.user.lastName}`,
       locationId: entry.locationId,
       locationName: entry.location?.name || 'a shift',
-      leaderIds,
+      leaderIds: ask.ids,
       cycle,
       organizationId: data.organizationId,
     });
@@ -148,31 +168,49 @@ export class ExtraTimeService {
         actualEndAt: clockOutAt,
       },
     });
-    const leaderIds = await this.routing.notifyTargetsFor(entry, 'canApproveOvertime');
+    const ask = await this.askFor(entry);
+    if (ask.route === 'AUTOMATIC') {
+      // The only administrator: exactly the time worked past the end, approved at once.
+      const from = entry.expectedClockOutAt ?? clockOutAt;
+      const minutes = Math.max(1, Math.min(1440, Math.ceil((clockOutAt.getTime() - from.getTime()) / 60_000)));
+      await this.decide({ approverId: entry.userId, entryId: entry.id, minutes, organizationId: entry.organizationId }, true);
+      return;
+    }
     this.notificationClient.emit('attendance_overtime_request', {
       entryId: entry.id,
       userId: entry.userId,
       userName: `${updated.user?.firstName ?? ''} ${updated.user?.lastName ?? ''}`.trim(),
       locationId: entry.locationId,
       locationName: updated.location?.name || 'a shift',
-      leaderIds,
+      leaderIds: ask.ids,
       cycle,
       organizationId: entry.organizationId,
     });
   }
 
+  /**
+   * Who is asked about this member's extra time: the shared own-request rule
+   * (a leader's own → the administrators, the only administrator's own →
+   * approved automatically) over the usual workspace routing.
+   */
+  async askFor(entry: { locationId: string; organizationId: string; userId: string }): Promise<OwnRequestAsk> {
+    const usual = await this.routing.notifyTargetsFor(entry, 'canApproveOvertime');
+    return askAboutOwnRequest(this.prisma, {
+      organizationId: entry.organizationId,
+      subjectId: entry.userId,
+      kind: 'extraTime',
+      spaceIds: entry.locationId ? [entry.locationId] : [],
+      usual,
+    });
+  }
+
   /** Leader approves N more minutes of work → extends the expected end + re-arms reminders. */
-  async approveExtraTime(data: {
-    /** Spaces the caller may act in; null = org-wide, [] = none. */
-    scopeSpaceIds?: AttendanceScope;
-    approverId: string;
-    entryId: string;
-    minutes: number;
-    organizationId: string;
-    /** base64 PNG, when the leader signed rather than tapping approve. */
-    signature?: string | null;
-    notes?: string | null;
-  }) {
+  async approveExtraTime(data: ExtraTimeDecision) {
+    return this.decide(data, false);
+  }
+
+  /** `automatic`: the only administrator's own request, recorded as approved automatically — never reachable from a request body. */
+  private async decide(data: ExtraTimeDecision, automatic: boolean) {
     let minutes = Math.round(data.minutes);
     if (!minutes || minutes < 1 || minutes > 1440) {
       throw new BadRequestException('Approved minutes must be between 1 and 1440');
@@ -275,7 +313,7 @@ export class ExtraTimeService {
                 approvedAt: now,
                 maxDurationMinutes: minutes,
                 overtimeEndAt: newExpected,
-                approvalMethod: data.signature ? 'SIGNATURE' : 'REMOTE',
+                approvalMethod: automatic ? 'AUTOMATIC' : data.signature ? 'SIGNATURE' : 'REMOTE',
                 leaderSignature: data.signature ?? null,
                 approverNotes: data.notes ?? null,
               },
@@ -287,7 +325,8 @@ export class ExtraTimeService {
     // Closed: the timesheet already counted it — count it again with the approval.
     if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
 
-    this.notificationClient.emit('attendance_overtime_decision', {
+    // Approved automatically: the owner asked and is answered on screen, not pushed about their own.
+    if (!automatic) this.notificationClient.emit('attendance_overtime_decision', {
       entryId: entry.id,
       userId: entry.userId,
       decision: 'approved',

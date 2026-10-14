@@ -4,6 +4,7 @@ import { Inject, Injectable, NotFoundException, BadRequestException, ForbiddenEx
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService, SERVICE_NAMES, TaskStatus, success } from '@hbcfield/shared';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
+import { askAboutOwnRequest } from '../../common/own-request-route';
 import { findPrior } from '../../common/create-once.util';
 import { CoverService } from './cover.service';
 import { CalendarRulesService } from '../calendar/calendar-rules.service';
@@ -687,11 +688,34 @@ export class TechniciansService {
       An empty list is a legitimate answer and is not padded with org admins:
       that is the configured meaning of "nobody watches this member".
     */
-    const { ids: recipientIds } = await this.notificationRouting.resolveWatchers(
+    const { ids: watchers } = await this.notificationRouting.resolveWatchers(
       technicianId,
       organizationId,
       'attendance',
     );
+    /*
+      A leader's own request goes to the administrators; the only
+      administrator's own is approved now (shared approvals/own-request.ts) —
+      a leader is often the only one who could have decided it, and nobody
+      decides their own.
+    */
+    const ask = await askAboutOwnRequest(this.prisma, {
+      organizationId,
+      subjectId: technicianId,
+      kind: 'request',
+      spaceIds: value.spaceId
+        ? [value.spaceId]
+        : (await this.prisma.spaceAssignment.findMany({
+            where: { userId: technicianId, organizationId, OR: [{ effectiveTo: null }, { effectiveTo: { gte: new Date() } }] },
+            select: { spaceId: true },
+          })).map((a) => a.spaceId),
+      usual: watchers,
+    });
+    if (ask.route === 'AUTOMATIC') {
+      const decided = await this.approveTimeOff({ timeOffId: timeOff.id, organizationId, approverId: technicianId, approved: true } as never, true);
+      return success({ ...(decided as { data?: object }).data ?? timeOff, cover: verdict });
+    }
+    const recipientIds = ask.ids;
 
     if (recipientIds.length > 0) {
       this.notificationClient.emit('time_off_requested', {
@@ -1045,7 +1069,8 @@ export class TechniciansService {
   /**
    * Approve or reject a time-off request
    */
-  async approveTimeOff(dto: ApproveTimeOffDto & { scopeSpaceIds?: string[] }) {
+  /** `automatic`: the only administrator's own request (approvals/own-request.ts) — never reachable from a request body. */
+  async approveTimeOff(dto: ApproveTimeOffDto & { scopeSpaceIds?: string[] }, automatic = false) {
     const { timeOffId, organizationId, approverId, approved, rejectionReason, scopeSpaceIds } = dto;
 
     // Find the time-off request. The roster comes with it, so the scope check
@@ -1146,6 +1171,7 @@ export class TechniciansService {
         approvedById: approverId,
         approvedAt: new Date(),
         rejectionReason: approved ? null : rejectionReason,
+        ...(automatic ? { autoApproved: true } : {}),
       },
       include: {
         technician: {
@@ -1166,7 +1192,8 @@ export class TechniciansService {
       out whether they had the days. This one is addressed, not routed — the
       answer belongs to the person who asked, and to nobody else.
     */
-    this.notificationClient.emit('time_off_decided', {
+    // Approved automatically: the owner sees it on screen; no push about their own.
+    if (!automatic) this.notificationClient.emit('time_off_decided', {
       timeOffId: updated.id,
       organizationId,
       memberId: updated.technicianId,

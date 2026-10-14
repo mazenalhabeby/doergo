@@ -269,3 +269,15 @@ export function graceCountdown(targetMs: number, nowMs: number): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
 }
+
+/**
+ * "Waiting for Anna to approve your extra time" — the person it was sent to
+ * (`askedOf`, the own-request rule: a leader's own goes to the administrators).
+ * An older server sends no names: the line it always said.
+ */
+export function waitingText(overtime: { askedOf?: { names: string[]; more: number } | null }, t: (k: string, o?: Record<string, unknown>) => string): string {
+  const names = overtime.askedOf?.names ?? [];
+  if (names.length === 0) return t('overtime.waitingApproval');
+  const others = names.length - 1 + (overtime.askedOf?.more ?? 0);
+  return others > 0 ? t('overtime.waitingForOthers', { name: names[0], count: others }) : t('overtime.waitingFor', { name: names[0] });
+}
