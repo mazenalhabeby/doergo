@@ -22,6 +22,7 @@ import {
   type AccessPermissionKey,
   assertServiceOk,
   clampListLimit,
+  isNoShowExcuseReason,
 } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermissionInSpace } from '../../common/decorators';
@@ -442,32 +443,51 @@ export class AttendanceController {
 
   @Get('no-shows')
   @RequirePermissionInSpace('canViewSpaceAttendance')
-  @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in) for review' })
+  @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in); open=true → only the undecided, with their run and facts' })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'spaceId', required: false, type: String })
-  async listNoShows(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any) {
+  @ApiQuery({ name: 'open', required: false, type: Boolean })
+  async listNoShows(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any, @Query('open') open?: string) {
     return this.attendanceService.listNoShows({
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       days: days ? Math.min(Math.max(1, Number(days) || 7), 60) : 7,
+      spaceId: spaceId || undefined,
+      open: open === 'true' || open === '1',
+    });
+  }
+
+  @Get('no-shows/summary')
+  @RequirePermissionInSpace('canViewSpaceAttendance')
+  @ApiOperation({ summary: 'The no-show record: one row per person — last planned days, absent / excused / settled / open' })
+  @ApiQuery({ name: 'days', required: false, type: Number })
+  @ApiQuery({ name: 'spaceId', required: false, type: String })
+  async noShowSummary(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any) {
+    return this.attendanceService.noShowSummary({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
+      days: days ? Math.min(Math.max(1, Number(days) || 30), 90) : 30,
       spaceId: spaceId || undefined,
     });
   }
 
   @Patch('no-shows/:id')
   @RequirePermissionInSpace('canReconcileAttendance')
-  @ApiOperation({ summary: 'Excuse or reopen a no-show' })
+  @ApiOperation({ summary: 'Decide a no-show: excused (with what happened), absent, or reopen — one day or its whole run' })
   async resolveNoShow(
     @Param('id') id: string,
-    @Body() body: { action: 'excuse' | 'reopen'; reason?: string },
+    @Body() body: { action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean },
     @Request() req: any,
   ) {
+    const action = body?.action === 'reopen' || body?.action === 'absent' ? body.action : 'excuse';
     return this.attendanceService.resolveNoShow({
       id,
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
-      action: body?.action === 'reopen' ? 'reopen' : 'excuse',
-      reason: body?.reason,
+      action,
+      reasonCode: isNoShowExcuseReason(body?.reasonCode) ? body.reasonCode : undefined,
+      reason: typeof body?.reason === 'string' ? body.reason.slice(0, 500) : undefined,
+      wholeRun: body?.wholeRun === true,
       excusedById: req.user.id,
     });
   }

@@ -17,7 +17,9 @@ import { BreakReminderService } from './break-reminder.service';
 import { PresenceModule } from './presence/presence.module';
 import { ShiftRematchService } from './shift-rematch.service';
 import { ClockOutService } from './clock-out.service';
+import { NoShowSettleService } from './no-show-settle.service';
 import { HandoverModule } from '../tasks/handover/handover.module';
+import { CalendarRulesModule } from '../calendar/calendar-rules.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { HandoverModule } from '../tasks/handover/handover.module';
     PresenceModule,
     // Every way a shift ends pauses the jobs left in work.
     HandoverModule,
+    // Public holidays close a missed shift by themselves (no-show-settle).
+    CalendarRulesModule,
   ],
   controllers: [AttendanceController],
   providers: [
@@ -48,6 +52,6 @@ import { HandoverModule } from '../tasks/handover/handover.module';
     AttendanceScheduler,
   ],
   // ClockOutService: the one way a shift closes — the legacy overtime module closes through it too.
-  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService, ClockOutService],
+  exports: [AttendanceService, AttendanceScheduler, ShiftRematchService, ClockOutService, NoShowSettleService],
 })
 export class AttendanceModule {}

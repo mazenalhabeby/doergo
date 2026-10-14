@@ -347,7 +347,16 @@ export default function AttendanceReviewScreen() {
           </View>
           {row.state === 'EXCUSED' && (
             <View style={[s.flag, { backgroundColor: '#22c55e1f', borderColor: '#22c55e55' }]}>
-              <Text style={[s.flagText, { color: '#22c55e' }]}>{t('attendanceReview.excusedBadge')}</Text>
+              <Text style={[s.flagText, { color: '#22c55e' }]} numberOfLines={1}>
+                {row.closeReason
+                  ? `${t('attendanceReview.excusedBadge')} · ${t(`attendanceReview.closeReason.${row.closeReason}`, { defaultValue: row.closeReason })}`
+                  : t('attendanceReview.excusedBadge')}
+              </Text>
+            </View>
+          )}
+          {row.state === 'ABSENT' && (
+            <View style={[s.flag, { backgroundColor: '#ef44441f', borderColor: '#ef444455' }]}>
+              <Text style={[s.flagText, { color: '#ef4444' }]}>{t('attendanceReview.absentBadge')}</Text>
             </View>
           )}
         </View>
@@ -366,8 +375,8 @@ export default function AttendanceReviewScreen() {
           <Text style={[s.note, { color: colors.textMuted }]} numberOfLines={2}>{row.excuseReason}</Text>
         )}
 
-        {/* Excusing is decided in Approvals — the one place. */}
-        {row.state !== 'EXCUSED' && (
+        {/* An open one is decided in Approvals — the one place. */}
+        {row.state !== 'EXCUSED' && row.state !== 'ABSENT' && (
           <TouchableOpacity style={s.editRow} onPress={() => router.push('/(app)/approvals?kind=noShow' as Href)} activeOpacity={0.7}>
             <Ionicons name="file-tray-full-outline" size={15} color={COLORS.primary} />
             <Text style={[s.editText, { color: COLORS.primary }]}>{t('approvals.decideInApprovals')}</Text>

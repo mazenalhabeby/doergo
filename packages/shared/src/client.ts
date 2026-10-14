@@ -143,6 +143,8 @@ export * from './attendance/break-totals';
 export * from './attendance/away-policy';
 // Clocking in with no shift: allow, limit per day, or shift only.
 export * from './attendance/no-shift-limit';
+// A no-show: what the system closes itself, runs of them, the record (attendance/no-show.ts).
+export * from './attendance/no-show';
 export * from './attendance/auto-clock';
 export * from './approvals';
 // Where somebody on the clock is working now, from evidence — and which workspace to clock in at.

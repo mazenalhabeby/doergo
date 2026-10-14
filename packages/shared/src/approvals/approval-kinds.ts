@@ -16,6 +16,7 @@
  * decide with it.
  */
 import type { AccessPermissionKey } from '../types/permissions';
+import { isNoShowExcuseReason } from '../attendance/no-show';
 
 export const APPROVAL_KINDS = [
   'hours',
@@ -94,7 +95,7 @@ export interface ApprovalActionSpec {
   /** A reason the member reads. */
   reason: 'required' | 'optional' | 'none';
   /** An extra value the decision needs. */
-  input?: 'minutes' | 'expiresOn';
+  input?: 'minutes' | 'expiresOn' | 'excuseReason';
 }
 
 export interface ApprovalKindSpec {
@@ -120,7 +121,12 @@ export const APPROVAL_KIND_SPECS: Record<ApprovalKind, ApprovalKindSpec> = {
   extraTime: { decideKey: 'canApproveOvertime', orgWide: false, actions: [approve('give', { input: 'minutes' }), reject('reject', 'optional')] },
   overtime: { decideKey: 'canApproveOvertime', orgWide: false, actions: [approve('approve', { input: 'minutes' }), reject('reject', 'required')] },
   request: { decideKey: 'canManageRota', orgWide: false, actions: [approve('approve'), reject('reject', 'optional')] },
-  noShow: { decideKey: 'canReconcileAttendance', orgWide: false, actions: [approve('excuse', { reason: 'optional' })] },
+  // Two answers that CLOSE it (attendance/no-show.ts): excused, with what happened — or a real missed day.
+  noShow: {
+    decideKey: 'canReconcileAttendance',
+    orgWide: false,
+    actions: [approve('excuse', { input: 'excuseReason', reason: 'optional' }), { ...reject('absent', 'none'), tone: 'neutral' }],
+  },
   issue: { decideKey: 'canReconcileAttendance', orgWide: false, actions: [approve('acknowledge')] },
   expense: { decideKey: 'canManageAssets', orgWide: false, actions: [approve('accept'), reject('reject', 'optional')] },
   assetProposal: {
@@ -180,6 +186,10 @@ export interface ApprovalDecision {
   reason?: string;
   minutes?: number;
   expiresOn?: string;
+  /** noShow excuse: what happened (`NO_SHOW_EXCUSE_REASONS`). */
+  reasonCode?: string;
+  /** noShow: the whole run of misses this one ends (the server finds the run itself). */
+  wholeRun?: boolean;
   /** clientRequest: the workspace the job goes to. */
   spaceId?: string;
 }
@@ -225,8 +235,15 @@ export function approvalRoute(d: ApprovalDecision): ApprovalRoute {
         : { ok: true, method: 'POST', path: `/overtime/${id}/reject`, body: { reason } };
     case 'request':
       return { ok: true, method: 'PATCH', path: `/employees/time-off/${id}/approve`, body: yes ? { approved: true } : { approved: false, ...(reason ? { rejectionReason: reason } : {}) } };
-    case 'noShow':
-      return { ok: true, method: 'PATCH', path: `/attendance/no-shows/${id}`, body: { action: 'excuse', ...(reason ? { reason } : {}) } };
+    case 'noShow': {
+      const code = yes ? (isNoShowExcuseReason(d.reasonCode) ? d.reasonCode : 'OTHER') : undefined;
+      return {
+        ok: true,
+        method: 'PATCH',
+        path: `/attendance/no-shows/${id}`,
+        body: { action: yes ? 'excuse' : 'absent', ...(code ? { reasonCode: code } : {}), ...(reason ? { reason } : {}), ...(d.wholeRun ? { wholeRun: true } : {}) },
+      };
+    }
     case 'issue':
       return { ok: true, method: 'POST', path: `/shift-issues/${id}/acknowledge`, body: {} };
     case 'expense':

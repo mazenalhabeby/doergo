@@ -111,12 +111,16 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_active_entries' }, data);
   }
 
-  async listNoShows(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string }) {
+  async listNoShows(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string; open?: boolean }) {
     return this.send({ cmd: 'list_no_shows' }, data);
   }
 
-  async resolveNoShow(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
+  async resolveNoShow(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null; action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean; excusedById?: string }) {
     return this.send({ cmd: 'resolve_no_show' }, data);
+  }
+
+  async noShowSummary(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string }) {
+    return this.send({ cmd: 'no_show_summary' }, data);
   }
 
   // =========================================================================

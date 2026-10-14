@@ -24,6 +24,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { formatTimeAgo } from "@/lib/format-date"
 import { cn } from "@/lib/utils"
 import { WhoElse } from "./who-else"
+import { NoShowDecision } from "./no-show-decision"
 import { nameParts } from "./name-parts"
 
 /**
@@ -122,6 +123,9 @@ export function DecisionPanel({
         </p>
       )}
 
+      {/* A missed shift has its own answers (excused with a reason, absent, they were here). */}
+      {item.kind === "noShow" && item.canDecide && <NoShowDecision item={item} busy={busy} onDecide={onDecide} />}
+
       {armed && (
         <div className="space-y-3">
           {armed.input === "minutes" && (
@@ -163,7 +167,7 @@ export function DecisionPanel({
         </div>
       )}
 
-      {actions.length > 0 && (
+      {actions.length > 0 && item.kind !== "noShow" && (
         <div className="flex flex-wrap gap-2">
           {actions.map((a) => {
             const isArmed = armed?.id === a.id

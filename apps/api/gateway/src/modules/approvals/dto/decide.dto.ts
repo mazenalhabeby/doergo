@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { APPROVAL_KINDS, type ApprovalActionId, type ApprovalKind } from '@hbcfield/shared';
+import { IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { APPROVAL_KINDS, NO_SHOW_EXCUSE_REASONS, type ApprovalActionId, type ApprovalKind } from '@hbcfield/shared';
 
 /** One decision from the inbox. Shape only — the kind's own route judges it. */
 export class DecideApprovalDto {
@@ -41,4 +41,16 @@ export class DecideApprovalDto {
   @IsString()
   @MaxLength(128)
   spaceId?: string;
+
+  /** noShow excuse: what happened. */
+  @ApiPropertyOptional({ enum: NO_SHOW_EXCUSE_REASONS })
+  @IsOptional()
+  @IsIn(NO_SHOW_EXCUSE_REASONS as unknown as string[])
+  reasonCode?: string;
+
+  /** noShow: decide the whole run of misses this one ends. */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  wholeRun?: boolean;
 }

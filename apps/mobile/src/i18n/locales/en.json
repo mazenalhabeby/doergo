@@ -2805,6 +2805,18 @@
       "saved": "Shift updated",
       "timeHint": "Add the time as HH:MM.",
       "title": "Edit shift"
+    },
+    "absentBadge": "Absent",
+    "closeReason": {
+      "SICK": "Sick",
+      "FORGOT": "Forgot to clock in",
+      "AGREED": "Agreed",
+      "OTHER": "Other",
+      "LEAVE": "On leave",
+      "ELSEWHERE": "At another workspace",
+      "HOLIDAY": "Public holiday",
+      "SHIFT_REMOVED": "Rota changed",
+      "LEFT": "No longer with us"
     }
   },
   "scan": {
@@ -5118,7 +5130,8 @@
       "overtime": "Overtime to approve",
       "noShow": "Didn't clock in for the shift",
       "assetProposal": "Sent in a paper for a new asset",
-      "join": "Wants to join the organization"
+      "join": "Wants to join the organization",
+      "noShowRun": "Missed {{count}} shifts in a row"
     },
     "fact": {
       "workspace": "Workspace",
@@ -5156,7 +5169,12 @@
       "message": "Message",
       "reference": "Reference",
       "unit": "Unit",
-      "priority": "Priority"
+      "priority": "Priority",
+      "inARow": "In a row",
+      "reminded": "Reminded",
+      "appLastUsed": "App last used",
+      "thisMonth": "This month",
+      "likely": "Likely"
     },
     "cover": {
       "ok": "Enough people stay",
@@ -5171,11 +5189,12 @@
       "allow": "Allow",
       "notAllowed": "Don't allow",
       "give": "Give time",
-      "excuse": "Excuse",
+      "excuse": "Excused",
       "acknowledge": "Take it",
       "accept": "Accept",
       "verify": "Verify",
-      "turnIntoJob": "Turn into a job"
+      "turnIntoJob": "Turn into a job",
+      "absent": "Absent"
     },
     "needsPage": {
       "assetProposal": "Accepting this creates an asset — choose its kind on the full page.",
@@ -5293,6 +5312,29 @@
       "waiting": "{{name}} approved. It needs {{role}} too.",
       "short": "needs {{role}}"
     },
-    "decideInApprovals": "Decide in Approvals"
+    "decideInApprovals": "Decide in Approvals",
+    "noShow": {
+      "run": "{{count}} days · {{from}} – {{to}}",
+      "reminded": "{{count}} reminders, no answer",
+      "reminded_one": "1 reminder, no answer",
+      "thisMonth": "{{count}} missed shifts",
+      "hintElsewhere": "Clocks in at {{space}} instead — the shift may be on the wrong workspace",
+      "hintNotSeen": "Not clocked in anywhere since {{date}}",
+      "hintNeverSeen": "Has never clocked in",
+      "whatHappened": "What happened?",
+      "excusedHelp": "Not held against them.",
+      "absentHelp": "A missed day. Counts on their record and in reports.",
+      "reasons": {
+        "SICK": "Sick",
+        "FORGOT": "Forgot to clock in",
+        "AGREED": "Agreed with me",
+        "OTHER": "Other"
+      },
+      "wasHere": "They were here",
+      "wasHereHelp": "Add the hours for this shift. The no-show closes when they are saved.",
+      "wholeRun": "Decide all {{count}} days at once",
+      "save": "Save",
+      "fixRota": "Fix the rota"
+    }
   }
 }

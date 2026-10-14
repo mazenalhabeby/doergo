@@ -111,13 +111,18 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'list_no_shows' })
-  async listNoShows(@Payload() data: { organizationId: string; days?: number; spaceId?: string }) {
+  async listNoShows(@Payload() data: { organizationId: string; days?: number; spaceId?: string; open?: boolean }) {
     return this.attendanceService.listNoShows(data);
   }
 
   @MessagePattern({ cmd: 'resolve_no_show' })
-  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string }) {
+  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean; excusedById?: string }) {
     return this.attendanceService.resolveNoShow(data);
+  }
+
+  @MessagePattern({ cmd: 'no_show_summary' })
+  async noShowSummary(@Payload() data: { organizationId: string; days?: number; spaceId?: string }) {
+    return this.attendanceService.noShowSummary(data);
   }
 
   // =========================================================================

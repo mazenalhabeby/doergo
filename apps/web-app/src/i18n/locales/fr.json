@@ -3927,13 +3927,44 @@
     "noShows": {
       "empty": "Toutes les personnes planifiées ont pointé.",
       "emptyTitle": "Aucune absence",
-      "excuse": "Excuser",
-      "expected": "Attendu",
-      "reasonLabel": "Motif de l’excuse",
-      "reasonPlaceholder": "Ajouter une note (facultatif)…",
       "reopen": "Rouvrir",
-      "subtitle": "Créneaux planifiés sans pointage — la personne a été relancée, puis l’alerte a été remontée. Excusez (p. ex. absence approuvée) ou rouvrez.",
-      "title": "Absences"
+      "title": "Absences",
+      "recordSubtitle": "Services prévus sans pointage sur les {{days}} derniers jours, et leur issue. Les ouverts se décident dans Validations.",
+      "col": {
+        "person": "Personne",
+        "days": "Derniers jours prévus",
+        "absent": "Absent",
+        "excused": "Excusé",
+        "settled": "Réglé tout seul",
+        "open": "Ouvert"
+      },
+      "inApprovals": "{{count}} dans Validations",
+      "nothingClosed": "Rien de décidé sur cette période.",
+      "reopened": "Rouvert — de retour dans Validations",
+      "mark": {
+        "open": "Ouvert",
+        "absent": "Absent",
+        "excused": "Excusé ou en congé",
+        "late": "Arrivé en retard",
+        "worked": "A travaillé",
+        "planned": "Prévu"
+      },
+      "state": {
+        "absent": "Absent",
+        "excused": "Excusé",
+        "settled": "Réglé"
+      },
+      "reason": {
+        "SICK": "Malade",
+        "FORGOT": "A oublié de pointer",
+        "AGREED": "Convenu",
+        "OTHER": "Autre",
+        "LEAVE": "En congé",
+        "ELSEWHERE": "A travaillé sur un autre espace",
+        "HOLIDAY": "Jour férié",
+        "SHIFT_REMOVED": "Planning modifié",
+        "LEFT": "Ne fait plus partie de l’équipe"
+      }
     },
     "addBreak": {
       "title": "Ajouter une pause",
@@ -10773,7 +10804,8 @@
       "overtime": "Heures supplémentaires à valider",
       "noShow": "N’a pas pointé pour le poste",
       "assetProposal": "A envoyé un document pour un nouvel équipement",
-      "join": "Souhaite rejoindre l’organisation"
+      "join": "Souhaite rejoindre l’organisation",
+      "noShowRun": "{{count}} services manqués d’affilée"
     },
     "fact": {
       "workspace": "Espace de travail",
@@ -10811,7 +10843,12 @@
       "message": "Message",
       "reference": "Référence",
       "unit": "Unité",
-      "priority": "Priorité"
+      "priority": "Priorité",
+      "inARow": "D’affilée",
+      "reminded": "Rappels",
+      "appLastUsed": "Dernière utilisation de l’app",
+      "thisMonth": "Ce mois-ci",
+      "likely": "Probablement"
     },
     "cover": {
       "ok": "Assez de personnes restent",
@@ -10826,11 +10863,12 @@
       "allow": "Autoriser",
       "notAllowed": "Ne pas autoriser",
       "give": "Accorder du temps",
-      "excuse": "Excuser",
+      "excuse": "Excusé",
       "acknowledge": "Prendre en charge",
       "accept": "Accepter",
       "verify": "Vérifier",
-      "turnIntoJob": "Transformer en intervention"
+      "turnIntoJob": "Transformer en intervention",
+      "absent": "Absent"
     },
     "needsPage": {
       "assetProposal": "Accepter crée un équipement — choisissez son type sur la page complète.",
@@ -10992,13 +11030,34 @@
       "escalateTo": "Transmettre à",
       "noAnswerHint": "Les rappels vont à qui peut décider aujourd’hui (pas aux absents). Transmettez à un rôle qui peut décider."
     },
-    "decideThere_one": "{{count}} en attente de votre décision — décidez dans",
-    "decideThere_other": "{{count}} en attente de votre décision — décidez dans",
     "viewFile": {
       "document": "Voir le document",
       "expense": "Voir le reçu",
       "assetProposal": "Voir la page"
     },
-    "decideInApprovals": "Décider dans Approbations"
+    "decideInApprovals": "Décider dans Validations",
+    "noShow": {
+      "run": "{{count}} jours · {{from}} – {{to}}",
+      "reminded": "{{count}} rappels, sans réponse",
+      "reminded_one": "1 rappel, sans réponse",
+      "thisMonth": "{{count}} services manqués",
+      "hintElsewhere": "Pointe à {{space}} à la place — le service est peut-être sur le mauvais espace",
+      "hintNotSeen": "N’a pointé nulle part depuis le {{date}}",
+      "hintNeverSeen": "N’a jamais pointé",
+      "whatHappened": "Que s’est-il passé ?",
+      "excusedHelp": "Ne compte pas contre la personne.",
+      "absentHelp": "Une journée manquée. Compte dans son historique et les rapports.",
+      "reasons": {
+        "SICK": "Malade",
+        "FORGOT": "A oublié de pointer",
+        "AGREED": "Convenu avec moi",
+        "OTHER": "Autre"
+      },
+      "wasHere": "La personne était là",
+      "wasHereHelp": "Ajoutez les heures de ce service. L’absence se ferme à l’enregistrement.",
+      "wholeRun": "Décider les {{count}} jours d’un coup",
+      "save": "Enregistrer",
+      "fixRota": "Corriger le planning"
+    }
   }
 }

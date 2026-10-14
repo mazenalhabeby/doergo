@@ -22,6 +22,7 @@ import type { AutoClockPlan } from '../../attendance/auto-clock';
 import type { OccurrenceEvidence } from '../../sync/occurrence';
 import { defineEndpoints, endpoint } from '../core/define';
 import { path, withQuery } from '../core/path';
+import type { NoShowPersonSummary } from '../../attendance/no-show';
 import type { OvertimeRequest, PresignedUpload, ShiftIssue, ShiftIssueEvent, WorkLogAttachment, WorkLogNote } from '../types';
 
 type Id = { id: string };
@@ -41,6 +42,10 @@ export interface NoShow {
   reminderCount: number;
   localDate: string;
   excuseReason?: string | null;
+  /** How it ended: a leader's reason or the proof the system found (attendance/no-show.ts). */
+  closeReason?: string | null;
+  closedAutomatically?: boolean;
+  settledSpaceName?: string | null;
 }
 
 export interface HeartbeatResult {
@@ -180,8 +185,10 @@ export const attendanceEndpoints = defineEndpoints('attendance', {
 
   // ── no-shows and extra time ──
   /** Scheduled shifts nobody clocked in for. Presence — never kept. */
-  noShows: endpoint<{ days?: number; spaceId?: string } | void, NoShow[]>({ method: 'GET', path: (q) => withQuery('/attendance/no-shows', q || undefined), keep: false }),
-  resolveNoShow: endpoint<Id, NoShow, { action: 'excuse' | 'reopen'; reason?: string }>({ method: 'PATCH', path: (a) => path`/attendance/no-shows/${a.id}` }),
+  noShows: endpoint<{ days?: number; spaceId?: string; open?: boolean } | void, NoShow[]>({ method: 'GET', path: (q) => withQuery('/attendance/no-shows', q || undefined), keep: false }),
+  /** The no-show record: one row per person (attendance/no-show.ts). */
+  noShowSummary: endpoint<{ days?: number; spaceId?: string } | void, NoShowPersonSummary[]>({ method: 'GET', path: (q) => withQuery('/attendance/no-shows/summary', q || undefined), keep: false }),
+  resolveNoShow: endpoint<Id, NoShow, { action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean }>({ method: 'PATCH', path: (a) => path`/attendance/no-shows/${a.id}` }),
   extraTimePending: endpoint<void, TimeEntry[]>({ method: 'GET', path: () => '/attendance/extra-time/pending', keep: true }),
   approveExtraTime: endpoint<Id, unknown, { minutes: number }>({ method: 'POST', path: (a) => path`/attendance/extra-time/${a.id}/approve` }),
   rejectExtraTime: endpoint<Id, unknown>({ method: 'POST', path: (a) => path`/attendance/extra-time/${a.id}/reject` }),

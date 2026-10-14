@@ -85,7 +85,6 @@ describe('canApproveAttendance', () => {
     // (kind "away"), as the caller, with canApproveAttendance.
     const panel = read('src/app/(dashboard)/attendance/_components/out-of-ring-panel.tsx');
     expect(panel).not.toMatch(/approveExcursion|rejectExcursion/);
-    expect(panel).toContain('DecideInApprovals kinds={["away"]}');
   });
 
   it('the page reads each of the three attendance decisions space-aware', () => {
@@ -97,7 +96,6 @@ describe('canApproveAttendance', () => {
   it('hours are decided in Approvals, never on the attendance page', () => {
     const page = read('src/app/(dashboard)/attendance/page.tsx');
     expect(page).not.toMatch(/approveEntry|rejectEntry/);
-    expect(page).toContain('DecideInApprovals');
   });
 });
 

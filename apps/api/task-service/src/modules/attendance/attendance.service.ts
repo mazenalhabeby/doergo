@@ -5,6 +5,8 @@ import { ExtraTimeService } from './extra-time.service';
 import { HeartbeatService } from './heartbeat.service';
 import { AttendanceReadService } from './attendance-read.service';
 import { ShiftSweepService } from './shift-sweep.service';
+import { NoShowRecordService } from './no-show-record.service';
+import { NoShowSettleService } from './no-show-settle.service';
 import { AttendanceRoutingService } from './attendance-routing.service';
 
 /*
@@ -31,6 +33,8 @@ export class AttendanceService {
     private readonly reads: AttendanceReadService,
     private readonly shiftSweeps: ShiftSweepService,
     private readonly routing: AttendanceRoutingService,
+    private readonly noShows: NoShowRecordService,
+    private readonly noShowSettle: NoShowSettleService,
   ) {}
 
   // midnightClockOut removed — replaced by timezone-aware autoClockOut that runs every 15 min
@@ -161,20 +165,27 @@ export class AttendanceService {
     return this.shiftSweeps.runShiftReminders(...args);
   }
 
-  materializeShiftInstances(...args: Parameters<ShiftSweepService['materializeShiftInstances']>) {
-    return this.shiftSweeps.materializeShiftInstances(...args);
+  /** The slow cron: plan the next shifts, and look again at every open no-show (the rota, leave or calendar may have changed). */
+  async materializeShiftInstances(...args: Parameters<ShiftSweepService['materializeShiftInstances']>) {
+    const made = await this.shiftSweeps.materializeShiftInstances(...args);
+    const noShows = await this.noShowSettle.recheckOpen();
+    return { ...made, noShows };
   }
 
   runNoShowSweep(...args: Parameters<ShiftSweepService['runNoShowSweep']>) {
     return this.shiftSweeps.runNoShowSweep(...args);
   }
 
-  listNoShows(...args: Parameters<ShiftSweepService['listNoShows']>) {
-    return this.shiftSweeps.listNoShows(...args);
+  listNoShows(...args: Parameters<NoShowRecordService['list']>) {
+    return this.noShows.list(...args);
   }
 
-  resolveNoShow(...args: Parameters<ShiftSweepService['resolveNoShow']>) {
-    return this.shiftSweeps.resolveNoShow(...args);
+  resolveNoShow(...args: Parameters<NoShowRecordService['resolve']>) {
+    return this.noShows.resolve(...args);
+  }
+
+  noShowSummary(...args: Parameters<NoShowRecordService['summary']>) {
+    return this.noShows.summary(...args);
   }
 
   // ── Who is told.

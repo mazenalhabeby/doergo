@@ -2805,6 +2805,18 @@
       "saved": "Turno actualizado",
       "timeHint": "Añade la hora como HH:MM.",
       "title": "Editar turno"
+    },
+    "absentBadge": "Ausente",
+    "closeReason": {
+      "SICK": "Enfermo",
+      "FORGOT": "Olvidó fichar",
+      "AGREED": "Acordado",
+      "OTHER": "Otro",
+      "LEAVE": "De permiso",
+      "ELSEWHERE": "En otro espacio",
+      "HOLIDAY": "Festivo",
+      "SHIFT_REMOVED": "Cuadrante cambiado",
+      "LEFT": "Ya no está"
     }
   },
   "scan": {
@@ -5118,7 +5130,8 @@
       "overtime": "Horas extra por aprobar",
       "noShow": "No fichó la entrada del turno",
       "assetProposal": "Envió un documento para un activo nuevo",
-      "join": "Quiere unirse a la organización"
+      "join": "Quiere unirse a la organización",
+      "noShowRun": "{{count}} turnos seguidos sin venir"
     },
     "fact": {
       "workspace": "Espacio de trabajo",
@@ -5156,7 +5169,12 @@
       "message": "Mensaje",
       "reference": "Referencia",
       "unit": "Unidad",
-      "priority": "Prioridad"
+      "priority": "Prioridad",
+      "inARow": "Seguidos",
+      "reminded": "Recordatorios",
+      "appLastUsed": "Último uso de la app",
+      "thisMonth": "Este mes",
+      "likely": "Probablemente"
     },
     "cover": {
       "ok": "Quedan suficientes personas",
@@ -5171,11 +5189,12 @@
       "allow": "Permitir",
       "notAllowed": "No permitir",
       "give": "Dar tiempo",
-      "excuse": "Justificar",
+      "excuse": "Justificado",
       "acknowledge": "Encargarse",
       "accept": "Aceptar",
       "verify": "Verificar",
-      "turnIntoJob": "Convertir en trabajo"
+      "turnIntoJob": "Convertir en trabajo",
+      "absent": "Ausente"
     },
     "needsPage": {
       "assetProposal": "Al aceptarlo se crea un activo: elija su tipo en la página completa.",
@@ -5293,6 +5312,29 @@
       "waiting": "{{name}} aprobó. También necesita a {{role}}.",
       "short": "necesita a {{role}}"
     },
-    "decideInApprovals": "Decidir en Aprobaciones"
+    "decideInApprovals": "Decidir en Aprobaciones",
+    "noShow": {
+      "run": "{{count}} días · {{from}} – {{to}}",
+      "reminded": "{{count}} recordatorios, sin respuesta",
+      "reminded_one": "1 recordatorio, sin respuesta",
+      "thisMonth": "{{count}} turnos sin venir",
+      "hintElsewhere": "Ficha en {{space}} en su lugar: el turno puede estar en el espacio equivocado",
+      "hintNotSeen": "No ha fichado en ningún sitio desde el {{date}}",
+      "hintNeverSeen": "Nunca ha fichado",
+      "whatHappened": "¿Qué pasó?",
+      "excusedHelp": "No cuenta en su contra.",
+      "absentHelp": "Un día perdido. Cuenta en su historial y en los informes.",
+      "reasons": {
+        "SICK": "Enfermo",
+        "FORGOT": "Olvidó fichar",
+        "AGREED": "Lo acordamos",
+        "OTHER": "Otro"
+      },
+      "wasHere": "Sí estuvo",
+      "wasHereHelp": "Añade las horas de este turno. La ausencia se cierra al guardarlas.",
+      "wholeRun": "Decidir los {{count}} días a la vez",
+      "save": "Guardar",
+      "fixRota": "Corregir el cuadrante"
+    }
   }
 }

@@ -2805,6 +2805,18 @@
       "saved": "Turno aggiornato",
       "timeHint": "Inserisci l’ora come HH:MM.",
       "title": "Modifica turno"
+    },
+    "absentBadge": "Assente",
+    "closeReason": {
+      "SICK": "Malattia",
+      "FORGOT": "Ha dimenticato di timbrare",
+      "AGREED": "Concordato",
+      "OTHER": "Altro",
+      "LEAVE": "In ferie",
+      "ELSEWHERE": "In un altro spazio",
+      "HOLIDAY": "Festività",
+      "SHIFT_REMOVED": "Turni modificati",
+      "LEFT": "Non più con noi"
     }
   },
   "scan": {
@@ -5118,7 +5130,8 @@
       "overtime": "Straordinari da approvare",
       "noShow": "Non ha timbrato l’ingresso del turno",
       "assetProposal": "Ha inviato un documento per un nuovo bene",
-      "join": "Vuole unirsi all’organizzazione"
+      "join": "Vuole unirsi all’organizzazione",
+      "noShowRun": "{{count}} turni saltati di fila"
     },
     "fact": {
       "workspace": "Spazio di lavoro",
@@ -5156,7 +5169,12 @@
       "message": "Messaggio",
       "reference": "Riferimento",
       "unit": "Unità",
-      "priority": "Priorità"
+      "priority": "Priorità",
+      "inARow": "Di fila",
+      "reminded": "Promemoria",
+      "appLastUsed": "Ultimo uso dell’app",
+      "thisMonth": "Questo mese",
+      "likely": "Probabilmente"
     },
     "cover": {
       "ok": "Restano abbastanza persone",
@@ -5171,11 +5189,12 @@
       "allow": "Consenti",
       "notAllowed": "Non consentire",
       "give": "Concedi tempo",
-      "excuse": "Giustifica",
+      "excuse": "Giustificato",
       "acknowledge": "Prendi in carico",
       "accept": "Accetta",
       "verify": "Verifica",
-      "turnIntoJob": "Trasforma in intervento"
+      "turnIntoJob": "Trasforma in intervento",
+      "absent": "Assente"
     },
     "needsPage": {
       "assetProposal": "Accettando si crea un bene: scelga il tipo nella pagina completa.",
@@ -5293,6 +5312,29 @@
       "waiting": "{{name}} ha approvato. Serve anche {{role}}.",
       "short": "serve {{role}}"
     },
-    "decideInApprovals": "Decidi in Approvazioni"
+    "decideInApprovals": "Decidi in Approvazioni",
+    "noShow": {
+      "run": "{{count}} giorni · {{from}} – {{to}}",
+      "reminded": "{{count}} promemoria, nessuna risposta",
+      "reminded_one": "1 promemoria, nessuna risposta",
+      "thisMonth": "{{count}} turni saltati",
+      "hintElsewhere": "Timbra invece a {{space}}: il turno potrebbe essere nello spazio sbagliato",
+      "hintNotSeen": "Non timbra da nessuna parte dal {{date}}",
+      "hintNeverSeen": "Non ha mai timbrato",
+      "whatHappened": "Cos’è successo?",
+      "excusedHelp": "Non conta a suo sfavore.",
+      "absentHelp": "Un giorno perso. Conta nello storico e nei report.",
+      "reasons": {
+        "SICK": "Malattia",
+        "FORGOT": "Ha dimenticato di timbrare",
+        "AGREED": "Concordato con me",
+        "OTHER": "Altro"
+      },
+      "wasHere": "Era presente",
+      "wasHereHelp": "Aggiungi le ore di questo turno. L’assenza si chiude al salvataggio.",
+      "wholeRun": "Decidi tutti i {{count}} giorni insieme",
+      "save": "Salva",
+      "fixRota": "Correggi il turno"
+    }
   }
 }

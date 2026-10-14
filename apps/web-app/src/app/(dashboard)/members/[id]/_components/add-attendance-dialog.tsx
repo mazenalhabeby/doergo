@@ -1,7 +1,7 @@
 "use client"
 
 import { personName, todayKey } from "@hbcfield/shared/client"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { BreakFields, breakFitsShift, type BreakKind } from "@/components/attendance/break-fields"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
@@ -38,6 +38,12 @@ interface AddAttendanceDialogProps {
   // When omitted, the dialog shows an employee picker (management page).
   employeeId?: string
   employeeName?: string
+  /** Open filled in — "They were here" on a missed shift fills the workspace, the day and the hours. */
+  prefill?: { locationId: string; date: string; startTime: string; endTime: string }
+  /** A different button to open it with. */
+  trigger?: ReactNode
+  /** After hours were added (the caller refreshes what depended on them). */
+  onAdded?: () => void
 }
 
 type Mode = "single" | "range"
@@ -48,6 +54,9 @@ const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 export function AddAttendanceDialog({
   employeeId,
   employeeName,
+  prefill,
+  trigger,
+  onAdded,
 }: AddAttendanceDialogProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
@@ -163,6 +172,7 @@ export function AddAttendanceDialog({
             ? t("technicians.addAttendance.successWithSkipped", { created, skipped })
             : t("technicians.addAttendance.success", { count: created })
         )
+        onAdded?.()
         resetAndClose()
       } else {
         toast.info(t("technicians.addAttendance.noneCreated", { skipped }))
@@ -172,6 +182,19 @@ export function AddAttendanceDialog({
       toast.error(err.message || t("technicians.addAttendance.error"))
     },
   })
+
+  function openWith() {
+    if (prefill) {
+      setMode("single")
+      setLocationId(prefill.locationId)
+      setStartDate(prefill.date)
+      setStartTime(prefill.startTime)
+      setEndTime(prefill.endTime)
+      // The rest the shift had is not known here: the office adds one if there was.
+      setHasBreak(false)
+    }
+    setOpen(true)
+  }
 
   function resetAndClose() {
     setOpen(false)
@@ -232,12 +255,14 @@ export function AddAttendanceDialog({
     !mutation.isPending
 
   return (
-    <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : resetAndClose())}>
+    <Dialog open={open} onOpenChange={(o) => (o ? openWith() : resetAndClose())}>
       <DialogTrigger asChild>
-        <Button data-tour="add-attendance-button" size="sm" className="gap-2">
-          <CalendarPlus className="h-4 w-4" />
-          {t("technicians.addAttendance.button")}
-        </Button>
+        {trigger ?? (
+          <Button data-tour="add-attendance-button" size="sm" className="gap-2">
+            <CalendarPlus className="h-4 w-4" />
+            {t("technicians.addAttendance.button")}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>

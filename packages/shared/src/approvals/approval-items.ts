@@ -156,7 +156,26 @@ export const toApproval = {
       raisedAt: expected,
       dueAt: iso(r.expectedClockOutAt),
       group: noShowGroup(iso(r.expectedClockOutAt), ctx.now),
-      data: { expectedClockInAt: expected, expectedClockOutAt: iso(r.expectedClockOutAt), state: r.state ?? null, localDate: r.localDate ?? null },
+      data: {
+        expectedClockInAt: expected,
+        expectedClockOutAt: iso(r.expectedClockOutAt),
+        state: r.state ?? null,
+        localDate: r.localDate ?? null,
+        reminderCount: typeof r.reminderCount === 'number' ? r.reminderCount : null,
+        lastActiveAt: iso(r.lastActiveAt),
+        missedThisMonth: typeof r.missedThisMonth === 'number' ? r.missedThisMonth : null,
+        // A run of misses decided as one (attendance/no-show.ts).
+        runCount: r.run?.count ?? null,
+        runFrom: r.run?.from ?? null,
+        runTo: r.run?.to ?? null,
+        hint: r.hint?.kind ?? null,
+        hintSpaceName: r.hint?.kind === 'ELSEWHERE' ? r.hint.spaceName ?? null : null,
+        hintSince: r.hint?.kind === 'NOT_SEEN' ? iso(r.hint.since) : null,
+        // "They were here" fills Add attendance with these; times read in the workspace's zone.
+        timezone: r.timezone ?? null,
+        userId: r.userId ?? null,
+        spaceId: r.spaceId ?? null,
+      },
     });
   },
 

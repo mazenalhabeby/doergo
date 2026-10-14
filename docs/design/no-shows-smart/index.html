@@ -1,0 +1,150 @@
+<title>Smarter No-shows</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column of four labelled steps — what the system settles alone, the one decision in Approvals, the pattern, the record. */
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --sunk:#eef1f5; --line:#dde3ea;
+  --fg:#16202b; --muted:#5d6b7a; --accent:#2563eb; --accent-soft:#e3ecfd;
+  --ok:#15803d; --ok-soft:#e3f4e8; --warn:#a16207; --warn-soft:#fbf1d9; --bad:#b42318; --bad-soft:#fbe5e3;
+  --display:'Manrope',system-ui,sans-serif; --body:'Manrope',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1117; --surface:#151c24; --sunk:#10161d; --line:#26313d;
+  --fg:#e7edf3; --muted:#93a1b0; --accent:#6d9cff; --accent-soft:#1a2a47;
+  --ok:#5fd38a; --ok-soft:#14301f; --warn:#e6b955; --warn-soft:#33290f; --bad:#f08a80; --bad-soft:#3a1a18; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1117; --surface:#151c24; --sunk:#10161d; --line:#26313d;
+  --fg:#e7edf3; --muted:#93a1b0; --accent:#6d9cff; --accent-soft:#1a2a47;
+  --ok:#5fd38a; --ok-soft:#14301f; --warn:#e6b955; --warn-soft:#33290f; --bad:#f08a80; --bad-soft:#3a1a18; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:flex;flex-direction:column;gap:40px}
+h1{font-family:var(--display);font-size:30px;font-weight:800;margin:0;text-wrap:balance}
+h2{font-size:20px;font-weight:700;margin:0;text-wrap:balance}
+p{margin:0}
+.lede{color:var(--muted);max-width:64ch;margin-top:8px}
+.step{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.why{color:var(--muted);max-width:68ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.row:first-child{border-top:none}
+.grow{flex:1;min-width:0}
+.name{font-weight:700}
+.sub{color:var(--muted);font-size:13px}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.ok{color:var(--ok);background:var(--ok-soft)} .warn{color:var(--warn);background:var(--warn-soft)} .bad{color:var(--bad);background:var(--bad-soft)} .info{color:var(--accent);background:var(--accent-soft)}
+.btn{font:inherit;font-size:14px;font-weight:600;border-radius:10px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:720px){.grid2{grid-template-columns:1fr}}
+.panel{padding:18px;display:flex;flex-direction:column;gap:14px}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.hint{display:flex;gap:10px;align-items:flex-start;background:var(--sunk);border-radius:10px;padding:10px 12px;font-size:14px}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.choice.sel{border-color:var(--accent);background:var(--accent-soft)}
+.choice b{display:block}
+.dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line);flex:none;margin-top:3px}
+.choice.sel .dot{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,transparent 50%)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.chip.on{border-color:var(--accent);color:var(--accent)}
+.days{display:flex;gap:4px}
+.d{width:22px;height:22px;border-radius:6px;font-size:11px;display:grid;place-items:center;background:var(--sunk);color:var(--muted);font-family:var(--mono)}
+.d.x{background:var(--bad-soft);color:var(--bad)} .d.e{background:var(--ok-soft);color:var(--ok)} .d.l{background:var(--warn-soft);color:var(--warn)}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:10px 18px;border-bottom:1px solid var(--line)}
+td{padding:12px 18px;border-top:1px solid var(--line)}
+.scroll{overflow-x:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mockup · not built · example people and times</div>
+    <h1>No-shows that sort themselves out</h1>
+    <p class="lede">Right now every missed shift lands as "Escalated" and sits there; the only choice is "Excuse". In the demo that is 85 rows, mostly the same three people on the same shift. Here the system settles what it can prove, asks a leader one clear question about the rest, and spots the pattern.</p>
+  </header>
+
+  <section class="step">
+    <div class="eyebrow">1 · Before anyone is asked</div>
+    <h2>The system settles what it can prove</h2>
+    <p class="why">These checks run when the shift is missed and again before it reaches a leader. Each one closes the no-show with the reason written on it, so nobody has to excuse anything by hand.</p>
+    <div class="card">
+      <div class="row"><span class="pill ok">Leave</span><div class="grow"><div class="name">Approved leave or sickness that day</div><div class="sub">Already done today. Stays.</div></div></div>
+      <div class="row"><span class="pill ok">Late</span><div class="grow"><div class="name">Clocked in later the same day</div><div class="sub">Becomes "Late 42 min", not a no-show. Already done today. Stays.</div></div></div>
+      <div class="row"><span class="pill info">New</span><div class="grow"><div class="name">Worked at another workspace in that shift's time</div><div class="sub">"Was at Warehouse instead." Closed as moved, the leader of that shift is told once.</div></div></div>
+      <div class="row"><span class="pill info">New</span><div class="grow"><div class="name">Public holiday or a day the workspace is closed</div><div class="sub">Not expected that day, so never a no-show.</div></div></div>
+      <div class="row"><span class="pill info">New</span><div class="grow"><div class="name">The shift was removed or moved afterwards</div><div class="sub">The rota changed, so the old shift drops out.</div></div></div>
+      <div class="row"><span class="pill info">New</span><div class="grow"><div class="name">The person left the company or the workspace</div><div class="sub">Dropped, never chased.</div></div></div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="eyebrow">2 · In Approvals</div>
+    <h2>One question for the leader, with an answer that closes it</h2>
+    <p class="why">Only what is left reaches Approvals. The leader sees what the system already checked and picks one of three outcomes. "Absent" is new: today there is no way to say "this really was a missed day", so rows stay open forever.</p>
+    <div class="grid2">
+      <div class="card"><div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><div class="name">Lisa Adler did not come in</div><div class="sub">Main Office · Tue Oct 14 · shift 11:11–19:11</div></div><span class="pill bad">No-show</span></div>
+        <dl class="facts">
+          <dt>Reminded</dt><dd>11:26 and 11:41, no answer</dd>
+          <dt>Leave</dt><dd>None that day</dd>
+          <dt>Other workspaces</dt><dd>Not clocked in anywhere</dd>
+          <dt>Phone last seen</dt><dd>Mon 21:04</dd>
+          <dt>This month</dt><dd>4th missed shift</dd>
+        </dl>
+        <div class="hint"><span class="pill warn">Pattern</span><span>Lisa missed this same 11:11 shift on 4 working days in a row. Her rota may be wrong. See step 3.</span></div>
+      </div></div>
+      <div class="card"><div class="panel">
+        <div class="name">What happened?</div>
+        <div class="choices">
+          <div class="choice"><span class="dot"></span><div><b>Excused</b><span class="sub">Not held against them.</span>
+            <div class="chips" style="margin-top:8px"><span class="chip on">Sick</span><span class="chip">Forgot to clock in</span><span class="chip">Agreed with me</span><span class="chip">Other…</span></div></div></div>
+          <div class="choice sel"><span class="dot"></span><div><b>Absent</b><span class="sub">A missed day. Counts on their record and in reports.</span></div></div>
+          <div class="choice"><span class="dot"></span><div><b>They were here</b><span class="sub">Opens "Add attendance" for that shift, filled in. The no-show closes when the hours are saved.</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="b1">Later</button><button class="btn primary" id="b2">Save</button></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="step">
+    <div class="eyebrow">3 · The pattern</div>
+    <h2>Three days the same way becomes one item, not three</h2>
+    <p class="why">When the same person misses the same shift again and again, Approvals shows one grouped item instead of one per day. A long run usually means the rota is wrong, so fixing it is offered first, and one answer closes every day in the group.</p>
+    <div class="card"><div class="panel">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div class="name">Lisa Adler · 4 missed shifts in a row</div><div class="sub">Main Office · 11:11–19:11 · Oct 9–14</div></div>
+        <div class="days" aria-label="Last 7 working days"><span class="d">W</span><span class="d">Th</span><span class="d x">F</span><span class="d">Sa</span><span class="d x">M</span><span class="d x">T</span><span class="d x">W</span></div></div>
+      <div class="hint"><span class="pill info">Likely</span><span>Lisa has not clocked in at Main Office since Oct 8 but works at Service Center every day. The shift is probably on the wrong workspace.</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="b3">Fix her rota</button><button class="btn" id="b4">Excuse all 4</button><button class="btn" id="b5">Mark all 4 absent</button><button class="btn" id="b6">Decide one by one</button></div>
+    </div></div>
+  </section>
+
+  <section class="step">
+    <div class="eyebrow">4 · Attendance → No-shows</div>
+    <h2>The tab becomes a record, by person</h2>
+    <p class="why">No buttons and no "waiting" banner. One row per person for the period, with how each missed day ended. Open rows link to Approvals; Reopen stays on a decided day for a leader who changes their mind.</p>
+    <div class="card scroll">
+      <table>
+        <thead><tr><th>Person</th><th>Last 7 working days</th><th>Absent</th><th>Excused</th><th>Settled by itself</th><th>Open</th></tr></thead>
+        <tbody>
+          <tr><td><div class="name">Lisa Adler</div><div class="sub">Main Office</div></td><td><div class="days"><span class="d">W</span><span class="d">Th</span><span class="d x">F</span><span class="d">Sa</span><span class="d x">M</span><span class="d x">T</span><span class="d x">W</span></div></td><td>1</td><td>0</td><td>0</td><td><span class="pill info">3 in Approvals →</span></td></tr>
+          <tr><td><div class="name">Mike Weber</div><div class="sub">Main Office</div></td><td><div class="days"><span class="d">W</span><span class="d l">Th</span><span class="d">F</span><span class="d">Sa</span><span class="d e">M</span><span class="d">T</span><span class="d">W</span></div></td><td>0</td><td>1</td><td>1 late</td><td>—</td></tr>
+          <tr><td><div class="name">Dana Pichler</div><div class="sub">Main Office</div></td><td><div class="days"><span class="d">W</span><span class="d">Th</span><span class="d">F</span><span class="d">Sa</span><span class="d e">M</span><span class="d">T</span><span class="d">W</span></div></td><td>0</td><td>0</td><td>1 leave</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend"><span><span class="d x">·</span> absent or open</span><span><span class="d e">·</span> excused / leave</span><span><span class="d l">·</span> late</span><span><span class="d">·</span> worked</span></div>
+  </section>
+
+  <section class="step">
+    <div class="eyebrow">Also</div>
+    <h2>The "waiting" notices go</h2>
+    <p class="why">As you asked: no "148 waiting for you — decide in Approvals" bar on Attendance, Overtime, Assets or anywhere else. The count beside the bell is the only pointer.</p>
+  </section>
+</div>

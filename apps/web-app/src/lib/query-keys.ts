@@ -169,6 +169,7 @@ const attendanceKeys = {
   activeBreaks: () => named("attendance-breaks-active"),
   breakHistory: (...a: [date?: string, type?: string]) => named("attendance-breaks-history", a),
   breakSummary: (...a: [date?: string]) => named("attendance-breaks-summary", a),
+  /** The no-show RECORD (one row per person) — the tab and its badge share it. */
   noShows: () => named("attendance-no-shows"),
   /** The dashboard's presence tiles. */
   active: () => named("attendance-active"),

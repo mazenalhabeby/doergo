@@ -9,6 +9,7 @@
  *  - the sweep always nudged every 5 min, 3 times, whatever the shift said.
  */
 import { ShiftSweepService, shiftNudgeCadence } from '../shift-sweep.service';
+import { NoShowSettleService } from '../no-show-settle.service';
 
 const NOW = new Date('2026-10-09T05:10:00.000Z');
 
@@ -60,46 +61,60 @@ function service(due: Inst[], opts: { leaves?: any[]; shifts?: any[] } = {}) {
 
 const leaveTo = (endDate: string) => [{ technicianId: 'u1', startDate: day('2026-10-05'), endDate: day(endDate) }];
 
-describe('no-show sweep — approved leave', () => {
+/*
+  Leave is now one of the proofs NoShowSettleService reads (shared
+  attendance/no-show.ts); the same two DATE-vs-instant bugs are pinned there.
+*/
+function settler(leaves: any[]) {
+  const svc = Object.create(NoShowSettleService.prototype) as any;
+  svc.prisma = {
+    timeEntry: { findMany: jest.fn().mockResolvedValue([]) },
+    timeOff: { findMany: jest.fn().mockResolvedValue(leaves) },
+    user: { findMany: jest.fn().mockResolvedValue([{ id: 'u1', isActive: true, organizationId: 'org-1' }]) },
+    shiftAssignment: { findMany: jest.fn().mockResolvedValue([]) },
+  };
+  // The rota still plans it: only the leave decides here.
+  svc.shiftResolver = { matchAndWindowForDate: () => ({}) };
+  svc.prisma.shiftAssignment.findMany.mockResolvedValue([
+    { userId: 'u1', spaceId: 'space-1', shiftId: 'shift-1', recurrence: 'WEEKLY', daysOfWeek: [], daysOfMonth: [], dates: [], effectiveFrom: day('2026-01-01'), effectiveTo: null, shift: { isActive: true }, space: { timezone: 'Europe/Vienna' } },
+  ]);
+  return svc as NoShowSettleService;
+}
+const full = (o: Partial<Inst> = {}) => {
+  const i = inst(o);
+  return { ...i, expectedClockOutAt: new Date(i.expectedClockInAt.getTime() + 8 * 3_600_000) };
+};
+
+describe('no-show — approved leave closes it', () => {
   beforeAll(() => jest.useFakeTimers().setSystemTime(NOW));
   afterAll(() => jest.useRealTimers());
 
-  it('excuses a shift on the LAST day of leave (07:00 Vienna on the end date)', async () => {
-    const svc = service([inst()], { leaves: leaveTo('2026-10-09') });
+  it('on the LAST day of leave (07:00 Vienna on the end date)', async () => {
+    const v = await settler(leaveTo('2026-10-09')).judge([full()]);
+    expect(v.get('inst-1')).toEqual({ state: 'EXCUSED', reason: 'LEAVE' });
+  });
+
+  it('not the day AFTER leave ends', async () => {
+    const v = await settler(leaveTo('2026-10-09')).judge([full({ localDate: '2026-10-10', expectedClockInAt: new Date('2026-10-10T05:00:00.000Z') })]);
+    expect(v.get('inst-1')).toBeNull();
+  });
+
+  it('judged by the shift LOCAL day, not the UTC day of its start', async () => {
+    const v = await settler(leaveTo('2026-10-09')).judge([full({ localDate: '2026-10-10', expectedClockInAt: new Date('2026-10-09T22:30:00.000Z') })]);
+    expect(v.get('inst-1')).toBeNull();
+  });
+
+  it('the first day of leave too', async () => {
+    const v = await settler(leaveTo('2026-10-09')).judge([full({ localDate: '2026-10-05' })]);
+    expect(v.get('inst-1')).toEqual({ state: 'EXCUSED', reason: 'LEAVE' });
+  });
+
+  it('the sweep neither nudges nor tells anybody about a settled one', async () => {
+    const svc = service([inst()]);
+    svc.noShowSettle = { settle: jest.fn().mockResolvedValue(new Map([['inst-1', { state: 'EXCUSED', reason: 'LEAVE' }]])) };
     const res = await svc.runNoShowSweep();
-    expect(res.data.excusedCount).toBe(1);
-    expect(svc.prisma.shiftInstance.updateMany).toHaveBeenCalledWith({
-      where: { id: { in: ['inst-1'] } },
-      data: { state: 'EXCUSED', nextRemindAt: null },
-    });
+    expect(res.data).toMatchObject({ excusedCount: 1, remindedCount: 0, escalatedCount: 0 });
     expect(svc.notificationClient.emit).not.toHaveBeenCalled();
-  });
-
-  it('chases the day AFTER leave ends', async () => {
-    const svc = service([inst({ localDate: '2026-10-10', expectedClockInAt: new Date('2026-10-10T05:00:00.000Z') })], {
-      leaves: leaveTo('2026-10-09'),
-    });
-    const res = await svc.runNoShowSweep();
-    expect(res.data.excusedCount).toBe(0);
-    expect(res.data.remindedCount).toBe(1);
-  });
-
-  it('judges by the shift LOCAL day, not the UTC day of its start', async () => {
-    // 00:30 Vienna on 10 Oct is 22:30Z on 9 Oct: leave ending 9 Oct must NOT
-    // excuse a shift whose own day is the 10th.
-    const svc = service(
-      [inst({ localDate: '2026-10-10', expectedClockInAt: new Date('2026-10-09T22:30:00.000Z') })],
-      { leaves: leaveTo('2026-10-09') },
-    );
-    expect((await svc.runNoShowSweep()).data.excusedCount).toBe(0);
-  });
-
-  it('excuses the first day of leave too, and reads only leave that can still apply', async () => {
-    const svc = service([inst({ localDate: '2026-10-05' })], { leaves: leaveTo('2026-10-09') });
-    expect((await svc.runNoShowSweep()).data.excusedCount).toBe(1);
-    expect(svc.prisma.timeOff.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ endDate: { gte: day('2026-10-05') } }) }),
-    );
   });
 });
 

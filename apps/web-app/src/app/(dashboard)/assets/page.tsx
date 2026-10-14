@@ -31,7 +31,6 @@ import { AssetsTab } from "../locations/[id]/_components/assets-tab"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { keys } from "@/lib/query-keys"
-import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -49,12 +48,6 @@ export default function AssetsPage() {
           {space ? space.name : t("assets.all.subtitle", "Every asset in your workspaces — search to find one")}
         </p>
       </div>
-
-      {/*
-        Receipts sent in from phones are decided in Approvals; this says how
-        many wait, and nothing at all when none do.
-      */}
-      <DecideInApprovals kinds={["expense"]} className="mb-6" />
 
       {scope.showTabs && (
         <SpaceTabs

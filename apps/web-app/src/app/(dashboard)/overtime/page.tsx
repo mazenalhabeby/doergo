@@ -2,7 +2,6 @@
 
 import { personName } from "@hbcfield/shared/client"
 import { PlanGate } from "@/components/plan-gate"
-import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 import type { LucideIcon } from "lucide-react"
 import { useState} from "react"
 import { cn } from "@/lib/utils"
@@ -187,9 +186,6 @@ function OvertimePageInner() {
             label={t("overtime.statThisWeek")}
           />
         </div>
-
-        {/* Decisions are made in Approvals; this page is the record. */}
-        <DecideInApprovals kinds={["overtime", "extraTime"]} className="mb-6" />
 
           <div>
             <div className="flex items-center justify-between mb-4">

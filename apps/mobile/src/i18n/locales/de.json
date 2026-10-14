@@ -2805,6 +2805,18 @@
       "saved": "Schicht aktualisiert",
       "timeHint": "Zeit als HH:MM eingeben.",
       "title": "Schicht bearbeiten"
+    },
+    "absentBadge": "Abwesend",
+    "closeReason": {
+      "SICK": "Krank",
+      "FORGOT": "Einstempeln vergessen",
+      "AGREED": "Abgesprochen",
+      "OTHER": "Anderes",
+      "LEAVE": "Im Urlaub",
+      "ELSEWHERE": "Anderer Arbeitsbereich",
+      "HOLIDAY": "Feiertag",
+      "SHIFT_REMOVED": "Dienstplan geändert",
+      "LEFT": "Nicht mehr bei uns"
     }
   },
   "scan": {
@@ -5118,7 +5130,8 @@
       "overtime": "Überstunden zur Freigabe",
       "noShow": "Hat sich nicht zur Schicht eingestempelt",
       "assetProposal": "Hat ein Dokument für eine neue Anlage eingereicht",
-      "join": "Möchte der Organisation beitreten"
+      "join": "Möchte der Organisation beitreten",
+      "noShowRun": "{{count}} Schichten in Folge verpasst"
     },
     "fact": {
       "workspace": "Arbeitsbereich",
@@ -5156,7 +5169,12 @@
       "message": "Nachricht",
       "reference": "Referenz",
       "unit": "Einheit",
-      "priority": "Priorität"
+      "priority": "Priorität",
+      "inARow": "In Folge",
+      "reminded": "Erinnert",
+      "appLastUsed": "App zuletzt genutzt",
+      "thisMonth": "Diesen Monat",
+      "likely": "Vermutlich"
     },
     "cover": {
       "ok": "Genug Personen bleiben",
@@ -5171,11 +5189,12 @@
       "allow": "Erlauben",
       "notAllowed": "Nicht erlauben",
       "give": "Zeit geben",
-      "excuse": "Entschuldigen",
+      "excuse": "Entschuldigt",
       "acknowledge": "Übernehmen",
       "accept": "Annehmen",
       "verify": "Bestätigen",
-      "turnIntoJob": "Zu einem Auftrag machen"
+      "turnIntoJob": "Zu einem Auftrag machen",
+      "absent": "Abwesend"
     },
     "needsPage": {
       "assetProposal": "Beim Annehmen entsteht eine Anlage — wählen Sie ihre Art auf der vollständigen Seite.",
@@ -5293,6 +5312,29 @@
       "waiting": "{{name}} hat freigegeben. Es braucht auch {{role}}.",
       "short": "braucht {{role}}"
     },
-    "decideInApprovals": "In Genehmigungen entscheiden"
+    "decideInApprovals": "In Genehmigungen entscheiden",
+    "noShow": {
+      "run": "{{count}} Tage · {{from}} – {{to}}",
+      "reminded": "{{count}} Erinnerungen, keine Antwort",
+      "reminded_one": "1 Erinnerung, keine Antwort",
+      "thisMonth": "{{count}} verpasste Schichten",
+      "hintElsewhere": "Stempelt stattdessen bei {{space}} ein – die Schicht liegt vielleicht im falschen Arbeitsbereich",
+      "hintNotSeen": "Seit {{date}} nirgends eingestempelt",
+      "hintNeverSeen": "Hat noch nie eingestempelt",
+      "whatHappened": "Was ist passiert?",
+      "excusedHelp": "Wird nicht gegen die Person gewertet.",
+      "absentHelp": "Ein verpasster Tag. Zählt im Verlauf und in Berichten.",
+      "reasons": {
+        "SICK": "Krank",
+        "FORGOT": "Einstempeln vergessen",
+        "AGREED": "Mit mir abgesprochen",
+        "OTHER": "Anderes"
+      },
+      "wasHere": "Die Person war da",
+      "wasHereHelp": "Stunden für diese Schicht eintragen. Das Nichterscheinen schließt sich beim Speichern.",
+      "wholeRun": "Alle {{count}} Tage auf einmal entscheiden",
+      "save": "Speichern",
+      "fixRota": "Dienstplan korrigieren"
+    }
   }
 }

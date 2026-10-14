@@ -106,10 +106,24 @@ export function describeApproval(item: ApprovalItem, t: ApprovalT, locale: strin
       add('reason', str(d.reason))
       return { headline: label, facts }
     }
-    case 'noShow':
-      add('expected', when(locale, d.expectedClockInAt))
-      add('shiftEnds', when(locale, d.expectedClockOutAt, null, false))
-      return { headline: t('approvals.headline.noShow'), facts }
+    case 'noShow': {
+      const run = num(d.runCount)
+      add('expected', when(locale, d.expectedClockInAt, tz))
+      add('shiftEnds', when(locale, d.expectedClockOutAt, tz, false))
+      if (run && run > 1) add('inARow', t('approvals.noShow.run', { count: run, from: day(locale, d.runFrom), to: day(locale, d.runTo) }), 'bad')
+      const reminded = num(d.reminderCount)
+      if (reminded) add('reminded', t('approvals.noShow.reminded', { count: reminded }))
+      add('appLastUsed', when(locale, d.lastActiveAt))
+      const month = num(d.missedThisMonth)
+      if (month && month > 1) add('thisMonth', t('approvals.noShow.thisMonth', { count: month }), 'warn')
+      const hint = str(d.hint)
+      if (hint === 'ELSEWHERE' && str(d.hintSpaceName)) add('likely', t('approvals.noShow.hintElsewhere', { space: d.hintSpaceName }), 'warn')
+      else if (hint === 'NOT_SEEN') {
+        const since = day(locale, d.hintSince)
+        add('likely', since ? t('approvals.noShow.hintNotSeen', { date: since }) : t('approvals.noShow.hintNeverSeen'), 'warn')
+      }
+      return { headline: run && run > 1 ? t('approvals.headline.noShowRun', { count: run }) : t('approvals.headline.noShow'), facts }
+    }
     case 'issue':
       add('severity', str(d.severity) ? t(`approvals.priority.${d.severity}`, { defaultValue: String(d.severity) }) : null,
         d.severity === 'URGENT' || d.severity === 'HIGH' ? 'bad' : undefined)

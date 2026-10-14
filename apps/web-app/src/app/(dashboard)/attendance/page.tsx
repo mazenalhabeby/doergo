@@ -16,7 +16,6 @@ import { attendanceApi, employeesApi, locationsApi, type TimeEntry, type TimeEnt
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useTranslation } from "react-i18next"
 import { personName, workedMinutes } from "@hbcfield/shared/client"
-import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 // Lazy (audit AT-C1). Four tabs of which one shows, plus a dialog that renders on
 // a click — ~2,600 lines in the first paint. ssr:false: none renders on the server.
@@ -188,13 +187,13 @@ export default function AttendancePage() {
   // Weekly/monthly reports moved to ReportsTab component
 
   // No-shows (shares the tab's query key → deduped) — drives the tab count badge.
-  const { data: noShowRows = [] } = useQuery({
+  const { data: noShowPeople = [] } = useQuery({
     queryKey: keys.attendance.noShows(),
-    queryFn: () => attendanceApi.listNoShows({ days: 14 }),
+    queryFn: () => attendanceApi.noShowSummary({ days: 30 }),
     enabled: canAccess,
     staleTime: 30_000,
   })
-  const openNoShows = noShowRows.filter((r) => r.state !== "EXCUSED").length
+  const openNoShows = noShowPeople.reduce((n, p) => n + p.open, 0)
 
   // Breaks state
   const [breakDate, setBreakDate] = useState<string>(format(new Date(), "yyyy-MM-dd"))
@@ -328,9 +327,6 @@ export default function AttendancePage() {
             )}
           </div>
         </div>
-
-        {/* Every decision about hours, time away and missed clock-ins is made in Approvals. */}
-        <DecideInApprovals kinds={["hours", "away", "noShow", "issue"]} className="mb-6" />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as typeof activeTab)} className="mb-6">

@@ -2805,6 +2805,18 @@
       "saved": "Poste mis à jour",
       "timeHint": "Saisissez l’heure au format HH:MM.",
       "title": "Modifier le poste"
+    },
+    "absentBadge": "Absent",
+    "closeReason": {
+      "SICK": "Malade",
+      "FORGOT": "A oublié de pointer",
+      "AGREED": "Convenu",
+      "OTHER": "Autre",
+      "LEAVE": "En congé",
+      "ELSEWHERE": "Autre espace",
+      "HOLIDAY": "Jour férié",
+      "SHIFT_REMOVED": "Planning modifié",
+      "LEFT": "Parti"
     }
   },
   "scan": {
@@ -5118,7 +5130,8 @@
       "overtime": "Heures supplémentaires à valider",
       "noShow": "N’a pas pointé pour le poste",
       "assetProposal": "A envoyé un document pour un nouvel équipement",
-      "join": "Souhaite rejoindre l’organisation"
+      "join": "Souhaite rejoindre l’organisation",
+      "noShowRun": "{{count}} services manqués d’affilée"
     },
     "fact": {
       "workspace": "Espace de travail",
@@ -5156,7 +5169,12 @@
       "message": "Message",
       "reference": "Référence",
       "unit": "Unité",
-      "priority": "Priorité"
+      "priority": "Priorité",
+      "inARow": "D’affilée",
+      "reminded": "Rappels",
+      "appLastUsed": "Dernière utilisation de l’app",
+      "thisMonth": "Ce mois-ci",
+      "likely": "Probablement"
     },
     "cover": {
       "ok": "Assez de personnes restent",
@@ -5171,11 +5189,12 @@
       "allow": "Autoriser",
       "notAllowed": "Ne pas autoriser",
       "give": "Accorder du temps",
-      "excuse": "Excuser",
+      "excuse": "Excusé",
       "acknowledge": "Prendre en charge",
       "accept": "Accepter",
       "verify": "Vérifier",
-      "turnIntoJob": "Transformer en intervention"
+      "turnIntoJob": "Transformer en intervention",
+      "absent": "Absent"
     },
     "needsPage": {
       "assetProposal": "Accepter crée un équipement — choisissez son type sur la page complète.",
@@ -5293,6 +5312,29 @@
       "waiting": "{{name}} a validé. Il faut aussi {{role}}.",
       "short": "attend {{role}}"
     },
-    "decideInApprovals": "Décider dans Approbations"
+    "decideInApprovals": "Décider dans Validations",
+    "noShow": {
+      "run": "{{count}} jours · {{from}} – {{to}}",
+      "reminded": "{{count}} rappels, sans réponse",
+      "reminded_one": "1 rappel, sans réponse",
+      "thisMonth": "{{count}} services manqués",
+      "hintElsewhere": "Pointe à {{space}} à la place — le service est peut-être sur le mauvais espace",
+      "hintNotSeen": "N’a pointé nulle part depuis le {{date}}",
+      "hintNeverSeen": "N’a jamais pointé",
+      "whatHappened": "Que s’est-il passé ?",
+      "excusedHelp": "Ne compte pas contre la personne.",
+      "absentHelp": "Une journée manquée. Compte dans son historique et les rapports.",
+      "reasons": {
+        "SICK": "Malade",
+        "FORGOT": "A oublié de pointer",
+        "AGREED": "Convenu avec moi",
+        "OTHER": "Autre"
+      },
+      "wasHere": "La personne était là",
+      "wasHereHelp": "Ajoutez les heures de ce service. L’absence se ferme à l’enregistrement.",
+      "wholeRun": "Décider les {{count}} jours d’un coup",
+      "save": "Enregistrer",
+      "fixRota": "Corriger le planning"
+    }
   }
 }

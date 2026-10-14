@@ -3361,13 +3361,19 @@ model ShiftInstance {
   expectedClockInAt  DateTime
   expectedClockOutAt DateTime
 
-  // Lifecycle: PENDING → PRESENT (clocked in) | REMINDED → ESCALATED (no-show) | EXCUSED (time-off)
+  // Lifecycle: PENDING → PRESENT (clocked in) | REMINDED → ESCALATED (no-show) → EXCUSED | ABSENT
   state         String    @default("PENDING")
   reminderCount Int       @default(0)
   nextRemindAt  DateTime? // when the sweep should next act (set to grace-until at create; null when resolved)
   timeEntryId   String? // the fulfilling clock-in, when PRESENT
-  excuseReason  String? // why the no-show was excused (e.g. approved absence, sick leave)
-  excusedById   String? // who excused it
+  excuseReason  String? // the leader's own words, when they gave any
+  excusedById   String? // who decided it (EXCUSED or ABSENT)
+  // How it ENDED (shared attendance/no-show.ts): a leader's reason (SICK|FORGOT|AGREED|OTHER)
+  // or the proof the system found (LEAVE|ELSEWHERE|HOLIDAY|SHIFT_REMOVED|LEFT). State ABSENT = a real missed day.
+  closeReason         String?
+  closedAutomatically Boolean   @default(false)
+  decidedAt           DateTime?
+  settledSpaceId      String? // ELSEWHERE: the workspace they clocked in at instead
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

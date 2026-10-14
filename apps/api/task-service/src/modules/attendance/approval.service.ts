@@ -27,6 +27,7 @@ import {
 } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
+import { NoShowSettleService } from './no-show-settle.service';
 import { zonedWallTimeToUtc as sharedZonedWallTimeToUtc, localPartsIn, parseHm } from '@hbcfield/shared';
 import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
@@ -47,6 +48,8 @@ export class ApprovalService {
     @Optional() private readonly rematch?: ShiftRematchService,
     // A manager closing an open shift ends it like any clock-out: jobs left in work pause.
     @Optional() private readonly jobPause?: JobPauseService,
+    // Hours added for a day somebody was marked missing close that no-show ("They were here").
+    @Optional() private readonly noShowSettle?: NoShowSettleService,
   ) {}
 
   /**
@@ -1036,7 +1039,14 @@ export class ApprovalService {
     this.logger.log(
       `Manual attendance added: user=${data.userId}, editor=${data.editorId}, created=${toCreate.length}, skipped=${skipped}`,
     );
-    if (toCreate.length) this.emitChanged(data.organizationId, 'manual-add');
+    if (toCreate.length) {
+      this.emitChanged(data.organizationId, 'manual-add');
+      const from = toCreate.reduce((m, e) => (e.clockInAt < m ? e.clockInAt : m), toCreate[0].clockInAt as Date);
+      const to = toCreate.reduce((m, e) => (e.clockOutAt > m ? e.clockOutAt : m), toCreate[0].clockOutAt as Date);
+      await this.noShowSettle?.settleForUser(data.userId, from, to).catch((e) =>
+        this.logger.warn(`No-show settle after manual add failed: ${(e as Error).message}`),
+      );
+    }
     return success(
       { created: toCreate.length, skipped },
       `Added ${toCreate.length} ${toCreate.length === 1 ? 'entry' : 'entries'}` +

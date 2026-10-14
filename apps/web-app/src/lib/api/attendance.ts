@@ -1,7 +1,7 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
 import type { AttendanceListResponse, AttendanceQueryParams, BreakRuleRow, BreakSummary, EntryBreak, EntryEditHistoryItem, NoShowRow } from './types/attendance';
-import { BreakType, attendanceEndpoints, locationsEndpoints, type Break, type CompanyLocation, type GeofenceExcursion, type TimeEntry } from '@hbcfield/shared/client';
+import { BreakType, attendanceEndpoints, locationsEndpoints, type Break, type CompanyLocation, type GeofenceExcursion, type NoShowPersonSummary, type TimeEntry } from '@hbcfield/shared/client';
 
 export const attendanceApi = {
   // Employee self-service: my current clock status
@@ -333,10 +333,17 @@ export const attendanceApi = {
     return response.data?.data ?? [];
   },
 
-  resolveNoShow: async (id: string, action: "excuse" | "reopen", reason?: string) => {
+  resolveNoShow: async (id: string, action: "excuse" | "absent" | "reopen", reason?: string) => {
     const response = await call(attendanceEndpoints.resolveNoShow, { id }, { body: { action, reason } }) as ApiResponse<unknown>;
     if (response.error) throw apiError(response);
     return response.data;
+  },
+
+  /** The no-show record: one row per person who missed a planned shift in the period. */
+  noShowSummary: async (params?: { days?: number; spaceId?: string }) => {
+    const response = await call(attendanceEndpoints.noShowSummary, undefined, { query: { days: params?.days, spaceId: params?.spaceId } }) as ApiResponse<{ success: boolean; data: NoShowPersonSummary[] }>;
+    if (response.error) throw apiError(response);
+    return response.data?.data ?? [];
   },
 
   // =========================================================================

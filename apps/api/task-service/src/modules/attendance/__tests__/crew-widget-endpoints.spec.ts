@@ -12,7 +12,7 @@
  * scope states: org-wide (null), some spaces, and none ([] = nothing).
  */
 import { AttendanceService } from '../attendance.service';
-import { ShiftSweepService } from '../shift-sweep.service';
+import { NoShowRecordService } from '../no-show-record.service';
 import { AttendanceReadService } from '../attendance-read.service';
 import { ApprovalService } from '../approval.service';
 import { BreakService } from '../break.service';
@@ -22,7 +22,7 @@ const ORG = 'org-1';
 /** The facade over the two collaborators these reads live in, each given only the database. */
 function attendance(prisma: any) {
   const svc = Object.create(AttendanceService.prototype) as any;
-  svc.shiftSweeps = Object.assign(Object.create(ShiftSweepService.prototype), { prisma });
+  svc.noShows = Object.assign(Object.create(NoShowRecordService.prototype), { prisma });
   svc.reads = Object.assign(Object.create(AttendanceReadService.prototype), { prisma });
   return svc as AttendanceService;
 }
@@ -142,6 +142,7 @@ describe('no-shows — who has not come', () => {
       shiftInstance: { findMany: jest.fn().mockResolvedValue(rows) },
       user: { findMany: jest.fn().mockResolvedValue([]) },
       companyLocation: { findMany: jest.fn().mockResolvedValue([]) },
+      timeEntry: { findMany: jest.fn().mockResolvedValue([]), groupBy: jest.fn().mockResolvedValue([]) },
     };
   }
 
@@ -187,8 +188,8 @@ describe('no-shows — who has not come', () => {
     const { gte, lte } = q.where.expectedClockInAt;
     expect(lte.getTime()).toBeGreaterThanOrEqual(before);
     expect(lte.getTime() - gte.getTime()).toBe(86_400_000);
-    expect(q.take).toBe(200);
-    expect(q.where.state).toEqual({ in: ['REMINDED', 'ESCALATED', 'EXCUSED'] });
+    expect(q.take).toBe(300);
+    expect(q.where.state).toEqual({ in: ['REMINDED', 'ESCALATED', 'EXCUSED', 'ABSENT'] });
   });
 
   it('names people and places in two batched reads, not one per row (no N+1)', async () => {
@@ -200,9 +201,11 @@ describe('no-shows — who has not come', () => {
     const r: any = await attendance(prisma).listNoShows({ organizationId: ORG, days: 1, scopeSpaceIds: null });
     expect(r.data).toHaveLength(150);
     expect(prisma.user.findMany).toHaveBeenCalledTimes(1);
-    expect(prisma.companyLocation.findMany).toHaveBeenCalledTimes(1);
     expect(prisma.user.findMany.mock.calls[0][0].where.id.in).toHaveLength(40);
+    // The rows' places once; the run hints name where else they clocked in, once more — never per row.
+    expect(prisma.companyLocation.findMany.mock.calls.length).toBeLessThanOrEqual(2);
     expect(prisma.companyLocation.findMany.mock.calls[0][0].where.id.in).toHaveLength(7);
+    expect(prisma.shiftInstance.findMany.mock.calls.length).toBeLessThanOrEqual(3);
   });
 });
 

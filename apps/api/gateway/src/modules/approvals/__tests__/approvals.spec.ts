@@ -32,7 +32,8 @@ describe('which existing route a decision calls', () => {
   it('refuses what the route would refuse anyway, before calling it', () => {
     expect(approvalRoute({ kind: 'hours', id: 'e1', action: 'reject' })).toEqual({ ok: false, code: 'APPROVAL_INVALID', field: 'reason' });
     expect(approvalRoute({ kind: 'overtime', id: 'o', action: 'approve' })).toMatchObject({ ok: false, field: 'minutes' });
-    expect(approvalRoute({ kind: 'noShow', id: 'n', action: 'reject' })).toMatchObject({ ok: false, field: 'action' });
+    // A no-show's second answer is ABSENT (a real missed day), not a refusal.
+    expect(approvalRoute({ kind: 'noShow', id: 'n', action: 'reject' })).toMatchObject({ ok: true, body: { action: 'absent' } });
     expect(approvalRoute({ kind: 'clientRequest', id: 'c', action: 'approve' })).toMatchObject({ ok: false, field: 'spaceId' });
   });
   it('an id is a path segment, never a path', () => {

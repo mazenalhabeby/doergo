@@ -3927,13 +3927,44 @@
     "noShows": {
       "empty": "Todos los programados han fichado.",
       "emptyTitle": "Sin ausencias",
-      "excuse": "Justificar",
-      "expected": "Previsto",
-      "reasonLabel": "Motivo de la justificación",
-      "reasonPlaceholder": "Añade una nota (opcional)…",
       "reopen": "Reabrir",
-      "subtitle": "Turnos programados sin fichaje: se avisó a la persona y luego se escaló. Justifica (p. ej. ausencia aprobada) o reabre.",
-      "title": "Ausencias"
+      "title": "Ausencias",
+      "recordSubtitle": "Turnos planificados sin fichaje en los últimos {{days}} días y cómo terminó cada uno. Los abiertos se deciden en Aprobaciones.",
+      "col": {
+        "person": "Persona",
+        "days": "Últimos días planificados",
+        "absent": "Ausente",
+        "excused": "Justificado",
+        "settled": "Resuelto solo",
+        "open": "Abierto"
+      },
+      "inApprovals": "{{count}} en Aprobaciones",
+      "nothingClosed": "Nada decidido aún en este periodo.",
+      "reopened": "Reabierto: vuelve a estar en Aprobaciones",
+      "mark": {
+        "open": "Abierto",
+        "absent": "Ausente",
+        "excused": "Justificado o de permiso",
+        "late": "Llegó tarde",
+        "worked": "Trabajó",
+        "planned": "Planificado"
+      },
+      "state": {
+        "absent": "Ausente",
+        "excused": "Justificado",
+        "settled": "Resuelto"
+      },
+      "reason": {
+        "SICK": "Enfermo",
+        "FORGOT": "Olvidó fichar",
+        "AGREED": "Acordado",
+        "OTHER": "Otro",
+        "LEAVE": "De permiso",
+        "ELSEWHERE": "Trabajó en otro espacio",
+        "HOLIDAY": "Festivo",
+        "SHIFT_REMOVED": "Cuadrante cambiado",
+        "LEFT": "Ya no está con nosotros"
+      }
     },
     "addBreak": {
       "title": "Añadir una pausa",
@@ -10764,7 +10795,8 @@
       "overtime": "Horas extra por aprobar",
       "noShow": "No fichó la entrada del turno",
       "assetProposal": "Envió un documento para un activo nuevo",
-      "join": "Quiere unirse a la organización"
+      "join": "Quiere unirse a la organización",
+      "noShowRun": "{{count}} turnos seguidos sin venir"
     },
     "fact": {
       "workspace": "Espacio de trabajo",
@@ -10802,7 +10834,12 @@
       "message": "Mensaje",
       "reference": "Referencia",
       "unit": "Unidad",
-      "priority": "Prioridad"
+      "priority": "Prioridad",
+      "inARow": "Seguidos",
+      "reminded": "Recordatorios",
+      "appLastUsed": "Último uso de la app",
+      "thisMonth": "Este mes",
+      "likely": "Probablemente"
     },
     "cover": {
       "ok": "Quedan suficientes personas",
@@ -10817,11 +10854,12 @@
       "allow": "Permitir",
       "notAllowed": "No permitir",
       "give": "Dar tiempo",
-      "excuse": "Justificar",
+      "excuse": "Justificado",
       "acknowledge": "Encargarse",
       "accept": "Aceptar",
       "verify": "Verificar",
-      "turnIntoJob": "Convertir en trabajo"
+      "turnIntoJob": "Convertir en trabajo",
+      "absent": "Ausente"
     },
     "needsPage": {
       "assetProposal": "Al aceptarlo se crea un activo: elija su tipo en la página completa.",
@@ -10983,13 +11021,34 @@
       "escalateTo": "Pasar a",
       "noAnswerHint": "Los recordatorios van a quien puede decidir hoy (no a quien está de permiso). Páselo a un rol que pueda decidir."
     },
-    "decideThere_one": "{{count}} pendiente para ti — decide en",
-    "decideThere_other": "{{count}} pendientes para ti — decide en",
     "viewFile": {
       "document": "Ver el documento",
       "expense": "Ver el recibo",
       "assetProposal": "Ver la página"
     },
-    "decideInApprovals": "Decidir en Aprobaciones"
+    "decideInApprovals": "Decidir en Aprobaciones",
+    "noShow": {
+      "run": "{{count}} días · {{from}} – {{to}}",
+      "reminded": "{{count}} recordatorios, sin respuesta",
+      "reminded_one": "1 recordatorio, sin respuesta",
+      "thisMonth": "{{count}} turnos sin venir",
+      "hintElsewhere": "Ficha en {{space}} en su lugar: el turno puede estar en el espacio equivocado",
+      "hintNotSeen": "No ha fichado en ningún sitio desde el {{date}}",
+      "hintNeverSeen": "Nunca ha fichado",
+      "whatHappened": "¿Qué pasó?",
+      "excusedHelp": "No cuenta en su contra.",
+      "absentHelp": "Un día perdido. Cuenta en su historial y en los informes.",
+      "reasons": {
+        "SICK": "Enfermo",
+        "FORGOT": "Olvidó fichar",
+        "AGREED": "Lo acordamos",
+        "OTHER": "Otro"
+      },
+      "wasHere": "Sí estuvo",
+      "wasHereHelp": "Añade las horas de este turno. La ausencia se cierra al guardarlas.",
+      "wholeRun": "Decidir los {{count}} días a la vez",
+      "save": "Guardar",
+      "fixRota": "Corregir el cuadrante"
+    }
   }
 }

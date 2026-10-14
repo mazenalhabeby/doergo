@@ -86,9 +86,10 @@ export class ApprovalsService {
     };
     add('hours', async () => rows(await get('/attendance/approvals/pending?limit=100')).map((r) => toApproval.hours(r, ctx)));
     add('away', async () => rows(await get('/attendance/excursions?status=pending')).map((r) => toApproval.away(r, ctx)));
+    // Undecided ones of the last month; a RUN of misses (same person, same shift) is one item — its newest.
     add('noShow', async () =>
-      rows(await get('/attendance/no-shows?days=7'))
-        .filter((r) => r.state === 'REMINDED' || r.state === 'ESCALATED')
+      rows(await get('/attendance/no-shows?days=30&open=true'))
+        .filter((r) => (r.state === 'REMINDED' || r.state === 'ESCALATED') && r.runLatest !== false)
         .map((r) => toApproval.noShow(r, ctx)),
     );
     if (holds('extraTime') || isAdmin(user) || user.canManageUsers === true) {

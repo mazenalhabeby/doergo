@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   APPROVAL_KIND_SPECS,
+  NO_SHOW_EXCUSE_REASONS,
   approvalActionsFor,
   describeApproval,
   type ApprovalActionSpec,
   type ApprovalItem,
   type ApprovalT,
+  type NoShowExcuseReason,
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
@@ -43,6 +45,9 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
   const [reason, setReason] = useState('');
   const [minutes, setMinutes] = useState('30');
   const [expiresOn, setExpiresOn] = useState('');
+  // A missed shift: what happened, and whether the answer covers its whole run of days.
+  const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>('SICK');
+  const [wholeRun, setWholeRun] = useState(true);
   const [busy, setBusy] = useState(false);
 
   // Opened from a link, or after the list moved on: read it again.
@@ -73,6 +78,8 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         reason: a.reason !== 'none' && reason.trim() ? reason.trim() : undefined,
         minutes: a.input === 'minutes' ? Number(minutes) : undefined,
         expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
+        reasonCode: a.input === 'excuseReason' ? reasonCode : undefined,
+        wholeRun: runCount > 1 && wholeRun ? true : undefined,
         spaceId: item.kind === 'clientRequest' ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined)) : undefined,
       });
       if (res.stage === 'FIRST_STEP') {
@@ -89,11 +96,15 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     } finally {
       setBusy(false);
     }
-  }, [item, itemKey, reason, minutes, expiresOn, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [item, itemKey, reason, minutes, expiresOn, reasonCode, wholeRun, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const runCount = typeof item?.data.runCount === 'number' ? item.data.runCount : 0;
   const press = (a: ApprovalActionSpec) => {
-    if (a.reason !== 'none' || a.input) {
+    // A run of missed days asks first whether the answer covers all of them.
+    if (a.reason !== 'none' || a.input || runCount > 1) {
       setReason('');
+      setReasonCode('SICK');
+      setWholeRun(true);
       setArmed(a);
     } else void decide(a);
   };
@@ -166,8 +177,8 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         <View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: amazen.space(2), paddingHorizontal: amazen.space(4), paddingTop: amazen.space(3), paddingBottom: amazen.space(8), backgroundColor: c.canvas }, wide]}>
           {actions.slice().reverse().map((a) => (
             <View key={a.id} style={{ flex: 1 }}>
-              {a.tone === 'danger'
-                ? <GhostButton label={t(`approvals.actions.${a.labelKey}`)} tone="critical" disabled={busy} onPress={() => press(a)} />
+              {a.tone !== 'primary'
+                ? <GhostButton label={t(`approvals.actions.${a.labelKey}`)} tone={a.tone === 'danger' ? 'critical' : undefined} disabled={busy} onPress={() => press(a)} />
                 : <PrimaryButton label={t(`approvals.actions.${a.labelKey}`)} loading={busy && !armed} disabled={busy} onPress={() => press(a)} />}
             </View>
           ))}
@@ -192,6 +203,47 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
             <SectionLabel>{t('approvals.expiresOn')}</SectionLabel>
             <GlassInput value={expiresOn} onChangeText={setExpiresOn} placeholder="2027-12-31" keyboardType="numbers-and-punctuation" maxLength={10} />
           </>
+        ) : null}
+        {armed?.input === 'excuseReason' ? (
+          <>
+            <SectionLabel>{t('approvals.noShow.whatHappened')}</SectionLabel>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
+              {NO_SHOW_EXCUSE_REASONS.map((code) => {
+                const on = reasonCode === code;
+                return (
+                  <Pressable
+                    key={code}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: on }}
+                    onPress={() => setReasonCode(code)}
+                    style={{
+                      paddingHorizontal: amazen.space(3.5),
+                      paddingVertical: amazen.space(2),
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderColor: on ? c.accent : c.lineWell,
+                      backgroundColor: on ? c.accentTint : 'transparent',
+                    }}
+                  >
+                    <AText variant="body" tone="strong" style={{ fontSize: 14, color: on ? c.accent : undefined }}>
+                      {t(`approvals.noShow.reasons.${code}`)}
+                    </AText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+        {armed && item.kind === 'noShow' ? (
+          <AText variant="caption" tone="onGlass">
+            {t(armed.id === 'approve' ? 'approvals.noShow.excusedHelp' : 'approvals.noShow.absentHelp')}
+          </AText>
+        ) : null}
+        {armed && runCount > 1 ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: amazen.space(3) }}>
+            <AText variant="body" tone="strong" style={{ flexShrink: 1 }}>{t('approvals.noShow.wholeRun', { count: runCount })}</AText>
+            <Switch value={wholeRun} onValueChange={setWholeRun} />
+          </View>
         ) : null}
         {armed && armed.reason !== 'none' ? (
           <>

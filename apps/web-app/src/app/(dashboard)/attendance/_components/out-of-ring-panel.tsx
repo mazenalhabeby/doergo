@@ -10,7 +10,6 @@ import { attendanceApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { UserAvatar } from "@/components/user-avatar"
 import { keys } from "@/lib/query-keys"
-import { DecideInApprovals } from "@/components/approvals/decide-in-approvals"
 
 // Format remaining ms as "M:SS" / "H:MM:SS".
 function fmtRemaining(ms: number): string {
@@ -47,12 +46,10 @@ export function OutOfRingPanel() {
   }, [excursions])
 
   const approved = excursions.filter((e) => e.status === "APPROVED")
-  const waiting = <DecideInApprovals kinds={["away"]} className="mb-4" />
-  if (approved.length === 0) return waiting
+  if (approved.length === 0) return null
 
   return (
     <>
-    {waiting}
     <div className="bg-card rounded-2xl border border-orange-200/60 dark:border-orange-500/25 shadow-sm mb-8 overflow-hidden">
       <div className="p-5 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5">
         <div className="flex items-center gap-3">

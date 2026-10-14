@@ -7,6 +7,8 @@ import { ClockInService } from './clock-in.service';
 import { HeartbeatService } from './heartbeat.service';
 import { AttendanceReadService } from './attendance-read.service';
 import { AutoClockService } from './auto-clock.service';
+import { NoShowSettleService } from './no-show-settle.service';
+import { NoShowRecordService } from './no-show-record.service';
 
 /**
  * The collaborators behind the AttendanceService facade. One list, read by the
@@ -16,6 +18,9 @@ export const ATTENDANCE_SERVICE_PARTS = [
   AttendanceRoutingService,
   AttendanceGeocoderService,
   ShiftSweepService,
+  // A no-show: what the system closes itself, and the record + decisions.
+  NoShowSettleService,
+  NoShowRecordService,
   ExtraTimeService,
   ClockOutService,
   ClockInService,

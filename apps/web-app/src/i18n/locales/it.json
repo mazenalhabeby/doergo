@@ -3927,13 +3927,44 @@
     "noShows": {
       "empty": "Tutti i programmati hanno timbrato.",
       "emptyTitle": "Nessuna assenza",
-      "excuse": "Giustifica",
-      "expected": "Previsto",
-      "reasonLabel": "Motivo della giustificazione",
-      "reasonPlaceholder": "Aggiungi una nota (facoltativa)…",
       "reopen": "Riapri",
-      "subtitle": "Turni pianificati senza timbratura: la persona è stata sollecitata e poi segnalata. Giustifica (es. assenza approvata) o riapri.",
-      "title": "Assenze"
+      "title": "Assenze",
+      "recordSubtitle": "Turni pianificati senza timbratura negli ultimi {{days}} giorni e come è finito ciascuno. Quelli aperti si decidono in Approvazioni.",
+      "col": {
+        "person": "Persona",
+        "days": "Ultimi giorni pianificati",
+        "absent": "Assente",
+        "excused": "Giustificato",
+        "settled": "Risolto da sé",
+        "open": "Aperto"
+      },
+      "inApprovals": "{{count}} in Approvazioni",
+      "nothingClosed": "Ancora nulla di deciso in questo periodo.",
+      "reopened": "Riaperto: è di nuovo in Approvazioni",
+      "mark": {
+        "open": "Aperto",
+        "absent": "Assente",
+        "excused": "Giustificato o in ferie",
+        "late": "Arrivato in ritardo",
+        "worked": "Ha lavorato",
+        "planned": "Pianificato"
+      },
+      "state": {
+        "absent": "Assente",
+        "excused": "Giustificato",
+        "settled": "Risolto"
+      },
+      "reason": {
+        "SICK": "Malattia",
+        "FORGOT": "Ha dimenticato di timbrare",
+        "AGREED": "Concordato",
+        "OTHER": "Altro",
+        "LEAVE": "In ferie",
+        "ELSEWHERE": "Ha lavorato in un altro spazio",
+        "HOLIDAY": "Festività",
+        "SHIFT_REMOVED": "Turni modificati",
+        "LEFT": "Non è più con noi"
+      }
     },
     "addBreak": {
       "title": "Aggiungi una pausa",
@@ -10773,7 +10804,8 @@
       "overtime": "Straordinari da approvare",
       "noShow": "Non ha timbrato l’ingresso del turno",
       "assetProposal": "Ha inviato un documento per un nuovo bene",
-      "join": "Vuole unirsi all’organizzazione"
+      "join": "Vuole unirsi all’organizzazione",
+      "noShowRun": "{{count}} turni saltati di fila"
     },
     "fact": {
       "workspace": "Spazio di lavoro",
@@ -10811,7 +10843,12 @@
       "message": "Messaggio",
       "reference": "Riferimento",
       "unit": "Unità",
-      "priority": "Priorità"
+      "priority": "Priorità",
+      "inARow": "Di fila",
+      "reminded": "Promemoria",
+      "appLastUsed": "Ultimo uso dell’app",
+      "thisMonth": "Questo mese",
+      "likely": "Probabilmente"
     },
     "cover": {
       "ok": "Restano abbastanza persone",
@@ -10826,11 +10863,12 @@
       "allow": "Consenti",
       "notAllowed": "Non consentire",
       "give": "Concedi tempo",
-      "excuse": "Giustifica",
+      "excuse": "Giustificato",
       "acknowledge": "Prendi in carico",
       "accept": "Accetta",
       "verify": "Verifica",
-      "turnIntoJob": "Trasforma in intervento"
+      "turnIntoJob": "Trasforma in intervento",
+      "absent": "Assente"
     },
     "needsPage": {
       "assetProposal": "Accettando si crea un bene: scelga il tipo nella pagina completa.",
@@ -10992,13 +11030,34 @@
       "escalateTo": "Passa a",
       "noAnswerHint": "I promemoria vanno a chi può decidere oggi (non a chi è in ferie). Lo passi a un ruolo che può decidere."
     },
-    "decideThere_one": "{{count}} in attesa — decidi in",
-    "decideThere_other": "{{count}} in attesa — decidi in",
     "viewFile": {
       "document": "Vedi il documento",
       "expense": "Vedi la ricevuta",
       "assetProposal": "Vedi la pagina"
     },
-    "decideInApprovals": "Decidi in Approvazioni"
+    "decideInApprovals": "Decidi in Approvazioni",
+    "noShow": {
+      "run": "{{count}} giorni · {{from}} – {{to}}",
+      "reminded": "{{count}} promemoria, nessuna risposta",
+      "reminded_one": "1 promemoria, nessuna risposta",
+      "thisMonth": "{{count}} turni saltati",
+      "hintElsewhere": "Timbra invece a {{space}}: il turno potrebbe essere nello spazio sbagliato",
+      "hintNotSeen": "Non timbra da nessuna parte dal {{date}}",
+      "hintNeverSeen": "Non ha mai timbrato",
+      "whatHappened": "Cos’è successo?",
+      "excusedHelp": "Non conta a suo sfavore.",
+      "absentHelp": "Un giorno perso. Conta nello storico e nei report.",
+      "reasons": {
+        "SICK": "Malattia",
+        "FORGOT": "Ha dimenticato di timbrare",
+        "AGREED": "Concordato con me",
+        "OTHER": "Altro"
+      },
+      "wasHere": "Era presente",
+      "wasHereHelp": "Aggiungi le ore di questo turno. L’assenza si chiude al salvataggio.",
+      "wholeRun": "Decidi tutti i {{count}} giorni insieme",
+      "save": "Salva",
+      "fixRota": "Correggi il turno"
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, Logger, Optional } from '@nestjs/common';
+import { Injectable, Inject, Logger, Optional } from '@nestjs/common';
 import { MEMBER_SELECT } from './attendance-selects';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -12,10 +12,10 @@ import {
   presenceSessionEnd,
   SERVICE_NAMES,
 } from '@hbcfield/shared';
-import { ABSENCE_WHERE, scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
-import { localPartsIn, toISODateString } from '@hbcfield/shared';
+import { localPartsIn } from '@hbcfield/shared';
 import { AttendanceRoutingService } from './attendance-routing.service';
 import { AutoClockService } from './auto-clock.service';
+import { NoShowSettleService } from './no-show-settle.service';
 
 /**
  * A shift's own nudge cadence — gap between nudges and how many before a
@@ -55,6 +55,8 @@ export class ShiftSweepService {
     private readonly routing: AttendanceRoutingService,
     // The automatic clock's own threshold for telling the leader (attendance/auto-clock.ts).
     @Optional() private readonly autoClock?: AutoClockService,
+    // What the system can prove about a missed shift closes it before anybody is asked.
+    @Optional() private readonly noShowSettle?: NoShowSettleService,
   ) {}
 
   /**
@@ -388,23 +390,24 @@ export class ShiftSweepService {
     });
     if (due.length === 0) return success({ remindedCount: 0, escalatedCount: 0, excusedCount: 0 });
 
-    // Batch-load names, approved time-off and each shift's cadence
-    // (ShiftInstance is fk-less by design) — one query each, whatever the batch.
-    const userIds = [...new Set(due.map((d) => d.userId))];
-    const shiftIds = [...new Set(due.map((d) => d.shiftId))];
-    // The earliest shift day in the batch: leave that ended before it cannot
-    // excuse anything here, so it is not read (a member's whole leave history
-    // otherwise rides along every minute).
-    const earliestDay = due.reduce((min, d) => (d.localDate < min ? d.localDate : min), due[0].localDate);
-    const [users, leaves, shifts] = await Promise.all([
+    /*
+      First, what the system can PROVE (shared attendance/no-show.ts): approved
+      leave, a clock-in here or at another workspace in the shift's time, the
+      person gone, the rota no longer planning it, a public holiday. Those are
+      closed with the reason, and nobody is chased or told.
+    */
+    const settled = this.noShowSettle ? await this.noShowSettle.settle(due, now) : new Map();
+    const open = due.filter((d) => !settled.get(d.id));
+    const excusedCount = due.length - open.length;
+    if (open.length === 0) return success({ remindedCount: 0, escalatedCount: 0, excusedCount });
+
+    // Names and each shift's cadence (ShiftInstance is fk-less by design) — one query each.
+    const userIds = [...new Set(open.map((d) => d.userId))];
+    const shiftIds = [...new Set(open.map((d) => d.shiftId))];
+    const [users, shifts] = await Promise.all([
       this.prisma.user.findMany({
         where: { id: { in: userIds } },
         select: { id: true, firstName: true, lastName: true },
-      }),
-      this.prisma.timeOff.findMany({
-        // Only LEAVE excuses a shift — a remote day or changed hours is a day still owed.
-        where: { technicianId: { in: userIds }, status: 'APPROVED', ...ABSENCE_WHERE, endDate: { gte: new Date(`${earliestDay}T00:00:00.000Z`) } },
-        select: { technicianId: true, startDate: true, endDate: true },
       }),
       this.prisma.shift.findMany({
         where: { id: { in: shiftIds } },
@@ -413,43 +416,15 @@ export class ShiftSweepService {
     ]);
     const nameById = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
     const shiftById = new Map(shifts.map((s) => [s.id, s]));
-    /*
-      ⚠️ Compared as CALENDAR DAYS, never as instants. `startDate`/`endDate` are
-      DATE columns (read back as UTC midnight) and the last day is INCLUSIVE, so
-      `endDate >= expectedClockInAt` failed for any shift on the last day of
-      leave — 07:00 in Vienna is 05:00Z, after the stored midnight — and the
-      member was chased on a day they had off. `localDate` is the shift's own day
-      in the zone it was materialized in (the workspace's), which is exactly the
-      day the leave was booked against.
-    */
-    const onLeave = (userId: string, localDate: string) =>
-      leaves.some(
-        (l) =>
-          l.technicianId === userId &&
-          toISODateString(l.startDate) <= localDate &&
-          toISODateString(l.endDate) >= localDate,
-      );
 
     const toRemind: { inst: (typeof due)[number]; nextCount: number; intervalMin: number }[] = [];
     const toEscalate: (typeof due)[number][] = [];
-    const toExcuse: string[] = [];
-    for (const inst of due) {
-      if (onLeave(inst.userId, inst.localDate)) {
-        toExcuse.push(inst.id);
-        continue;
-      }
+    for (const inst of open) {
       // A deleted shift (no row) falls back to the defaults rather than stalling.
       const { intervalMin, maxReminders } = shiftNudgeCadence(shiftById.get(inst.shiftId));
       const nextCount = inst.reminderCount + 1;
       if (nextCount <= maxReminders) toRemind.push({ inst, nextCount, intervalMin });
       else toEscalate.push(inst);
-    }
-
-    if (toExcuse.length) {
-      await this.prisma.shiftInstance.updateMany({
-        where: { id: { in: toExcuse } },
-        data: { state: 'EXCUSED', nextRemindAt: null },
-      });
     }
 
     const leadersBySpace = new Map<string, string[]>();
@@ -501,82 +476,6 @@ export class ShiftSweepService {
     for (let i = 0; i < tasks.length; i += CONCURRENCY) {
       await Promise.all(tasks.slice(i, i + CONCURRENCY).map((fn) => fn()));
     }
-    return success({ remindedCount: toRemind.length, escalatedCount: toEscalate.length, excusedCount: toExcuse.length });
-  }
-
-  /** Admin list: recent no-shows (reminded / escalated / excused) for review. */
-  async listNoShows(data: { organizationId: string; days?: number; spaceId?: string; scopeSpaceIds?: AttendanceScope }) {
-    const now = new Date();
-    const since = new Date(now.getTime() - (data.days ?? 7) * 86_400_000);
-    const rows = await this.prisma.shiftInstance.findMany({
-      where: {
-        organizationId: data.organizationId,
-        /*
-          ⚠️ BOTH, AND-ed — never spread into one object. Spreading the scope
-          after `{ spaceId }` REPLACED the key: a site lead asking for one of
-          their two sites got both, silently. It never leaked (the scope still
-          won), but the filter the caller asked for was dropped.
-        */
-        AND: [
-          data.spaceId ? { spaceId: data.spaceId } : {},
-          scopeWhereOn('spaceId', data.scopeSpaceIds),
-        ],
-        state: { in: ['REMINDED', 'ESCALATED', 'EXCUSED'] },
-        expectedClockInAt: { gte: since, lte: now },
-      },
-      orderBy: { expectedClockInAt: 'desc' },
-      take: 200,
-    });
-    if (rows.length === 0) return success([]);
-
-    const userIds = [...new Set(rows.map((r) => r.userId))];
-    const spaceIds = [...new Set(rows.map((r) => r.spaceId))];
-    const [users, spaces] = await Promise.all([
-      this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } }),
-      this.prisma.companyLocation.findMany({ where: { id: { in: spaceIds } }, select: { id: true, name: true } }),
-    ]);
-    const uMap = new Map(users.map((u) => [u.id, u]));
-    const sMap = new Map(spaces.map((s) => [s.id, s.name]));
-    return success(
-      rows.map((r) => {
-        const u = uMap.get(r.userId);
-        return {
-          id: r.id,
-          userId: r.userId,
-          userName: u ? `${u.firstName} ${u.lastName}` : 'Unknown',
-          avatarUrl: u?.avatarUrl ?? null,
-          spaceId: r.spaceId,
-          spaceName: sMap.get(r.spaceId) ?? 'Space',
-          expectedClockInAt: r.expectedClockInAt,
-          expectedClockOutAt: r.expectedClockOutAt,
-          state: r.state,
-          reminderCount: r.reminderCount,
-          localDate: r.localDate,
-          excuseReason: r.excuseReason ?? null,
-        };
-      }),
-    );
-  }
-
-  /** Excuse a no-show (mark EXCUSED + record the reason) or reopen it (back to PENDING). */
-  async resolveNoShow(data: { id: string; organizationId: string; action: 'excuse' | 'reopen'; reason?: string; excusedById?: string; scopeSpaceIds?: AttendanceScope }) {
-    const inst = await this.prisma.shiftInstance.findFirst({
-      // ShiftInstance names its own space, so it narrows on `spaceId`. A
-      // no-show in a space the caller was not granted reads as 'not found'.
-      where: {
-        id: data.id,
-        organizationId: data.organizationId,
-        ...scopeWhereOn('spaceId', data.scopeSpaceIds),
-      },
-      select: { id: true },
-    });
-    if (!inst) throw new NotFoundException('No-show not found');
-    const updated = await this.prisma.shiftInstance.update({
-      where: { id: inst.id },
-      data: data.action === 'reopen'
-        ? { state: 'PENDING', nextRemindAt: new Date(), excuseReason: null, excusedById: null }
-        : { state: 'EXCUSED', nextRemindAt: null, excuseReason: data.reason?.trim().slice(0, 500) || null, excusedById: data.excusedById ?? null },
-    });
-    return success(updated);
+    return success({ remindedCount: toRemind.length, escalatedCount: toEscalate.length, excusedCount });
   }
 }
