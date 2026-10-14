@@ -32,8 +32,7 @@ export const MANAGE_ROWS = [
   */
   { icon: 'file-tray-full', labelKey: 'manage.approvals.label', descKey: 'manage.approvals.desc', route: '/(app)/approvals', color: '#dc2626', permission: '', orgWide: false, gate: { decides: true } },
   { icon: 'stopwatch', labelKey: 'manage.attendance.label', descKey: 'manage.attendance.desc', route: '/(app)/manage/attendance', color: '#0ea5e9', permission: 'canViewSpaceAttendance', orgWide: false },
-  // The team's requests as a record; deciding one is in Approvals.
-  { icon: 'calendar', labelKey: 'manage.timeOff.label', descKey: 'manage.timeOff.desc', route: '/(app)/manage/time-off-requests', color: '#f59e0b', permission: 'canViewAllTasks', orgWide: false },
+  // No "Requests" row: waiting requests are in Approvals; the team's record opens from the calendar ("who is off").
   { icon: 'people', labelKey: 'manage.members.label', descKey: 'manage.members.desc', route: '/(app)/manage/members', color: '#8b5cf6', permission: 'canManageUsers', orgWide: true },
   /*
     Clients. `crmViewOwn` alone was the whole gate, so an organization that has

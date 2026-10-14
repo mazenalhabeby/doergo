@@ -1117,7 +1117,7 @@
   "manage": {
     "timeOff": {
       "label": "Anträge",
-      "desc": "Anträge genehmigen"
+      "desc": "Urlaub und Anträge des Teams – der Verlauf"
     },
     "members": {
       "label": "Mitglieder",
@@ -1217,7 +1217,7 @@
     },
     "attendance": {
       "label": "Anwesenheit",
-      "desc": "Stunden freigeben und Schichten prüfen"
+      "desc": "Zeiterfassung und verpasste Schichten"
     },
     "customers": {
       "label": "Kunden",

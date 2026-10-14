@@ -1117,7 +1117,7 @@
   "manage": {
     "timeOff": {
       "label": "Solicitudes",
-      "desc": "Aprobar solicitudes"
+      "desc": "Permisos y solicitudes del equipo: el historial"
     },
     "members": {
       "label": "Miembros",
@@ -1217,7 +1217,7 @@
     },
     "attendance": {
       "label": "Asistencia",
-      "desc": "Aprueba horas y revisa turnos"
+      "desc": "Fichajes y turnos perdidos"
     },
     "customers": {
       "label": "Clientes",

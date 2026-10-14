@@ -76,7 +76,7 @@ describe('what Manage offers', () => {
   const keys = (user: unknown) => manageRowsFor(user as never).map((r) => r.labelKey);
 
   it('gives an admin the whole list', () => {
-    expect(keys(admin).length).toBeGreaterThanOrEqual(7);
+    expect(keys(admin).length).toBeGreaterThanOrEqual(6);
   });
 
   it('gives a space supervisor the space-scoped rows, and only those', () => {

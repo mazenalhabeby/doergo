@@ -225,6 +225,16 @@ export function TabPill({
         }}
       />
       {/*
+        ⚠️ BELOW THE PILL IS SOLID. The fade is for the content arriving at the
+        bar; under it — down to the phone's own buttons — the page must not show
+        through, or a half-faded row ("Invitations") sits in that strip and reads
+        as the page ignoring the footer (2026-10-14, Android).
+      */}
+      <View
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: bottomInset, backgroundColor: c.canvas }}
+      />
+      {/*
         ⚠️ THE SHADOW LIVES ON A WRAPPER, NOT ON THE PILL. The pill needs
         `overflow: hidden` to clip its blur to the radius, and on iOS
         `overflow: hidden` clips the view's OWN shadow too — so the light-mode

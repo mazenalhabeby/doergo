@@ -1117,7 +1117,7 @@
   "manage": {
     "timeOff": {
       "label": "Richieste",
-      "desc": "Approva le richieste"
+      "desc": "Ferie e richieste del team: lo storico"
     },
     "members": {
       "label": "Membri",
@@ -1217,7 +1217,7 @@
     },
     "attendance": {
       "label": "Presenze",
-      "desc": "Approva le ore e controlla i turni"
+      "desc": "Presenze e turni saltati"
     },
     "customers": {
       "label": "Clienti",

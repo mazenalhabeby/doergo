@@ -1117,7 +1117,7 @@
   "manage": {
     "timeOff": {
       "label": "Requests",
-      "desc": "Approve requests"
+      "desc": "Team leave and requests — the record"
     },
     "members": {
       "label": "Members",
@@ -1221,7 +1221,7 @@
     },
     "attendance": {
       "label": "Attendance",
-      "desc": "Approve hours and review shifts"
+      "desc": "Timesheet and missed shifts"
     },
     "extraTime": {
       "label": "Extra time",

@@ -1117,7 +1117,7 @@
   "manage": {
     "timeOff": {
       "label": "Demandes",
-      "desc": "Approuver les demandes"
+      "desc": "Congés et demandes de l’équipe — l’historique"
     },
     "members": {
       "label": "Membres",
@@ -1217,7 +1217,7 @@
     },
     "attendance": {
       "label": "Présence",
-      "desc": "Valider les heures et vérifier les postes"
+      "desc": "Feuille de temps et services manqués"
     },
     "customers": {
       "label": "Clients",
