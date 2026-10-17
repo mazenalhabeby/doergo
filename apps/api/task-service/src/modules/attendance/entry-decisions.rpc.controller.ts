@@ -4,6 +4,18 @@ import { ApprovalService } from './approval.service';
 import { EntryEditService } from './entry-edit.service';
 import { EntryRecordService } from './entry-record.service';
 import { ManualEntriesService } from './manual-entries.service';
+import {
+  pattern,
+  type RpcRequest,
+  getPendingApprovals,
+  approveEntry,
+  rejectEntry,
+  editEntry,
+  getEntryHistory,
+  deleteEntry,
+  addManualEntries,
+  bulkApproveEntries,
+} from '@hbcfield/shared/microservices';
 
 /** Deciding and correcting time entries over RPC: approve, reject, edit, history, delete, add by hand. */
 @Controller()
@@ -19,113 +31,60 @@ export class EntryDecisionsRpcController {
   // APPROVAL WORKFLOW
   // =========================================================================
 
-  @MessagePattern({ cmd: 'get_pending_approvals' })
+  @MessagePattern(pattern(getPendingApprovals))
   async getPendingApprovals(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      page?: number;
-      limit?: number;
-      summary?: boolean;
-    },
+    data: RpcRequest<typeof getPendingApprovals>,
   ) {
     return this.approvalService.getPendingApprovals(data);
   }
 
-  @MessagePattern({ cmd: 'approve_entry' })
+  @MessagePattern(pattern(approveEntry))
   async approveEntry(
     @Payload()
-    data: {
-      entryId: string;
-      approverId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      notes?: string;
-    },
+    data: RpcRequest<typeof approveEntry>,
   ) {
     return this.approvalService.approveEntry(data);
   }
 
-  @MessagePattern({ cmd: 'reject_entry' })
+  @MessagePattern(pattern(rejectEntry))
   async rejectEntry(
     @Payload()
-    data: {
-      entryId: string;
-      approverId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      reason: string;
-    },
+    data: RpcRequest<typeof rejectEntry>,
   ) {
     return this.approvalService.rejectEntry(data);
   }
 
-  @MessagePattern({ cmd: 'edit_entry' })
+  @MessagePattern(pattern(editEntry))
   async editEntry(
     @Payload()
-    data: {
-      entryId: string;
-      editorId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      clockInAt?: string;
-      clockOutAt?: string;
-      notes?: string;
-      reason: string;
-    },
+    data: RpcRequest<typeof editEntry>,
   ) {
     return this.entryEdit.editEntry(data);
   }
 
-  @MessagePattern({ cmd: 'get_entry_history' })
-  async getEntryHistory(@Payload() data: { entryId: string; organizationId: string }) {
+  @MessagePattern(pattern(getEntryHistory))
+  async getEntryHistory(@Payload() data: RpcRequest<typeof getEntryHistory>) {
     return this.entryRecord.getEntryHistory(data);
   }
 
-  @MessagePattern({ cmd: 'delete_entry' })
-  async deleteEntry(@Payload() data: { entryId: string; editorId: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteEntry))
+  async deleteEntry(@Payload() data: RpcRequest<typeof deleteEntry>) {
     return this.entryRecord.deleteEntry(data);
   }
 
-  @MessagePattern({ cmd: 'add_manual_entries' })
+  @MessagePattern(pattern(addManualEntries))
   async addManualEntries(
     @Payload()
-    data: {
-      editorId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      userId: string;
-      locationId: string;
-      startDate: string;
-      endDate: string;
-      weekdays?: number[];
-      startTime: string;
-      endTime: string;
-      breakMinutes?: number;
-      notes?: string;
-      reason?: string;
-    },
+    data: RpcRequest<typeof addManualEntries>,
   ) {
     return this.manualEntries.addManualEntries(data);
   }
 
-  @MessagePattern({ cmd: 'bulk_approve_entries' })
+  @MessagePattern(pattern(bulkApproveEntries))
   async bulkApprove(
     @Payload()
-    data: {
-      entryIds: string[];
-      approverId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      notes?: string;
-    },
+    data: RpcRequest<typeof bulkApproveEntries>,
   ) {
     return this.approvalService.bulkApprove(data);
   }

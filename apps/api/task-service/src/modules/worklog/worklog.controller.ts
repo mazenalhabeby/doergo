@@ -2,6 +2,17 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { WorklogService } from './worklog.service';
 import { WorklogAttachmentsService } from './worklog-attachments.service';
+import {
+  pattern,
+  type RpcRequest,
+  worklogAddNote,
+  worklogAddNotesBatch,
+  worklogList,
+  worklogDeleteNote,
+  worklogPresignAttachment,
+  worklogConfirmAttachment,
+  worklogDeleteAttachment,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class WorklogController {
@@ -10,38 +21,38 @@ export class WorklogController {
     private readonly worklogFiles: WorklogAttachmentsService,
   ) {}
 
-  @MessagePattern({ cmd: 'worklog_add_note' })
-  addNote(@Payload() d: any) {
+  @MessagePattern(pattern(worklogAddNote))
+  addNote(@Payload() d: RpcRequest<typeof worklogAddNote>) {
     return this.worklog.addNote(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_add_notes_batch' })
-  addNotesBatch(@Payload() d: any) {
+  @MessagePattern(pattern(worklogAddNotesBatch))
+  addNotesBatch(@Payload() d: RpcRequest<typeof worklogAddNotesBatch>) {
     return this.worklog.addNotesBatch(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_list' })
-  list(@Payload() d: any) {
+  @MessagePattern(pattern(worklogList))
+  list(@Payload() d: RpcRequest<typeof worklogList>) {
     return this.worklog.listNotes(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_delete_note' })
-  deleteNote(@Payload() d: any) {
+  @MessagePattern(pattern(worklogDeleteNote))
+  deleteNote(@Payload() d: RpcRequest<typeof worklogDeleteNote>) {
     return this.worklog.deleteNote(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_presign_attachment' })
-  presign(@Payload() d: any) {
+  @MessagePattern(pattern(worklogPresignAttachment))
+  presign(@Payload() d: RpcRequest<typeof worklogPresignAttachment>) {
     return this.worklogFiles.presignAttachment(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_confirm_attachment' })
-  confirm(@Payload() d: any) {
+  @MessagePattern(pattern(worklogConfirmAttachment))
+  confirm(@Payload() d: RpcRequest<typeof worklogConfirmAttachment>) {
     return this.worklogFiles.confirmAttachment(d);
   }
 
-  @MessagePattern({ cmd: 'worklog_delete_attachment' })
-  deleteAttachment(@Payload() d: any) {
+  @MessagePattern(pattern(worklogDeleteAttachment))
+  deleteAttachment(@Payload() d: RpcRequest<typeof worklogDeleteAttachment>) {
     return this.worklogFiles.deleteAttachment(d);
   }
 }

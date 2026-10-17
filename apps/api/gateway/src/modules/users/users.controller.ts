@@ -7,6 +7,16 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { UpdateMeDto, UpdateMyEmailDto, MarkNotificationsReadDto, UpdateMyNotificationPrefsDto } from './users.dto';
+import {
+  sendRpc,
+  getProfile,
+  updateOwnProfile,
+  listNotifications,
+  markNotificationsRead,
+  getMyNotificationPrefs,
+  updateMyNotificationPrefs,
+  updateOwnEmail,
+} from '@hbcfield/shared/microservices';
 
 export { MarkNotificationsReadDto } from './users.dto';
 
@@ -14,7 +24,6 @@ export { MarkNotificationsReadDto } from './users.dto';
 @ApiBearerAuth()
 @Controller('users')
 export class UsersController {
-
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
@@ -27,17 +36,13 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'get_profile' }, { userId: user.id }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, getProfile, { userId: user.id }));
   }
 
   @Patch('me')
   @ApiOperation({ summary: 'Update your own profile (name) — any authenticated user' })
   async updateMe(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMeDto) {
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'update_own_profile' }, { userId: user.id, dto }),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, updateOwnProfile, { userId: user.id, dto }));
     // Drop the cached session so the new name takes effect on the next request.
     await this.authCache.invalidateUser(user.id);
 
@@ -61,12 +66,9 @@ export class UsersController {
 
   @Get('me/notifications')
   @ApiOperation({ summary: 'Your in-app notification inbox (recent + unread count)' })
-  async listNotifications(
-    @CurrentUser() user: CurrentUserData,
-    @Query('limit') limit?: string,
-  ) {
+  async listNotifications(@CurrentUser() user: CurrentUserData, @Query('limit') limit?: string) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'list_notifications' }, {
+      sendRpc(this.authClient, listNotifications, {
         userId: user.id,
         limit: limit ? Number(limit) : undefined,
       }),
@@ -75,12 +77,9 @@ export class UsersController {
 
   @Post('me/notifications/read')
   @ApiOperation({ summary: 'Mark notifications read (all, or the given ids)' })
-  async markNotificationsRead(
-    @CurrentUser() user: CurrentUserData,
-    @Body() dto: MarkNotificationsReadDto,
-  ) {
+  async markNotificationsRead(@CurrentUser() user: CurrentUserData, @Body() dto: MarkNotificationsReadDto) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'mark_notifications_read' }, {
+      sendRpc(this.authClient, markNotificationsRead, {
         userId: user.id,
         ids: dto?.ids,
       }),
@@ -90,19 +89,14 @@ export class UsersController {
   @Get('me/notification-prefs')
   @ApiOperation({ summary: 'Get your notification opt-out preferences' })
   async getNotificationPrefs(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'get_my_notification_prefs' }, { userId: user.id }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, getMyNotificationPrefs, { userId: user.id }));
   }
 
   @Patch('me/notification-prefs')
   @ApiOperation({ summary: 'Update your notification opt-out preferences (category → boolean)' })
-  async updateNotificationPrefs(
-    @CurrentUser() user: CurrentUserData,
-    @Body() dto: UpdateMyNotificationPrefsDto,
-  ) {
+  async updateNotificationPrefs(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMyNotificationPrefsDto) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'update_my_notification_prefs' }, {
+      sendRpc(this.authClient, updateMyNotificationPrefs, {
         userId: user.id,
         prefs: dto?.prefs || {},
       }),
@@ -113,10 +107,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Change your own email (requires current password)' })
   async updateMyEmail(@CurrentUser() user: CurrentUserData, @Body() dto: UpdateMyEmailDto) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_own_email' },
-        { userId: user.id, newEmail: dto.newEmail, currentPassword: dto.currentPassword },
-      ),
+      sendRpc(this.authClient, updateOwnEmail, {
+        userId: user.id,
+        newEmail: dto.newEmail,
+        currentPassword: dto.currentPassword,
+      }),
     );
     await this.authCache.invalidateUser(user.id);
     return result;

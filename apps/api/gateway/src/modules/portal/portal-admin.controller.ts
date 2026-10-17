@@ -22,6 +22,13 @@ import { mkdir, writeFile } from 'fs/promises';
 import { portalScope } from '../../common/portal-scope';
 import { assignSpaceIds } from '../../common/task-actor';
 import { PortalAdminControllerBase } from './portal-admin-controller.base';
+import { portalList, portalCreate, portalGet, portalUpdate, portalDelete } from '@hbcfield/shared/microservices';
+import {
+  sendRpc,
+  portalListRequestsByPortal,
+  portalTriageRequest,
+  portalListRequests,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Office-facing multi-portal management. Org always from the token. An org can
@@ -52,14 +59,13 @@ import { PortalAdminControllerBase } from './portal-admin-controller.base';
 @ApiBearerAuth()
 @Controller('portal/admin')
 export class PortalAdminController extends PortalAdminControllerBase {
-
   // ── Portals ──
 
   @Get('portals')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'List the org’s portals (those in the caller’s workspaces)' })
   listPortals(@Request() req: any) {
-    return this.auth('portal_list', {
+    return this.auth(portalList, {
       organizationId: req.user.organizationId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });
@@ -74,7 +80,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Create a portal (from a template)' })
   createPortal(@Body() body: { templateKey?: string; name?: string }, @Request() req: any) {
-    return this.auth('portal_create', {
+    return this.auth(portalCreate, {
       templateKey: body?.templateKey,
       name: body?.name,
       organizationId: req.user.organizationId,
@@ -85,7 +91,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'Get a portal (config + categories)' })
   getPortal(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_get', {
+    return this.auth(portalGet, {
       id,
       organizationId: req.user.organizationId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
@@ -97,14 +103,11 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @ApiOperation({ summary: 'List every request in a portal (all clients)' })
   portalRequests(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'portal_list_requests_by_portal' },
-        {
-          organizationId: req.user.organizationId,
-          portalId: id,
-          scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-        },
-      ),
+      sendRpc(this.taskClient, portalListRequestsByPortal, {
+        organizationId: req.user.organizationId,
+        portalId: id,
+        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+      }),
     );
   }
 
@@ -114,11 +117,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @ApiOperation({ summary: 'Upload the portal cover/hero image' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024, files: 1 } }))
-  async uploadCover(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-    @Request() req: any,
-  ) {
+  async uploadCover(@Param('id') id: string, @UploadedFile() file: Express.Multer.File, @Request() req: any) {
     if (!file) throw new BadRequestException('No file provided');
     if (file.size > 8 * 1024 * 1024) throw new BadRequestException('File too large (max 8MB)');
     // Validate the portal id BEFORE it enters a filesystem path. Express decodes
@@ -148,18 +147,14 @@ export class PortalAdminController extends PortalAdminControllerBase {
     const fileName = `${Date.now()}.${ext}`;
     let coverImageUrl: string;
     if (this.storage.isConfigured) {
-      coverImageUrl = await this.storage.uploadPublicImage(
-        `portals/${id}/${fileName}`,
-        file.buffer,
-        file.mimetype,
-      );
+      coverImageUrl = await this.storage.uploadPublicImage(`portals/${id}/${fileName}`, file.buffer, file.mimetype);
     } else {
       const dir = join(process.cwd(), 'uploads', 'portals', id);
       await mkdir(dir, { recursive: true });
       await writeFile(join(dir, fileName), file.buffer);
       coverImageUrl = `/uploads/portals/${id}/${fileName}`;
     }
-    await this.auth('portal_update', {
+    await this.auth(portalUpdate, {
       id,
       organizationId: req.user.organizationId,
       coverImageUrl,
@@ -173,7 +168,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Remove the portal cover image' })
   removeCover(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_update', {
+    return this.auth(portalUpdate, {
       id,
       organizationId: req.user.organizationId,
       coverImageUrl: null,
@@ -194,27 +189,24 @@ export class PortalAdminController extends PortalAdminControllerBase {
   ) {
     const scopeSpaceIds = portalScope(req.user, 'canAnswerPortal');
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'portal_triage_request' },
-        {
-          id,
-          organizationId: req.user.organizationId,
-          userId: req.user.id,
-          spaceId: body.spaceId,
-          workflowId: body.workflowId,
-          priority: body.priority,
-          assignedToId: body.assignedToId,
-          scopeSpaceIds,
-          // Naming the worker is ASSIGNING, its own permission. Asked only of a
-          // workspace-scoped answerer — an org-wide one keeps what routing a
-          // request has always allowed.
-          // (The flat flag first: it carries an org-wide grant `access.org` may
-          // not spell out, exactly as `portalScope` reads its own key.)
-          ...(scopeSpaceIds === undefined || req.user?.canAssignTasks === true
-            ? {}
-            : { assignScopeSpaceIds: assignSpaceIds(req) }),
-        },
-      ),
+      sendRpc(this.taskClient, portalTriageRequest, {
+        id,
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        spaceId: body.spaceId,
+        workflowId: body.workflowId,
+        priority: body.priority,
+        assignedToId: body.assignedToId,
+        scopeSpaceIds,
+        // Naming the worker is ASSIGNING, its own permission. Asked only of a
+        // workspace-scoped answerer — an org-wide one keeps what routing a
+        // request has always allowed.
+        // (The flat flag first: it carries an org-wide grant `access.org` may
+        // not spell out, exactly as `portalScope` reads its own key.)
+        ...(scopeSpaceIds === undefined || req.user?.canAssignTasks === true
+          ? {}
+          : { assignScopeSpaceIds: assignSpaceIds(req) }),
+      }),
     );
   }
 
@@ -230,7 +222,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   ) {
     // Whitelisted: a spread body also carried `coverImageUrl` (any string, onto
     // a page every resident opens) — the cover has its own upload route.
-    return this.auth('portal_update', {
+    return this.auth(portalUpdate, {
       name: body?.name,
       templateKey: body?.templateKey,
       reseed: body?.reseed,
@@ -248,7 +240,7 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Delete a portal' })
   deletePortal(@Param('id') id: string, @Request() req: any) {
-    return this.auth('portal_delete', {
+    return this.auth(portalDelete, {
       id,
       organizationId: req.user.organizationId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -262,14 +254,11 @@ export class PortalAdminController extends PortalAdminControllerBase {
   @ApiOperation({ summary: "List a resident's portal requests" })
   requests(@Query('customerId') customerId: string, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'portal_list_requests' },
-        {
-          organizationId: req.user.organizationId,
-          customerId,
-          scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-        },
-      ),
+      sendRpc(this.taskClient, portalListRequests, {
+        organizationId: req.user.organizationId,
+        customerId,
+        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+      }),
     );
   }
 }

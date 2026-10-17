@@ -1,6 +1,7 @@
 /** The consent wording, the employer company, and the values a contract template is filled with. */
 import { personName, toISODateString } from '@hbcfield/shared';
 
+import { type ContractTerms } from '@hbcfield/shared/microservices';
 /**
  * The consent a member gives before signing.
  *
@@ -8,35 +9,60 @@ import { personName, toISODateString } from '@hbcfield/shared';
  * certificate page. If the wording ever changes, past signatures keep the words
  * that were actually shown — which is the only version worth having on a record.
  */
-export const CONSENT_TEXT =
-  'I have read this document and agree to sign it electronically.';
+export const CONSENT_TEXT = 'I have read this document and agree to sign it electronically.';
 
 /**
  * The company a contract names as the employer: the member's own (Settings › Companies), else the
  * organization's main company. One select for every place that builds merge values.
  */
 export const EMPLOYER_COMPANY_SELECT = {
-  legalName: true, addressLine1: true, addressLine2: true, postalCode: true, city: true, state: true,
-  country: true, email: true, phone: true, vatId: true, taxId: true, registerNumber: true,
+  legalName: true,
+  addressLine1: true,
+  addressLine2: true,
+  postalCode: true,
+  city: true,
+  state: true,
+  country: true,
+  email: true,
+  phone: true,
+  vatId: true,
+  taxId: true,
+  registerNumber: true,
 } as const;
 
 export type EmployerCompany = {
-  legalName: string; addressLine1: string | null; addressLine2: string | null; postalCode: string | null;
-  city: string | null; state: string | null; country: string | null; email: string | null; phone: string | null;
-  vatId: string | null; taxId: string | null; registerNumber: string | null;
+  legalName: string;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  postalCode: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  email: string | null;
+  phone: string | null;
+  vatId: string | null;
+  taxId: string | null;
+  registerNumber: string | null;
 };
 
 /** Merge-field values for one member. */
 export function contractValues(
   member: {
-    firstName: string; lastName: string; email: string;
-    position: string | null; specialty: string | null;
+    firstName: string;
+    lastName: string;
+    email: string;
+    position: string | null;
+    specialty: string | null;
     employmentStartDate: Date | null;
     employerEntity?: EmployerCompany | null;
     organization: {
-      name: string; addressLine1: string | null; city: string | null;
-      postalCode: string | null; country: string | null;
-      email: string | null; phone: string | null;
+      name: string;
+      addressLine1: string | null;
+      city: string | null;
+      postalCode: string | null;
+      country: string | null;
+      email: string | null;
+      phone: string | null;
       legalEntities?: EmployerCompany[];
     } | null;
   },
@@ -64,7 +90,12 @@ export function contractValues(
   */
   const company = member.employerEntity ?? org?.legalEntities?.[0] ?? null;
   const address = company
-    ? [company.addressLine1, company.addressLine2, [company.postalCode, company.city].filter(Boolean).join(' '), company.state]
+    ? [
+        company.addressLine1,
+        company.addressLine2,
+        [company.postalCode, company.city].filter(Boolean).join(' '),
+        company.state,
+      ]
         .filter(Boolean)
         .join(', ')
     : [org?.addressLine1, [org?.postalCode, org?.city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
@@ -105,12 +136,5 @@ export function contractValues(
   };
 }
 
-/** Terms that are not on the member record and are supplied at issue time. */
-export interface ContractTerms {
-  startDate?: string;
-  weeklyHours?: number | string;
-  endDate?: string;
-  siteName?: string;
-  siteAddress?: string;
-  rotation?: string;
-}
+/** The message contract's type (shared with the gateway). */
+export type { ContractTerms };

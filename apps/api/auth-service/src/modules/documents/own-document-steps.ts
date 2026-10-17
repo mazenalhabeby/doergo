@@ -3,36 +3,9 @@ import { retentionUntil, type Rect, type checkScan } from '@hbcfield/shared';
 import { MAX_PAGES } from './pages-pdf';
 import type { DocumentActor, RequestContext } from './document-common';
 
-/** The pure steps of `DocumentSupplyService.submitOwnDocument`, in the order it runs them. */
-
-export interface SubmitOwnDocumentInput {
-  actor: DocumentActor;
-  stagingKey: string;
-  typeId: string;
-  title?: string;
-  expiresOn?: string | null;
-  /**
-   * Whatever a scanner read off the document — the machine-readable zone as
-   * text. Optional: most documents here have no zone at all.
-   */
-  mrzText?: string | null;
-  /** The scanner's frame, as fractions of the photograph. */
-  crop?: Rect | null;
-  /** The reverse of a two-sided card, filed as part of the same document. */
-  backStagingKey?: string | null;
-  /**
-   * Further sheets, in reading order — a plain multi-sheet upload.
-   *
-   * ⚠️ Not combinable with `backStagingKey`: a card has a reverse, a stack of
-   * paper has a page 2, and letting both through would silently decide which
-   * one won.
-   */
-  pageStagingKeys?: string[] | null;
-  backCrop?: Rect | null;
-  ctx?: RequestContext;
-  /** Made on the phone: the same document sent twice is filed once. */
-  id?: string;
-}
+import { type SubmitOwnDocumentInput } from '@hbcfield/shared/microservices';
+/** The message contract's type (shared with the gateway). */
+export type { SubmitOwnDocumentInput };
 
 export type OwnScan = ReturnType<typeof checkScan>;
 

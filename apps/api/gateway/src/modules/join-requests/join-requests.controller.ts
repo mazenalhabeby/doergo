@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  Param,
-  Query,
-  Inject,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -15,11 +6,14 @@ import { personName, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcf
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { OrgEventsService } from '../../common/events/org-events.service';
+import { ListJoinRequestsDto, ApproveJoinRequestDto, RejectJoinRequestDto } from './dto';
 import {
-  ListJoinRequestsDto,
-  ApproveJoinRequestDto,
-  RejectJoinRequestDto,
-} from './dto';
+  sendRpc,
+  onboardingListJoinRequests,
+  onboardingApproveJoinRequest,
+  onboardingRejectJoinRequest,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 @ApiTags('join-requests')
 @Controller('join-requests')
@@ -36,12 +30,9 @@ export class JoinRequestsController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List join requests for organization' })
   @ApiResponse({ status: 200, description: 'Join requests list' })
-  async list(
-    @Query() query: ListJoinRequestsDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async list(@Query() query: ListJoinRequestsDto, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_list_join_requests' }, {
+      sendRpc(this.authClient, onboardingListJoinRequests, {
         ...query,
         organizationId: user.organizationId,
       }),
@@ -54,17 +45,13 @@ export class JoinRequestsController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request approved' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async approve(
-    @Param('id') id: string,
-    @Body() dto: ApproveJoinRequestDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async approve(@Param('id') id: string, @Body() dto: ApproveJoinRequestDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_approve_join_request' }, {
+      sendRpc(this.authClient, onboardingApproveJoinRequest, {
         // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
         ...dto,
         requestId: id,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         approverId: user.id,
       }),
     );
@@ -102,17 +89,13 @@ export class JoinRequestsController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request rejected' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async reject(
-    @Param('id') id: string,
-    @Body() dto: RejectJoinRequestDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async reject(@Param('id') id: string, @Body() dto: RejectJoinRequestDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_reject_join_request' }, {
+      sendRpc(this.authClient, onboardingRejectJoinRequest, {
         // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
         ...dto,
         requestId: id,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         approverId: user.id,
       }),
     );

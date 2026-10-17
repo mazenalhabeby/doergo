@@ -18,6 +18,18 @@ function trackingScope(user: any): { scopeSpaceIds?: string[] } {
   return scope === null ? {} : { scopeSpaceIds: scope };
 }
 import { UpdateTrackingLocationDto, BatchTrackingLocationDto } from './dto';
+import {
+  sendRpc,
+  getSpaceWorkers,
+  updateLocation,
+  updateLocationBatch,
+  getActiveWorkers,
+  getWorkerLocation,
+  getWorkerHistory,
+  getWorkerCurrentRoute,
+  getTaskRoute,
+} from '@hbcfield/shared/microservices';
+import { getLocationAssignments } from '@hbcfield/shared/microservices';
 
 @ApiTags('tracking')
 @ApiBearerAuth()
@@ -42,15 +54,13 @@ export class TrackingController {
   // and the roster is resolved owner-side; nothing comes from the client body.
   @Get('spaces/:spaceId/workers')
   @RequirePermissionInSpace('canViewTracking')
-  @ApiOperation({ summary: "Live worker locations for a cross-org shared space" })
+  @ApiOperation({ summary: 'Live worker locations for a cross-org shared space' })
   async getSpaceWorkers(@Param('spaceId') spaceId: string, @Request() req: any) {
-    const grant = (req.user.access?.sharedSpaces ?? []).find(
-      (s: any) => s.spaceId === spaceId && s.showTracking,
-    );
+    const grant = (req.user.access?.sharedSpaces ?? []).find((s: any) => s.spaceId === spaceId && s.showTracking);
     if (!grant) throw new ForbiddenException('Tracking is not shared for this space');
     // Roster (owner-org workers assigned to the space) — resolved server-side.
     const roster: any = await firstValueFrom(
-      this.taskClient.send({ cmd: 'get_location_assignments' }, {
+      sendRpc(this.taskClient, getLocationAssignments, {
         locationId: spaceId,
         organizationId: req.user.organizationId,
         sharedSpaceIds: [spaceId],
@@ -58,7 +68,7 @@ export class TrackingController {
     );
     const userIds = ((roster?.data ?? []) as any[]).map((a) => a.userId || a.user?.id).filter(Boolean);
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_space_workers' }, {
+      sendRpc(this.trackingClient, getSpaceWorkers, {
         organizationId: grant.ownerOrgId,
         userIds,
       }),
@@ -77,7 +87,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Update user location (any authenticated user on a task)' })
   async updateLocation(@Body() updateLocationDto: UpdateTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'update_location' }, {
+      sendRpc(this.trackingClient, updateLocation, {
         ...updateLocationDto,
         userId: req.user.id, // Always use authenticated user's ID
         organizationId: req.user.organizationId, // for org-scoped live-map broadcast
@@ -97,7 +107,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Batch-update route points (mobile background tracker flush)' })
   async updateLocationBatch(@Body() batchDto: BatchTrackingLocationDto, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'update_location_batch' }, {
+      sendRpc(this.trackingClient, updateLocationBatch, {
         organizationId: req.user.organizationId, // for org-scoped live-map broadcast
         taskId: batchDto.taskId,
         points: batchDto.points,
@@ -111,7 +121,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Get all active employee locations' })
   async getActiveWorkers(@Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_active_workers' }, {
+      sendRpc(this.trackingClient, getActiveWorkers, {
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
         ...trackingScope(req.user),
@@ -124,7 +134,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Get employee location by ID' })
   async getWorkerLocation(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_worker_location' }, {
+      sendRpc(this.trackingClient, getWorkerLocation, {
         workerId: id,
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
@@ -143,7 +153,7 @@ export class TrackingController {
     @Query('endDate') endDate?: string,
   ) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_worker_history' }, {
+      sendRpc(this.trackingClient, getWorkerHistory, {
         workerId: id,
         dispatcherId: req.user.id,
         organizationId: req.user.organizationId,
@@ -160,7 +170,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Get employee current EN_ROUTE journey' })
   async getWorkerCurrentRoute(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_worker_current_route' }, {
+      sendRpc(this.trackingClient, getWorkerCurrentRoute, {
         workerId: id,
         organizationId: req.user.organizationId,
         ...trackingScope(req.user),
@@ -173,7 +183,7 @@ export class TrackingController {
   @ApiOperation({ summary: 'Get full route for a task' })
   async getTaskRoute(@Param('taskId') taskId: string, @Request() req: any) {
     return firstValueFrom(
-      this.trackingClient.send({ cmd: 'get_task_route' }, {
+      sendRpc(this.trackingClient, getTaskRoute, {
         taskId,
         organizationId: req.user.organizationId,
         ...trackingScope(req.user),

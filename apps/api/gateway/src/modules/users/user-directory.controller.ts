@@ -6,6 +6,9 @@ import { firstValueFrom } from 'rxjs';
 import { Role, SERVICE_NAMES, CurrentUser, CurrentUserData } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { sendRpc, getWorkers, findUser, getWorkerTasks } from '@hbcfield/shared/microservices';
+import { getTechnicianAssignments } from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 /**
  * /users — other people: the workers list, one person, their tasks, their
@@ -16,7 +19,6 @@ import { Roles } from '../../common/decorators/roles.decorator';
 @ApiBearerAuth()
 @Controller('users')
 export class UserDirectoryController {
-
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.TASK) private readonly taskClient: ClientProxy,
@@ -26,15 +28,12 @@ export class UserDirectoryController {
   @ApiOperation({ summary: 'Get all employees (ADMIN or MANAGER)' })
   @ApiQuery({ name: 'organizationId', required: false })
   @RequirePermission('canViewAllTasks')
-  async getWorkers(
-    @CurrentUser() user: CurrentUserData,
-    @Query() query: Record<string, any>,
-  ) {
+  async getWorkers(@CurrentUser() user: CurrentUserData, @Query() query: Record<string, any>) {
     // Office can only see workers in their organization
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_workers' }, {
+      sendRpc(this.authClient, getWorkers, {
         ...query,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         /*
           Coordinates travel only to somebody who may see where people are.
           This list is the whole organization (the route asks "view all tasks"
@@ -48,10 +47,7 @@ export class UserDirectoryController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     // Users can access their own data; admins and members granted "view all
     // tasks" can access other users (scoped to their org below).
     const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
@@ -59,9 +55,7 @@ export class UserDirectoryController {
       throw new ForbiddenException('You can only access your own profile');
     }
 
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }));
 
     if (!result?.data) {
       throw new NotFoundException('User not found');
@@ -80,10 +74,7 @@ export class UserDirectoryController {
   @Get(':id/tasks')
   @ApiOperation({ summary: 'Get tasks assigned to an employee' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async getWorkerTasks(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async getWorkerTasks(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     // Plain workers see only their own tasks; admins and "view all tasks" members
     // can see any worker's tasks (scoped to their org).
     const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
@@ -93,7 +84,7 @@ export class UserDirectoryController {
 
     if (privileged && user.id !== id) {
       const workerResult = await firstValueFrom(
-        this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
+        sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }),
       );
 
       if (!workerResult?.data) {
@@ -106,20 +97,17 @@ export class UserDirectoryController {
     }
 
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_worker_tasks' }, { workerId: id, organizationId: user.organizationId }),
+      sendRpc(this.authClient, getWorkerTasks, { workerId: id, organizationId: callerOrgId(user) }),
     );
   }
 
   @Get(':id/assignments')
   @ApiOperation({ summary: 'Get company location assignments for a user' })
   @RequirePermission('canViewAllTasks')
-  async getUserAssignments(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async getUserAssignments(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     // Verify user is in the same organization
     const targetUser = await firstValueFrom(
-      this.authClient.send({ cmd: 'find_user' }, { id, organizationId: user.organizationId }),
+      sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }),
     );
 
     if (!targetUser?.data) {
@@ -131,10 +119,7 @@ export class UserDirectoryController {
     }
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_assignments' },
-        { userId: id, organizationId: user.organizationId },
-      ),
+      sendRpc(this.taskClient, getTechnicianAssignments, { userId: id, organizationId: callerOrgId(user) }),
     );
   }
 }

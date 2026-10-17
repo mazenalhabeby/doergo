@@ -1,6 +1,7 @@
 /** Module-level helpers of calendar.service.ts — moved here unchanged. */
 import { TaskStatus } from '@hbcfield/shared';
 import { type Caller } from './events.service';
+import type { CalendarItemsQuery } from '@hbcfield/shared/microservices';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -11,16 +12,6 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 */
 const CANCELED_TASK_KEYS: string[] = [TaskStatus.CANCELED, 'CANCELLED'];
 
-export interface ItemsQuery extends Caller {
-  from: string;
-  to: string;
-  spaceId?: string | null;
-  layers?: string[];
-  lang?: string;
-  /** Workspaces where the caller sees ALL the work. undefined = everywhere, [] = only their own. */
-  viewTaskSpaces?: string[];
-  /** Workspaces where the caller sees the team's leave. undefined = everywhere, [] = nowhere. */
-  teamSpaces?: string[];
-}
+export type ItemsQuery = CalendarItemsQuery;
 
 export { DATE, CANCELED_TASK_KEYS };

@@ -2,6 +2,15 @@ import { Controller, Post, Body, Param, Request, BadRequestException } from '@ne
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DenyExternal } from '../../common/decorators';
 import { CustomersControllerBase } from './customers-controller.base';
+import {
+  portalListUnits,
+  portalGet,
+  portalEnsureForSpace,
+  portalCreateUnit,
+  createInvitation,
+  updateCustomer,
+  resendInvitation,
+} from '@hbcfield/shared/microservices';
 
 /** /customers/:id — inviting a client into the portal, and sending the invitation again. */
 @ApiTags('customers')
@@ -34,11 +43,11 @@ export class CustomerInviteController extends CustomersControllerBase {
     // they hold decides their portal; (2) an explicitly-chosen portalId from the
     // caller (validated to belong to this customer's space); (3) the space's
     // default portal (single-portal spaces / no choice needed).
-    const units: any[] = (await this.auth('portal_list_units', { organizationId: orgId, customerId: id })) || [];
+    const units: any[] = (await this.auth(portalListUnits, { organizationId: orgId, customerId: id })) || [];
     let unit: any = units.find((u) => u.isPrimary) ?? units[0];
     let portalId: string | undefined = unit?.portalId ?? undefined;
     if (!portalId && body.portalId) {
-      const p: any = await this.auth('portal_get', { id: body.portalId, organizationId: orgId });
+      const p: any = await this.auth(portalGet, { id: body.portalId, organizationId: orgId });
       const portal = p?.data ?? p;
       if (!portal || portal.spaceId !== customer.spaceId) {
         throw new BadRequestException('Invalid portal for this customer');
@@ -46,14 +55,14 @@ export class CustomerInviteController extends CustomersControllerBase {
       portalId = body.portalId;
     }
     if (!portalId) {
-      const portalRes: any = await this.auth('portal_ensure_for_space', {
+      const portalRes: any = await this.auth(portalEnsureForSpace, {
         organizationId: orgId,
         spaceId: customer.spaceId,
       });
       portalId = portalRes?.data?.id ?? portalRes?.id;
     }
     if (!unit) {
-      unit = await this.auth('portal_create_unit', {
+      unit = await this.auth(portalCreateUnit, {
         organizationId: orgId,
         customerId: id,
         portalId,
@@ -61,7 +70,7 @@ export class CustomerInviteController extends CustomersControllerBase {
         address: customer.address,
       });
     }
-    const inviteRes: any = await this.auth('create_invitation', {
+    const inviteRes: any = await this.auth(createInvitation, {
       targetRole: 'CUSTOMER',
       organizationId: orgId,
       createdById: req.user.id,
@@ -73,7 +82,7 @@ export class CustomerInviteController extends CustomersControllerBase {
     });
     // Flip the CRM record into a portal resident + advance the stage to Customer
     // (an invited app user has converted). Status change is auto-logged.
-    await this.auth('update_customer', {
+    await this.auth(updateCustomer, {
       id,
       organizationId: orgId,
       actorId: req.user.id,
@@ -90,6 +99,6 @@ export class CustomerInviteController extends CustomersControllerBase {
     // The same door as the invite: manage where the client is filed. It used to
     // re-send for any client id on the org-wide flag alone.
     await this.managedCustomer(id, req.user.organizationId, this.caller(req));
-    return this.auth('resend_invitation', { organizationId: req.user.organizationId, customerId: id });
+    return this.auth(resendInvitation, { organizationId: req.user.organizationId, customerId: id });
   }
 }

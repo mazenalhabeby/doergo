@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpException, HttpStatus, Inject, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Post,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { ClientProxy } from '@nestjs/microservices';
@@ -7,6 +18,7 @@ import { SERVICE_NAMES, releaseNoteFor } from '@hbcfield/shared';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../common/decorators';
+import { sendRpc, appUpdateNotice } from '@hbcfield/shared/microservices';
 
 /**
  * What version of the mobile app is still allowed to talk to this API.
@@ -69,6 +81,8 @@ export class AppUpdateNoticeController {
   async notify(@Body() body: { dryRun?: boolean }) {
     const version = process.env.MOBILE_LATEST_VERSION;
     if (!version) throw new HttpException({ message: 'MOBILE_LATEST_VERSION is not set' }, HttpStatus.BAD_REQUEST);
-    return firstValueFrom(this.notificationClient.send({ cmd: 'app_update_notice' }, { version, dryRun: body?.dryRun !== false }));
+    return firstValueFrom(
+      sendRpc(this.notificationClient, appUpdateNotice, { version, dryRun: body?.dryRun !== false }),
+    );
   }
 }

@@ -2,34 +2,9 @@
 import { documentVisibleTo, type DocumentSignerRole, visibleDocumentWhere } from '@hbcfield/shared';
 import { NotFoundException } from '@nestjs/common';
 
-/** What a caller is allowed to do, resolved by the gateway from their access. */
-export interface DocumentActor {
-  /**
-   * Works for a client or partner, not for this organization.
-   *
-   * The personnel file is the one area where the answer is a relationship
-   * rather than a permission: we ask somebody else's employee for nothing, and
-   * we accept nothing from them either.
-   */
-  isExternal?: boolean;
-  userId: string;
-  organizationId: string;
-  canViewMemberDocuments: boolean;
-  canOpenMemberDocuments: boolean;
-  canIssueDocuments: boolean;
-  canManageDocumentTemplates: boolean;
-  /** The member's org-wide role — a document TYPE may name the roles that see it. */
-  roleId?: string | null;
-  /** An administrator sees every type. */
-  isAdmin?: boolean;
-  /*
-    Control over one document. Optional so every existing caller that builds an
-    actor by hand fails CLOSED: absent is false.
-  */
-  canManageDocumentVisibility?: boolean;
-  canReplaceDocuments?: boolean;
-  canDeleteDocuments?: boolean;
-}
+import { type RequestContext, type DocumentActor } from '@hbcfield/shared/microservices';
+/** The message contract's type (shared with the gateway). */
+export type { DocumentActor };
 
 /** Request provenance, recorded on every evidence-trail entry. */
 /**
@@ -133,13 +108,8 @@ export function assertNotHiddenDraft(actor: DocumentActor, doc: { status?: strin
   if (doc.status === 'DRAFT' && !maySeeDrafts(actor)) throw new NotFoundException('Document not found');
 }
 
-export interface RequestContext {
-  ip?: string | null;
-  userAgent?: string | null;
-  appVersion?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-}
+/** The message contract's type (shared with the gateway). */
+export type { RequestContext };
 
 /** Uploads are capped well below anything that would strain a phone or a bill. */
 export const MAX_DOCUMENT_BYTES = 25 * 1024 * 1024;

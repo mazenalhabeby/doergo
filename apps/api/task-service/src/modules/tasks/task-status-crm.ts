@@ -3,6 +3,7 @@ import type { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import type { PrismaService } from '../../common/prisma/prisma.service';
 import { crmIntents, type PreparedStepSubmission } from './step-submission';
+import { sendRpc, addCustomerActivity } from '@hbcfield/shared/microservices';
 
 /**
  * A step form's CRM fields, written to the job's client — through the SAME
@@ -44,18 +45,13 @@ export async function applyStepFormCrm(
     for (const intent of intents) {
       try {
         await firstValueFrom(
-          deps.authClient
-            .send(
-              { cmd: 'add_customer_activity' },
-              {
-                ...intent,
-                customerId: args.task.customerId,
-                organizationId: args.task.organizationId,
-                authorId: args.userId,
-                caller: { userId: args.userId, role: args.userRole },
-              },
-            )
-            .pipe(timeout(5000)),
+          sendRpc(deps.authClient, addCustomerActivity, {
+            ...intent,
+            customerId: args.task.customerId,
+            organizationId: args.task.organizationId,
+            authorId: args.userId,
+            caller: { userId: args.userId, role: args.userRole },
+          }).pipe(timeout(5000)),
         );
       } catch (err: any) {
         deps.logger.warn(

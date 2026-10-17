@@ -1,6 +1,17 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcRequest,
+  resolveForgotClockOut,
+  requestExtraTime,
+  approveExtraTime,
+  addOvertimeToEntry,
+  removeApprovedOvertime,
+  rejectExtraTime,
+  listPendingExtraTime,
+} from '@hbcfield/shared/microservices';
 
 /** Forgot to clock out, extra time and overtime, asked of task-service. */
 @Injectable()
@@ -12,77 +23,38 @@ export class ExtraTimeGatewayService extends BaseGatewayService {
   // ── Shift reminder responses (worker actions + leader approval) ──
 
   /** Worker self-reports their leave time after forgetting to clock out. */
-  async resolveForgotClockOut(data: {
-    userId: string;
-    entryId: string;
-    clockOutAt: string;
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-  }) {
-    return this.send({ cmd: 'resolve_forgot_clock_out' }, data);
+  async resolveForgotClockOut(data: RpcRequest<typeof resolveForgotClockOut>) {
+    return this.send(pattern(resolveForgotClockOut), data);
   }
 
   /** Worker requests to keep working past the shift end (routes to a leader). */
-  async requestExtraTime(data: {
-    userId: string;
-    entryId: string;
-    organizationId: string;
-    occurredAt?: string | null;
-  }) {
+  async requestExtraTime(data: RpcRequest<typeof requestExtraTime>) {
     // A write: `send` retries on a slow reply and would open a second round.
-    return this.sendOnce({ cmd: 'request_extra_time' }, data);
+    return this.sendOnce(pattern(requestExtraTime), data);
   }
 
   /** Leader approves N more minutes of overtime for an open shift. */
-  async approveExtraTime(data: {
-    approverId: string;
-    entryId: string;
-    minutes: number;
-    organizationId: string;
-    signature?: string | null;
-    notes?: string | null;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-  }) {
-    return this.send({ cmd: 'approve_extra_time' }, data);
+  async approveExtraTime(data: RpcRequest<typeof approveExtraTime>) {
+    return this.send(pattern(approveExtraTime), data);
   }
 
   /** A manager adds overtime to a closed shift. A write: never retried. */
-  async addOvertimeToEntry(data: {
-    approverId: string;
-    entryId: string;
-    minutes: number;
-    reason?: string | null;
-    organizationId: string;
-    scopeSpaceIds?: string[] | null;
-  }) {
-    return this.sendOnce({ cmd: 'add_overtime_to_entry' }, data);
+  async addOvertimeToEntry(data: RpcRequest<typeof addOvertimeToEntry>) {
+    return this.sendOnce(pattern(addOvertimeToEntry), data);
   }
 
   /** Remove an approved overtime as if it never was. A write: never retried. */
-  async removeApprovedOvertime(data: {
-    actorId: string;
-    overtimeId: string;
-    organizationId: string;
-    scopeSpaceIds?: string[] | null;
-  }) {
-    return this.sendOnce({ cmd: 'remove_approved_overtime' }, data);
+  async removeApprovedOvertime(data: RpcRequest<typeof removeApprovedOvertime>) {
+    return this.sendOnce(pattern(removeApprovedOvertime), data);
   }
 
-  /** Leader rejects an extra-time request. */
-  async rejectExtraTime(data: {
-    approverId: string;
-    entryId: string;
-    organizationId: string;
-    /** Reaches the member, so it is worth asking for. */
-    reason?: string | null;
-  }) {
-    return this.send({ cmd: 'reject_extra_time' }, data);
+  /** Leader rejects an extra-time request. The reason reaches the member, so it is worth asking for. */
+  async rejectExtraTime(data: RpcRequest<typeof rejectExtraTime>) {
+    return this.send(pattern(rejectExtraTime), data);
   }
 
   /** Open extra-time requests awaiting approval (scoped to the caller's spaces). */
-  async listPendingExtraTime(data: { userId: string; organizationId: string; isAdmin?: boolean }) {
-    return this.send({ cmd: 'list_pending_extra_time' }, data);
+  async listPendingExtraTime(data: RpcRequest<typeof listPendingExtraTime>) {
+    return this.send(pattern(listPendingExtraTime), data);
   }
 }

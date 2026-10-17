@@ -1,233 +1,175 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AttendanceService } from './attendance.service';
+import {
+  pattern,
+  type RpcRequest,
+  listClockInLocations,
+  getAttendanceStatus,
+  getAttendanceHistory,
+  getLocationEntries,
+  getLocationEntriesBatch,
+  getAllEntries,
+  getActiveEntries,
+  listNoShows,
+  resolveNoShow,
+  noShowSummary,
+  reportGeofenceExcursion,
+  approveGeofenceExcursion,
+  rejectGeofenceExcursion,
+  listGeofenceExcursions,
+  resolveForgotClockOut,
+  requestExtraTime,
+  approveExtraTime,
+  addOvertimeToEntry,
+  removeApprovedOvertime,
+  rejectExtraTime,
+  listPendingExtraTime,
+  getEntryPresence,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-  @MessagePattern({ cmd: 'list_clock_in_locations' })
-  listClockInLocations(@Payload() d: { userId: string; organizationId: string }) {
+  @MessagePattern(pattern(listClockInLocations))
+  listClockInLocations(@Payload() d: RpcRequest<typeof listClockInLocations>) {
     return this.attendanceService.listClockInLocations(d);
   }
 
-  @MessagePattern({ cmd: 'get_attendance_status' })
-  async getStatus(@Payload() data: { userId: string; organizationId: string }) {
+  @MessagePattern(pattern(getAttendanceStatus))
+  async getStatus(@Payload() data: RpcRequest<typeof getAttendanceStatus>) {
     return this.attendanceService.getStatus(data);
   }
 
-  @MessagePattern({ cmd: 'get_attendance_history' })
+  @MessagePattern(pattern(getAttendanceHistory))
   async getHistory(
     @Payload()
-    data: {
-      userId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      startDate?: string;
-      endDate?: string;
-      page?: number;
-      limit?: number;
-    },
+    data: RpcRequest<typeof getAttendanceHistory>,
   ) {
     return this.attendanceService.getHistory(data);
   }
 
-  @MessagePattern({ cmd: 'get_location_entries' })
+  @MessagePattern(pattern(getLocationEntries))
   async getLocationEntries(
     @Payload()
-    data: {
-      locationId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      date?: string;
-      search?: string;
-      page?: number;
-      limit?: number;
-      startDate?: string;
-      endDate?: string;
-      requesterId?: string;
-      /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
-      viewScopeSpaceIds: string[] | null;
-      sortBy?: string;
-      sortOrder?: string;
-      sharedSpaceIds?: string[];
-    },
+    data: RpcRequest<typeof getLocationEntries>,
   ) {
     return this.attendanceService.getLocationEntries(data);
   }
 
-  @MessagePattern({ cmd: 'get_location_entries_batch' })
+  @MessagePattern(pattern(getLocationEntriesBatch))
   async getLocationEntriesBatch(
     @Payload()
-    data: {
-      locationIds: string[];
-      organizationId: string;
-      date?: string;
-      requesterId?: string;
-      /** Where the caller holds canViewSpaceAttendance; null = org-wide, [] = none. */
-      viewScopeSpaceIds: string[] | null;
-    },
+    data: RpcRequest<typeof getLocationEntriesBatch>,
   ) {
     return this.attendanceService.getLocationEntriesBatch(data);
   }
 
-  @MessagePattern({ cmd: 'get_all_entries' })
+  @MessagePattern(pattern(getAllEntries))
   async getAllEntries(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      date?: string;
-      status?: string;
-      search?: string;
-      page?: number;
-      limit?: number;
-      sortBy?: string;
-      sortOrder?: string;
-    },
+    data: RpcRequest<typeof getAllEntries>,
   ) {
     return this.attendanceService.getAllEntries(data);
   }
 
-  @MessagePattern({ cmd: 'get_active_entries' })
-  async getActiveEntries(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(getActiveEntries))
+  async getActiveEntries(@Payload() data: RpcRequest<typeof getActiveEntries>) {
     return this.attendanceService.getActiveEntries(data);
   }
 
-  @MessagePattern({ cmd: 'list_no_shows' })
-  async listNoShows(@Payload() data: { organizationId: string; days?: number; spaceId?: string; open?: boolean }) {
+  @MessagePattern(pattern(listNoShows))
+  async listNoShows(@Payload() data: RpcRequest<typeof listNoShows>) {
     return this.attendanceService.listNoShows(data);
   }
 
-  @MessagePattern({ cmd: 'resolve_no_show' })
+  @MessagePattern(pattern(resolveNoShow))
   async resolveNoShow(
     @Payload()
-    data: {
-      id: string;
-      organizationId: string;
-      action: 'excuse' | 'absent' | 'reopen';
-      reasonCode?: string;
-      reason?: string;
-      wholeRun?: boolean;
-      excusedById?: string;
-    },
+    data: RpcRequest<typeof resolveNoShow>,
   ) {
     return this.attendanceService.resolveNoShow(data);
   }
 
-  @MessagePattern({ cmd: 'no_show_summary' })
-  async noShowSummary(@Payload() data: { organizationId: string; days?: number; spaceId?: string }) {
+  @MessagePattern(pattern(noShowSummary))
+  async noShowSummary(@Payload() data: RpcRequest<typeof noShowSummary>) {
     return this.attendanceService.noShowSummary(data);
   }
 
   // ── Geofence excursion ("out of ring") ──
-  @MessagePattern({ cmd: 'report_geofence_excursion' })
+  @MessagePattern(pattern(reportGeofenceExcursion))
   async reportExcursion(
     @Payload()
-    data: {
-      userId: string;
-      organizationId: string;
-      reason: string;
-      requestedMinutes: number;
-    },
+    data: RpcRequest<typeof reportGeofenceExcursion>,
   ) {
     return this.attendanceService.reportExcursion(data);
   }
 
-  @MessagePattern({ cmd: 'approve_geofence_excursion' })
+  @MessagePattern(pattern(approveGeofenceExcursion))
   async approveExcursion(
     @Payload()
-    data: {
-      excursionId: string;
-      approverId: string;
-      organizationId: string;
-      grantedMinutes?: number;
-    },
+    data: RpcRequest<typeof approveGeofenceExcursion>,
   ) {
     return this.attendanceService.approveExcursion(data);
   }
 
-  @MessagePattern({ cmd: 'reject_geofence_excursion' })
+  @MessagePattern(pattern(rejectGeofenceExcursion))
   async rejectExcursion(
     @Payload()
-    data: {
-      excursionId: string;
-      approverId: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof rejectGeofenceExcursion>,
   ) {
     return this.attendanceService.rejectExcursion(data);
   }
 
-  @MessagePattern({ cmd: 'list_geofence_excursions' })
+  @MessagePattern(pattern(listGeofenceExcursions))
   async listExcursions(
     @Payload()
-    data: {
-      organizationId: string;
-      status?: 'active' | 'pending' | 'approved';
-    },
+    data: RpcRequest<typeof listGeofenceExcursions>,
   ) {
     return this.attendanceService.listActiveExcursions(data);
   }
 
-  @MessagePattern({ cmd: 'resolve_forgot_clock_out' })
-  async resolveForgotClockOut(
-    @Payload() data: { userId: string; entryId: string; clockOutAt: string; organizationId: string },
-  ) {
+  @MessagePattern(pattern(resolveForgotClockOut))
+  async resolveForgotClockOut(@Payload() data: RpcRequest<typeof resolveForgotClockOut>) {
     return this.attendanceService.resolveForgotClockOut(data);
   }
 
-  @MessagePattern({ cmd: 'request_extra_time' })
-  async requestExtraTime(@Payload() data: { userId: string; entryId: string; organizationId: string }) {
+  @MessagePattern(pattern(requestExtraTime))
+  async requestExtraTime(@Payload() data: RpcRequest<typeof requestExtraTime>) {
     return this.attendanceService.requestExtraTime(data);
   }
 
-  @MessagePattern({ cmd: 'approve_extra_time' })
-  async approveExtraTime(
-    @Payload() data: { approverId: string; entryId: string; minutes: number; organizationId: string },
-  ) {
+  @MessagePattern(pattern(approveExtraTime))
+  async approveExtraTime(@Payload() data: RpcRequest<typeof approveExtraTime>) {
     return this.attendanceService.approveExtraTime(data);
   }
 
-  @MessagePattern({ cmd: 'add_overtime_to_entry' })
+  @MessagePattern(pattern(addOvertimeToEntry))
   async addOvertimeToEntry(
     @Payload()
-    data: {
-      approverId: string;
-      entryId: string;
-      minutes: number;
-      reason?: string | null;
-      organizationId: string;
-      scopeSpaceIds?: string[] | null;
-    },
+    data: RpcRequest<typeof addOvertimeToEntry>,
   ) {
     return this.attendanceService.addOvertimeToClosedEntry(data);
   }
 
-  @MessagePattern({ cmd: 'remove_approved_overtime' })
-  async removeApprovedOvertime(
-    @Payload() data: { actorId: string; overtimeId: string; organizationId: string; scopeSpaceIds?: string[] | null },
-  ) {
+  @MessagePattern(pattern(removeApprovedOvertime))
+  async removeApprovedOvertime(@Payload() data: RpcRequest<typeof removeApprovedOvertime>) {
     return this.attendanceService.removeApprovedOvertime(data);
   }
 
-  @MessagePattern({ cmd: 'reject_extra_time' })
-  async rejectExtraTime(@Payload() data: { approverId: string; entryId: string; organizationId: string }) {
+  @MessagePattern(pattern(rejectExtraTime))
+  async rejectExtraTime(@Payload() data: RpcRequest<typeof rejectExtraTime>) {
     return this.attendanceService.rejectExtraTime(data);
   }
 
-  @MessagePattern({ cmd: 'list_pending_extra_time' })
-  async listPendingExtraTime(@Payload() data: { userId: string; organizationId: string; isAdmin?: boolean }) {
+  @MessagePattern(pattern(listPendingExtraTime))
+  async listPendingExtraTime(@Payload() data: RpcRequest<typeof listPendingExtraTime>) {
     return this.attendanceService.listPendingExtraTime(data);
   }
 
-  @MessagePattern({ cmd: 'get_entry_presence' })
-  async getEntryPresence(
-    @Payload() data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null },
-  ) {
+  @MessagePattern(pattern(getEntryPresence))
+  async getEntryPresence(@Payload() data: RpcRequest<typeof getEntryPresence>) {
     return this.attendanceService.getEntryPresence(data);
   }
 }

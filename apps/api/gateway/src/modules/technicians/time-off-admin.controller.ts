@@ -8,6 +8,16 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
 import { leaveWriteScope } from './employees-controller-helpers';
+import { callerOrgId } from '../../common/caller-org';
+import {
+  sendRpc,
+  getOrgTimeOff,
+  approveTimeOff,
+  addTimeOff,
+  updateTimeOff,
+  adminDeleteTimeOff,
+  cancelTimeOff,
+} from '@hbcfield/shared/microservices';
 
 /**
  * /employees/time-off — the organization's leave: the list, approving, entering,
@@ -24,7 +34,11 @@ export class TimeOffAdminController {
   @Get('time-off')
   @ApiOperation({ summary: 'Time-off requests: the organization, or the spaces the caller leads' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED', 'CANCELED'] })
-  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD — with `to`: leave touching the window + every pending request' })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    description: 'YYYY-MM-DD — with `to`: leave touching the window + every pending request',
+  })
   @ApiQuery({ name: 'to', required: false })
   @ApiResponse({ status: 200, description: 'Time-off requests retrieved' })
   /*
@@ -53,19 +67,17 @@ export class TimeOffAdminController {
     const canSeeCover = cover === null || cover.length > 0;
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_org_time_off' },
-        {
-          organizationId: user?.organizationId,
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          withCover: canSeeCover,
-          status,
-          // Validated in the service (a malformed day is ignored, not trusted).
-          from: typeof from === 'string' ? from.slice(0, 10) : undefined,
-          to: typeof to === 'string' ? to.slice(0, 10) : undefined,
-        },
-      ),
+      sendRpc(this.taskClient, getOrgTimeOff, {
+        // `user` is optional only because it follows optional query params; the route is authenticated.
+        organizationId: callerOrgId(user!),
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        withCover: canSeeCover,
+        status,
+        // Validated in the service (a malformed day is ignored, not trusted).
+        from: typeof from === 'string' ? from.slice(0, 10) : undefined,
+        to: typeof to === 'string' ? to.slice(0, 10) : undefined,
+      }),
     );
   }
 
@@ -86,17 +98,14 @@ export class TimeOffAdminController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'approve_time_off' },
-        {
-          timeOffId,
-          organizationId: user.organizationId,
-          approverId: user.id,
-          scopeSpaceIds: leaveWriteScope(user),
-          approved: body.approved,
-          rejectionReason: body.rejectionReason,
-        },
-      ),
+      sendRpc(this.taskClient, approveTimeOff, {
+        timeOffId,
+        organizationId: callerOrgId(user),
+        approverId: user.id,
+        scopeSpaceIds: leaveWriteScope(user),
+        approved: body.approved,
+        rejectionReason: body.rejectionReason,
+      }),
     );
   }
 
@@ -108,17 +117,14 @@ export class TimeOffAdminController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'add_time_off' },
-        {
-          editorId: user.id,
-          organizationId: user.organizationId,
-          technicianId: body.technicianId,
-          startDate: body.startDate,
-          endDate: body.endDate,
-          reason: body.reason,
-        },
-      ),
+      sendRpc(this.taskClient, addTimeOff, {
+        editorId: user.id,
+        organizationId: callerOrgId(user),
+        technicianId: body.technicianId,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        reason: body.reason,
+      }),
     );
   }
 
@@ -132,16 +138,13 @@ export class TimeOffAdminController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'update_time_off' },
-        {
-          organizationId: user.organizationId,
-          timeOffId,
-          startDate: body.startDate,
-          endDate: body.endDate,
-          reason: body.reason,
-        },
-      ),
+      sendRpc(this.taskClient, updateTimeOff, {
+        organizationId: callerOrgId(user),
+        timeOffId,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        reason: body.reason,
+      }),
     );
   }
 
@@ -151,7 +154,7 @@ export class TimeOffAdminController {
   @RequirePermission('canManageRota')
   async adminDeleteTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'admin_delete_time_off' }, { organizationId: user.organizationId, timeOffId }),
+      sendRpc(this.taskClient, adminDeleteTimeOff, { organizationId: callerOrgId(user), timeOffId }),
     );
   }
 
@@ -162,13 +165,10 @@ export class TimeOffAdminController {
   @Roles(Role.EMPLOYEE)
   async cancelTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'cancel_time_off' },
-        {
-          timeOffId,
-          technicianId: user.id,
-        },
-      ),
+      sendRpc(this.taskClient, cancelTimeOff, {
+        timeOffId,
+        technicianId: user.id,
+      }),
     );
   }
 }

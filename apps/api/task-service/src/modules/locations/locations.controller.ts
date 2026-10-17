@@ -4,6 +4,17 @@ import { LocationsService } from './locations.service';
 import { SpaceReadService } from './space-read.service';
 import { SpaceRosterService } from './space-roster.service';
 import { MemberSpacesService } from './member-spaces.service';
+import {
+  pattern,
+  type RpcRequest,
+  findAllLocations,
+  findOneLocation,
+  getEffectiveModules,
+  getLocationAssignments,
+  getLocationAssignmentsBatch,
+  getTechnicianAssignments,
+  getColleagues,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class LocationsController {
@@ -14,38 +25,38 @@ export class LocationsController {
     private readonly memberSpaces: MemberSpacesService,
   ) {}
 
-  @MessagePattern({ cmd: 'find_all_locations' })
-  async findAll(@Payload() data: any) {
+  @MessagePattern(pattern(findAllLocations))
+  async findAll(@Payload() data: RpcRequest<typeof findAllLocations>) {
     return this.spaceRead.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'find_one_location' })
-  async findOne(@Payload() data: any) {
+  @MessagePattern(pattern(findOneLocation))
+  async findOne(@Payload() data: RpcRequest<typeof findOneLocation>) {
     return this.spaceRead.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'get_effective_modules' })
-  async getEffectiveModules(@Payload() data: any) {
+  @MessagePattern(pattern(getEffectiveModules))
+  async getEffectiveModules(@Payload() data: RpcRequest<typeof getEffectiveModules>) {
     return this.locationsService.getEffectiveModules(data);
   }
 
-  @MessagePattern({ cmd: 'get_location_assignments' })
-  async getLocationAssignments(@Payload() data: any) {
+  @MessagePattern(pattern(getLocationAssignments))
+  async getLocationAssignments(@Payload() data: RpcRequest<typeof getLocationAssignments>) {
     return this.roster.getLocationAssignments(data);
   }
 
-  @MessagePattern({ cmd: 'get_location_assignments_batch' })
-  async getLocationAssignmentsBatch(@Payload() data: any) {
+  @MessagePattern(pattern(getLocationAssignmentsBatch))
+  async getLocationAssignmentsBatch(@Payload() data: RpcRequest<typeof getLocationAssignmentsBatch>) {
     return this.roster.getLocationAssignmentsBatch(data);
   }
 
-  @MessagePattern({ cmd: 'get_technician_assignments' })
-  async getTechnicianAssignments(@Payload() data: any) {
+  @MessagePattern(pattern(getTechnicianAssignments))
+  async getTechnicianAssignments(@Payload() data: RpcRequest<typeof getTechnicianAssignments>) {
     return this.memberSpaces.getTechnicianAssignments(data);
   }
 
-  @MessagePattern({ cmd: 'get_colleagues' })
-  async getColleagues(@Payload() data: any) {
+  @MessagePattern(pattern(getColleagues))
+  async getColleagues(@Payload() data: RpcRequest<typeof getColleagues>) {
     return this.memberSpaces.getColleagues(data);
   }
 }

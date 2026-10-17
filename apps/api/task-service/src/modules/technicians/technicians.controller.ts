@@ -25,6 +25,36 @@ import {
 } from './dto';
 import { LeaveOpeningService } from './leave-opening.service';
 import { CoverFloorService } from './cover-floor.service';
+import {
+  pattern,
+  type RpcRequest,
+  listLeaveAdjustments,
+  addLeaveAdjustment,
+  voidLeaveAdjustment,
+  getLeaveOpening,
+  saveLeaveOpening,
+  matchLeaveOpening,
+  getTechnicianStats,
+  getTechnicianPerformance,
+  getTechnicianTaskHistory,
+  setTechnicianSchedule,
+  getTechnicianSchedule,
+  requestTimeOff,
+  requestPrecheck,
+  getRequestOptions,
+  getTimeOff,
+  countLeaveRpc,
+  getLeaveBalance,
+  getFloorNow,
+  getCoverRange,
+  getOrgTimeOff,
+  approveTimeOff,
+  cancelTimeOff,
+  updateTimeOff,
+  adminDeleteTimeOff,
+  addTimeOff,
+  getTechniciansAvailability,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class TechniciansController {
@@ -46,33 +76,33 @@ export class TechniciansController {
   // THE LEAVE LEDGER (leave-ledger.service.ts) — scope and caller come from the gateway
   // ========================================================================
 
-  @MessagePattern({ cmd: 'list_leave_adjustments' })
-  async listLeaveAdjustments(@Payload() dto: Parameters<LeaveLedgerService['listAdjustments']>[0]) {
+  @MessagePattern(pattern(listLeaveAdjustments))
+  async listLeaveAdjustments(@Payload() dto: RpcRequest<typeof listLeaveAdjustments>) {
     return success(await this.leaveLedger.listAdjustments(dto));
   }
 
-  @MessagePattern({ cmd: 'add_leave_adjustment' })
-  async addLeaveAdjustment(@Payload() dto: Parameters<LeaveLedgerService['addAdjustment']>[0]) {
+  @MessagePattern(pattern(addLeaveAdjustment))
+  async addLeaveAdjustment(@Payload() dto: RpcRequest<typeof addLeaveAdjustment>) {
     return success(await this.leaveLedger.addAdjustment(dto));
   }
 
-  @MessagePattern({ cmd: 'void_leave_adjustment' })
-  async voidLeaveAdjustment(@Payload() dto: Parameters<LeaveLedgerService['voidAdjustment']>[0]) {
+  @MessagePattern(pattern(voidLeaveAdjustment))
+  async voidLeaveAdjustment(@Payload() dto: RpcRequest<typeof voidLeaveAdjustment>) {
     return success(await this.leaveLedger.voidAdjustment(dto));
   }
 
-  @MessagePattern({ cmd: 'get_leave_opening' })
-  async getLeaveOpening(@Payload() dto: Parameters<LeaveOpeningService['getOpening']>[0]) {
+  @MessagePattern(pattern(getLeaveOpening))
+  async getLeaveOpening(@Payload() dto: RpcRequest<typeof getLeaveOpening>) {
     return success(await this.leaveOpening.getOpening(dto));
   }
 
-  @MessagePattern({ cmd: 'save_leave_opening' })
-  async saveLeaveOpening(@Payload() dto: Parameters<LeaveOpeningService['saveOpening']>[0]) {
+  @MessagePattern(pattern(saveLeaveOpening))
+  async saveLeaveOpening(@Payload() dto: RpcRequest<typeof saveLeaveOpening>) {
     return success(await this.leaveOpening.saveOpening(dto));
   }
 
-  @MessagePattern({ cmd: 'match_leave_opening' })
-  async matchLeaveOpening(@Payload() dto: Parameters<LeaveOpeningService['matchOpening']>[0]) {
+  @MessagePattern(pattern(matchLeaveOpening))
+  async matchLeaveOpening(@Payload() dto: RpcRequest<typeof matchLeaveOpening>) {
     return success(await this.leaveOpening.matchOpening(dto));
   }
 
@@ -80,18 +110,18 @@ export class TechniciansController {
   // PERFORMANCE & STATS
   // ========================================================================
 
-  @MessagePattern({ cmd: 'get_technician_stats' })
-  async getStats(@Payload() data: GetEmployeeStatsDto) {
+  @MessagePattern(pattern(getTechnicianStats))
+  async getStats(@Payload() data: RpcRequest<typeof getTechnicianStats>) {
     return this.techniciansService.getStats(data);
   }
 
-  @MessagePattern({ cmd: 'get_technician_performance' })
-  async getPerformance(@Payload() data: GetEmployeePerformanceDto) {
+  @MessagePattern(pattern(getTechnicianPerformance))
+  async getPerformance(@Payload() data: RpcRequest<typeof getTechnicianPerformance>) {
     return this.performance.getPerformance(data);
   }
 
-  @MessagePattern({ cmd: 'get_technician_task_history' })
-  async getTaskHistory(@Payload() data: GetEmployeeTaskHistoryDto) {
+  @MessagePattern(pattern(getTechnicianTaskHistory))
+  async getTaskHistory(@Payload() data: RpcRequest<typeof getTechnicianTaskHistory>) {
     return this.techniciansService.getTaskHistory(data);
   }
 
@@ -99,13 +129,13 @@ export class TechniciansController {
   // SCHEDULE MANAGEMENT
   // ========================================================================
 
-  @MessagePattern({ cmd: 'set_technician_schedule' })
-  async setSchedule(@Payload() data: SetScheduleDto) {
+  @MessagePattern(pattern(setTechnicianSchedule))
+  async setSchedule(@Payload() data: RpcRequest<typeof setTechnicianSchedule>) {
     return this.schedule.setSchedule(data);
   }
 
-  @MessagePattern({ cmd: 'get_technician_schedule' })
-  async getSchedule(@Payload() data: GetScheduleDto) {
+  @MessagePattern(pattern(getTechnicianSchedule))
+  async getSchedule(@Payload() data: RpcRequest<typeof getTechnicianSchedule>) {
     return this.schedule.getSchedule(data);
   }
 
@@ -113,47 +143,40 @@ export class TechniciansController {
   // TIME-OFF MANAGEMENT
   // ========================================================================
 
-  @MessagePattern({ cmd: 'request_time_off' })
-  async requestTimeOff(@Payload() data: RequestTimeOffDto) {
+  @MessagePattern(pattern(requestTimeOff))
+  async requestTimeOff(@Payload() data: RpcRequest<typeof requestTimeOff>) {
     return this.requests.requestTimeOff(data);
   }
 
   /** What the caller may request, and at which workspaces a remote day (requests/request-kinds.ts). */
   /** What a leader would check, for the member's OWN request before sending (advice only). */
-  @MessagePattern({ cmd: 'request_precheck' })
-  requestPrecheck(@Payload() data: { userId: string; organizationId: string; body: unknown }) {
+  @MessagePattern(pattern(requestPrecheck))
+  requestPrecheck(@Payload() data: RpcRequest<typeof requestPrecheck>) {
     return this.precheck.precheck(data);
   }
 
-  @MessagePattern({ cmd: 'get_request_options' })
-  async getRequestOptions(@Payload() data: { userId: string; organizationId: string }) {
+  @MessagePattern(pattern(getRequestOptions))
+  async getRequestOptions(@Payload() data: RpcRequest<typeof getRequestOptions>) {
     return this.requests.requestOptions(data);
   }
 
-  @MessagePattern({ cmd: 'get_time_off' })
-  async getTimeOff(@Payload() data: GetTimeOffDto) {
+  @MessagePattern(pattern(getTimeOff))
+  async getTimeOff(@Payload() data: RpcRequest<typeof getTimeOff>) {
     return this.leaveRecords.getTimeOff(data);
   }
 
   /** What a leave range would cost — weekends, rota rest days and holidays left out. */
-  @MessagePattern({ cmd: 'count_leave' })
+  @MessagePattern(pattern(countLeaveRpc))
   async countLeave(
     @Payload()
-    dto: {
-      organizationId: string;
-      technicianId: string;
-      from: string;
-      to: string;
-      callerId?: string;
-      scopeSpaceIds?: string[];
-    },
+    dto: RpcRequest<typeof countLeaveRpc>,
   ) {
     return this.leaveRecords.countLeave(dto);
   }
 
-  @MessagePattern({ cmd: 'get_leave_balance' })
+  @MessagePattern(pattern(getLeaveBalance))
   async getLeaveBalance(
-    @Payload() dto: { technicianId: string; organizationId: string; on?: string; year?: number | string },
+    @Payload() dto: RpcRequest<typeof getLeaveBalance>,
   ) {
     return this.leaveRecords.getLeaveBalance(dto);
   }
@@ -166,64 +189,51 @@ export class TechniciansController {
    * break to work it out, which is both slower and more than the viewer is
    * entitled to see.
    */
-  @MessagePattern({ cmd: 'get_floor_now' })
-  async getFloorNow(@Payload() data: { organizationId: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(getFloorNow))
+  async getFloorNow(@Payload() data: RpcRequest<typeof getFloorNow>) {
     return success(await this.coverFloor.floorNow(data.organizationId, data.scopeSpaceIds));
   }
 
   /** Cover for every day of a window, per workspace — the wallchart's footer. */
-  @MessagePattern({ cmd: 'get_cover_range' })
+  @MessagePattern(pattern(getCoverRange))
   async getCoverRange(
-    @Payload() data: { organizationId: string; start: string; end: string; scopeSpaceIds?: string[] },
+    @Payload() data: RpcRequest<typeof getCoverRange>,
   ) {
     return success(await this.coverService.coverRange(data.organizationId, data.start, data.end, data.scopeSpaceIds));
   }
 
-  @MessagePattern({ cmd: 'get_org_time_off' })
-  async getOrgTimeOff(@Payload() data: GetOrgTimeOffDto) {
+  @MessagePattern(pattern(getOrgTimeOff))
+  async getOrgTimeOff(@Payload() data: RpcRequest<typeof getOrgTimeOff>) {
     return this.leaveRecords.getOrgTimeOff(data);
   }
 
-  @MessagePattern({ cmd: 'approve_time_off' })
-  async approveTimeOff(@Payload() data: ApproveTimeOffDto) {
+  @MessagePattern(pattern(approveTimeOff))
+  async approveTimeOff(@Payload() data: RpcRequest<typeof approveTimeOff>) {
     return this.decisions.approveTimeOff(data);
   }
 
-  @MessagePattern({ cmd: 'cancel_time_off' })
-  async cancelTimeOff(@Payload() data: CancelTimeOffDto) {
+  @MessagePattern(pattern(cancelTimeOff))
+  async cancelTimeOff(@Payload() data: RpcRequest<typeof cancelTimeOff>) {
     return this.decisions.cancelTimeOff(data);
   }
 
-  @MessagePattern({ cmd: 'update_time_off' })
+  @MessagePattern(pattern(updateTimeOff))
   async updateTimeOff(
     @Payload()
-    data: {
-      organizationId: string;
-      timeOffId: string;
-      startDate?: string;
-      endDate?: string;
-      reason?: string | null;
-    },
+    data: RpcRequest<typeof updateTimeOff>,
   ) {
     return this.decisions.updateTimeOff(data);
   }
 
-  @MessagePattern({ cmd: 'admin_delete_time_off' })
-  async adminDeleteTimeOff(@Payload() data: { organizationId: string; timeOffId: string }) {
+  @MessagePattern(pattern(adminDeleteTimeOff))
+  async adminDeleteTimeOff(@Payload() data: RpcRequest<typeof adminDeleteTimeOff>) {
     return this.decisions.adminDeleteTimeOff(data);
   }
 
-  @MessagePattern({ cmd: 'add_time_off' })
+  @MessagePattern(pattern(addTimeOff))
   async addTimeOff(
     @Payload()
-    data: {
-      editorId: string;
-      organizationId: string;
-      technicianId: string;
-      startDate: string;
-      endDate: string;
-      reason?: string;
-    },
+    data: RpcRequest<typeof addTimeOff>,
   ) {
     return this.leaveRecords.addTimeOff(data);
   }
@@ -232,8 +242,8 @@ export class TechniciansController {
   // AVAILABILITY QUERIES
   // ========================================================================
 
-  @MessagePattern({ cmd: 'get_technicians_availability' })
-  async getAvailability(@Payload() data: GetAvailabilityDto) {
+  @MessagePattern(pattern(getTechniciansAvailability))
+  async getAvailability(@Payload() data: RpcRequest<typeof getTechniciansAvailability>) {
     return this.schedule.getAvailability(data);
   }
 }

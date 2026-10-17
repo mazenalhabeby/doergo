@@ -14,6 +14,16 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePermission } from '../../common/decorators';
 import { scopeFor, scopeIdsFor } from '../../common/permission-scope';
+import { callerOrgId } from '../../common/caller-org';
+import {
+  sendRpc,
+  getTechnicianPerformance,
+  getTechnicianTaskHistory,
+  getAttendanceHistory,
+  getTechnicianAssignments,
+  getTechnicianSchedule,
+  setTechnicianSchedule,
+} from '@hbcfield/shared/microservices';
 
 /** /employees/:id — one member's record: performance, jobs, attendance, workspaces, working week. */
 @ApiTags('employees')
@@ -41,17 +51,15 @@ export class EmployeeRecordsController {
   ) {
     // Route to task-service for performance metrics (task data lives there)
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_performance' },
-        {
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          id,
-          organizationId: user?.organizationId,
-          startDate,
-          endDate,
-        },
-      ),
+      sendRpc(this.taskClient, getTechnicianPerformance, {
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        id,
+        // `user` is optional only because it follows optional query params; the route is authenticated.
+        organizationId: callerOrgId(user!),
+        startDate,
+        endDate,
+      }),
     );
   }
 
@@ -77,20 +85,17 @@ export class EmployeeRecordsController {
   ) {
     // Route to task-service for task history (task data lives there)
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_task_history' },
-        {
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          id,
-          organizationId: user?.organizationId,
-          status,
-          startDate,
-          endDate,
-          page: page ? Math.max(1, Number(page) || 1) : 1,
-          limit: clampListLimit(limit, 20, 500),
-        },
-      ),
+      sendRpc(this.taskClient, getTechnicianTaskHistory, {
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        id,
+        organizationId: callerOrgId(user!),
+        status,
+        startDate,
+        endDate,
+        page: page ? Math.max(1, Number(page) || 1) : 1,
+        limit: clampListLimit(limit, 20, 500),
+      }),
     );
   }
 
@@ -112,16 +117,13 @@ export class EmployeeRecordsController {
     @CurrentUser() user?: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_attendance_history' },
-        {
-          userId: id,
-          organizationId: user?.organizationId,
-          scopeSpaceIds: scopeFor(user, 'canViewSpaceAttendance'),
-          startDate,
-          endDate,
-        },
-      ),
+      sendRpc(this.taskClient, getAttendanceHistory, {
+        userId: id,
+        organizationId: callerOrgId(user!),
+        scopeSpaceIds: scopeFor(user, 'canViewSpaceAttendance'),
+        startDate,
+        endDate,
+      }),
     );
   }
 
@@ -136,15 +138,12 @@ export class EmployeeRecordsController {
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeAssignments(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_assignments' },
-        {
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          userId: id,
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.taskClient, getTechnicianAssignments, {
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        userId: id,
+        organizationId: callerOrgId(user),
+      }),
     );
   }
 
@@ -166,13 +165,10 @@ export class EmployeeRecordsController {
     }
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_schedule' },
-        {
-          technicianId: id,
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.taskClient, getTechnicianSchedule, {
+        technicianId: id,
+        organizationId: callerOrgId(user),
+      }),
     );
   }
 
@@ -183,19 +179,19 @@ export class EmployeeRecordsController {
   @RequirePermission('canManageRota')
   async setEmployeeSchedule(
     @Param('id') id: string,
-    @Body() body: { schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }> },
+    @Body()
+    body: {
+      schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }>;
+    },
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'set_technician_schedule' },
-        {
-          technicianId: id,
-          organizationId: user.organizationId,
-          requesterId: user.id,
-          schedule: body.schedule,
-        },
-      ),
+      sendRpc(this.taskClient, setTechnicianSchedule, {
+        technicianId: id,
+        organizationId: callerOrgId(user),
+        requesterId: user.id,
+        schedule: body.schedule,
+      }),
     );
   }
 }

@@ -5,6 +5,7 @@ import { PushService } from './modules/push/push.service';
 import { WebsocketGateway } from './modules/websocket/websocket.gateway';
 import { RecipientLocales } from './i18n/recipient-locales.service';
 
+import { pattern, registerPushToken, removePushToken, type RpcRequest } from '@hbcfield/shared/microservices';
 @Controller()
 export class NotificationController {
   private readonly logger = new Logger('NotificationController');
@@ -54,14 +55,8 @@ export class NotificationController {
   // PUSH TOKEN MANAGEMENT
   // =========================================================================
 
-  @MessagePattern({ cmd: 'register_push_token' })
-  async registerPushToken(@Payload() data: {
-    userId: string;
-    token: string;
-    platform: string;
-    deviceId?: string;
-    locale?: string;
-  }) {
+  @MessagePattern(pattern(registerPushToken))
+  async registerPushToken(@Payload() data: RpcRequest<typeof registerPushToken>) {
     this.logger.log(`Registering push token for user ${data.userId}`);
     return this.pushService.registerPushToken(data);
   }
@@ -76,8 +71,8 @@ export class NotificationController {
     if (data?.userId) this.recipientLocales.forget(data.userId);
   }
 
-  @MessagePattern({ cmd: 'remove_push_token' })
-  async removePushToken(@Payload() data: { token: string; userId?: string }) {
+  @MessagePattern(pattern(removePushToken))
+  async removePushToken(@Payload() data: RpcRequest<typeof removePushToken>) {
     this.logger.log(`Removing push token: ${data.token.substring(0, 20)}...`);
     return this.pushService.removePushToken(data.token, data.userId);
   }
@@ -116,7 +111,8 @@ export class NotificationController {
   @EventPattern('organization_suspended')
   async handleOrganizationSuspended(@Payload() data: { organizationId: string }) {
     this.logger.log(`Organization suspended: ${data?.organizationId}`);
-    if (data?.organizationId) this.websocketGateway.disconnectOrganization(data.organizationId, 'organization_suspended');
+    if (data?.organizationId)
+      this.websocketGateway.disconnectOrganization(data.organizationId, 'organization_suspended');
   }
 
   // An admin changed this member's access/role. Signal the member's own sockets
@@ -136,12 +132,8 @@ export class NotificationController {
   // IDS ONLY: each client re-reads through its own scoped endpoint, so a broadcast
   // can never widen what a viewer is allowed to see.
   @EventPattern('member_changed')
-  async handleMemberChanged(
-    @Payload() data: { organizationId: string; memberId?: string; reason?: string },
-  ) {
-    this.logger.log(
-      `Member list changed in org ${data.organizationId} (${data.reason || 'update'})`,
-    );
+  async handleMemberChanged(@Payload() data: { organizationId: string; memberId?: string; reason?: string }) {
+    this.logger.log(`Member list changed in org ${data.organizationId} (${data.reason || 'update'})`);
     this.websocketGateway.emitToOrganization(data.organizationId, 'member.changed', {
       memberId: data.memberId,
       reason: data.reason,
@@ -153,9 +145,7 @@ export class NotificationController {
   // cannot reach that client refetch and get back what they are allowed to see —
   // the scoping lives in the endpoint, not in who receives the hint.
   @EventPattern('customer_changed')
-  async handleCustomerChanged(
-    @Payload() data: { organizationId: string; customerId?: string },
-  ) {
+  async handleCustomerChanged(@Payload() data: { organizationId: string; customerId?: string }) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'customer.changed', {
       customerId: data.customerId,
     });
@@ -166,17 +156,20 @@ export class NotificationController {
   // =========================================================================
 
   @EventPattern('invitation_created')
-  async handleInvitationCreated(@Payload() data: {
-    recipientEmail: string;
-    organizationName: string | null;
-    invitationCode: string;
-    targetRole: string;
-    expiresAt: string;
-    /** The member who created it — their language is the email's fallback. */
-    inviterId?: string | null;
-    /** Already decided by the sender — a client's invitation (see EmailService). */
-    locale?: string | null;
-  }) {
+  async handleInvitationCreated(
+    @Payload()
+    data: {
+      recipientEmail: string;
+      organizationName: string | null;
+      invitationCode: string;
+      targetRole: string;
+      expiresAt: string;
+      /** The member who created it — their language is the email's fallback. */
+      inviterId?: string | null;
+      /** Already decided by the sender — a client's invitation (see EmailService). */
+      locale?: string | null;
+    },
+  ) {
     this.logger.log(`Sending invitation email to ${data.recipientEmail} for org ${data.organizationName}`);
     await this.emailService.sendInvitationEmail(data);
   }

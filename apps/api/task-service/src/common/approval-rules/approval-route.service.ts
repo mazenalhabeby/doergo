@@ -18,17 +18,12 @@ import {
 } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationRoutingService } from '../notification-routing.service';
+import type { ApprovalRouteInput as SharedApprovalRouteInput } from '@hbcfield/shared/microservices';
 
 /** "Who else can decide" is a hint, not a directory: the first few, and how many more. */
 const MAX_DECIDERS = 8;
 
-export interface ApprovalRouteInput {
-  organizationId: string;
-  callerId: string;
-  kind: ApprovalKind;
-  spaceId: string | null;
-  subjectUserId: string | null;
-}
+export type ApprovalRouteInput = SharedApprovalRouteInput;
 
 /**
  * Who could decide one approval, and who is told about the person.

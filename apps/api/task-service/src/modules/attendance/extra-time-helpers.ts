@@ -1,18 +1,8 @@
 import type { Prisma } from '@prisma/client';
 import { TimeEntryStatus } from '@hbcfield/shared';
-import { type AttendanceScope } from '@hbcfield/shared';
+import type { ExtraTimeDecisionMessage } from '@hbcfield/shared/microservices';
 
-interface ExtraTimeDecision {
-  /** Spaces the caller may act in; null = org-wide, [] = none. */
-  scopeSpaceIds?: AttendanceScope;
-  approverId: string;
-  entryId: string;
-  minutes: number;
-  organizationId: string;
-  /** base64 PNG, when the leader signed rather than tapping approve. */
-  signature?: string | null;
-  notes?: string | null;
-}
+type ExtraTimeDecision = ExtraTimeDecisionMessage;
 
 /** How long after its clock-out a shift's extra time may still be decided. */
 const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -21,7 +11,10 @@ const EXTRA_TIME_DECIDABLE_AFTER_CLOSE_MS = 7 * 24 * 60 * 60 * 1000;
  * A shift whose extra-time request a leader may still decide: open and waiting,
  * or closed within a week with the round still undecided.
  */
-export function decidableExtraTimeWhere(now: Date, opts: { openMustBePending?: boolean } = {}): Prisma.TimeEntryWhereInput {
+export function decidableExtraTimeWhere(
+  now: Date,
+  opts: { openMustBePending?: boolean } = {},
+): Prisma.TimeEntryWhereInput {
   return {
     OR: [
       // Deciding an open shift is as it always was; LISTING one needs a request waiting.

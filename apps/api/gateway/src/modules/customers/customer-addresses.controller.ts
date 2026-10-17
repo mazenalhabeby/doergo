@@ -1,7 +1,19 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Request } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { pickUnitFields } from '@hbcfield/shared';
 import { CustomersControllerBase } from './customers-controller.base';
+import { unitFieldsFor } from '../../common/unit-fields';
+import {
+  getCustomer,
+  portalListUnits,
+  portalCreateUnit,
+  portalUpdateUnit,
+  portalSetPrimaryUnit,
+  portalDeleteUnit,
+  listCustomerActivities,
+  addCustomerActivity,
+  updateCustomerActivity,
+  deleteCustomerActivity,
+} from '@hbcfield/shared/microservices';
 
 /** /customers/:id — a client's addresses and its activity timeline. */
 @ApiTags('customers')
@@ -14,8 +26,8 @@ export class CustomerAddressesController extends CustomersControllerBase {
   @Get(':id/addresses')
   async listAddresses(@Param('id') id: string, @Request() req: any) {
     // Enforce the caller may reach this client before exposing its units.
-    await this.auth('get_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
-    return this.auth('portal_list_units', { organizationId: req.user.organizationId, customerId: id });
+    await this.auth(getCustomer, { id, organizationId: req.user.organizationId, caller: this.caller(req) });
+    return this.auth(portalListUnits, { organizationId: req.user.organizationId, customerId: id });
   }
 
   /*
@@ -44,8 +56,8 @@ export class CustomerAddressesController extends CustomersControllerBase {
     },
     @Request() req: any,
   ) {
-    const fields = pickUnitFields(body, { relations: false });
-    return this.auth('portal_create_unit', {
+    const fields = unitFieldsFor(portalCreateUnit, body, { relations: false });
+    return this.auth(portalCreateUnit, {
       ...fields,
       name: body?.name?.trim() || body?.address || 'Address',
       organizationId: req.user.organizationId,
@@ -57,8 +69,8 @@ export class CustomerAddressesController extends CustomersControllerBase {
   @Patch(':id/addresses/:unitId')
   updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
-    return this.auth('portal_update_unit', {
-      ...pickUnitFields(body, { relations: false }),
+    return this.auth(portalUpdateUnit, {
+      ...unitFieldsFor(portalUpdateUnit, body, { relations: false }),
       id: unitId,
       organizationId: req.user.organizationId,
       scopeCustomerId: id,
@@ -69,7 +81,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
 
   @Post(':id/addresses/:unitId/primary')
   setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_set_primary_unit', {
+    return this.auth(portalSetPrimaryUnit, {
       id: unitId,
       organizationId: req.user.organizationId,
       customerId: id,
@@ -79,7 +91,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
 
   @Delete(':id/addresses/:unitId')
   deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
-    return this.auth('portal_delete_unit', {
+    return this.auth(portalDeleteUnit, {
       id: unitId,
       organizationId: req.user.organizationId,
       customerId: id,
@@ -91,7 +103,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
   @Get(':id/activities')
   @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
   listActivities(@Param('id') id: string, @Request() req: any) {
-    return this.auth('list_customer_activities', {
+    return this.auth(listCustomerActivities, {
       customerId: id,
       organizationId: req.user.organizationId,
       caller: this.caller(req),
@@ -116,7 +128,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
     @Request() req: any,
   ) {
     return this.authMutation(
-      'add_customer_activity',
+      addCustomerActivity,
       {
         clientId: body.id,
         customerId: id,
@@ -153,7 +165,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
     @Request() req: any,
   ) {
     return this.authMutation(
-      'update_customer_activity',
+      updateCustomerActivity,
       {
         id: activityId,
         customerId: id,
@@ -175,7 +187,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
   @Delete(':id/activities/:activityId')
   deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
     return this.authMutation(
-      'delete_customer_activity',
+      deleteCustomerActivity,
       { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) },
       req.user.organizationId,
       id,

@@ -8,6 +8,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RequestTimeOffDto } from './dto';
 import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 import { leaveReadScope } from './employees-controller-helpers';
+import { callerOrgId } from '../../common/caller-org';
+import { sendRpc, getTimeOff, getLeaveBalance, countLeaveRpc, requestTimeOff } from '@hbcfield/shared/microservices';
 
 /** /employees/:id/time-off — one member's leave: the list, balance, what a range costs, asking. */
 @ApiTags('employees')
@@ -39,14 +41,12 @@ export class EmployeeTimeOffController {
     }
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_time_off' },
-        {
-          technicianId: id,
-          organizationId: user?.organizationId,
-          status,
-        },
-      ),
+      sendRpc(this.taskClient, getTimeOff, {
+        technicianId: id,
+        // `user` is optional only because it follows optional query params; the route is authenticated.
+        organizationId: callerOrgId(user!),
+        status,
+      }),
     );
   }
 
@@ -68,16 +68,13 @@ export class EmployeeTimeOffController {
       throw new ForbiddenException('You can only view your own leave balance');
     }
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_leave_balance' },
-        {
-          technicianId: id,
-          organizationId: user?.organizationId,
-          // The leave year containing `on` (default today); `year` = the one starting in that year.
-          on: typeof on === 'string' ? on.slice(0, 10) : undefined,
-          year,
-        },
-      ),
+      sendRpc(this.taskClient, getLeaveBalance, {
+        technicianId: id,
+        organizationId: callerOrgId(user!),
+        // The leave year containing `on` (default today); `year` = the one starting in that year.
+        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+        year,
+      }),
     );
   }
 
@@ -92,17 +89,14 @@ export class EmployeeTimeOffController {
     if (user?.id !== id && scope !== undefined && scope.length === 0)
       throw new ForbiddenException('You can only count your own leave');
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'count_leave' },
-        {
-          technicianId: id,
-          organizationId: user.organizationId,
-          from: q.from,
-          to: q.to,
-          callerId: user.id,
-          scopeSpaceIds: scope,
-        },
-      ),
+      sendRpc(this.taskClient, countLeaveRpc, {
+        technicianId: id,
+        organizationId: callerOrgId(user),
+        from: q.from,
+        to: q.to,
+        callerId: user.id,
+        scopeSpaceIds: scope,
+      }),
     );
   }
 
@@ -120,25 +114,22 @@ export class EmployeeTimeOffController {
     }
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'request_time_off' },
-        {
-          id: body.id,
-          technicianId: id,
-          organizationId: user.organizationId,
-          // The request itself, as sent: task-service reads it with the shared
-          // `parseRequestInput` (defaults: LEAVE, VACATION — what older clients send).
-          kind: body.kind,
-          startDate: body.startDate,
-          endDate: body.endDate,
-          reason: body.reason,
-          type: body.type,
-          spaceId: body.spaceId,
-          startTime: body.startTime,
-          endTime: body.endTime,
-          minutes: body.minutes,
-        },
-      ),
+      sendRpc(this.taskClient, requestTimeOff, {
+        id: body.id,
+        technicianId: id,
+        organizationId: callerOrgId(user),
+        // The request itself, as sent: task-service reads it with the shared
+        // `parseRequestInput` (defaults: LEAVE, VACATION — what older clients send).
+        kind: body.kind,
+        startDate: body.startDate,
+        endDate: body.endDate,
+        reason: body.reason,
+        type: body.type,
+        spaceId: body.spaceId,
+        startTime: body.startTime,
+        endTime: body.endTime,
+        minutes: body.minutes,
+      }),
     );
   }
 }

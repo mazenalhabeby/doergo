@@ -2,9 +2,22 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } fr
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermissionInSpace, pickUnitFields } from '@hbcfield/shared';
+import { RequirePermissionInSpace } from '@hbcfield/shared';
+import { unitFieldsFor } from '../../common/unit-fields';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { portalScope } from '../../common/portal-scope';
+import {
+  sendRpc,
+  portalGetUnit,
+  portalListUnitActivities,
+  portalAddUnitActivity,
+  portalListSpaceUnits,
+  portalCreateUnit,
+  portalUpdateUnit,
+  portalDeleteUnit,
+  portalSetMemberApartment,
+  type RpcContract,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
@@ -45,8 +58,9 @@ export class SpaceUnitsController {
   private requireModule(spaceId: string, organizationId: string) {
     return this.spaceModules.assertEnabled(spaceId, organizationId, 'b2c_portal');
   }
-  private auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
+  /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
+  private auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
+    return firstValueFrom(sendRpc(this.authClient, contract, payload));
   }
 
   @Get()
@@ -58,7 +72,7 @@ export class SpaceUnitsController {
   @ApiOperation({ summary: "The space's apartments / units" })
   async list(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth('portal_list_space_units', { organizationId: req.user.organizationId, spaceId });
+    return this.auth(portalListSpaceUnits, { organizationId: req.user.organizationId, spaceId });
   }
 
   @Post()
@@ -81,7 +95,7 @@ export class SpaceUnitsController {
     @Request() req: any,
   ) {
     await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth('portal_create_unit', {
+    return this.auth(portalCreateUnit, {
       organizationId: req.user.organizationId,
       spaceId,
       name: body.name?.trim() || body.address || 'Unit',
@@ -91,7 +105,8 @@ export class SpaceUnitsController {
       contactName: body.contactName,
       contactPhone: body.contactPhone,
       residentUserId: body.residentUserId,
-      customerId: body.customerId,
+      // null is sent as null; createUnit reads it like absent (`!data.customerId`).
+      customerId: body.customerId as string | undefined,
       details: body.details,
       actorId: req.user.id,
       // The client named as resident must be in reach too, not merely the org's.
@@ -114,8 +129,8 @@ export class SpaceUnitsController {
     // replaced it — a cross-tenant write. One pick shared with every unit route.
     // scopeSpaceId: the unit must be THIS space's, not merely the organization's;
     // scopeSpaceIds: and whatever it is moved to must be in the caller's reach.
-    return this.auth('portal_update_unit', {
-      ...pickUnitFields(body),
+    return this.auth(portalUpdateUnit, {
+      ...unitFieldsFor(portalUpdateUnit, body),
       id: unitId,
       organizationId: req.user.organizationId,
       actorId: req.user.id,
@@ -129,7 +144,7 @@ export class SpaceUnitsController {
   @ApiOperation({ summary: 'Remove an apartment / unit' })
   async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth('portal_delete_unit', {
+    return this.auth(portalDeleteUnit, {
       id: unitId,
       organizationId: req.user.organizationId,
       scopeSpaceId: spaceId,
@@ -147,7 +162,7 @@ export class SpaceUnitsController {
     @Request() req: any,
   ) {
     await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth('portal_set_member_apartment', {
+    return this.auth(portalSetMemberApartment, {
       organizationId: req.user.organizationId,
       spaceId,
       userId: body.userId,
@@ -176,14 +191,11 @@ export class UnitDetailController {
   @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
   get(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'portal_get_unit' },
-        {
-          id,
-          organizationId: req.user.organizationId,
-          scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-        },
-      ),
+      sendRpc(this.authClient, portalGetUnit, {
+        id,
+        organizationId: req.user.organizationId,
+        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+      }),
     );
   }
 
@@ -192,14 +204,11 @@ export class UnitDetailController {
   @ApiOperation({ summary: "An apartment's activity timeline (notes + system events)" })
   activities(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'portal_list_unit_activities' },
-        {
-          id,
-          organizationId: req.user.organizationId,
-          scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
-        },
-      ),
+      sendRpc(this.authClient, portalListUnitActivities, {
+        id,
+        organizationId: req.user.organizationId,
+        scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
+      }),
     );
   }
 
@@ -208,16 +217,13 @@ export class UnitDetailController {
   @ApiOperation({ summary: 'Add a note to an apartment' })
   addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: any) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'portal_add_unit_activity' },
-        {
-          id,
-          organizationId: req.user.organizationId,
-          body: body.body,
-          authorId: req.user.id,
-          scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
-        },
-      ),
+      sendRpc(this.authClient, portalAddUnitActivity, {
+        id,
+        organizationId: req.user.organizationId,
+        body: body.body,
+        authorId: req.user.id,
+        scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
+      }),
     );
   }
 }

@@ -1,6 +1,8 @@
 import { TaskStatus } from '@hbcfield/shared';
 
 /** Statuses that are certainly over — the indexed half of "still open"; `isWorkOver` is the rest. */
+import type { RoleTaskFacts } from '@hbcfield/shared/microservices';
+
 const OVER = [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.CLOSED];
 
 const DAY_MS = 86_400_000;
@@ -10,6 +12,6 @@ export const ROLE_WAVE_CLOSED = 3;
 
 type OpenRole = { id: string; name: string };
 
-type Facts = { userId: string; organizationId: string };
+type Facts = RoleTaskFacts;
 
 export { OVER, DAY_MS, OpenRole, Facts };

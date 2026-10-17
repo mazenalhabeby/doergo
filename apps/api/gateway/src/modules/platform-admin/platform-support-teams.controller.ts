@@ -5,6 +5,19 @@ import { SERVICE_NAMES, BaseGatewayService, assertServiceOk } from '@hbcfield/sh
 import { Public } from '../../common/decorators';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
+import {
+  platformSupportStaffList,
+  platformSupportTeamsList,
+  platformSupportTeamCreate,
+  platformSupportTeamUpdate,
+  platformSupportTeamDelete,
+  platformSupportTeamAddMember,
+  platformSupportTeamRemoveMember,
+  platformSupportRuleUpsert,
+  platformSupportRuleDelete,
+  platformSupportPinOrg,
+  platformSupportTeamPinnedOrgs,
+} from '@hbcfield/shared/microservices';
 
 /** Gateway → auth-service proxy for support-team administration. */
 @Injectable()
@@ -13,37 +26,37 @@ export class PlatformSupportTeamsService extends BaseGatewayService {
     super(authClient, PlatformSupportTeamsService.name);
   }
   listStaff() {
-    return this.send({ cmd: 'platform_support_staff_list' }, {});
+    return this.call(platformSupportStaffList, {});
   }
   listTeams() {
-    return this.send({ cmd: 'platform_support_teams_list' }, {});
+    return this.call(platformSupportTeamsList, {});
   }
   createTeam(d: any) {
-    return this.send({ cmd: 'platform_support_team_create' }, d);
+    return this.call(platformSupportTeamCreate, d);
   }
   updateTeam(d: any) {
-    return this.send({ cmd: 'platform_support_team_update' }, d);
+    return this.call(platformSupportTeamUpdate, d);
   }
   deleteTeam(d: any) {
-    return this.send({ cmd: 'platform_support_team_delete' }, d);
+    return this.call(platformSupportTeamDelete, d);
   }
   addMember(d: any) {
-    return this.send({ cmd: 'platform_support_team_add_member' }, d);
+    return this.call(platformSupportTeamAddMember, d);
   }
   removeMember(d: any) {
-    return this.send({ cmd: 'platform_support_team_remove_member' }, d);
+    return this.call(platformSupportTeamRemoveMember, d);
   }
   upsertRule(d: any) {
-    return this.send({ cmd: 'platform_support_rule_upsert' }, d);
+    return this.call(platformSupportRuleUpsert, d);
   }
   deleteRule(d: any) {
-    return this.send({ cmd: 'platform_support_rule_delete' }, d);
+    return this.call(platformSupportRuleDelete, d);
   }
   pinOrg(d: any) {
-    return this.send({ cmd: 'platform_support_pin_org' }, d);
+    return this.call(platformSupportPinOrg, d);
   }
   pinnedOrgs(d: any) {
-    return this.send({ cmd: 'platform_support_team_pinned_orgs' }, d);
+    return this.call(platformSupportTeamPinnedOrgs, d);
   }
 }
 

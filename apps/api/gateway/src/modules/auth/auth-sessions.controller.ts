@@ -7,6 +7,14 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { RefreshTokenDto, ChangePasswordDto, DeleteAccountDto } from './dto';
 import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import {
+  sendRpc,
+  changePassword,
+  listSessions,
+  revokeSession,
+  revokeAllSessions,
+  deleteAccount,
+} from '@hbcfield/shared/microservices';
 
 /**
  * /auth — the caller's own account: changing the password, their sessions, signing
@@ -15,7 +23,6 @@ import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared'
 @ApiTags('auth')
 @Controller('auth')
 export class AuthSessionsController {
-
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly authCache: AuthTokenCache,
@@ -28,12 +35,9 @@ export class AuthSessionsController {
   @ApiOperation({ summary: 'Change password for authenticated user' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid current password or weak new password' })
-  async changePassword(
-    @Body() dto: ChangePasswordDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'change_password' }, {
+      sendRpc(this.authClient, changePassword, {
         userId: user.id,
         currentPassword: dto.currentPassword,
         newPassword: dto.newPassword,
@@ -56,21 +60,14 @@ export class AuthSessionsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List active sessions for current user' })
   async listSessions(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'list_sessions' }, { userId: user.id }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, listSessions, { userId: user.id }));
   }
 
   @Delete('sessions/:id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a specific session' })
-  async revokeSession(
-    @Param('id') sessionId: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    const result: any = await firstValueFrom(
-      this.authClient.send({ cmd: 'revoke_session' }, { userId: user.id, sessionId }),
-    );
+  async revokeSession(@Param('id') sessionId: string, @CurrentUser() user: CurrentUserData) {
+    const result: any = await firstValueFrom(sendRpc(this.authClient, revokeSession, { userId: user.id, sessionId }));
 
     assertServiceOk(result, HttpStatus.NOT_FOUND);
 
@@ -80,11 +77,7 @@ export class AuthSessionsController {
   @Delete('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke all other sessions (keep current)' })
-  async revokeAllSessions(
-    @CurrentUser() user: CurrentUserData,
-    @Req() req: Request,
-    @Body() body: RefreshTokenDto,
-  ) {
+  async revokeAllSessions(@CurrentUser() user: CurrentUserData, @Req() req: Request, @Body() body: RefreshTokenDto) {
     /*
       "Keep current" needs to know which session is current, and the gateway
       cannot name it: the access token carries no session claim, and a refresh
@@ -97,7 +90,7 @@ export class AuthSessionsController {
     */
     const currentRefreshToken = req.cookies?.refreshToken || body?.refreshToken || undefined;
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'revoke_all_sessions' }, { userId: user.id, currentRefreshToken }),
+      sendRpc(this.authClient, revokeAllSessions, { userId: user.id, currentRefreshToken }),
     );
     /*
       The cut-off moved for the whole account, so the gateway's cached copy of
@@ -119,12 +112,9 @@ export class AuthSessionsController {
   @ApiOperation({ summary: 'Permanently delete the current user account' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   @ApiResponse({ status: 400, description: 'Invalid password or last admin' })
-  async deleteAccount(
-    @Body() dto: DeleteAccountDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async deleteAccount(@Body() dto: DeleteAccountDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'delete_account' }, {
+      sendRpc(this.authClient, deleteAccount, {
         userId: user.id,
         password: dto.password,
       }),

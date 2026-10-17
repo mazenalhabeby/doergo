@@ -4,6 +4,31 @@ import { AuthService } from './auth.service';
 import { BiometricService } from './biometric.service';
 import { SessionControlService } from './session-control.service';
 
+import {
+  pattern,
+  authHealth,
+  register,
+  login,
+  refresh,
+  logout,
+  forgotPassword,
+  resetPassword,
+  validateToken,
+  changePassword,
+  updateAvatar,
+  removeAvatar,
+  listSessions,
+  revokeSession,
+  revokeAllSessions,
+  deleteAccount,
+  platformMailStatus,
+  biometricEnroll,
+  biometricChallenge,
+  biometricVerify,
+  biometricDevices,
+  biometricRevoke,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class AuthController {
   constructor(
@@ -14,83 +39,83 @@ export class AuthController {
 
   // Its OWN pattern: on the shared Redis transport a common 'health' was answered
   // by whichever service replied first, so the gateway could not tell who was up.
-  @MessagePattern({ cmd: 'auth_health' })
+  @MessagePattern(pattern(authHealth))
   async health() {
     return { status: 'ok', service: 'auth-service', timestamp: new Date().toISOString() };
   }
 
-  @MessagePattern({ cmd: 'register' })
-  async register(@Payload() data: any) {
+  @MessagePattern(pattern(register))
+  async register(@Payload() data: RpcRequest<typeof register>) {
     return this.authService.register(data);
   }
 
-  @MessagePattern({ cmd: 'login' })
-  async login(@Payload() data: any) {
+  @MessagePattern(pattern(login))
+  async login(@Payload() data: RpcRequest<typeof login>) {
     return this.authService.login(data);
   }
 
-  @MessagePattern({ cmd: 'refresh' })
-  async refresh(@Payload() data: any) {
+  @MessagePattern(pattern(refresh))
+  async refresh(@Payload() data: RpcRequest<typeof refresh>) {
     return this.authService.refresh(data.refreshToken);
   }
 
-  @MessagePattern({ cmd: 'logout' })
-  async logout(@Payload() data: any) {
+  @MessagePattern(pattern(logout))
+  async logout(@Payload() data: RpcRequest<typeof logout>) {
     return this.sessionControl.logout(data.refreshToken, data.pushToken);
   }
 
-  @MessagePattern({ cmd: 'forgot_password' })
-  async forgotPassword(@Payload() data: any) {
+  @MessagePattern(pattern(forgotPassword))
+  async forgotPassword(@Payload() data: RpcRequest<typeof forgotPassword>) {
     return this.authService.forgotPassword(data);
   }
 
-  @MessagePattern({ cmd: 'reset_password' })
-  async resetPassword(@Payload() data: any) {
+  @MessagePattern(pattern(resetPassword))
+  async resetPassword(@Payload() data: RpcRequest<typeof resetPassword>) {
     return this.authService.resetPassword(data);
   }
 
-  @MessagePattern({ cmd: 'validate_token' })
-  async validateToken(@Payload() data: any) {
+  @MessagePattern(pattern(validateToken))
+  async validateToken(@Payload() data: RpcRequest<typeof validateToken>) {
     return this.authService.validateToken(data.token);
   }
 
-  @MessagePattern({ cmd: 'change_password' })
-  async changePassword(@Payload() data: any) {
+  @MessagePattern(pattern(changePassword))
+  async changePassword(@Payload() data: RpcRequest<typeof changePassword>) {
     return this.authService.changePassword(data);
   }
 
-  @MessagePattern({ cmd: 'update_avatar' })
-  async updateAvatar(@Payload() data: any) {
+  @MessagePattern(pattern(updateAvatar))
+  async updateAvatar(@Payload() data: RpcRequest<typeof updateAvatar>) {
     return this.authService.updateAvatar(data);
   }
 
-  @MessagePattern({ cmd: 'remove_avatar' })
-  async removeAvatar(@Payload() data: any) {
+  @MessagePattern(pattern(removeAvatar))
+  async removeAvatar(@Payload() data: RpcRequest<typeof removeAvatar>) {
     return this.authService.removeAvatar(data);
   }
 
-  @MessagePattern({ cmd: 'list_sessions' })
-  async listSessions(@Payload() data: any) {
+  @MessagePattern(pattern(listSessions))
+  async listSessions(@Payload() data: RpcRequest<typeof listSessions>) {
     return this.sessionControl.listSessions(data.userId);
   }
 
-  @MessagePattern({ cmd: 'revoke_session' })
-  async revokeSession(@Payload() data: any) {
+  @MessagePattern(pattern(revokeSession))
+  async revokeSession(@Payload() data: RpcRequest<typeof revokeSession>) {
     return this.sessionControl.revokeSession(data.userId, data.sessionId);
   }
 
-  @MessagePattern({ cmd: 'revoke_all_sessions' })
-  async revokeAllSessions(@Payload() data: any) {
+  @MessagePattern(pattern(revokeAllSessions))
+  async revokeAllSessions(@Payload() data: RpcRequest<typeof revokeAllSessions>) {
     return this.sessionControl.revokeAllSessions(data.userId, data.exceptSessionId, data.currentRefreshToken);
   }
 
-  @MessagePattern({ cmd: 'delete_account' })
-  async deleteAccount(@Payload() data: any) {
+  @MessagePattern(pattern(deleteAccount))
+  async deleteAccount(@Payload() data: RpcRequest<typeof deleteAccount>) {
     return this.authService.deleteAccount(data);
   }
 
   // Operator-only: is outbound email working? See AuthService.mailHealth.
-  @MessagePattern({ cmd: 'platform_mail_status' })
+  @MessagePattern(pattern(platformMailStatus))
   mailStatus() {
     return this.authService.mailHealth();
   }
@@ -103,40 +128,28 @@ export class AuthController {
     body. This service is behind Redis and trusts its caller; the gateway is the
     boundary that must not be bypassed.
   */
-  @MessagePattern({ cmd: 'biometric_enroll' })
-  async biometricEnroll(
-    @Payload()
-    data: {
-      userId: string;
-      deviceId: string;
-      publicKey: string;
-      label: string;
-      platform: string;
-      secureHardware?: boolean;
-    },
-  ) {
+  @MessagePattern(pattern(biometricEnroll))
+  async biometricEnroll(@Payload() data: RpcRequest<typeof biometricEnroll>) {
     return this.biometric.enroll(data.userId, data);
   }
 
-  @MessagePattern({ cmd: 'biometric_challenge' })
-  async biometricChallenge(@Payload() data: { deviceId: string }) {
+  @MessagePattern(pattern(biometricChallenge))
+  async biometricChallenge(@Payload() data: RpcRequest<typeof biometricChallenge>) {
     return this.biometric.challenge(data.deviceId);
   }
 
-  @MessagePattern({ cmd: 'biometric_verify' })
-  async biometricVerify(
-    @Payload() data: { deviceId: string; signature: string; userAgent?: string; ipAddress?: string },
-  ) {
+  @MessagePattern(pattern(biometricVerify))
+  async biometricVerify(@Payload() data: RpcRequest<typeof biometricVerify>) {
     return this.biometric.verify(data, { userAgent: data.userAgent, ipAddress: data.ipAddress });
   }
 
-  @MessagePattern({ cmd: 'biometric_devices' })
-  async biometricDevices(@Payload() data: { userId: string }) {
+  @MessagePattern(pattern(biometricDevices))
+  async biometricDevices(@Payload() data: RpcRequest<typeof biometricDevices>) {
     return this.biometric.list(data.userId);
   }
 
-  @MessagePattern({ cmd: 'biometric_revoke' })
-  async biometricRevoke(@Payload() data: { userId: string; deviceId: string }) {
+  @MessagePattern(pattern(biometricRevoke))
+  async biometricRevoke(@Payload() data: RpcRequest<typeof biometricRevoke>) {
     return this.biometric.revoke(data.userId, data.deviceId);
   }
 }

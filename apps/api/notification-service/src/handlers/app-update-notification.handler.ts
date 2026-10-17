@@ -5,6 +5,7 @@ import { personName, PrismaService, compareAppVersions, getRedisConfig } from '@
 import { PushService } from '../modules/push/push.service';
 import { msg } from '../i18n/translate';
 
+import { pattern, appUpdateNotice, type RpcRequest } from '@hbcfield/shared/microservices';
 /**
  * "HBCField 1.0.7 is ready" — once per person per version, only to people whose app is older.
  *
@@ -30,8 +31,8 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
     this.redis.disconnect();
   }
 
-  @MessagePattern({ cmd: 'app_update_notice' })
-  async notify(@Payload() data: { version: string; dryRun?: boolean }) {
+  @MessagePattern(pattern(appUpdateNotice))
+  async notify(@Payload() data: RpcRequest<typeof appUpdateNotice>) {
     const version = String(data?.version ?? '').trim();
     if (!/^\d+\.\d+\.\d+$/.test(version))
       return { success: false, statusCode: 400, message: 'A version like 1.0.7 is required' };

@@ -1,5 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  createEpic,
+  deleteEpic,
+  findAllEpics,
+  findEpic,
+  updateEpic,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { EpicsService } from './epics.service';
 
 /**
@@ -12,28 +21,28 @@ import { EpicsService } from './epics.service';
 export class EpicsController {
   constructor(private readonly epicsService: EpicsService) {}
 
-  @MessagePattern({ cmd: 'find_all_epics' })
-  async findAll(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(findAllEpics))
+  async findAll(@Payload() data: RpcRequest<typeof findAllEpics>) {
     return this.epicsService.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'find_epic' })
-  async findOne(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findEpic))
+  async findOne(@Payload() data: RpcRequest<typeof findEpic>) {
     return this.epicsService.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'create_epic' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createEpic))
+  async create(@Payload() data: RpcRequest<typeof createEpic>) {
     return this.epicsService.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_epic' })
-  async update(@Payload() data: any) {
+  @MessagePattern(pattern(updateEpic))
+  async update(@Payload() data: RpcRequest<typeof updateEpic>) {
     return this.epicsService.update(data);
   }
 
-  @MessagePattern({ cmd: 'delete_epic' })
-  async remove(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteEpic))
+  async remove(@Payload() data: RpcRequest<typeof deleteEpic>) {
     return this.epicsService.remove(data);
   }
 }

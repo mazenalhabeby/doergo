@@ -2,19 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Role, clampListLimit } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildTaskVisibilityWhere } from '../tasks/task-visibility';
+import type { TaskSearchInput } from '@hbcfield/shared/microservices';
 
-interface SearchInput {
-  organizationId: string;
-  userId: string;
-  userRole?: string;
-  canViewAllTasks?: boolean;
-  /** Spaces where the caller holds canViewAllTasks by a SPACE role (`spacesGranting`). */
-  viewAllSpaceIds?: string[];
-  /** Cross-org spaces shared WITH the caller's org (server-authoritative, from the token grant). */
-  sharedSpaceIds?: string[];
-  query: string;
-  limit?: number;
-}
+type SearchInput = TaskSearchInput;
 
 /**
  * Lightweight, org-scoped search for the global command palette. Selects ONLY
@@ -47,7 +37,9 @@ export class SearchService {
       viewAllSpaceIds: data.viewAllSpaceIds,
       organizationId: data.organizationId,
     });
-    const shared = Array.isArray(data.sharedSpaceIds) ? data.sharedSpaceIds.filter((x) => typeof x === 'string' && x) : [];
+    const shared = Array.isArray(data.sharedSpaceIds)
+      ? data.sharedSpaceIds.filter((x) => typeof x === 'string' && x)
+      : [];
     // A shared space confers view-all INSIDE that space (as on the list), and the space itself is the boundary.
     const visible = shared.length ? { OR: [visibility, { spaceId: { in: shared } }] } : visibility;
     const taskWhere = { AND: [visible, { OR: [{ title: contains }, { description: contains }] }] };

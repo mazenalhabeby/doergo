@@ -23,6 +23,17 @@ import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SetMemberHomeDto, UpdateMemberDto } from './dto';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import {
+  sendRpc,
+  updateMemberProfile,
+  getMemberWatchers,
+  setMemberWatchers,
+  adminResetMemberPassword,
+  setMemberHome,
+  removeMember,
+} from '@hbcfield/shared/microservices';
+import type { Role } from '@hbcfield/shared';
+import { callerOrgId } from '../../common/caller-org';
 
 /**
  * /organizations/members/:id — changing a member: profile, watchers, password
@@ -52,42 +63,40 @@ export class MemberManagementController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_member_profile' },
-        {
-          memberId,
-          organizationId: user.organizationId,
-          requesterId: user.id,
-          dto: {
-            email: dto.email,
-            firstName: dto.firstName,
-            lastName: dto.lastName,
-            position: dto.position,
-            employerEntityId: dto.employerEntityId,
-            // Vacation entitlement. Forwarded even when null — null means "use
-            // the organization's default" and has to reach the database as a
-            // clear, not be dropped as an omitted field.
-            leaveAllowance: dto.leaveAllowance,
-            employmentStartDate: dto.employmentStartDate,
-            scheduleType: dto.scheduleType,
-            monthlyHourBudget: dto.monthlyHourBudget,
-            role: dto.role,
-            canCreateTasks: dto.canCreateTasks,
-            taskCreationScope: dto.taskCreationScope,
-            canViewAllTasks: dto.canViewAllTasks,
-            canAssignTasks: dto.canAssignTasks,
-            canManageUsers: dto.canManageUsers,
-            canViewReports: dto.canViewReports,
-            memberRoleId: dto.memberRoleId,
-            isExternal: dto.isExternal,
-            enabledModules: dto.enabledModules,
-            contactable: dto.contactable,
-            contactScope: dto.contactScope,
-            contactAllowedIds: dto.contactAllowedIds,
-            allowRemote: dto.allowRemote,
-          },
+      sendRpc(this.authClient, updateMemberProfile, {
+        memberId,
+        organizationId: callerOrgId(user),
+        requesterId: user.id,
+        dto: {
+          email: dto.email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          position: dto.position,
+          employerEntityId: dto.employerEntityId,
+          // Vacation entitlement. Forwarded even when null — null means "use
+          // the organization's default" and has to reach the database as a
+          // clear, not be dropped as an omitted field.
+          leaveAllowance: dto.leaveAllowance,
+          employmentStartDate: dto.employmentStartDate,
+          scheduleType: dto.scheduleType,
+          monthlyHourBudget: dto.monthlyHourBudget,
+          // @IsEnum(['ADMIN', 'EMPLOYEE']) on the DTO: the value is a Role.
+          role: dto.role as Role | undefined,
+          canCreateTasks: dto.canCreateTasks,
+          taskCreationScope: dto.taskCreationScope,
+          canViewAllTasks: dto.canViewAllTasks,
+          canAssignTasks: dto.canAssignTasks,
+          canManageUsers: dto.canManageUsers,
+          canViewReports: dto.canViewReports,
+          memberRoleId: dto.memberRoleId,
+          isExternal: dto.isExternal,
+          enabledModules: dto.enabledModules,
+          contactable: dto.contactable,
+          contactScope: dto.contactScope,
+          contactAllowedIds: dto.contactAllowedIds,
+          allowRemote: dto.allowRemote,
         },
-      ),
+      }),
     );
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
@@ -120,7 +129,7 @@ export class MemberManagementController {
   @ApiOperation({ summary: 'List who is notified about this member (per-employee routing)' })
   async getMemberWatchers(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'get_member_watchers' }, {
+      sendRpc(this.authClient, getMemberWatchers, {
         memberId,
         organizationId: user.organizationId,
       }),
@@ -136,7 +145,7 @@ export class MemberManagementController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'set_member_watchers' }, {
+      sendRpc(this.authClient, setMemberWatchers, {
         memberId,
         organizationId: user.organizationId,
         watcherIds: Array.isArray(dto?.watcherIds) ? dto.watcherIds : [],
@@ -150,7 +159,7 @@ export class MemberManagementController {
   @ApiResponse({ status: 200, description: 'Temporary password generated' })
   async resetMemberPassword(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'admin_reset_member_password' }, {
+      sendRpc(this.authClient, adminResetMemberPassword, {
         memberId,
         organizationId: user.organizationId,
         requesterId: user.id,
@@ -181,9 +190,9 @@ export class MemberManagementController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'set_member_home' }, {
+      sendRpc(this.authClient, setMemberHome, {
         memberId,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         layout: { widgets: body?.widgets, shortcuts: body?.shortcuts },
       }),
     );
@@ -197,7 +206,7 @@ export class MemberManagementController {
   @ApiOperation({ summary: 'Clear an office-set home screen' })
   async clearMemberHome(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'set_member_home' }, { memberId, organizationId: user.organizationId, layout: null }),
+      sendRpc(this.authClient, setMemberHome, { memberId, organizationId: callerOrgId(user), layout: null }),
     );
     await this.authCache.invalidateUser(memberId);
     return result;
@@ -209,7 +218,7 @@ export class MemberManagementController {
   @ApiResponse({ status: 200, description: 'Member removed' })
   async removeMember(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'remove_member' }, {
+      sendRpc(this.authClient, removeMember, {
         memberId,
         organizationId: user.organizationId,
         requesterId: user.id,

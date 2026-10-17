@@ -1,16 +1,10 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-  Inject,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Inject, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { IS_PUBLIC_KEY } from '@hbcfield/shared';
 import { AuthTokenCache, secondsUntilExp } from '../cache/auth-token-cache.service';
+import { sendRpc, validateToken } from '@hbcfield/shared/microservices';
 
 /**
  * Authenticates every non-public request by validating the access token.
@@ -63,9 +57,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       // Validate token via auth service
-      const result = await firstValueFrom(
-        this.authClient.send({ cmd: 'validate_token' }, { token }),
-      );
+      const result = await firstValueFrom(sendRpc(this.authClient, validateToken, { token }));
 
       if (!result.valid) {
         throw new UnauthorizedException('Invalid token');

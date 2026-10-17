@@ -1,6 +1,14 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  createEpic,
+  deleteEpic,
+  findAllEpics,
+  updateEpic,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Gateway service for Epic operations.
@@ -8,25 +16,23 @@ import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
  */
 @Injectable()
 export class EpicsService extends BaseGatewayService {
-  constructor(
-    @Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy,
-  ) {
+  constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, EpicsService.name);
   }
 
   async findAll(data: { organizationId: string }) {
-    return this.send({ cmd: 'find_all_epics' }, data);
+    return this.send(pattern(findAllEpics), data satisfies RpcRequest<typeof findAllEpics>);
   }
 
-  async create(data: Record<string, any>) {
-    return this.send({ cmd: 'create_epic' }, data);
+  async create(data: RpcRequest<typeof createEpic>) {
+    return this.send(pattern(createEpic), data);
   }
 
-  async update(data: Record<string, any>) {
-    return this.send({ cmd: 'update_epic' }, data);
+  async update(data: RpcRequest<typeof updateEpic>) {
+    return this.send(pattern(updateEpic), data);
   }
 
   async remove(data: { id: string; organizationId: string }) {
-    return this.send({ cmd: 'delete_epic' }, data);
+    return this.send(pattern(deleteEpic), data satisfies RpcRequest<typeof deleteEpic>);
   }
 }

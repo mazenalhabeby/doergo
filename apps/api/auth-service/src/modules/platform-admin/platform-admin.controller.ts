@@ -6,6 +6,25 @@ import { PlatformBillingService } from './platform-billing.service';
 import { PlatformBillingAlertsService } from './platform-billing-alerts.service';
 import { PlatformTrialService } from './platform-trial.service';
 
+import {
+  pattern,
+  platformAuditWrite,
+  platformAuditList,
+  platformOverview,
+  platformListOrgs,
+  platformOrgDetail,
+  platformEndTrial,
+  platformBillingAlerts,
+  platformAckBillingAlert,
+  platformSetBillingMode,
+  platformSetAgreedPrice,
+  platformClearAgreedPrice,
+  platformSuspend,
+  platformSetOfflineMode,
+  platformReactivate,
+  platformExtendTrial,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class PlatformAdminController {
   constructor(
@@ -18,64 +37,78 @@ export class PlatformAdminController {
 
   // The operator audit trail: written by the gateway interceptor and the agent
   // socket, read by Owners. No update or delete pattern exists — append-only.
-  @MessagePattern({ cmd: 'platform_audit_write' })
-  auditWrite(@Payload() d: any) { return this.audit.write(d ?? {}); }
+  @MessagePattern(pattern(platformAuditWrite))
+  auditWrite(@Payload() d: RpcRequest<typeof platformAuditWrite>) {
+    return this.audit.write(d ?? {});
+  }
 
-  @MessagePattern({ cmd: 'platform_audit_list' })
-  auditList(@Payload() d: any) { return this.audit.list(d ?? {}); }
+  @MessagePattern(pattern(platformAuditList))
+  auditList(@Payload() d: RpcRequest<typeof platformAuditList>) {
+    return this.audit.list(d ?? {});
+  }
 
-  @MessagePattern({ cmd: 'platform_overview' })
-  overview() { return this.svc.overview(); }
+  @MessagePattern(pattern(platformOverview))
+  overview() {
+    return this.svc.overview();
+  }
 
-  @MessagePattern({ cmd: 'platform_list_orgs' })
-  listOrgs(@Payload() d: { search?: string; status?: string; cursor?: string; limit?: number }) { return this.svc.listOrgs(d ?? {}); }
+  @MessagePattern(pattern(platformListOrgs))
+  listOrgs(@Payload() d: RpcRequest<typeof platformListOrgs>) {
+    return this.svc.listOrgs(d ?? {});
+  }
 
-  @MessagePattern({ cmd: 'platform_org_detail' })
-  orgDetail(@Payload() d: { organizationId: string; viewerRole?: string; memberLimit?: number }) {
+  @MessagePattern(pattern(platformOrgDetail))
+  orgDetail(@Payload() d: RpcRequest<typeof platformOrgDetail>) {
     return this.svc.orgDetail(d.organizationId, { viewerRole: d.viewerRole, memberLimit: d.memberLimit });
   }
 
-  @MessagePattern({ cmd: 'platform_end_trial' })
-  endTrial(@Payload() d: any) {
+  @MessagePattern(pattern(platformEndTrial))
+  endTrial(@Payload() d: RpcRequest<typeof platformEndTrial>) {
     return this.trials.endTrial(d);
   }
 
-  @MessagePattern({ cmd: 'platform_billing_alerts' })
-  billingAlerts(@Payload() d: any) {
+  @MessagePattern(pattern(platformBillingAlerts))
+  billingAlerts(@Payload() d: RpcRequest<typeof platformBillingAlerts>) {
     return this.alertsService.listBillingAlerts(d ?? {});
   }
 
-  @MessagePattern({ cmd: 'platform_ack_billing_alert' })
-  ackBillingAlert(@Payload() d: any) {
+  @MessagePattern(pattern(platformAckBillingAlert))
+  ackBillingAlert(@Payload() d: RpcRequest<typeof platformAckBillingAlert>) {
     return this.alertsService.acknowledgeBillingAlert(d);
   }
 
-  @MessagePattern({ cmd: 'platform_set_billing_mode' })
-  setBillingMode(@Payload() d: any) {
+  @MessagePattern(pattern(platformSetBillingMode))
+  setBillingMode(@Payload() d: RpcRequest<typeof platformSetBillingMode>) {
     return this.platformBilling.setBillingMode(d);
   }
 
-  @MessagePattern({ cmd: 'platform_set_agreed_price' })
-  setAgreedPrice(@Payload() d: any) {
+  @MessagePattern(pattern(platformSetAgreedPrice))
+  setAgreedPrice(@Payload() d: RpcRequest<typeof platformSetAgreedPrice>) {
     return this.platformBilling.setAgreedPrice(d);
   }
 
-  @MessagePattern({ cmd: 'platform_clear_agreed_price' })
-  clearAgreedPrice(@Payload() d: any) {
+  @MessagePattern(pattern(platformClearAgreedPrice))
+  clearAgreedPrice(@Payload() d: RpcRequest<typeof platformClearAgreedPrice>) {
     return this.platformBilling.clearAgreedPrice(d);
   }
 
-  @MessagePattern({ cmd: 'platform_suspend' })
-  suspend(@Payload() d: any) { return this.svc.suspend(d); }
+  @MessagePattern(pattern(platformSuspend))
+  suspend(@Payload() d: RpcRequest<typeof platformSuspend>) {
+    return this.svc.suspend(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_set_offline_mode' })
-  setOfflineMode(@Payload() d: any) { return this.svc.setOfflineMode(d); }
+  @MessagePattern(pattern(platformSetOfflineMode))
+  setOfflineMode(@Payload() d: RpcRequest<typeof platformSetOfflineMode>) {
+    return this.svc.setOfflineMode(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_reactivate' })
-  reactivate(@Payload() d: any) { return this.svc.reactivate(d); }
+  @MessagePattern(pattern(platformReactivate))
+  reactivate(@Payload() d: RpcRequest<typeof platformReactivate>) {
+    return this.svc.reactivate(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_extend_trial' })
-  extendTrial(@Payload() d: any) {
+  @MessagePattern(pattern(platformExtendTrial))
+  extendTrial(@Payload() d: RpcRequest<typeof platformExtendTrial>) {
     return this.trials.extendTrial(d);
   }
 }

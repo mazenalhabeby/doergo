@@ -6,6 +6,14 @@ import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { Public } from '../../common/decorators';
 import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import {
+  sendRpc,
+  biometricEnroll,
+  biometricChallenge,
+  biometricVerify,
+  biometricDevices,
+  biometricRevoke,
+} from '@hbcfield/shared/microservices';
 
 /**
  * /auth — signing in with Face ID / fingerprint: enrolling a device, the
@@ -14,10 +22,7 @@ import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared'
 @ApiTags('auth')
 @Controller('auth')
 export class AuthBiometricController {
-
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-  ) {}
+  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
 
   // ── Biometric sign-in ───────────────────────────────────────────────────
   /*
@@ -31,9 +36,7 @@ export class AuthBiometricController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Bind this device to the signed-in member' })
   async biometricEnroll(@CurrentUser() user: CurrentUserData, @Body() body: any) {
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'biometric_enroll' }, { ...body, userId: user.id }),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, biometricEnroll, { ...body, userId: user.id }));
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
   }
@@ -51,7 +54,7 @@ export class AuthBiometricController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Get a one-time challenge to sign' })
   async biometricChallenge(@Body() body: { deviceId: string }) {
-    return firstValueFrom(this.authClient.send({ cmd: 'biometric_challenge' }, body));
+    return firstValueFrom(sendRpc(this.authClient, biometricChallenge, body));
   }
 
   @Public()
@@ -62,10 +65,11 @@ export class AuthBiometricController {
   @ApiOperation({ summary: 'Sign in with a device signature' })
   async biometricVerify(@Body() body: { deviceId: string; signature: string }, @Req() req: Request) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'biometric_verify' }, {
+      sendRpc(this.authClient, biometricVerify, {
         ...body,
         userAgent: req.headers['user-agent'],
-        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        // Node joins a repeated header into one string; Express types it string | string[].
+        ipAddress: (req.ip || req.headers['x-forwarded-for']) as string | undefined,
       }),
     );
     assertServiceOk(result, HttpStatus.UNAUTHORIZED);
@@ -75,15 +79,13 @@ export class AuthBiometricController {
   @Get('devices')
   @ApiOperation({ summary: 'Devices that can sign in without a password' })
   async biometricDevices(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(this.authClient.send({ cmd: 'biometric_devices' }, { userId: user.id }));
+    return firstValueFrom(sendRpc(this.authClient, biometricDevices, { userId: user.id }));
   }
 
   /** The lost-phone button. Scoped to the caller's own devices by `user.id`. */
   @Delete('devices/:deviceId')
   @ApiOperation({ summary: 'Revoke a device' })
   async biometricRevoke(@CurrentUser() user: CurrentUserData, @Param('deviceId') deviceId: string) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'biometric_revoke' }, { userId: user.id, deviceId }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, biometricRevoke, { userId: user.id, deviceId }));
   }
 }

@@ -10,6 +10,7 @@ import {
 import { crmSpacesWhere, crmOwnedWhere, type CrmReach } from '@hbcfield/shared';
 import { contactMatchKeys } from '@hbcfield/shared';
 
+import { type CustomerInput, type CustomerDetail, type CrmCaller } from '@hbcfield/shared/microservices';
 /** An id a phone made (UUIDv7) — the same alphabet the gateway accepts. */
 const CLIENT_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
@@ -19,51 +20,17 @@ const ownedBy = (userId: string | undefined) => crmOwnedWhere(userId as string);
 /** A client the caller may not reach answers exactly like one that does not exist. */
 const notFound = () => new NotFoundException('Customer not found');
 
-/** Who is making the request — used to resolve & enforce CRM abilities. */
-export interface CrmCaller {
-  userId?: string;
-  role?: string; // system role ('ADMIN' bypasses to full CRM access)
-}
+/** The message contract's type (shared with the gateway). */
+export type { CrmCaller };
 
 /** How many open reminders `due()` reads; past it the totals are counted on the database. */
 const DUE_ROWS = 200;
 
-export interface CustomerDetail {
-  label: string;
-  value: string;
-}
+/** The message contract's type (shared with the gateway). */
+export type { CustomerDetail };
 
-export interface CustomerInput {
-  /** Made on the phone when creating; ignored on update. */
-  id?: string;
-  name?: string;
-  contactName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  notes?: string | null;
-  isActive?: boolean;
-  isPortalResident?: boolean;
-  portalId?: string | null;
-  spaceId?: string | null; // the space's Customers list this record belongs to (CRM)
-  ownerId?: string | null; // sales rep who owns the relationship
-  managerIds?: string[] | null; // sales managers assigned to this customer
-  status?: string; // CRM lifecycle stage
-  // Person vs Company + B2B company fields
-  type?: string; // PERSON | COMPANY
-  legalName?: string | null;
-  website?: string | null;
-  industry?: string | null;
-  vatId?: string | null;
-  regNumber?: string | null;
-  /** The language email to this client is written in; null / "" = not set. */
-  locale?: string | null;
-  /** Invoice currency outside a workspace; null / "" = the organization's. */
-  currency?: string | null;
-  /** The company that invoices this client outside a workspace; null / "" = the main one. */
-  legalEntityId?: string | null;
-  details?: CustomerDetail[] | null; // flexible custom key-value attributes
-}
+/** The message contract's type (shared with the gateway). */
+export type { CustomerInput };
 
 const customerSelect = {
   id: true,
@@ -152,7 +119,12 @@ function advanceDate(from: Date, repeat: string): Date {
 function sanitizeIds(ids: unknown): string[] | undefined {
   if (!Array.isArray(ids)) return undefined;
   return Array.from(
-    new Set(ids.filter((x): x is string => typeof x === 'string').map((x) => x.trim()).filter(Boolean)),
+    new Set(
+      ids
+        .filter((x): x is string => typeof x === 'string')
+        .map((x) => x.trim())
+        .filter(Boolean),
+    ),
   ).slice(0, 15);
 }
 

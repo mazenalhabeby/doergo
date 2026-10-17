@@ -10,6 +10,15 @@ import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ListMembersQueryDto, TransferOwnershipDto } from './dto';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import {
+  sendRpc,
+  listOrgMembers,
+  memberStatement,
+  getOrgMember,
+  listOrgContacts,
+  transferOwnership,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 /**
  * /organizations/members — the list, one member, a worker's statement, contacts,
@@ -39,8 +48,8 @@ export class OrgMembersController {
   @ApiResponse({ status: 200, description: 'Members list' })
   async listMembers(@Query() query: ListMembersQueryDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'list_org_members' }, {
-        organizationId: user.organizationId,
+      sendRpc(this.authClient, listOrgMembers, {
+        organizationId: callerOrgId(user),
         search: query.search,
         role: query.role,
         page: query.page ? Number(query.page) : undefined,
@@ -51,7 +60,11 @@ export class OrgMembersController {
         excludeId: query.excludeId,
         lite: query.lite === true || (query.lite as any) === 'true',
         includeIds: query.includeIds
-          ? String(query.includeIds).split(',').map((v) => v.trim()).filter(Boolean).slice(0, 200)
+          ? String(query.includeIds)
+              .split(',')
+              .map((v) => v.trim())
+              .filter(Boolean)
+              .slice(0, 200)
           : undefined,
       }),
     );
@@ -79,9 +92,9 @@ export class OrgMembersController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'member_statement' }, {
+      sendRpc(this.authClient, memberStatement, {
         memberId,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         from: typeof from === 'string' ? from.slice(0, 10) : undefined,
         to: typeof to === 'string' ? to.slice(0, 10) : undefined,
       }),
@@ -95,7 +108,7 @@ export class OrgMembersController {
   @ApiOperation({ summary: 'Get a single organization member (same shape as the list row)' })
   async getMember(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'get_org_member' }, {
+      sendRpc(this.authClient, getOrgMember, {
         memberId,
         organizationId: user.organizationId,
       }),
@@ -109,7 +122,7 @@ export class OrgMembersController {
   @ApiResponse({ status: 200, description: 'Contacts list' })
   async listContacts(@CurrentUser() user: CurrentUserData) {
     const contacts = await firstValueFrom(
-      this.authClient.send({ cmd: 'list_org_contacts' }, {
+      sendRpc(this.authClient, listOrgContacts, {
         organizationId: user.organizationId,
         userId: user.id,
       }),
@@ -131,7 +144,7 @@ export class OrgMembersController {
   @ApiOperation({ summary: 'Transfer organization ownership to another member' })
   async transferOwnership(@Body() dto: TransferOwnershipDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'transfer_ownership' }, {
+      sendRpc(this.authClient, transferOwnership, {
         organizationId: user.organizationId,
         requesterId: user.id,
         newOwnerId: dto.newOwnerId,

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { Role, type AssetAccessLevel } from '@hbcfield/shared';
+import type { AssetActorMessage } from '@hbcfield/shared/microservices';
 
 /** Nobody may ask for more than this in one request, however they ask. */
 const MAX_PAGE = 200;
@@ -16,25 +17,7 @@ const MAX_PAGE = 200;
  * organization's register. That is the opposite of what `undefined` used to
  * mean on the contract flow, and it is the safe one.
  */
-export interface AssetActor {
-  userId: string;
-  userRole: string;
-  organizationId: string;
-  /** A client's or partner's person — holds no custody, whatever the rows say. */
-  isExternal?: boolean;
-  /** Read records, their history, money, custody and logbook. */
-  viewSpaceIds?: string[] | null;
-  /** Add logbook entries and file expenses. */
-  logSpaceIds?: string[] | null;
-  /** Create, edit, delete, hand over, money rows, contracts, proposals. */
-  manageSpaceIds?: string[] | null;
-  /**
-   * Manages assets ORG-WIDE. Read by the shared entry-date rule (the
-   * backdating exemption) and by "may name somebody else as the holder" —
-   * both org-wide by definition, so a workspace grant never satisfies them.
-   */
-  canManageAssets?: boolean;
-}
+export type AssetActor = AssetActorMessage;
 
 const FIELD: Record<AssetAccessLevel, 'viewSpaceIds' | 'logSpaceIds' | 'manageSpaceIds'> = {
   view: 'viewSpaceIds',
@@ -156,7 +139,10 @@ export class AssetAccessService {
     const asset = await this.prisma.asset.findFirst({
       where: { id, organizationId: actor.organizationId },
       select: {
-        id: true, holderUserId: true, customerId: true, categoryId: true,
+        id: true,
+        holderUserId: true,
+        customerId: true,
+        categoryId: true,
         category: { select: { spaceId: true } },
       },
     });

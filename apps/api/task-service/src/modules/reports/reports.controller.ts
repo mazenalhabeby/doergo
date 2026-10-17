@@ -1,5 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { pattern, getAssetReports, getTaskReport, type RpcRequest } from '@hbcfield/shared/microservices';
 import { ReportReadService } from './report-read.service';
 
 /**
@@ -17,31 +18,18 @@ export class ReportsController {
 
   // ============ READ Operations (Direct Microservice) ============
 
-  @MessagePattern({ cmd: 'get_task_report' })
+  @MessagePattern(pattern(getTaskReport))
   async findByTaskId(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getTaskReport>,
   ) {
     return this.reportRead.findByTaskId(data);
   }
 
-  @MessagePattern({ cmd: 'get_asset_reports' })
+  @MessagePattern(pattern(getAssetReports))
   async findByAssetId(
     @Payload()
-    data: {
-      assetId: string;
-      page?: number;
-      limit?: number;
-      userId: string;
-      userRole: string;
-      canViewAllTasks?: boolean;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getAssetReports>,
   ) {
     return this.reportRead.findByAssetId(data);
   }

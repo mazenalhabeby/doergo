@@ -5,6 +5,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
+import { calendarFeedRender } from '@hbcfield/shared/microservices';
 
 /**
  * Per LINK, not per address: Google and Outlook fetch every subscriber's feed from a few shared
@@ -46,7 +47,7 @@ export class CalendarFeedController {
     if (!allowLink(m[1]!)) throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
     let ics: string;
     try {
-      const r: any = await this.svc.read('calendar_feed_render', { token: m[1] });
+      const r: any = await this.svc.read(calendarFeedRender, { token: m[1] });
       ics = r?.data?.ics;
     } catch (e) {
       /*

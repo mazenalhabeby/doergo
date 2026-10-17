@@ -5,6 +5,18 @@ import { DenyExternal } from '../../common/decorators';
 import { moduleAnywhere, parseContactImport, CONTACT_IMPORT_MESSAGES } from '@hbcfield/shared';
 import { CustomerDto, assertClientLocale } from './customers-controller-helpers';
 import { CustomersControllerBase } from './customers-controller.base';
+import {
+  listCustomers,
+  customersDue,
+  customerMatchKeys,
+  importCustomerContacts,
+  updateCustomerContact,
+  removeCustomerContact,
+  getCustomer,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Customers. Two overlapping uses on ONE model:
@@ -57,7 +69,7 @@ export class CustomersController extends CustomersControllerBase {
     @Query('contacts') contacts?: 'exclude' | 'only' | 'all',
     @Query('type') type?: string,
   ) {
-    return this.auth('list_customers', {
+    return this.auth(listCustomers, {
       contacts,
       type,
       organizationId: req.user.organizationId,
@@ -86,7 +98,7 @@ export class CustomersController extends CustomersControllerBase {
     @Query('dayEnd') dayEnd?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.auth('customers_due', {
+    return this.auth(customersDue, {
       organizationId: req.user.organizationId,
       caller: this.caller(req),
       // ⚠️ CRM must RUN in a workspace the caller is assigned to — read off the
@@ -115,7 +127,7 @@ export class CustomersController extends CustomersControllerBase {
     summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact",
   })
   matchKeys(@Request() req: any) {
-    return this.auth('customer_match_keys', { organizationId: req.user.organizationId, caller: this.caller(req) });
+    return this.auth(customerMatchKeys, { organizationId: req.user.organizationId, caller: this.caller(req) });
   }
 
   @Post('import')
@@ -137,7 +149,7 @@ export class CustomersController extends CustomersControllerBase {
     const orgId = req.user.organizationId;
     await this.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
     return this.authMutation(
-      'import_customer_contacts',
+      importCustomerContacts,
       { organizationId: orgId, body: parsed.value, caller: this.caller(req) },
       orgId,
     );
@@ -162,7 +174,7 @@ export class CustomersController extends CustomersControllerBase {
     @Body() body: { role?: string | null; isPrimary?: boolean },
     @Request() req: any,
   ) {
-    return this.auth('update_customer_contact', {
+    return this.auth(updateCustomerContact, {
       linkId,
       role: body?.role,
       isPrimary: body?.isPrimary,
@@ -174,7 +186,7 @@ export class CustomersController extends CustomersControllerBase {
   @Delete('contacts/:linkId')
   @ApiOperation({ summary: 'Detach a contact person (the person record is kept)' })
   async removeContact(@Param('linkId') linkId: string, @Request() req: any) {
-    return this.auth('remove_customer_contact', {
+    return this.auth(removeCustomerContact, {
       linkId,
       organizationId: req.user.organizationId,
       caller: this.caller(req),
@@ -184,7 +196,7 @@ export class CustomersController extends CustomersControllerBase {
   @Get(':id')
   @ApiOperation({ summary: 'Get a customer' })
   async get(@Param('id') id: string, @Request() req: any) {
-    return this.auth('get_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
+    return this.auth(getCustomer, { id, organizationId: req.user.organizationId, caller: this.caller(req) });
   }
 
   @Post()
@@ -196,7 +208,7 @@ export class CustomersController extends CustomersControllerBase {
       await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
       dto = { ...dto, ownerId: dto.ownerId ?? req.user.id };
     }
-    return this.authMutation('create_customer', { organizationId: orgId, dto, caller: this.caller(req) }, orgId);
+    return this.authMutation(createCustomer, { organizationId: orgId, dto, caller: this.caller(req) }, orgId);
   }
 
   @Patch(':id')
@@ -207,7 +219,7 @@ export class CustomersController extends CustomersControllerBase {
     // (parity with create; the service also validates the space belongs to org).
     if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
     return this.authMutation(
-      'update_customer',
+      updateCustomer,
       { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) },
       req.user.organizationId,
       id,
@@ -217,7 +229,7 @@ export class CustomersController extends CustomersControllerBase {
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
   async remove(@Param('id') id: string, @Request() req: any) {
-    const result: any = await this.auth('delete_customer', {
+    const result: any = await this.auth(deleteCustomer, {
       id,
       organizationId: req.user.organizationId,
       caller: this.caller(req),

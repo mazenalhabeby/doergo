@@ -1,5 +1,17 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  supportAddMessage,
+  supportAssign,
+  supportCreate,
+  supportInbox,
+  supportList,
+  supportMarkRead,
+  supportSetStatus,
+  supportThread,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { SupportService } from './support.service';
 import { SupportInboxService } from './support-inbox.service';
 
@@ -14,43 +26,43 @@ export class SupportController {
     private readonly supportInbox: SupportInboxService,
   ) {}
 
-  @MessagePattern({ cmd: 'support.create' })
-  create(@Payload() data: any) {
+  @MessagePattern(pattern(supportCreate))
+  create(@Payload() data: RpcRequest<typeof supportCreate>) {
     return this.support.createTicket(data);
   }
 
-  @MessagePattern({ cmd: 'support.addMessage' })
-  addMessage(@Payload() data: any) {
+  @MessagePattern(pattern(supportAddMessage))
+  addMessage(@Payload() data: RpcRequest<typeof supportAddMessage>) {
     return this.support.addMessage(data);
   }
 
-  @MessagePattern({ cmd: 'support.assign' })
-  assign(@Payload() data: any) {
+  @MessagePattern(pattern(supportAssign))
+  assign(@Payload() data: RpcRequest<typeof supportAssign>) {
     return this.support.assign(data);
   }
 
-  @MessagePattern({ cmd: 'support.setStatus' })
-  setStatus(@Payload() data: any) {
+  @MessagePattern(pattern(supportSetStatus))
+  setStatus(@Payload() data: RpcRequest<typeof supportSetStatus>) {
     return this.support.setStatus(data);
   }
 
-  @MessagePattern({ cmd: 'support.markRead' })
-  markRead(@Payload() data: any) {
+  @MessagePattern(pattern(supportMarkRead))
+  markRead(@Payload() data: RpcRequest<typeof supportMarkRead>) {
     return this.support.markRead(data);
   }
 
-  @MessagePattern({ cmd: 'support.list' })
-  list(@Payload() data: any) {
+  @MessagePattern(pattern(supportList))
+  list(@Payload() data: RpcRequest<typeof supportList>) {
     return this.supportInbox.listForCustomer(data);
   }
 
-  @MessagePattern({ cmd: 'support.thread' })
-  thread(@Payload() data: any) {
+  @MessagePattern(pattern(supportThread))
+  thread(@Payload() data: RpcRequest<typeof supportThread>) {
     return this.supportInbox.getThread(data);
   }
 
-  @MessagePattern({ cmd: 'support.inbox' })
-  inbox(@Payload() data: any) {
+  @MessagePattern(pattern(supportInbox))
+  inbox(@Payload() data: RpcRequest<typeof supportInbox>) {
     return this.supportInbox.agentInbox(data);
   }
 }

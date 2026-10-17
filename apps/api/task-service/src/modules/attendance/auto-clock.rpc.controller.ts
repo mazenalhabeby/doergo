@@ -4,6 +4,14 @@ import { AutoClockService } from './auto-clock.service';
 import type { OccurrenceEvidence } from '@hbcfield/shared';
 import { AutoClockPlanService } from './auto-clock-plan.service';
 import { AutoClockUndoService } from './auto-clock-undo.service';
+import {
+  pattern,
+  type RpcRequest,
+  autoClockPlan,
+  autoClockConsent,
+  autoClockUndo,
+  autoClockSkipRest,
+} from '@hbcfield/shared/microservices';
 
 /** The automatic clock over RPC: plan, consent, undo, skip the rest. */
 @Controller()
@@ -17,23 +25,27 @@ export class AutoClockRpcController {
   // ── Shift reminder responses (worker actions + leader approval) ──
   // ── The automatic clock (attendance/auto-clock.ts) — always the caller's own ──
 
-  @MessagePattern({ cmd: 'auto_clock_plan' })
-  autoClockPlan(@Payload() d: { userId: string; organizationId: string }) {
+  @MessagePattern(pattern(autoClockPlan))
+  autoClockPlan(@Payload() d: RpcRequest<typeof autoClockPlan>) {
     return this.planning.plan({ userId: d.userId, organizationId: d.organizationId });
   }
 
-  @MessagePattern({ cmd: 'auto_clock_consent' })
-  autoClockConsent(@Payload() d: { userId: string; organizationId: string; consent: boolean }) {
-    return this.autoClock.setConsent({ userId: d.userId, organizationId: d.organizationId, consent: d.consent === true });
+  @MessagePattern(pattern(autoClockConsent))
+  autoClockConsent(@Payload() d: RpcRequest<typeof autoClockConsent>) {
+    return this.autoClock.setConsent({
+      userId: d.userId,
+      organizationId: d.organizationId,
+      consent: d.consent === true,
+    });
   }
 
-  @MessagePattern({ cmd: 'auto_clock_undo' })
-  autoClockUndo(@Payload() d: { userId: string; organizationId: string; entryId: string; evidence?: OccurrenceEvidence }) {
+  @MessagePattern(pattern(autoClockUndo))
+  autoClockUndo(@Payload() d: RpcRequest<typeof autoClockUndo>) {
     return this.undoing.undo(d);
   }
 
-  @MessagePattern({ cmd: 'auto_clock_skip_rest' })
-  autoClockSkipRest(@Payload() d: { userId: string; organizationId: string; entryId: string; evidence?: OccurrenceEvidence }) {
+  @MessagePattern(pattern(autoClockSkipRest))
+  autoClockSkipRest(@Payload() d: RpcRequest<typeof autoClockSkipRest>) {
     return this.undoing.skipRest(d);
   }
 }

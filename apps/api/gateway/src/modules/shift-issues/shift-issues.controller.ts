@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, Request } from '@nestjs/common';
 import { Role } from '@hbcfield/shared';
+import type { ShiftIssueAttachment } from '@hbcfield/shared/microservices';
 import { attendanceAuthority, type AttendanceNeed } from '../../common/attendance-authority';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ShiftIssuesService } from './shift-issues.service';
@@ -63,7 +64,10 @@ export class ShiftIssuesController {
 
   @Post(':id/messages')
   message(@Param('id') id: string, @Body() body: ShiftIssueMessageDto, @Request() req: any) {
-    return this.service.message({ id: body.id, body: body.body, attachments: body.attachments, issueId: id, ...this.ctx(req, 'write') });
+    // ⚠️ Typed as sent today: the DTO lets fileKey OR fileUrl and fileSize be absent, while task-service's
+    // ShiftIssueAttachment declares all three — a mismatch the contract surfaced, left unchanged on purpose.
+    const attachments = body.attachments as ShiftIssueAttachment[] | undefined;
+    return this.service.message({ id: body.id, body: body.body, attachments, issueId: id, ...this.ctx(req, 'write') });
   }
 
   @Post(':id/acknowledge')
@@ -83,6 +87,11 @@ export class ShiftIssuesController {
 
   @Post(':id/attachments/presign')
   presign(@Param('id') id: string, @Body() body: PresignShiftIssueAttachmentDto, @Request() req: any) {
-    return this.service.presign({ ...this.ctx(req, 'write'), issueId: id, fileName: body.fileName, mimeType: body.mimeType });
+    return this.service.presign({
+      ...this.ctx(req, 'write'),
+      issueId: id,
+      fileName: body.fileName,
+      mimeType: body.mimeType,
+    });
   }
 }

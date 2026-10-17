@@ -1,5 +1,6 @@
+import type { SupportAttachmentMessage } from '@hbcfield/shared/microservices';
 
-type Attachment = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
+type Attachment = SupportAttachmentMessage;
 
 // Customers never see internal agent notes; agents see everything.
 const publicMessageWhere = { isInternalNote: false } as const;

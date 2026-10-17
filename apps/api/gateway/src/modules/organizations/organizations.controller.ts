@@ -16,6 +16,20 @@ import {
   UpdateSecuritySettingsDto,
 } from './dto';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import {
+  sendRpc,
+  onboardingGetJoinCode,
+  onboardingRegenerateJoinCode,
+  onboardingUpdateLeavePolicy,
+  onboardingUpdateJoinPolicy,
+  getProfileBadges,
+  updateProfileBadges,
+  getOrgProfile,
+  updateOrgProfile,
+  updateOrgNotificationPrefs,
+  updateSecuritySettings,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 @ApiTags('organizations')
 @UseInterceptors(LabourCostInterceptor)
@@ -37,12 +51,9 @@ export class OrganizationsController {
   @ApiResponse({ status: 200, description: 'Join code info' })
   async getJoinCode(@CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'onboarding_get_join_code' },
-        {
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.authClient, onboardingGetJoinCode, {
+        organizationId: user.organizationId,
+      }),
     );
   }
 
@@ -52,12 +63,9 @@ export class OrganizationsController {
   @ApiResponse({ status: 200, description: 'New join code generated' })
   async regenerateJoinCode(@CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'onboarding_regenerate_join_code' },
-        {
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.authClient, onboardingRegenerateJoinCode, {
+        organizationId: user.organizationId,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -74,21 +82,18 @@ export class OrganizationsController {
   })
   async updateLeavePolicy(@Body() dto: LeavePolicyInput, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'onboarding_update_leave_policy' },
-        {
-          organizationId: user.organizationId,
-          // Read in auth-service with the shared parseLeavePolicy; only the known fields travel.
-          policy: {
-            defaultLeaveAllowance: dto?.defaultLeaveAllowance,
-            leaveYearMode: dto?.leaveYearMode,
-            carryOverMode: dto?.carryOverMode,
-            carryOverMaxDays: dto?.carryOverMaxDays,
-            carryExpiresAfterMonths: dto?.carryExpiresAfterMonths,
-            leaveTrackingStartedOn: dto?.leaveTrackingStartedOn,
-          },
+      sendRpc(this.authClient, onboardingUpdateLeavePolicy, {
+        organizationId: callerOrgId(user),
+        // Read in auth-service with the shared parseLeavePolicy; only the known fields travel.
+        policy: {
+          defaultLeaveAllowance: dto?.defaultLeaveAllowance,
+          leaveYearMode: dto?.leaveYearMode,
+          carryOverMode: dto?.carryOverMode,
+          carryOverMaxDays: dto?.carryOverMaxDays,
+          carryExpiresAfterMonths: dto?.carryExpiresAfterMonths,
+          leaveTrackingStartedOn: dto?.leaveTrackingStartedOn,
         },
-      ),
+      }),
     );
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
     return result;
@@ -100,13 +105,10 @@ export class OrganizationsController {
   @ApiResponse({ status: 200, description: 'Settings updated' })
   async updateSettings(@Body() dto: UpdateOrgSettingsDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'onboarding_update_join_policy' },
-        {
-          organizationId: user.organizationId,
-          joinPolicy: dto.joinPolicy,
-        },
-      ),
+      sendRpc(this.authClient, onboardingUpdateJoinPolicy, {
+        organizationId: user.organizationId,
+        joinPolicy: dto.joinPolicy,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -120,7 +122,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get org profile badge visibility config' })
   async getProfileBadges(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(this.authClient.send({ cmd: 'get_profile_badges' }, { organizationId: user.organizationId }));
+    return firstValueFrom(sendRpc(this.authClient, getProfileBadges, { organizationId: user.organizationId }));
   }
 
   @Patch('profile-badges')
@@ -131,13 +133,10 @@ export class OrganizationsController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_profile_badges' },
-        {
-          organizationId: user.organizationId,
-          profileBadges: body,
-        },
-      ),
+      sendRpc(this.authClient, updateProfileBadges, {
+        organizationId: callerOrgId(user),
+        profileBadges: body,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
@@ -151,7 +150,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get organization profile and all settings' })
   async getOrgProfile(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(this.authClient.send({ cmd: 'get_org_profile' }, { organizationId: user.organizationId }));
+    return firstValueFrom(sendRpc(this.authClient, getOrgProfile, { organizationId: user.organizationId }));
   }
 
   @Patch('profile')
@@ -159,13 +158,10 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Update organization profile (name, industry, address, etc.)' })
   async updateOrgProfile(@Body() dto: UpdateOrgProfileDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_org_profile' },
-        {
-          organizationId: user.organizationId,
-          updates: dto,
-        },
-      ),
+      sendRpc(this.authClient, updateOrgProfile, {
+        organizationId: callerOrgId(user),
+        updates: dto,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
@@ -190,13 +186,10 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Update org notification preferences' })
   async updateNotificationPrefs(@Body() dto: UpdateNotificationPrefsDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_org_notification_prefs' },
-        {
-          organizationId: user.organizationId,
-          prefs: dto,
-        },
-      ),
+      sendRpc(this.authClient, updateOrgNotificationPrefs, {
+        organizationId: callerOrgId(user),
+        prefs: dto,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
@@ -209,13 +202,10 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Update org security settings' })
   async updateSecuritySettings(@Body() dto: UpdateSecuritySettingsDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_security_settings' },
-        {
-          organizationId: user.organizationId,
-          settings: dto,
-        },
-      ),
+      sendRpc(this.authClient, updateSecuritySettings, {
+        organizationId: callerOrgId(user),
+        settings: dto,
+      }),
     );
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);

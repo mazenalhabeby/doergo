@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { auditAction, auditBody, declaredPath, resolveAuditRoute } from './audit-helpers';
+import { sendRpc, platformAuditWrite } from '@hbcfield/shared/microservices';
 
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
@@ -108,7 +109,7 @@ export class PlatformAuditInterceptor implements NestInterceptor {
     try {
       const row = this.buildRow(req, ok, err, declared);
       if (!row) return;
-      this.authClient.send({ cmd: 'platform_audit_write' }, row).subscribe({ error: () => undefined });
+      sendRpc(this.authClient, platformAuditWrite, row).subscribe({ error: () => undefined });
     } catch {
       // Auditing must never break the request.
     }

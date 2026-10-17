@@ -1,10 +1,31 @@
-import { Body, Controller, Delete, Get, Inject, Injectable, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Injectable,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
 import { BaseGatewayService, SERVICE_NAMES, assertServiceOk } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
+import {
+  pattern,
+  curateDeleteWorkflowTemplate,
+  curateImportWorkflowTemplate,
+  curateListWorkflowTemplates,
+  curatePublishWorkflowTemplate,
+  curateUpsertWorkflowTemplate,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 /** Gateway → task-service proxy for curating the shared task-type library. */
 @Injectable()
@@ -12,12 +33,29 @@ export class PlatformLibraryService extends BaseGatewayService {
   constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, PlatformLibraryService.name);
   }
-  list() { return this.send({ cmd: 'curate_list_workflow_templates' }, {}); }
-  upsert(data: any) { return this.send({ cmd: 'curate_upsert_workflow_template' }, data); }
-  setPublished(data: { id: string; isPublished: boolean }) { return this.send({ cmd: 'curate_publish_workflow_template' }, data); }
-  remove(data: { id: string }) { return this.send({ cmd: 'curate_delete_workflow_template' }, data); }
+  list() {
+    return this.send(pattern(curateListWorkflowTemplates), {} satisfies RpcRequest<typeof curateListWorkflowTemplates>);
+  }
+  upsert(data: RpcRequest<typeof curateUpsertWorkflowTemplate>) {
+    return this.send(pattern(curateUpsertWorkflowTemplate), data);
+  }
+  setPublished(data: { id: string; isPublished: boolean }) {
+    return this.send(
+      pattern(curatePublishWorkflowTemplate),
+      data satisfies RpcRequest<typeof curatePublishWorkflowTemplate>,
+    );
+  }
+  remove(data: { id: string }) {
+    return this.send(
+      pattern(curateDeleteWorkflowTemplate),
+      data satisfies RpcRequest<typeof curateDeleteWorkflowTemplate>,
+    );
+  }
   importFromOrg(data: { workflowId: string; slug?: string; industry?: string | null }) {
-    return this.send({ cmd: 'curate_import_workflow_template' }, data);
+    return this.send(
+      pattern(curateImportWorkflowTemplate),
+      data satisfies RpcRequest<typeof curateImportWorkflowTemplate>,
+    );
   }
 }
 
@@ -47,11 +85,15 @@ export class PlatformLibraryController {
 
   @Get('templates')
   @RequirePlatformPerm('view')
-  async list() { return this.unwrap(await this.svc.list()); }
+  async list() {
+    return this.unwrap(await this.svc.list());
+  }
 
   @Post('templates')
   @RequirePlatformPerm('manageLibrary')
-  async create(@Body() body: any) { return this.unwrap(await this.svc.upsert({ ...body, id: undefined })); }
+  async create(@Body() body: any) {
+    return this.unwrap(await this.svc.upsert({ ...body, id: undefined }));
+  }
 
   @Patch('templates/:id')
   @RequirePlatformPerm('manageLibrary')
@@ -67,7 +109,9 @@ export class PlatformLibraryController {
 
   @Delete('templates/:id')
   @RequirePlatformPerm('manageLibrary')
-  async remove(@Param('id') id: string) { return this.unwrap(await this.svc.remove({ id })); }
+  async remove(@Param('id') id: string) {
+    return this.unwrap(await this.svc.remove({ id }));
+  }
 
   /**
    * Take a copy of a real organization's task type into the library.
@@ -78,6 +122,8 @@ export class PlatformLibraryController {
   @Post('templates/import/:workflowId')
   @RequirePlatformPerm('manageLibrary')
   async importFromOrg(@Param('workflowId') workflowId: string, @Body() body: { slug?: string; industry?: string }) {
-    return this.unwrap(await this.svc.importFromOrg({ workflowId, slug: body?.slug, industry: body?.industry ?? null }));
+    return this.unwrap(
+      await this.svc.importFromOrg({ workflowId, slug: body?.slug, industry: body?.industry ?? null }),
+    );
   }
 }

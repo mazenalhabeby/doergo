@@ -1,6 +1,25 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcRequest,
+  startBreak,
+  snoozeBreak,
+  listBreakRules,
+  createBreakRule,
+  updateBreakRule,
+  deleteBreakRule,
+  endBreak,
+  getBreakStatus,
+  getBreaksForEntry,
+  getActiveBreaks,
+  getBreakHistory,
+  addBreakForMember,
+  deleteBreak,
+  endBreakManually,
+  getBreakSummary,
+} from '@hbcfield/shared/microservices';
 
 /** Rests, asked of task-service: taking and ending one, the prompt, the rules, reading and correcting. */
 @Injectable()
@@ -16,95 +35,66 @@ export class BreaksGatewayService extends BaseGatewayService {
   /**
    * Start a break
    */
-  async startBreak(data: {
-    userId: string;
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    type?: string;
-    notes?: string;
-    /** The planned rest this satisfies; omitted = whichever is next. */
-    ruleId?: string;
-    id?: string;
-    entryId?: string;
-    evidence?: unknown;
-  }) {
-    return this.sendOnce({ cmd: 'start_break' }, data);
+  async startBreak(data: RpcRequest<typeof startBreak>) {
+    return this.sendOnce(pattern(startBreak), data);
   }
 
   /** "Later" — the count is kept server-side, so this is a real answer. */
-  async snoozeBreak(data: { userId: string; organizationId: string; ruleId?: string }) {
-    return this.sendOnce({ cmd: 'snooze_break' }, data);
+  async snoozeBreak(data: RpcRequest<typeof snoozeBreak>) {
+    return this.sendOnce(pattern(snoozeBreak), data);
   }
 
   // ── Rest rules ───────────────────────────────────────────────────────────
 
-  async listBreakRules(data: { organizationId: string; spaceId?: string; shiftId?: string }) {
-    return this.send({ cmd: 'list_break_rules' }, data);
+  async listBreakRules(data: RpcRequest<typeof listBreakRules>) {
+    return this.send(pattern(listBreakRules), data);
   }
 
-  async createBreakRule(data: Record<string, unknown> & { organizationId: string }) {
-    return this.send({ cmd: 'create_break_rule' }, data);
+  async createBreakRule(data: RpcRequest<typeof createBreakRule>) {
+    return this.send(pattern(createBreakRule), data);
   }
 
-  async updateBreakRule(data: Record<string, unknown> & { id: string; organizationId: string }) {
-    return this.send({ cmd: 'update_break_rule' }, data);
+  async updateBreakRule(data: RpcRequest<typeof updateBreakRule>) {
+    return this.send(pattern(updateBreakRule), data);
   }
 
-  async deleteBreakRule(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
-    return this.send({ cmd: 'delete_break_rule' }, data);
+  async deleteBreakRule(data: RpcRequest<typeof deleteBreakRule>) {
+    return this.send(pattern(deleteBreakRule), data);
   }
 
   /**
    * End current break
    */
-  async endBreak(data: {
-    userId: string;
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    notes?: string;
-    breakId?: string;
-    evidence?: unknown;
-  }) {
-    return this.sendOnce({ cmd: 'end_break' }, data);
+  async endBreak(data: RpcRequest<typeof endBreak>) {
+    return this.sendOnce(pattern(endBreak), data);
   }
 
   /**
    * Get current break status
    */
-  async getBreakStatus(data: { userId: string; organizationId: string }) {
-    return this.send({ cmd: 'get_break_status' }, data);
+  async getBreakStatus(data: RpcRequest<typeof getBreakStatus>) {
+    return this.send(pattern(getBreakStatus), data);
   }
 
   /**
    * Get breaks for a time entry
    */
-  async getBreaksForEntry(data: { timeEntryId: string; organizationId: string; requesterId: string; scopeSpaceIds: string[] | null }) {
-    return this.send({ cmd: 'get_breaks_for_entry' }, data);
+  async getBreaksForEntry(data: RpcRequest<typeof getBreaksForEntry>) {
+    return this.send(pattern(getBreaksForEntry), data);
   }
 
   /**
    * Get all active breaks in the organization (admin)
    */
-  async getActiveBreaks(data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
-    return this.send({ cmd: 'get_active_breaks' }, data);
+  async getActiveBreaks(data: RpcRequest<typeof getActiveBreaks>) {
+    return this.send(pattern(getActiveBreaks), data);
   }
 
   /**
    * Get break history with filters (admin)
    */
-  async getBreakHistory(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    date?: string;
-    userId?: string;
-    type?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    return this.send({ cmd: 'get_break_history' }, data);
+  async getBreakHistory(data: RpcRequest<typeof getBreakHistory>) {
+    return this.send(pattern(getBreakHistory), data);
   }
 
   /**
@@ -114,47 +104,23 @@ export class BreaksGatewayService extends BaseGatewayService {
    * Add a break to a member's shift. `sendOnce`, not `send`: this is a write, and
    * a retried request would record the same break twice.
    */
-  async addBreakForMember(data: {
-    timeEntryId: string;
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    editorId: string;
-    type?: string;
-    startedAt: string;
-    endedAt: string;
-    reason: string;
-  }) {
-    return this.sendOnce({ cmd: 'add_break_for_member' }, data);
+  async addBreakForMember(data: RpcRequest<typeof addBreakForMember>) {
+    return this.sendOnce(pattern(addBreakForMember), data);
   }
 
   /** Remove a break. `sendOnce` — a retried delete must not race a re-add. */
-  async deleteBreak(data: { breakId: string; organizationId: string; scopeSpaceIds?: string[] | null; editorId: string }) {
-    return this.sendOnce({ cmd: 'delete_break' }, data);
+  async deleteBreak(data: RpcRequest<typeof deleteBreak>) {
+    return this.sendOnce(pattern(deleteBreak), data);
   }
 
-  async endBreakManually(data: {
-    breakId: string;
-    adminId: string;
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    notes?: string;
-  }) {
-    return this.send({ cmd: 'end_break_manually' }, data);
+  async endBreakManually(data: RpcRequest<typeof endBreakManually>) {
+    return this.send(pattern(endBreakManually), data);
   }
 
   /**
    * Get break summary statistics for a date range
    */
-  async getBreakSummary(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    startDate: string;
-    endDate: string;
-    userId?: string;
-  }) {
-    return this.send({ cmd: 'get_break_summary' }, data);
+  async getBreakSummary(data: RpcRequest<typeof getBreakSummary>) {
+    return this.send(pattern(getBreakSummary), data);
   }
 }

@@ -17,6 +17,16 @@ import {
 import { RequirePermission } from '../../common/decorators';
 import { CreateEmployeeDto, UpdateEmployeeDto, ListEmployeesDto } from './dto';
 import { scopeIdsFor } from '../../common/permission-scope';
+import {
+  sendRpc,
+  listTechnicians,
+  createTechnician,
+  getTechnicianDetail,
+  updateTechnician,
+  deactivateTechnician,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
+import { getTechnicianStats } from '@hbcfield/shared/microservices';
 
 @ApiTags('employees')
 @ApiBearerAuth()
@@ -47,20 +57,14 @@ export class EmployeesController {
     different set than the page.
   */
   @RequirePermissionInSpace('canViewAllTasks')
-  async listEmployees(
-    @Query() query: ListEmployeesDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async listEmployees(@Query() query: ListEmployeesDto, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'list_technicians' },
-        {
-          ...query,
-          organizationId: user.organizationId,
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-        },
-      ),
+      sendRpc(this.authClient, listTechnicians, {
+        ...query,
+        organizationId: callerOrgId(user),
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+      }),
     );
   }
 
@@ -73,18 +77,12 @@ export class EmployeesController {
   @ApiResponse({ status: 201, description: 'Employee created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @RequirePermission('canManageUsers')
-  async createEmployee(
-    @Body() dto: CreateEmployeeDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async createEmployee(@Body() dto: CreateEmployeeDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'create_technician' },
-        {
-          ...dto,
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.authClient, createTechnician, {
+        ...dto,
+        organizationId: callerOrgId(user),
+      }),
     );
     this.billing.rebill(user.organizationId);
     return result;
@@ -100,17 +98,12 @@ export class EmployeesController {
   @ApiResponse({ status: 200, description: 'Employee detail retrieved' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermissionInSpace('canViewAllTasks')
-  async getEmployeeDetail(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async getEmployeeDetail(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'get_technician_detail' },
-        {
-          id,
-          organizationId: user.organizationId,
-          /*
+      sendRpc(this.authClient, getTechnicianDetail, {
+        id,
+        organizationId: callerOrgId(user),
+        /*
             Who is asking, so the answer can be layered.
 
             This route carries no permission decorator by design — every member
@@ -126,7 +119,8 @@ export class EmployeesController {
 
             Computed server-side from the resolved grant, never from the client.
           */
-          viewerSpaceIds: isAdmin(user as any) || user.canViewAllTasks || user.canManageUsers
+        viewerSpaceIds:
+          isAdmin(user as any) || user.canViewAllTasks || user.canManageUsers
             ? null
             : Array.from(
                 new Set([
@@ -134,11 +128,10 @@ export class EmployeesController {
                   ...(spacesGranting((user as any)?.access, 'canViewSpaceAttendance') ?? []),
                 ]),
               ),
-          // Coordinates are their own permission — see lastLocation in the
-          // service. Resolved access, not the flat column (common/tracking-visibility.ts).
-          ...trackingVisibility(user),
-        },
-      ),
+        // Coordinates are their own permission — see lastLocation in the
+        // service. Resolved access, not the flat column (common/tracking-visibility.ts).
+        ...trackingVisibility(user),
+      }),
     );
   }
 
@@ -151,21 +144,15 @@ export class EmployeesController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Stats retrieved' })
   @RequirePermissionInSpace('canViewAllTasks')
-  async getEmployeeStats(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async getEmployeeStats(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     // Route to task-service for task stats (task data lives there)
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technician_stats' },
-        {
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          id,
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.taskClient, getTechnicianStats, {
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        id,
+        organizationId: callerOrgId(user),
+      }),
     );
   }
 
@@ -179,20 +166,13 @@ export class EmployeesController {
   @ApiResponse({ status: 200, description: 'Employee updated' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canManageUsers')
-  async updateEmployee(
-    @Param('id') id: string,
-    @Body() dto: UpdateEmployeeDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async updateEmployee(@Param('id') id: string, @Body() dto: UpdateEmployeeDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_technician' },
-        {
-          id,
-          organizationId: user.organizationId,
-          dto,
-        },
-      ),
+      sendRpc(this.authClient, updateTechnician, {
+        id,
+        organizationId: callerOrgId(user),
+        dto,
+      }),
     );
     // employmentType (and access) changes can flip a member's billable seat type
     // (in-house ⇄ external field), so re-sync seats to Stripe after the edit.
@@ -221,18 +201,12 @@ export class EmployeesController {
     description: 'Cannot deactivate employee with active tasks',
   })
   @RequirePermission('canManageUsers')
-  async deactivateEmployee(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async deactivateEmployee(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'deactivate_technician' },
-        {
-          id,
-          organizationId: user.organizationId,
-        },
-      ),
+      sendRpc(this.authClient, deactivateTechnician, {
+        id,
+        organizationId: user.organizationId,
+      }),
     );
     this.billing.rebill(user.organizationId);
     // A deactivated member is refused on their NEXT request, not when the

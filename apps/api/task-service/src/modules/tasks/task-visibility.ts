@@ -1,13 +1,7 @@
 import { Role } from '@hbcfield/shared';
+import type { TaskVisibilityFacts as SharedTaskVisibilityFacts } from '@hbcfield/shared/microservices';
 
-export interface TaskVisibilityFacts {
-  userId: string;
-  userRole: string;
-  canViewAllTasks?: boolean;
-  /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
-  viewAllSpaceIds?: string[];
-  organizationId: string;
-}
+export type TaskVisibilityFacts = SharedTaskVisibilityFacts;
 
 /**
  * Who may see which tasks — the single definition.
@@ -43,11 +37,7 @@ export function buildTaskVisibilityWhere(opts: TaskVisibilityFacts): { organizat
       organizationId,
       AND: [
         {
-          OR: [
-            { spaceId: { in: viewAllSpaceIds } },
-            { assignedToId: userId },
-            { assignees: { some: { userId } } },
-          ],
+          OR: [{ spaceId: { in: viewAllSpaceIds } }, { assignedToId: userId }, { assignees: { some: { userId } } }],
         },
       ],
     };

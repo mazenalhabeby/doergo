@@ -2,26 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { clampListLimit } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
+import { type PlatformAuditInput } from '@hbcfield/shared/microservices';
 const ACTOR_TYPES = new Set(['STAFF', 'STATIC_KEY', 'ANONYMOUS']);
-const str = (v: unknown, max: number): string | null =>
-  typeof v === 'string' && v.length ? v.slice(0, max) : null;
+const str = (v: unknown, max: number): string | null => (typeof v === 'string' && v.length ? v.slice(0, max) : null);
 
-export interface PlatformAuditInput {
-  actorType?: string;
-  actorId?: string | null;
-  actorLabel?: string | null;
-  actorRole?: string | null;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  method?: string;
-  route?: string;
-  action?: string;
-  targetOrganizationId?: string | null;
-  summary?: unknown;
-  ok?: boolean;
-  statusCode?: number | null;
-  error?: string | null;
-}
+/** The message contract's type (shared with the gateway). */
+export type { PlatformAuditInput };
 
 /**
  * The operator audit trail — written for every platform mutation and every
@@ -88,8 +74,11 @@ export class PlatformAuditService {
     const names = new Map(orgs.map((o) => [o.id, o.name]));
     return {
       success: true,
-      data: page.map((r) => ({ ...r, targetOrganizationName: r.targetOrganizationId ? names.get(r.targetOrganizationId) ?? null : null })),
-      nextCursor: rows.length > limit ? page[page.length - 1]?.id ?? null : null,
+      data: page.map((r) => ({
+        ...r,
+        targetOrganizationName: r.targetOrganizationId ? (names.get(r.targetOrganizationId) ?? null) : null,
+      })),
+      nextCursor: rows.length > limit ? (page[page.length - 1]?.id ?? null) : null,
     };
   }
 }

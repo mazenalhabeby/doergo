@@ -12,6 +12,8 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES, formatCents, moduleMonthlyCents } from '@hbcfield/shared';
+import { sendRpc, findAssetSpace } from '@hbcfield/shared/microservices';
+import { getEffectiveModules, findTaskSpace } from '@hbcfield/shared/microservices';
 
 /**
  * The refusal for a module that is not on — ONE shape, 402, for ModuleGuard and
@@ -98,8 +100,7 @@ export class SpaceModulesService {
     let res: any;
     try {
       res = await firstValueFrom(
-        this.taskClient
-          .send({ cmd: 'get_effective_modules' }, { id: spaceId, organizationId })
+        sendRpc(this.taskClient, getEffectiveModules, { id: spaceId, organizationId })
           // A guard must not hang a request while a service is slow. Falling
           // back to the org's modules is wrong-ish; blocking is worse.
           .pipe(timeout(1_500)),
@@ -136,7 +137,7 @@ export class SpaceModulesService {
     try {
       const res: any = await firstValueFrom(
         // ⚠️ Its own pattern: `find_task` asks who is reading, and the guard has nobody to name.
-        this.taskClient.send({ cmd: 'find_task_space' }, { id: taskId, organizationId }).pipe(timeout(1_500)),
+        sendRpc(this.taskClient, findTaskSpace, { id: taskId, organizationId }).pipe(timeout(1_500)),
       );
       const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);
@@ -165,7 +166,7 @@ export class SpaceModulesService {
     try {
       const res: any = await firstValueFrom(
         // ⚠️ Its own pattern: `find_asset` asks who is reading, and the guard has nobody to name.
-        this.taskClient.send({ cmd: 'find_asset_space' }, { id: assetId, organizationId }).pipe(timeout(1_500)),
+        sendRpc(this.taskClient, findAssetSpace, { id: assetId, organizationId }).pipe(timeout(1_500)),
       );
       const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);

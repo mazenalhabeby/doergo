@@ -2,6 +2,7 @@ import { Global, Inject, Injectable, Module } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
+import { sendRpc, billingReconcileSeats } from '@hbcfield/shared/microservices';
 
 /**
  * "The bill moved — re-price this organization."
@@ -24,7 +25,7 @@ export class RebillService {
   rebill(organizationId: string | null | undefined): void {
     if (!organizationId) return;
     try {
-      firstValueFrom(this.authClient.send({ cmd: 'billing_reconcile_seats' }, { organizationId })).catch(() => {});
+      firstValueFrom(sendRpc(this.authClient, billingReconcileSeats, { organizationId })).catch(() => {});
     } catch {
       // A synchronous throw from the transport is still never the caller's failure.
     }

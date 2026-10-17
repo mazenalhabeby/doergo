@@ -2,40 +2,77 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { PlatformSupportTeamsService } from './platform-support-teams.service';
 
+import {
+  pattern,
+  platformSupportStaffList,
+  platformSupportTeamsList,
+  platformSupportTeamCreate,
+  platformSupportTeamUpdate,
+  platformSupportTeamDelete,
+  platformSupportTeamAddMember,
+  platformSupportTeamRemoveMember,
+  platformSupportRuleUpsert,
+  platformSupportRuleDelete,
+  platformSupportPinOrg,
+  platformSupportTeamPinnedOrgs,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class PlatformSupportTeamsController {
   constructor(private readonly svc: PlatformSupportTeamsService) {}
 
-  @MessagePattern({ cmd: 'platform_support_staff_list' })
-  listStaff() { return this.svc.listStaff(); }
+  @MessagePattern(pattern(platformSupportStaffList))
+  listStaff() {
+    return this.svc.listStaff();
+  }
 
-  @MessagePattern({ cmd: 'platform_support_teams_list' })
-  listTeams() { return this.svc.listTeams(); }
+  @MessagePattern(pattern(platformSupportTeamsList))
+  listTeams() {
+    return this.svc.listTeams();
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_create' })
-  createTeam(@Payload() d: any) { return this.svc.createTeam(d); }
+  @MessagePattern(pattern(platformSupportTeamCreate))
+  createTeam(@Payload() d: RpcRequest<typeof platformSupportTeamCreate>) {
+    return this.svc.createTeam(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_update' })
-  updateTeam(@Payload() d: any) { return this.svc.updateTeam(d); }
+  @MessagePattern(pattern(platformSupportTeamUpdate))
+  updateTeam(@Payload() d: RpcRequest<typeof platformSupportTeamUpdate>) {
+    return this.svc.updateTeam(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_delete' })
-  deleteTeam(@Payload() d: any) { return this.svc.deleteTeam(d); }
+  @MessagePattern(pattern(platformSupportTeamDelete))
+  deleteTeam(@Payload() d: RpcRequest<typeof platformSupportTeamDelete>) {
+    return this.svc.deleteTeam(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_add_member' })
-  addMember(@Payload() d: any) { return this.svc.addMember(d); }
+  @MessagePattern(pattern(platformSupportTeamAddMember))
+  addMember(@Payload() d: RpcRequest<typeof platformSupportTeamAddMember>) {
+    return this.svc.addMember(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_remove_member' })
-  removeMember(@Payload() d: any) { return this.svc.removeMember(d); }
+  @MessagePattern(pattern(platformSupportTeamRemoveMember))
+  removeMember(@Payload() d: RpcRequest<typeof platformSupportTeamRemoveMember>) {
+    return this.svc.removeMember(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_rule_upsert' })
-  upsertRule(@Payload() d: any) { return this.svc.upsertRule(d); }
+  @MessagePattern(pattern(platformSupportRuleUpsert))
+  upsertRule(@Payload() d: RpcRequest<typeof platformSupportRuleUpsert>) {
+    return this.svc.upsertRule(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_rule_delete' })
-  deleteRule(@Payload() d: any) { return this.svc.deleteRule(d); }
+  @MessagePattern(pattern(platformSupportRuleDelete))
+  deleteRule(@Payload() d: RpcRequest<typeof platformSupportRuleDelete>) {
+    return this.svc.deleteRule(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_pin_org' })
-  pinOrg(@Payload() d: any) { return this.svc.pinOrg(d); }
+  @MessagePattern(pattern(platformSupportPinOrg))
+  pinOrg(@Payload() d: RpcRequest<typeof platformSupportPinOrg>) {
+    return this.svc.pinOrg(d);
+  }
 
-  @MessagePattern({ cmd: 'platform_support_team_pinned_orgs' })
-  listPinnedOrgs(@Payload() d: any) { return this.svc.listPinnedOrgs(d); }
+  @MessagePattern(pattern(platformSupportTeamPinnedOrgs))
+  listPinnedOrgs(@Payload() d: RpcRequest<typeof platformSupportTeamPinnedOrgs>) {
+    return this.svc.listPinnedOrgs(d);
+  }
 }

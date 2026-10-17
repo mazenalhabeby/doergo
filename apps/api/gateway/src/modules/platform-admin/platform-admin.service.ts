@@ -1,6 +1,41 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  platformOverview,
+  platformListOrgs,
+  platformOrgDetail,
+  platformAuditList,
+  platformSetAgreedPrice,
+  platformClearAgreedPrice,
+  platformSuspend,
+  platformSetOfflineMode,
+  platformBillingAlerts,
+  platformAckBillingAlert,
+  platformSetBillingMode,
+  platformReactivate,
+  platformExtendTrial,
+  platformEndTrial,
+  platformLogin,
+  platformMe,
+  platformUsersList,
+  platformUsersCreate,
+  platformUsersUpdate,
+  platformUsersResetPassword,
+  platformBootstrapOwner,
+  platformChangePassword,
+  platform2faSetup,
+  platform2faEnable,
+  platform2faDisable,
+  platformUsersReset2fa,
+  platformLogout,
+  platformRefresh,
+  billingAdminSetAddons,
+  platformPricingList,
+  platformPricingStripeStatus,
+  platformMailStatus,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 /** Gateway → auth-service proxy for the platform-operator control center. */
 @Injectable()
@@ -9,16 +44,16 @@ export class PlatformAdminService extends BaseGatewayService {
     super(authClient, PlatformAdminService.name);
   }
   overview() {
-    return this.send({ cmd: 'platform_overview' }, {});
+    return this.call(platformOverview, {});
   }
   listOrgs(data: { search?: string; status?: string; cursor?: string; limit?: number }) {
-    return this.send({ cmd: 'platform_list_orgs' }, data);
+    return this.call(platformListOrgs, data);
   }
   orgDetail(data: { organizationId: string; viewerRole?: string; memberLimit?: number }) {
-    return this.send({ cmd: 'platform_org_detail' }, data);
+    return this.call(platformOrgDetail, data);
   }
   auditList(data: { cursor?: string; limit?: number; actorId?: string; organizationId?: string }) {
-    return this.send({ cmd: 'platform_audit_list' }, data);
+    return this.call(platformAuditList, data);
   }
   setAgreedPrice(data: {
     organizationId: string;
@@ -27,96 +62,96 @@ export class PlatformAdminService extends BaseGatewayService {
     note?: string | null;
     byUserId?: string;
   }) {
-    return this.send({ cmd: 'platform_set_agreed_price' }, data);
+    return this.call(platformSetAgreedPrice, data);
   }
   clearAgreedPrice(data: { organizationId: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_clear_agreed_price' }, data);
+    return this.call(platformClearAgreedPrice, data);
   }
   suspend(data: { organizationId: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_suspend' }, data);
+    return this.call(platformSuspend, data);
   }
   setOfflineMode(data: { organizationId: string; enabled: boolean; byUserId?: string }) {
-    return this.send({ cmd: 'platform_set_offline_mode' }, data);
+    return this.call(platformSetOfflineMode, data);
   }
   billingAlerts(data: { includeAcknowledged?: boolean }) {
-    return this.send({ cmd: 'platform_billing_alerts' }, data);
+    return this.call(platformBillingAlerts, data);
   }
   ackBillingAlert(data: { id: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_ack_billing_alert' }, data);
+    return this.call(platformAckBillingAlert, data);
   }
-  setBillingMode(data: { organizationId: string; mode: string; invoiceDueDays?: number; byUserId?: string }) {
-    return this.send({ cmd: 'platform_set_billing_mode' }, data);
+  setBillingMode(data: RpcRequest<typeof platformSetBillingMode>) {
+    return this.call(platformSetBillingMode, data);
   }
   reactivate(data: { organizationId: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_reactivate' }, data);
+    return this.call(platformReactivate, data);
   }
   extendTrial(data: { organizationId: string; days: number; byUserId?: string }) {
-    return this.send({ cmd: 'platform_extend_trial' }, data);
+    return this.call(platformExtendTrial, data);
   }
   endTrial(data: { organizationId: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_end_trial' }, data);
+    return this.call(platformEndTrial, data);
   }
 
   // Auth + staff management
   login(data: { email: string; password: string; code?: string }) {
-    return this.send({ cmd: 'platform_login' }, data);
+    return this.call(platformLogin, data);
   }
   me(data: { userId: string }) {
-    return this.send({ cmd: 'platform_me' }, data);
+    return this.call(platformMe, data);
   }
   listUsers() {
-    return this.send({ cmd: 'platform_users_list' }, {});
+    return this.call(platformUsersList, {});
   }
   createUser(data: any) {
-    return this.send({ cmd: 'platform_users_create' }, data);
+    return this.call(platformUsersCreate, data);
   }
   updateUser(data: any) {
-    return this.send({ cmd: 'platform_users_update' }, data);
+    return this.call(platformUsersUpdate, data);
   }
   resetPassword(data: any) {
-    return this.send({ cmd: 'platform_users_reset_password' }, data);
+    return this.call(platformUsersResetPassword, data);
   }
   bootstrapOwner(data: any) {
-    return this.send({ cmd: 'platform_bootstrap_owner' }, data);
+    return this.call(platformBootstrapOwner, data);
   }
   changePassword(data: any) {
-    return this.send({ cmd: 'platform_change_password' }, data);
+    return this.call(platformChangePassword, data);
   }
   setup2fa(data: any) {
-    return this.send({ cmd: 'platform_2fa_setup' }, data);
+    return this.call(platform2faSetup, data);
   }
   enable2fa(data: any) {
-    return this.send({ cmd: 'platform_2fa_enable' }, data);
+    return this.call(platform2faEnable, data);
   }
   disable2fa(data: any) {
-    return this.send({ cmd: 'platform_2fa_disable' }, data);
+    return this.call(platform2faDisable, data);
   }
   reset2fa(data: { id: string; byUserId?: string }) {
-    return this.send({ cmd: 'platform_users_reset_2fa' }, data);
+    return this.call(platformUsersReset2fa, data);
   }
   logout(data: { userId: string; iat?: number }) {
-    return this.send({ cmd: 'platform_logout' }, data);
+    return this.call(platformLogout, data);
   }
   refresh(data: { userId: string; authTime?: number }) {
-    return this.send({ cmd: 'platform_refresh' }, data);
+    return this.call(platformRefresh, data);
   }
   // Operator grant — capabilities, not a tier (reuses the billing service).
   setAddOns(data: { organizationId: string; addOns: string[]; byUserId?: string }) {
-    return this.send({ cmd: 'billing_admin_set_addons' }, data);
+    return this.call(billingAdminSetAddons, data);
   }
 
   // Pricing — READ ONLY. Prices live in `packages/shared/src/billing/*`; the
   // editable price book this replaced kept a second copy in the database that
   // had been quoting deleted tier prices since the model changed.
   pricingList() {
-    return this.send({ cmd: 'platform_pricing_list' }, {});
+    return this.call(platformPricingList, {});
   }
   pricingStripeStatus() {
-    return this.send({ cmd: 'platform_pricing_stripe_status' }, {});
+    return this.call(platformPricingStripeStatus, {});
   }
 
   // Is outbound email working? Nothing else in the product surfaces this.
   mailStatus() {
-    return this.send({ cmd: 'platform_mail_status' }, {});
+    return this.call(platformMailStatus, {});
   }
 }

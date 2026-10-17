@@ -10,6 +10,7 @@ import {
   type BreakPlanItem,
   type BreakRuleLike,
 } from '@hbcfield/shared';
+import type { BreakRuleInput as SharedBreakRuleInput } from '@hbcfield/shared/microservices';
 
 /**
  * The rests a workspace expects, and this shift's plan of them.
@@ -245,20 +246,4 @@ function clamp(v: number | null | undefined, min: number, max: number): number |
   return Math.min(max, Math.max(min, Math.round(v)));
 }
 
-interface BreakRuleInput {
-  spaceId?: string | null;
-  shiftId?: string | null;
-  name?: string;
-  trigger?: string;
-  afterMinutes?: number | null;
-  earliestLocal?: string | null;
-  latestLocal?: string | null;
-  durationMinutes?: number;
-  isPaid?: boolean;
-  isRequired?: boolean;
-  remind?: boolean;
-  snoozeMin?: number;
-  maxSnoozes?: number | null;
-  isActive?: boolean;
-  position?: number;
-}
+type BreakRuleInput = SharedBreakRuleInput;

@@ -5,6 +5,7 @@ import {
   RateChangeError,
   AssignmentPermissionsError,
 } from '@hbcfield/shared';
+import type { SpaceMemberAuthorityMessage } from '@hbcfield/shared/microservices';
 
 // Permission keys that make sense on a SPACE role.
 const SPACE_PERMISSION_KEYS = ACCESS_PERMISSION_SCHEMA.filter((p) => p.scopes.includes('space')).map((p) => p.key);
@@ -21,13 +22,20 @@ const userSelect = {
     able to say so without a second request per row.
   */
   select: {
-    id: true, firstName: true, lastName: true, email: true,
-    avatarUrl: true, position: true, isExternal: true,
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+    avatarUrl: true,
+    position: true,
+    isExternal: true,
   },
 };
 
 // `personalAssignmentId` set = this person's own permissions here (the builder), not a role from the list.
-const roleSelect = { select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true, personalAssignmentId: true } };
+const roleSelect = {
+  select: { id: true, name: true, slug: true, color: true, permissions: true, kind: true, personalAssignmentId: true },
+};
 
 /**
  * What the caller may change about people in THIS workspace, decided at the
@@ -35,14 +43,7 @@ const roleSelect = { select: { id: true, name: true, slug: true, color: true, pe
  * `mayManageSpaceMembers`) and enforced here, where the role's kind is known.
  * Absent = all three (internal callers and tests that predate the split).
  */
-export interface SpaceMemberAuthority {
-  /** Put a person into the workspace, or take them off it. */
-  addMembers: boolean;
-  /** Choose the MANAGEMENT role somebody holds here (the ceiling still applies). */
-  grantRoles: boolean;
-  /** Trades, billing terms and routing — `canManageUsers` here; never an external member. */
-  manageTerms: boolean;
-}
+export type SpaceMemberAuthority = SpaceMemberAuthorityMessage;
 
 function authorityRefusal(what: string): ForbiddenException {
   return new ForbiddenException({ message: `You cannot ${what} in this workspace`, code: 'SPACE_MEMBER_NOT_ALLOWED' });
@@ -69,7 +70,8 @@ async function withRateErrors<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (e) {
-    if (e instanceof RateChangeError) throw new BadRequestException({ message: e.message, code: `RATE_START_${e.code}` });
+    if (e instanceof RateChangeError)
+      throw new BadRequestException({ message: e.message, code: `RATE_START_${e.code}` });
     throw e;
   }
 }

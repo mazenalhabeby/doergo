@@ -1,6 +1,14 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { APPROVAL_KIND_SPECS, BaseGatewayService, SERVICE_NAMES, type ApprovalKind, type ApprovalRouting } from '@hbcfield/shared';
+import {
+  APPROVAL_KIND_SPECS,
+  BaseGatewayService,
+  SERVICE_NAMES,
+  type ApprovalKind,
+  type ApprovalRouting,
+} from '@hbcfield/shared';
+import { pattern, type RpcReply, type RpcRequest, approvalRouteRpc } from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 import { ApprovalsService, type ApprovalCaller } from './approvals.service';
 
 /**
@@ -24,8 +32,8 @@ export class ApprovalRouteService extends BaseGatewayService {
     const item = await this.approvals.item(caller, kind, id);
     if (!item) throw new NotFoundException('Not in your approvals');
     const spec = APPROVAL_KIND_SPECS[kind];
-    return this.send<ApprovalRouting>({ cmd: 'approval_route' }, {
-      organizationId: caller.user.organizationId,
+    return this.send<RpcReply<typeof approvalRouteRpc>>(pattern(approvalRouteRpc), {
+      organizationId: callerOrgId(caller.user),
       callerId: caller.user.id,
       kind,
       decideKey: spec.decideKey,
@@ -33,6 +41,6 @@ export class ApprovalRouteService extends BaseGatewayService {
       spaceId: item.space?.id ?? null,
       // A client or a joiner is not a member: nobody is "told" about them through member routing.
       subjectUserId: kind === 'clientRequest' || kind === 'guestRequest' || kind === 'join' ? null : item.subject.id,
-    });
+    } satisfies RpcRequest<typeof approvalRouteRpc>);
   }
 }

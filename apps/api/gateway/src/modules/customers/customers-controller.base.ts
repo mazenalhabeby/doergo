@@ -4,6 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SpaceModulesService } from '../../common/space-modules.service';
+import { sendRpc, getCustomer, type RpcContract } from '@hbcfield/shared/microservices';
 
 /**
  * What every /customers controller shares: asking auth-service, a write that
@@ -12,7 +13,6 @@ import { SpaceModulesService } from '../../common/space-modules.service';
  */
 @Injectable()
 export abstract class CustomersControllerBase {
-
   constructor(
     @Inject('AUTH_SERVICE') protected readonly authClient: ClientProxy,
     protected readonly spaceModules: SpaceModulesService,
@@ -20,9 +20,9 @@ export abstract class CustomersControllerBase {
     protected readonly orgEvents: OrgEventsService,
   ) {}
 
-
-  protected auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
+  /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
+  protected auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
+    return firstValueFrom(sendRpc(this.authClient, contract, payload));
   }
 
   /**
@@ -31,8 +31,13 @@ export abstract class CustomersControllerBase {
    * co-manager viewing the same client, and a new client never appeared on another
    * admin's list. Broadcast on success only — a refused mutation changed nothing.
    */
-  protected async authMutation(cmd: string, payload: any, organizationId: string, customerId?: string) {
-    const res = await this.auth(cmd, payload);
+  protected async authMutation<Req>(
+    contract: RpcContract<Req, unknown>,
+    payload: NoInfer<Req>,
+    organizationId: string,
+    customerId?: string,
+  ) {
+    const res = await this.auth(contract, payload);
     if (!res || res.success !== false) {
       this.orgEvents.customerChanged(organizationId, customerId ?? res?.data?.id ?? res?.id);
     }
@@ -56,7 +61,7 @@ export abstract class CustomersControllerBase {
    * customers.service's answer for org ∪ that workspace, never the org flag.
    */
   protected async managedCustomer(id: string, organizationId: string, caller: { userId: string; role: string }) {
-    const res: any = await this.auth('get_customer', { id, organizationId, caller });
+    const res: any = await this.auth(getCustomer, { id, organizationId, caller });
     const customer = res?.data ?? res;
     if (!customer?.id) throw new BadRequestException('Customer not found');
     if (!customer.crmCaps?.manage) throw new ForbiddenException('Not allowed to manage this client');

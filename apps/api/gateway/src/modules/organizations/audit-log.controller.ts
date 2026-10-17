@@ -19,6 +19,8 @@ import { isFeatureEntitled } from '../../common/entitlements';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import { sendRpc, auditLogList } from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 /** /organizations/audit-logs — who did what, when. */
 @ApiTags('organizations')
@@ -43,7 +45,8 @@ export class AuditLogController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get audit logs — org-wide (ADMIN) or per-entity (managers with canViewAllTasks)' })
   async getAuditLogs(
-    @Query() query: {
+    @Query()
+    query: {
       eventType?: string;
       userId?: string;
       resourceType?: string;
@@ -86,8 +89,8 @@ export class AuditLogController {
       );
     }
     return firstValueFrom(
-      this.authClient.send({ cmd: 'audit_log_list' }, {
-        organizationId: user.organizationId,
+      sendRpc(this.authClient, auditLogList, {
+        organizationId: callerOrgId(user),
         // Who is reading: a document's trail follows the document's own visibility.
         viewerId: user.id,
         eventType: query.eventType,

@@ -1,124 +1,30 @@
-export class GetEmployeeStatsDto {
-  id: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-}
+/**
+ * The technicians module's message shapes. They live with the message contracts
+ * (packages/shared/src/microservices/contracts/task-service-1-technicians-types.ts)
+ * so the gateway and this service read one definition; the old names stay here.
+ */
+import type {
+  GetEmployeeStatsMessage,
+  GetEmployeePerformanceMessage,
+  GetEmployeeTaskHistoryMessage,
+  SetScheduleMessage,
+  GetScheduleMessage,
+  RequestTimeOffMessage,
+  GetTimeOffMessage,
+  GetOrgTimeOffMessage,
+  ApproveTimeOffMessage,
+  CancelTimeOffMessage,
+  GetAvailabilityMessage,
+} from '@hbcfield/shared/microservices';
 
-export class GetEmployeePerformanceDto {
-  id: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  startDate?: string;
-  endDate?: string;
-}
-
-export class GetEmployeeTaskHistoryDto {
-  id: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  status?: string;
-  page?: number;
-  limit?: number;
-}
-
-// ===========================
-// Schedule DTOs
-// ===========================
-
-interface ScheduleEntryInput {
-  dayOfWeek: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
-  startTime: string; // "09:00"
-  endTime: string; // "17:00"
-  isActive?: boolean;
-  notes?: string;
-}
-
-export class SetScheduleDto {
-  technicianId: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  requesterId: string;
-  schedule: ScheduleEntryInput[];
-}
-
-export class GetScheduleDto {
-  technicianId: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-}
-
-// ===========================
-// Time-Off DTOs
-// ===========================
-
-export class RequestTimeOffDto {
-  /** Made on the phone: a request sent twice is still one request. */
-  id?: string;
-  technicianId: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  /** The request as sent — read ONLY through the shared `parseRequestInput` (requests/request-kinds.ts). */
-  kind?: string;
-  startDate: string; // ISO date string
-  endDate?: string; // ISO date string; absent = the start day
-  reason?: string;
-  type?: string;
-  spaceId?: string;
-  startTime?: string;
-  endTime?: string;
-  minutes?: number;
-}
-
-export class GetTimeOffDto {
-  technicianId: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
-}
-
-export class GetOrgTimeOffDto {
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
-  /** A window (YYYY-MM-DD, inclusive): leave touching it, plus every request still PENDING. */
-  from?: string;
-  to?: string;
-}
-
-export class ApproveTimeOffDto {
-  timeOffId: string;
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  approverId: string;
-  approved: boolean;
-  rejectionReason?: string;
-}
-
-export class CancelTimeOffDto {
-  timeOffId: string;
-  technicianId: string;
-}
-
-// ===========================
-// Availability DTOs
-// ===========================
-
-export class GetAvailabilityDto {
-  organizationId: string;
-  /** Spaces the caller may read; undefined = org-wide, [] = none. */
-  scopeSpaceIds?: string[];
-  date?: string; // Specific date (defaults to today)
-  startDate?: string; // For range query
-  endDate?: string; // For range query
-}
-
-// Backward-compatible aliases for internal message patterns
+export type GetEmployeeStatsDto = GetEmployeeStatsMessage;
+export type GetEmployeePerformanceDto = GetEmployeePerformanceMessage;
+export type GetEmployeeTaskHistoryDto = GetEmployeeTaskHistoryMessage;
+export type SetScheduleDto = SetScheduleMessage;
+export type GetScheduleDto = GetScheduleMessage;
+export type RequestTimeOffDto = RequestTimeOffMessage;
+export type GetTimeOffDto = GetTimeOffMessage;
+export type GetOrgTimeOffDto = GetOrgTimeOffMessage;
+export type ApproveTimeOffDto = ApproveTimeOffMessage;
+export type CancelTimeOffDto = CancelTimeOffMessage;
+export type GetAvailabilityDto = GetAvailabilityMessage;

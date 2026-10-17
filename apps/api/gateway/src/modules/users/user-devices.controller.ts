@@ -18,13 +18,19 @@ import { mkdir, writeFile, unlink } from 'fs/promises';
 import { SERVICE_NAMES, CurrentUser, CurrentUserData, AllowCustomer } from '@hbcfield/shared';
 import { StorageService } from '../../common/storage/storage.service';
 import { RegisterPushTokenDto } from './users.dto';
+import {
+  sendRpc,
+  updateAvatar,
+  removeAvatar,
+  registerPushToken,
+  removePushToken,
+} from '@hbcfield/shared/microservices';
 
 /** /users — the caller's own picture and the phones that receive their pushes. */
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
 export class UserDevicesController {
-
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
@@ -39,10 +45,7 @@ export class UserDevicesController {
   @ApiOperation({ summary: 'Upload avatar image (multipart/form-data)' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
-  async avatarUpload(
-    @CurrentUser() user: CurrentUserData,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async avatarUpload(@CurrentUser() user: CurrentUserData, @UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
@@ -75,11 +78,7 @@ export class UserDevicesController {
     const fileName = `${Date.now()}.${ext}`;
     let avatarUrl: string;
     if (this.storage.isConfigured) {
-      avatarUrl = await this.storage.uploadPublicImage(
-        `avatars/${user.id}/${fileName}`,
-        file.buffer,
-        file.mimetype,
-      );
+      avatarUrl = await this.storage.uploadPublicImage(`avatars/${user.id}/${fileName}`, file.buffer, file.mimetype);
     } else {
       const uploadDir = join(process.cwd(), 'uploads', 'avatars', user.id);
       await mkdir(uploadDir, { recursive: true });
@@ -88,12 +87,7 @@ export class UserDevicesController {
     }
 
     // Update user in database
-    await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'update_avatar' },
-        { userId: user.id, avatarUrl },
-      ),
-    );
+    await firstValueFrom(sendRpc(this.authClient, updateAvatar, { userId: user.id, avatarUrl }));
 
     return { success: true, data: { avatarUrl } };
   }
@@ -102,12 +96,7 @@ export class UserDevicesController {
   @ApiOperation({ summary: 'Remove avatar from user profile and local storage' })
   async avatarRemove(@CurrentUser() user: CurrentUserData) {
     // 1. Remove from DB and get old URL
-    const result: any = await firstValueFrom(
-      this.authClient.send(
-        { cmd: 'remove_avatar' },
-        { userId: user.id },
-      ),
-    );
+    const result: any = await firstValueFrom(sendRpc(this.authClient, removeAvatar, { userId: user.id }));
 
     // 2. Clean up the stored file, wherever it lives. Old avatars are still
     //    relative `/uploads/...` paths on disk; new ones are absolute S3 URLs.
@@ -134,36 +123,22 @@ export class UserDevicesController {
   @AllowCustomer() // portal customers register their device to get request-status pushes
   @ApiOperation({ summary: 'Register a push notification token for the current user' })
   @ApiBody({ type: RegisterPushTokenDto })
-  async registerPushToken(
-    @CurrentUser() user: CurrentUserData,
-    @Body() dto: RegisterPushTokenDto,
-  ) {
+  async registerPushToken(@CurrentUser() user: CurrentUserData, @Body() dto: RegisterPushTokenDto) {
     return firstValueFrom(
-      this.notificationClient.send(
-        { cmd: 'register_push_token' },
-        {
-          userId: user.id,
-          token: dto.token,
-          platform: dto.platform,
-          deviceId: dto.deviceId,
-          locale: dto.locale,
-        },
-      ),
+      sendRpc(this.notificationClient, registerPushToken, {
+        userId: user.id,
+        token: dto.token,
+        platform: dto.platform,
+        deviceId: dto.deviceId,
+        locale: dto.locale,
+      }),
     );
   }
 
   @Delete('push-token/:token')
   @AllowCustomer() // portal customers unregister their device on logout
   @ApiOperation({ summary: 'Remove a push notification token' })
-  async removePushToken(
-    @Param('token') token: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    return firstValueFrom(
-      this.notificationClient.send(
-        { cmd: 'remove_push_token' },
-        { token, userId: user.id },
-      ),
-    );
+  async removePushToken(@Param('token') token: string, @CurrentUser() user: CurrentUserData) {
+    return firstValueFrom(sendRpc(this.notificationClient, removePushToken, { token, userId: user.id }));
   }
 }

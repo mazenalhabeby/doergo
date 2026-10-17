@@ -5,6 +5,25 @@ import { BreakRulesService } from './break-rules.service';
 import { BreakStatusService } from './break-status.service';
 import { BreakReadService } from './break-read.service';
 import { OfficeBreaksService } from './office-breaks.service';
+import {
+  pattern,
+  type RpcRequest,
+  startBreak,
+  snoozeBreak,
+  listBreakRules,
+  createBreakRule,
+  updateBreakRule,
+  deleteBreakRule,
+  endBreak,
+  getBreakStatus,
+  getBreaksForEntry,
+  getActiveBreaks,
+  getBreakHistory,
+  addBreakForMember,
+  deleteBreak,
+  endBreakManually,
+  getBreakSummary,
+} from '@hbcfield/shared/microservices';
 
 /** Rests over RPC: taking one, the prompt, the rules, reading and correcting them. */
 @Controller()
@@ -21,26 +40,17 @@ export class BreaksRpcController {
   // BREAKS
   // =========================================================================
 
-  @MessagePattern({ cmd: 'start_break' })
+  @MessagePattern(pattern(startBreak))
   async startBreak(
     @Payload()
-    data: {
-      userId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      type?: string;
-      notes?: string;
-      /** The planned rest this satisfies; omitted = whichever is next. */
-      ruleId?: string;
-    },
+    data: RpcRequest<typeof startBreak>,
   ) {
     return this.breakService.startBreak(data);
   }
 
   /** "Later." Moves the rest out by its own interval; the COUNT is kept here. */
-  @MessagePattern({ cmd: 'snooze_break' })
-  async snoozeBreak(@Payload() data: { userId: string; organizationId: string; ruleId?: string }) {
+  @MessagePattern(pattern(snoozeBreak))
+  async snoozeBreak(@Payload() data: RpcRequest<typeof snoozeBreak>) {
     return this.breakStatus.snoozeBreak(data);
   }
 
@@ -48,145 +58,91 @@ export class BreaksRpcController {
   // REST RULES — the workspace's planned rests
   // =========================================================================
 
-  @MessagePattern({ cmd: 'list_break_rules' })
-  async listBreakRules(@Payload() data: { organizationId: string; spaceId?: string; shiftId?: string }) {
+  @MessagePattern(pattern(listBreakRules))
+  async listBreakRules(@Payload() data: RpcRequest<typeof listBreakRules>) {
     return this.breakRules.list(data);
   }
 
-  @MessagePattern({ cmd: 'create_break_rule' })
-  async createBreakRule(@Payload() data: any) {
+  @MessagePattern(pattern(createBreakRule))
+  async createBreakRule(@Payload() data: RpcRequest<typeof createBreakRule>) {
     return this.breakRules.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_break_rule' })
-  async updateBreakRule(@Payload() data: any) {
+  @MessagePattern(pattern(updateBreakRule))
+  async updateBreakRule(@Payload() data: RpcRequest<typeof updateBreakRule>) {
     return this.breakRules.update(data);
   }
 
-  @MessagePattern({ cmd: 'delete_break_rule' })
-  async deleteBreakRule(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+  @MessagePattern(pattern(deleteBreakRule))
+  async deleteBreakRule(@Payload() data: RpcRequest<typeof deleteBreakRule>) {
     return this.breakRules.remove(data);
   }
 
-  @MessagePattern({ cmd: 'end_break' })
+  @MessagePattern(pattern(endBreak))
   async endBreak(
     @Payload()
-    data: {
-      userId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      notes?: string;
-    },
+    data: RpcRequest<typeof endBreak>,
   ) {
     return this.breakService.endBreak(data);
   }
 
-  @MessagePattern({ cmd: 'get_break_status' })
+  @MessagePattern(pattern(getBreakStatus))
   async getBreakStatus(
     @Payload()
-    data: {
-      userId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-    },
+    data: RpcRequest<typeof getBreakStatus>,
   ) {
     return this.breakStatus.getBreakStatus(data);
   }
 
-  @MessagePattern({ cmd: 'get_breaks_for_entry' })
+  @MessagePattern(pattern(getBreaksForEntry))
   async getBreaksForEntry(
     @Payload()
-    data: {
-      timeEntryId: string;
-      organizationId: string;
-      requesterId: string;
-      /** Spaces the caller may read attendance in; null = org-wide, [] = none. */
-      scopeSpaceIds: string[] | null;
-    },
+    data: RpcRequest<typeof getBreaksForEntry>,
   ) {
     return this.breakRead.getBreaksForEntry(data);
   }
 
-  @MessagePattern({ cmd: 'get_active_breaks' })
+  @MessagePattern(pattern(getActiveBreaks))
   async getActiveBreaks(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-    },
+    data: RpcRequest<typeof getActiveBreaks>,
   ) {
     return this.breakRead.getActiveBreaks(data);
   }
 
-  @MessagePattern({ cmd: 'get_break_history' })
+  @MessagePattern(pattern(getBreakHistory))
   async getBreakHistory(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      date?: string;
-      userId?: string;
-      type?: string;
-      page?: number;
-      limit?: number;
-    },
+    data: RpcRequest<typeof getBreakHistory>,
   ) {
     return this.breakRead.getBreakHistory(data);
   }
 
-  @MessagePattern({ cmd: 'add_break_for_member' })
+  @MessagePattern(pattern(addBreakForMember))
   async addBreakForMember(
     @Payload()
-    data: {
-      timeEntryId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      editorId: string;
-      type?: any;
-      startedAt: string;
-      endedAt: string;
-      reason: string;
-    },
+    data: RpcRequest<typeof addBreakForMember>,
   ) {
     return this.officeBreaks.addBreakForMember(data);
   }
 
-  @MessagePattern({ cmd: 'delete_break' })
-  async deleteBreak(@Payload() data: { breakId: string; organizationId: string; editorId: string }) {
+  @MessagePattern(pattern(deleteBreak))
+  async deleteBreak(@Payload() data: RpcRequest<typeof deleteBreak>) {
     return this.officeBreaks.deleteBreak(data);
   }
 
-  @MessagePattern({ cmd: 'end_break_manually' })
+  @MessagePattern(pattern(endBreakManually))
   async endBreakManually(
     @Payload()
-    data: {
-      breakId: string;
-      adminId: string;
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      notes?: string;
-    },
+    data: RpcRequest<typeof endBreakManually>,
   ) {
     return this.breakStatus.endBreakManually(data);
   }
 
-  @MessagePattern({ cmd: 'get_break_summary' })
+  @MessagePattern(pattern(getBreakSummary))
   async getBreakSummary(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      startDate: string;
-      endDate: string;
-      userId?: string;
-    },
+    data: RpcRequest<typeof getBreakSummary>,
   ) {
     return this.breakRead.getBreakSummary(data);
   }

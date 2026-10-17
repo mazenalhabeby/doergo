@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { BaseGatewayService, SERVICE_NAMES } from '@hbcfield/shared';
+import { pattern, type RpcContract } from '@hbcfield/shared/microservices';
 
 /** The calendar in task-service. Reads retry on a transient failure; writes are sent once. */
 @Injectable()
@@ -9,11 +10,11 @@ export class CalendarGatewayService extends BaseGatewayService {
     super(taskClient, CalendarGatewayService.name);
   }
 
-  read(cmd: string, data: Record<string, unknown>) {
-    return this.send({ cmd }, data);
+  read<Req, Res>(contract: RpcContract<Req, Res>, data: Req) {
+    return this.send<Res>(pattern(contract), data);
   }
 
-  write(cmd: string, data: Record<string, unknown>) {
-    return this.sendOnce({ cmd }, data);
+  write<Req, Res>(contract: RpcContract<Req, Res>, data: Req) {
+    return this.sendOnce<Res>(pattern(contract), data);
   }
 }

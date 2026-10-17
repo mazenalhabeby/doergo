@@ -1,6 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AttendanceReportService } from './attendance-report.service';
+import {
+  pattern,
+  type RpcRequest,
+  getAttendanceSummary,
+  getWeeklyReport,
+  getMonthlyReport,
+  exportAttendanceCsv,
+} from '@hbcfield/shared/microservices';
 
 /** Attendance reports over RPC: summary, week, month, CSV. */
 @Controller()
@@ -11,61 +19,34 @@ export class AttendanceReportsRpcController {
   // REPORTS
   // =========================================================================
 
-  @MessagePattern({ cmd: 'get_attendance_summary' })
+  @MessagePattern(pattern(getAttendanceSummary))
   async getAttendanceSummary(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      userId?: string;
-      startDate: string;
-      endDate: string;
-    },
+    data: RpcRequest<typeof getAttendanceSummary>,
   ) {
     return this.reportService.getAttendanceSummary(data);
   }
 
-  @MessagePattern({ cmd: 'get_weekly_report' })
+  @MessagePattern(pattern(getWeeklyReport))
   async getWeeklyReport(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      userId?: string;
-      weekStartDate?: string;
-    },
+    data: RpcRequest<typeof getWeeklyReport>,
   ) {
     return this.reportService.getWeeklyReport(data);
   }
 
-  @MessagePattern({ cmd: 'get_monthly_report' })
+  @MessagePattern(pattern(getMonthlyReport))
   async getMonthlyReport(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      userId?: string;
-      year?: number;
-      month?: number;
-    },
+    data: RpcRequest<typeof getMonthlyReport>,
   ) {
     return this.reportService.getMonthlyReport(data);
   }
 
-  @MessagePattern({ cmd: 'export_attendance_csv' })
+  @MessagePattern(pattern(exportAttendanceCsv))
   async exportToCSV(
     @Payload()
-    data: {
-      organizationId: string;
-      /** Spaces the caller may act in; null = org-wide, [] = none. */
-      scopeSpaceIds?: string[] | null;
-      startDate: string;
-      endDate: string;
-      userId?: string;
-    },
+    data: RpcRequest<typeof exportAttendanceCsv>,
   ) {
     return this.reportService.exportToCSV(data);
   }

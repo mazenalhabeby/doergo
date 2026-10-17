@@ -5,6 +5,18 @@ import { StandInsService, type StandInCaller } from './stand-ins.service';
 import type { ApprovalRuleInput, RuleKind, StandInInput } from '@hbcfield/shared';
 import { ApprovalRulesService } from '../../common/approval-rules/approval-rules.service';
 import { ApprovalRulesAdminService } from '../../common/approval-rules/approval-rules-admin.service';
+import {
+  pattern,
+  type RpcRequest,
+  approvalRouteRpc,
+  standInsList,
+  standInsCreate,
+  standInsEnd,
+  approvalSteps,
+  approvalRulesList,
+  approvalRulesSave,
+  approvalRulesDelete,
+} from '@hbcfield/shared/microservices';
 
 /** The approvals inbox's people questions (the inbox itself lives in the gateway). */
 @Controller()
@@ -16,43 +28,43 @@ export class ApprovalsController {
     private readonly rulesAdmin: ApprovalRulesAdminService,
   ) {}
 
-  @MessagePattern({ cmd: 'approval_route' })
-  route(@Payload() data: ApprovalRouteInput) {
+  @MessagePattern(pattern(approvalRouteRpc))
+  route(@Payload() data: RpcRequest<typeof approvalRouteRpc>) {
     return this.routes.route(data);
   }
 
-  @MessagePattern({ cmd: 'stand_ins_list' })
-  listStandIns(@Payload() data: { caller: StandInCaller }) {
+  @MessagePattern(pattern(standInsList))
+  listStandIns(@Payload() data: RpcRequest<typeof standInsList>) {
     return this.standIns.list(data.caller);
   }
 
-  @MessagePattern({ cmd: 'stand_ins_create' })
-  createStandIn(@Payload() data: { caller: StandInCaller; input: StandInInput }) {
+  @MessagePattern(pattern(standInsCreate))
+  createStandIn(@Payload() data: RpcRequest<typeof standInsCreate>) {
     return this.standIns.create(data.caller, data.input);
   }
 
-  @MessagePattern({ cmd: 'stand_ins_end' })
-  endStandIn(@Payload() data: { caller: StandInCaller; id: string }) {
+  @MessagePattern(pattern(standInsEnd))
+  endStandIn(@Payload() data: RpcRequest<typeof standInsEnd>) {
     return this.standIns.end(data.caller, data.id);
   }
 
-  @MessagePattern({ cmd: 'approval_steps' })
-  steps(@Payload() data: { organizationId: string; items: Array<{ kind: RuleKind; itemId: string }> }) {
+  @MessagePattern(pattern(approvalSteps))
+  steps(@Payload() data: RpcRequest<typeof approvalSteps>) {
     return this.rules.steps(data.organizationId, data.items ?? []);
   }
 
-  @MessagePattern({ cmd: 'approval_rules_list' })
-  listRules(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(approvalRulesList))
+  listRules(@Payload() data: RpcRequest<typeof approvalRulesList>) {
     return this.rulesAdmin.listRules(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'approval_rules_save' })
-  saveRule(@Payload() data: { organizationId: string; userId: string; input: ApprovalRuleInput; id?: string }) {
+  @MessagePattern(pattern(approvalRulesSave))
+  saveRule(@Payload() data: RpcRequest<typeof approvalRulesSave>) {
     return this.rulesAdmin.saveRule(data.organizationId, data.userId, data.input, data.id);
   }
 
-  @MessagePattern({ cmd: 'approval_rules_delete' })
-  deleteRule(@Payload() data: { organizationId: string; id: string }) {
+  @MessagePattern(pattern(approvalRulesDelete))
+  deleteRule(@Payload() data: RpcRequest<typeof approvalRulesDelete>) {
     return this.rulesAdmin.deleteRule(data.organizationId, data.id);
   }
 }

@@ -1,6 +1,15 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  supportAddMessage,
+  supportCreate,
+  supportList,
+  supportMarkRead,
+  supportThread,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Gateway → task-service proxy for support. Support ops are synchronous
@@ -16,19 +25,19 @@ export class SupportService extends BaseGatewayService {
     super(taskClient, SupportService.name);
   }
 
-  createTicket(data: any) {
-    return this.sendOnce({ cmd: 'support.create' }, data);
+  createTicket(data: RpcRequest<typeof supportCreate>) {
+    return this.sendOnce(pattern(supportCreate), data);
   }
-  addMessage(data: any) {
-    return this.sendOnce({ cmd: 'support.addMessage' }, data);
+  addMessage(data: RpcRequest<typeof supportAddMessage>) {
+    return this.sendOnce(pattern(supportAddMessage), data);
   }
-  markRead(data: any) {
-    return this.send({ cmd: 'support.markRead' }, data);
+  markRead(data: RpcRequest<typeof supportMarkRead>) {
+    return this.send(pattern(supportMarkRead), data);
   }
-  list(data: any) {
-    return this.send({ cmd: 'support.list' }, data);
+  list(data: RpcRequest<typeof supportList>) {
+    return this.send(pattern(supportList), data);
   }
-  thread(data: any) {
-    return this.send({ cmd: 'support.thread' }, data);
+  thread(data: RpcRequest<typeof supportThread>) {
+    return this.send(pattern(supportThread), data);
   }
 }

@@ -19,6 +19,28 @@ import { SERVICE_NAMES, isAdmin } from '@hbcfield/shared';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { ReportAccessGuard, reportSpaceScope } from '../../common/guards/report-access.guard';
+import {
+  pattern,
+  analyticsCatalog,
+  analyticsCreateSaved,
+  analyticsCreateSchedule,
+  analyticsDeleteSaved,
+  analyticsDeleteSchedule,
+  analyticsListSaved,
+  analyticsListSchedules,
+  analyticsRun,
+  analyticsTimesheet,
+  analyticsUpdateSaved,
+  analyticsUpdateSchedule,
+  type ReportDefinitionMessage,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
+
+/*
+  ⚠️ Contract mismatch, kept as it is: the definition is the request body, unchecked
+  here — the service's query engine refuses an unknown dataset, dimension or measure.
+*/
+const definitionFromBody = (v: unknown) => v as ReportDefinitionMessage;
 
 /**
  * A scheduled delivery runs with NO reader — on a timer, mailed to addresses.
@@ -49,21 +71,20 @@ export class AnalyticsController {
   @Get('catalog')
   @ApiOperation({ summary: 'Report builder catalog: datasets (dimensions/measures) + templates' })
   async catalog() {
-    return firstValueFrom(this.taskClient.send({ cmd: 'analytics_catalog' }, {}));
+    return firstValueFrom(
+      this.taskClient.send(pattern(analyticsCatalog), {} satisfies RpcRequest<typeof analyticsCatalog>),
+    );
   }
 
   @Post('run')
   @ApiOperation({ summary: 'Run a report definition (always scoped to your organization)' })
   async run(@Body() body: { definition: unknown }, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_run' },
-        {
-          organizationId: req.user.organizationId,
-          definition: body?.definition,
-          scopeSpaceIds: reportSpaceScope(req.user),
-        },
-      ),
+      this.taskClient.send(pattern(analyticsRun), {
+        organizationId: req.user.organizationId,
+        definition: definitionFromBody(body?.definition),
+        scopeSpaceIds: reportSpaceScope(req.user),
+      } satisfies RpcRequest<typeof analyticsRun>),
     );
   }
 
@@ -76,16 +97,13 @@ export class AnalyticsController {
     @Query('to') to?: string,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_timesheet' },
-        {
-          organizationId: req.user.organizationId,
-          userId: typeof userId === 'string' ? userId : '',
-          from,
-          to,
-          scopeSpaceIds: reportSpaceScope(req.user),
-        },
-      ),
+      this.taskClient.send(pattern(analyticsTimesheet), {
+        organizationId: req.user.organizationId,
+        userId: typeof userId === 'string' ? userId : '',
+        from,
+        to,
+        scopeSpaceIds: reportSpaceScope(req.user),
+      } satisfies RpcRequest<typeof analyticsTimesheet>),
     );
   }
 
@@ -94,10 +112,10 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'List saved reports (org-shared + your own)' })
   async listSaved(@Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_list_saved' },
-        { organizationId: req.user.organizationId, userId: req.user.id },
-      ),
+      this.taskClient.send(pattern(analyticsListSaved), {
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+      } satisfies RpcRequest<typeof analyticsListSaved>),
     );
   }
 
@@ -109,17 +127,14 @@ export class AnalyticsController {
     @Request() req: any,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_create_saved' },
-        {
-          organizationId: req.user.organizationId,
-          userId: req.user.id,
-          name: body?.name,
-          description: body?.description,
-          config: body?.config,
-          isShared: body?.isShared,
-        },
-      ),
+      this.taskClient.send(pattern(analyticsCreateSaved), {
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        name: body?.name,
+        description: body?.description,
+        config: definitionFromBody(body?.config),
+        isShared: body?.isShared,
+      } satisfies RpcRequest<typeof analyticsCreateSaved>),
     );
   }
 
@@ -132,19 +147,16 @@ export class AnalyticsController {
     @Request() req: any,
   ) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_update_saved' },
-        {
-          id,
-          organizationId: req.user.organizationId,
-          userId: req.user.id,
-          isAdmin: isAdmin(req.user),
-          name: body?.name,
-          description: body?.description,
-          config: body?.config,
-          isShared: body?.isShared,
-        },
-      ),
+      this.taskClient.send(pattern(analyticsUpdateSaved), {
+        id,
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        isAdmin: isAdmin(req.user),
+        name: body?.name,
+        description: body?.description,
+        config: definitionFromBody(body?.config),
+        isShared: body?.isShared,
+      } satisfies RpcRequest<typeof analyticsUpdateSaved>),
     );
   }
 
@@ -153,10 +165,12 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Delete a saved report (Pro+)' })
   async deleteSaved(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_delete_saved' },
-        { id, organizationId: req.user.organizationId, userId: req.user.id, isAdmin: isAdmin(req.user) },
-      ),
+      this.taskClient.send(pattern(analyticsDeleteSaved), {
+        id,
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+        isAdmin: isAdmin(req.user),
+      } satisfies RpcRequest<typeof analyticsDeleteSaved>),
     );
   }
 
@@ -165,10 +179,10 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'List report delivery schedules' })
   async listSchedules(@Request() req: any, @Query('reportId') reportId?: string) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_list_schedules' },
-        { organizationId: req.user.organizationId, reportDefinitionId: reportId },
-      ),
+      this.taskClient.send(pattern(analyticsListSchedules), {
+        organizationId: req.user.organizationId,
+        reportDefinitionId: reportId,
+      } satisfies RpcRequest<typeof analyticsListSchedules>),
     );
   }
 
@@ -178,10 +192,11 @@ export class AnalyticsController {
   async createSchedule(@Body() body: any, @Request() req: any) {
     assertOrgWideReports(req);
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_create_schedule' },
-        { ...body, organizationId: req.user.organizationId, userId: req.user.id },
-      ),
+      this.taskClient.send(pattern(analyticsCreateSchedule), {
+        ...body,
+        organizationId: req.user.organizationId,
+        userId: req.user.id,
+      } satisfies RpcRequest<typeof analyticsCreateSchedule>),
     );
   }
 
@@ -191,10 +206,11 @@ export class AnalyticsController {
   async updateSchedule(@Param('id') id: string, @Body() body: any, @Request() req: any) {
     assertOrgWideReports(req);
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'analytics_update_schedule' },
-        { ...body, id, organizationId: req.user.organizationId },
-      ),
+      this.taskClient.send(pattern(analyticsUpdateSchedule), {
+        ...body,
+        id,
+        organizationId: req.user.organizationId,
+      } satisfies RpcRequest<typeof analyticsUpdateSchedule>),
     );
   }
 
@@ -204,7 +220,10 @@ export class AnalyticsController {
   async deleteSchedule(@Param('id') id: string, @Request() req: any) {
     assertOrgWideReports(req);
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'analytics_delete_schedule' }, { id, organizationId: req.user.organizationId }),
+      this.taskClient.send(pattern(analyticsDeleteSchedule), {
+        id,
+        organizationId: req.user.organizationId,
+      } satisfies RpcRequest<typeof analyticsDeleteSchedule>),
     );
   }
 }

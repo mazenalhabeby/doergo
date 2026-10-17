@@ -11,6 +11,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
+import { callerOrgId } from '../../common/caller-org';
+import {
+  sendRpc,
+  getTechniciansAvailability,
+  getRequestOptions,
+  requestPrecheck,
+  getFloorNow,
+  getCoverRange,
+} from '@hbcfield/shared/microservices';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -66,17 +75,15 @@ export class EmployeeCoverController {
     }
 
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_technicians_availability' },
-        {
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
-          organizationId: user?.organizationId,
-          date,
-          startDate,
-          endDate,
-        },
-      ),
+      sendRpc(this.taskClient, getTechniciansAvailability, {
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
+        // `user` is optional only because it follows optional query params; the route is authenticated.
+        organizationId: callerOrgId(user!),
+        date,
+        startDate,
+        endDate,
+      }),
     );
   }
 
@@ -92,7 +99,7 @@ export class EmployeeCoverController {
   async getRequestOptions(@CurrentUser() user: CurrentUserData) {
     // Only the caller's own options: the ids come from the token, never the request.
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'get_request_options' }, { userId: user.id, organizationId: user.organizationId }),
+      sendRpc(this.taskClient, getRequestOptions, { userId: user.id, organizationId: callerOrgId(user) }),
     );
   }
 
@@ -105,7 +112,7 @@ export class EmployeeCoverController {
   async precheckRequest(@CurrentUser() user: CurrentUserData, @Body() body: Record<string, unknown>) {
     // Only the caller's own request: the person comes from the token, the body is read by the same parser as sending.
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'request_precheck' }, { userId: user.id, organizationId: user.organizationId, body }),
+      sendRpc(this.taskClient, requestPrecheck, { userId: user.id, organizationId: callerOrgId(user), body }),
     );
   }
 
@@ -123,14 +130,11 @@ export class EmployeeCoverController {
   @RequirePermissionInSpace('canViewSpaceAttendance')
   async getFloorNow(@CurrentUser() user?: CurrentUserData) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_floor_now' },
-        {
-          organizationId: user?.organizationId,
-          // undefined = org-wide; [] = granted nowhere and matches nothing.
-          scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
-        },
-      ),
+      sendRpc(this.taskClient, getFloorNow, {
+        organizationId: callerOrgId(user!),
+        // undefined = org-wide; [] = granted nowhere and matches nothing.
+        scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
+      }),
     );
   }
 
@@ -156,15 +160,12 @@ export class EmployeeCoverController {
       throw new BadRequestException('start and end must be dates (YYYY-MM-DD), and end must not be before start');
     }
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'get_cover_range' },
-        {
-          organizationId: user?.organizationId,
-          start,
-          end,
-          scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
-        },
-      ),
+      sendRpc(this.taskClient, getCoverRange, {
+        organizationId: callerOrgId(user!),
+        start,
+        end,
+        scopeSpaceIds: scopeIdsFor(user, 'canViewSpaceAttendance'),
+      }),
     );
   }
 }

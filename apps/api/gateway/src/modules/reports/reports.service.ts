@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import { pattern, getAssetReports, getTaskReport, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /**
  * Service for direct microservice communication with task-service for Reports
@@ -13,9 +14,7 @@ import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
  */
 @Injectable()
 export class ReportsService extends BaseGatewayService {
-  constructor(
-    @Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy,
-  ) {
+  constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, ReportsService.name);
   }
 
@@ -34,7 +33,7 @@ export class ReportsService extends BaseGatewayService {
     organizationId: string;
   }) {
     this.logger.debug(`Getting report for task ${data.taskId} via direct microservice call`);
-    return this.send({ cmd: 'get_task_report' }, data);
+    return this.send(pattern(getTaskReport), data satisfies RpcRequest<typeof getTaskReport>);
   }
 
   /**
@@ -52,6 +51,6 @@ export class ReportsService extends BaseGatewayService {
     organizationId: string;
   }) {
     this.logger.debug(`Getting reports for asset ${data.assetId} via direct microservice call`);
-    return this.send({ cmd: 'get_asset_reports' }, data);
+    return this.send(pattern(getAssetReports), data satisfies RpcRequest<typeof getAssetReports>);
   }
 }

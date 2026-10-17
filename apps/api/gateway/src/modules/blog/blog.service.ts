@@ -1,6 +1,16 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  blogListPublished,
+  blogGetBySlug,
+  blogImageGet,
+  blogListAll,
+  blogCreate,
+  blogUpdate,
+  blogDelete,
+  blogImageSave,
+} from '@hbcfield/shared/microservices';
 
 /** Gateway → auth-service proxy for the public marketing blog. */
 @Injectable()
@@ -10,14 +20,30 @@ export class BlogGatewayService extends BaseGatewayService {
   }
 
   // Public reads
-  listPublished() { return this.send({ cmd: 'blog_list_published' }, {}); }
-  getBySlug(slug: string) { return this.send({ cmd: 'blog_get_by_slug' }, { slug }); }
-  getImage(id: string) { return this.send({ cmd: 'blog_image_get' }, { id }); }
+  listPublished() {
+    return this.call(blogListPublished, {});
+  }
+  getBySlug(slug: string) {
+    return this.call(blogGetBySlug, { slug });
+  }
+  getImage(id: string) {
+    return this.call(blogImageGet, { id });
+  }
 
   // Platform-key-guarded writes
-  listAll() { return this.send({ cmd: 'blog_list_all' }, {}); }
-  create(data: any) { return this.send({ cmd: 'blog_create' }, data); }
-  update(data: any) { return this.send({ cmd: 'blog_update' }, data); }
-  remove(id: string) { return this.send({ cmd: 'blog_delete' }, { id }); }
-  saveImage(data: any) { return this.send({ cmd: 'blog_image_save' }, data); }
+  listAll() {
+    return this.call(blogListAll, {});
+  }
+  create(data: any) {
+    return this.call(blogCreate, data);
+  }
+  update(data: any) {
+    return this.call(blogUpdate, data);
+  }
+  remove(id: string) {
+    return this.call(blogDelete, { id });
+  }
+  saveImage(data: any) {
+    return this.call(blogImageSave, data);
+  }
 }

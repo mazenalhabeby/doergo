@@ -1,32 +1,39 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcRequest,
+  getActiveOvertime,
+  getPendingOvertimeApprovals,
+  getOvertimeHistory,
+  getOvertimeSummary,
+  getOvertimeRound,
+} from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class OvertimeGatewayService extends BaseGatewayService {
-  constructor(
-    @Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy,
-  ) {
+  constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, OvertimeGatewayService.name);
   }
 
-  async getActive(data: { userId: string }) {
-    return this.send({ cmd: 'get_active_overtime' }, data);
+  async getActive(data: RpcRequest<typeof getActiveOvertime>) {
+    return this.send(pattern(getActiveOvertime), data);
   }
 
-  async getPendingApprovals(data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
-    return this.send({ cmd: 'get_pending_overtime_approvals' }, data);
+  async getPendingApprovals(data: RpcRequest<typeof getPendingOvertimeApprovals>) {
+    return this.send(pattern(getPendingOvertimeApprovals), data);
   }
 
-  async getHistory(data: any) {
-    return this.send({ cmd: 'get_overtime_history' }, data);
+  async getHistory(data: RpcRequest<typeof getOvertimeHistory>) {
+    return this.send(pattern(getOvertimeHistory), data);
   }
 
-  async getSummary(data: any) {
-    return this.send({ cmd: 'get_overtime_summary' }, data);
+  async getSummary(data: RpcRequest<typeof getOvertimeSummary>) {
+    return this.send(pattern(getOvertimeSummary), data);
   }
 
-  async getRound(data: any) {
-    return this.send({ cmd: 'get_overtime_round' }, data);
+  async getRound(data: RpcRequest<typeof getOvertimeRound>) {
+    return this.send(pattern(getOvertimeRound), data);
   }
 }

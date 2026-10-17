@@ -4,6 +4,15 @@ import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformSupportService } from './platform-support.service';
+import type { RpcRequest, supportInbox, supportAddMessage, supportSetStatus } from '@hbcfield/shared/microservices';
+
+/*
+  ⚠️ Contract mismatches, kept as they are — the handler declares narrower types than arrive:
+  the inbox `view` and a ticket `status` are the client's raw strings (or absent), the agent id
+  may be null, and a reply's body may be absent. The task-service decides what each one means.
+*/
+type Wire<C, K extends keyof RpcRequest<C>> = RpcRequest<C>[K];
+const asWire = <C, K extends keyof RpcRequest<C>>(v: unknown) => v as Wire<C, K>;
 
 /**
  * The caller's support scope, resolved from the VERIFIED platform session
@@ -53,12 +62,12 @@ export class PlatformSupportController {
         status,
         tier,
         atRisk: atRisk === 'true',
-        view,
+        view: asWire<typeof supportInbox, 'view'>(view),
         page: page ? Number(page) : 1,
         limit: limit ? Number(limit) : 50,
         isSupervisor: scope.isSupervisor,
         teamIds: scope.teamIds,
-        agentId: scope.platformUserId,
+        agentId: asWire<typeof supportInbox, 'agentId'>(scope.platformUserId),
       }),
     );
   }
@@ -78,9 +87,9 @@ export class PlatformSupportController {
     return this.unwrap(
       await this.svc.reply({
         ticketId: id,
-        authorId: scope.platformUserId,
+        authorId: asWire<typeof supportAddMessage, 'authorId'>(scope.platformUserId),
         authorType: 'AGENT',
-        body: body?.body,
+        body: asWire<typeof supportAddMessage, 'body'>(body?.body),
         attachments: body?.attachments,
         isInternalNote: !!body?.isInternalNote,
         asAgent: true,
@@ -91,7 +100,8 @@ export class PlatformSupportController {
 
   @Post('tickets/:id/status')
   async status(@Param('id') id: string, @Body() body: { status?: string }, @Request() req: any) {
-    return this.unwrap(await this.svc.setStatus({ ticketId: id, status: body?.status, scope: supportScopeOf(req) }));
+    const status = asWire<typeof supportSetStatus, 'status'>(body?.status);
+    return this.unwrap(await this.svc.setStatus({ ticketId: id, status, scope: supportScopeOf(req) }));
   }
 
   @Post('tickets/:id/assign')

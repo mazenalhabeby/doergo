@@ -1,17 +1,9 @@
 import { type AssetActor } from './asset-access.service';
 import { AssetCustodyService } from './asset-custody.service';
+import type { ContractFieldsMessage } from '@hbcfield/shared/microservices';
 
 /** What a client sends: the reading, after a person has corrected it. */
-export interface ContractFields {
-  name?: string;
-  registration?: string;
-  vin?: string;
-  serial?: string;
-  manufacturer?: string;
-  model?: string;
-  startsOn?: string;
-  endsOn?: string;
-}
+export type ContractFields = ContractFieldsMessage;
 
 type Db = Parameters<AssetCustodyService['apply']>[0];
 

@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { PricingService } from './platform-pricing.service';
 
+import { pattern, platformPricingList } from '@hbcfield/shared/microservices';
 /**
  * One handler. The price book used to have seven — draft, edit a seat, add a
  * module price, delete one, publish — because prices lived in a database table
@@ -11,6 +12,8 @@ import { PricingService } from './platform-pricing.service';
 export class PlatformPricingController {
   constructor(private readonly svc: PricingService) {}
 
-  @MessagePattern({ cmd: 'platform_pricing_list' })
-  list() { return this.svc.getPriceList(); }
+  @MessagePattern(pattern(platformPricingList))
+  list() {
+    return this.svc.getPriceList();
+  }
 }

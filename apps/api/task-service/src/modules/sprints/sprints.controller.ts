@@ -1,5 +1,18 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  completeSprint,
+  createSprint,
+  deleteSprint,
+  findAllSprints,
+  findSprint,
+  getSprintReport,
+  getVelocity,
+  startSprint,
+  updateSprint,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { SprintsService } from './sprints.service';
 import { SprintReportsService } from './sprint-reports.service';
 
@@ -16,48 +29,48 @@ export class SprintsController {
     private readonly sprintReports: SprintReportsService,
   ) {}
 
-  @MessagePattern({ cmd: 'find_all_sprints' })
-  async findAll(@Payload() data: { organizationId: string; status?: string }) {
+  @MessagePattern(pattern(findAllSprints))
+  async findAll(@Payload() data: RpcRequest<typeof findAllSprints>) {
     return this.sprintsService.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'find_sprint' })
-  async findOne(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findSprint))
+  async findOne(@Payload() data: RpcRequest<typeof findSprint>) {
     return this.sprintsService.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'create_sprint' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createSprint))
+  async create(@Payload() data: RpcRequest<typeof createSprint>) {
     return this.sprintsService.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_sprint' })
-  async update(@Payload() data: any) {
+  @MessagePattern(pattern(updateSprint))
+  async update(@Payload() data: RpcRequest<typeof updateSprint>) {
     return this.sprintsService.update(data);
   }
 
-  @MessagePattern({ cmd: 'start_sprint' })
-  async start(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(startSprint))
+  async start(@Payload() data: RpcRequest<typeof startSprint>) {
     return this.sprintsService.start(data);
   }
 
-  @MessagePattern({ cmd: 'complete_sprint' })
-  async complete(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(completeSprint))
+  async complete(@Payload() data: RpcRequest<typeof completeSprint>) {
     return this.sprintsService.complete(data);
   }
 
-  @MessagePattern({ cmd: 'delete_sprint' })
-  async remove(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteSprint))
+  async remove(@Payload() data: RpcRequest<typeof deleteSprint>) {
     return this.sprintsService.remove(data);
   }
 
-  @MessagePattern({ cmd: 'get_sprint_report' })
-  async getReport(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(getSprintReport))
+  async getReport(@Payload() data: RpcRequest<typeof getSprintReport>) {
     return this.sprintReports.getReport(data);
   }
 
-  @MessagePattern({ cmd: 'get_velocity' })
-  async getVelocity(@Payload() data: { organizationId: string; limit?: number }) {
+  @MessagePattern(pattern(getVelocity))
+  async getVelocity(@Payload() data: RpcRequest<typeof getVelocity>) {
     return this.sprintReports.getVelocity(data);
   }
 }

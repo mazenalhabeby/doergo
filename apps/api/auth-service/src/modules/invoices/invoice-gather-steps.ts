@@ -12,17 +12,12 @@ import {
 } from '@hbcfield/shared';
 import { jobHours } from './work-source';
 import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { InvoiceGatherMessage } from '@hbcfield/shared/microservices';
 
 /** The steps of `InvoiceGatherService.gather`, in the order it runs them. */
 
-export interface GatherInput {
-  organizationId: string;
-  spaceId?: string;
-  customerId?: string;
-  /** Service period — inclusive, `YYYY-MM-DD`. Either end may be omitted. */
-  from?: string;
-  to?: string;
-}
+/** The message contract's type (shared with the gateway). */
+export type GatherInput = InvoiceGatherMessage;
 
 export interface GatherRefusal {
   success: false;

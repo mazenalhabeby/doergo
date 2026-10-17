@@ -1,5 +1,29 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  chatAddMembers,
+  chatBadge,
+  chatCapabilities,
+  chatContacts,
+  chatCreateGroup,
+  chatEdit,
+  chatHistory,
+  chatLeaveGroup,
+  chatListConversations,
+  chatMarkRead,
+  chatMute,
+  chatOpenDirect,
+  chatOpenTask,
+  chatPresignAttachment,
+  chatReachableIds,
+  chatRemove,
+  chatRemoveMember,
+  chatRenameGroup,
+  chatSearch,
+  chatSend,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { ChatService } from './chat.service';
 import { ChatEditService } from './chat-edit.service';
 import { ChatReachService } from './chat-reach.service';
@@ -20,103 +44,103 @@ export class ChatController {
     private readonly searcher: ChatSearchService,
   ) {}
 
-  @MessagePattern({ cmd: 'chat.contacts' })
-  contacts(@Payload() data: any) {
+  @MessagePattern(pattern(chatContacts))
+  contacts(@Payload() data: RpcRequest<typeof chatContacts>) {
     return this.chat.listContacts(data);
   }
 
-  @MessagePattern({ cmd: 'chat.openDirect' })
-  openDirect(@Payload() data: any) {
+  @MessagePattern(pattern(chatOpenDirect))
+  openDirect(@Payload() data: RpcRequest<typeof chatOpenDirect>) {
     return this.chat.openDirect(data);
   }
 
-  @MessagePattern({ cmd: 'chat.listConversations' })
-  list(@Payload() data: any) {
+  @MessagePattern(pattern(chatListConversations))
+  list(@Payload() data: RpcRequest<typeof chatListConversations>) {
     return this.chat.listConversations(data);
   }
 
-  @MessagePattern({ cmd: 'chat.history' })
-  history(@Payload() data: any) {
+  @MessagePattern(pattern(chatHistory))
+  history(@Payload() data: RpcRequest<typeof chatHistory>) {
     return this.messages.history(data);
   }
 
-  @MessagePattern({ cmd: 'chat.send' })
-  send(@Payload() data: any) {
+  @MessagePattern(pattern(chatSend))
+  send(@Payload() data: RpcRequest<typeof chatSend>) {
     return this.messages.sendMessage(data);
   }
 
-  @MessagePattern({ cmd: 'chat.badge' })
-  badge(@Payload() data: any) {
+  @MessagePattern(pattern(chatBadge))
+  badge(@Payload() data: RpcRequest<typeof chatBadge>) {
     return this.chat.badge(data);
   }
 
-  @MessagePattern({ cmd: 'chat.markRead' })
-  markRead(@Payload() data: any) {
+  @MessagePattern(pattern(chatMarkRead))
+  markRead(@Payload() data: RpcRequest<typeof chatMarkRead>) {
     return this.messages.markRead(data);
   }
 
-  @MessagePattern({ cmd: 'chat.mute' })
-  mute(@Payload() data: any) {
+  @MessagePattern(pattern(chatMute))
+  mute(@Payload() data: RpcRequest<typeof chatMute>) {
     return this.messages.mute(data);
   }
 
-  @MessagePattern({ cmd: 'chat.edit' })
-  edit(@Payload() data: any) {
+  @MessagePattern(pattern(chatEdit))
+  edit(@Payload() data: RpcRequest<typeof chatEdit>) {
     return this.edits.edit(data);
   }
 
-  @MessagePattern({ cmd: 'chat.remove' })
-  remove(@Payload() data: any) {
+  @MessagePattern(pattern(chatRemove))
+  remove(@Payload() data: RpcRequest<typeof chatRemove>) {
     return this.edits.remove(data);
   }
 
-  @MessagePattern({ cmd: 'chat.presignAttachment' })
-  presignAttachment(@Payload() data: any) {
+  @MessagePattern(pattern(chatPresignAttachment))
+  presignAttachment(@Payload() data: RpcRequest<typeof chatPresignAttachment>) {
     return this.messages.presignAttachment(data);
   }
 
-  @MessagePattern({ cmd: 'chat.capabilities' })
-  async capabilities(@Payload() data: { userId: string }) {
+  @MessagePattern(pattern(chatCapabilities))
+  async capabilities(@Payload() data: RpcRequest<typeof chatCapabilities>) {
     return { success: true, data: { mayCreateGroup: await this.reach.mayCreateGroup(data.userId) } };
   }
 
-  @MessagePattern({ cmd: 'chat.createGroup' })
-  createGroup(@Payload() data: any) {
+  @MessagePattern(pattern(chatCreateGroup))
+  createGroup(@Payload() data: RpcRequest<typeof chatCreateGroup>) {
     return this.groups.create(data);
   }
 
-  @MessagePattern({ cmd: 'chat.renameGroup' })
-  renameGroup(@Payload() data: any) {
+  @MessagePattern(pattern(chatRenameGroup))
+  renameGroup(@Payload() data: RpcRequest<typeof chatRenameGroup>) {
     return this.groups.rename(data);
   }
 
-  @MessagePattern({ cmd: 'chat.addMembers' })
-  addMembers(@Payload() data: any) {
+  @MessagePattern(pattern(chatAddMembers))
+  addMembers(@Payload() data: RpcRequest<typeof chatAddMembers>) {
     return this.groups.addMembers(data);
   }
 
-  @MessagePattern({ cmd: 'chat.removeMember' })
-  removeMember(@Payload() data: any) {
+  @MessagePattern(pattern(chatRemoveMember))
+  removeMember(@Payload() data: RpcRequest<typeof chatRemoveMember>) {
     return this.groups.removeMember(data);
   }
 
-  @MessagePattern({ cmd: 'chat.leaveGroup' })
-  leaveGroup(@Payload() data: any) {
+  @MessagePattern(pattern(chatLeaveGroup))
+  leaveGroup(@Payload() data: RpcRequest<typeof chatLeaveGroup>) {
     return this.groups.leave(data);
   }
 
-  @MessagePattern({ cmd: 'chat.openTask' })
-  openTask(@Payload() data: any) {
+  @MessagePattern(pattern(chatOpenTask))
+  openTask(@Payload() data: RpcRequest<typeof chatOpenTask>) {
     return this.tasks.open(data);
   }
 
-  @MessagePattern({ cmd: 'chat.search' })
-  search(@Payload() data: any) {
+  @MessagePattern(pattern(chatSearch))
+  search(@Payload() data: RpcRequest<typeof chatSearch>) {
     return this.searcher.search(data);
   }
 
-  @MessagePattern({ cmd: 'chat.reachableIds' })
-  reachableIds(@Payload() data: any) {
+  @MessagePattern(pattern(chatReachableIds))
+  reachableIds(@Payload() data: RpcRequest<typeof chatReachableIds>) {
     return this.reach.reachableIds(data);
   }
 }

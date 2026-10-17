@@ -1,7 +1,34 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { SERVICE_NAMES, BaseGatewayService, type PermissionSet, type BillByValue, type RoleKindValue } from '@hbcfield/shared';
+import {
+  SERVICE_NAMES,
+  BaseGatewayService,
+  type PermissionSet,
+  type BillByValue,
+  type RoleKindValue,
+} from '@hbcfield/shared';
 import type { SpaceMemberAuthority } from './space-member-access';
+import {
+  pattern,
+  assignSpaceMember,
+  createSpaceRole,
+  deleteSpaceRole,
+  getSpaceMemberPermissions,
+  listRateHistory,
+  listSpaceMembers,
+  listSpaceRoles,
+  listSpaceRolesInSpace,
+  mergeSpaceRole,
+  removeSpaceMember,
+  setSpaceMemberPermissions,
+  setSpaceRoleDayRate,
+  setWorkRoleHere,
+  updateSpaceMemberRate,
+  updateSpaceMemberRoles,
+  updateSpaceMemberRouting,
+  updateSpaceRole,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class SpaceRolesService extends BaseGatewayService {
@@ -11,7 +38,7 @@ export class SpaceRolesService extends BaseGatewayService {
 
   // Roles
   listRoles(data: { organizationId: string }) {
-    return this.send({ cmd: 'list_space_roles' }, data);
+    return this.send(pattern(listSpaceRoles), data satisfies RpcRequest<typeof listSpaceRoles>);
   }
   createRole(data: {
     organizationId: string;
@@ -22,7 +49,7 @@ export class SpaceRolesService extends BaseGatewayService {
     kind?: RoleKindValue;
     spaceId?: string;
   }) {
-    return this.send({ cmd: 'create_space_role' }, data);
+    return this.send(pattern(createSpaceRole), data satisfies RpcRequest<typeof createSpaceRole>);
   }
   updateRole(data: {
     organizationId: string;
@@ -36,23 +63,23 @@ export class SpaceRolesService extends BaseGatewayService {
     /** Ceiling for what the caller may author. Null = admin, no ceiling. */
     requesterPerms?: PermissionSet | null;
   }) {
-    return this.send({ cmd: 'update_space_role' }, data);
+    return this.send(pattern(updateSpaceRole), data satisfies RpcRequest<typeof updateSpaceRole>);
   }
   setWorkRoleHere(data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
-    return this.send({ cmd: 'set_work_role_here' }, data);
+    return this.send(pattern(setWorkRoleHere), data satisfies RpcRequest<typeof setWorkRoleHere>);
   }
 
   mergeRole(data: { organizationId: string; roleId: string; intoRoleId: string }) {
-    return this.send({ cmd: 'merge_space_role' }, data);
+    return this.send(pattern(mergeSpaceRole), data satisfies RpcRequest<typeof mergeSpaceRole>);
   }
 
   deleteRole(data: { organizationId: string; roleId: string }) {
-    return this.send({ cmd: 'delete_space_role' }, data);
+    return this.send(pattern(deleteSpaceRole), data satisfies RpcRequest<typeof deleteSpaceRole>);
   }
 
   // Members
   listMembers(data: { organizationId: string; spaceId: string }) {
-    return this.send({ cmd: 'list_space_members' }, data);
+    return this.send(pattern(listSpaceMembers), data satisfies RpcRequest<typeof listSpaceMembers>);
   }
   assignMember(data: {
     organizationId: string;
@@ -65,15 +92,25 @@ export class SpaceRolesService extends BaseGatewayService {
     authority?: SpaceMemberAuthority;
     outrankCheck?: boolean;
   }) {
-    return this.send({ cmd: 'assign_space_member' }, data);
+    return this.send(pattern(assignSpaceMember), data satisfies RpcRequest<typeof assignSpaceMember>);
   }
-  removeMember(data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null }) {
-    return this.send({ cmd: 'remove_space_member' }, data);
+  removeMember(data: {
+    organizationId: string;
+    spaceId: string;
+    memberId: string;
+    outrankPerms?: PermissionSet | null;
+  }) {
+    return this.send(pattern(removeSpaceMember), data satisfies RpcRequest<typeof removeSpaceMember>);
   }
 
   /** One person's permissions here, as the builder shows them. */
-  getMemberPermissions(data: { organizationId: string; spaceId: string; assignmentId: string; requesterPerms: PermissionSet | null }) {
-    return this.send({ cmd: 'get_space_member_permissions' }, data);
+  getMemberPermissions(data: {
+    organizationId: string;
+    spaceId: string;
+    assignmentId: string;
+    requesterPerms: PermissionSet | null;
+  }) {
+    return this.send(pattern(getSpaceMemberPermissions), data satisfies RpcRequest<typeof getSpaceMemberPermissions>);
   }
 
   /** Save one person's permissions here: a shared role, or a set of keys (their personal role). */
@@ -86,7 +123,7 @@ export class SpaceRolesService extends BaseGatewayService {
     requesterId: string;
     outrankCheck: boolean;
   }) {
-    return this.send({ cmd: 'set_space_member_permissions' }, data);
+    return this.send(pattern(setSpaceMemberPermissions), data satisfies RpcRequest<typeof setSpaceMemberPermissions>);
   }
   updateMemberRouting(data: {
     organizationId: string;
@@ -99,7 +136,7 @@ export class SpaceRolesService extends BaseGatewayService {
     approveRoleIds?: string[];
     approveUserIds?: string[];
   }) {
-    return this.send({ cmd: 'update_space_member_routing' }, data);
+    return this.send(pattern(updateSpaceMemberRouting), data satisfies RpcRequest<typeof updateSpaceMemberRouting>);
   }
 
   /** What this member is billed at for THIS client — the top rung of the ladder. */
@@ -113,11 +150,11 @@ export class SpaceRolesService extends BaseGatewayService {
     effectiveFrom?: string;
     createdById?: string;
   }) {
-    return this.send({ cmd: 'update_space_member_rate' }, data);
+    return this.send(pattern(updateSpaceMemberRate), data satisfies RpcRequest<typeof updateSpaceMemberRate>);
   }
 
   listSpaceRoles(data: { organizationId: string; spaceId: string }) {
-    return this.send({ cmd: 'list_space_roles_in_space' }, data);
+    return this.send(pattern(listSpaceRolesInSpace), data satisfies RpcRequest<typeof listSpaceRolesInSpace>);
   }
 
   setRoleDayRate(data: {
@@ -129,7 +166,7 @@ export class SpaceRolesService extends BaseGatewayService {
     effectiveFrom?: string;
     createdById?: string;
   }) {
-    return this.send({ cmd: 'set_space_role_day_rate' }, data);
+    return this.send(pattern(setSpaceRoleDayRate), data satisfies RpcRequest<typeof setSpaceRoleDayRate>);
   }
 
   listRateHistory(data: {
@@ -139,7 +176,7 @@ export class SpaceRolesService extends BaseGatewayService {
     spaceId?: string;
     kinds: Array<'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY'>;
   }) {
-    return this.send({ cmd: 'list_rate_history' }, data);
+    return this.send(pattern(listRateHistory), data satisfies RpcRequest<typeof listRateHistory>);
   }
 
   updateMemberRoles(data: {
@@ -155,6 +192,6 @@ export class SpaceRolesService extends BaseGatewayService {
     authority?: SpaceMemberAuthority;
     outrankCheck?: boolean;
   }) {
-    return this.send({ cmd: 'update_space_member_roles' }, data);
+    return this.send(pattern(updateSpaceMemberRoles), data satisfies RpcRequest<typeof updateSpaceMemberRoles>);
   }
 }

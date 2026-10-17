@@ -15,13 +15,9 @@ import {
   type StandInsResponse,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import type { StandInCaller as SharedStandInCaller } from '@hbcfield/shared/microservices';
 
-export interface StandInCaller {
-  organizationId: string;
-  userId: string;
-  /** Admin, or `canManageUsers` held org-wide on their OWN access: may arrange anybody's. */
-  managesPeople: boolean;
-}
+export type StandInCaller = SharedStandInCaller;
 
 /** Holds, themselves, an approval DECISION a stand-in could carry (seeing the lists alone is nothing to decide). */
 function decides(u: any): boolean {

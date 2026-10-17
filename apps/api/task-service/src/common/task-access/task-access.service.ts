@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nest
 import { canAccessTask, isTaskAssignee, isWithinTaskBoundary } from '@hbcfield/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { holdsOpenRole } from '@hbcfield/shared';
+import type { TaskAccessFacts as SharedTaskAccessFacts } from '@hbcfield/shared/microservices';
 
 /**
  * The caller's whole identity as the gateway forwards it, in one piece.
@@ -11,17 +12,7 @@ import { holdsOpenRole } from '@hbcfield/shared';
  * sites. Passing the payload itself means a new fact reaches every check the
  * moment the gateway sends it. There is nothing left to forget.
  */
-export interface TaskAccessFacts {
-  userId: string;
-  userRole: string;
-  organizationId: string;
-  /** The ORG-wide resolution of canViewAllTasks. */
-  canViewAllTasks?: boolean;
-  /** Cross-org spaces shared with this caller (server-authoritative). */
-  sharedSpaceIds?: string[];
-  /** Spaces where the caller holds canViewAllTasks through a SPACE role. */
-  viewAllSpaceIds?: string[];
-}
+export type TaskAccessFacts = SharedTaskAccessFacts;
 
 export interface TaskAccessOptions {
   /**

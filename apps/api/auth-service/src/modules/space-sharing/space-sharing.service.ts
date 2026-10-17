@@ -2,7 +2,7 @@ import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
 
-type Level = 'VIEW' | 'CONTRIBUTE' | 'CONTROL';
+import { type Level } from '@hbcfield/shared/microservices';
 const LEVELS: Level[] = ['VIEW', 'CONTRIBUTE', 'CONTROL'];
 
 /**
@@ -75,7 +75,14 @@ export class SpaceSharingService {
       if (existing.status === 'ACTIVE') return this.err('This space is already shared with that organization');
       share = await this.prisma.spaceShare.update({
         where: { id: existing.id },
-        data: { level, status: 'PENDING', createdById: data.createdById, acceptedAt: null, acceptedById: null, ...scope },
+        data: {
+          level,
+          status: 'PENDING',
+          createdById: data.createdById,
+          acceptedAt: null,
+          acceptedById: null,
+          ...scope,
+        },
       });
     } else {
       share = await this.prisma.spaceShare.create({
@@ -145,9 +152,15 @@ export class SpaceSharingService {
       orderBy: { createdAt: 'desc' },
     });
     const guestIds = [...new Set(shares.map((s) => s.guestOrgId))];
-    const orgs = await this.prisma.organization.findMany({ where: { id: { in: guestIds } }, select: { id: true, name: true } });
+    const orgs = await this.prisma.organization.findMany({
+      where: { id: { in: guestIds } },
+      select: { id: true, name: true },
+    });
     const name = new Map(orgs.map((o) => [o.id, o.name]));
-    return { success: true as const, data: shares.map((s) => ({ ...s, guestOrgName: name.get(s.guestOrgId) ?? null })) };
+    return {
+      success: true as const,
+      data: shares.map((s) => ({ ...s, guestOrgName: name.get(s.guestOrgId) ?? null })),
+    };
   }
 
   // ── GUEST: list shares addressed to my org (pending invites + active) ──────
@@ -166,7 +179,11 @@ export class SpaceSharingService {
     const orgName = new Map(orgs.map((o) => [o.id, o.name]));
     return {
       success: true as const,
-      data: shares.map((s) => ({ ...s, spaceName: spaceName.get(s.spaceId) ?? null, ownerOrgName: orgName.get(s.ownerOrgId) ?? null })),
+      data: shares.map((s) => ({
+        ...s,
+        spaceName: spaceName.get(s.spaceId) ?? null,
+        ownerOrgName: orgName.get(s.ownerOrgId) ?? null,
+      })),
     };
   }
 

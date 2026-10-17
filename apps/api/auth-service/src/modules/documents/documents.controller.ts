@@ -6,6 +6,12 @@ import { CustomerSignMailerService } from './customer-sign-mailer.service';
 import { OwnUploadReaderService } from './own-upload-reader.service';
 import { ComplianceBoardService } from './compliance-board.service';
 
+import { pattern, type RpcRequest } from '@hbcfield/shared/microservices';
+// The handlers' message contracts — one namespace, so the list is not repeated here.
+import * as docs from '@hbcfield/shared/microservices';
+
+/** A handler's payload: its message contract's request type. */
+type Msg<C> = RpcRequest<C>;
 /**
  * Transport only. Every method forwards to the service, which is where the
  * authorization lives — so a new caller cannot reach a document by finding a
@@ -22,180 +28,182 @@ export class DocumentsController {
   ) {}
 
   // ── Types ────────────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_chain' })
-  documentChain(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsChain))
+  documentChain(@Payload() data: Msg<typeof docs.documentsChain>) {
     return this.documents.documentChain(data);
   }
 
-  @MessagePattern({ cmd: 'documents_route_candidates' })
-  routeCandidates(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsRouteCandidates))
+  routeCandidates(@Payload() data: Msg<typeof docs.documentsRouteCandidates>) {
     return this.documents.routeCandidates(data);
   }
 
-  @MessagePattern({ cmd: 'documents_send_back' })
-  sendBack(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsSendBack))
+  sendBack(@Payload() data: Msg<typeof docs.documentsSendBack>) {
     return this.documents.sendBack(data);
   }
 
-  @MessagePattern({ cmd: 'documents_browse' })
-  browse(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsBrowse))
+  browse(@Payload() data: Msg<typeof docs.documentsBrowse>) {
     return this.documents.browse(data);
   }
 
-  @MessagePattern({ cmd: 'documents_list_issued' })
-  listIssued(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsListIssued))
+  listIssued(@Payload() data: Msg<typeof docs.documentsListIssued>) {
     return this.documents.listIssued(data);
   }
 
-  @MessagePattern({ cmd: 'documents_list_types' })
-  listTypes(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsListTypes))
+  listTypes(@Payload() data: Msg<typeof docs.documentsListTypes>) {
     return this.documents.listTypes(data);
   }
 
-  @MessagePattern({ cmd: 'documents_create_type' })
-  createType(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsCreateType))
+  createType(@Payload() data: Msg<typeof docs.documentsCreateType>) {
     return this.documents.createType(data);
   }
 
-  @MessagePattern({ cmd: 'documents_update_type' })
-  updateType(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsUpdateType))
+  updateType(@Payload() data: Msg<typeof docs.documentsUpdateType>) {
     return this.documents.updateType(data);
   }
 
-  @MessagePattern({ cmd: 'documents_deactivate_type' })
-  deactivateType(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsDeactivateType))
+  deactivateType(@Payload() data: Msg<typeof docs.documentsDeactivateType>) {
     return this.documents.deactivateType(data);
   }
 
   // ── Issuing ──────────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_presign_upload' })
-  presignUpload(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsPresignUpload))
+  presignUpload(@Payload() data: Msg<typeof docs.documentsPresignUpload>) {
     return this.documents.presignUpload(data);
   }
 
-  @MessagePattern({ cmd: 'documents_confirm_upload' })
-  confirmUpload(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsConfirmUpload))
+  confirmUpload(@Payload() data: Msg<typeof docs.documentsConfirmUpload>) {
     return this.documents.confirmUpload(data);
   }
 
-  @MessagePattern({ cmd: 'documents_revoke' })
-  revoke(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsRevoke))
+  revoke(@Payload() data: Msg<typeof docs.documentsRevoke>) {
     return this.documents.revoke(data);
   }
 
-  @MessagePattern({ cmd: 'documents_set_visibility' })
-  setVisibility(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsSetVisibility))
+  setVisibility(@Payload() data: Msg<typeof docs.documentsSetVisibility>) {
     return this.documents.setVisibility(data);
   }
 
-  @MessagePattern({ cmd: 'documents_delete' })
-  deleteDocuments(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsDelete))
+  deleteDocuments(@Payload() data: Msg<typeof docs.documentsDelete>) {
     return this.documents.deleteDocuments(data);
   }
 
   // ── Credentials ──────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_compliance' })
-  compliance(@Payload() data: any) { return this.complianceBoard.listCompliance(data); }
+  @MessagePattern(pattern(docs.documentsCompliance))
+  compliance(@Payload() data: Msg<typeof docs.documentsCompliance>) { return this.complianceBoard.listCompliance(data); }
 
   // ── Templates ────────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_list_templates' })
-  listTemplates(@Payload() data: any) { return this.documents.listTemplates(data); }
+  @MessagePattern(pattern(docs.documentsListTemplates))
+  listTemplates(@Payload() data: Msg<typeof docs.documentsListTemplates>) { return this.documents.listTemplates(data); }
 
-  @MessagePattern({ cmd: 'documents_create_template' })
-  createTemplate(@Payload() data: any) { return this.documents.createTemplate(data); }
+  @MessagePattern(pattern(docs.documentsCreateTemplate))
+  createTemplate(@Payload() data: Msg<typeof docs.documentsCreateTemplate>) { return this.documents.createTemplate(data); }
 
-  @MessagePattern({ cmd: 'documents_update_template' })
-  updateTemplate(@Payload() data: any) { return this.documents.updateTemplate(data); }
+  @MessagePattern(pattern(docs.documentsUpdateTemplate))
+  updateTemplate(@Payload() data: Msg<typeof docs.documentsUpdateTemplate>) { return this.documents.updateTemplate(data); }
 
-  @MessagePattern({ cmd: 'documents_deactivate_template' })
-  deactivateTemplate(@Payload() data: any) { return this.documents.deactivateTemplate(data); }
+  @MessagePattern(pattern(docs.documentsDeactivateTemplate))
+  deactivateTemplate(@Payload() data: Msg<typeof docs.documentsDeactivateTemplate>) { return this.documents.deactivateTemplate(data); }
 
-  @MessagePattern({ cmd: 'documents_list_requirements' })
-  listRequirements(@Payload() data: any) { return this.documents.listRequirements(data); }
+  @MessagePattern(pattern(docs.documentsListRequirements))
+  listRequirements(@Payload() data: Msg<typeof docs.documentsListRequirements>) { return this.documents.listRequirements(data); }
 
-  @MessagePattern({ cmd: 'documents_pending_for_member' })
-  pendingForMember(@Payload() data: any) { return this.documents.pendingForMember(data); }
+  @MessagePattern(pattern(docs.documentsPendingForMember))
+  pendingForMember(@Payload() data: Msg<typeof docs.documentsPendingForMember>) { return this.documents.pendingForMember(data); }
 
   // ── Reviewing what members supplied ──────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_awaiting_verification' })
-  listAwaitingVerification(@Payload() data: any) { return this.documents.listAwaitingVerification(data); }
+  @MessagePattern(pattern(docs.documentsAwaitingVerification))
+  listAwaitingVerification(@Payload() data: Msg<typeof docs.documentsAwaitingVerification>) {
+    return this.documents.listAwaitingVerification(data);
+  }
 
-  @MessagePattern({ cmd: 'documents_verify' })
-  verifyDocument(@Payload() data: any) { return this.documents.verifyDocument(data); }
+  @MessagePattern(pattern(docs.documentsVerify))
+  verifyDocument(@Payload() data: Msg<typeof docs.documentsVerify>) { return this.documents.verifyDocument(data); }
 
-  @MessagePattern({ cmd: 'documents_reject' })
-  rejectDocument(@Payload() data: any) { return this.documents.rejectDocument(data); }
+  @MessagePattern(pattern(docs.documentsReject))
+  rejectDocument(@Payload() data: Msg<typeof docs.documentsReject>) { return this.documents.rejectDocument(data); }
 
   // ── What the member supplies ─────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_presign_own_upload' })
-  presignOwnUpload(@Payload() data: any) { return this.documents.presignOwnUpload(data); }
+  @MessagePattern(pattern(docs.documentsPresignOwnUpload))
+  presignOwnUpload(@Payload() data: Msg<typeof docs.documentsPresignOwnUpload>) { return this.documents.presignOwnUpload(data); }
 
-  @MessagePattern({ cmd: 'documents_read_own_upload' })
-  readOwnUpload(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsReadOwnUpload))
+  readOwnUpload(@Payload() data: Msg<typeof docs.documentsReadOwnUpload>) {
     return this.ownUploadReader.readOwnUpload(data);
   }
 
-  @MessagePattern({ cmd: 'documents_submit_own' })
-  submitOwnDocument(@Payload() data: any) { return this.documents.submitOwnDocument(data); }
+  @MessagePattern(pattern(docs.documentsSubmitOwn))
+  submitOwnDocument(@Payload() data: Msg<typeof docs.documentsSubmitOwn>) { return this.documents.submitOwnDocument(data); }
 
-  @MessagePattern({ cmd: 'documents_preview_template' })
-  previewTemplate(@Payload() data: any) { return this.documents.previewTemplate(data); }
+  @MessagePattern(pattern(docs.documentsPreviewTemplate))
+  previewTemplate(@Payload() data: Msg<typeof docs.documentsPreviewTemplate>) { return this.documents.previewTemplate(data); }
 
-  @MessagePattern({ cmd: 'documents_issue_from_template' })
-  issueFromTemplate(@Payload() data: any) { return this.documents.issueFromTemplate(data); }
+  @MessagePattern(pattern(docs.documentsIssueFromTemplate))
+  issueFromTemplate(@Payload() data: Msg<typeof docs.documentsIssueFromTemplate>) { return this.documents.issueFromTemplate(data); }
 
   // ── Signing ──────────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_consent' })
-  consent(@Payload() data: any) { return this.documents.recordConsent(data); }
+  @MessagePattern(pattern(docs.documentsConsent))
+  consent(@Payload() data: Msg<typeof docs.documentsConsent>) { return this.documents.recordConsent(data); }
 
-  @MessagePattern({ cmd: 'documents_sign' })
-  sign(@Payload() data: any) { return this.documents.signDocument(data); }
+  @MessagePattern(pattern(docs.documentsSign))
+  sign(@Payload() data: Msg<typeof docs.documentsSign>) { return this.documents.signDocument(data); }
 
-  @MessagePattern({ cmd: 'documents_acknowledge' })
-  acknowledge(@Payload() data: any) { return this.documents.acknowledgeDocument(data); }
+  @MessagePattern(pattern(docs.documentsAcknowledge))
+  acknowledge(@Payload() data: Msg<typeof docs.documentsAcknowledge>) { return this.documents.acknowledgeDocument(data); }
 
   // ── Payroll day ──────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_match_candidates' })
-  matchCandidates(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsMatchCandidates))
+  matchCandidates(@Payload() data: Msg<typeof docs.documentsMatchCandidates>) {
     return this.documents.listMatchCandidates(data);
   }
 
-  @MessagePattern({ cmd: 'documents_list_drafts' })
-  listDrafts(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsListDrafts))
+  listDrafts(@Payload() data: Msg<typeof docs.documentsListDrafts>) {
     return this.documents.listDrafts(data);
   }
 
-  @MessagePattern({ cmd: 'documents_publish_batch' })
-  publishBatch(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsPublishBatch))
+  publishBatch(@Payload() data: Msg<typeof docs.documentsPublishBatch>) {
     return this.documents.publishBatch(data);
   }
 
-  @MessagePattern({ cmd: 'documents_discard_draft' })
-  discardDraft(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsDiscardDraft))
+  discardDraft(@Payload() data: Msg<typeof docs.documentsDiscardDraft>) {
     return this.documents.discardDraft(data);
   }
 
   // ── Reading ──────────────────────────────────────────────────────────────
-  @MessagePattern({ cmd: 'documents_list_for_member' })
-  listForMember(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsListForMember))
+  listForMember(@Payload() data: Msg<typeof docs.documentsListForMember>) {
     return this.documents.listForMember(data);
   }
 
-  @MessagePattern({ cmd: 'documents_download_url' })
-  downloadUrl(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsDownloadUrl))
+  downloadUrl(@Payload() data: Msg<typeof docs.documentsDownloadUrl>) {
     return this.documents.getDownloadUrl(data);
   }
 
-  @MessagePattern({ cmd: 'documents_list_events' })
-  listEvents(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsListEvents))
+  listEvents(@Payload() data: Msg<typeof docs.documentsListEvents>) {
     return this.documents.listEvents(data);
   }
 
-  @MessagePattern({ cmd: 'documents_export' })
-  export(@Payload() data: any) { return this.documents.exportForMember(data); }
+  @MessagePattern(pattern(docs.documentsExport))
+  export(@Payload() data: Msg<typeof docs.documentsExport>) { return this.documents.exportForMember(data); }
 
-  @MessagePattern({ cmd: 'documents_delete_own' })
-  deleteOwn(@Payload() data: any) {
+  @MessagePattern(pattern(docs.documentsDeleteOwn))
+  deleteOwn(@Payload() data: Msg<typeof docs.documentsDeleteOwn>) {
     return this.documents.deleteOwnSupplied(data);
   }
 
@@ -205,8 +213,8 @@ export class DocumentsController {
   // and the client from it. Nothing here accepts an id from the caller, so a
   // crafted payload has nothing to aim at.
 
-  @MessagePattern({ cmd: 'documents_link_open' })
-  async linkOpen(@Payload() data: { token: string }) {
+  @MessagePattern(pattern(docs.documentsLinkOpen))
+  async linkOpen(@Payload() data: Msg<typeof docs.documentsLinkOpen>) {
     const resolved = await this.links.resolve(data?.token ?? '');
     if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
 
@@ -224,8 +232,8 @@ export class DocumentsController {
     };
   }
 
-  @MessagePattern({ cmd: 'documents_link_file' })
-  async linkFile(@Payload() data: { token: string; signerId: string }) {
+  @MessagePattern(pattern(docs.documentsLinkFile))
+  async linkFile(@Payload() data: Msg<typeof docs.documentsLinkFile>) {
     const resolved = await this.links.resolve(data?.token ?? '');
     if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
     const { url } = await this.documents.openForCustomer({
@@ -236,19 +244,8 @@ export class DocumentsController {
     return { ok: true as const, url };
   }
 
-  @MessagePattern({ cmd: 'documents_link_sign' })
-  async linkSign(
-    @Payload()
-    data: {
-      token: string;
-      signerIds: string[];
-      signatureImage: string;
-      name: string;
-      role?: string | null;
-      idempotencyKey: string;
-      ctx?: any;
-    },
-  ) {
+  @MessagePattern(pattern(docs.documentsLinkSign))
+  async linkSign(@Payload() data: Msg<typeof docs.documentsLinkSign>) {
     const resolved = await this.links.resolve(data?.token ?? '');
     if (!resolved.ok) return { ok: false as const, refusal: resolved.refusal };
     const result = await this.documents.signBatchAsCustomer({
@@ -272,8 +269,8 @@ export class DocumentsController {
    * companies a supplier works with — so the branch that sends and the branch
    * that does nothing return identical shapes.
    */
-  @MessagePattern({ cmd: 'documents_link_reissue' })
-  async linkReissue(@Payload() data: { email: string }) {
+  @MessagePattern(pattern(docs.documentsLinkReissue))
+  async linkReissue(@Payload() data: Msg<typeof docs.documentsLinkReissue>) {
     try {
       const outcome = await this.links.requestReissue(data?.email ?? '');
       if (outcome.send) {
@@ -293,5 +290,4 @@ export class DocumentsController {
     }
     return { ok: true as const };
   }
-
 }

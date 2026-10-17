@@ -1,6 +1,14 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcRequest,
+  getAttendanceSummary,
+  getWeeklyReport,
+  getMonthlyReport,
+  exportAttendanceCsv,
+} from '@hbcfield/shared/microservices';
 
 /** Attendance reports, asked of task-service: summary, week, month, CSV. */
 @Injectable()
@@ -16,55 +24,28 @@ export class AttendanceReportsGatewayService extends BaseGatewayService {
   /**
    * Get attendance summary for a period
    */
-  async getAttendanceSummary(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    userId?: string;
-    startDate: string;
-    endDate: string;
-  }) {
-    return this.send({ cmd: 'get_attendance_summary' }, data);
+  async getAttendanceSummary(data: RpcRequest<typeof getAttendanceSummary>) {
+    return this.send(pattern(getAttendanceSummary), data);
   }
 
   /**
    * Get weekly attendance report
    */
-  async getWeeklyReport(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    userId?: string;
-    weekStartDate?: string;
-  }) {
-    return this.send({ cmd: 'get_weekly_report' }, data);
+  async getWeeklyReport(data: RpcRequest<typeof getWeeklyReport>) {
+    return this.send(pattern(getWeeklyReport), data);
   }
 
   /**
    * Get monthly attendance report
    */
-  async getMonthlyReport(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    userId?: string;
-    year?: number;
-    month?: number;
-  }) {
-    return this.send({ cmd: 'get_monthly_report' }, data);
+  async getMonthlyReport(data: RpcRequest<typeof getMonthlyReport>) {
+    return this.send(pattern(getMonthlyReport), data);
   }
 
   /**
    * Export attendance data to CSV
    */
-  async exportToCSV(data: {
-    organizationId: string;
-    /** Spaces the caller may see; null = org-wide, [] = none. */
-    scopeSpaceIds?: string[] | null;
-    startDate: string;
-    endDate: string;
-    userId?: string;
-  }) {
-    return this.send({ cmd: 'export_attendance_csv' }, data);
+  async exportToCSV(data: RpcRequest<typeof exportAttendanceCsv>) {
+    return this.send(pattern(exportAttendanceCsv), data);
   }
 }

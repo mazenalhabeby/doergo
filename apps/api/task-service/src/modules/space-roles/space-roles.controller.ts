@@ -1,5 +1,26 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  assignSpaceMember,
+  createSpaceRole,
+  deleteSpaceRole,
+  getSpaceMemberPermissions,
+  listRateHistory,
+  listSpaceMembers,
+  listSpaceRoles,
+  listSpaceRolesInSpace,
+  mergeSpaceRole,
+  removeSpaceMember,
+  setSpaceMemberPermissions,
+  setSpaceRoleDayRate,
+  setWorkRoleHere,
+  updateSpaceMemberRate,
+  updateSpaceMemberRoles,
+  updateSpaceMemberRouting,
+  updateSpaceRole,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { SpaceRolesService, type SpaceMemberAuthority } from './space-roles.service';
 import type { PermissionSet } from '@hbcfield/shared';
 import { RoleAdminService } from './role-admin.service';
@@ -18,148 +39,104 @@ export class SpaceRolesController {
   ) {}
 
   // ── Roles ──
-  @MessagePattern({ cmd: 'list_space_roles' })
-  listRoles(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(listSpaceRoles))
+  listRoles(@Payload() data: RpcRequest<typeof listSpaceRoles>) {
     return this.service.listRoles(data);
   }
 
-  @MessagePattern({ cmd: 'create_space_role' })
+  @MessagePattern(pattern(createSpaceRole))
   createRole(
     @Payload()
-    data: {
-      organizationId: string;
-      name: string;
-      description?: string;
-      color?: string;
-      permissions?: PermissionSet;
-      kind?: any;
-      spaceId?: string;
-    },
+    data: RpcRequest<typeof createSpaceRole>,
   ) {
     return this.service.createRole(data);
   }
 
-  @MessagePattern({ cmd: 'update_space_role' })
+  @MessagePattern(pattern(updateSpaceRole))
   updateRole(
     @Payload()
-    data: {
-      organizationId: string;
-      roleId: string;
-      name?: string;
-      description?: string;
-      color?: string;
-      permissions?: PermissionSet;
-      isActive?: boolean;
-      kind?: any;
-      requesterPerms?: PermissionSet | null;
-    },
+    data: RpcRequest<typeof updateSpaceRole>,
   ) {
     return this.service.updateRole(data);
   }
 
-  @MessagePattern({ cmd: 'set_work_role_here' })
-  setWorkRoleHere(@Payload() data: { organizationId: string; spaceId: string; roleId: string; active: boolean }) {
+  @MessagePattern(pattern(setWorkRoleHere))
+  setWorkRoleHere(@Payload() data: RpcRequest<typeof setWorkRoleHere>) {
     return this.roleAdmin.setWorkRoleHere(data);
   }
 
-  @MessagePattern({ cmd: 'merge_space_role' })
-  mergeRole(@Payload() data: { organizationId: string; roleId: string; intoRoleId: string }) {
+  @MessagePattern(pattern(mergeSpaceRole))
+  mergeRole(@Payload() data: RpcRequest<typeof mergeSpaceRole>) {
     return this.roleAdmin.mergeRole(data);
   }
 
-  @MessagePattern({ cmd: 'delete_space_role' })
-  deleteRole(@Payload() data: { organizationId: string; roleId: string }) {
+  @MessagePattern(pattern(deleteSpaceRole))
+  deleteRole(@Payload() data: RpcRequest<typeof deleteSpaceRole>) {
     return this.roleAdmin.deleteRole(data);
   }
 
   // ── Members ──
-  @MessagePattern({ cmd: 'list_space_members' })
-  listMembers(@Payload() data: { organizationId: string; spaceId: string }) {
+  @MessagePattern(pattern(listSpaceMembers))
+  listMembers(@Payload() data: RpcRequest<typeof listSpaceMembers>) {
     return this.spaceMembers.listMembers(data);
   }
 
-  @MessagePattern({ cmd: 'assign_space_member' })
+  @MessagePattern(pattern(assignSpaceMember))
   assignMember(
     @Payload()
-    data: {
-      organizationId: string;
-      spaceId: string;
-      userId: string;
-      spaceRoleId?: string | null;
-      createdById?: string;
-      requesterPerms?: PermissionSet | null;
-      authority?: SpaceMemberAuthority;
-      outrankCheck?: boolean;
-    },
+    data: RpcRequest<typeof assignSpaceMember>,
   ) {
     return this.spaceMembers.assignMember(data);
   }
 
-  @MessagePattern({ cmd: 'remove_space_member' })
-  removeMember(
-    @Payload() data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null },
-  ) {
+  @MessagePattern(pattern(removeSpaceMember))
+  removeMember(@Payload() data: RpcRequest<typeof removeSpaceMember>) {
     return this.memberRoles.removeMember(data);
   }
 
   // ── One person's permissions here (the builder) ──
-  @MessagePattern({ cmd: 'get_space_member_permissions' })
+  @MessagePattern(pattern(getSpaceMemberPermissions))
   getMemberPermissions(
     @Payload()
-    data: {
-      organizationId: string;
-      spaceId: string;
-      assignmentId: string;
-      requesterPerms?: PermissionSet | null;
-    },
+    data: RpcRequest<typeof getSpaceMemberPermissions>,
   ) {
     return this.memberRoles.getMemberPermissions(data);
   }
 
-  @MessagePattern({ cmd: 'set_space_member_permissions' })
-  setMemberPermissions(@Payload() data: any) {
+  @MessagePattern(pattern(setSpaceMemberPermissions))
+  setMemberPermissions(@Payload() data: RpcRequest<typeof setSpaceMemberPermissions>) {
     return this.memberRoles.setMemberPermissions(data);
   }
 
-  @MessagePattern({ cmd: 'list_space_roles_in_space' })
-  listSpaceRoles(@Payload() data: { organizationId: string; spaceId: string }) {
+  @MessagePattern(pattern(listSpaceRolesInSpace))
+  listSpaceRoles(@Payload() data: RpcRequest<typeof listSpaceRolesInSpace>) {
     return this.service.listSpaceRoles(data);
   }
 
-  @MessagePattern({ cmd: 'set_space_role_day_rate' })
-  setRoleDayRate(@Payload() data: any) {
+  @MessagePattern(pattern(setSpaceRoleDayRate))
+  setRoleDayRate(@Payload() data: RpcRequest<typeof setSpaceRoleDayRate>) {
     return this.roleAdmin.setRoleDayRate(data);
   }
 
-  @MessagePattern({ cmd: 'list_rate_history' })
-  listRateHistory(@Payload() data: any) {
+  @MessagePattern(pattern(listRateHistory))
+  listRateHistory(@Payload() data: RpcRequest<typeof listRateHistory>) {
     return this.memberTerms.listRateHistory(data);
   }
 
-  @MessagePattern({ cmd: 'update_space_member_roles' })
-  updateMemberRoles(@Payload() data: any) {
+  @MessagePattern(pattern(updateSpaceMemberRoles))
+  updateMemberRoles(@Payload() data: RpcRequest<typeof updateSpaceMemberRoles>) {
     return this.memberRoles.updateMemberRoles(data);
   }
 
-  @MessagePattern({ cmd: 'update_space_member_rate' })
-  updateMemberRate(@Payload() data: any) {
+  @MessagePattern(pattern(updateSpaceMemberRate))
+  updateMemberRate(@Payload() data: RpcRequest<typeof updateSpaceMemberRate>) {
     return this.memberTerms.updateMemberRate(data);
   }
 
-  @MessagePattern({ cmd: 'update_space_member_routing' })
+  @MessagePattern(pattern(updateSpaceMemberRouting))
   updateMemberRouting(
     @Payload()
-    data: {
-      organizationId: string;
-      spaceId: string;
-      memberId: string;
-      notifyRoleIds?: string[];
-      notifyUserIds?: string[];
-      contactRoleIds?: string[];
-      contactUserIds?: string[];
-      approveRoleIds?: string[];
-      approveUserIds?: string[];
-    },
+    data: RpcRequest<typeof updateSpaceMemberRouting>,
   ) {
     return this.memberTerms.updateMemberRouting(data);
   }

@@ -18,6 +18,7 @@ import {
   PLATFORM_2FA_ENROLMENT_REQUIRED,
   type PlatformCapability,
 } from '@hbcfield/shared';
+import { sendRpc, platformValidateToken } from '@hbcfield/shared/microservices';
 
 const PLATFORM_PERM_KEY = 'platform_required_perm';
 const PLATFORM_ENROLMENT_OK_KEY = 'platform_enrolment_ok';
@@ -76,7 +77,7 @@ export class PlatformAuthGuard implements CanActivate {
     const token = header.toLowerCase().startsWith('bearer ') ? header.slice(7).trim() : '';
     if (!token) throw new UnauthorizedException('Not authenticated');
 
-    const result = await firstValueFrom(this.authClient.send({ cmd: 'platform_validate_token' }, { token }));
+    const result = await firstValueFrom(sendRpc(this.authClient, platformValidateToken, { token }));
     if (!result?.valid) throw new UnauthorizedException('Invalid or expired session');
     req.platformUser = result.user;
     req.platformPermissions = result.permissions;

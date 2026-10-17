@@ -1,11 +1,12 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { RpcRequest, findTask } from '@hbcfield/shared/microservices';
 import { taskActor } from './task-actor';
 
 /** Reads one task through task-service's gate (`find_task`). */
-export type TaskReader = (data: Record<string, any>) => Promise<unknown>;
+export type TaskReader = (data: RpcRequest<typeof findTask>) => Promise<unknown>;
 
 export const EXTERNAL_TASK_WRITE_MESSAGE =
-  'An external member can add to a job they raised, not to the organization\'s other work.';
+  "An external member can add to a job they raised, not to the organization's other work.";
 
 /**
  * May this caller WRITE onto this task — a comment, a photo, a field value?

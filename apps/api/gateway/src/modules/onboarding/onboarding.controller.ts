@@ -1,24 +1,20 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  Param,
-  Inject,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Inject, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { SkipOnboardingCheck, CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import { CreateOrganizationDto, SubmitJoinRequestDto, AcceptInvitationExistingUserDto } from './dto';
 import {
-  CreateOrganizationDto,
-  SubmitJoinRequestDto,
-  AcceptInvitationExistingUserDto,
-} from './dto';
+  sendRpc,
+  onboardingCreateOrg,
+  onboardingValidateOrgCode,
+  onboardingSubmitJoinRequest,
+  onboardingAcceptInvitationExisting,
+  onboardingGetStatus,
+  onboardingCancelJoinRequest,
+} from '@hbcfield/shared/microservices';
 
 @ApiTags('onboarding')
 @Controller('onboarding')
@@ -35,12 +31,9 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Create organization (Path A - onboarding)' })
   @ApiResponse({ status: 201, description: 'Organization created' })
   @ApiResponse({ status: 400, description: 'Already onboarded or has org' })
-  async createOrganization(
-    @Body() dto: CreateOrganizationDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async createOrganization(@Body() dto: CreateOrganizationDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_create_org' }, {
+      sendRpc(this.authClient, onboardingCreateOrg, {
         ...dto,
         userId: user.id,
       }),
@@ -61,9 +54,7 @@ export class OnboardingController {
   @ApiParam({ name: 'code', description: 'Organization join code' })
   @ApiResponse({ status: 200, description: 'Validation result' })
   async validateOrgCode(@Param('code') code: string) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_validate_org_code' }, { code }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, onboardingValidateOrgCode, { code }));
   }
 
   @Post('join-by-code')
@@ -73,12 +64,9 @@ export class OnboardingController {
   @ApiResponse({ status: 201, description: 'Join request submitted' })
   @ApiResponse({ status: 400, description: 'Invalid code or already onboarded' })
   @ApiResponse({ status: 409, description: 'Already have pending request to this org' })
-  async submitJoinRequest(
-    @Body() dto: SubmitJoinRequestDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async submitJoinRequest(@Body() dto: SubmitJoinRequestDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_submit_join_request' }, {
+      sendRpc(this.authClient, onboardingSubmitJoinRequest, {
         ...dto,
         userId: user.id,
       }),
@@ -102,12 +90,9 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Accept invitation as existing user (Path C)' })
   @ApiResponse({ status: 200, description: 'Invitation accepted, user joined org' })
   @ApiResponse({ status: 400, description: 'Invalid/expired invitation or already onboarded' })
-  async acceptInvitation(
-    @Body() dto: AcceptInvitationExistingUserDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async acceptInvitation(@Body() dto: AcceptInvitationExistingUserDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_accept_invitation_existing' }, {
+      sendRpc(this.authClient, onboardingAcceptInvitationExisting, {
         userId: user.id,
         code: dto.code,
       }),
@@ -126,9 +111,7 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Get onboarding status' })
   @ApiResponse({ status: 200, description: 'Onboarding status' })
   async getStatus(@CurrentUser() user: CurrentUserData) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_get_status' }, { userId: user.id }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, onboardingGetStatus, { userId: user.id }));
   }
 
   @Delete('join-requests/:id')
@@ -137,12 +120,9 @@ export class OnboardingController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request canceled' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async cancelJoinRequest(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async cancelJoinRequest(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'onboarding_cancel_join_request' }, {
+      sendRpc(this.authClient, onboardingCancelJoinRequest, {
         requestId: id,
         userId: user.id,
       }),

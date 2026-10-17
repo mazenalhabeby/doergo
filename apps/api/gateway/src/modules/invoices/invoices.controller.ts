@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Inject,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
@@ -17,6 +6,20 @@ import { Role, CurrentUser, CurrentUserData, stripLabourCost, assertServiceOk } 
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
+import {
+  sendRpc,
+  invoiceCreate,
+  invoiceList,
+  invoiceExchangeRate,
+  invoiceGather,
+  invoiceGet,
+  invoiceUpdate,
+  invoiceUpdateStatus,
+  invoiceDelete,
+  invoiceAddItem,
+  invoiceRemoveItem,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 @ApiTags('invoices')
 @RequirePlan('invoicing') // Professional+ (write routes; reads pass through)
@@ -32,9 +35,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 @Controller('invoices')
 @ApiBearerAuth()
 export class InvoicesController {
-  constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
-  ) {}
+  constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
 
   /**
    * Everything leaving this controller passes through here.
@@ -69,12 +70,9 @@ export class InvoicesController {
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create invoice' })
-  async create(
-    @Body() body: any,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async create(@Body() body: any, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_create' }, {
+      sendRpc(this.authClient, invoiceCreate, {
         ...body,
         organizationId: user.organizationId,
         createdById: user.id,
@@ -99,8 +97,8 @@ export class InvoicesController {
       bookkeeper opens first disclosed the margin the other eight hid.
     */
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_list' }, {
-        organizationId: user.organizationId,
+      sendRpc(this.authClient, invoiceList, {
+        organizationId: callerOrgId(user),
         status: query.status,
         spaceId: query.spaceId,
         legalEntityId: query.legalEntityId || undefined,
@@ -125,8 +123,8 @@ export class InvoicesController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_exchange_rate' }, {
-        organizationId: user.organizationId,
+      sendRpc(this.authClient, invoiceExchangeRate, {
+        organizationId: callerOrgId(user),
         currency: String(currency ?? ''),
         date: typeof date === 'string' ? date : undefined,
       }),
@@ -158,8 +156,8 @@ export class InvoicesController {
       that could return that tenant's work.
     */
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_gather' }, {
-        organizationId: user.organizationId,
+      sendRpc(this.authClient, invoiceGather, {
+        organizationId: callerOrgId(user),
         spaceId: spaceId || undefined,
         customerId: customerId || undefined,
         from: from || undefined,
@@ -173,12 +171,9 @@ export class InvoicesController {
   @Get(':id')
   @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'Get invoice detail' })
-  async findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_get' }, {
+      sendRpc(this.authClient, invoiceGet, {
         id,
         organizationId: user.organizationId,
       }),
@@ -192,13 +187,9 @@ export class InvoicesController {
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update draft invoice' })
-  async update(
-    @Param('id') id: string,
-    @Body() body: any,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async update(@Param('id') id: string, @Body() body: any, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_update' }, {
+      sendRpc(this.authClient, invoiceUpdate, {
         ...body,
         // id + org LAST so a malicious body cannot override the tenant scope
         // (body is untyped, so ValidationPipe's whitelist doesn't strip them).
@@ -215,13 +206,9 @@ export class InvoicesController {
   @Patch(':id/status')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Change invoice status' })
-  async updateStatus(
-    @Param('id') id: string,
-    @Body() body: { status: string },
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_update_status' }, {
+      sendRpc(this.authClient, invoiceUpdateStatus, {
         id,
         organizationId: user.organizationId,
         status: body.status,
@@ -236,12 +223,9 @@ export class InvoicesController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete draft invoice' })
-  async delete(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_delete' }, {
+      sendRpc(this.authClient, invoiceDelete, {
         id,
         organizationId: user.organizationId,
       }),
@@ -255,13 +239,9 @@ export class InvoicesController {
   @Post(':id/items')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Add line item to invoice' })
-  async addItem(
-    @Param('id') invoiceId: string,
-    @Body() body: any,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async addItem(@Param('id') invoiceId: string, @Body() body: any, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_add_item' }, {
+      sendRpc(this.authClient, invoiceAddItem, {
         invoiceId,
         organizationId: user.organizationId,
         item: body,
@@ -282,7 +262,7 @@ export class InvoicesController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'invoice_remove_item' }, {
+      sendRpc(this.authClient, invoiceRemoveItem, {
         invoiceId,
         itemId,
         organizationId: user.organizationId,

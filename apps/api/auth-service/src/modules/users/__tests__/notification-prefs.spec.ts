@@ -99,13 +99,34 @@ describe('message patterns', () => {
     });
   }
 
+  /*
+    A handler names its pattern as a string ({ cmd: 'x' }) or as a message
+    contract (`pattern(x)`, `pattern(ns.x)`) declared in the shared package as
+    `export const x = rpc<…>('cmd')`. Both are resolved to the cmd and counted.
+  */
+  const CONTRACTS = join(API, '..', '..', 'packages', 'shared', 'src', 'microservices', 'contracts');
+  const cmdOf = new Map<string, string>();
+  for (const file of readdirSync(CONTRACTS).filter((f) => f.endsWith('.ts'))) {
+    const src = readFileSync(join(CONTRACTS, file), 'utf8');
+    for (const m of src.matchAll(/export const (\w+) = rpc<[\s\S]*?>\(\s*'([^']+)'\s*,?\s*\)/g)) cmdOf.set(m[1], m[2]);
+  }
+
   it.each(SERVICES)('%s registers each cmd once', (svc) => {
     const counts = new Map<string, number>();
+    const unresolved: string[] = [];
     for (const file of tsFiles(join(API, svc, 'src'))) {
-      for (const m of readFileSync(file, 'utf8').matchAll(/@MessagePattern\(\{\s*cmd:\s*'([^']+)'/g)) {
+      const src = readFileSync(file, 'utf8');
+      for (const m of src.matchAll(/@MessagePattern\(\{\s*cmd:\s*'([^']+)'/g)) {
         counts.set(m[1], (counts.get(m[1]) ?? 0) + 1);
       }
+      for (const m of src.matchAll(/@MessagePattern\(\s*pattern\(\s*(?:\w+\.)?(\w+)\s*\)\s*\)/g)) {
+        const cmd = cmdOf.get(m[1]);
+        if (!cmd) unresolved.push(m[1]);
+        else counts.set(cmd, (counts.get(cmd) ?? 0) + 1);
+      }
     }
+    // A contract the guard cannot resolve would be a pattern it silently stopped counting.
+    expect(unresolved).toEqual([]);
     expect(counts.size).toBeGreaterThan(0);
     expect([...counts].filter(([, n]) => n > 1).map(([cmd]) => cmd)).toEqual([]);
   });

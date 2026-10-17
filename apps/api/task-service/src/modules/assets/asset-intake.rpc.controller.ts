@@ -1,5 +1,20 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  assetContractApply,
+  assetContractPreview,
+  assetContractRead,
+  assetProposalAccept,
+  assetProposalDocumentUrl,
+  assetProposalMine,
+  assetProposalPending,
+  assetProposalPresign,
+  assetProposalRaise,
+  assetProposalReject,
+  assetProposalWithdraw,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { AssetContractService } from './asset-contract.service';
 import { AssetProposalService } from './asset-proposal.service';
 import { ProposalReviewService } from './proposal-review.service';
@@ -17,13 +32,13 @@ export class AssetIntakeRpcController {
   // CONTRACTS — read one, then propose, then apply
   // ============================================
 
-  @MessagePattern({ cmd: 'asset_contract_read' })
-  async contractRead(@Payload() data: any) {
+  @MessagePattern(pattern(assetContractRead))
+  async contractRead(@Payload() data: RpcRequest<typeof assetContractRead>) {
     return this.contracts.read(data);
   }
 
-  @MessagePattern({ cmd: 'asset_contract_preview' })
-  async contractPreview(@Payload() data: any) {
+  @MessagePattern(pattern(assetContractPreview))
+  async contractPreview(@Payload() data: RpcRequest<typeof assetContractPreview>) {
     return this.contracts.preview(data);
   }
 
@@ -32,8 +47,8 @@ export class AssetIntakeRpcController {
     button and watching for the result. It is a transaction either way; a round
     trip through Redis would only add latency to a screen somebody is looking at.
   */
-  @MessagePattern({ cmd: 'asset_contract_apply' })
-  async contractApply(@Payload() data: any) {
+  @MessagePattern(pattern(assetContractApply))
+  async contractApply(@Payload() data: RpcRequest<typeof assetContractApply>) {
     return this.contracts.apply(data);
   }
 
@@ -41,43 +56,43 @@ export class AssetIntakeRpcController {
   // PROPOSALS — a member sends a page, the office decides
   // ============================================
 
-  @MessagePattern({ cmd: 'asset_proposal_presign' })
-  async proposalPresign(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalPresign))
+  async proposalPresign(@Payload() data: RpcRequest<typeof assetProposalPresign>) {
     return this.proposals.presign(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_raise' })
-  async proposalRaise(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalRaise))
+  async proposalRaise(@Payload() data: RpcRequest<typeof assetProposalRaise>) {
     return this.proposals.raise(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_mine' })
-  async proposalMine(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalMine))
+  async proposalMine(@Payload() data: RpcRequest<typeof assetProposalMine>) {
     return this.proposals.mine(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_pending' })
-  async proposalPending(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalPending))
+  async proposalPending(@Payload() data: RpcRequest<typeof assetProposalPending>) {
     return this.proposalReview.pending(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_accept' })
-  async proposalAccept(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalAccept))
+  async proposalAccept(@Payload() data: RpcRequest<typeof assetProposalAccept>) {
     return this.proposalReview.accept(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_reject' })
-  async proposalReject(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalReject))
+  async proposalReject(@Payload() data: RpcRequest<typeof assetProposalReject>) {
     return this.proposalReview.reject(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_withdraw' })
-  async proposalWithdraw(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalWithdraw))
+  async proposalWithdraw(@Payload() data: RpcRequest<typeof assetProposalWithdraw>) {
     return this.proposals.withdraw(data);
   }
 
-  @MessagePattern({ cmd: 'asset_proposal_document_url' })
-  async proposalDocumentUrl(@Payload() data: any) {
+  @MessagePattern(pattern(assetProposalDocumentUrl))
+  async proposalDocumentUrl(@Payload() data: RpcRequest<typeof assetProposalDocumentUrl>) {
     return this.proposalReview.documentUrl(data);
   }
 }

@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
+import { sendRpc, calendarPlacesToDetect, calendarSetDetectedPlace } from '@hbcfield/shared/microservices';
 import { lookupAdminPlace } from '../geo/geo-providers';
 
 const SWEEP_EVERY_MS = 15 * 60_000;
@@ -59,25 +60,20 @@ export class WorkspacePlaceDetector implements OnModuleInit, OnModuleDestroy {
     try {
       for (let round = 0; round < 10; round++) {
         const res: any = await firstValueFrom(
-          this.taskClient.send({ cmd: 'calendar_places_to_detect' }, { limit: PAGE }).pipe(timeout(10_000)),
+          sendRpc(this.taskClient, calendarPlacesToDetect, { limit: PAGE }).pipe(timeout(10_000)),
         );
         const rows: { id: string; organizationId: string; lat: number; lng: number }[] = res?.data ?? [];
         if (!rows.length) break;
         for (const r of rows) {
           const place = await lookupAdminPlace(Number(r.lat), Number(r.lng));
           await firstValueFrom(
-            this.taskClient
-              .send(
-                { cmd: 'calendar_set_detected_place' },
-                {
-                  organizationId: r.organizationId,
-                  spaceId: r.id,
-                  country: place?.country ?? null,
-                  stateCode: place?.stateCode ?? null,
-                  stateName: place?.stateName ?? null,
-                },
-              )
-              .pipe(timeout(10_000)),
+            sendRpc(this.taskClient, calendarSetDetectedPlace, {
+              organizationId: r.organizationId,
+              spaceId: r.id,
+              country: place?.country ?? null,
+              stateCode: place?.stateCode ?? null,
+              stateName: place?.stateName ?? null,
+            }).pipe(timeout(10_000)),
           );
           done++;
           await new Promise((ok) => setTimeout(ok, PAUSE_MS));

@@ -9,6 +9,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor, requestContext } from './documents.actor';
 import { RejectDocumentDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
+import { callerOrgId } from '../../common/caller-org';
 
 /** /documents — the credential board, what is required and pending, and the verification queue. */
 @ApiTags('documents')
@@ -40,7 +41,7 @@ export class DocumentComplianceController {
       // for exactly the people who may see it (and for administrators) — the
       // board used to be read as nobody, which shows unrestricted types only.
       actor: documentActor(user),
-      organizationId: user.organizationId,
+      organizationId: callerOrgId(user),
       scopeSpaceIds: scopeIdsFor(user, 'canAssignTasks'),
     });
   }

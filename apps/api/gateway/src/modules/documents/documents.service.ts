@@ -1,6 +1,55 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { BaseGatewayService } from '@hbcfield/shared';
+import {
+  documentsListTypes,
+  documentsListForMember,
+  documentsListEvents,
+  documentsMatchCandidates,
+  documentsListDrafts,
+  documentsListTemplates,
+  documentsBrowse,
+  documentsChain,
+  documentsLinkOpen,
+  documentsLinkFile,
+  documentsLinkSign,
+  documentsLinkReissue,
+  documentsRouteCandidates,
+  documentsListIssued,
+  documentsCompliance,
+  documentsAwaitingVerification,
+  documentsListRequirements,
+  documentsPendingForMember,
+  documentsSendBack,
+  listAccessRoles,
+  documentsCreateType,
+  documentsUpdateType,
+  documentsDeactivateType,
+  documentsPresignUpload,
+  documentsPresignOwnUpload,
+  documentsReadOwnUpload,
+  documentsVerify,
+  documentsReject,
+  documentsSubmitOwn,
+  documentsConfirmUpload,
+  documentsRevoke,
+  documentsSetVisibility,
+  documentsDelete,
+  documentsDeleteOwn,
+  documentsExport,
+  documentsPublishBatch,
+  documentsDiscardDraft,
+  documentsCreateTemplate,
+  documentsPreviewTemplate,
+  documentsUpdateTemplate,
+  documentsDeactivateTemplate,
+  documentsIssueFromTemplate,
+  documentsConsent,
+  documentsSign,
+  documentsAcknowledge,
+  documentsDownloadUrl,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 
 /**
  * The gateway's half of the personnel file.
@@ -22,60 +71,142 @@ export class DocumentsGatewayService extends BaseGatewayService {
   }
 
   // ── Reads ────────────────────────────────────────────────────────────────
-  listTypes(data: unknown) { return this.send({ cmd: 'documents_list_types' }, data); }
-  list(data: unknown) { return this.send({ cmd: 'documents_list_for_member' }, data); }
-  events(data: unknown) { return this.send({ cmd: 'documents_list_events' }, data); }
-  matchCandidates(data: unknown) { return this.send({ cmd: 'documents_match_candidates' }, data); }
-  listDrafts(data: unknown) { return this.send({ cmd: 'documents_list_drafts' }, data); }
-  listTemplates(data: unknown) { return this.send({ cmd: 'documents_list_templates' }, data); }
-  browse(data: unknown) { return this.send({ cmd: 'documents_browse' }, data); }
-  documentChain(data: unknown) { return this.send({ cmd: 'documents_chain' }, data); }
+  listTypes(data: RpcRequest<typeof documentsListTypes>) {
+    return this.call(documentsListTypes, data);
+  }
+  list(data: RpcRequest<typeof documentsListForMember>) {
+    return this.call(documentsListForMember, data);
+  }
+  events(data: RpcRequest<typeof documentsListEvents>) {
+    return this.call(documentsListEvents, data);
+  }
+  matchCandidates(data: RpcRequest<typeof documentsMatchCandidates>) {
+    return this.call(documentsMatchCandidates, data);
+  }
+  listDrafts(data: RpcRequest<typeof documentsListDrafts>) {
+    return this.call(documentsListDrafts, data);
+  }
+  listTemplates(data: RpcRequest<typeof documentsListTemplates>) {
+    return this.call(documentsListTemplates, data);
+  }
+  browse(data: RpcRequest<typeof documentsBrowse>) {
+    return this.call(documentsBrowse, data);
+  }
+  documentChain(data: RpcRequest<typeof documentsChain>) {
+    return this.call(documentsChain, data);
+  }
 
   // ── The client, signing by emailed link (public, token-authenticated) ─────
-  linkOpen(data: unknown) { return this.send({ cmd: 'documents_link_open' }, data); }
-  linkFile(data: unknown) { return this.send({ cmd: 'documents_link_file' }, data); }
-  linkSign(data: unknown) { return this.send({ cmd: 'documents_link_sign' }, data); }
-  linkReissue(data: unknown) { return this.send({ cmd: 'documents_link_reissue' }, data); }
-    routeCandidates(data: unknown) { return this.send({ cmd: 'documents_route_candidates' }, data); }
-  listIssued(data: unknown) { return this.send({ cmd: 'documents_list_issued' }, data); }
-  compliance(data: unknown) { return this.send({ cmd: 'documents_compliance' }, data); }
-  awaitingVerification(data: unknown) { return this.send({ cmd: 'documents_awaiting_verification' }, data); }
-  requirements(data: unknown) { return this.send({ cmd: 'documents_list_requirements' }, data); }
-  pending(data: unknown) { return this.send({ cmd: 'documents_pending_for_member' }, data); }
+  linkOpen(data: RpcRequest<typeof documentsLinkOpen>) {
+    return this.call(documentsLinkOpen, data);
+  }
+  linkFile(data: RpcRequest<typeof documentsLinkFile>) {
+    return this.call(documentsLinkFile, data);
+  }
+  linkSign(data: RpcRequest<typeof documentsLinkSign>) {
+    return this.call(documentsLinkSign, data);
+  }
+  linkReissue(data: RpcRequest<typeof documentsLinkReissue>) {
+    return this.call(documentsLinkReissue, data);
+  }
+  routeCandidates(data: RpcRequest<typeof documentsRouteCandidates>) {
+    return this.call(documentsRouteCandidates, data);
+  }
+  listIssued(data: RpcRequest<typeof documentsListIssued>) {
+    return this.call(documentsListIssued, data);
+  }
+  compliance(data: RpcRequest<typeof documentsCompliance>) {
+    return this.call(documentsCompliance, data);
+  }
+  awaitingVerification(data: RpcRequest<typeof documentsAwaitingVerification>) {
+    return this.call(documentsAwaitingVerification, data);
+  }
+  requirements(data: RpcRequest<typeof documentsListRequirements>) {
+    return this.call(documentsListRequirements, data);
+  }
+  pending(data: RpcRequest<typeof documentsPendingForMember>) {
+    return this.call(documentsPendingForMember, data);
+  }
 
   // ── Writes ───────────────────────────────────────────────────────────────
-  sendBack(data: unknown) { return this.sendOnce({ cmd: 'documents_send_back' }, data); }
+  sendBack(data: RpcRequest<typeof documentsSendBack>) {
+    return this.callOnce(documentsSendBack, data);
+  }
   // A read: the org's roles, for "Who can see this".
-  listOrgRoles(organizationId: string) { return this.send({ cmd: 'list_access_roles' }, { organizationId, scope: 'org' }); }
-  createType(data: unknown) { return this.sendOnce({ cmd: 'documents_create_type' }, data); }
-  updateType(data: unknown) { return this.sendOnce({ cmd: 'documents_update_type' }, data); }
-  deactivateType(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_type' }, data); }
-  presignUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_upload' }, data); }
-  presignOwnUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_presign_own_upload' }, data); }
+  listOrgRoles(organizationId: string) {
+    return this.call(listAccessRoles, { organizationId, scope: 'org' });
+  }
+  createType(data: RpcRequest<typeof documentsCreateType>) {
+    return this.callOnce(documentsCreateType, data);
+  }
+  updateType(data: RpcRequest<typeof documentsUpdateType>) {
+    return this.callOnce(documentsUpdateType, data);
+  }
+  deactivateType(data: RpcRequest<typeof documentsDeactivateType>) {
+    return this.callOnce(documentsDeactivateType, data);
+  }
+  presignUpload(data: RpcRequest<typeof documentsPresignUpload>) {
+    return this.callOnce(documentsPresignUpload, data);
+  }
+  presignOwnUpload(data: RpcRequest<typeof documentsPresignOwnUpload>) {
+    return this.callOnce(documentsPresignOwnUpload, data);
+  }
   // Reads and returns; files nothing. `send`, because a retry costs a second
   // read and nothing else — and OCR is slower than a database lookup.
-  readOwnUpload(data: unknown) { return this.send({ cmd: 'documents_read_own_upload' }, data); }
+  readOwnUpload(data: RpcRequest<typeof documentsReadOwnUpload>) {
+    return this.call(documentsReadOwnUpload, data);
+  }
   // Writes: a retry after a timeout must not re-run a decision somebody made once.
-  verifyDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_verify' }, data); }
-  rejectDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_reject' }, data); }
+  verifyDocument(data: RpcRequest<typeof documentsVerify>) {
+    return this.callOnce(documentsVerify, data);
+  }
+  rejectDocument(data: RpcRequest<typeof documentsReject>) {
+    return this.callOnce(documentsReject, data);
+  }
   // A retry would file the same photograph twice, under two rows.
-  submitOwnDocument(data: unknown) { return this.sendOnce({ cmd: 'documents_submit_own' }, data); }
-  confirmUpload(data: unknown) { return this.sendOnce({ cmd: 'documents_confirm_upload' }, data); }
-  revoke(data: unknown) { return this.sendOnce({ cmd: 'documents_revoke' }, data); }
-  setVisibility(data: unknown) { return this.sendOnce({ cmd: 'documents_set_visibility' }, data); }
-  deleteDocuments(data: unknown) { return this.sendOnce({ cmd: 'documents_delete' }, data); }
-  deleteOwn(data: unknown) { return this.sendOnce({ cmd: 'documents_delete_own' }, data); }
+  submitOwnDocument(data: RpcRequest<typeof documentsSubmitOwn>) {
+    return this.callOnce(documentsSubmitOwn, data);
+  }
+  confirmUpload(data: RpcRequest<typeof documentsConfirmUpload>) {
+    return this.callOnce(documentsConfirmUpload, data);
+  }
+  revoke(data: RpcRequest<typeof documentsRevoke>) {
+    return this.callOnce(documentsRevoke, data);
+  }
+  setVisibility(data: RpcRequest<typeof documentsSetVisibility>) {
+    return this.callOnce(documentsSetVisibility, data);
+  }
+  deleteDocuments(data: RpcRequest<typeof documentsDelete>) {
+    return this.callOnce(documentsDelete, data);
+  }
+  deleteOwn(data: RpcRequest<typeof documentsDeleteOwn>) {
+    return this.callOnce(documentsDeleteOwn, data);
+  }
   /* A write — it records a DOWNLOADED event per document — and slow enough to
      need the wider window when a file is large. */
-  export(data: unknown) { return this.sendOnce({ cmd: 'documents_export' }, data, 60000); }
-  publishBatch(data: unknown) { return this.sendOnce({ cmd: 'documents_publish_batch' }, data); }
-  discardDraft(data: unknown) { return this.sendOnce({ cmd: 'documents_discard_draft' }, data); }
-  createTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_create_template' }, data); }
+  export(data: RpcRequest<typeof documentsExport>) {
+    return this.callOnce(documentsExport, data, 60000);
+  }
+  publishBatch(data: RpcRequest<typeof documentsPublishBatch>) {
+    return this.callOnce(documentsPublishBatch, data);
+  }
+  discardDraft(data: RpcRequest<typeof documentsDiscardDraft>) {
+    return this.callOnce(documentsDiscardDraft, data);
+  }
+  createTemplate(data: RpcRequest<typeof documentsCreateTemplate>) {
+    return this.callOnce(documentsCreateTemplate, data);
+  }
   // A read in every sense that matters: it stores nothing and writes no event,
   // so a retried preview costs a second render and nothing else.
-  previewTemplate(data: unknown) { return this.send({ cmd: 'documents_preview_template' }, data); }
-  updateTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_update_template' }, data); }
-  deactivateTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_deactivate_template' }, data); }
+  previewTemplate(data: RpcRequest<typeof documentsPreviewTemplate>) {
+    return this.call(documentsPreviewTemplate, data);
+  }
+  updateTemplate(data: RpcRequest<typeof documentsUpdateTemplate>) {
+    return this.callOnce(documentsUpdateTemplate, data);
+  }
+  deactivateTemplate(data: RpcRequest<typeof documentsDeactivateTemplate>) {
+    return this.callOnce(documentsDeactivateTemplate, data);
+  }
 
   /*
     Rendering a PDF and writing two objects takes longer than a status flip, so
@@ -84,15 +215,25 @@ export class DocumentsGatewayService extends BaseGatewayService {
     survive. `signDocument` is idempotent by key, which is the real protection;
     the absence of a retry here is the belt to that pair of braces.
   */
-  issueFromTemplate(data: unknown) { return this.sendOnce({ cmd: 'documents_issue_from_template' }, data, 60000); }
-  consent(data: unknown) { return this.sendOnce({ cmd: 'documents_consent' }, data); }
-  sign(data: unknown) { return this.sendOnce({ cmd: 'documents_sign' }, data, 60000); }
-  acknowledge(data: unknown) { return this.sendOnce({ cmd: 'documents_acknowledge' }, data); }
+  issueFromTemplate(data: RpcRequest<typeof documentsIssueFromTemplate>) {
+    return this.callOnce(documentsIssueFromTemplate, data, 60000);
+  }
+  consent(data: RpcRequest<typeof documentsConsent>) {
+    return this.callOnce(documentsConsent, data);
+  }
+  sign(data: RpcRequest<typeof documentsSign>) {
+    return this.callOnce(documentsSign, data, 60000);
+  }
+  acknowledge(data: RpcRequest<typeof documentsAcknowledge>) {
+    return this.callOnce(documentsAcknowledge, data);
+  }
 
   /*
     Minting a download link is a POST and it WRITES — it records the open on the
     evidence trail. Retrying it would enter the same read twice and make the
     delivery record wrong, so it is a `sendOnce` despite reading a file.
   */
-  downloadUrl(data: unknown) { return this.sendOnce({ cmd: 'documents_download_url' }, data); }
+  downloadUrl(data: RpcRequest<typeof documentsDownloadUrl>) {
+    return this.callOnce(documentsDownloadUrl, data);
+  }
 }

@@ -8,6 +8,41 @@ import { UnitWriteService } from './unit-write.service';
 import { PortalClientsService } from './portal-clients.service';
 import { PortalCategoriesService } from './portal-categories.service';
 
+import {
+  pattern,
+  portalList,
+  portalCreate,
+  portalCreateSpace,
+  portalGet,
+  portalEnsureForSpace,
+  portalGetForSpace,
+  portalUpdateForSpace,
+  portalGetUnit,
+  portalListUnitActivities,
+  portalAddUnitActivity,
+  portalListSpaceUnits,
+  portalUpdate,
+  portalDelete,
+  portalConfigForCustomer,
+  portalListUnits,
+  portalListAssets,
+  portalAdminListUnits,
+  portalCreateUnit,
+  portalUpdateUnit,
+  portalSetPrimaryUnit,
+  portalSetMemberApartment,
+  portalDeleteUnit,
+  portalRemoveClient,
+  portalListAvailableUnits,
+  portalListAssignableCustomers,
+  portalAssertReach,
+  portalCreateCategory,
+  portalUpdateCategory,
+  portalDeleteCategory,
+  portalReorderCategories,
+  type RpcRequest,
+  type Scoped,
+} from '@hbcfield/shared/microservices';
 /*
   `scopeSpaceIds` on an office payload = the workspaces in which the caller holds
   the portal key the gateway route asked for (undefined/null = org-wide, [] =
@@ -15,7 +50,6 @@ import { PortalCategoriesService } from './portal-categories.service';
   (`portalScope`), never from a request body, and the service narrows every
   query to it — the guard alone only knows the key is held SOMEWHERE.
 */
-type Scoped = { scopeSpaceIds?: SpaceScopeIds };
 
 @Controller()
 export class PortalController {
@@ -30,171 +64,160 @@ export class PortalController {
 
   // ── Portals (office) ──
 
-  @MessagePattern({ cmd: 'portal_list' })
-  listPortals(@Payload() data: { organizationId: string; spaceId?: string } & Scoped) {
+  @MessagePattern(pattern(portalList))
+  listPortals(@Payload() data: RpcRequest<typeof portalList>) {
     return this.portalService.listPortals(data);
   }
 
-  @MessagePattern({ cmd: 'portal_create' })
-  createPortal(@Payload() data: { organizationId: string; templateKey?: string; name?: string }) {
+  @MessagePattern(pattern(portalCreate))
+  createPortal(@Payload() data: RpcRequest<typeof portalCreate>) {
     return this.spacePortals.createPortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_create_space' })
-  createSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string; name?: string }) {
+  @MessagePattern(pattern(portalCreateSpace))
+  createSpacePortal(@Payload() data: RpcRequest<typeof portalCreateSpace>) {
     return this.spacePortals.createSpacePortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_get' })
-  getPortal(@Payload() data: { id: string; organizationId: string } & Scoped) {
+  @MessagePattern(pattern(portalGet))
+  getPortal(@Payload() data: RpcRequest<typeof portalGet>) {
     return this.portalService.getPortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_ensure_for_space' })
-  ensurePortalForSpace(@Payload() data: { organizationId: string; spaceId: string; name?: string }) {
+  @MessagePattern(pattern(portalEnsureForSpace))
+  ensurePortalForSpace(@Payload() data: RpcRequest<typeof portalEnsureForSpace>) {
     return this.spacePortals.ensurePortalForSpace(data);
   }
 
-  @MessagePattern({ cmd: 'portal_get_for_space' })
-  getSpacePortal(@Payload() data: { organizationId: string; spaceId: string; mayCreate?: boolean }) {
+  @MessagePattern(pattern(portalGetForSpace))
+  getSpacePortal(@Payload() data: RpcRequest<typeof portalGetForSpace>) {
     return this.spacePortals.getSpacePortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_update_for_space' })
-  updateSpacePortal(@Payload() data: { organizationId: string; spaceId: string; templateKey?: string }) {
+  @MessagePattern(pattern(portalUpdateForSpace))
+  updateSpacePortal(@Payload() data: RpcRequest<typeof portalUpdateForSpace>) {
     return this.spacePortals.updateSpacePortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_get_unit' })
-  getUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(portalGetUnit))
+  getUnit(@Payload() data: RpcRequest<typeof portalGetUnit>) {
     return this.units.getUnit(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_unit_activities' })
-  listUnitActivities(@Payload() data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(portalListUnitActivities))
+  listUnitActivities(@Payload() data: RpcRequest<typeof portalListUnitActivities>) {
     return this.units.listUnitActivities(data);
   }
 
-  @MessagePattern({ cmd: 'portal_add_unit_activity' })
-  addUnitActivity(@Payload() data: { id: string; organizationId: string; body?: string; authorId?: string } & Scoped) {
+  @MessagePattern(pattern(portalAddUnitActivity))
+  addUnitActivity(@Payload() data: RpcRequest<typeof portalAddUnitActivity>) {
     return this.units.addUnitActivity(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_space_units' })
-  listSpaceUnits(@Payload() data: { organizationId: string; spaceId: string }) {
+  @MessagePattern(pattern(portalListSpaceUnits))
+  listSpaceUnits(@Payload() data: RpcRequest<typeof portalListSpaceUnits>) {
     return this.spacePortals.listSpaceUnits(data);
   }
 
-  @MessagePattern({ cmd: 'portal_update' })
-  updatePortal(@Payload() data: any) {
+  @MessagePattern(pattern(portalUpdate))
+  updatePortal(@Payload() data: RpcRequest<typeof portalUpdate>) {
     return this.portalService.updatePortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_delete' })
-  deletePortal(@Payload() data: { id: string; organizationId: string } & Scoped) {
+  @MessagePattern(pattern(portalDelete))
+  deletePortal(@Payload() data: RpcRequest<typeof portalDelete>) {
     return this.portalService.deletePortal(data);
   }
 
   // ── Config for the mobile customer (their own portal) ──
 
-  @MessagePattern({ cmd: 'portal_config_for_customer' })
-  getConfigForCustomer(@Payload() data: { customerId: string }) {
+  @MessagePattern(pattern(portalConfigForCustomer))
+  getConfigForCustomer(@Payload() data: RpcRequest<typeof portalConfigForCustomer>) {
     return this.portalService.getConfigForCustomer(data);
   }
 
   // ── Units ──
 
-  @MessagePattern({ cmd: 'portal_list_units' })
-  listUnits(@Payload() data: { organizationId: string; customerId: string }) {
+  @MessagePattern(pattern(portalListUnits))
+  listUnits(@Payload() data: RpcRequest<typeof portalListUnits>) {
     return this.units.listCustomerUnits(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_assets' })
-  async listAssets(@Payload() data: any) {
+  @MessagePattern(pattern(portalListAssets))
+  async listAssets(@Payload() data: RpcRequest<typeof portalListAssets>) {
     return this.units.listAssets(data);
   }
 
-  @MessagePattern({ cmd: 'portal_admin_list_units' })
-  adminListUnits(@Payload() data: { organizationId: string; customerId?: string } & Scoped) {
+  @MessagePattern(pattern(portalAdminListUnits))
+  adminListUnits(@Payload() data: RpcRequest<typeof portalAdminListUnits>) {
     return this.units.listUnits(data);
   }
 
-  @MessagePattern({ cmd: 'portal_create_unit' })
-  createUnit(@Payload() data: any) {
+  @MessagePattern(pattern(portalCreateUnit))
+  createUnit(@Payload() data: RpcRequest<typeof portalCreateUnit>) {
     return this.unitWrite.createUnit(data);
   }
 
-  @MessagePattern({ cmd: 'portal_update_unit' })
-  updateUnit(@Payload() data: any) {
+  @MessagePattern(pattern(portalUpdateUnit))
+  updateUnit(@Payload() data: RpcRequest<typeof portalUpdateUnit>) {
     return this.unitWrite.updateUnit(data);
   }
 
-  @MessagePattern({ cmd: 'portal_set_primary_unit' })
-  setPrimaryUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string }) {
+  @MessagePattern(pattern(portalSetPrimaryUnit))
+  setPrimaryUnit(@Payload() data: RpcRequest<typeof portalSetPrimaryUnit>) {
     return this.units.setPrimaryUnit(data);
   }
 
-  @MessagePattern({ cmd: 'portal_set_member_apartment' })
-  setMemberApartment(
-    @Payload()
-    data: {
-      organizationId: string;
-      spaceId: string;
-      userId: string;
-      unitId?: string | null;
-      actorId?: string;
-    },
-  ) {
+  @MessagePattern(pattern(portalSetMemberApartment))
+  setMemberApartment(@Payload() data: RpcRequest<typeof portalSetMemberApartment>) {
     return this.unitWrite.setMemberApartment(data);
   }
 
-  @MessagePattern({ cmd: 'portal_delete_unit' })
-  deleteUnit(@Payload() data: { id: string; organizationId: string; scopeSpaceId?: string } & Scoped) {
+  @MessagePattern(pattern(portalDeleteUnit))
+  deleteUnit(@Payload() data: RpcRequest<typeof portalDeleteUnit>) {
     return this.unitWrite.deleteUnit(data);
   }
 
-  @MessagePattern({ cmd: 'portal_remove_client' })
-  removePortalClient(@Payload() data: { organizationId: string; customerId: string } & Scoped) {
+  @MessagePattern(pattern(portalRemoveClient))
+  removePortalClient(@Payload() data: RpcRequest<typeof portalRemoveClient>) {
     return this.portalClients.removePortalClient(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_available_units' })
-  listAvailableUnitsForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
+  @MessagePattern(pattern(portalListAvailableUnits))
+  listAvailableUnitsForPortal(@Payload() data: RpcRequest<typeof portalListAvailableUnits>) {
     return this.portalClients.listAvailableUnitsForPortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_assignable_customers' })
-  listAssignableCustomersForPortal(@Payload() data: { organizationId: string; portalId: string } & Scoped) {
+  @MessagePattern(pattern(portalListAssignableCustomers))
+  listAssignableCustomersForPortal(@Payload() data: RpcRequest<typeof portalListAssignableCustomers>) {
     return this.portalClients.listAssignableCustomersForPortal(data);
   }
 
   /** Is this portal / client / unit in the caller's reach? 404 when not (see the service). */
-  @MessagePattern({ cmd: 'portal_assert_reach' })
-  assertPortalReach(
-    @Payload() data: { organizationId: string; portalId?: string; customerId?: string; unitId?: string } & Scoped,
-  ) {
+  @MessagePattern(pattern(portalAssertReach))
+  assertPortalReach(@Payload() data: RpcRequest<typeof portalAssertReach>) {
     return this.portalService.assertPortalReach(data);
   }
 
   // ── Intake category editor (per portal) ──
 
-  @MessagePattern({ cmd: 'portal_create_category' })
-  createCategory(@Payload() data: any) {
+  @MessagePattern(pattern(portalCreateCategory))
+  createCategory(@Payload() data: RpcRequest<typeof portalCreateCategory>) {
     return this.categories.createCategory(data);
   }
 
-  @MessagePattern({ cmd: 'portal_update_category' })
-  updateCategory(@Payload() data: any) {
+  @MessagePattern(pattern(portalUpdateCategory))
+  updateCategory(@Payload() data: RpcRequest<typeof portalUpdateCategory>) {
     return this.categories.updateCategory(data);
   }
 
-  @MessagePattern({ cmd: 'portal_delete_category' })
-  deleteCategory(@Payload() data: { id: string; organizationId: string } & Scoped) {
+  @MessagePattern(pattern(portalDeleteCategory))
+  deleteCategory(@Payload() data: RpcRequest<typeof portalDeleteCategory>) {
     return this.categories.deleteCategory(data);
   }
 
-  @MessagePattern({ cmd: 'portal_reorder_categories' })
-  reorderCategories(@Payload() data: { organizationId: string; portalId: string; orderedIds: string[] } & Scoped) {
+  @MessagePattern(pattern(portalReorderCategories))
+  reorderCategories(@Payload() data: RpcRequest<typeof portalReorderCategories>) {
     return this.categories.reorderCategories(data);
   }
 }

@@ -7,6 +7,29 @@ import { JoinRequestReviewService } from './join-request-review.service';
 import { OrgSettingsService } from './org-settings.service';
 import { OrgProfileService } from './org-profile.service';
 
+import {
+  pattern,
+  onboardingCreateOrg,
+  onboardingValidateOrgCode,
+  onboardingSubmitJoinRequest,
+  onboardingAcceptInvitationExisting,
+  onboardingGetStatus,
+  onboardingListJoinRequests,
+  onboardingApproveJoinRequest,
+  onboardingRejectJoinRequest,
+  onboardingCancelJoinRequest,
+  onboardingRegenerateJoinCode,
+  onboardingGetJoinCode,
+  onboardingUpdateJoinPolicy,
+  onboardingUpdateLeavePolicy,
+  updateProfileBadges,
+  getProfileBadges,
+  getOrgProfile,
+  updateOrgProfile,
+  updateOrgNotificationPrefs,
+  updateSecuritySettings,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class OnboardingController {
   constructor(
@@ -18,68 +41,68 @@ export class OnboardingController {
     private readonly invitationOnboarding: InvitationOnboardingService,
   ) {}
 
-  @MessagePattern({ cmd: 'onboarding_create_org' })
-  async createOrganization(@Payload() data: { userId: string; name: string; address?: string; industry?: string }) {
+  @MessagePattern(pattern(onboardingCreateOrg))
+  async createOrganization(@Payload() data: RpcRequest<typeof onboardingCreateOrg>) {
     return this.onboardingService.createOrganization(data.userId, data);
   }
 
-  @MessagePattern({ cmd: 'onboarding_validate_org_code' })
-  async validateOrgCode(@Payload() data: { code: string }) {
+  @MessagePattern(pattern(onboardingValidateOrgCode))
+  async validateOrgCode(@Payload() data: RpcRequest<typeof onboardingValidateOrgCode>) {
     return this.onboardingService.validateOrgCode(data.code);
   }
 
-  @MessagePattern({ cmd: 'onboarding_submit_join_request' })
-  async submitJoinRequest(@Payload() data: { userId: string; orgCode: string; message?: string }) {
+  @MessagePattern(pattern(onboardingSubmitJoinRequest))
+  async submitJoinRequest(@Payload() data: RpcRequest<typeof onboardingSubmitJoinRequest>) {
     return this.joinRequests.submitJoinRequest(data.userId, data);
   }
 
-  @MessagePattern({ cmd: 'onboarding_accept_invitation_existing' })
-  async acceptInvitationExisting(@Payload() data: { userId: string; code: string }) {
+  @MessagePattern(pattern(onboardingAcceptInvitationExisting))
+  async acceptInvitationExisting(@Payload() data: RpcRequest<typeof onboardingAcceptInvitationExisting>) {
     return this.invitationOnboarding.acceptInvitationForExistingUser(data.userId, data.code);
   }
 
-  @MessagePattern({ cmd: 'onboarding_get_status' })
-  async getStatus(@Payload() data: { userId: string }) {
+  @MessagePattern(pattern(onboardingGetStatus))
+  async getStatus(@Payload() data: RpcRequest<typeof onboardingGetStatus>) {
     return this.onboardingService.getOnboardingStatus(data.userId);
   }
 
-  @MessagePattern({ cmd: 'onboarding_list_join_requests' })
-  async listJoinRequests(@Payload() data: any) {
+  @MessagePattern(pattern(onboardingListJoinRequests))
+  async listJoinRequests(@Payload() data: RpcRequest<typeof onboardingListJoinRequests>) {
     return this.joinReview.listJoinRequests(data);
   }
 
-  @MessagePattern({ cmd: 'onboarding_approve_join_request' })
-  async approveJoinRequest(@Payload() data: any) {
+  @MessagePattern(pattern(onboardingApproveJoinRequest))
+  async approveJoinRequest(@Payload() data: RpcRequest<typeof onboardingApproveJoinRequest>) {
     return this.joinReview.approveJoinRequest(data);
   }
 
-  @MessagePattern({ cmd: 'onboarding_reject_join_request' })
-  async rejectJoinRequest(@Payload() data: any) {
+  @MessagePattern(pattern(onboardingRejectJoinRequest))
+  async rejectJoinRequest(@Payload() data: RpcRequest<typeof onboardingRejectJoinRequest>) {
     return this.joinReview.rejectJoinRequest(data);
   }
 
-  @MessagePattern({ cmd: 'onboarding_cancel_join_request' })
-  async cancelJoinRequest(@Payload() data: { requestId: string; userId: string }) {
+  @MessagePattern(pattern(onboardingCancelJoinRequest))
+  async cancelJoinRequest(@Payload() data: RpcRequest<typeof onboardingCancelJoinRequest>) {
     return this.joinRequests.cancelJoinRequest(data.requestId, data.userId);
   }
 
-  @MessagePattern({ cmd: 'onboarding_regenerate_join_code' })
-  async regenerateJoinCode(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(onboardingRegenerateJoinCode))
+  async regenerateJoinCode(@Payload() data: RpcRequest<typeof onboardingRegenerateJoinCode>) {
     return this.orgSettings.regenerateJoinCode(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'onboarding_get_join_code' })
-  async getJoinCode(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(onboardingGetJoinCode))
+  async getJoinCode(@Payload() data: RpcRequest<typeof onboardingGetJoinCode>) {
     return this.orgSettings.getJoinCode(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'onboarding_update_join_policy' })
-  async updateJoinPolicy(@Payload() data: { organizationId: string; joinPolicy: string }) {
+  @MessagePattern(pattern(onboardingUpdateJoinPolicy))
+  async updateJoinPolicy(@Payload() data: RpcRequest<typeof onboardingUpdateJoinPolicy>) {
     return this.orgSettings.updateJoinPolicy(data.organizationId, data.joinPolicy);
   }
 
-  @MessagePattern({ cmd: 'onboarding_update_leave_policy' })
-  async updateLeavePolicy(@Payload() data: { organizationId: string; policy?: Record<string, unknown>; defaultLeaveAllowance?: number }) {
+  @MessagePattern(pattern(onboardingUpdateLeavePolicy))
+  async updateLeavePolicy(@Payload() data: RpcRequest<typeof onboardingUpdateLeavePolicy>) {
     // `policy` from the current gateway; the flat allowance from one deployed before it.
     return this.orgSettings.updateLeavePolicy(
       data.organizationId,
@@ -87,35 +110,35 @@ export class OnboardingController {
     );
   }
 
-  @MessagePattern({ cmd: 'update_profile_badges' })
-  async updateProfileBadges(@Payload() data: { organizationId: string; profileBadges: any }) {
+  @MessagePattern(pattern(updateProfileBadges))
+  async updateProfileBadges(@Payload() data: RpcRequest<typeof updateProfileBadges>) {
     return this.orgSettings.updateProfileBadges(data.organizationId, data.profileBadges);
   }
 
-  @MessagePattern({ cmd: 'get_profile_badges' })
-  async getProfileBadges(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(getProfileBadges))
+  async getProfileBadges(@Payload() data: RpcRequest<typeof getProfileBadges>) {
     return this.orgSettings.getProfileBadges(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'get_org_profile' })
-  async getOrgProfile(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(getOrgProfile))
+  async getOrgProfile(@Payload() data: RpcRequest<typeof getOrgProfile>) {
     return this.orgProfile.getOrgProfile(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'update_org_profile' })
-  async updateOrgProfile(@Payload() data: { organizationId: string; updates: any }) {
+  @MessagePattern(pattern(updateOrgProfile))
+  async updateOrgProfile(@Payload() data: RpcRequest<typeof updateOrgProfile>) {
     return this.orgProfile.updateOrgProfile(data.organizationId, data.updates);
   }
 
   // Not `update_notification_prefs`: that name was shared with the member's own
   // settings, and the later registration silently took both (see UsersController).
-  @MessagePattern({ cmd: 'update_org_notification_prefs' })
-  async updateNotificationPrefs(@Payload() data: { organizationId: string; prefs: any }) {
+  @MessagePattern(pattern(updateOrgNotificationPrefs))
+  async updateNotificationPrefs(@Payload() data: RpcRequest<typeof updateOrgNotificationPrefs>) {
     return this.orgSettings.updateNotificationPrefs(data.organizationId, data.prefs);
   }
 
-  @MessagePattern({ cmd: 'update_security_settings' })
-  async updateSecuritySettings(@Payload() data: { organizationId: string; settings: any }) {
+  @MessagePattern(pattern(updateSecuritySettings))
+  async updateSecuritySettings(@Payload() data: RpcRequest<typeof updateSecuritySettings>) {
     return this.orgSettings.updateSecuritySettings(data.organizationId, data.settings);
   }
 }

@@ -1,5 +1,23 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  addAssetMoney,
+  assetCustodyForMember,
+  assetCustodyHandover,
+  assetCustodyMine,
+  assetCustodyTimeline,
+  assetExpenseMine,
+  assetExpensePending,
+  assetExpensePresign,
+  assetExpenseRead,
+  assetExpenseReceiptUrl,
+  assetExpenseReview,
+  assetExpenseSubmit,
+  listAssetMoney,
+  removeAssetMoney,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { AssetLedgerService } from './asset-ledger.service';
 import { AssetCustodyService } from './asset-custody.service';
 import { AssetExpenseService } from './asset-expense.service';
@@ -19,18 +37,18 @@ export class AssetMoneyRpcController {
     private readonly logs: AssetLogService,
   ) {}
 
-  @MessagePattern({ cmd: 'list_asset_money' })
-  async listMoney(@Payload() data: any) {
+  @MessagePattern(pattern(listAssetMoney))
+  async listMoney(@Payload() data: RpcRequest<typeof listAssetMoney>) {
     return this.ledger.listMoney(data);
   }
 
-  @MessagePattern({ cmd: 'add_asset_money' })
-  async addMoney(@Payload() data: any) {
+  @MessagePattern(pattern(addAssetMoney))
+  async addMoney(@Payload() data: RpcRequest<typeof addAssetMoney>) {
     return this.ledger.addMoney(data);
   }
 
-  @MessagePattern({ cmd: 'remove_asset_money' })
-  async removeMoney(@Payload() data: any) {
+  @MessagePattern(pattern(removeAssetMoney))
+  async removeMoney(@Payload() data: RpcRequest<typeof removeAssetMoney>) {
     return this.ledger.removeMoney(data);
   }
 
@@ -38,8 +56,8 @@ export class AssetMoneyRpcController {
   // CUSTODY — who held it, and when
   // ============================================
 
-  @MessagePattern({ cmd: 'asset_custody_timeline' })
-  async custodyTimeline(@Payload() data: any) {
+  @MessagePattern(pattern(assetCustodyTimeline))
+  async custodyTimeline(@Payload() data: RpcRequest<typeof assetCustodyTimeline>) {
     return this.custodyRead.timeline(data);
   }
 
@@ -50,19 +68,19 @@ export class AssetMoneyRpcController {
     button and waiting to see the result, and a round trip through Redis buys
     nothing but latency on a screen somebody is watching.
   */
-  @MessagePattern({ cmd: 'asset_custody_handover' })
-  async handOver(@Payload() data: any) {
+  @MessagePattern(pattern(assetCustodyHandover))
+  async handOver(@Payload() data: RpcRequest<typeof assetCustodyHandover>) {
     return this.custody.handOver(data);
   }
 
-  @MessagePattern({ cmd: 'asset_custody_for_member' })
-  async custodyForMember(@Payload() data: any) {
+  @MessagePattern(pattern(assetCustodyForMember))
+  async custodyForMember(@Payload() data: RpcRequest<typeof assetCustodyForMember>) {
     return this.custodyRead.forMember(data);
   }
 
   /** What the CALLER holds — the phone opens on this. */
-  @MessagePattern({ cmd: 'asset_custody_mine' })
-  async custodyMine(@Payload() data: any) {
+  @MessagePattern(pattern(assetCustodyMine))
+  async custodyMine(@Payload() data: RpcRequest<typeof assetCustodyMine>) {
     return this.custodyRead.mine(data);
   }
 
@@ -70,28 +88,28 @@ export class AssetMoneyRpcController {
   // EXPENSES — a member spends, the office accepts
   // ============================================
 
-  @MessagePattern({ cmd: 'asset_expense_presign' })
-  async expensePresign(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpensePresign))
+  async expensePresign(@Payload() data: RpcRequest<typeof assetExpensePresign>) {
     return this.expenses.presignReceipt(data);
   }
 
-  @MessagePattern({ cmd: 'asset_expense_read' })
-  async expenseRead(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpenseRead))
+  async expenseRead(@Payload() data: RpcRequest<typeof assetExpenseRead>) {
     return this.expenses.readReceipt(data);
   }
 
-  @MessagePattern({ cmd: 'asset_expense_submit' })
-  async expenseSubmit(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpenseSubmit))
+  async expenseSubmit(@Payload() data: RpcRequest<typeof assetExpenseSubmit>) {
     return this.expenses.submit(data);
   }
 
-  @MessagePattern({ cmd: 'asset_expense_mine' })
-  async expenseMine(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpenseMine))
+  async expenseMine(@Payload() data: RpcRequest<typeof assetExpenseMine>) {
     return this.expenseReviews.mine(data);
   }
 
-  @MessagePattern({ cmd: 'asset_expense_pending' })
-  async expensePending(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpensePending))
+  async expensePending(@Payload() data: RpcRequest<typeof assetExpensePending>) {
     return this.expenseReviews.pending(data);
   }
 
@@ -100,13 +118,13 @@ export class AssetMoneyRpcController {
     asset: an accepted oil change resets a service interval, and a decision that
     skipped that would leave the due date a job behind.
   */
-  @MessagePattern({ cmd: 'asset_expense_review' })
-  async expenseReview(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpenseReview))
+  async expenseReview(@Payload() data: RpcRequest<typeof assetExpenseReview>) {
     return this.logs.review(data);
   }
 
-  @MessagePattern({ cmd: 'asset_expense_receipt_url' })
-  async expenseReceiptUrl(@Payload() data: any) {
+  @MessagePattern(pattern(assetExpenseReceiptUrl))
+  async expenseReceiptUrl(@Payload() data: RpcRequest<typeof assetExpenseReceiptUrl>) {
     return this.expenses.receiptUrl(data);
   }
 }

@@ -12,9 +12,16 @@ import { pickUnitFields } from '@hbcfield/shared';
  */
 describe('pickUnitFields', () => {
   const hostile = {
-    organizationId: 'org-B', id: 'unit-B', actorId: 'someone', scopeCustomerId: 'c-B',
-    crmCaller: { userId: 'x', role: 'ADMIN' }, __proto__: { name: 'polluted' },
-    name: 'Flat 2', lat: 1, spaceId: 's1', customerId: 'c1',
+    organizationId: 'org-B',
+    id: 'unit-B',
+    actorId: 'someone',
+    scopeCustomerId: 'c-B',
+    crmCaller: { userId: 'x', role: 'ADMIN' },
+    __proto__: { name: 'polluted' },
+    name: 'Flat 2',
+    lat: 1,
+    spaceId: 's1',
+    customerId: 'c1',
   };
 
   it('keeps editable fields and drops every identity field', () => {
@@ -43,9 +50,18 @@ describe('unit routes in the gateway', () => {
   ];
   const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
+  // `unitFieldsFor` (common/unit-fields.ts) is pickUnitFields typed as the message it goes into.
+  it('unitFieldsFor is pickUnitFields, nothing more', () => {
+    const helper = strip(fs.readFileSync(path.join(ROOT, '../common/unit-fields.ts'), 'utf8'));
+    expect(helper).toContain('return pickUnitFields(body, opts) as Partial<Req>;');
+  });
+
   it.each(FILES)('%s builds unit writes from pickUnitFields, identity last', (file) => {
     const code = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
-    const writes = code.split(/this\.auth\('portal_(?:create|update)_unit',/).slice(1);
+    // The write names its message as a string or as its contract (portalCreateUnit / portalUpdateUnit).
+    const writes = code
+      .split(/this\.auth\(\s*(?:'portal_(?:create|update)_unit'|portal(?:Create|Update)Unit)\s*,/)
+      .slice(1);
     expect(writes.length).toBeGreaterThan(0);
     for (const w of writes) {
       // The payload literal: from its `{` to the brace that closes it.
@@ -61,15 +77,23 @@ describe('unit routes in the gateway', () => {
       expect(payload).not.toMatch(/\.\.\.(body|rest|dto|input)\b/);
       const org = payload.indexOf('organizationId');
       expect(org).toBeGreaterThan(-1);
-      const pick = payload.indexOf('pickUnitFields(');
+      const pick = payload.search(/(pickUnitFields|unitFieldsFor)\(/);
       if (pick !== -1) expect(pick).toBeLessThan(org);
     }
   });
 
   it('every CRM address write carries the caller, so the service can ask the reach rule', () => {
     const code = strip(fs.readFileSync(path.join(ROOT, 'customers/customer-addresses.controller.ts'), 'utf8'));
-    for (const cmd of ['portal_create_unit', 'portal_update_unit', 'portal_set_primary_unit', 'portal_delete_unit']) {
-      const at = code.indexOf(`'${cmd}'`);
+    // Each write by its cmd string or its message contract's name.
+    const CONTRACT: Record<string, string> = {
+      portal_create_unit: 'portalCreateUnit',
+      portal_update_unit: 'portalUpdateUnit',
+      portal_set_primary_unit: 'portalSetPrimaryUnit',
+      portal_delete_unit: 'portalDeleteUnit',
+    };
+    for (const cmd of Object.keys(CONTRACT)) {
+      const byName = code.search(new RegExp(`this\\.auth\\(\\s*${CONTRACT[cmd]}\\s*,`));
+      const at = byName !== -1 ? byName : code.indexOf(`'${cmd}'`);
       expect(at).toBeGreaterThan(-1);
       expect(code.slice(at, code.indexOf('});', at))).toContain('crmCaller: this.caller(req)');
     }
@@ -89,7 +113,10 @@ describe('no ...rest spread after the caller in the controllers this audit owns'
     for (const d of DIRS) {
       const dir = path.join(__dirname, '../..', d);
       for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.controller.ts'))) {
-        const code = fs.readFileSync(path.join(dir, f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        const code = fs
+          .readFileSync(path.join(dir, f), 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/\/\/.*$/gm, '');
         for (const lit of code.match(/\{[^{}]*\}/g) ?? []) {
           const s = lit.search(SPREAD);
           const i = lit.search(IDENTITY);

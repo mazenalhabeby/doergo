@@ -7,8 +7,9 @@ import { findMembership } from './chat-membership';
 import { ChatReachService } from './chat-reach.service';
 import { ChatCountersService } from './chat-counters.service';
 import { announceMembersChanged, personName, writeSystemLine } from './chat-system';
+import type { ChatActorMessage } from '@hbcfield/shared/microservices';
 
-type Actor = { userId: string; organizationId: string };
+type Actor = ChatActorMessage;
 
 /**
  * Groups (docs/plans/chat-team.md phase 3, D3).

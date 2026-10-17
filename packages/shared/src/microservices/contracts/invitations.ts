@@ -32,6 +32,8 @@ export interface CreateInvitationMessage {
   unitId?: string;
   /** Invite the client to one ASSET — any type whose records a client holds. */
   assetId?: string;
+  /** Sent by the customer/portal invite routes; createInvitation does not read it. */
+  portalId?: string;
   // When present, the invite code is ALSO emailed to this address automatically.
   email?: string;
 }

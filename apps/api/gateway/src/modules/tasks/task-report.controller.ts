@@ -15,6 +15,7 @@ import { taskActor } from '../../common/task-actor';
 import { trackingVisibility } from '../../common/tracking-visibility';
 import { TaskReportQueryDto } from './dto';
 import { TasksService } from './tasks.service';
+import { sendRpc, getTaskRoute } from '@hbcfield/shared/microservices';
 
 /** A route is a nice-to-have on a report; it must never hold the report up. */
 const ROUTE_TIMEOUT_MS = 5_000;
@@ -70,8 +71,7 @@ export class TaskReportController {
       const spaceId = report.header.workspace?.id;
       const chosen = report.meta.copy === 'office' || (report.meta.include ?? []).includes('route');
       const allowed =
-        chosen &&
-        (tracking.canViewTracking || (!!spaceId && (tracking.trackingSpaceIds ?? []).includes(spaceId)));
+        chosen && (tracking.canViewTracking || (!!spaceId && (tracking.trackingSpaceIds ?? []).includes(spaceId)));
       if (allowed && route) report.route = toReportRoute(route, report.header.site);
       else delete report.route;
       report.meta.sections = presentSections(report);
@@ -83,7 +83,7 @@ export class TaskReportController {
   private async routeOf(taskId: string, organizationId: string): Promise<TrackedTaskRoute | null> {
     try {
       const res: any = await firstValueFrom(
-        this.trackingClient.send({ cmd: 'get_task_route' }, { taskId, organizationId }).pipe(timeout(ROUTE_TIMEOUT_MS)),
+        sendRpc(this.trackingClient, getTaskRoute, { taskId, organizationId }).pipe(timeout(ROUTE_TIMEOUT_MS)),
       );
       return res?.success === true && res.data ? (res.data as TrackedTaskRoute) : null;
     } catch (err: any) {

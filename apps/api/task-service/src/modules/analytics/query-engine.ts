@@ -1,26 +1,19 @@
 import { BadRequestException } from '@nestjs/common';
 import { reportLabelEn, type ReportLabelKey, type SpaceScopeIds, clampListLimit } from '@hbcfield/shared';
 import { DATASETS, Dataset } from './registry';
+import type {
+  ReportDatePresetMessage,
+  ReportDefinitionMessage,
+  ReportFilterMessage,
+  ReportGranularityMessage,
+} from '@hbcfield/shared/microservices';
 
-export type Granularity = 'none' | 'day' | 'week' | 'month' | 'quarter' | 'year';
-export type DatePreset = 'last_7d' | 'last_30d' | 'last_90d' | 'this_month' | 'last_month' | 'this_year' | 'all';
+export type Granularity = ReportGranularityMessage;
+export type DatePreset = ReportDatePresetMessage;
 
-export interface ReportFilter {
-  field: string; // dimension key
-  op: 'eq' | 'neq' | 'in';
-  value: string | number | Array<string | number>;
-}
+export type ReportFilter = ReportFilterMessage;
 
-export interface ReportDefinition {
-  dataset: string;
-  measures: string[];
-  dimensions?: string[];
-  granularity?: Granularity;
-  dateRange?: { preset?: DatePreset; from?: string; to?: string };
-  filters?: ReportFilter[];
-  sort?: { key: string; dir: 'asc' | 'desc' };
-  limit?: number;
-}
+export type ReportDefinition = ReportDefinitionMessage;
 
 const GRANULARITIES = new Set<Granularity>(['none', 'day', 'week', 'month', 'quarter', 'year']);
 

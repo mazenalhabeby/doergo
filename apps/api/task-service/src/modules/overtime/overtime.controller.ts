@@ -3,6 +3,15 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OvertimeService } from './overtime.service';
 import { OvertimeRecordService } from './overtime-record.service';
 import { OvertimeSummaryService } from './overtime-summary.service';
+import {
+  pattern,
+  type RpcRequest,
+  getActiveOvertime,
+  getPendingOvertimeApprovals,
+  getOvertimeHistory,
+  getOvertimeSummary,
+  getOvertimeRound,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class OvertimeController {
@@ -12,28 +21,28 @@ export class OvertimeController {
     private readonly overtimeTotals: OvertimeSummaryService,
   ) {}
 
-  @MessagePattern({ cmd: 'get_active_overtime' })
-  async getActive(@Payload() data: { userId: string }) {
+  @MessagePattern(pattern(getActiveOvertime))
+  async getActive(@Payload() data: RpcRequest<typeof getActiveOvertime>) {
     return this.overtimeService.getActive(data);
   }
 
-  @MessagePattern({ cmd: 'get_pending_overtime_approvals' })
-  async getPendingApprovals(@Payload() data: { organizationId: string; scopeSpaceIds?: string[] | null }) {
+  @MessagePattern(pattern(getPendingOvertimeApprovals))
+  async getPendingApprovals(@Payload() data: RpcRequest<typeof getPendingOvertimeApprovals>) {
     return this.overtimeService.getPendingApprovals(data);
   }
 
-  @MessagePattern({ cmd: 'get_overtime_history' })
-  async getHistory(@Payload() data: any) {
+  @MessagePattern(pattern(getOvertimeHistory))
+  async getHistory(@Payload() data: RpcRequest<typeof getOvertimeHistory>) {
     return this.record.history(data);
   }
 
-  @MessagePattern({ cmd: 'get_overtime_summary' })
-  async getSummary(@Payload() data: any) {
+  @MessagePattern(pattern(getOvertimeSummary))
+  async getSummary(@Payload() data: RpcRequest<typeof getOvertimeSummary>) {
     return this.overtimeTotals.summary(data);
   }
 
-  @MessagePattern({ cmd: 'get_overtime_round' })
-  async getRound(@Payload() data: any) {
+  @MessagePattern(pattern(getOvertimeRound))
+  async getRound(@Payload() data: RpcRequest<typeof getOvertimeRound>) {
     return this.record.round(data);
   }
 }

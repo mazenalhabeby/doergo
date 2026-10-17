@@ -1,5 +1,20 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  addAssetRow,
+  assetLogCreate,
+  assetLogDueMine,
+  assetLogList,
+  assetLogMine,
+  assetLogPresign,
+  assetLogRemove,
+  assetLogSummary,
+  listAssetRows,
+  removeAssetRow,
+  updateAssetRow,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { AssetRowsService } from './asset-rows.service';
 import { AssetLogService } from './asset-log.service';
 import { AssetLogReadService } from './asset-log-read.service';
@@ -17,58 +32,58 @@ export class AssetLogRpcController {
   // LOGBOOK — what gets done to a thing, and when it is due again
   // ============================================
 
-  @MessagePattern({ cmd: 'asset_log_presign' })
-  async logPresign(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogPresign))
+  async logPresign(@Payload() data: RpcRequest<typeof assetLogPresign>) {
     return this.logs.presign(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_create' })
-  async logCreate(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogCreate))
+  async logCreate(@Payload() data: RpcRequest<typeof assetLogCreate>) {
     return this.logs.create(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_list' })
-  async logList(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogList))
+  async logList(@Payload() data: RpcRequest<typeof assetLogList>) {
     return this.logReads.list(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_summary' })
-  async logSummary(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogSummary))
+  async logSummary(@Payload() data: RpcRequest<typeof assetLogSummary>) {
     return this.logReads.summary(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_mine' })
-  async logMine(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogMine))
+  async logMine(@Payload() data: RpcRequest<typeof assetLogMine>) {
     return this.logReads.mine(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_due_mine' })
-  async logDueMine(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogDueMine))
+  async logDueMine(@Payload() data: RpcRequest<typeof assetLogDueMine>) {
     return this.logReads.dueMine(data);
   }
 
-  @MessagePattern({ cmd: 'asset_log_remove' })
-  async logRemove(@Payload() data: any) {
+  @MessagePattern(pattern(assetLogRemove))
+  async logRemove(@Payload() data: RpcRequest<typeof assetLogRemove>) {
     return this.logs.remove(data);
   }
 
-  @MessagePattern({ cmd: 'list_asset_rows' })
-  async listRows(@Payload() data: any) {
+  @MessagePattern(pattern(listAssetRows))
+  async listRows(@Payload() data: RpcRequest<typeof listAssetRows>) {
     return this.rows.listRows(data);
   }
 
-  @MessagePattern({ cmd: 'add_asset_row' })
-  async addRow(@Payload() data: any) {
+  @MessagePattern(pattern(addAssetRow))
+  async addRow(@Payload() data: RpcRequest<typeof addAssetRow>) {
     return this.rows.addRow(data);
   }
 
-  @MessagePattern({ cmd: 'update_asset_row' })
-  async updateRow(@Payload() data: any) {
+  @MessagePattern(pattern(updateAssetRow))
+  async updateRow(@Payload() data: RpcRequest<typeof updateAssetRow>) {
     return this.rows.updateRow(data);
   }
 
-  @MessagePattern({ cmd: 'remove_asset_row' })
-  async removeRow(@Payload() data: any) {
+  @MessagePattern(pattern(removeAssetRow))
+  async removeRow(@Payload() data: RpcRequest<typeof removeAssetRow>) {
     return this.rows.removeRow(data);
   }
 }

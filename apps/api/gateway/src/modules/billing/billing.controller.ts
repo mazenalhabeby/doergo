@@ -23,6 +23,18 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
 import { SetAddOnsDto } from './dto';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
+import {
+  sendRpc,
+  billingGetSubscription,
+  billingGetBill,
+  billingSetAddons,
+  billingCreateCheckout,
+  billingCreatePortal,
+  billingCancel,
+  billingWebhook,
+  billingAdminListOrgs,
+  billingAdminSetAddons,
+} from '@hbcfield/shared/microservices';
 
 @ApiTags('billing')
 @Controller('billing')
@@ -53,9 +65,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Get the org subscription/billing status' })
   async getSubscription(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
-      await firstValueFrom(
-        this.authClient.send({ cmd: 'billing_get_subscription' }, { organizationId: user.organizationId }),
-      ),
+      await firstValueFrom(sendRpc(this.authClient, billingGetSubscription, { organizationId: user.organizationId })),
     );
   }
 
@@ -67,7 +77,7 @@ export class BillingController {
   @ApiOperation({ summary: 'The itemised bill: seats, every space, and org add-ons' })
   async getBill(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
-      await firstValueFrom(this.authClient.send({ cmd: 'billing_get_bill' }, { organizationId: user.organizationId })),
+      await firstValueFrom(sendRpc(this.authClient, billingGetBill, { organizationId: user.organizationId })),
     );
   }
 
@@ -80,10 +90,7 @@ export class BillingController {
     // ever change what their own organization has bought.
     const result = this.unwrap(
       await firstValueFrom(
-        this.authClient.send(
-          { cmd: 'billing_set_addons' },
-          { organizationId: user.organizationId, addOns: dto.addOns },
-        ),
+        sendRpc(this.authClient, billingSetAddons, { organizationId: user.organizationId, addOns: dto.addOns }),
       ),
     );
     /*
@@ -109,14 +116,11 @@ export class BillingController {
     const base = this.webBase();
     return this.unwrap(
       await firstValueFrom(
-        this.authClient.send(
-          { cmd: 'billing_create_checkout' },
-          {
-            organizationId: user.organizationId,
-            successUrl: `${base}/settings/billing?checkout=success`,
-            cancelUrl: `${base}/settings/billing?checkout=cancel`,
-          },
-        ),
+        sendRpc(this.authClient, billingCreateCheckout, {
+          organizationId: user.organizationId,
+          successUrl: `${base}/settings/billing?checkout=success`,
+          cancelUrl: `${base}/settings/billing?checkout=cancel`,
+        }),
       ),
     );
   }
@@ -128,10 +132,10 @@ export class BillingController {
   async portal(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
       await firstValueFrom(
-        this.authClient.send(
-          { cmd: 'billing_create_portal' },
-          { organizationId: user.organizationId, returnUrl: `${this.webBase()}/settings/billing` },
-        ),
+        sendRpc(this.authClient, billingCreatePortal, {
+          organizationId: user.organizationId,
+          returnUrl: `${this.webBase()}/settings/billing`,
+        }),
       ),
     );
   }
@@ -142,7 +146,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Cancel the subscription at period end (ADMIN)' })
   async cancel(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
-      await firstValueFrom(this.authClient.send({ cmd: 'billing_cancel' }, { organizationId: user.organizationId })),
+      await firstValueFrom(sendRpc(this.authClient, billingCancel, { organizationId: user.organizationId })),
     );
   }
 
@@ -158,7 +162,7 @@ export class BillingController {
   async webhook(@Req() req: any) {
     const signature = (req.headers['stripe-signature'] as string) || '';
     const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body ?? {});
-    const result = await firstValueFrom(this.authClient.send({ cmd: 'billing_webhook' }, { rawBody, signature }));
+    const result = await firstValueFrom(sendRpc(this.authClient, billingWebhook, { rawBody, signature }));
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return { received: true };
   }
@@ -194,7 +198,7 @@ export class BillingController {
   @ApiOperation({ summary: 'Operator: list orgs + billing state (secret-gated)' })
   async adminListOrgs(@Req() req: any) {
     this.assertPlatformKey(req);
-    return firstValueFrom(this.authClient.send({ cmd: 'billing_admin_list_orgs' }, {}));
+    return firstValueFrom(sendRpc(this.authClient, billingAdminListOrgs, {}));
   }
 
   /**
@@ -219,7 +223,7 @@ export class BillingController {
     }
     const addOns = Array.isArray(dto.addOns) ? dto.addOns : ADD_ON_KEYS;
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'billing_admin_set_addons' }, { organizationId: dto.organizationId, addOns }),
+      sendRpc(this.authClient, billingAdminSetAddons, { organizationId: dto.organizationId, addOns }),
     );
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     // The operator path changes the same thing from the other side — and is the

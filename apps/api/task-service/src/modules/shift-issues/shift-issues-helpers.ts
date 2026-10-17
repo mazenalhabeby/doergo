@@ -1,4 +1,5 @@
 import { UPLOAD_RULES } from '@hbcfield/shared';
+import type { ShiftIssueAttachment } from '@hbcfield/shared/microservices';
 
 // What may be uploaded, and how big: ONE shared definition (constants/upload-rules.ts).
 // Shift-issue evidence takes no Word files — deliberate, and named there.
@@ -12,14 +13,6 @@ const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
 const BODY_MAX = 5000;
 
-type Attachment = {
-  fileKey: string;
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  width?: number | null;
-  height?: number | null;
-};
+type Attachment = ShiftIssueAttachment;
 
 export { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, UPLOAD_TTL_SECONDS, SEVERITIES, BODY_MAX, Attachment };

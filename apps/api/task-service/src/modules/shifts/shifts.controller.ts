@@ -3,6 +3,20 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ShiftsService } from './shifts.service';
 import { ShiftAssignmentsService } from './shift-assignments.service';
 import { RotaService } from './rota.service';
+import {
+  pattern,
+  type RpcRequest,
+  listShifts,
+  createShift,
+  updateShift,
+  deleteShift,
+  weekRota,
+  setRotaDay,
+  listShiftAssignments,
+  createShiftAssignment,
+  updateShiftAssignment,
+  deleteShiftAssignment,
+} from '@hbcfield/shared/microservices';
 
 @Controller()
 export class ShiftsController {
@@ -13,55 +27,55 @@ export class ShiftsController {
   ) {}
 
   // Shifts
-  @MessagePattern({ cmd: 'list_shifts' })
-  listShifts(@Payload() data: { organizationId: string; spaceId?: string }) {
+  @MessagePattern(pattern(listShifts))
+  listShifts(@Payload() data: RpcRequest<typeof listShifts>) {
     return this.service.listShifts(data);
   }
 
-  @MessagePattern({ cmd: 'create_shift' })
-  createShift(@Payload() data: any) {
+  @MessagePattern(pattern(createShift))
+  createShift(@Payload() data: RpcRequest<typeof createShift>) {
     return this.service.createShift(data);
   }
 
-  @MessagePattern({ cmd: 'update_shift' })
-  updateShift(@Payload() data: any) {
+  @MessagePattern(pattern(updateShift))
+  updateShift(@Payload() data: RpcRequest<typeof updateShift>) {
     return this.service.updateShift(data);
   }
 
-  @MessagePattern({ cmd: 'delete_shift' })
-  deleteShift(@Payload() data: { organizationId: string; shiftId: string }) {
+  @MessagePattern(pattern(deleteShift))
+  deleteShift(@Payload() data: RpcRequest<typeof deleteShift>) {
     return this.service.deleteShift(data);
   }
 
   // The week as the clock-in reads it, and changing one day of it
-  @MessagePattern({ cmd: 'week_rota' })
-  weekRota(@Payload() data: any) {
+  @MessagePattern(pattern(weekRota))
+  weekRota(@Payload() data: RpcRequest<typeof weekRota>) {
     return this.rota.weekRota(data);
   }
 
-  @MessagePattern({ cmd: 'set_rota_day' })
-  setRotaDay(@Payload() data: any) {
+  @MessagePattern(pattern(setRotaDay))
+  setRotaDay(@Payload() data: RpcRequest<typeof setRotaDay>) {
     return this.rota.setRotaDay(data);
   }
 
   // Rota (assignments)
-  @MessagePattern({ cmd: 'list_shift_assignments' })
-  listAssignments(@Payload() data: { organizationId: string; spaceId: string; includeEnded?: boolean }) {
+  @MessagePattern(pattern(listShiftAssignments))
+  listAssignments(@Payload() data: RpcRequest<typeof listShiftAssignments>) {
     return this.shiftAssignments.listAssignments(data);
   }
 
-  @MessagePattern({ cmd: 'create_shift_assignment' })
-  createAssignment(@Payload() data: any) {
+  @MessagePattern(pattern(createShiftAssignment))
+  createAssignment(@Payload() data: RpcRequest<typeof createShiftAssignment>) {
     return this.shiftAssignments.createAssignment(data);
   }
 
-  @MessagePattern({ cmd: 'update_shift_assignment' })
-  updateAssignment(@Payload() data: any) {
+  @MessagePattern(pattern(updateShiftAssignment))
+  updateAssignment(@Payload() data: RpcRequest<typeof updateShiftAssignment>) {
     return this.shiftAssignments.updateAssignment(data);
   }
 
-  @MessagePattern({ cmd: 'delete_shift_assignment' })
-  deleteAssignment(@Payload() data: { organizationId: string; assignmentId: string }) {
+  @MessagePattern(pattern(deleteShiftAssignment))
+  deleteAssignment(@Payload() data: RpcRequest<typeof deleteShiftAssignment>) {
     return this.shiftAssignments.deleteAssignment(data);
   }
 }

@@ -1,102 +1,33 @@
-import { Role } from "@hbcfield/shared";
-/**
- * User/Employee DTOs for Auth Service
- */
+import { Role } from '@hbcfield/shared';
+import {
+  type UpdateMemberProfileDto,
+  type ListOrgMembersDto,
+  type GetEmployeeDetailDto,
+  type ListEmployeesDto,
+  type UpdateEmployeeDto,
+  type CreateEmployeeDto,
+} from '@hbcfield/shared/microservices';
+/** The message contract's type (shared with the gateway). */
+export type { CreateEmployeeDto };
 
+/** The message contract's type (shared with the gateway). */
+export type { UpdateEmployeeDto };
 
-/**
- * DTO for creating a new employee
- */
-export interface CreateEmployeeDto {
-  email: string;
-  firstName: string;
-  lastName: string;
-  password?: string;
-  position?: string;
-  enabledModules?: string[];
-  specialty?: string;
-  maxDailyJobs?: number;
-  organizationId: string;
-}
+/** The message contract's type (shared with the gateway). */
+export type { ListEmployeesDto };
 
-/**
- * DTO for updating an employee
- */
-export interface UpdateEmployeeDto {
-  firstName?: string;
-  lastName?: string;
-  position?: string;
-  /** "YYYY-MM-DD". A birthday has no time and no timezone. */
-  dateOfBirth?: string | null;
-  enabledModules?: string[];
-  specialty?: string;
-  employmentType?: string; // "IN_HOUSE" | "EXTERNAL"
-  maxDailyJobs?: number;
-  isActive?: boolean;
-  rating?: number;
-  ratingCount?: number;
-  canCreateTasks?: boolean;
-  profileBadges?: any;
-}
-
-/**
- * DTO for listing employees
- */
-export interface ListEmployeesDto {
-  organizationId: string;
-  status?: 'active' | 'inactive' | 'all';
-  position?: string;
-  specialty?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: 'name' | 'email' | 'rating' | 'taskCount' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
-}
-
-/**
- * DTO for getting employee detail
- */
-export interface GetEmployeeDetailDto {
-  id: string;
-  organizationId: string;
-}
+/** The message contract's type (shared with the gateway). */
+export type { GetEmployeeDetailDto };
 
 // ============================================================================
 // ORGANIZATION MEMBERS DTOs
 // ============================================================================
 
-/**
- * DTO for listing organization members
- */
-export interface ListOrgMembersDto {
-  organizationId: string;
-  search?: string;
-  role?: Role;
-  page?: number;
-  limit?: number;
-}
+/** The message contract's type (shared with the gateway). */
+export type { ListOrgMembersDto };
 
-/**
- * DTO for updating a member's profile + role/permissions (combined)
- */
-export interface UpdateMemberProfileDto {
-  /** Login email — unique across all users. */
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  position?: string;
-  /** "YYYY-MM-DD", or null to clear. A birthday has no time and no timezone. */
-  dateOfBirth?: string | null;
-  scheduleType?: string;
-  monthlyHourBudget?: number;
-  role?: Role;
-  canCreateTasks?: boolean;
-  taskCreationScope?: string;
-  canViewAllTasks?: boolean;
-  canAssignTasks?: boolean;
-  canManageUsers?: boolean;
-}
+/** The message contract's type (shared with the gateway). */
+export type { UpdateMemberProfileDto };
 
 /**
  * DTO for removing a member

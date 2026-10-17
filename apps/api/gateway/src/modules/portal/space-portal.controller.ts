@@ -3,10 +3,24 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Inject, Request } fr
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { RequirePermissionInSpace, pickUnitFields } from '@hbcfield/shared';
+import { RequirePermissionInSpace } from '@hbcfield/shared';
+import { unitFieldsFor } from '../../common/unit-fields';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { portalScope } from '../../common/portal-scope';
 import { scopeFor } from '../../common/permission-scope';
+import {
+  sendRpc,
+  portalList,
+  portalCreateSpace,
+  portalGetForSpace,
+  portalUpdateForSpace,
+  portalListSpaceUnits,
+  portalCreateUnit,
+  portalUpdateUnit,
+  portalDeleteUnit,
+  portalSetPrimaryUnit,
+  type RpcContract,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
@@ -33,8 +47,9 @@ export class SpacePortalController {
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     private readonly spaceModules: SpaceModulesService,
   ) {}
-  private auth(cmd: string, payload: any) {
-    return firstValueFrom(this.authClient.send({ cmd }, payload));
+  /** A message contract; the payload is checked against it. The reply is not typed yet (it was `any`). */
+  private auth<Req>(contract: RpcContract<Req, unknown>, payload: NoInfer<Req>): Promise<any> {
+    return firstValueFrom(sendRpc(this.authClient, contract, payload));
   }
 
   /** The whole surface is a paid feature — the space MUST have b2c_portal on. */
@@ -47,7 +62,7 @@ export class SpacePortalController {
   @ApiOperation({ summary: "List the space's client portals (a space can run several)" })
   async listPortals(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_list', {
+    return this.auth(portalList, {
       organizationId: req.user.organizationId,
       spaceId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
@@ -67,7 +82,7 @@ export class SpacePortalController {
     @Request() req: any,
   ) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_create_space', {
+    return this.auth(portalCreateSpace, {
       organizationId: req.user.organizationId,
       spaceId,
       templateKey: body.templateKey,
@@ -83,7 +98,7 @@ export class SpacePortalController {
     // A reader must not create the (billed) portal by opening the page.
     const manage = scopeFor(req.user, 'canManagePortals');
     const mayCreate = manage === null || manage.includes(spaceId);
-    return this.auth('portal_get_for_space', { organizationId: req.user.organizationId, spaceId, mayCreate });
+    return this.auth(portalGetForSpace, { organizationId: req.user.organizationId, spaceId, mayCreate });
   }
 
   @Patch()
@@ -91,7 +106,7 @@ export class SpacePortalController {
   @ApiOperation({ summary: "Set the space portal's entity type" })
   async update(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string }, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_update_for_space', {
+    return this.auth(portalUpdateForSpace, {
       organizationId: req.user.organizationId,
       spaceId,
       templateKey: body.templateKey,
@@ -103,7 +118,7 @@ export class SpacePortalController {
   @RequirePermissionInSpace('canViewPortal')
   async listUnits(@Param('spaceId') spaceId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_list_space_units', { organizationId: req.user.organizationId, spaceId });
+    return this.auth(portalListSpaceUnits, { organizationId: req.user.organizationId, spaceId });
   }
 
   @Post('units')
@@ -115,8 +130,8 @@ export class SpacePortalController {
   ) {
     const orgId = req.user.organizationId;
     await this.requirePortalModule(spaceId, orgId);
-    const portal: any = await this.auth('portal_get_for_space', { organizationId: orgId, spaceId });
-    return this.auth('portal_create_unit', {
+    const portal: any = await this.auth(portalGetForSpace, { organizationId: orgId, spaceId });
+    return this.auth(portalCreateUnit, {
       organizationId: orgId,
       spaceId,
       portalId: portal?.data?.id,
@@ -147,8 +162,8 @@ export class SpacePortalController {
     // know two cuids. `body` is `any`, so ValidationPipe's whitelist never applied.
     // Same fix as `space-sharing.controller.updateShare`, which found this first.
     // The field list lives in `pickUnitFields` now, shared by all three unit routes.
-    return this.auth('portal_update_unit', {
-      ...pickUnitFields(body),
+    return this.auth(portalUpdateUnit, {
+      ...unitFieldsFor(portalUpdateUnit, body),
       id: unitId,
       organizationId: req.user.organizationId,
       actorId: req.user.id,
@@ -161,7 +176,7 @@ export class SpacePortalController {
   @RequirePermissionInSpace('canManagePortals')
   async deleteUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
     await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth('portal_delete_unit', {
+    return this.auth(portalDeleteUnit, {
       id: unitId,
       organizationId: req.user.organizationId,
       scopeSpaceId: spaceId,
@@ -181,14 +196,14 @@ export class SpacePortalController {
     await this.requirePortalModule(spaceId, orgId);
     // The unit must be THIS workspace's and the client in reach (scopeSpaceIds),
     // before anything is written.
-    await this.auth('portal_update_unit', {
+    await this.auth(portalUpdateUnit, {
       id: unitId,
       organizationId: orgId,
       customerId: body.customerId,
       scopeSpaceId: spaceId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
-    await this.auth('portal_set_primary_unit', { id: unitId, organizationId: orgId, scopeSpaceId: spaceId });
+    await this.auth(portalSetPrimaryUnit, { id: unitId, organizationId: orgId, scopeSpaceId: spaceId });
     return { data: { success: true } };
   }
 }

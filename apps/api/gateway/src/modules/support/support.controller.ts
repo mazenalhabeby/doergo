@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
@@ -14,6 +6,14 @@ import { orgHasAddOn, slaBusinessMinutes } from '@hbcfield/shared';
 import { Public } from '../../common/decorators';
 import { SupportService } from './support.service';
 import { CreateTicketDto, AddMessageDto } from './dto';
+import type { SupportAttachmentMessage } from '@hbcfield/shared/microservices';
+
+/*
+  ⚠️ Contract mismatches, kept as they are (the handler declares narrower types than arrive):
+  the DTO lets an attachment's `fileSize` be absent, and `page`/`limit` travel as the query's strings.
+*/
+const wireAttachments = (a: CreateTicketDto['attachments']) => a as SupportAttachmentMessage[] | undefined;
+const wireNumber = (v: string) => v as unknown as number;
 
 @ApiTags('support')
 @Controller('support')
@@ -59,7 +59,7 @@ export class SupportController {
       body: dto.body,
       category: dto.category,
       channel: dto.channel ?? 'WEB',
-      attachments: dto.attachments,
+      attachments: wireAttachments(dto.attachments),
     });
   }
 
@@ -67,8 +67,13 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'List my support tickets' })
-  listMine(@Query('status') status: string, @Query('page') page: string, @Query('limit') limit: string, @Req() req: any) {
-    return this.support.list({ createdById: req.user.id, status, page, limit });
+  listMine(
+    @Query('status') status: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Req() req: any,
+  ) {
+    return this.support.list({ createdById: req.user.id, status, page: wireNumber(page), limit: wireNumber(limit) });
   }
 
   @Get('tickets/:id')
@@ -76,7 +81,12 @@ export class SupportController {
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Get one of my tickets (thread)' })
   getMine(@Param('id') id: string, @Req() req: any) {
-    return this.support.thread({ ticketId: id, organizationId: req.user.organizationId, userId: req.user.id, asAgent: false });
+    return this.support.thread({
+      ticketId: id,
+      organizationId: req.user.organizationId,
+      userId: req.user.id,
+      asAgent: false,
+    });
   }
 
   @Post('tickets/:id/messages')
@@ -90,7 +100,7 @@ export class SupportController {
       authorId: req.user.id,
       authorType: 'CUSTOMER',
       body: dto.body,
-      attachments: dto.attachments,
+      attachments: wireAttachments(dto.attachments),
       organizationId: req.user.organizationId,
       userId: req.user.id,
     });

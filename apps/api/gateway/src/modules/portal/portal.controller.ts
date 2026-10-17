@@ -1,28 +1,14 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Request,
-  Inject,
-  UseGuards,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Request, Inject, UseGuards, BadRequestException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import {
-  AllowCustomer,
-  SkipOnboardingCheck,
-  TASK_SOURCE,
-  requestTitle,
-  priorityForCategory,
-} from '@hbcfield/shared';
+import { AllowCustomer, SkipOnboardingCheck, TASK_SOURCE, requestTitle, priorityForCategory } from '@hbcfield/shared';
 import { CustomerScopeGuard } from '../../common/guards/customer-scope.guard';
 import { TasksQueueService } from '../tasks/tasks.queue.service';
 import { SubmitRequestDto } from './dto';
+import { sendRpc, portalConfigForCustomer, portalListUnits, portalListAssets } from '@hbcfield/shared/microservices';
+import { portalListRequests, portalGetRequest } from '@hbcfield/shared/microservices';
 
 /**
  * Customer Portal API (external CUSTOMER persona only).
@@ -48,9 +34,7 @@ export class PortalController {
   @SkipOnboardingCheck()
   @ApiOperation({ summary: 'Get the portal intake config' })
   async config(@Request() req: any) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'portal_config_for_customer' }, { customerId: req.user.customerId }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }));
   }
 
   /** Units the caller (a customer) is bound to. */
@@ -60,10 +44,10 @@ export class PortalController {
   async units(@Request() req: any) {
     // Units live in the auth DB; auth-service serves them.
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'portal_list_units' },
-        { organizationId: req.user.organizationId, customerId: req.user.customerId },
-      ),
+      sendRpc(this.authClient, portalListUnits, {
+        organizationId: req.user.organizationId,
+        customerId: req.user.customerId,
+      }),
     );
   }
 
@@ -73,15 +57,12 @@ export class PortalController {
   @ApiOperation({ summary: "List the client's assets" })
   async assets(@Request() req: any) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'portal_list_assets' },
-        {
-          organizationId: req.user.organizationId,
-          customerId: req.user.customerId,
-          // The one their login is confined to, when they hold nothing else.
-          assetId: req.user.assetId ?? null,
-        },
-      ),
+      sendRpc(this.authClient, portalListAssets, {
+        organizationId: req.user.organizationId,
+        customerId: req.user.customerId,
+        // The one their login is confined to, when they hold nothing else.
+        assetId: req.user.assetId ?? null,
+      }),
     );
   }
 
@@ -91,10 +72,10 @@ export class PortalController {
   @ApiOperation({ summary: "List the customer's requests" })
   async listRequests(@Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'portal_list_requests' },
-        { organizationId: req.user.organizationId, customerId: req.user.customerId },
-      ),
+      sendRpc(this.taskClient, portalListRequests, {
+        organizationId: req.user.organizationId,
+        customerId: req.user.customerId,
+      }),
     );
   }
 
@@ -104,10 +85,11 @@ export class PortalController {
   @ApiOperation({ summary: 'Get one of the customer’s requests' })
   async getRequest(@Param('id') id: string, @Request() req: any) {
     return firstValueFrom(
-      this.taskClient.send(
-        { cmd: 'portal_get_request' },
-        { id, organizationId: req.user.organizationId, customerId: req.user.customerId },
-      ),
+      sendRpc(this.taskClient, portalGetRequest, {
+        id,
+        organizationId: req.user.organizationId,
+        customerId: req.user.customerId,
+      }),
     );
   }
 
@@ -119,7 +101,7 @@ export class PortalController {
   async submitRequest(@Body() dto: SubmitRequestDto, @Request() req: any) {
     // Resolve the category from the caller's own portal config (fail closed).
     const config: any = await firstValueFrom(
-      this.authClient.send({ cmd: 'portal_config_for_customer' }, { customerId: req.user.customerId }),
+      sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }),
     );
     const category = (config?.categories || []).find((c: any) => c.key === dto.categoryKey && c.isActive);
     if (!category) {
@@ -138,12 +120,12 @@ export class PortalController {
     // Access permission / preferred time / contact preference are captured into the
     // description so staff see them without a bespoke schema (kept simple for v1).
     const extras: string[] = [];
-    if (dto.accessPermitted !== undefined) extras.push(`Access: ${dto.accessPermitted ? 'permitted' : 'not permitted'}`);
+    if (dto.accessPermitted !== undefined)
+      extras.push(`Access: ${dto.accessPermitted ? 'permitted' : 'not permitted'}`);
     if (dto.preferredTime) extras.push(`Preferred: ${dto.preferredTime.toLowerCase()}`);
     if (dto.contactPreference) extras.push(`Contact via: ${dto.contactPreference.toLowerCase()}`);
-    const description = [dto.description?.trim(), extras.length ? extras.join(' · ') : null]
-      .filter(Boolean)
-      .join('\n\n') || undefined;
+    const description =
+      [dto.description?.trim(), extras.length ? extras.join(' · ') : null].filter(Boolean).join('\n\n') || undefined;
 
     const created: any = await this.tasksQueue.createTask({
       // Named on the phone when sent from a queue: a resend returns the same request.

@@ -1,5 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  createPhase,
+  deletePhase,
+  findAllPhases,
+  findPhase,
+  updatePhase,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { PhasesService } from './phases.service';
 
 /**
@@ -12,28 +21,28 @@ import { PhasesService } from './phases.service';
 export class PhasesController {
   constructor(private readonly phasesService: PhasesService) {}
 
-  @MessagePattern({ cmd: 'find_all_phases' })
-  async findAll(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(findAllPhases))
+  async findAll(@Payload() data: RpcRequest<typeof findAllPhases>) {
     return this.phasesService.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'find_phase' })
-  async findOne(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findPhase))
+  async findOne(@Payload() data: RpcRequest<typeof findPhase>) {
     return this.phasesService.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'create_phase' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createPhase))
+  async create(@Payload() data: RpcRequest<typeof createPhase>) {
     return this.phasesService.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_phase' })
-  async update(@Payload() data: any) {
+  @MessagePattern(pattern(updatePhase))
+  async update(@Payload() data: RpcRequest<typeof updatePhase>) {
     return this.phasesService.update(data);
   }
 
-  @MessagePattern({ cmd: 'delete_phase' })
-  async remove(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deletePhase))
+  async remove(@Payload() data: RpcRequest<typeof deletePhase>) {
     return this.phasesService.remove(data);
   }
 }

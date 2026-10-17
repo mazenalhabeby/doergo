@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { LocationsService } from '../locations/locations.service';
 import { getSpaceScope } from '@hbcfield/shared';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import { sendRpc, listOrgContacts } from '@hbcfield/shared/microservices';
 
 const rowsOf = (r: any): any[] => (Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : []);
 
@@ -39,7 +40,7 @@ export class PeopleController {
         spaceScope: getSpaceScope(user),
       }),
       firstValueFrom(
-        this.authClient.send({ cmd: 'list_org_contacts' }, { organizationId: user.organizationId, userId: user.id }),
+        sendRpc(this.authClient, listOrgContacts, { organizationId: user.organizationId, userId: user.id }),
       ),
     ]);
     const asColleague = rowsOf(team).filter((p) => p?.id === id);

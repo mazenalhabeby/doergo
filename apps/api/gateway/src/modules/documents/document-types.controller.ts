@@ -7,6 +7,7 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { documentActor } from './documents.actor';
 import { CreateDocumentTypeDto, RouteCandidatesQueryDto, UpdateDocumentTypeDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
+import { callerOrgId } from '../../common/caller-org';
 
 /** /documents/types — the catalogue: types, who may see them, who may be routed to sign. */
 @ApiTags('documents')
@@ -46,7 +47,7 @@ export class DocumentTypesController {
   async listTypes(@CurrentUser() user: CurrentUserData, @Query('includeInactive') includeInactive?: string) {
     const actor = documentActor(user);
     return this.documents.listTypes({
-      organizationId: user.organizationId,
+      organizationId: callerOrgId(user),
       includeInactive: includeInactive === 'true',
       roleId: actor.roleId,
       isAdmin: actor.isAdmin,

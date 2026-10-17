@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger, ServiceUnavailableException } from '@nestjs
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
+import { sendRpc, memberOffboard, spaceShareRelease } from '@hbcfield/shared/microservices';
 
 /**
  * Somebody is leaving — ask task-service to let go of them first.
@@ -26,9 +27,9 @@ export class MemberOffboarding {
   ): Promise<void> {
     try {
       await firstValueFrom(
-        this.tasks
-          .send({ cmd: 'member_offboard' }, { organizationId, userId, actorId, erase: opts.erase === true })
-          .pipe(timeout(30_000)),
+        sendRpc(this.tasks, memberOffboard, { organizationId, userId, actorId, erase: opts.erase === true }).pipe(
+          timeout(30_000),
+        ),
       );
     } catch (e) {
       this.logger.error(`member_offboard failed for ${userId}: ${(e as Error)?.message ?? e}`);
@@ -46,7 +47,7 @@ export class MemberOffboarding {
   async releaseSharedSpace(ownerOrgId: string, spaceId: string, guestOrgId: string): Promise<void> {
     try {
       await firstValueFrom(
-        this.tasks.send({ cmd: 'space_share_release' }, { ownerOrgId, spaceId, guestOrgId }).pipe(timeout(30_000)),
+        sendRpc(this.tasks, spaceShareRelease, { ownerOrgId, spaceId, guestOrgId }).pipe(timeout(30_000)),
       );
     } catch (e) {
       this.logger.error(`space_share_release failed for ${spaceId}/${guestOrgId}: ${(e as Error)?.message ?? e}`);

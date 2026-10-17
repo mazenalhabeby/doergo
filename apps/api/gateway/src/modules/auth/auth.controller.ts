@@ -16,13 +16,21 @@ import {
   assertServiceOk,
 } from '@hbcfield/shared';
 import { setRefreshCookie, isBrowserClient, withoutRefreshTokenForBrowser } from './auth-controller-helpers';
+import {
+  sendRpc,
+  register,
+  login,
+  refresh,
+  logout,
+  forgotPassword,
+  resetPassword,
+} from '@hbcfield/shared/microservices';
 
 export { isBrowserClient, withoutRefreshTokenForBrowser } from './auth-controller-helpers';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-
   constructor(
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
@@ -45,9 +53,7 @@ export class AuthController {
       role: 'ADMIN',
     };
 
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'register' }, securePayload),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, register, securePayload));
 
     // Check if the result is an error response
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -66,14 +72,15 @@ export class AuthController {
   @ApiResponse({ status: 429, description: 'Too many requests - account temporarily locked' })
   async login(@Body() loginDto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'login' }, {
+      sendRpc(this.authClient, login, {
         ...loginDto,
         userAgent: req.headers['user-agent'],
-        ipAddress: req.ip || req.headers['x-forwarded-for'],
+        // Node joins a repeated header into one string; Express types it string | string[].
+        ipAddress: (req.ip || req.headers['x-forwarded-for']) as string | undefined,
         // Which app is asking, so a member restricted to one surface is turned
         // away here with a reason rather than signing in to a session that then
         // fails on every request. Absent for clients that predate the header.
-        clientPlatform: req.headers['x-client-platform'],
+        clientPlatform: req.headers['x-client-platform'] as string | undefined,
       }),
     );
 
@@ -106,13 +113,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     // Read refresh token from httpOnly cookie (web) or body (mobile)
     const refreshToken = req.cookies?.refreshToken || refreshTokenDto.refreshToken;
 
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'refresh' }, { refreshToken }),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, refresh, { refreshToken }));
 
     // Check if the result is an error response
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -135,7 +144,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@Body() refreshTokenDto: RefreshTokenDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     // Read refresh token from cookie or body
     const refreshToken = req.cookies?.refreshToken || refreshTokenDto.refreshToken;
 
@@ -144,7 +157,7 @@ export class AuthController {
     res.clearCookie('refreshToken', { path: '/' });
 
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'logout' }, { refreshToken, pushToken: refreshTokenDto.pushToken }),
+      sendRpc(this.authClient, logout, { refreshToken, pushToken: refreshTokenDto.pushToken }),
     );
 
     // Kill the cached session immediately so a still-valid access token can't be
@@ -182,9 +195,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'forgot_password' }, forgotPasswordDto),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, forgotPassword, forgotPasswordDto));
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -201,9 +212,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'reset_password' }, resetPasswordDto),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, resetPassword, resetPasswordDto));
 
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
 

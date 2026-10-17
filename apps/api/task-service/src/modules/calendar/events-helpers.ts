@@ -1,4 +1,5 @@
 import { addDaysStr, occurrences, type Repeat, type ReminderEvent } from '@hbcfield/shared';
+import type { CalendarCaller, CalendarEventMessage } from '@hbcfield/shared/microservices';
 
 const DAY = 86400000;
 
@@ -7,47 +8,10 @@ const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:?\d
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The caller, as the gateway resolved it from the token — never from the body. */
-export interface Caller {
-  userId: string;
-  organizationId: string;
-  role?: string;
-  canManageUsers?: boolean;
-  /** Org-wide canViewAllTasks — may invite anybody in the organization. */
-  orgWideView?: boolean;
-  /** May read the client book — only then may an event name a client, or show one. */
-  crm?: boolean;
-  /** Where the caller sees the team's leave (undefined = everywhere, [] = nowhere). */
-  teamSpaces?: string[];
-}
+export type Caller = CalendarCaller;
 
-export interface EventInput {
-  kind?: 'APPOINTMENT' | 'REMINDER';
-  title?: string;
-  description?: string | null;
-  location?: string | null;
-  meetingUrl?: string | null;
-  customerId?: string | null;
-  spaceId?: string | null;
-  allDay?: boolean;
-  /** Timed: ISO instants. */
-  startAt?: string;
-  endAt?: string;
-  /** All-day: local dates, end inclusive. */
-  startDate?: string;
-  endDate?: string;
-  timezone?: string;
-  repeat?: unknown;
-  reminders?: unknown;
-  visibility?: 'BUSY' | 'DETAILS';
-  attendeeIds?: string[];
-  /** How and where (shared calendar/meeting.ts). */
-  meetingMode?: 'IN_PERSON' | 'ONLINE' | 'PHONE' | null;
-  placeKind?: 'OFFICE' | 'CLIENT_SITE' | 'ADDRESS' | null;
-  placeSpaceId?: string | null;
-  room?: string | null;
-  phone?: string | null;
-  callDirection?: 'OUTGOING' | 'INCOMING' | null;
-}
+/** The event as sent — the message contract's type. */
+export type EventInput = CalendarEventMessage;
 
 const MEETING_KEYS = [
   'meetingMode',

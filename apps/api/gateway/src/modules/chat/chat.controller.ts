@@ -57,7 +57,15 @@ export class ChatController {
   @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Message history (paginated via ?before=ISO)' })
   history(@Param('id') id: string, @Query('before') before: string, @Query('limit') limit: string, @Req() req: any) {
-    return this.chat.history({ conversationId: id, userId: req.user.id, before, limit, facts: taskActor(req) });
+    // ⚠️ Contract mismatch, kept as it is: `limit` travels as the query's string; the handler declares a number.
+    const wireLimit = limit as unknown as number;
+    return this.chat.history({
+      conversationId: id,
+      userId: req.user.id,
+      before,
+      limit: wireLimit,
+      facts: taskActor(req),
+    });
   }
 
   @Post('conversations/:id/messages')

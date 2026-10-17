@@ -19,6 +19,7 @@
 import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout, catchError, retry, timer } from 'rxjs';
+import type { RpcContract } from './contract';
 
 interface ServiceError {
   name?: string;
@@ -90,11 +91,7 @@ export abstract class BaseGatewayService {
    * The timeout is longer than a read's because a write may legitimately do
    * more work (hash a file, write in a transaction) before it answers.
    */
-  protected async sendOnce<T>(
-    pattern: { cmd: string },
-    data: unknown,
-    timeoutMs = 30000,
-  ): Promise<T> {
+  protected async sendOnce<T>(pattern: { cmd: string }, data: unknown, timeoutMs = 30000): Promise<T> {
     try {
       return await firstValueFrom(
         this.client.send<T>(pattern, data).pipe(
@@ -108,6 +105,24 @@ export abstract class BaseGatewayService {
     } catch (err) {
       throw this.toHttpException(err as ServiceError);
     }
+  }
+
+  /**
+   * `send` with a message contract: the payload is checked against the contract's
+   * request type. The reply type comes from the call site (as with `send<T>`);
+   * `NoInfer` keeps the payload from widening the request type to fit.
+   */
+  protected call<T = unknown, Req = unknown>(contract: RpcContract<Req, unknown>, data: NoInfer<Req>): Promise<T> {
+    return this.send<T>({ cmd: contract.cmd }, data);
+  }
+
+  /** `sendOnce` with a message contract — see `call`. */
+  protected callOnce<T = unknown, Req = unknown>(
+    contract: RpcContract<Req, unknown>,
+    data: NoInfer<Req>,
+    timeoutMs?: number,
+  ): Promise<T> {
+    return this.sendOnce<T>({ cmd: contract.cmd }, data, timeoutMs);
   }
 
   /**

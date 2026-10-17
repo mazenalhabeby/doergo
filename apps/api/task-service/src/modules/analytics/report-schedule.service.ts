@@ -23,17 +23,11 @@ import {
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
 import { ReportDefinition } from './query-engine';
+import type { ReportCadenceMessage, ReportScheduleInputMessage } from '@hbcfield/shared/microservices';
 
-type Cadence = 'daily' | 'weekly' | 'monthly';
+type Cadence = ReportCadenceMessage;
 
-interface ScheduleInput {
-  cadence: Cadence;
-  hour?: number;
-  dayOfWeek?: number | null;
-  dayOfMonth?: number | null;
-  recipients: string[];
-  isActive?: boolean;
-}
+type ScheduleInput = ReportScheduleInputMessage;
 
 @Injectable()
 export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {

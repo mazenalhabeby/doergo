@@ -21,6 +21,14 @@ import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared'
 import { RequirePermission } from '../../common/decorators';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
+import {
+  sendRpc,
+  listAccessRoles,
+  createAccessRole,
+  updateAccessRole,
+  deleteAccessRole,
+} from '@hbcfield/shared/microservices';
+import { callerOrgId } from '../../common/caller-org';
 
 /** /organizations/roles — the organization's access roles. */
 @ApiTags('organizations')
@@ -42,10 +50,10 @@ export class OrgRolesController {
   @ApiOperation({ summary: 'List assignable roles (org: Admin/Manager/custom · space: Space Manager/…)' })
   async listRoles(@CurrentUser() user: CurrentUserData, @Query('scope') scope?: string) {
     return firstValueFrom(
-      this.authClient.send(
-        { cmd: 'list_access_roles' },
-        { organizationId: user.organizationId, scope: scope === 'space' ? 'space' : 'org' },
-      ),
+      sendRpc(this.authClient, listAccessRoles, {
+        organizationId: callerOrgId(user),
+        scope: scope === 'space' ? 'space' : 'org',
+      }),
     );
   }
 
@@ -57,7 +65,7 @@ export class OrgRolesController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'create_access_role' }, { ...body, organizationId: user.organizationId, requesterId: user.id }),
+      sendRpc(this.authClient, createAccessRole, { ...body, organizationId: callerOrgId(user), requesterId: user.id }),
     );
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
@@ -72,7 +80,12 @@ export class OrgRolesController {
     @CurrentUser() user: CurrentUserData,
   ) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'update_access_role' }, { ...body, roleId, organizationId: user.organizationId, requesterId: user.id }),
+      sendRpc(this.authClient, updateAccessRole, {
+        ...body,
+        roleId,
+        organizationId: callerOrgId(user),
+        requesterId: user.id,
+      }),
     );
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
@@ -83,7 +96,7 @@ export class OrgRolesController {
   @ApiOperation({ summary: 'Delete a custom role' })
   async deleteRole(@Param('id') roleId: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'delete_access_role' }, { roleId, organizationId: user.organizationId, requesterId: user.id }),
+      sendRpc(this.authClient, deleteAccessRole, { roleId, organizationId: callerOrgId(user), requesterId: user.id }),
     );
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;

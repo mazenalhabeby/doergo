@@ -7,9 +7,16 @@ import {
   isAdmin,
   ownAccess,
   type StandInInput,
-  type StandInView,
-  type StandInsResponse,
 } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcReply,
+  type RpcRequest,
+  type StandInCaller,
+  standInsList,
+  standInsCreate,
+  standInsEnd,
+} from '@hbcfield/shared/microservices';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApprovalsService } from './approvals.service';
 
@@ -30,20 +37,25 @@ export class StandInsService extends BaseGatewayService {
   }
 
   list(user: any) {
-    return this.send<StandInsResponse>({ cmd: 'stand_ins_list' }, { caller: callerOf(user) });
+    return this.send<RpcReply<typeof standInsList>>(pattern(standInsList), {
+      caller: callerOf(user),
+    } satisfies RpcRequest<typeof standInsList>);
   }
 
   async create(user: any, input: StandInInput) {
-    const view = await this.sendOnce<StandInView>({ cmd: 'stand_ins_create' }, { caller: callerOf(user), input });
+    const view = await this.sendOnce<RpcReply<typeof standInsCreate>>(pattern(standInsCreate), {
+      caller: callerOf(user),
+      input,
+    } satisfies RpcRequest<typeof standInsCreate>);
     await this.refresh(view.to.id);
     return view;
   }
 
   async end(user: any, id: string) {
-    const r = await this.sendOnce<{ ended: true; toUserId: string }>(
-      { cmd: 'stand_ins_end' },
-      { caller: callerOf(user), id },
-    );
+    const r = await this.sendOnce<RpcReply<typeof standInsEnd>>(pattern(standInsEnd), {
+      caller: callerOf(user),
+      id,
+    } satisfies RpcRequest<typeof standInsEnd>);
     await this.refresh(r.toUserId);
     return { ended: true };
   }
@@ -55,7 +67,7 @@ export class StandInsService extends BaseGatewayService {
 }
 
 /** Who is asking — "manages people" read on their OWN access: a stand-in never arranges stand-ins. */
-function callerOf(user: any) {
+function callerOf(user: any): StandInCaller {
   return {
     organizationId: user.organizationId,
     userId: user.id,

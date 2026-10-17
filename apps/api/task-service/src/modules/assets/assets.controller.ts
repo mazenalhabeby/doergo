@@ -1,5 +1,19 @@
 import { Controller, ForbiddenException } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  addAssetActivity,
+  assetBillingUsage,
+  findAllAssetCategories,
+  findAllAssets,
+  findAsset,
+  findAssetSpace,
+  findTypesByCategory,
+  getAssetMaintenanceHistory,
+  listAssetActivities,
+  listOrphanAssets,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { AssetsService } from './assets.service';
 import { AssetCatalogService } from './asset-catalog.service';
 import { AssetRowsService } from './asset-rows.service';
@@ -38,8 +52,8 @@ export class AssetsController {
   // CATEGORIES (READ operations via MessagePattern)
   // ============================================
 
-  @MessagePattern({ cmd: 'find_all_asset_categories' })
-  async findAllCategories(@Payload() data: any) {
+  @MessagePattern(pattern(findAllAssetCategories))
+  async findAllCategories(@Payload() data: RpcRequest<typeof findAllAssetCategories>) {
     return this.catalog.findAllCategories(data);
   }
 
@@ -47,8 +61,8 @@ export class AssetsController {
   // TYPES (READ operations via MessagePattern)
   // ============================================
 
-  @MessagePattern({ cmd: 'find_types_by_category' })
-  async findTypesByCategory(@Payload() data: any) {
+  @MessagePattern(pattern(findTypesByCategory))
+  async findTypesByCategory(@Payload() data: RpcRequest<typeof findTypesByCategory>) {
     return this.assetTypes.findTypesByCategory(data);
   }
 
@@ -56,8 +70,8 @@ export class AssetsController {
   // ASSETS (READ operations via MessagePattern)
   // ============================================
 
-  @MessagePattern({ cmd: 'find_all_assets' })
-  async findAll(@Payload() data: any) {
+  @MessagePattern(pattern(findAllAssets))
+  async findAll(@Payload() data: RpcRequest<typeof findAllAssets>) {
     return this.assetsService.findAll(data);
   }
 
@@ -70,25 +84,25 @@ export class AssetsController {
     that runs assets per workspace was refused with "not switched on". This
     returns the space id and nothing else, scoped to the organization.
   */
-  @MessagePattern({ cmd: 'find_asset_space' })
-  async findSpace(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findAssetSpace))
+  async findSpace(@Payload() data: RpcRequest<typeof findAssetSpace>) {
     return this.assetsService.spaceOf(data);
   }
 
-  @MessagePattern({ cmd: 'find_asset' })
-  async findOne(@Payload() data: any) {
+  @MessagePattern(pattern(findAsset))
+  async findOne(@Payload() data: RpcRequest<typeof findAsset>) {
     return this.assetsService.findOne(data);
   }
 
   /** Assets in no space — invisible on every screen, still on the bill. */
-  @MessagePattern({ cmd: 'list_orphan_assets' })
-  async listOrphans(@Payload() data: any) {
+  @MessagePattern(pattern(listOrphanAssets))
+  async listOrphans(@Payload() data: RpcRequest<typeof listOrphanAssets>) {
     return this.assetsService.listOrphans(data);
   }
 
   /** Billable assets per space — the counts only; pricing is shared. */
-  @MessagePattern({ cmd: 'asset_billing_usage' })
-  async billingUsage(@Payload() data: any) {
+  @MessagePattern(pattern(assetBillingUsage))
+  async billingUsage(@Payload() data: RpcRequest<typeof assetBillingUsage>) {
     // The bill's counts, every workspace's: an org-wide reader only.
     if (this.access.scope(data, 'view') !== null) {
       throw new ForbiddenException('Only someone who sees every workspace’s assets can read these counts');
@@ -96,18 +110,18 @@ export class AssetsController {
     return this.usage.count(data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'get_asset_maintenance_history' })
-  async getMaintenanceHistory(@Payload() data: any) {
+  @MessagePattern(pattern(getAssetMaintenanceHistory))
+  async getMaintenanceHistory(@Payload() data: RpcRequest<typeof getAssetMaintenanceHistory>) {
     return this.assetsService.getMaintenanceHistory(data);
   }
 
-  @MessagePattern({ cmd: 'list_asset_activities' })
-  async listActivities(@Payload() data: any) {
+  @MessagePattern(pattern(listAssetActivities))
+  async listActivities(@Payload() data: RpcRequest<typeof listAssetActivities>) {
     return this.activity.listActivities(data);
   }
 
-  @MessagePattern({ cmd: 'add_asset_activity' })
-  async addActivity(@Payload() data: any) {
+  @MessagePattern(pattern(addAssetActivity))
+  async addActivity(@Payload() data: RpcRequest<typeof addAssetActivity>) {
     return this.activity.addActivity(data);
   }
 }

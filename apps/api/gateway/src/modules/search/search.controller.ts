@@ -4,6 +4,12 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { firstValueFrom, timeout, catchError, of } from 'rxjs';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { taskActor } from '../../common/task-actor';
+import {
+  pattern,
+  type RpcContract,
+  searchTasksAndSpaces,
+  searchPeopleAndCustomers,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Unified global search for the web command palette. Fans out to the existing
@@ -41,9 +47,14 @@ export class SearchController {
     const canAll = !!user.canViewAllTasks;
     const LIMIT = 6;
 
-    const call = <T>(client: ClientProxy, cmd: string, payload: Record<string, unknown>, fallback: T): Promise<T> =>
+    const call = <Req, T>(
+      client: ClientProxy,
+      contract: RpcContract<Req, unknown>,
+      payload: Req,
+      fallback: T,
+    ): Promise<T> =>
       firstValueFrom(
-        client.send({ cmd }, payload).pipe(
+        client.send<T, Req>(pattern(contract), payload).pipe(
           timeout(4000),
           catchError(() => of(fallback)),
         ),
@@ -56,22 +67,22 @@ export class SearchController {
       // The task gate's own caller (common/task-actor.ts): a supervisor granted
       // "view all tasks" in a SPACE finds that space's tasks, and a guest the
       // tasks of a space shared with them — the same set GET /tasks lists.
-      call<{ tasks?: unknown[]; spaces?: unknown[] }>(
+      call(
         this.taskClient,
-        'search_tasks_and_spaces',
+        searchTasksAndSpaces,
         {
           query,
           limit: LIMIT,
           ...taskActor(req, { crossOrgRead: true }),
         },
-        {},
+        {} as { tasks?: unknown[]; spaces?: unknown[] },
       ),
       canAll
-        ? call<{ members?: unknown[]; customers?: unknown[] }>(
+        ? call(
             this.authClient,
-            'search_people_and_customers',
+            searchPeopleAndCustomers,
             { query, organizationId: org, limit: LIMIT },
-            {},
+            {} as { members?: unknown[]; customers?: unknown[] },
           )
         : Promise.resolve({}),
     ]);

@@ -1,36 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
-import { computeCountedTime, toISODateString, type AttendanceScope } from '@hbcfield/shared';
+import { computeCountedTime, toISODateString } from '@hbcfield/shared';
+import type { ManualEntriesMessage } from '@hbcfield/shared/microservices';
 
 /** The steps of `ManualEntriesService.addManualEntries` that need no database, in the order it runs them. */
 
-export interface ManualEntriesInput {
-  /** Spaces the caller may act in; null = org-wide, [] = none. */
-  scopeSpaceIds?: AttendanceScope;
-  editorId: string;
-  organizationId: string;
-  userId: string;
-  locationId: string;
-  startDate: string; // "YYYY-MM-DD"
-  endDate: string; // "YYYY-MM-DD" (inclusive)
-  weekdays?: number[]; // 0=Sun..6=Sat; ignored for a single-day add
-  startTime: string; // "HH:MM"
-  endTime: string; // "HH:MM"
-  /*
-    The break as the dialogs now describe it: wall-clock times inside the
-    shift, with a type and a reason — the same shape the edit dialog sends.
-
-    ⚠️ `breakMinutes` is still accepted. Older clients send it, and a phone that
-    has not taken the update must not start failing; it becomes the same break,
-    centred, which is what this service already did.
-  */
-  breakStart?: string;
-  breakEnd?: string;
-  breakType?: 'SHORT' | 'LUNCH' | 'OTHER';
-  breakReason?: string;
-  breakMinutes?: number;
-  notes?: string;
-  reason?: string;
-}
+/** The request as sent — the message contract's type. */
+export type ManualEntriesInput = ManualEntriesMessage;
 
 /** The dates and times are the shapes the dialog sends, and the range runs forwards. */
 export function assertManualRangeShape(data: ManualEntriesInput): void {

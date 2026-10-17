@@ -1,5 +1,36 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  addWorkflowStatus,
+  attachSpaceWorkflow,
+  createWorkflow,
+  curateDeleteWorkflowTemplate,
+  curateImportWorkflowTemplate,
+  curateListWorkflowTemplates,
+  curatePublishWorkflowTemplate,
+  curateUpsertWorkflowTemplate,
+  deleteDefinitionOfDone,
+  deleteWorkflow,
+  deleteWorkflowStatus,
+  detachSpaceWorkflow,
+  findAllWorkflows,
+  findWorkflow,
+  forkWorkflowForSpace,
+  getDefinitionOfDone,
+  listSpaceWorkflows,
+  listWorkflowTemplates,
+  reorderWorkflowStatuses,
+  setDefaultWorkflow,
+  setSpaceDefaultWorkflow,
+  shareWorkflowWithOrg,
+  submitWorkflowToLibrary,
+  updateWorkflow,
+  updateWorkflowStatus,
+  upsertDefinitionOfDone,
+  useWorkflowTemplate,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { WorkflowsService } from './workflows.service';
 import { WorkflowLibraryService } from './workflow-library.service';
 import { WorkflowStatusesService } from './workflow-statuses.service';
@@ -25,103 +56,101 @@ export class WorkflowsController {
     private readonly curation: LibraryCurationService,
   ) {}
 
-  @MessagePattern({ cmd: 'find_all_workflows' })
-  async findAll(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(findAllWorkflows))
+  async findAll(@Payload() data: RpcRequest<typeof findAllWorkflows>) {
     return this.workflowsService.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'find_workflow' })
-  async findOne(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findWorkflow))
+  async findOne(@Payload() data: RpcRequest<typeof findWorkflow>) {
     return this.workflowsService.findOne(data);
   }
 
-  @MessagePattern({ cmd: 'create_workflow' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createWorkflow))
+  async create(@Payload() data: RpcRequest<typeof createWorkflow>) {
     return this.workflowsService.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_workflow' })
-  async update(@Payload() data: any) {
+  @MessagePattern(pattern(updateWorkflow))
+  async update(@Payload() data: RpcRequest<typeof updateWorkflow>) {
     return this.workflowsService.update(data);
   }
 
-  @MessagePattern({ cmd: 'delete_workflow' })
-  async remove(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteWorkflow))
+  async remove(@Payload() data: RpcRequest<typeof deleteWorkflow>) {
     return this.workflowsService.remove(data);
   }
 
-  @MessagePattern({ cmd: 'set_default_workflow' })
-  async setDefault(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(setDefaultWorkflow))
+  async setDefault(@Payload() data: RpcRequest<typeof setDefaultWorkflow>) {
     return this.spaceWorkflows.setDefault(data);
   }
 
-  @MessagePattern({ cmd: 'add_workflow_status' })
-  async addStatus(@Payload() data: any) {
+  @MessagePattern(pattern(addWorkflowStatus))
+  async addStatus(@Payload() data: RpcRequest<typeof addWorkflowStatus>) {
     return this.statuses.addStatus(data);
   }
 
-  @MessagePattern({ cmd: 'update_workflow_status' })
-  async updateStatus(@Payload() data: any) {
+  @MessagePattern(pattern(updateWorkflowStatus))
+  async updateStatus(@Payload() data: RpcRequest<typeof updateWorkflowStatus>) {
     return this.statuses.updateStatus(data);
   }
 
-  @MessagePattern({ cmd: 'delete_workflow_status' })
-  async removeStatus(@Payload() data: { workflowId: string; statusId: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteWorkflowStatus))
+  async removeStatus(@Payload() data: RpcRequest<typeof deleteWorkflowStatus>) {
     return this.statuses.removeStatus(data);
   }
 
-  @MessagePattern({ cmd: 'reorder_workflow_statuses' })
-  async reorderStatuses(@Payload() data: { workflowId: string; organizationId: string; statusIds: string[] }) {
+  @MessagePattern(pattern(reorderWorkflowStatuses))
+  async reorderStatuses(@Payload() data: RpcRequest<typeof reorderWorkflowStatuses>) {
     return this.statuses.reorderStatuses(data);
   }
 
   // ==================== Definition of Done ====================
 
-  @MessagePattern({ cmd: 'get_definition_of_done' })
-  async getDefinitionOfDone(@Payload() data: { organizationId: string; workflowId?: string }) {
+  @MessagePattern(pattern(getDefinitionOfDone))
+  async getDefinitionOfDone(@Payload() data: RpcRequest<typeof getDefinitionOfDone>) {
     return this.definitionOfDone.getDefinitionOfDone(data);
   }
 
-  @MessagePattern({ cmd: 'upsert_definition_of_done' })
-  async upsertDefinitionOfDone(@Payload() data: any) {
+  @MessagePattern(pattern(upsertDefinitionOfDone))
+  async upsertDefinitionOfDone(@Payload() data: RpcRequest<typeof upsertDefinitionOfDone>) {
     return this.definitionOfDone.upsertDefinitionOfDone(data);
   }
 
-  @MessagePattern({ cmd: 'delete_definition_of_done' })
-  async removeDefinitionOfDone(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteDefinitionOfDone))
+  async removeDefinitionOfDone(@Payload() data: RpcRequest<typeof deleteDefinitionOfDone>) {
     return this.definitionOfDone.removeDefinitionOfDone(data);
   }
   // ── Which workflows a space offers ──────────────────────────────────────────
 
-  @MessagePattern({ cmd: 'list_space_workflows' })
-  listSpaceWorkflows(@Payload() data: { spaceId: string; organizationId: string }) {
+  @MessagePattern(pattern(listSpaceWorkflows))
+  listSpaceWorkflows(@Payload() data: RpcRequest<typeof listSpaceWorkflows>) {
     return this.spaceWorkflows.listSpaceWorkflows(data);
   }
 
-  @MessagePattern({ cmd: 'attach_space_workflow' })
-  attachSpaceWorkflow(
-    @Payload() data: { spaceId: string; workflowId: string; organizationId: string; makeDefault?: boolean },
-  ) {
+  @MessagePattern(pattern(attachSpaceWorkflow))
+  attachSpaceWorkflow(@Payload() data: RpcRequest<typeof attachSpaceWorkflow>) {
     return this.spaceWorkflows.attachSpaceWorkflow(data);
   }
 
-  @MessagePattern({ cmd: 'detach_space_workflow' })
-  detachSpaceWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
+  @MessagePattern(pattern(detachSpaceWorkflow))
+  detachSpaceWorkflow(@Payload() data: RpcRequest<typeof detachSpaceWorkflow>) {
     return this.spaceWorkflows.detachSpaceWorkflow(data);
   }
 
-  @MessagePattern({ cmd: 'share_workflow_with_org' })
-  shareWithOrganization(@Payload() data: { workflowId: string; organizationId: string }) {
+  @MessagePattern(pattern(shareWorkflowWithOrg))
+  shareWithOrganization(@Payload() data: RpcRequest<typeof shareWorkflowWithOrg>) {
     return this.sharing.shareWithOrganization(data);
   }
 
-  @MessagePattern({ cmd: 'fork_workflow_for_space' })
-  forkForSpace(@Payload() data: { workflowId: string; spaceId: string; organizationId: string }) {
+  @MessagePattern(pattern(forkWorkflowForSpace))
+  forkForSpace(@Payload() data: RpcRequest<typeof forkWorkflowForSpace>) {
     return this.sharing.forkForSpace(data);
   }
 
-  @MessagePattern({ cmd: 'set_space_default_workflow' })
-  setSpaceDefaultWorkflow(@Payload() data: { spaceId: string; workflowId: string; organizationId: string }) {
+  @MessagePattern(pattern(setSpaceDefaultWorkflow))
+  setSpaceDefaultWorkflow(@Payload() data: RpcRequest<typeof setSpaceDefaultWorkflow>) {
     return this.spaceWorkflows.setSpaceDefaultWorkflow(data);
   }
 
@@ -131,53 +160,46 @@ export class WorkflowsController {
   // reach and only ever touch published rows. The `curate_*` patterns are the
   // platform's, reachable only behind the platform-staff guard at the gateway.
 
-  @MessagePattern({ cmd: 'list_workflow_templates' })
-  listTemplates(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(listWorkflowTemplates))
+  listTemplates(@Payload() data: RpcRequest<typeof listWorkflowTemplates>) {
     return this.library.listTemplates(data);
   }
 
-  @MessagePattern({ cmd: 'use_workflow_template' })
+  @MessagePattern(pattern(useWorkflowTemplate))
   useTemplate(
     @Payload()
-    data: {
-      templateId: string;
-      organizationId: string;
-      name?: string;
-      isDefault?: boolean;
-      spaceId?: string;
-      shareWithOrganization?: boolean;
-    },
+    data: RpcRequest<typeof useWorkflowTemplate>,
   ) {
     return this.library.useTemplate(data);
   }
 
-  @MessagePattern({ cmd: 'submit_workflow_to_library' })
-  submitToLibrary(@Payload() data: { workflowId: string; organizationId: string; note?: string }) {
+  @MessagePattern(pattern(submitWorkflowToLibrary))
+  submitToLibrary(@Payload() data: RpcRequest<typeof submitWorkflowToLibrary>) {
     return this.library.submitToLibrary(data);
   }
 
-  @MessagePattern({ cmd: 'curate_list_workflow_templates' })
+  @MessagePattern(pattern(curateListWorkflowTemplates))
   curateList() {
     return this.curation.curateList();
   }
 
-  @MessagePattern({ cmd: 'curate_upsert_workflow_template' })
-  curateUpsert(@Payload() data: any) {
+  @MessagePattern(pattern(curateUpsertWorkflowTemplate))
+  curateUpsert(@Payload() data: RpcRequest<typeof curateUpsertWorkflowTemplate>) {
     return this.curation.curateUpsert(data);
   }
 
-  @MessagePattern({ cmd: 'curate_publish_workflow_template' })
-  curatePublish(@Payload() data: { id: string; isPublished: boolean }) {
+  @MessagePattern(pattern(curatePublishWorkflowTemplate))
+  curatePublish(@Payload() data: RpcRequest<typeof curatePublishWorkflowTemplate>) {
     return this.curation.curateSetPublished(data);
   }
 
-  @MessagePattern({ cmd: 'curate_delete_workflow_template' })
-  curateDelete(@Payload() data: { id: string }) {
+  @MessagePattern(pattern(curateDeleteWorkflowTemplate))
+  curateDelete(@Payload() data: RpcRequest<typeof curateDeleteWorkflowTemplate>) {
     return this.curation.curateDelete(data);
   }
 
-  @MessagePattern({ cmd: 'curate_import_workflow_template' })
-  curateImport(@Payload() data: { workflowId: string; slug?: string; industry?: string | null }) {
+  @MessagePattern(pattern(curateImportWorkflowTemplate))
+  curateImport(@Payload() data: RpcRequest<typeof curateImportWorkflowTemplate>) {
     return this.curation.curateImportFromOrg(data);
   }
 }

@@ -1,6 +1,20 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
+import {
+  pattern,
+  type RpcRequest,
+  listShifts,
+  createShift,
+  updateShift,
+  deleteShift,
+  weekRota,
+  setRotaDay,
+  listShiftAssignments,
+  createShiftAssignment,
+  updateShiftAssignment,
+  deleteShiftAssignment,
+} from '@hbcfield/shared/microservices';
 
 @Injectable()
 export class ShiftsService extends BaseGatewayService {
@@ -9,58 +23,38 @@ export class ShiftsService extends BaseGatewayService {
   }
 
   // Shifts
-  listShifts(data: { organizationId: string; scopeSpaceIds?: string[] | null; spaceId?: string }) {
-    return this.send({ cmd: 'list_shifts' }, data);
+  listShifts(data: RpcRequest<typeof listShifts>) {
+    return this.send(pattern(listShifts), data);
   }
-  createShift(data: Record<string, any>) {
-    return this.send({ cmd: 'create_shift' }, data);
+  createShift(data: RpcRequest<typeof createShift>) {
+    return this.send(pattern(createShift), data);
   }
-  updateShift(data: Record<string, any>) {
-    return this.send({ cmd: 'update_shift' }, data);
+  updateShift(data: RpcRequest<typeof updateShift>) {
+    return this.send(pattern(updateShift), data);
   }
-  deleteShift(data: { organizationId: string; scopeSpaceIds?: string[] | null; shiftId: string }) {
-    return this.send({ cmd: 'delete_shift' }, data);
+  deleteShift(data: RpcRequest<typeof deleteShift>) {
+    return this.send(pattern(deleteShift), data);
   }
 
   // Rota
-  weekRota(data: {
-    organizationId: string;
-    viewScope: string[] | null;
-    editScope: string[] | null;
-    spaceId?: string;
-    from?: string;
-  }) {
-    return this.send({ cmd: 'week_rota' }, data);
+  weekRota(data: RpcRequest<typeof weekRota>) {
+    return this.send(pattern(weekRota), data);
   }
 
-  setRotaDay(data: {
-    organizationId: string;
-    editScope: string[] | null;
-    spaceId: string;
-    userId: string;
-    date: string;
-    shiftId: string | null;
-    repeat: 'once' | 'weekly';
-    createdById: string;
-  }) {
-    return this.send({ cmd: 'set_rota_day' }, data);
+  setRotaDay(data: RpcRequest<typeof setRotaDay>) {
+    return this.send(pattern(setRotaDay), data);
   }
 
-  listAssignments(data: {
-    organizationId: string;
-    scopeSpaceIds?: string[] | null;
-    spaceId: string;
-    includeEnded?: boolean;
-  }) {
-    return this.send({ cmd: 'list_shift_assignments' }, data);
+  listAssignments(data: RpcRequest<typeof listShiftAssignments>) {
+    return this.send(pattern(listShiftAssignments), data);
   }
-  createAssignment(data: Record<string, any>) {
-    return this.send({ cmd: 'create_shift_assignment' }, data);
+  createAssignment(data: RpcRequest<typeof createShiftAssignment>) {
+    return this.send(pattern(createShiftAssignment), data);
   }
-  updateAssignment(data: Record<string, any>) {
-    return this.send({ cmd: 'update_shift_assignment' }, data);
+  updateAssignment(data: RpcRequest<typeof updateShiftAssignment>) {
+    return this.send(pattern(updateShiftAssignment), data);
   }
-  deleteAssignment(data: { organizationId: string; scopeSpaceIds?: string[] | null; assignmentId: string }) {
-    return this.send({ cmd: 'delete_shift_assignment' }, data);
+  deleteAssignment(data: RpcRequest<typeof deleteShiftAssignment>) {
+    return this.send(pattern(deleteShiftAssignment), data);
   }
 }

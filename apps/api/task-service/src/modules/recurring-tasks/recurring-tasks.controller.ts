@@ -2,6 +2,15 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { RecurringTasksService } from './recurring-tasks.service';
 import { RecurringRunnerService } from './recurring-runner.service';
+import {
+  pattern,
+  type RpcRequest,
+  findAllRecurringTasks,
+  createRecurringTask,
+  updateRecurringTask,
+  deleteRecurringTask,
+  generateRecurringTask,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Microservice Controller for Recurring Task Template Operations
@@ -15,28 +24,28 @@ export class RecurringTasksController {
     private readonly runner: RecurringRunnerService,
   ) {}
 
-  @MessagePattern({ cmd: 'find_all_recurring_tasks' })
-  async findAll(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(findAllRecurringTasks))
+  async findAll(@Payload() data: RpcRequest<typeof findAllRecurringTasks>) {
     return this.recurringTasksService.findAll(data);
   }
 
-  @MessagePattern({ cmd: 'create_recurring_task' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createRecurringTask))
+  async create(@Payload() data: RpcRequest<typeof createRecurringTask>) {
     return this.recurringTasksService.create(data);
   }
 
-  @MessagePattern({ cmd: 'update_recurring_task' })
-  async update(@Payload() data: any) {
+  @MessagePattern(pattern(updateRecurringTask))
+  async update(@Payload() data: RpcRequest<typeof updateRecurringTask>) {
     return this.recurringTasksService.update(data);
   }
 
-  @MessagePattern({ cmd: 'delete_recurring_task' })
-  async remove(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(deleteRecurringTask))
+  async remove(@Payload() data: RpcRequest<typeof deleteRecurringTask>) {
     return this.recurringTasksService.remove(data);
   }
 
-  @MessagePattern({ cmd: 'generate_recurring_task' })
-  async generate(@Payload() data: { id: string; organizationId: string; userId: string }) {
+  @MessagePattern(pattern(generateRecurringTask))
+  async generate(@Payload() data: RpcRequest<typeof generateRecurringTask>) {
     return this.runner.generate(data);
   }
 }

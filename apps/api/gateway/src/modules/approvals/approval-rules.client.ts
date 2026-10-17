@@ -1,13 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { BaseGatewayService, SERVICE_NAMES, type ApprovalRuleInput, type RuleKind } from '@hbcfield/shared';
 import {
-  BaseGatewayService,
-  SERVICE_NAMES,
-  type ApprovalRuleInput,
-  type ApprovalRuleView,
-  type ApprovalStepView,
-  type RuleKind,
-} from '@hbcfield/shared';
+  pattern,
+  type RpcReply,
+  type RpcRequest,
+  approvalSteps,
+  approvalRulesList,
+  approvalRulesSave,
+  approvalRulesDelete,
+} from '@hbcfield/shared/microservices';
 
 /** Gateway → task-service for office rules and the open first steps. */
 @Injectable()
@@ -17,15 +19,28 @@ export class ApprovalRulesClient extends BaseGatewayService {
   }
 
   steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>) {
-    return this.send<ApprovalStepView[]>({ cmd: 'approval_steps' }, { organizationId, items });
+    return this.send<RpcReply<typeof approvalSteps>>(pattern(approvalSteps), {
+      organizationId,
+      items,
+    } satisfies RpcRequest<typeof approvalSteps>);
   }
   list(organizationId: string) {
-    return this.send<ApprovalRuleView[]>({ cmd: 'approval_rules_list' }, { organizationId });
+    return this.send<RpcReply<typeof approvalRulesList>>(pattern(approvalRulesList), {
+      organizationId,
+    } satisfies RpcRequest<typeof approvalRulesList>);
   }
   save(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string) {
-    return this.sendOnce<{ id: string }>({ cmd: 'approval_rules_save' }, { organizationId, userId, input, id });
+    return this.sendOnce<RpcReply<typeof approvalRulesSave>>(pattern(approvalRulesSave), {
+      organizationId,
+      userId,
+      input,
+      id,
+    } satisfies RpcRequest<typeof approvalRulesSave>);
   }
   remove(organizationId: string, id: string) {
-    return this.sendOnce<{ deleted: true }>({ cmd: 'approval_rules_delete' }, { organizationId, id });
+    return this.sendOnce<RpcReply<typeof approvalRulesDelete>>(pattern(approvalRulesDelete), {
+      organizationId,
+      id,
+    } satisfies RpcRequest<typeof approvalRulesDelete>);
   }
 }

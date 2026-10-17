@@ -8,6 +8,36 @@ import { FeedService } from './feed.service';
 import { EventAnswersService } from './event-answers.service';
 import { EventReadService } from './event-read.service';
 import { AvailabilityService } from './availability.service';
+import {
+  pattern,
+  type RpcRequest,
+  calendarItems,
+  calendarTeam,
+  calendarSettings,
+  calendarCountries,
+  calendarRegions,
+  calendarUpdateOrg,
+  calendarUpdateSpace,
+  calendarHolidays,
+  calendarHolidaySave,
+  calendarHolidayRemove,
+  calendarSetDetectedPlace,
+  calendarPlacesToDetect,
+  calendarEventCreate,
+  calendarEventUpdate,
+  calendarEventCancel,
+  calendarEventGet,
+  calendarEventRespond,
+  calendarEventSnooze,
+  calendarEventDone,
+  calendarPeople,
+  calendarAvailability,
+  calendarFreeSlots,
+  calendarFeedStatus,
+  calendarFeedRotate,
+  calendarFeedRevoke,
+  calendarFeedRender,
+} from '@hbcfield/shared/microservices';
 
 /** The calendar over RPC. Every payload's identity (userId, organizationId, scopes) comes from the gateway's token. */
 @Controller()
@@ -22,90 +52,92 @@ export class CalendarController {
     private readonly feed: FeedService,
   ) {}
 
-  @MessagePattern({ cmd: 'calendar_items' }) items(@Payload() d: ItemsQuery) {
+  @MessagePattern(pattern(calendarItems)) items(@Payload() d: RpcRequest<typeof calendarItems>) {
     return this.calendar.items(d);
   }
-  @MessagePattern({ cmd: 'calendar_team' }) team(@Payload() d: any) {
+  @MessagePattern(pattern(calendarTeam)) team(@Payload() d: RpcRequest<typeof calendarTeam>) {
     return this.calendar.team(d);
   }
 
-  @MessagePattern({ cmd: 'calendar_settings' }) settings(@Payload() d: any) {
+  @MessagePattern(pattern(calendarSettings)) settings(@Payload() d: RpcRequest<typeof calendarSettings>) {
     return this.holidays.settings(d);
   }
-  @MessagePattern({ cmd: 'calendar_countries' }) countries(@Payload() d: { lang?: string }) {
+  @MessagePattern(pattern(calendarCountries)) countries(@Payload() d: RpcRequest<typeof calendarCountries>) {
     return this.holidays.countries(d);
   }
-  @MessagePattern({ cmd: 'calendar_regions' }) regions(@Payload() d: { country: string; lang?: string }) {
+  @MessagePattern(pattern(calendarRegions)) regions(@Payload() d: RpcRequest<typeof calendarRegions>) {
     return this.holidays.regions(d);
   }
-  @MessagePattern({ cmd: 'calendar_update_org' }) updateOrg(@Payload() d: any) {
+  @MessagePattern(pattern(calendarUpdateOrg)) updateOrg(@Payload() d: RpcRequest<typeof calendarUpdateOrg>) {
     return this.holidays.updateOrganization(d);
   }
-  @MessagePattern({ cmd: 'calendar_update_space' }) updateSpace(@Payload() d: any) {
+  @MessagePattern(pattern(calendarUpdateSpace)) updateSpace(@Payload() d: RpcRequest<typeof calendarUpdateSpace>) {
     return this.holidays.updateWorkspace(d);
   }
-  @MessagePattern({ cmd: 'calendar_holidays' }) holidaysList(@Payload() d: any) {
+  @MessagePattern(pattern(calendarHolidays)) holidaysList(@Payload() d: RpcRequest<typeof calendarHolidays>) {
     return this.holidays.list(d);
   }
-  @MessagePattern({ cmd: 'calendar_holiday_save' }) holidaySave(@Payload() d: any) {
+  @MessagePattern(pattern(calendarHolidaySave)) holidaySave(@Payload() d: RpcRequest<typeof calendarHolidaySave>) {
     return this.holidays.save(d);
   }
-  @MessagePattern({ cmd: 'calendar_holiday_remove' }) holidayRemove(@Payload() d: any) {
+  @MessagePattern(pattern(calendarHolidayRemove)) holidayRemove(
+    @Payload() d: RpcRequest<typeof calendarHolidayRemove>,
+  ) {
     return this.holidays.remove(d);
   }
   // Internal only — the gateway's geocoder, never a client route.
-  @MessagePattern({ cmd: 'calendar_set_detected_place' }) setDetectedPlace(@Payload() d: any) {
+  @MessagePattern(pattern(calendarSetDetectedPlace)) setDetectedPlace(
+    @Payload() d: RpcRequest<typeof calendarSetDetectedPlace>,
+  ) {
     return this.holidays.setDetectedPlace(d);
   }
-  @MessagePattern({ cmd: 'calendar_places_to_detect' }) placesToDetect(@Payload() d: any) {
+  @MessagePattern(pattern(calendarPlacesToDetect)) placesToDetect(
+    @Payload() d: RpcRequest<typeof calendarPlacesToDetect>,
+  ) {
     return this.holidays.placesToDetect(d ?? {});
   }
 
-  @MessagePattern({ cmd: 'calendar_event_create' }) create(
-    @Payload() d: Caller & { input: EventInput; clientId?: string },
-  ) {
+  @MessagePattern(pattern(calendarEventCreate)) create(@Payload() d: RpcRequest<typeof calendarEventCreate>) {
     return this.events.create(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_update' }) update(
-    @Payload() d: Caller & { eventId: string; input: EventInput },
-  ) {
+  @MessagePattern(pattern(calendarEventUpdate)) update(@Payload() d: RpcRequest<typeof calendarEventUpdate>) {
     return this.events.update(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_cancel' }) cancel(@Payload() d: Caller & { eventId: string }) {
+  @MessagePattern(pattern(calendarEventCancel)) cancel(@Payload() d: RpcRequest<typeof calendarEventCancel>) {
     return this.events.cancel(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_get' }) get(@Payload() d: Caller & { eventId: string }) {
+  @MessagePattern(pattern(calendarEventGet)) get(@Payload() d: RpcRequest<typeof calendarEventGet>) {
     return this.events.get(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_respond' }) respond(@Payload() d: any) {
+  @MessagePattern(pattern(calendarEventRespond)) respond(@Payload() d: RpcRequest<typeof calendarEventRespond>) {
     return this.eventAnswers.respond(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_snooze' }) snooze(@Payload() d: any) {
+  @MessagePattern(pattern(calendarEventSnooze)) snooze(@Payload() d: RpcRequest<typeof calendarEventSnooze>) {
     return this.eventAnswers.snooze(d);
   }
-  @MessagePattern({ cmd: 'calendar_event_done' }) done(@Payload() d: any) {
+  @MessagePattern(pattern(calendarEventDone)) done(@Payload() d: RpcRequest<typeof calendarEventDone>) {
     return this.eventAnswers.done(d);
   }
-  @MessagePattern({ cmd: 'calendar_people' }) people(@Payload() d: any) {
+  @MessagePattern(pattern(calendarPeople)) people(@Payload() d: RpcRequest<typeof calendarPeople>) {
     return this.eventRead.people(d);
   }
-  @MessagePattern({ cmd: 'calendar_availability' }) availability(@Payload() d: any) {
+  @MessagePattern(pattern(calendarAvailability)) availability(@Payload() d: RpcRequest<typeof calendarAvailability>) {
     return this.freeBusy.availability(d);
   }
-  @MessagePattern({ cmd: 'calendar_free_slots' }) freeSlots(@Payload() d: any) {
+  @MessagePattern(pattern(calendarFreeSlots)) freeSlots(@Payload() d: RpcRequest<typeof calendarFreeSlots>) {
     return this.freeBusy.freeSlots(d);
   }
 
-  @MessagePattern({ cmd: 'calendar_feed_status' }) feedStatus(@Payload() d: any) {
+  @MessagePattern(pattern(calendarFeedStatus)) feedStatus(@Payload() d: RpcRequest<typeof calendarFeedStatus>) {
     return this.feed.status(d);
   }
-  @MessagePattern({ cmd: 'calendar_feed_rotate' }) feedRotate(@Payload() d: any) {
+  @MessagePattern(pattern(calendarFeedRotate)) feedRotate(@Payload() d: RpcRequest<typeof calendarFeedRotate>) {
     return this.feed.rotate(d);
   }
-  @MessagePattern({ cmd: 'calendar_feed_revoke' }) feedRevoke(@Payload() d: any) {
+  @MessagePattern(pattern(calendarFeedRevoke)) feedRevoke(@Payload() d: RpcRequest<typeof calendarFeedRevoke>) {
     return this.feed.revoke(d);
   }
-  @MessagePattern({ cmd: 'calendar_feed_render' }) async feedRender(@Payload() d: { token: string }) {
+  @MessagePattern(pattern(calendarFeedRender)) async feedRender(@Payload() d: RpcRequest<typeof calendarFeedRender>) {
     return success({ ics: await this.feed.render(d) });
   }
 }

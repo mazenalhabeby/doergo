@@ -5,6 +5,19 @@ import { WorkerLocationReadService } from './worker-location-read.service';
 import { RouteReadService } from './route-read.service';
 import { LocationBatchService } from './location-batch.service';
 
+import {
+  pattern,
+  trackingHealth,
+  updateLocation,
+  updateLocationBatch,
+  getActiveWorkers,
+  getSpaceWorkers,
+  getWorkerLocation,
+  getWorkerHistory,
+  getTaskRoute,
+  getWorkerCurrentRoute,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 /**
  * The gateway sends `scopeSpaceIds` only for a workspace-scoped caller (an
  * array, possibly empty = nowhere); absent or null = org-wide. A JSON hop turns
@@ -26,23 +39,13 @@ export class LocationController {
 
   // Its OWN pattern: on the shared Redis transport a common 'health' was answered
   // by whichever service replied first, so the gateway could not tell who was up.
-  @MessagePattern({ cmd: 'tracking_health' })
+  @MessagePattern(pattern(trackingHealth))
   async health() {
     return { status: 'ok', service: 'tracking-service', timestamp: new Date().toISOString() };
   }
 
-  @MessagePattern({ cmd: 'update_location' })
-  async updateLocation(
-    @Payload()
-    data: {
-      userId: string;
-      lat: number;
-      lng: number;
-      accuracy?: number;
-      taskId?: string;
-      organizationId?: string;
-    },
-  ) {
+  @MessagePattern(pattern(updateLocation))
+  async updateLocation(@Payload() data: RpcRequest<typeof updateLocation>) {
     return this.locationService.updateLocation(
       data.userId,
       data.lat,
@@ -53,48 +56,31 @@ export class LocationController {
     );
   }
 
-  @MessagePattern({ cmd: 'update_location_batch' })
-  async updateLocationBatch(
-    @Payload()
-    data: {
-      userId: string;
-      taskId?: string;
-      organizationId?: string;
-      points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[];
-    },
-  ) {
+  @MessagePattern(pattern(updateLocationBatch))
+  async updateLocationBatch(@Payload() data: RpcRequest<typeof updateLocationBatch>) {
     return this.batches.updateLocationBatch(data.userId, data.taskId, data.points, data.organizationId);
   }
 
-  @MessagePattern({ cmd: 'get_active_workers' })
-  async getActiveWorkers(@Payload() data: { organizationId?: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(getActiveWorkers))
+  async getActiveWorkers(@Payload() data: RpcRequest<typeof getActiveWorkers>) {
     return this.workerReads.getActiveWorkers(data.organizationId, undefined, scopeOf(data));
   }
 
   // Cross-org shared space: live locations of the owner-org workers assigned to
   // that space. organizationId = the space's OWNER org, userIds = the roster
   // (both resolved server-side by the gateway; never client input).
-  @MessagePattern({ cmd: 'get_space_workers' })
-  async getSpaceWorkers(@Payload() data: { organizationId: string; userIds: string[] }) {
+  @MessagePattern(pattern(getSpaceWorkers))
+  async getSpaceWorkers(@Payload() data: RpcRequest<typeof getSpaceWorkers>) {
     return this.workerReads.getActiveWorkers(data.organizationId, data.userIds);
   }
 
-  @MessagePattern({ cmd: 'get_worker_location' })
-  async getWorkerLocation(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(getWorkerLocation))
+  async getWorkerLocation(@Payload() data: RpcRequest<typeof getWorkerLocation>) {
     return this.workerReads.getWorkerLocation(data.workerId, data.organizationId, scopeOf(data));
   }
 
-  @MessagePattern({ cmd: 'get_worker_history' })
-  async getWorkerHistory(
-    @Payload()
-    data: {
-      workerId: string;
-      startDate?: string;
-      endDate?: string;
-      organizationId?: string;
-      scopeSpaceIds?: string[];
-    },
-  ) {
+  @MessagePattern(pattern(getWorkerHistory))
+  async getWorkerHistory(@Payload() data: RpcRequest<typeof getWorkerHistory>) {
     return this.workerReads.getWorkerHistory(
       data.workerId,
       data.startDate,
@@ -104,15 +90,13 @@ export class LocationController {
     );
   }
 
-  @MessagePattern({ cmd: 'get_task_route' })
-  async getTaskRoute(@Payload() data: { taskId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+  @MessagePattern(pattern(getTaskRoute))
+  async getTaskRoute(@Payload() data: RpcRequest<typeof getTaskRoute>) {
     return this.routeReads.getTaskRoute(data.taskId, data.organizationId, scopeOf(data));
   }
 
-  @MessagePattern({ cmd: 'get_worker_current_route' })
-  async getWorkerCurrentRoute(
-    @Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] },
-  ) {
+  @MessagePattern(pattern(getWorkerCurrentRoute))
+  async getWorkerCurrentRoute(@Payload() data: RpcRequest<typeof getWorkerCurrentRoute>) {
     return this.routeReads.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
   }
 }

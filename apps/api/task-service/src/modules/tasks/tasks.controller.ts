@@ -6,6 +6,39 @@ import { TaskReportService } from './task-report.service';
 import { RoleTakeService } from './role-take.service';
 import { RoleStatsService } from './role-stats.service';
 import { JobPauseReadService } from './handover/job-pause-read.service';
+import {
+  pattern,
+  type RpcRequest,
+  roleTasksOpenForMe,
+  roleTaskTake,
+  roleTaskReturn,
+  roleTaskSetOpen,
+  roleTaskOptions,
+  roleTaskPreview,
+  roleTaskStats,
+  taskHealth,
+  findAllTasks,
+  findTaskSpace,
+  findTask,
+  taskFullReport,
+  getTaskSubmissions,
+  getTaskTimeline,
+  getTaskTime,
+  getJobTimeReport,
+  getMyHandovers,
+  getComments,
+  getStatusCounts,
+  getSuggestedTechnicians,
+  getTaskAssignees,
+  getTaskChecklist,
+  resyncSpaceWorkflow,
+  resyncAllSpaces,
+  portalListRequests,
+  portalListRequestsByPortal,
+  portalGetRequest,
+  portalTriageRequest,
+  getSubtasks,
+} from '@hbcfield/shared/microservices';
 
 /**
  * Microservice Controller for Task READ Operations
@@ -31,44 +64,44 @@ export class TasksController {
   // Direct, not through the queue: taking a place is ONE conditional update in
   // the database, which is the guarantee — a queue in front would only add wait.
 
-  @MessagePattern({ cmd: 'role_tasks_open_for_me' })
-  async roleTasksOpenForMe(@Payload() data: any) {
+  @MessagePattern(pattern(roleTasksOpenForMe))
+  async roleTasksOpenForMe(@Payload() data: RpcRequest<typeof roleTasksOpenForMe>) {
     return this.rolePool.openForMe(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_take' })
-  async roleTaskTake(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskTake))
+  async roleTaskTake(@Payload() data: RpcRequest<typeof roleTaskTake>) {
     return this.roleTake.take(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_return' })
-  async roleTaskReturn(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskReturn))
+  async roleTaskReturn(@Payload() data: RpcRequest<typeof roleTaskReturn>) {
     return this.rolePool.returnToRole(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_set_open' })
-  async roleTaskSetOpen(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskSetOpen))
+  async roleTaskSetOpen(@Payload() data: RpcRequest<typeof roleTaskSetOpen>) {
     return this.rolePool.setOpenRole(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_options' })
-  async roleTaskOptions(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskOptions))
+  async roleTaskOptions(@Payload() data: RpcRequest<typeof roleTaskOptions>) {
     return this.rolePool.roleOptions(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_preview' })
-  async roleTaskPreview(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskPreview))
+  async roleTaskPreview(@Payload() data: RpcRequest<typeof roleTaskPreview>) {
     return this.rolePool.preview(data);
   }
 
-  @MessagePattern({ cmd: 'role_task_stats' })
-  async roleTaskStats(@Payload() data: any) {
+  @MessagePattern(pattern(roleTaskStats))
+  async roleTaskStats(@Payload() data: RpcRequest<typeof roleTaskStats>) {
     return this.roleStats.stats(data);
   }
 
   // Its OWN pattern: on the shared Redis transport a common 'health' was answered
   // by whichever service replied first, so the gateway could not tell who was up.
-  @MessagePattern({ cmd: 'task_health' })
+  @MessagePattern(pattern(taskHealth))
   async health() {
     return { status: 'ok', service: 'task-service', timestamp: new Date().toISOString() };
   }
@@ -76,8 +109,8 @@ export class TasksController {
   // ============ READ Operations (Direct Microservice) ============
   // WRITE operations are handled by TasksProcessor via BullMQ
 
-  @MessagePattern({ cmd: 'find_all_tasks' })
-  async findAll(@Payload() data: any) {
+  @MessagePattern(pattern(findAllTasks))
+  async findAll(@Payload() data: RpcRequest<typeof findAllTasks>) {
     return this.tasksService.findAll(data);
   }
 
@@ -86,25 +119,15 @@ export class TasksController {
     ⚠️ Not `find_task`, which asks who is reading and refuses a caller the guard
     cannot name. The space id and nothing else, scoped to the organization.
   */
-  @MessagePattern({ cmd: 'find_task_space' })
-  async findSpace(@Payload() data: { id: string; organizationId: string }) {
+  @MessagePattern(pattern(findTaskSpace))
+  async findSpace(@Payload() data: RpcRequest<typeof findTaskSpace>) {
     return this.tasksService.spaceOf(data);
   }
 
-  @MessagePattern({ cmd: 'find_task' })
+  @MessagePattern(pattern(findTask))
   async findOne(
     @Payload()
-    data: {
-      id: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-      canViewAllTasks?: boolean;
-      /** Cross-org shared spaces the caller may read. */
-      sharedSpaceIds?: string[];
-      /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
-      viewAllSpaceIds?: string[];
-    },
+    data: RpcRequest<typeof findTask>,
   ) {
     return this.tasksService.findOne(data);
   }
@@ -113,115 +136,77 @@ export class TasksController {
    * The full report for one job (shared tasks/task-report.ts) — `copy` office or
    * client. The client copy is cut here, in the service, never by the reader.
    */
-  @MessagePattern({ cmd: 'task_full_report' })
-  async fullReport(@Payload() data: any) {
+  @MessagePattern(pattern(taskFullReport))
+  async fullReport(@Payload() data: RpcRequest<typeof taskFullReport>) {
     return this.taskReport.build(data);
   }
 
   /** The step forms answered on this job — gated like reading the task. */
-  @MessagePattern({ cmd: 'get_task_submissions' })
-  async getSubmissions(@Payload() data: any) {
+  @MessagePattern(pattern(getTaskSubmissions))
+  async getSubmissions(@Payload() data: RpcRequest<typeof getTaskSubmissions>) {
     return this.tasksService.getSubmissions(data);
   }
 
-  @MessagePattern({ cmd: 'get_task_timeline' })
+  @MessagePattern(pattern(getTaskTimeline))
   async getTimeline(
     @Payload()
-    data: {
-      id: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-      canViewAllTasks?: boolean;
-      /** Cross-org shared spaces the caller may read. */
-      sharedSpaceIds?: string[];
-      /** Spaces where the caller holds canViewAllTasks by a SPACE role. */
-      viewAllSpaceIds?: string[];
-    },
+    data: RpcRequest<typeof getTaskTimeline>,
   ) {
     return this.tasksService.getTimeline(data);
   }
 
   /** The member's own: jobs in work, notes owed, jobs paused on them. */
-  @MessagePattern({ cmd: 'get_task_time' })
-  async jobTime(@Payload() data: any) {
+  @MessagePattern(pattern(getTaskTime))
+  async jobTime(@Payload() data: RpcRequest<typeof getTaskTime>) {
     return this.tasksService.getJobTime(data);
   }
 
-  @MessagePattern({ cmd: 'get_job_time_report' })
-  async jobTimeReport(@Payload() data: { userId: string; organizationId: string; from: string; to: string }) {
+  @MessagePattern(pattern(getJobTimeReport))
+  async jobTimeReport(@Payload() data: RpcRequest<typeof getJobTimeReport>) {
     return this.tasksService.getJobTimeReport(data);
   }
 
-  @MessagePattern({ cmd: 'get_my_handovers' })
-  async myHandovers(@Payload() data: { userId: string; organizationId: string }) {
+  @MessagePattern(pattern(getMyHandovers))
+  async myHandovers(@Payload() data: RpcRequest<typeof getMyHandovers>) {
     return this.pausedJobs.mine(data);
   }
 
-  @MessagePattern({ cmd: 'get_comments' })
+  @MessagePattern(pattern(getComments))
   async getComments(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getComments>,
   ) {
     return this.tasksService.getComments(data);
   }
 
-  @MessagePattern({ cmd: 'get_status_counts' })
+  @MessagePattern(pattern(getStatusCounts))
   async getStatusCounts(
     @Payload()
-    data: {
-      userId: string;
-      userRole: string;
-      organizationId: string;
-      spaceId?: string;
-    },
+    data: RpcRequest<typeof getStatusCounts>,
   ) {
     return this.tasksService.getStatusCounts(data);
   }
 
-  @MessagePattern({ cmd: 'get_suggested_technicians' })
+  @MessagePattern(pattern(getSuggestedTechnicians))
   async getSuggestedTechnicians(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-      canAssignTasks?: boolean;
-      /** Spaces where the caller holds canAssignTasks by a SPACE role. */
-      assignSpaceIds?: string[];
-    },
+    data: RpcRequest<typeof getSuggestedTechnicians>,
   ) {
     return this.tasksService.getSuggestedTechnicians(data);
   }
 
-  @MessagePattern({ cmd: 'get_task_assignees' })
+  @MessagePattern(pattern(getTaskAssignees))
   async getAssignees(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getTaskAssignees>,
   ) {
     return this.tasksService.getAssignees(data);
   }
 
-  @MessagePattern({ cmd: 'get_task_checklist' })
+  @MessagePattern(pattern(getTaskChecklist))
   async getChecklist(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getTaskChecklist>,
   ) {
     return this.tasksService.getChecklist(data);
   }
@@ -231,69 +216,47 @@ export class TasksController {
   // One-shot admin maintenance op: re-point every task in a space onto the
   // space's workflow and remap statuses. Not high-frequency, so a direct
   // microservice call (not BullMQ) is sufficient.
-  @MessagePattern({ cmd: 'resync_space_workflow' })
-  async resyncSpaceWorkflow(
-    @Payload() data: { spaceId: string; organizationId: string },
-  ) {
+  @MessagePattern(pattern(resyncSpaceWorkflow))
+  async resyncSpaceWorkflow(@Payload() data: RpcRequest<typeof resyncSpaceWorkflow>) {
     return this.tasksService.resyncSpaceWorkflow(data);
   }
 
-  @MessagePattern({ cmd: 'resync_all_spaces' })
-  async resyncAllSpaces(@Payload() data: { organizationId: string }) {
+  @MessagePattern(pattern(resyncAllSpaces))
+  async resyncAllSpaces(@Payload() data: RpcRequest<typeof resyncAllSpaces>) {
     return this.tasksService.resyncAllSpaces(data);
   }
 
   // ============ Customer Portal (customer-scoped reads) ============
 
-  @MessagePattern({ cmd: 'portal_list_requests' })
-  async listPortalRequests(@Payload() data: { organizationId: string; customerId: string; scopeSpaceIds?: string[] | null }) {
+  @MessagePattern(pattern(portalListRequests))
+  async listPortalRequests(@Payload() data: RpcRequest<typeof portalListRequests>) {
     return this.tasksService.listPortalRequests(data);
   }
 
-  @MessagePattern({ cmd: 'portal_list_requests_by_portal' })
-  async listPortalRequestsByPortal(
-    @Payload() data: { organizationId: string; portalId: string; scopeSpaceIds?: string[] | null },
-  ) {
+  @MessagePattern(pattern(portalListRequestsByPortal))
+  async listPortalRequestsByPortal(@Payload() data: RpcRequest<typeof portalListRequestsByPortal>) {
     return this.tasksService.listPortalRequestsByPortal(data);
   }
 
-  @MessagePattern({ cmd: 'portal_get_request' })
-  async getPortalRequest(
-    @Payload() data: { id: string; organizationId: string; customerId: string },
-  ) {
+  @MessagePattern(pattern(portalGetRequest))
+  async getPortalRequest(@Payload() data: RpcRequest<typeof portalGetRequest>) {
     return this.tasksService.getPortalRequest(data);
   }
 
-  @MessagePattern({ cmd: 'portal_triage_request' })
+  @MessagePattern(pattern(portalTriageRequest))
   async triageRequest(
     @Payload()
-    data: {
-      id: string;
-      organizationId: string;
-      userId: string;
-      spaceId: string;
-      workflowId?: string | null;
-      priority?: string;
-      assignedToId?: string | null;
-      // Built in the gateway from the session (portalScope / assignSpaceIds).
-      scopeSpaceIds?: string[] | null;
-      assignScopeSpaceIds?: string[] | null;
-    },
+    data: RpcRequest<typeof portalTriageRequest>,
   ) {
     return this.tasksService.triageRequest(data);
   }
 
   // ============ Subtask READ Operations ============
 
-  @MessagePattern({ cmd: 'get_subtasks' })
+  @MessagePattern(pattern(getSubtasks))
   async getSubtasks(
     @Payload()
-    data: {
-      taskId: string;
-      userId: string;
-      userRole: string;
-      organizationId: string;
-    },
+    data: RpcRequest<typeof getSubtasks>,
   ) {
     return this.tasksService.getSubtasks(data);
   }

@@ -5,6 +5,20 @@ import { SubscriptionService } from './subscription.service';
 import { StripeWebhookService } from './stripe-webhook.service';
 import { BillingAdminService } from './billing-admin.service';
 
+import {
+  pattern,
+  billingGetSubscription,
+  billingGetBill,
+  billingSetAddons,
+  billingAdminListOrgs,
+  billingAdminSetAddons,
+  billingCreateCheckout,
+  billingCreatePortal,
+  billingCancel,
+  billingReconcileSeats,
+  billingWebhook,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 @Controller()
 export class BillingController {
   constructor(
@@ -14,54 +28,54 @@ export class BillingController {
     private readonly subscriptions: SubscriptionService,
   ) {}
 
-  @MessagePattern({ cmd: 'billing_get_subscription' })
-  getSubscription(@Payload() d: { organizationId: string }) {
+  @MessagePattern(pattern(billingGetSubscription))
+  getSubscription(@Payload() d: RpcRequest<typeof billingGetSubscription>) {
     return this.subscriptions.getSubscription(d.organizationId);
   }
 
-  @MessagePattern({ cmd: 'billing_get_bill' })
-  getBill(@Payload() d: { organizationId: string }) {
+  @MessagePattern(pattern(billingGetBill))
+  getBill(@Payload() d: RpcRequest<typeof billingGetBill>) {
     return this.billing.getBill(d.organizationId);
   }
 
-  @MessagePattern({ cmd: 'billing_set_addons' })
-  setAddOns(@Payload() d: { organizationId: string; addOns: string[] }) {
+  @MessagePattern(pattern(billingSetAddons))
+  setAddOns(@Payload() d: RpcRequest<typeof billingSetAddons>) {
     return this.billing.setAddOns(d.organizationId, d.addOns);
   }
 
-  @MessagePattern({ cmd: 'billing_admin_list_orgs' })
+  @MessagePattern(pattern(billingAdminListOrgs))
   adminListOrgs() {
     return this.billingAdmin.adminListOrgs();
   }
 
-  @MessagePattern({ cmd: 'billing_admin_set_addons' })
-  adminSetOrgAddOns(@Payload() d: { organizationId: string; addOns: string[]; byUserId?: string }) {
+  @MessagePattern(pattern(billingAdminSetAddons))
+  adminSetOrgAddOns(@Payload() d: RpcRequest<typeof billingAdminSetAddons>) {
     return this.billingAdmin.adminSetOrgAddOns(d);
   }
 
-  @MessagePattern({ cmd: 'billing_create_checkout' })
-  createCheckout(@Payload() d: { organizationId: string; successUrl: string; cancelUrl: string }) {
+  @MessagePattern(pattern(billingCreateCheckout))
+  createCheckout(@Payload() d: RpcRequest<typeof billingCreateCheckout>) {
     return this.subscriptions.createCheckout(d.organizationId, d.successUrl, d.cancelUrl);
   }
 
-  @MessagePattern({ cmd: 'billing_create_portal' })
-  createPortal(@Payload() d: { organizationId: string; returnUrl: string }) {
+  @MessagePattern(pattern(billingCreatePortal))
+  createPortal(@Payload() d: RpcRequest<typeof billingCreatePortal>) {
     return this.subscriptions.createPortal(d.organizationId, d.returnUrl);
   }
 
-  @MessagePattern({ cmd: 'billing_cancel' })
-  cancel(@Payload() d: { organizationId: string }) {
+  @MessagePattern(pattern(billingCancel))
+  cancel(@Payload() d: RpcRequest<typeof billingCancel>) {
     return this.subscriptions.cancel(d.organizationId);
   }
 
-  @MessagePattern({ cmd: 'billing_reconcile_seats' })
-  reconcile(@Payload() d: { organizationId: string }) {
+  @MessagePattern(pattern(billingReconcileSeats))
+  reconcile(@Payload() d: RpcRequest<typeof billingReconcileSeats>) {
     // Debounced: a burst of member changes collapses into one Stripe sync.
     return this.billing.scheduleReconcile(d.organizationId);
   }
 
-  @MessagePattern({ cmd: 'billing_webhook' })
-  webhook(@Payload() d: { rawBody: string; signature: string }) {
+  @MessagePattern(pattern(billingWebhook))
+  webhook(@Payload() d: RpcRequest<typeof billingWebhook>) {
     return this.webhooks.applyWebhook(d.rawBody, d.signature);
   }
 }
