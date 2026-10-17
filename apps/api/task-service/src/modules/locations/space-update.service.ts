@@ -84,9 +84,10 @@ export class SpaceUpdateService extends SpaceServiceBase {
     // Only touched when the caller actually sent the field: a PATCH that is
     // renaming the space must not wipe a boundary somebody drew.
     if ('geofencePolygon' in data) {
-      // ⚠️ cleanPolygon answers null to clear the boundary; Prisma's type for a nullable JSON column wants
-      // Prisma.DbNull there, not null. Kept as it is (CODE_AUDIT.md §12) — typed so the gap is visible.
-      updateData.geofencePolygon = this.cleanPolygon(data.geofencePolygon) as Prisma.InputJsonValue;
+      // A cleared boundary is a database NULL, like a space that never had one. A plain `null` here
+      // stored the JSON value null — read back the same, but "IS NULL" would count it as drawn.
+      const polygon = this.cleanPolygon(data.geofencePolygon);
+      updateData.geofencePolygon = polygon === null ? Prisma.DbNull : polygon;
     }
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
