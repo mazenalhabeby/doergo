@@ -13,42 +13,12 @@ import {
   type PermissionSet,
 } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
+import type { CreateInvitationMessage } from '@hbcfield/shared/microservices';
+
+/** The input is the message contract's request type (shared with the gateway). */
+export type CreateInvitationInput = CreateInvitationMessage;
 
 /** The steps of `InvitationService.createInvitation`, in the order it runs them. */
-
-export interface CreateInvitationInput {
-  targetRole: string;
-  organizationId: string;
-  createdById: string;
-  creatorRole: string;
-  expiresInHours?: number;
-  position?: string;
-  scheduleType?: string;
-  schedule?: { dayOfWeek: number; startTime: string; endTime: string; isActive: boolean }[];
-  monthlyHourBudget?: number;
-  enabledModules?: string[];
-  specialty?: string;
-  maxDailyJobs?: number;
-  spaceId?: string;
-  // Pre-assigned org role (AccessRole id) applied to the member on accept.
-  memberRoleId?: string;
-  isExternal?: boolean;
-  /**
-   * What an EXTERNAL invitee may do in `spaceId`, built in the permission
-   * builder — the alternative to naming a role. Becomes their personal role
-   * (or the shared role it exactly matches) when they accept.
-   */
-  spacePermissions?: unknown;
-  // Full pre-configured Access Profile (applied to the member on accept).
-  accessProfile?: unknown;
-  // Customer-portal invite (targetRole = CUSTOMER)
-  customerId?: string;
-  unitId?: string;
-  /** Invite the client to one ASSET — any type whose records a client holds. */
-  assetId?: string;
-  // When present, the invite code is ALSO emailed to this address automatically.
-  email?: string;
-}
 
 export interface InvitationRefusal {
   success: false;

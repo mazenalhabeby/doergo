@@ -1,5 +1,15 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  pattern,
+  createInvitation,
+  validateInvitation,
+  acceptInvitation,
+  listInvitations,
+  resendInvitation,
+  revokeInvitation,
+  type RpcRequest,
+} from '@hbcfield/shared/microservices';
 import { InvitationService } from './invitation.service';
 import { InvitationAcceptService } from './invitation-accept.service';
 import { InvitationAdminService } from './invitation-admin.service';
@@ -12,33 +22,33 @@ export class InvitationController {
     private readonly accepting: InvitationAcceptService,
   ) {}
 
-  @MessagePattern({ cmd: 'create_invitation' })
-  async create(@Payload() data: any) {
+  @MessagePattern(pattern(createInvitation))
+  async create(@Payload() data: RpcRequest<typeof createInvitation>) {
     return this.invitationService.createInvitation(data);
   }
 
-  @MessagePattern({ cmd: 'validate_invitation' })
-  async validate(@Payload() data: { code: string }) {
+  @MessagePattern(pattern(validateInvitation))
+  async validate(@Payload() data: RpcRequest<typeof validateInvitation>) {
     return this.accepting.validateCode(data.code);
   }
 
-  @MessagePattern({ cmd: 'accept_invitation' })
-  async accept(@Payload() data: any) {
+  @MessagePattern(pattern(acceptInvitation))
+  async accept(@Payload() data: RpcRequest<typeof acceptInvitation>) {
     return this.accepting.acceptInvitation(data);
   }
 
-  @MessagePattern({ cmd: 'list_invitations' })
-  async list(@Payload() data: any) {
+  @MessagePattern(pattern(listInvitations))
+  async list(@Payload() data: RpcRequest<typeof listInvitations>) {
     return this.invitationAdmin.listInvitations(data);
   }
 
-  @MessagePattern({ cmd: 'resend_invitation' })
-  async resend(@Payload() data: { organizationId: string; customerId: string }) {
+  @MessagePattern(pattern(resendInvitation))
+  async resend(@Payload() data: RpcRequest<typeof resendInvitation>) {
     return this.invitationAdmin.resendInvitation(data);
   }
 
-  @MessagePattern({ cmd: 'revoke_invitation' })
-  async revoke(@Payload() data: any) {
+  @MessagePattern(pattern(revokeInvitation))
+  async revoke(@Payload() data: RpcRequest<typeof revokeInvitation>) {
     return this.invitationAdmin.revokeInvitation(data);
   }
 }

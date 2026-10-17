@@ -1,22 +1,21 @@
 import { Controller, Get, Post, Delete, Body, Param, Query, Inject, HttpStatus } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
 import { CurrentUser, CurrentUserData, assertServiceOk } from '@hbcfield/shared';
+import {
+  sendRpc,
+  createInvitation,
+  validateInvitation,
+  acceptInvitation,
+  listInvitations,
+  revokeInvitation,
+} from '@hbcfield/shared/microservices';
 import { Public, RequirePermission } from '../../common/decorators';
 import { OrgEventsService } from '../../common/events/org-events.service';
-import {
-  CreateInvitationDto,
-  AcceptInvitationDto,
-  ListInvitationsDto,
-} from './dto';
+import { callerOrgId } from '../../common/caller-org';
+import { CreateInvitationDto, AcceptInvitationDto, ListInvitationsDto } from './dto';
 
 @ApiTags('invitations')
 @Controller('invitations')
@@ -33,14 +32,11 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Create an invitation code' })
   @ApiResponse({ status: 201, description: 'Invitation created with code' })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
-  async create(
-    @Body() dto: CreateInvitationDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async create(@Body() dto: CreateInvitationDto, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'create_invitation' }, {
+      sendRpc(this.authClient, createInvitation, {
         ...dto,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         createdById: user.id,
         creatorRole: user.role,
       }),
@@ -66,14 +62,11 @@ export class InvitationsController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List organization invitations' })
   @ApiResponse({ status: 200, description: 'Invitations list' })
-  async list(
-    @Query() query: ListInvitationsDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async list(@Query() query: ListInvitationsDto, @CurrentUser() user: CurrentUserData) {
     return firstValueFrom(
-      this.authClient.send({ cmd: 'list_invitations' }, {
+      sendRpc(this.authClient, listInvitations, {
         ...query,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
       }),
     );
   }
@@ -85,9 +78,7 @@ export class InvitationsController {
   @ApiParam({ name: 'code', description: 'Invitation code to validate' })
   @ApiResponse({ status: 200, description: 'Validation result' })
   async validate(@Param('code') code: string) {
-    return firstValueFrom(
-      this.authClient.send({ cmd: 'validate_invitation' }, { code }),
-    );
+    return firstValueFrom(sendRpc(this.authClient, validateInvitation, { code }));
   }
 
   @Public()
@@ -98,9 +89,7 @@ export class InvitationsController {
   @ApiResponse({ status: 400, description: 'Invalid or expired code' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async accept(@Body() dto: AcceptInvitationDto) {
-    const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'accept_invitation' }, dto),
-    );
+    const result = await firstValueFrom(sendRpc(this.authClient, acceptInvitation, dto));
 
     assertServiceOk(result, HttpStatus.INTERNAL_SERVER_ERROR);
 
@@ -114,14 +103,11 @@ export class InvitationsController {
   @ApiParam({ name: 'id', description: 'Invitation ID to revoke' })
   @ApiResponse({ status: 200, description: 'Invitation revoked' })
   @ApiResponse({ status: 404, description: 'Invitation not found' })
-  async revoke(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async revoke(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
     const result = await firstValueFrom(
-      this.authClient.send({ cmd: 'revoke_invitation' }, {
+      sendRpc(this.authClient, revokeInvitation, {
         invitationId: id,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         userId: user.id,
       }),
     );
