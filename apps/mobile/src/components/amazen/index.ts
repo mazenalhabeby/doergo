@@ -29,6 +29,20 @@ export { WidgetBoundary } from './widget-frame';
 export { TabPill, useTabSafe, tabSafeFor, type TabPillItem } from './tab-pill';
 export { ScreenHeader, HeaderBack, type HeaderAction } from './screen-header';
 export { ChoicePill, FilterPill, FilterRow, GlassInput, SearchField } from './filter';
+// The job page's small parts, moved here unchanged — job/job-ui.tsx still re-exports them.
+export { SectionLabel, StateEyebrow, Initials } from './state-eyebrow';
+export {
+  ReceiptRow,
+  SheetOption,
+  RoundButton,
+  Banner,
+  Pill,
+  Dot,
+  JobField,
+  ChoiceRow,
+  QuietButton,
+  type Tone as OptionTone,
+} from './sheet-option';
 
 /*
   ⚠️ THIS BARREL HOLDS PRIMITIVES ONLY, AND NOTHING THAT OWNS A GESTURE.

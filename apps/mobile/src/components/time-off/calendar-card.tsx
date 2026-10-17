@@ -3,8 +3,7 @@ import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { isSameDay } from '../../lib/utils';
-import { AText, Well } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, Well, SectionLabel } from '../amazen';
 import { getMonthGrid, isDateInRange, toDateString } from './helpers';
 
 /**

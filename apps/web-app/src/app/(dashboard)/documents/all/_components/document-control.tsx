@@ -11,16 +11,26 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { keys } from "@/lib/query-keys"
 import { type DocumentAction, useDocumentControl, useRefreshDocuments } from "./document-row-menu"
 import { DeleteDialog, ReplaceDialog } from "./delete-dialog"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 export { useRowSelection } from "./delete-dialog"
 export {
   type DocumentAction,
@@ -65,8 +75,16 @@ export function DocumentActionDialogs({
 // ── Who can see this ───────────────────────────────────────────────────────
 
 function VisibilityDialog({
-  open, rows, onClose, onDone,
-}: { open: boolean; rows: IssuedRow[]; onClose: () => void; onDone?: () => void }) {
+  open,
+  rows,
+  onClose,
+  onDone,
+}: {
+  open: boolean
+  rows: IssuedRow[]
+  onClose: () => void
+  onDone?: () => void
+}) {
   const { t } = useTranslation()
   const refresh = useRefreshDocuments()
   const single = rows.length === 1 ? rows[0] : null
@@ -81,7 +99,7 @@ function VisibilityDialog({
     setMemberSees(rows.length > 0 ? !rows.every((r) => r.hiddenFromMember) : true)
     const overridden = single?.rolesOverridden ?? false
     setMode(overridden ? "roles" : "type")
-    setRoleIds(overridden ? single?.visibleToRoleIds ?? [] : [])
+    setRoleIds(overridden ? (single?.visibleToRoleIds ?? []) : [])
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: roles = [], isLoading: rolesLoading } = useQuery({
@@ -104,7 +122,10 @@ function VisibilityDialog({
       notify.success(
         rows.length === 1
           ? t("documents.control.visibilitySaved", "Visibility updated")
-          : t("documents.control.visibilitySavedMany", { defaultValue: "Visibility updated for {{count}} documents", count: rows.length }),
+          : t("documents.control.visibilitySavedMany", {
+              defaultValue: "Visibility updated for {{count}} documents",
+              count: rows.length,
+            }),
       )
       refresh()
       onDone?.()
@@ -123,7 +144,10 @@ function VisibilityDialog({
           <DialogTitle>
             {rows.length === 1
               ? t("documents.control.visibilityTitle", "Who can see this document")
-              : t("documents.control.visibilityTitleMany", { defaultValue: "Who can see these {{count}} documents", count: rows.length })}
+              : t("documents.control.visibilityTitleMany", {
+                  defaultValue: "Who can see these {{count}} documents",
+                  count: rows.length,
+                })}
           </DialogTitle>
           {single && (
             <DialogDescription>
@@ -156,7 +180,8 @@ function VisibilityDialog({
               <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                 {firstName
                   ? t("documents.control.hiddenNote", {
-                      defaultValue: "Hidden from {{name}}. It no longer appears anywhere they can look, and they are not told.",
+                      defaultValue:
+                        "Hidden from {{name}}. It no longer appears anywhere they can look, and they are not told.",
                       name: firstName,
                     })
                   : t("documents.control.hiddenNoteMany", "Hidden from their members. They are not told.")}
@@ -194,23 +219,17 @@ function VisibilityDialog({
                     {roles.map((r) => {
                       const on = roleIds.includes(r.id)
                       return (
-                        <button
+                        <ChoiceChip
                           key={r.id}
+                          variant="iconPill"
+                          on={on}
                           type="button"
                           aria-pressed={on}
-                          onClick={() =>
-                            setRoleIds((ids) => (on ? ids.filter((x) => x !== r.id) : [...ids, r.id]))
-                          }
-                          className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            on
-                              ? "border-primary bg-primary/10 text-foreground"
-                              : "border-border text-muted-foreground hover:text-foreground",
-                          )}
+                          onClick={() => setRoleIds((ids) => (on ? ids.filter((x) => x !== r.id) : [...ids, r.id]))}
                         >
                           {on && <Check className="h-3 w-3" />}
                           {r.name}
-                        </button>
+                        </ChoiceChip>
                       )
                     })}
                   </div>
@@ -218,7 +237,10 @@ function VisibilityDialog({
                 <p className="text-xs text-muted-foreground">
                   {roleIds.length === 0
                     ? t("documents.control.adminsOnly", "No role picked: only administrators can see it.")
-                    : t("documents.control.rolesNote", "Anyone without one of these roles no longer sees it. Administrators always can.")}
+                    : t(
+                        "documents.control.rolesNote",
+                        "Anyone without one of these roles no longer sees it. Administrators always can.",
+                      )}
                 </p>
               </div>
             )}
@@ -226,7 +248,9 @@ function VisibilityDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{t("common.cancel", "Cancel")}</Button>
+          <Button variant="outline" onClick={onClose}>
+            {t("common.cancel", "Cancel")}
+          </Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending || rows.length === 0}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("common.save", "Save")}

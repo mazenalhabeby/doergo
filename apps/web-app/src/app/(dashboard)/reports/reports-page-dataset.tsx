@@ -11,6 +11,7 @@ import { personName, reportLabel } from "@hbcfield/shared/client"
 import { DATE_PRESETS } from "./use-reports-page"
 import { GRANULARITIES, TIMESHEET_COLS, TIMESHEET_LABEL } from "./reports-page-helpers"
 import type { ReportsPageState } from "./use-reports-page"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 /** Part of ReportsPage's markup, moved here unchanged; it reads the page's state from `s`. */
 export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
@@ -111,17 +112,15 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                     // Keep at least one column so the report is never empty.
                     const isLast = on && tsCols.length === 1
                     return (
-                      <button
+                      <ChoiceChip
                         key={key}
+                        on={on}
                         disabled={isLast}
                         onClick={() => setTsCols((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))}
-                        className={cn(
-                          "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                          on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-                          isLast && "cursor-default")}
+                        className={isLast ? "cursor-default" : undefined}
                       >
                         {reportLabel(lang, TIMESHEET_LABEL[key] ?? `col.${key}`, key)}
-                      </button>
+                      </ChoiceChip>
                     )
                   })}
                 </div>
@@ -134,14 +133,9 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                 <div className="flex flex-wrap gap-1.5">
                   {dsMeta.measures.map((m) => {
                     const on = (active.def.measures || []).includes(m.key)
-                    return <button
-                      key={m.key}
-                      onClick={() => toggleArr("measures", m.key)}
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                        on
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, m.labelKey, m.label)}</button>
+                    return <ChoiceChip key={m.key} on={on} onClick={() => toggleArr("measures", m.key)}>
+                      {reportLabel(lang, m.labelKey, m.label)}
+                    </ChoiceChip>
                   })}
                 </div>
               </div>
@@ -150,17 +144,9 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                 <div className="flex flex-wrap gap-1.5">
                   {dsMeta.dimensions.map((dim) => {
                     const on = (active.def.dimensions || []).includes(dim.key)
-                    return <button
-                      key={dim.key}
-                      onClick={() => toggleArr("dimensions", dim.key)}
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                        on
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(
-                            lang,
-                            dim.labelKey,
-                            dim.label)}</button>
+                    return <ChoiceChip key={dim.key} on={on} onClick={() => toggleArr("dimensions", dim.key)}>
+                      {reportLabel(lang, dim.labelKey, dim.label)}
+                    </ChoiceChip>
                   })}
                 </div>
               </div>

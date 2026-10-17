@@ -12,6 +12,7 @@ import { centeredContent } from '../../../src/components/screen-container';
 import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Well, useTabSafe } from '../../../src/components/amazen';
 import { Initials, QuietButton } from '../../../src/components/job/job-ui';
 import { RequestRow, useRequestWords, type RequestRowData } from '../../../src/components/requests/request-parts';
+import { LoadingLine } from '../../../src/components/loading-line';
 
 type StatusFilter = 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL';
 const FILTER_KEYS: StatusFilter[] = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
@@ -93,9 +94,7 @@ export default function RequestsToDecideScreen() {
         }
       >
         {requests === null ? (
-          <AText variant="caption" tone="onGlass" style={{ paddingVertical: amazen.space(4), textAlign: 'center' }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={4} />
         ) : filtered.length === 0 ? (
           <Well
             style={{

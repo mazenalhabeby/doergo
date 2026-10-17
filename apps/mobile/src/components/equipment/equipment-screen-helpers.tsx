@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/theme-context';
 import { canTakeBack, type SentItem } from '../../lib/sent-in';
 import { AText } from '../amazen';
+import { toneColor } from '../../theme/tone-color';
 
 /** EquipmentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export function Fact({
@@ -38,7 +39,7 @@ export function Fact({
         style={{
           fontSize: 13.5,
           textAlign: 'right',
-          color: tone === 'critical' ? c.critical : tone === 'warn' ? c.warn : c.inkStrong,
+          color: toneColor(c, tone, c.inkStrong),
         }}
       >{`${value}${onPress ? '  ›' : ''}`}</AText>
     </View>

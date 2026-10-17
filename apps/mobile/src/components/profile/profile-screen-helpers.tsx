@@ -1,8 +1,7 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme, type ThemeMode } from '../../contexts/theme-context';
-import { AText, Well, WellDivider } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, Well, WellDivider, SectionLabel } from '../amazen';
 import { PROFILE_GLYPHS } from './profile-glyphs';
 
 /** ProfileScreen's module-level helpers, moved here unchanged so its sections can read them too. */

@@ -6,9 +6,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { useReachSpaces } from '../../hooks/use-reach-spaces';
 import { formatDay } from '../../lib/money';
 import { useResponsive } from '../../lib/responsive';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader } from '../amazen';
+import { AText, FilterPill, FilterRow, Ground, HeaderBack, ScreenHeader, Pill } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Pill } from '../job/job-ui';
 import { WellRow } from '../register/well-row';
 import { requestsOfSpaces, stageOf, type ListedRequest, type RequestStage } from './requests-store';
 

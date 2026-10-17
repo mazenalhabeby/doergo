@@ -3,12 +3,12 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, LiveDot } from '../amazen';
+import { AText, LiveDot, Banner, RoundButton } from '../amazen';
 import { MoreGlyph, NavigateGlyph } from '../glyphs';
 import type { GlyphProps } from '../glyphs/glyphs';
 import { TourTarget } from '../tour';
 import { EditGlyph } from './job-glyphs';
-import { Banner, RoundButton, type Tone } from './job-ui';
+import { type Tone } from './job-ui';
 
 export interface DockPrimary {
   label: string;

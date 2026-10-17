@@ -7,8 +7,7 @@ import { MEMBER_EMAIL_PREF, MEMBER_EMAILS, type MemberEmail } from '@hbcfield/sh
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { userApi } from '../../lib/api';
-import { AText, PrimaryButton, Well } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, PrimaryButton, Well, SectionLabel } from '../amazen';
 import { SettingsPage, StateCard, SwitchRow } from './settings-ui';
 
 /** Where the switches used to live — on the phone, read by nothing. Moved to the account once, then forgotten. */

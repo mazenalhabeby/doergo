@@ -8,7 +8,7 @@ import { useResponsive } from '../../../lib/responsive';
 import { locationsApi } from '../../../lib/api';
 import type { MobileCustomerContact } from '../../../lib/api/customers';
 import { centeredContent } from '../../screen-container';
-import { SectionLabel } from '../../job/job-ui';
+import { SectionLabel } from '../../amazen';
 import { ActivityRow, type PendingActivity } from '../activity-row';
 import { useClientRecord } from './use-client-record';
 import { localDateKey } from '@hbcfield/shared/client';

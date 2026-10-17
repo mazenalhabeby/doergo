@@ -11,6 +11,7 @@ import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
 import { lookFor, offeredTo, type IssueActions } from '../home/issue-status';
 import { MAX_PHOTOS, uploadPhotos } from './photos';
 import { personName } from '@hbcfield/shared/client';
+import { toneColor } from '../../theme/tone-color';
 
 /** ShiftIssueThreadSheet's state and handlers — everything before its markup, moved here unchanged. */
 export function useShiftIssueThreadSheet({
@@ -138,7 +139,7 @@ export function useShiftIssueThreadSheet({
     ? offeredTo({ issue, viewerId, canManage: !!canManage })
     : { acknowledge: false, resolve: false, withdraw: false, reopen: false, reply: false };
   const look = issue ? lookFor(issue.status) : null;
-  const tone = look?.tone === 'warn' ? c.warn : look?.tone === 'accent' ? c.accent : c.inkMuted;
+  const tone = toneColor(c, look?.tone, c.inkMuted);
 
   return {
     amazen,

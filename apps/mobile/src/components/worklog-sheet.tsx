@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { useTimeFormat } from '../hooks/useTimeFormat';
-import { AText, Sunken } from './amazen';
-import { JobField, JobSheet, Pill, ReceiptRow, RoundButton, StateEyebrow } from './job/job-ui';
+import { AText, Sunken, JobField, Pill, ReceiptRow, RoundButton, StateEyebrow } from './amazen';
+import { JobSheet } from './job/job-ui';
 import { CameraGlyph, CloseGlyph, GalleryGlyph, SendGlyph } from './job/job-glyphs';
 import { DayBar } from './time/day-bar';
 import { useWorklog } from './worklog/use-worklog';
@@ -13,6 +13,7 @@ import type { WorklogItem } from '../offline/attendance/worklog';
 import { formatDuration } from '@hbcfield/shared/client';
 import { useWorkLogSheet, type WorkLogShift } from './use-work-log-sheet';
 import { QUICK, NoteRow } from './work-log-sheet-helpers';
+import { LoadingLine } from './loading-line';
 
 /**
  * A shift's work log — what was done, note by note, drawn on the shift itself.
@@ -123,7 +124,7 @@ export function WorkLogSheet({
           />
 
           {log.loading && log.notes.length === 0 ? (
-            <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
+            <LoadingLine />
           ) : log.notes.length === 0 ? (
             <View style={{ gap: 4, paddingVertical: amazen.space(2) }}>
               <AText variant="body" tone="strong">

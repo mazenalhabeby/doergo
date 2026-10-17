@@ -8,14 +8,27 @@ import { useToast } from '../../island/island-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { membersApi, type OrgMember } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, ChoicePill, GlassInput, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider } from '../amazen';
+import {
+  AText,
+  ChoicePill,
+  GlassInput,
+  Ground,
+  HeaderBack,
+  PrimaryButton,
+  ScreenHeader,
+  Sunken,
+  Well,
+  WellDivider,
+  Banner,
+} from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Banner, JobSheet } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 import { timeAgo } from '../team/helpers';
 import { PersonAvatar } from './person-avatar';
 import { personName } from '@hbcfield/shared/client';
 import { useMembersScreen } from './use-members-screen';
 import { RoleTag, Line } from './members-screen-helpers';
+import { LoadingLine } from '../loading-line';
 
 /**
  * MEMBERS — everyone in the organization, filtered by the organization's OWN roles.
@@ -129,9 +142,7 @@ export function MembersScreen() {
         </ScrollView>
 
         {members === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={6} />
         ) : shown.length === 0 ? (
           <Well style={{ padding: amazen.space(5) }}>
             <AText variant="body" tone="ink">

@@ -15,6 +15,7 @@ import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { useSignPageInner } from "./use-sign-page-inner"
 import { Shell, Tabs, Row, Refused } from "./sign-page-inner-helpers"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 function SignPageInner() {
   const {
@@ -51,7 +52,11 @@ function SignPageInner() {
   }
 
   if (!state?.ok) {
-    return <Shell><Refused refusal={state?.refusal ?? "unknown"} /></Shell>
+    return (
+      <Shell>
+        <Refused refusal={state?.refusal ?? "unknown"} />
+      </Shell>
+    )
   }
 
   if (step === "done") {
@@ -71,7 +76,14 @@ function SignPageInner() {
           <p className="mt-4 text-xs text-muted-foreground">
             {t("signLink.done.keep", "This link stays your way back to these documents.")}
           </p>
-          <Button variant="outline" className="mt-4" onClick={() => { setStep("list"); void load() }}>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => {
+              setStep("list")
+              void load()
+            }}
+          >
             {t("signLink.done.back", "Back to my documents")}
           </Button>
         </div>
@@ -88,9 +100,7 @@ function SignPageInner() {
           <Tabs toSign={state.toSign.length} signed={state.signed.length} />
 
           {state.toSign.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {t("signLink.list.nothing", "Nothing is waiting for your signature.")}
-            </p>
+            <EmptyNote>{t("signLink.list.nothing", "Nothing is waiting for your signature.")}</EmptyNote>
           ) : (
             <div className="space-y-2">
               {state.toSign.map((d) => (
@@ -99,9 +109,7 @@ function SignPageInner() {
                   doc={d}
                   checked={picked.includes(d.signerId)}
                   onToggle={() =>
-                    setPicked((p) =>
-                      p.includes(d.signerId) ? p.filter((x) => x !== d.signerId) : [...p, d.signerId],
-                    )
+                    setPicked((p) => (p.includes(d.signerId) ? p.filter((x) => x !== d.signerId) : [...p, d.signerId]))
                   }
                   onOpen={() => openDocument(d)}
                 />
@@ -136,7 +144,8 @@ function SignPageInner() {
           <ul className="mb-4 rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
             {chosen.map((d) => (
               <li key={d.signerId} className="truncate">
-                {d.title}{d.forMember ? ` — ${d.forMember}` : ""}
+                {d.title}
+                {d.forMember ? ` — ${d.forMember}` : ""}
               </li>
             ))}
           </ul>
@@ -157,7 +166,9 @@ function SignPageInner() {
 
             <label className="flex cursor-pointer items-start gap-2.5 text-sm text-muted-foreground">
               <Checkbox checked={agreed} onCheckedChange={(v) => setAgreed(v === true)} className="mt-0.5" />
-              <span>{t("signLink.agree.consent", "I have read these documents and agree to sign them electronically.")}</span>
+              <span>
+                {t("signLink.agree.consent", "I have read these documents and agree to sign them electronically.")}
+              </span>
             </label>
 
             {/*
@@ -173,9 +184,10 @@ function SignPageInner() {
               </p>
               {t(
                 "signLink.agree.recorded",
-                ("The name you typed · your IP address and browser · the exact time · a " +
+                "The name you typed · your IP address and browser · the exact time · a " +
                   "fingerprint of each document, so any later change shows · and which of " +
-                  "them you opened."))}
+                  "them you opened.",
+              )}
             </div>
 
             <Button className="w-full" disabled={!agreed || name.trim().length < 2} onClick={() => setStep("draw")}>
@@ -191,7 +203,10 @@ function SignPageInner() {
             {t("signLink.draw.title", "Sign with your finger or mouse")}
           </h1>
           <p className="mb-4 text-center text-sm text-muted-foreground">
-            {t("signLink.draw.body", { count: chosen.length, defaultValue: "This signature is applied to {{count}} documents." })}
+            {t("signLink.draw.body", {
+              count: chosen.length,
+              defaultValue: "This signature is applied to {{count}} documents.",
+            })}
           </p>
           <SignaturePad onChange={setSignature} disabled={busy} />
           <div className="mt-3 flex gap-2">

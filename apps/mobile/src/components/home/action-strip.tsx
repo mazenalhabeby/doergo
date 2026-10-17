@@ -17,6 +17,7 @@ import { usePhrase, type Phrase } from './phrase';
 import { GlyphTile } from './glyph-tile';
 import { StripBox } from './strip-box';
 import type { GlyphProps } from '../glyphs/glyphs';
+import { toneColor } from '../../theme/tone-color';
 
 /**
  * ⭐ THE ACTION STRIP — what the app needs from the member, under the header.
@@ -83,7 +84,7 @@ export function ActionStrip() {
 
   const tone = stripTone(items);
   const lines = stripLines(items)!;
-  const ink = tone === 'crit' ? c.critical : tone === 'warn' ? c.warn : c.ink;
+  const ink = toneColor(c, tone, c.ink);
   const single = items.length === 1;
 
   return (

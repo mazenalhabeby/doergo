@@ -1,6 +1,5 @@
 import { View } from 'react-native';
-import { AText } from '../amazen';
-import { QuietButton } from '../job/job-ui';
+import { AText, QuietButton } from '../amazen';
 import type { TimeBannersState } from './use-time-banners';
 import type { TimeBanners } from './time-banners';
 

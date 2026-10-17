@@ -8,10 +8,11 @@ import { useTheme } from '../../contexts/theme-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { rotaApi, type RotaCell, type RotaShift, type RotaWeek } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well } from '../amazen';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, Banner, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Banner, JobSheet, SectionLabel } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 import { NAME_W, Cell, Legend, RoundArrow, DaySheet } from './day-sheet';
+import { LoadingLine } from '../loading-line';
 
 /**
  * SCHEDULES — who works when, in one workspace, for one week — as the CLOCK-IN
@@ -178,7 +179,7 @@ export function SchedulesScreen() {
 
         <Animated.View style={{ opacity: fade, gap: amazen.space(3) }} pointerEvents={pending ? 'none' : 'auto'}>
         {!week ? (
-          failed ? null : <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
+          failed ? null : <LoadingLine onGlass padUnits={6} />
         ) : !week.space ? (
           <Well style={{ padding: amazen.space(5) }}>
             <AText variant="body" tone="ink">

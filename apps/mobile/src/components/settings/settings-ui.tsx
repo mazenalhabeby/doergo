@@ -6,6 +6,7 @@ import { useResponsive } from '../../lib/responsive';
 import { AText, Ground, HeaderBack, ScreenHeader } from '../amazen';
 import { FinishGlyph } from '../glyphs/work-glyphs';
 import { centeredContent } from '../screen-container';
+import { toneColor, toneTint } from '../../theme/tone-color';
 
 /**
  * A settings page: the app's ground and header, Back to the profile, and a
@@ -123,8 +124,8 @@ export function StateCard({ tone, mark, title, sub }: {
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const fg = tone === 'critical' ? c.critical : tone === 'warn' ? c.warn : c.accent;
-  const bg = tone === 'critical' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.accentTint;
+  const fg = toneColor(c, tone, c.accent);
+  const bg = toneTint(c, tone, c.accentTint);
   return (
     <View
       style={{

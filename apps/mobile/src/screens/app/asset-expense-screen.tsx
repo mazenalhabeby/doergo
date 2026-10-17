@@ -7,6 +7,7 @@ import { CaptureCamera, CaptureSkip } from '../../components/equipment/capture-c
 import { MediaAccessScreen } from '../../permissions/media-access-screen';
 import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
 import { useAssetExpenseScreen } from './use-asset-expense-screen';
+import { NotAllowed } from '../../components/not-allowed';
 export { type Stage } from './use-asset-expense-screen';
 
 /** The asset-expense screen — moved here unchanged from app/(app)/asset-expense.tsx (a route keeps only its export). */
@@ -62,12 +63,7 @@ export function AssetExpenseScreen() {
     */
     return (
       <EquipmentFrame title={t('expenses.title', 'Add a receipt')}>
-        <View style={s.centre}>
-          <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
-          <Text style={[s.hint, { color: colors.textMuted }]}>
-            {t('expenses.notYours', 'You do not have this one.')}
-          </Text>
-        </View>
+        <NotAllowed message={t('expenses.notYours', 'You do not have this one.')} />
       </EquipmentFrame>
     );
   }

@@ -2,6 +2,7 @@
 import { BreakType, TimeEntryStatus } from '../enums';
 import type { TimeEntry } from './entry';
 import type { CompanyLocation } from './location';
+import type { PaginationMeta } from '../../api/responses';
 
 // ============================================================================
 // BREAKS
@@ -213,10 +214,6 @@ export interface CSVExportResult {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  /** The same shape `paginated()` builds (api/responses.ts). */
+  meta: PaginationMeta;
 }

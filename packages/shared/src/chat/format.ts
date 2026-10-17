@@ -67,6 +67,22 @@ export function chatRelTime(iso: string | null, lang: string): string {
   return new Date(iso).toLocaleDateString(chatLocale(lang), { month: 'short', day: 'numeric' });
 }
 
+/** A translator that also takes a count (i18next's `t` fits). */
+export type ChatCountTranslate = ChatTranslate &
+  ((key: string, opts: { count: number; defaultValue: string }) => string);
+
+/**
+ * Under my newest message: "Sent", "Read" (a direct chat), "Seen by everyone"
+ * or "Seen by 3" (a group). The web bubble and the phone row wrote this twice.
+ */
+export function receiptLabel(r: { readBy: number; of: number }, direct: boolean, t: ChatCountTranslate): string {
+  if (r.readBy === 0) return t('chat.sent', 'Sent');
+  if (direct) return t('chat.read', 'Read');
+  return r.readBy >= r.of
+    ? t('chat.seenByAll', 'Seen by everyone')
+    : t('chat.seenBy', { count: r.readBy, defaultValue: 'Seen by {{count}}' });
+}
+
 /** "Active now / Busy / Away / Offline". */
 export function chatPresenceLabel(p: string | null | undefined, t: ChatTranslate): string {
   if (p === 'AVAILABLE') return t('chat.presence.active', 'Active now');

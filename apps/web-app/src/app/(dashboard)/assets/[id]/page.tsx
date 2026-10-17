@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * One thing you own — the page an apartment gets, drawn from its KIND.
@@ -106,9 +107,9 @@ export default function AssetRecordPage() {
   // Falls back to the spaces list for an asset whose type was deleted out from
   // under it — an orphan, which has no list to go back to.
   const backHref = kind?.spaceId
-    // The kind's own list, on the page that now owns it — carrying `type` so
-    // Back lands on the kind you came from rather than the list of kinds.
-    ? `/assets?space=${kind.spaceId}&type=${kind.id}`
+    ? // The kind's own list, on the page that now owns it — carrying `type` so
+      // Back lands on the kind you came from rather than the list of kinds.
+      `/assets?space=${kind.spaceId}&type=${kind.id}`
     : "/locations"
 
   // getAssetHistory already unwraps the envelope, so this IS the array. Reaching
@@ -146,25 +147,29 @@ export default function AssetRecordPage() {
         {/* Right: what happened to it */}
         <main className="min-w-0 space-y-4">
           <div className="flex items-center gap-1 border-b border-border/70">
-            {([
-              ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
-              ["history", t("assetRecords.jobs", "Jobs"), openCount || null],
-              // The logbook: whenever the kind logs anything at all — Cost counts.
-              ...(logTypesForKind(shape).length > 0
-                ? [["logbook", t("assetLog.tab", "Logbook"), null] as const]
-                : []),
-              ...(shape.money.enabled
-                ? [
-                  [
-                    "money",
-                    t("assetMoney.title", "Money"),
-                    moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null] as const]
-                : []),
-              ...(shape.holder.enabled
-                ? [["custody", t("custody.tab", "Custody"), (custodyQ.data?.periods ?? []).length || null] as const]
-                : []),
-              ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
-            ] as const).map(([key, label, count]) => (
+            {(
+              [
+                ["activity", t("assetRecords.activity", "Activity"), (actQ.data ?? []).length],
+                ["history", t("assetRecords.jobs", "Jobs"), openCount || null],
+                // The logbook: whenever the kind logs anything at all — Cost counts.
+                ...(logTypesForKind(shape).length > 0
+                  ? [["logbook", t("assetLog.tab", "Logbook"), null] as const]
+                  : []),
+                ...(shape.money.enabled
+                  ? [
+                      [
+                        "money",
+                        t("assetMoney.title", "Money"),
+                        moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null,
+                      ] as const,
+                    ]
+                  : []),
+                ...(shape.holder.enabled
+                  ? [["custody", t("custody.tab", "Custody"), (custodyQ.data?.periods ?? []).length || null] as const]
+                  : []),
+                ...shape.lists.map((l) => [`list:${l.label}`, l.label, null] as const),
+              ] as const
+            ).map(([key, label, count]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -187,16 +192,15 @@ export default function AssetRecordPage() {
               // The tab can outlive its list if the kind is edited while the
               // record is open; fall back rather than render nothing at all.
               if (!list) {
-                return <p
-                  className="py-8 text-center text-sm text-muted-foreground">{t(
-                    "assetLists.gone",
-                    "That table is no longer on this kind.")}</p>
+                return <EmptyNote>{t("assetLists.gone", "That table is no longer on this kind.")}</EmptyNote>
               }
               // Cards or a grid — a display choice the kind makes, not a type
               // we recognise. Both read the same rows.
-              return list.display === "cards"
-                ? <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
-                : <AssetListTable assetId={id} list={list} />
+              return list.display === "cards" ? (
+                <AssetFaults assetId={id} assetName={asset.name} spaceId={kind?.spaceId} list={list} shape={shape} />
+              ) : (
+                <AssetListTable assetId={id} list={list} />
+              )
             })()
           ) : tab === "logbook" ? (
             <LogbookPanel assetId={id} shape={shape} canManage={canManageAssets} />

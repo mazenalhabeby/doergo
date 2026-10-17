@@ -13,9 +13,8 @@ import { loadTeamHalf, openingHalf, rememberTeamHalf, type TeamHalf } from '../.
 import { TeamMessages } from './team-messages';
 import { useResponsive } from '../../lib/responsive';
 import { tabAccessFor } from '../../lib/tab-layout';
-import { AText, ChoicePill, GlassInput, Ground, ScreenHeader, Well, WellDivider, useTabSafe } from '../amazen';
+import { AText, ChoicePill, GlassInput, Ground, ScreenHeader, Well, WellDivider, useTabSafe, RoundButton, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { RoundButton, SectionLabel } from '../job/job-ui';
 import { MessagesGlyph } from '../glyphs/glyphs';
 import { PersonAvatar, PRESENCE_DOT, presenceKey } from './person-avatar';
 import { TourTarget, useTourScroll } from '../tour/tour-target';

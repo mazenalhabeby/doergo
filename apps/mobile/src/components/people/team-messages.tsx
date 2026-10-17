@@ -20,8 +20,7 @@ import { useSocketContext } from '../../contexts/socket-context';
 import { chatApi } from '../../lib/api';
 import { useOffline } from '../../offline/offline-context';
 import { useAppResume } from '../../lib/app-resume';
-import { AText, GlassInput, Well, WellDivider, useTabSafe } from '../amazen';
-import { Banner } from '../job/job-ui';
+import { AText, GlassInput, Well, WellDivider, useTabSafe, Banner } from '../amazen';
 import { ConversationAvatar, ConversationRow } from '../chat/chat-rows';
 import { Arrive } from '../amazen/motion';
 import { InkIcon } from '../amazen/ink-icon';
@@ -29,6 +28,7 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { debounce } from '../chat/live-thread';
 import { refreshChatBadge } from '../../lib/chat-badge';
 import { useTeamMessages } from './use-team-messages';
+import { LoadingLine } from '../loading-line';
 
 /**
  * Team → MESSAGES: every conversation, newest first, with what is unread.
@@ -83,9 +83,7 @@ export function TeamMessages({ header }: { header: React.ReactElement }) {
       ListFooterComponent={found}
       ListEmptyComponent={
         list === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={6} />
         ) : (
           <Well style={{ padding: amazen.space(6), alignItems: 'center', gap: amazen.space(2) }}>
             <InkIcon name="chat" size={40} />

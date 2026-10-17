@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../hooks/useImagePicker';
 import { useTimeFormat } from '../hooks/useTimeFormat';
-import { StateEyebrow } from './job/job-ui';
+import { StateEyebrow } from './amazen';
 import { useWorklog } from './worklog/use-worklog';
 
 export interface WorkLogShift {

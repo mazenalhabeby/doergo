@@ -8,36 +8,37 @@ import { Button } from "@/components/ui/button"
 import { InlineEditField } from "./inline-edit-field"
 import { LeaveByLine } from "./leave-by-line"
 import { OpenToRoleAction } from "./open-to-role-dialog"
-import { dateLocale } from "@/lib/format-date"
+import { formatMediumDate } from "@/lib/format-date"
 import { SidebarRow } from "./task-detail-sidebar-helpers"
 import type { TaskDetailSidebarState } from "./use-task-detail-sidebar"
 import type { TaskDetailSidebar } from "./task-detail-sidebar"
 
 /** Part of TaskDetailSidebar's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskDetailSidebarSidebar(
-  {
-    vm,
-    canAssign,
-    onAssignClick,
-    onSetLead,
-    onRemoveAssignee,
-    task,
-    canEdit,
-    onFieldSave
-  }: {
-    vm: TaskDetailSidebarState;
-    canAssign: Parameters<typeof TaskDetailSidebar>[0]['canAssign'];
-    onAssignClick: Parameters<typeof TaskDetailSidebar>[0]['onAssignClick'];
-    onSetLead: Parameters<typeof TaskDetailSidebar>[0]['onSetLead'];
-    onRemoveAssignee: Parameters<typeof TaskDetailSidebar>[0]['onRemoveAssignee'];
-    task: Parameters<typeof TaskDetailSidebar>[0]['task'];
-    canEdit: Parameters<typeof TaskDetailSidebar>[0]['canEdit'];
-    onFieldSave: Parameters<typeof TaskDetailSidebar>[0]['onFieldSave']
-  }) {
+export function TaskDetailSidebarSidebar({
+  vm,
+  canAssign,
+  onAssignClick,
+  onSetLead,
+  onRemoveAssignee,
+  task,
+  canEdit,
+  onFieldSave,
+}: {
+  vm: TaskDetailSidebarState
+  canAssign: Parameters<typeof TaskDetailSidebar>[0]["canAssign"]
+  onAssignClick: Parameters<typeof TaskDetailSidebar>[0]["onAssignClick"]
+  onSetLead: Parameters<typeof TaskDetailSidebar>[0]["onSetLead"]
+  onRemoveAssignee: Parameters<typeof TaskDetailSidebar>[0]["onRemoveAssignee"]
+  task: Parameters<typeof TaskDetailSidebar>[0]["task"]
+  canEdit: Parameters<typeof TaskDetailSidebar>[0]["canEdit"]
+  onFieldSave: Parameters<typeof TaskDetailSidebar>[0]["onFieldSave"]
+}) {
   const { t, assignees, leadCount, hasMultiple } = vm
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("tasks.sidebar.details")}</h3>
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        {t("tasks.sidebar.details")}
+      </h3>
 
       <div className="divide-y divide-border/50">
         {/* Assignees */}
@@ -47,7 +48,9 @@ export function TaskDetailSidebarSidebar(
               <Users className="size-4 text-muted-foreground" />
               <span className="text-[11px] text-muted-foreground">{t("tasks.sidebar.assignees")}</span>
               {assignees.length > 0 && (
-                <span className="text-[10px] text-muted-foreground/60 bg-muted px-1 py-0.5 rounded font-medium">{assignees.length}</span>
+                <span className="text-[10px] text-muted-foreground/60 bg-muted px-1 py-0.5 rounded font-medium">
+                  {assignees.length}
+                </span>
               )}
             </div>
             {canAssign && (
@@ -77,22 +80,27 @@ export function TaskDetailSidebarSidebar(
                     className="group flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="size-6 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[9px] font-semibold text-foreground">
-                        {personInitials(a.user)}
-                      </span>
+                      <span className="text-[9px] font-semibold text-foreground">{personInitials(a.user)}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/members/${a.userId}`}
-                        className={"text-xs font-medium text-foreground truncate block hover:text-blue-600 " + "transition-colors"}>
+                        className={
+                          "text-xs font-medium text-foreground truncate block hover:text-blue-600 " +
+                          "transition-colors"
+                        }
+                      >
                         {personName(a.user)}
                       </Link>
                     </div>
                     {isLead && (
                       <span
-                        className={"text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 " +
+                        className={
+                          "text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 " +
                           "dark:text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase " +
-                          "tracking-wider flex-shrink-0"}>
+                          "tracking-wider flex-shrink-0"
+                        }
+                      >
                         {t("tasks.sidebar.lead")}
                       </span>
                     )}
@@ -101,8 +109,10 @@ export function TaskDetailSidebarSidebar(
                       {canPromote && onSetLead && (
                         <button
                           onClick={() => onSetLead(a.id)}
-                          className={"size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
-                            "hover:text-foreground hover:bg-muted transition-colors"}
+                          className={
+                            "size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
+                            "hover:text-foreground hover:bg-muted transition-colors"
+                          }
                           title={t("tasks.sidebar.makeLead")}
                         >
                           <Crown className="size-3" />
@@ -111,9 +121,11 @@ export function TaskDetailSidebarSidebar(
                       {canRemove && onRemoveAssignee && (
                         <button
                           onClick={() => onRemoveAssignee(a.id)}
-                          className={"size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
+                          className={
+                            "size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
                             "hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 " +
-                            "transition-colors"}
+                            "transition-colors"
+                          }
                           title={t("tasks.sidebar.remove")}
                         >
                           <X className="size-3" />
@@ -127,13 +139,12 @@ export function TaskDetailSidebarSidebar(
           ) : task.assignedTo ? (
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="size-6 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
-                <span className="text-[9px] font-semibold text-foreground">
-                  {personInitials(task.assignedTo)}
-                </span>
+                <span className="text-[9px] font-semibold text-foreground">{personInitials(task.assignedTo)}</span>
               </div>
               <Link
                 href={`/members/${task.assignedTo.id}`}
-                className={"text-xs font-medium text-foreground hover:text-blue-600 " + "transition-colors"}>
+                className={"text-xs font-medium text-foreground hover:text-blue-600 " + "transition-colors"}
+              >
                 {personName(task.assignedTo)}
               </Link>
             </div>
@@ -141,8 +152,8 @@ export function TaskDetailSidebarSidebar(
             <button
               onClick={canEdit ? onAssignClick : undefined}
               className={cn(
-                ("w-full flex items-center gap-2 px-2 py-2 rounded-lg border border-dashed " +
-                  "border-border/60 text-xs text-muted-foreground/50"),
+                "w-full flex items-center gap-2 px-2 py-2 rounded-lg border border-dashed " +
+                  "border-border/60 text-xs text-muted-foreground/50",
                 canEdit && "hover:border-foreground/20 hover:text-muted-foreground cursor-pointer transition-colors",
               )}
             >
@@ -189,8 +200,11 @@ export function TaskDetailSidebarSidebar(
             {task.space && (
               <Link
                 href={`/locations`}
-                className={"text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 " +
-                  "dark:hover:text-blue-300 flex items-center gap-1 transition-colors"}>
+                className={
+                  "text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 " +
+                  "dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                }
+              >
                 {task.space.name}
                 <ExternalLink className="size-2.5" />
               </Link>
@@ -201,9 +215,9 @@ export function TaskDetailSidebarSidebar(
               type="text"
               disabled={!canEdit}
               placeholder={t("tasks.sidebar.addLocation")}
-              renderDisplay={(v) => v ? (
-                <span className="text-xs text-foreground/80 leading-snug break-words">{String(v)}</span>
-              ) : null}
+              renderDisplay={(v) =>
+                v ? <span className="text-xs text-foreground/80 leading-snug break-words">{String(v)}</span> : null
+              }
             />
           </div>
         </SidebarRow>
@@ -216,22 +230,18 @@ export function TaskDetailSidebarSidebar(
             type="number"
             disabled={!canEdit}
             placeholder="—"
-            renderDisplay={(v) => v != null && String(v) !== "" ? `${v}h` : null}
+            renderDisplay={(v) => (v != null && String(v) !== "" ? `${v}h` : null)}
           />
         </SidebarRow>
 
         {/* Created By */}
         <SidebarRow icon={User} label={t("tasks.sidebar.createdBy")}>
-          <span className="text-sm text-foreground">
-            {task.createdBy ? personName(task.createdBy) : "—"}
-          </span>
+          <span className="text-sm text-foreground">{task.createdBy ? personName(task.createdBy) : "—"}</span>
         </SidebarRow>
 
         {/* Created Date */}
         <SidebarRow icon={Calendar} label={t("tasks.sidebar.created")}>
-          <span className="text-sm text-muted-foreground">
-            {new Date(task.createdAt).toLocaleDateString(dateLocale(), { month: "short", day: "numeric", year: "numeric" })}
-          </span>
+          <span className="text-sm text-muted-foreground">{formatMediumDate(task.createdAt)}</span>
         </SidebarRow>
       </div>
     </div>

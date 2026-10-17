@@ -1,7 +1,6 @@
 import { PrismaClient, Role, TaskStatus, TaskPriority, TaskEventType, AssetStatus, AttachmentType, ReportAttachmentType, TimeEntryStatus, InvitationStatus, JoinRequestStatus, JoinPolicy, CustomFieldType, RecurrenceFrequency } from '@prisma/client';
-import { createHash } from 'crypto';
 import * as bcrypt from 'bcryptjs';
-import { BUILTIN_ROLES, builtInRoleCreateData } from '@hbcfield/shared';
+import { BUILTIN_ROLES, builtInRoleCreateData, hashCode } from '@hbcfield/shared';
 
 const prisma = new PrismaClient();
 
@@ -21,7 +20,6 @@ async function main() {
   }
 
   // Helper to hash codes with SHA-256
-  const hashCode = (code: string) => createHash('sha256').update(code).digest('hex');
 
   // Create organization (all users in same org for simpler testing)
   const organization = await prisma.organization.create({

@@ -6,8 +6,7 @@ import {
   reminderPayload,
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
-import { FilterPill, PrimaryButton, Well } from '../amazen';
-import { JobField } from '../job/job-ui';
+import { FilterPill, PrimaryButton, Well, JobField } from '../amazen';
 import { ChoiceChip } from './client-fields';
 import {
   ReminderFields,

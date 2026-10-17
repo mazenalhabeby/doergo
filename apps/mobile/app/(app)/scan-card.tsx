@@ -16,6 +16,7 @@ import { useCardReview } from '../../src/components/scan-card/use-card-review';
 import { useCardSaveFlow } from '../../src/components/scan-card/use-card-save-flow';
 import { CardReviewScreen } from '../../src/components/scan-card/card-review-screen';
 import { CardCamera } from '../../src/components/scan-card/card-camera';
+import { NotAllowed } from '../../src/components/not-allowed';
 
 /**
  * Scan a business card into a client.
@@ -113,12 +114,7 @@ export default function ScanCardScreen() {
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.surface }]} edges={['top']}>
         <ScreenHeader title={t('scan.title', 'Scan a card')} />
-        <View style={s.centre}>
-          <Ionicons name="lock-closed-outline" size={40} color={colors.textMuted} />
-          <Text style={[s.hint, { color: colors.textMuted }]}>
-            {t('scan.notAllowed', 'You do not have permission to add clients.')}
-          </Text>
-        </View>
+        <NotAllowed message={t('scan.notAllowed', 'You do not have permission to add clients.')} />
       </SafeAreaView>
     );
   }

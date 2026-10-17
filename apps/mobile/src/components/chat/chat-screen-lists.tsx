@@ -9,8 +9,7 @@ import {
   type ChatUserRef,
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
-import { Banner, SectionLabel } from '../job/job-ui';
+import { AText, Banner, SectionLabel } from '../amazen';
 import { presenceKey } from '../people/person-avatar';
 import type { bubbleShape } from './live-thread';
 import { ContactRow, MessageRow, SystemRow, type Receipt } from './chat-rows';

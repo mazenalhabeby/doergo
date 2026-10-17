@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AText } from '../../amazen';
-import { JobSheet, QuietButton } from '../job-ui';
+import { AText, QuietButton } from '../../amazen';
+import { JobSheet } from '../job-ui';
 
 /**
  * "Decline this job?", "Cancel this job?", "Delete this file?" — the one

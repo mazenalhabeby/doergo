@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
-import { Pill, RoundButton } from '../job/job-ui';
+import { AText, Pill, RoundButton } from '../amazen';
 import { CallGlyph, NavigateGlyph } from '../glyphs/work-glyphs';
 import type { MobileCustomerAddress } from '../../lib/api/customers';
 import { geoUrl, openSafeUrl, telUrl } from '../../lib/safe-links';

@@ -20,8 +20,7 @@ import {
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
-import { AText, FilterPill, FilterRow, Ground, PrimaryButton, Well } from '../amazen';
-import { JobField, SectionLabel } from '../job/job-ui';
+import { AText, FilterPill, FilterRow, Ground, PrimaryButton, Well, JobField, SectionLabel } from '../amazen';
 import { DaySheet, TimeSheet } from '../new-job/when-sheets';
 import { calendarApi, customersApi, locationsApi, type CalendarPerson, type MobileCustomer } from '../../lib/api';
 import { crmCapsOf } from '../../lib/member-reach';

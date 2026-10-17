@@ -13,8 +13,7 @@ import {
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { chatApi } from '../../lib/api';
-import { AText, GhostButton, GlassInput, PrimaryButton, useTabSafe } from '../amazen';
-import { Banner, SectionLabel } from '../job/job-ui';
+import { AText, GhostButton, GlassInput, PrimaryButton, useTabSafe, Banner, SectionLabel } from '../amazen';
 import { ContactRow, ConversationAvatar } from './chat-rows';
 import { Arrive } from '../amazen/motion';
 export { GroupCreateView, AddPeopleView } from './pick-people';

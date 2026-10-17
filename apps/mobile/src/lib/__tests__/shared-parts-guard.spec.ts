@@ -76,7 +76,7 @@ describe('the card sheet (slide-sheet.tsx)', () => {
 
 describe('one copy of each small part', () => {
   it('the receipt line (ReceiptRow, job-ui)', () => {
-    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/components/job/job-ui.tsx', 'src/components/job/sheet-option.tsx'])).toEqual([]);
+    expect(copiesOf(/fontSize: strong \? 16 : 13\.5/, ['src/components/job/job-ui.tsx', 'src/components/amazen/sheet-option.tsx'])).toEqual([]);
   });
 
   it('the date tile (DateTileRow)', () => {

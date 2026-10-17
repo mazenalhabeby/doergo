@@ -5,8 +5,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { customFieldsApi, type MobileCustomFieldDefinition, type MobileCustomFieldValue } from '../../lib/api';
 import { knownOffline } from '../../offline/connectivity';
-import { AText, PrimaryButton } from '../amazen';
-import { JobField, JobSheet, SectionLabel } from './job-ui';
+import { AText, PrimaryButton, JobField, SectionLabel } from '../amazen';
+import { JobSheet } from './job-ui';
 
 /**
  * "Job fields" — the custom fields of the job's type, as a two-column grid

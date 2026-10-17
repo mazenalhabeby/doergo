@@ -7,10 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Package, Pencil, Plus, Search, ShieldAlert, Trash2, Wrench, X } from "lucide-react"
 
 import { assetsApi, type AssetListRow } from "@/lib/api"
-import {
-  keyColumn, linkColumns, listByLabel,
-  type KindList, type KindShape,
-} from "@hbcfield/shared/client"
+import { keyColumn, linkColumns, listByLabel, type KindList, type KindShape } from "@hbcfield/shared/client"
 import { AssetRaiseJob } from "@/components/assets/asset-raise-job"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
 import { useAssetFaults } from "./use-asset-faults"
 import { FaultForm } from "./asset-faults-helpers"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * The fault-code lookup a technician standing at the machine actually uses.
@@ -34,7 +32,11 @@ import { FaultForm } from "./asset-faults-helpers"
  * to the equipment class, not to one machine.
  */
 export function AssetFaults({
-  assetId, assetName, spaceId, list, shape,
+  assetId,
+  assetName,
+  spaceId,
+  list,
+  shape,
 }: {
   assetId: string
   assetName: string
@@ -87,7 +89,8 @@ export function AssetFaults({
         <p className="text-[11px] text-muted-foreground">
           {t(
             "assetFaults.sharedNote",
-            ("This library belongs to the kind — every one of them reads it, and a " + "change here changes it for all."))}
+            "This library belongs to the kind — every one of them reads it, and a " + "change here changes it for all.",
+          )}
         </p>
       )}
 
@@ -97,19 +100,24 @@ export function AssetFaults({
           list={list}
           partOptions={partOptions}
           linkCol={linkCol}
-          onDone={() => { setEditing(null); refresh() }}
+          onDone={() => {
+            setEditing(null)
+            refresh()
+          }}
           onCancel={() => setEditing(null)}
         />
       )}
 
       {faultsQ.isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <EmptyNote>
           {search ? t("assetLists.noMatch", "Nothing matches that") : t("assetFaults.empty", "No fault codes yet")}
-        </p>
+        </EmptyNote>
       ) : (
         <div className="space-y-2">
           {rows.map((row) => {
@@ -130,7 +138,10 @@ export function AssetFaults({
                   existing={row}
                   partOptions={partOptions}
                   linkCol={linkCol}
-                  onDone={() => { setEditing(null); refresh() }}
+                  onDone={() => {
+                    setEditing(null)
+                    refresh()
+                  }}
                   onCancel={() => setEditing(null)}
                 />
               )
@@ -140,8 +151,11 @@ export function AssetFaults({
               <div key={row.id} className="group rounded-xl border border-border bg-card p-3">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span
-                    className={"rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-sm font-semibold " +
-                      "text-amber-600 dark:text-amber-400"}>
+                    className={
+                      "rounded-md bg-amber-500/15 px-2 py-0.5 font-mono text-sm font-semibold " +
+                      "text-amber-600 dark:text-amber-400"
+                    }
+                  >
                     {code || "—"}
                   </span>
                   <span className="text-sm font-medium text-foreground">{meaning}</span>
@@ -157,16 +171,20 @@ export function AssetFaults({
                     />
                     <button
                       onClick={() => setEditing(row.id)}
-                      className={"rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
-                        "hover:text-foreground group-hover:opacity-100"}
+                      className={
+                        "rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+                        "hover:text-foreground group-hover:opacity-100"
+                      }
                       aria-label={t("common.edit", "Edit")}
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => remove.mutate(row.id)}
-                      className={"rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
-                        "hover:text-destructive group-hover:opacity-100"}
+                      className={
+                        "rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+                        "hover:text-destructive group-hover:opacity-100"
+                      }
                       aria-label={t("common.remove", "Remove")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -178,13 +196,17 @@ export function AssetFaults({
                   {cause && (
                     <p className="flex items-start gap-1.5 text-muted-foreground">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span><span className="text-foreground">{t("assetFaults.cause", "Cause")}:</span> {cause}</span>
+                      <span>
+                        <span className="text-foreground">{t("assetFaults.cause", "Cause")}:</span> {cause}
+                      </span>
                     </p>
                   )}
                   {fix && (
                     <p className="flex items-start gap-1.5 text-muted-foreground">
                       <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                      <span><span className="text-foreground">{t("assetFaults.fix", "Fix")}:</span> {fix}</span>
+                      <span>
+                        <span className="text-foreground">{t("assetFaults.fix", "Fix")}:</span> {fix}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -209,10 +231,9 @@ export function AssetFaults({
                     ) : (
                       <span className="text-[11px] text-amber-600 dark:text-amber-400">
                         {catalogueTruncated
-                          ? t(
-                            "assetFaults.partUnchecked",
-                            "not among the first {{count}} — search the catalogue",
-                            { count: partsQ.data?.rows.length ?? 0 })
+                          ? t("assetFaults.partUnchecked", "not among the first {{count}} — search the catalogue", {
+                              count: partsQ.data?.rows.length ?? 0,
+                            })
                           : t("assetFaults.partMissing", "not in the catalogue")}
                       </span>
                     )}

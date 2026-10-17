@@ -10,8 +10,7 @@ import {
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { chatApi } from '../../lib/api';
-import { AText, GlassInput, PrimaryButton, useTabSafe } from '../amazen';
-import { Banner, SectionLabel } from '../job/job-ui';
+import { AText, GlassInput, PrimaryButton, useTabSafe, Banner, SectionLabel } from '../amazen';
 import { ContactRow } from './chat-rows';
 import { Arrive } from '../amazen/motion';
 

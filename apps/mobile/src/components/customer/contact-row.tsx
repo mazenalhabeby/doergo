@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
-import { Pill, RoundButton } from '../job/job-ui';
+import { AText, Pill, RoundButton } from '../amazen';
 import { CallGlyph } from '../glyphs/work-glyphs';
 import { EmailGlyph } from '../glyphs/crm-glyphs';
 import type { MobileCustomerContact } from '../../lib/api/customers';

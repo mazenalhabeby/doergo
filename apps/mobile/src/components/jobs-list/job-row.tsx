@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { usePendingFor } from '../../offline/offline-context';
-import { AText } from '../amazen';
-import { Pill } from '../job/job-ui';
+import { AText, Pill } from '../amazen';
 import { hasHour, sameDay } from '../home/my-work';
 import { sameJobRowProps, type JobBand, type RowRight, type RowWho } from './jobs-logic';
 

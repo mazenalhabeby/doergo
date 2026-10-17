@@ -19,6 +19,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { GenericContentSkeleton } from "@/components/skeletons/primitives"
 import { PHONE_SYNC_STATES, countByState, formatAge, matchesSearch, reasonsOf } from "@/lib/phone-sync"
 import { TONE, StatePill, FilterChip, DetailPanel } from "./detail-panel"
+import { PageNotice } from "@/components/ui/empty-note"
 
 /*
   Phone sync — whose phone is still holding work done without signal, and why.
@@ -63,14 +64,15 @@ export default function PhoneSyncPage() {
 
   const counts = useMemo(() => countByState(rows), [rows])
   const visible = useMemo(
-    () => rows.filter((r) => (filter === "all" || r.state === filter) && matchesSearch(personById.get(r.userId), search)),
+    () =>
+      rows.filter((r) => (filter === "all" || r.state === filter) && matchesSearch(personById.get(r.userId), search)),
     [rows, filter, search, personById],
   )
   const selected = rows.find((r) => r.userId === selectedId) ?? visible[0] ?? null
   const now = Date.now()
 
   if (!canView) {
-    return <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">{t("manage.noAccess")}</div>
+    return <PageNotice>{t("manage.noAccess")}</PageNotice>
   }
   if (health.isLoading) return <GenericContentSkeleton />
 
@@ -84,7 +86,10 @@ export default function PhoneSyncPage() {
   return (
     <div className="min-h-full bg-background">
       <div className={PAGE_SHELL}>
-        <Link href="/members" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href="/members"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> {t("members.team")}
         </Link>
 
@@ -93,7 +98,13 @@ export default function PhoneSyncPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("members.phoneSync.title")}</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("members.phoneSync.subtitle")}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => health.refetch()} disabled={health.isFetching} className="shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => health.refetch()}
+            disabled={health.isFetching}
+            className="shrink-0"
+          >
             <RefreshCw className={cn("mr-2 h-4 w-4", health.isFetching && "animate-spin")} />
             {t("members.phoneSync.refresh")}
           </Button>
@@ -157,8 +168,11 @@ export default function PhoneSyncPage() {
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
                       <tr
-                        className={"border-b border-border/60 bg-muted/40 text-left text-xs font-medium " +
-                          "uppercase tracking-wide text-muted-foreground"}>
+                        className={
+                          "border-b border-border/60 bg-muted/40 text-left text-xs font-medium " +
+                          "uppercase tracking-wide text-muted-foreground"
+                        }
+                      >
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.member")}</th>
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.state")}</th>
                         <th className="px-4 py-2.5 text-right">{t("members.phoneSync.columns.waiting")}</th>
@@ -195,11 +209,15 @@ export default function PhoneSyncPage() {
                                 />
                                 <div className="min-w-0">
                                   <div className="truncate font-medium text-foreground">{nameOf(r.userId)}</div>
-                                  {p?.position && <div className="truncate text-xs text-muted-foreground">{p.position}</div>}
+                                  {p?.position && (
+                                    <div className="truncate text-xs text-muted-foreground">{p.position}</div>
+                                  )}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-4 py-3"><StatePill state={r.state} /></td>
+                            <td className="px-4 py-3">
+                              <StatePill state={r.state} />
+                            </td>
                             <td className="px-4 py-3 text-right">{r.state === "silent" ? "—" : r.waiting}</td>
                             <td className="px-4 py-3 text-muted-foreground">
                               {r.oldestWaitingAt && r.waiting > 0
@@ -207,7 +225,9 @@ export default function PhoneSyncPage() {
                                 : "—"}
                             </td>
                             <td className="px-4 py-3 text-right text-muted-foreground">
-                              {r.filesWaiting > 0 ? `${r.filesWaiting} · ${formatFileSize(r.bytesWaiting, locale)}` : "—"}
+                              {r.filesWaiting > 0
+                                ? `${r.filesWaiting} · ${formatFileSize(r.bytesWaiting, locale)}`
+                                : "—"}
                             </td>
                             <td className="px-4 py-3 text-muted-foreground">{when(r.lastSuccessAt)}</td>
                             <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.appVersion}</td>
@@ -227,7 +247,9 @@ export default function PhoneSyncPage() {
                 <p className="mt-3 text-xs text-muted-foreground">{t("members.phoneSync.footnote")}</p>
               </div>
 
-              {selected && <DetailPanel row={selected} name={nameOf(selected.userId)} now={now} locale={locale} when={when} />}
+              {selected && (
+                <DetailPanel row={selected} name={nameOf(selected.userId)} now={now} locale={locale} when={when} />
+              )}
             </div>
           </>
         )}

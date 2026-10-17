@@ -8,8 +8,7 @@ import { useTheme } from '../../contexts/theme-context';
 import { useVersionStatus } from '../../contexts/version-context';
 import { openUpdate } from '../../lib/in-app-updates';
 import { formatDay } from '../../lib/money';
-import { AText, PrimaryButton, Well } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, PrimaryButton, Well, SectionLabel } from '../amazen';
 import { SettingsPage, StateCard } from './settings-ui';
 
 /**

@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { type StepForm, type StepFormField } from '@hbcfield/shared/client';
 import { useTheme } from '../../../contexts/theme-context';
-import { AText, PrimaryButton } from '../../amazen';
-import { Banner, JobSheet, QuietButton } from '../job-ui';
+import { AText, PrimaryButton, Banner, QuietButton } from '../../amazen';
+import { JobSheet } from '../job-ui';
 import { type SignPadHandle } from '../sign-pad';
 import {
   draftErrors,

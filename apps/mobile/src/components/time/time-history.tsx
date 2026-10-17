@@ -5,12 +5,13 @@ import type { TimeEntry } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { attendanceApi } from '../../lib/api/attendance';
-import { AText, Chip, Well, WellDivider } from '../amazen';
-import { JobSheet, SectionLabel } from '../job/job-ui';
+import { AText, Chip, Well, WellDivider, SectionLabel } from '../amazen';
+import { JobSheet } from '../job/job-ui';
 import { WorkLogSheet } from '../worklog-sheet';
 import { DateTileRow } from './date-tile-row';
 import { addDays, dayKey, statusOf } from './time-logic';
 import { AUTO_CLOCK_IN_FLAG, AUTO_CLOCK_OUT_FLAG, formatDuration } from '@hbcfield/shared/client';
+import { LoadingLine } from '../loading-line';
 
 /** Made (in part) by the automatic clock — marked, never suspected (attendance/auto-clock.ts). */
 const isAutomatic = (e: TimeEntry) => (e.flagReasons ?? []).some((f) => f === AUTO_CLOCK_IN_FLAG || f === AUTO_CLOCK_OUT_FLAG);
@@ -211,7 +212,7 @@ function AllShiftsSheet({
       </View>
 
       {rows === null ? (
-        <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
+        <LoadingLine />
       ) : failed ? (
         <AText variant="caption" tone="critical">{t('time.history.failed', 'Could not load your shifts. Try again in a moment.')}</AText>
       ) : rows.length === 0 ? (

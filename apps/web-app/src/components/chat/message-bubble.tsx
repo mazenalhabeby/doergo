@@ -10,6 +10,7 @@ import {
   bubbleShape,
   chatDayLabel,
   chatTime,
+  receiptLabel,
   type ChatConversation,
   type ChatMessage,
   type ChatUserRef,
@@ -84,9 +85,9 @@ export function MessageBubble({
     <div>
       {dayLine}
       <div
-        className={`group flex items-end gap-2 ${grouped
-          ? "mt-0.5"
-          : "mt-2.5"} ${mine ? "justify-end" : "justify-start"} ${arriving ? (mine ? "motion-msg-sent" : "motion-msg-in") : ""}`}
+        className={`group flex items-end gap-2 ${
+          grouped ? "mt-0.5" : "mt-2.5"
+        } ${mine ? "justify-end" : "justify-start"} ${arriving ? (mine ? "motion-msg-sent" : "motion-msg-in") : ""}`}
       >
         {!mine && (
           <span className="w-7 shrink-0">{lastOfGroup ? <ChatAvatar u={sender} size={28} dot={false} /> : null}</span>
@@ -122,9 +123,9 @@ export function MessageBubble({
               removed
                 ? "rounded-2xl border border-dashed border-border bg-transparent italic text-muted-foreground"
                 : mine
-                  ? `bg-gradient-to-br from-blue-500 to-blue-600 text-white ${lastOfGroup
-                    ? "rounded-2xl rounded-br-md"
-                    : "rounded-2xl"} ${pending ? "opacity-70" : ""}`
+                  ? `bg-gradient-to-br from-blue-500 to-blue-600 text-white ${
+                      lastOfGroup ? "rounded-2xl rounded-br-md" : "rounded-2xl"
+                    } ${pending ? "opacity-70" : ""}`
                   : `bg-muted text-foreground ${lastOfGroup ? "rounded-2xl rounded-bl-md" : "rounded-2xl"}`
             }`}
           >
@@ -156,13 +157,7 @@ export function MessageBubble({
 /** One tick when sent; a second slides in and both turn blue once read. */
 function Receipt({ r, group, t }: { r: { readBy: number; of: number }; group: boolean; t: TFunction }) {
   const read = r.readBy > 0
-  const text = !read
-    ? t("chat.sent", "Sent")
-    : !group
-      ? t("chat.read", "Read")
-      : r.readBy >= r.of
-        ? t("chat.seenByAll", "Seen by everyone")
-        : t("chat.seenBy", { count: r.readBy, defaultValue: "Seen by {{count}}" })
+  const text = receiptLabel(r, !group, t)
   const tick = (cls?: string) => (
     <svg className={cls} width="15" height="11" viewBox="0 0 16 12" aria-hidden="true">
       <path

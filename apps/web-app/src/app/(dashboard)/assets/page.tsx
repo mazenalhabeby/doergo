@@ -31,6 +31,7 @@ import { AssetsTab } from "../locations/[id]/_components/assets-tab"
 import { AllAssetsList } from "@/components/assets/all-assets-list"
 import { ProposalQueue } from "@/components/assets/proposal-queue"
 import { keys } from "@/lib/query-keys"
+import { DashedEmptyBox } from "@/components/ui/empty-note"
 
 export default function AssetsPage() {
   const { t } = useTranslation()
@@ -43,7 +44,9 @@ export default function AssetsPage() {
   return (
     <div className="mx-auto max-w-[1000px] px-6 py-6">
       <div className="mb-4">
-        <h1 data-tour="page-assets" className="text-2xl font-semibold text-foreground">{t("assets.title")}</h1>
+        <h1 data-tour="page-assets" className="text-2xl font-semibold text-foreground">
+          {t("assets.title")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {space ? space.name : t("assets.all.subtitle", "Every asset in your workspaces — search to find one")}
         </p>
@@ -63,12 +66,9 @@ export default function AssetsPage() {
         can have the module on and no workspace using it yet.
       */}
       {scope.ready && scope.spaces.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center">
-          <Package className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">
-            {t("assets.noWorkspace", "No workspace has assets switched on yet.")}
-          </p>
-        </div>
+        <DashedEmptyBox icon={Package}>
+          {t("assets.noWorkspace", "No workspace has assets switched on yet.")}
+        </DashedEmptyBox>
       ) : spaceId ? (
         /*
           The only workspace, with no "All" tab to fall back to: its queue

@@ -26,9 +26,9 @@ import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '../../l
 import { useSyncStatus } from '../../offline/offline-context';
 import { STILL_MINE } from '../../offline/actions/outcome';
 import { overlayMyLog, logEntriesDeliveredSince } from '../../offline/assets/log-overlay';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well } from '../amazen';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, Banner, Pill, SectionLabel, SheetOption } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Banner, JobSheet, Pill, SectionLabel, SheetOption } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 import { useEquipmentScreen, typesFor, logFor } from './use-equipment-screen';
 import { Fact, SentRow } from './equipment-screen-helpers';
 import { useEquipmentScreenLogic } from './use-equipment-screen-logic';

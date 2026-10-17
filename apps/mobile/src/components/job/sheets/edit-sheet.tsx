@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UpdateTaskInput } from '../../../lib/api';
 import { knownOffline } from '../../../offline/connectivity';
-import { AText, PrimaryButton } from '../../amazen';
-import { ChoiceRow, JobField, JobSheet, SectionLabel } from '../job-ui';
+import { AText, PrimaryButton, ChoiceRow, JobField, SectionLabel } from '../../amazen';
+import { JobSheet } from '../job-ui';
 
 type Priority = NonNullable<UpdateTaskInput['priority']>;
 const PRIORITIES: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];

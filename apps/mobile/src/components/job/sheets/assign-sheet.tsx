@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
 import { locationsApi, techniciansApi, type TechnicianListItem } from '../../../lib/api';
 import { knownOffline } from '../../../offline/connectivity';
-import { AText } from '../../amazen';
-import { Initials, JobField, JobSheet, Pill } from '../job-ui';
+import { AText, Initials, JobField, Pill } from '../../amazen';
+import { JobSheet } from '../job-ui';
 import { personName } from '@hbcfield/shared/client';
 
 export interface AssignMember {

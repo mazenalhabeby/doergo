@@ -7,9 +7,9 @@ import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
 import { chatApi } from '../../lib/api';
 import { tabAccessFor } from '../../lib/tab-layout';
-import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider } from '../amazen';
-import { Banner } from '../job/job-ui';
+import { AText, Ground, HeaderBack, PrimaryButton, ScreenHeader, Well, WellDivider, Banner } from '../amazen';
 import { PersonAvatar } from './person-avatar';
+import { LoadingLine } from '../loading-line';
 
 type Person = Awaited<ReturnType<typeof chatApi.person>> & { spaceName?: string | null };
 
@@ -65,9 +65,7 @@ export function PersonScreen() {
         {missing ? (
           <Banner tone="critical" text={t('team.notVisible', 'This person is not on your team.')} />
         ) : !person ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={8} />
         ) : (
           <>
             <View style={{ alignItems: 'center', gap: amazen.space(2) }}>

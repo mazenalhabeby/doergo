@@ -7,7 +7,7 @@ import {
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
-import { Banner } from './job-ui';
+import { Banner } from '../amazen';
 
 /**
  * The lines between the title and the facts — `.banner` in the mockup. Each

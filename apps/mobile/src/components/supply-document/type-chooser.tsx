@@ -7,6 +7,7 @@ import type { AskType, AskedRow, typeGroups } from '../../lib/document-asks';
 import { documentTypeIcon } from '../../lib/document-icons';
 import { PressableScale } from '../pressable-scale';
 import { s, useSupplyPalette } from './styles';
+import { toneColor, toneTint } from '../../theme/tone-color';
 
 /**
  * "Contract for a vehicle or equipment" — the one thing a member hands in that
@@ -76,7 +77,7 @@ export function TypeChooser({
   const typeRow = (ty: AskType, sub: string | null, o: { tone?: 'warn' | 'crit'; off?: boolean } = {}) => {
     const full = ty as DocumentType;
     const on = !o.off && ty.id === selectedId;
-    const hint = o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : colors.textMuted;
+    const hint = toneColor(a, o.tone, colors.textMuted);
     return (
       <PressableScale
         key={ty.id}
@@ -93,7 +94,7 @@ export function TypeChooser({
         <View
           style={[
             s.typeIcon,
-            { backgroundColor: o.tone === 'crit' ? a.criticalTint : o.tone === 'warn' ? a.warnTint : colors.surface },
+            { backgroundColor: toneTint(a, o.tone, colors.surface) },
           ]}>
           <Ionicons
             name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)}

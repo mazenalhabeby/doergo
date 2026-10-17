@@ -3,8 +3,7 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { localDateKey } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, Sunken, WellDivider } from '../amazen';
-import { ReceiptRow } from '../job/job-ui';
+import { AText, Sunken, WellDivider, ReceiptRow } from '../amazen';
 import { balanceRows, carryNote, leaveYearLabel, signedDays, type MemberLeaveBalance } from '../../lib/leave-balance';
 
 /** A day `YYYY-MM-DD` at noon, local — never shifted across midnight by a zone. */

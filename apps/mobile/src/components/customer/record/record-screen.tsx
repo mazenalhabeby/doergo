@@ -8,9 +8,20 @@ import { useResponsive } from '../../../lib/responsive';
 import { locationsApi } from '../../../lib/api';
 import type { MobileCustomerContact } from '../../../lib/api/customers';
 import { CLIENT_LOCALE_OPTIONS, clientLocaleFormValue } from '../../../lib/client-locale';
-import { AText, FilterPill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader } from '../../amazen';
+import {
+  AText,
+  FilterPill,
+  FilterRow,
+  Ground,
+  HeaderBack,
+  PrimaryButton,
+  ScreenHeader,
+  Banner,
+  SectionLabel,
+  SheetOption,
+} from '../../amazen';
 import { centeredContent } from '../../screen-container';
-import { Banner, JobSheet, SectionLabel, SheetOption } from '../../job/job-ui';
+import { JobSheet } from '../../job/job-ui';
 import { ActivityRow, type PendingActivity } from '../activity-row';
 import { ActivityComposer } from '../activity-composer';
 import { ClientEditSheet } from '../client-edit-sheet';

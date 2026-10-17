@@ -6,8 +6,7 @@ import { formatCalendarDate } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import type { MemberDocument } from '../../lib/api';
 import { documentTypeIcon } from '../../lib/document-icons';
-import { AText } from '../amazen';
-import { Pill } from '../job/job-ui';
+import { AText, Pill } from '../amazen';
 
 const MONTH_KEYS = [
   'january', 'february', 'march', 'april', 'may', 'june',

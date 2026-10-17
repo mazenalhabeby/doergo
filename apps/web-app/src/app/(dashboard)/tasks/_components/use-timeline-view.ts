@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next"
 import { startOfDay, addDays, diffDays } from "@/lib/local-days"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task, Phase } from "@/lib/api"
-import { dateLocale } from "@/lib/format-date"
+import { formatMonthYear } from "@/lib/format-date"
 
 export type TimeScale = "day" | "week" | "month"
 
 export function getMonthLabel(d: Date): string {
-  return d.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })
+  return formatMonthYear(d)
 }
 
 export const ROW_HEIGHT = 36
@@ -35,7 +35,7 @@ export interface TimelineViewProps {
 }
 
 /** TimelineView's state and handlers — everything before its markup, moved here unchanged. */
-export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'tasks' | 'phases'>) {
+export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, "tasks" | "phases">) {
   const { t } = useTranslation()
   const stepOf = useStepConfigs(tasks)
   const [scale, setScale] = useState<TimeScale>("week")
@@ -108,12 +108,7 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'task
       cols.push(addDays(rStart, i))
     }
 
-    const cw =
-      scale === "day"
-        ? MIN_COL_WIDTH_DAY
-        : scale === "week"
-          ? MIN_COL_WIDTH_WEEK
-          : MIN_COL_WIDTH_MONTH
+    const cw = scale === "day" ? MIN_COL_WIDTH_DAY : scale === "week" ? MIN_COL_WIDTH_WEEK : MIN_COL_WIDTH_MONTH
 
     return { rangeStart: rStart, rangeEnd: rEnd, columns: cols, colWidth: cw }
   }, [tasks, scale])
@@ -188,7 +183,7 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'task
 
       return null
     },
-    [rangeStart, colWidth]
+    [rangeStart, colWidth],
   )
 
   // ─── Dependency arrows ───
@@ -215,7 +210,11 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'task
           if (predRow == null || succRow == null) continue
 
           // Predecessor end
-          const predEnd = task.dueDate ? startOfDay(new Date(task.dueDate)) : task.startDate ? startOfDay(new Date(task.startDate)) : null
+          const predEnd = task.dueDate
+            ? startOfDay(new Date(task.dueDate))
+            : task.startDate
+              ? startOfDay(new Date(task.startDate))
+              : null
           if (!predEnd) continue
 
           // Successor start
@@ -223,7 +222,9 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'task
           if (!succTask) continue
           const succStart = succTask.startDate
             ? startOfDay(new Date(succTask.startDate))
-            : succTask.dueDate ? startOfDay(new Date(succTask.dueDate)) : null
+            : succTask.dueDate
+              ? startOfDay(new Date(succTask.dueDate))
+              : null
           if (!succStart) continue
 
           const x1 = (diffDays(predEnd, rangeStart) + 1) * colWidth

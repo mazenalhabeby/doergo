@@ -1,5 +1,11 @@
 import type { TFunction } from 'i18next';
-import { conversationTitle, readState, type ChatConversation, type ChatMessage } from '@hbcfield/shared/client';
+import {
+  conversationTitle,
+  readState,
+  receiptLabel,
+  type ChatConversation,
+  type ChatMessage,
+} from '@hbcfield/shared/client';
 import type { Receipt } from './chat-rows';
 
 /** Pure pieces of `ChatScreen` — moved here unchanged. */
@@ -13,15 +19,7 @@ export function receiptFor(
 ): Receipt | null {
   if (!active || m.id !== lastMineId) return null;
   const r = readState(active, m);
-  if (r.readBy === 0) return { read: false, label: t('chat.sent', 'Sent') };
-  if (active.type === 'DIRECT') return { read: true, label: t('chat.read', 'Read') };
-  return {
-    read: true,
-    label:
-      r.readBy >= r.of
-        ? t('chat.seenByAll', 'Seen by everyone')
-        : t('chat.seenBy', { count: r.readBy, defaultValue: 'Seen by {{count}}' }),
-  };
+  return { read: r.readBy > 0, label: receiptLabel(r, active.type === 'DIRECT', t) };
 }
 
 /** The header of a page that is not the thread itself. */

@@ -7,9 +7,9 @@ import { useToast } from '../../island/island-context';
 import { approvalsApi } from '../../lib/api';
 import { formatDay } from '../../lib/money';
 import { dayKeyOf } from '../../lib/log-dates';
-import { AText, GhostButton, GlassInput, PrimaryButton } from '../amazen';
+import { AText, GhostButton, GlassInput, PrimaryButton, SectionLabel, SheetOption } from '../amazen';
 import { DateField } from '../date-field';
-import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 
 /**
  * Stand-ins on the phone: hand your approvals to a colleague for some days,

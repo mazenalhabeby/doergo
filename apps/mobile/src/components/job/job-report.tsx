@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { ServiceReport } from '../../lib/api';
-import { AText, Well, WellDivider } from '../amazen';
-import { SectionLabel } from './job-ui';
+import { AText, Well, WellDivider, SectionLabel } from '../amazen';
 import { formatOnJob } from './job-logic';
 
 /**

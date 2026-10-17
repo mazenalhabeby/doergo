@@ -8,8 +8,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import { ensureBackgroundLocation } from '../../services/background-permission';
 import { autoClockStatus, refreshAutoClock, setAutoClockConsent } from '../../services/auto-clock/plan';
-import { AText, GhostButton, PrimaryButton, Well } from '../amazen';
-import { JobSheet, SectionLabel } from '../job/job-ui';
+import { AText, GhostButton, PrimaryButton, Well, SectionLabel } from '../amazen';
+import { JobSheet } from '../job/job-ui';
 import { SwitchRow } from '../settings/settings-ui';
 
 /**

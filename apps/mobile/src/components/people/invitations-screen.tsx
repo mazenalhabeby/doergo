@@ -7,9 +7,22 @@ import { useToast } from '../../island/island-context';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { adminInvitationsApi, locationsApi, type Invitation } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
-import { AText, GlassCard, Ground, HeaderBack, PrimaryButton, ScreenHeader, Sunken, Well, WellDivider } from '../amazen';
+import {
+  AText,
+  GlassCard,
+  Ground,
+  HeaderBack,
+  PrimaryButton,
+  ScreenHeader,
+  Sunken,
+  Well,
+  WellDivider,
+  JobField,
+  SectionLabel,
+} from '../amazen';
 import { centeredContent } from '../screen-container';
-import { JobField, JobSheet, SectionLabel } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
+import { LoadingLine } from '../loading-line';
 
 /**
  * INVITATIONS — make a code, share it, see what became of the ones sent.
@@ -206,9 +219,7 @@ export function InvitationsScreen() {
         </GlassCard>
 
         {items === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={6} />
         ) : !items.length ? (
           <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4) }}>
             {t('manage.invitationsScreen.noInvitations')}

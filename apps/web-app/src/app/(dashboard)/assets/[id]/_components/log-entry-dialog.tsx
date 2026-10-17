@@ -6,9 +6,17 @@ import { useMutation } from "@tanstack/react-query"
 import { Camera, Loader2, Plus, X } from "lucide-react"
 
 import {
-  logTypesForKind, validateLogValues, readLogNumber,
-  assetEntryDateExempt, assetEntryDayBounds, assetEntryOccurredAt, localDayKey,
-  type KindLogField, type KindLogType, type KindShape, type LogValueProblem,
+  logTypesForKind,
+  validateLogValues,
+  readLogNumber,
+  assetEntryDateExempt,
+  assetEntryDayBounds,
+  assetEntryOccurredAt,
+  localDayKey,
+  type KindLogField,
+  type KindLogType,
+  type KindShape,
+  type LogValueProblem,
 } from "@hbcfield/shared/client"
 import { assetsApi, uploadToS3 } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -21,9 +29,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog"
 import { todayIso, FieldInput } from "./field-input"
+import { ChoiceChip } from "@/components/ui/choice-chip"
 
 /**
  * "+ Log" — one entry of one of the kind's log types.
@@ -107,12 +122,16 @@ export function LogEntryDialog({
       if (!type) throw new Error("No log type")
       // Today means now; an earlier day means midday — no time zone turns it into the day before.
       const at = assetEntryOccurredAt(day, new Date())
-      if (!at || dateProblem) throw new Error(dateProblem ?? t("assetLog.problem.notADate", "That date could not be read"))
+      if (!at || dateProblem)
+        throw new Error(dateProblem ?? t("assetLog.problem.notADate", "That date could not be read"))
       const occurredAt = at.toISOString()
       let receipt: { receiptKey: string; receiptName: string; receiptMime: string } | undefined
       if (file) {
         const pre = await assetsApi.presignLogPhoto(assetId, {
-          logType: type.key, fileName: file.name, mimeType: file.type, occurredAt,
+          logType: type.key,
+          fileName: file.name,
+          mimeType: file.type,
+          occurredAt,
         })
         if (!pre?.uploadUrl) throw new Error(t("assetLog.uploadFailed", "The photo could not be uploaded"))
         await uploadToS3(pre.uploadUrl, file)
@@ -153,7 +172,10 @@ export function LogEntryDialog({
           <DialogTitle>{t("assetLog.addTitle", "What was done?")}</DialogTitle>
           <DialogDescription>
             {type?.needsApproval
-              ? t("assetLog.approvalHint", "An entry from somebody who does not manage assets waits for approval before it counts.")
+              ? t(
+                  "assetLog.approvalHint",
+                  "An entry from somebody who does not manage assets waits for approval before it counts.",
+                )
               : t("assetLog.addHint", "Everything you log here stays on this record's logbook.")}
           </DialogDescription>
         </DialogHeader>
@@ -162,20 +184,21 @@ export function LogEntryDialog({
           {/* The type: one chip each, in the kind's order, Cost first. */}
           <div className="flex flex-wrap gap-1.5">
             {types.map((x) => (
-              <button
+              <ChoiceChip
                 key={x.key}
+                variant="iconPill"
+                on={x.key === type?.key}
                 type="button"
-                onClick={() => { setTypeKey(x.key); setRaw({}); setFile(null); setShowProblems(false) }}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                  x.key === type?.key
-                    ? "border-primary bg-primary/10 text-foreground"
-                    : "border-border text-muted-foreground hover:text-foreground",
-                )}
+                onClick={() => {
+                  setTypeKey(x.key)
+                  setRaw({})
+                  setFile(null)
+                  setShowProblems(false)
+                }}
               >
                 <span className={cn("h-2 w-2 rounded-full", logColor(x.color).dot)} />
                 {logTypeLabel(t, x)}
-              </button>
+              </ChoiceChip>
             ))}
           </div>
 
@@ -207,14 +230,17 @@ export function LogEntryDialog({
 
           <div>
             <Label className="text-xs text-muted-foreground">
-              {t("assetLog.note", "Note")} <span className="text-muted-foreground/60">{t("common.optional", "(optional)")}</span>
+              {t("assetLog.note", "Note")}{" "}
+              <span className="text-muted-foreground/60">{t("common.optional", "(optional)")}</span>
             </Label>
             <Input className="mt-1" value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {t("common.cancel", "Cancel")}
+          </Button>
           <Button
             disabled={save.isPending}
             onClick={() => {

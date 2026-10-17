@@ -6,8 +6,7 @@ import { tasksApi, type OpenRoleTask } from '../../lib/api';
 import { formatDistance, refusalText } from '../../lib/distance';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
-import { AText, WellDivider } from '../amazen';
-import { QuietButton, SectionLabel } from '../job/job-ui';
+import { AText, WellDivider, QuietButton, SectionLabel } from '../amazen';
 
 /**
  * "Open for your role" — jobs opened to a work role I hold, in the workspace I

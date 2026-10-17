@@ -1,8 +1,7 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
-import { Banner } from '../job/job-ui';
+import { AText, Banner } from '../amazen';
 import { TourTarget } from '../tour';
 import type { TimeOffStats } from './helpers';
 

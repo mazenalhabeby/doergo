@@ -11,12 +11,11 @@ import { drivesRoutes } from '../../lib/member-reach';
 import { ROUTES } from '../../lib/constants';
 import { OfflineBanner } from '../../offline/components/offline-banner';
 import { FreshnessLabel } from '../../offline/components/freshness-label';
-import { Ground, AText, ScreenHeader, WellDivider, useTabSafe } from '../amazen';
+import { Ground, AText, ScreenHeader, WellDivider, useTabSafe, QuietButton, SectionLabel } from '../amazen';
 import { TourTarget, useTourScroll } from '../tour';
 import { centeredContent } from '../screen-container';
 import { isCanceled, isClosed, isMine, isUnderWay, stepLabelFor, stepsFor } from '../home/my-work';
 import { useTaskFlows } from '../home/use-task-flows';
-import { QuietButton, SectionLabel } from '../job/job-ui';
 import type { OpenSheet } from '../job/job-logic';
 import type { WriteStatus } from '../job/use-job-writes';
 import {

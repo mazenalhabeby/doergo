@@ -4,8 +4,8 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { formatDistance } from '../../lib/distance';
-import { AText, Well, WellDivider } from '../amazen';
-import { JobSheet, SectionLabel } from '../job/job-ui';
+import { AText, Well, WellDivider, SectionLabel } from '../amazen';
+import { JobSheet } from '../job/job-ui';
 import { formatDuration } from '@hbcfield/shared/client';
 import { noShiftOf, type PlaceRelation, type PlaceTile } from './time-logic';
 

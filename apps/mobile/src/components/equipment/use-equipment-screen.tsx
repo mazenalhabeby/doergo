@@ -26,9 +26,8 @@ import { knownEquipment, rememberEquipment, type EquipmentLoaded } from '../../l
 import { useSyncStatus } from '../../offline/offline-context';
 import { STILL_MINE } from '../../offline/actions/outcome';
 import { overlayMyLog, logEntriesDeliveredSince } from '../../offline/assets/log-overlay';
-import { AText, PrimaryButton } from '../amazen';
+import { AText, PrimaryButton, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { SectionLabel } from '../job/job-ui';
 
 export type Loaded = EquipmentLoaded;
 

@@ -16,6 +16,7 @@ import { AText, ChoicePill, GlassInput, Well, useTabSafe } from '../amazen';
 import { centeredContent } from '../screen-container';
 import { PRESENCE_DOT, presenceKey } from './person-avatar';
 import { TourTarget, useTourScroll } from '../tour/tour-target';
+import { LoadingLine } from '../loading-line';
 
 export type Filter = 'all' | 'AVAILABLE' | 'BUSY' | 'AWAY';
 
@@ -156,9 +157,7 @@ export function useTeamScreen() {
   );
 
   const empty = colleagues === null ? (
-    <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
-      {t('common.loading', 'Loading…')}
-    </AText>
+    <LoadingLine onGlass padUnits={6} />
   ) : all.length === 0 ? (
     <Well style={{ padding: amazen.space(6), alignItems: 'center', marginTop: amazen.space(3) }}>
       <AText variant="body" tone="ink">{t('team.empty')}</AText>

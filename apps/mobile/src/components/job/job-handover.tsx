@@ -5,8 +5,7 @@ import { formatDuration, owesHandover, personName } from '@hbcfield/shared/clien
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { Task } from '../../lib/api';
-import { AText } from '../amazen';
-import { Banner, Initials, SectionLabel } from './job-ui';
+import { AText, Banner, Initials, SectionLabel } from '../amazen';
 import type { JobFile } from './job-files';
 
 /**

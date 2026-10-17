@@ -28,6 +28,7 @@ import { useMyAttendancePage } from "./use-my-attendance-page"
 import { duration, fmtDate, LiveShift, RangeField } from "./my-attendance-page-helpers"
 import { MyAttendancePageView } from "./my-attendance-page-view"
 import { MyAttendancePageMy } from "./my-attendance-page-my"
+import { PageNotice } from "@/components/ui/empty-note"
 
 /** Local calendar day as yyyy-MM-dd — never via toISOString, which shifts to UTC. */
 
@@ -60,9 +61,9 @@ export default function MyAttendancePage() {
 
   if (!canSee) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
+      <PageNotice>
         {t("attendance.my.noAccess")}
-      </div>
+      </PageNotice>
     )
   }
 

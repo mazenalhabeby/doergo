@@ -6,8 +6,8 @@ import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
 import type { TimeOffRequest } from '../../lib/api';
 import { SyncChip } from '../../offline/components/sync-chip';
-import { AText, PrimaryButton, Sunken } from '../amazen';
-import { JobSheet, Pill, ReceiptRow, SheetOption, StateEyebrow, type Tone } from '../job/job-ui';
+import { AText, PrimaryButton, Sunken, Pill, ReceiptRow, SheetOption, StateEyebrow } from '../amazen';
+import { JobSheet, type Tone } from '../job/job-ui';
 import { LeaveTypeMark, REQUEST_KIND_GLYPH, RequestKindGlyph } from './request-glyphs';
 import {
   describeRequest,
@@ -21,6 +21,7 @@ import {
 } from './request-model';
 import { useRequestDetailSheet, useRequestWords, type RequestRowData } from './use-request-detail-sheet';
 import { RequestDetailSheetView } from './request-detail-sheet-view';
+import { LoadingLine } from '../loading-line';
 export { useRequestWords, type RequestRowData } from './use-request-detail-sheet';
 
 /** One request in a list: its mark, what it is, when and where, and its state. */
@@ -89,7 +90,7 @@ export function KindChooserSheet({
   return (
     <JobSheet visible={visible} onClose={onClose} title={t('requests.chooseTitle', 'What are you asking for?')}>
       {kinds === null ? (
-        <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
+        <LoadingLine />
       ) : (
         kinds.map((k) => (
           <SheetOption

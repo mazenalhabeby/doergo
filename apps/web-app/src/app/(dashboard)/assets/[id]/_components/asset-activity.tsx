@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dateLocale } from "@/lib/format-date"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 export function NoteBox({ assetId, onAdded }: { assetId: string; onAdded: () => void }) {
   const { t } = useTranslation()
@@ -19,7 +20,10 @@ export function NoteBox({ assetId, onAdded }: { assetId: string; onAdded: () => 
 
   const add = useMutation({
     mutationFn: () => assetsApi.addActivity(assetId, body.trim()),
-    onSuccess: () => { setBody(""); onAdded() },
+    onSuccess: () => {
+      setBody("")
+      onAdded()
+    },
     onError: (e: Error) => notify.error(e.message),
   })
 
@@ -35,9 +39,13 @@ export function NoteBox({ assetId, onAdded }: { assetId: string; onAdded: () => 
         placeholder={t("assetRecords.notePh", "Add a note — inspection, damage, handover…")}
       />
       <Button disabled={!body.trim() || add.isPending} onClick={() => add.mutate()}>
-        {add.isPending
-          ? <Loader2 className="h-4 w-4 animate-spin" />
-          : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("assetRecords.addNote", "Add note")}</>}
+        {add.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            <Plus className="mr-1 h-3.5 w-3.5" /> {t("assetRecords.addNote", "Add note")}
+          </>
+        )}
       </Button>
     </div>
   )
@@ -49,13 +57,14 @@ export function Timeline({ loading, activities }: { loading: boolean; activities
   if (loading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+        ))}
       </div>
     )
   }
   if (activities.length === 0) {
-    return <p
-      className="py-8 text-center text-sm text-muted-foreground">{t("assetRecords.noActivity", "Nothing has happened to this one yet.")}</p>
+    return <EmptyNote>{t("assetRecords.noActivity", "Nothing has happened to this one yet.")}</EmptyNote>
   }
 
   return (

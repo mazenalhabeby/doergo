@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { normalizeKindShape, logTypesForKind } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { assetsApi, type HeldAsset } from '../../lib/api';
-import { AText } from '../amazen';
-import { SheetOption } from '../job/job-ui';
+import { AText, SheetOption } from '../amazen';
 import { EquipmentFrame } from './equipment-frame';
+import { LoadingLine } from '../loading-line';
 
 /** Which of the things a member holds can take this: a receipt needs money going out; a log entry needs a logbook. */
 function fits(h: HeldAsset, what: 'expense' | 'log'): boolean {
@@ -55,9 +55,7 @@ export function EquipmentPicker({ what }: { what: 'expense' | 'log' }) {
             {t('myAssets.loadFailed', 'Could not load what you hold')}
           </AText>
         ) : list === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>
-            {t('common.loading', 'Loading…')}
-          </AText>
+          <LoadingLine onGlass padUnits={8} />
         ) : list.length === 0 ? (
           <View style={{ alignItems: 'center', gap: amazen.space(2), paddingVertical: amazen.space(8) }}>
             <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />

@@ -1,8 +1,10 @@
 import { type ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, LiveDot } from '../amazen';
+import { AText } from './text';
+import { LiveDot } from './live-dot';
 import { personInitials } from '@hbcfield/shared/client';
+import { toneColor } from '../../theme/tone-color';
 
 /** The mockup's mono eyebrow — `.ey`. */
 export function SectionLabel({
@@ -16,7 +18,7 @@ export function SectionLabel({
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const color = tone === 'accent' ? c.accent : tone === 'warn' ? c.warn : tone === 'critical' ? c.critical : c.inkMuted;
+  const color = toneColor(c, tone, c.inkMuted);
   return (
     <View style={style}>
       <AText
@@ -51,7 +53,7 @@ export function StateEyebrow({
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const color = tone === 'accent' ? c.accent : tone === 'warn' ? c.warn : tone === 'critical' ? c.critical : c.lineField;
+  const color = toneColor(c, tone, c.lineField);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
       <LiveDot color={color} live={live} />

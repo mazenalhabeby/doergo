@@ -3,10 +3,9 @@ import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { usePendingFor } from '../../offline/offline-context';
-import { AText } from '../amazen';
+import { AText, Dot, Pill, SectionLabel } from '../amazen';
 import { TourTarget } from '../tour';
 import { CloseGlyph } from './job-glyphs';
-import { Dot, Pill, SectionLabel } from './job-ui';
 
 /**
  * The top of the job — `renderDetail()`'s first block: the id and "waiting to

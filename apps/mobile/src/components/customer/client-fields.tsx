@@ -1,8 +1,7 @@
 import { memo } from 'react';
 import { View, type KeyboardTypeOptions } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { FilterPill, PrimaryButton as AmazenPrimary } from '../amazen';
-import { JobField, SectionLabel } from '../job/job-ui';
+import { FilterPill, PrimaryButton as AmazenPrimary, JobField, SectionLabel } from '../amazen';
 
 /*
   The client forms' four parts — a labelled field, a choice, a group title and

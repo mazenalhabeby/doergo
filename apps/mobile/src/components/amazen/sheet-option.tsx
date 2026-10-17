@@ -8,8 +8,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
+import { AText } from './text';
 import type { GlyphProps } from '../glyphs/glyphs';
+import { toneColor } from '../../theme/tone-color';
 export { JobField, ChoiceRow, QuietButton } from './sheet-option-fields';
 
 /**
@@ -60,7 +61,7 @@ export function SheetOption({
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const ink = tone === 'critical' ? c.critical : tone === 'accent' ? c.accent : c.inkStrong;
+  const ink = toneColor(c, tone, c.inkStrong);
   return (
     <Pressable
       onPress={disabled ? undefined : onPress}

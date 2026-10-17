@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AText, PrimaryButton } from '../../amazen';
-import { JobSheet, QuietButton } from '../job-ui';
+import { AText, PrimaryButton, QuietButton } from '../../amazen';
+import { JobSheet } from '../job-ui';
 
 /**
  * "You're not clocked in" — asked when a step would start work and the member

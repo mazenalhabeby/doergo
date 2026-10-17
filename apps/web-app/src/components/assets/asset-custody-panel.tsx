@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AssetHandoverDialog } from "./asset-handover-dialog"
 import { keys } from "@/lib/query-keys"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * Who has had this, and what it cost each of them.
@@ -52,7 +53,9 @@ export function AssetCustodyPanel({
   if (q.isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+        ))}
       </div>
     )
   }
@@ -77,9 +80,7 @@ export function AssetCustodyPanel({
       )}
 
       {periods.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          {t("custody.empty", "Nobody has held this yet.")}
-        </p>
+        <EmptyNote>{t("custody.empty", "Nobody has held this yet.")}</EmptyNote>
       ) : (
         /*
           A rail down the left, one node per period. It is a timeline because
@@ -87,7 +88,9 @@ export function AssetCustodyPanel({
           already answered by the panel beside the record.
         */
         <ol className="relative space-y-2 border-l border-border/70 pl-5">
-          {periods.map((p) => <PeriodRow key={p.id} period={p} />)}
+          {periods.map((p) => (
+            <PeriodRow key={p.id} period={p} />
+          ))}
         </ol>
       )}
 
@@ -102,9 +105,13 @@ export function AssetCustodyPanel({
             {t("custody.unattributed", "Outside anybody’s custody")}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {t("custody.unattributedHint", "{{count}} entries dated when nobody held it — the organisation’s own cost.", {
-              count: unattributed.entries,
-            })}
+            {t(
+              "custody.unattributedHint",
+              "{{count}} entries dated when nobody held it — the organisation’s own cost.",
+              {
+                count: unattributed.entries,
+              },
+            )}
           </p>
           <p className="mt-1.5 text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
             {formatCents(unattributed.outCents)}
@@ -120,9 +127,13 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
   const open = !period.endedAt
   const name = period.user
     ? personName(period.user) || period.user.email || "—"
-    : period.customer?.name ?? t("assetRecords.formerMember", "Former member")
+    : (period.customer?.name ?? t("assetRecords.formerMember", "Former member"))
   const days = custodyDays(period as never)
-  const href = period.userId ? `/members/${period.userId}` : period.customerId ? `/customers/${period.customerId}` : null
+  const href = period.userId
+    ? `/members/${period.userId}`
+    : period.customerId
+      ? `/customers/${period.customerId}`
+      : null
 
   const body = (
     <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
@@ -138,10 +149,14 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
         {period.reason && <p className="mt-0.5 truncate text-xs text-muted-foreground">{period.reason}</p>}
       </div>
       <div className="shrink-0 text-right">
-        <p className={cn(
-          "text-sm font-semibold tabular-nums",
-          period.totals.netCents >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400",
-        )}>
+        <p
+          className={cn(
+            "text-sm font-semibold tabular-nums",
+            period.totals.netCents >= 0
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-amber-600 dark:text-amber-400",
+          )}
+        >
           {period.totals.netCents >= 0 ? "+" : "−"} {formatCents(Math.abs(period.totals.netCents))}
         </p>
         <p className="text-[11px] text-muted-foreground">
@@ -153,10 +168,12 @@ function PeriodRow({ period }: { period: CustodyPeriodDto }) {
 
   return (
     <li className="relative">
-      <span className={cn(
-        "absolute -left-[1.4rem] top-4 h-2.5 w-2.5 rounded-full ring-4 ring-background",
-        open ? "bg-emerald-500" : "bg-border",
-      )} />
+      <span
+        className={cn(
+          "absolute -left-[1.4rem] top-4 h-2.5 w-2.5 rounded-full ring-4 ring-background",
+          open ? "bg-emerald-500" : "bg-border",
+        )}
+      />
       {href ? <Link href={href}>{body}</Link> : body}
     </li>
   )

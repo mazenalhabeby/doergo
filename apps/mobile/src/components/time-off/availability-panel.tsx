@@ -2,9 +2,9 @@ import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { formatShortDate } from '../../lib/utils';
-import { AText, Well } from '../amazen';
-import { Banner, SectionLabel } from '../job/job-ui';
+import { AText, Well, Banner, SectionLabel } from '../amazen';
 import type { AvailabilityInsights } from './helpers';
+import { LoadingLine } from '../loading-line';
 
 /** Who else is out over the picked range, and how thin the team gets — for somebody who may read it. */
 export function TeamAvailabilityPanel({
@@ -27,7 +27,7 @@ export function TeamAvailabilityPanel({
       {failed ? (
         <AText variant="caption" tone="muted">{t('timeOff.teamAvailability.unableToLoad')}</AText>
       ) : loading || !insights ? (
-        <AText variant="caption" tone="muted">{t('common.loading', 'Loading…')}</AText>
+        <LoadingLine />
       ) : (
         <>
           <AText variant="body" tone="strong" style={{ fontSize: 14 }}>

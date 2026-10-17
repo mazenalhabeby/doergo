@@ -5,8 +5,7 @@ import { parseStoredStepForm, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { StepSubmission } from '../../lib/api';
-import { AText, Well, WellDivider } from '../amazen';
-import { SectionLabel } from './job-ui';
+import { AText, Well, WellDivider, SectionLabel } from '../amazen';
 import { fieldLabel, shownAnswer } from './step-form-logic';
 import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
 

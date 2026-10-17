@@ -2,8 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, Well } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, Well, SectionLabel } from '../amazen';
 import { formatDuration } from '@hbcfield/shared/client';
 
 /**

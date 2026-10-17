@@ -12,9 +12,8 @@ import { useDocumentRequirements } from '../../contexts/document-requirements-co
 import { useSyncStatus } from '../../offline/offline-context';
 import { STILL_MINE } from '../../offline/actions/outcome';
 import { stillNeeded, type AskRequirement, type AskedRow } from '../../lib/document-asks';
-import { AText, FilterPill, FilterRow, SearchField, Well } from '../amazen';
+import { AText, FilterPill, FilterRow, SearchField, Well, Pill, SectionLabel } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { Pill, SectionLabel } from '../job/job-ui';
 import { dayOf, useDocumentTag, usePeriod } from './document-row';
 import { httpsUrl, openSafeUrl } from '../../lib/safe-links';
 

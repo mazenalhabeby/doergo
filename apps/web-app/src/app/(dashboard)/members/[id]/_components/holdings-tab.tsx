@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { CustodySpan, HasItNowBadge } from "@/components/assets/custody-parts"
 import { Skeleton } from "@/components/ui/skeleton"
 import { keys } from "@/lib/query-keys"
+import { DashedEmptyBox } from "@/components/ui/empty-note"
 
 /**
  * What this member has, and what they have had.
@@ -32,7 +33,9 @@ export function HoldingsTab({ memberId }: { memberId: string }) {
   if (q.isLoading) {
     return (
       <div className="space-y-2">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-xl" />)}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+        ))}
       </div>
     )
   }
@@ -43,12 +46,9 @@ export function HoldingsTab({ memberId }: { memberId: string }) {
 
   if (periods.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border py-16 text-center">
-        <Package className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">
-          {t("custody.memberEmpty", "Nothing has been handed to this member.")}
-        </p>
-      </div>
+      <DashedEmptyBox icon={Package}>
+        {t("custody.memberEmpty", "Nothing has been handed to this member.")}
+      </DashedEmptyBox>
     )
   }
 
@@ -64,21 +64,21 @@ export function HoldingsTab({ memberId }: { memberId: string }) {
       <div className="grid gap-2 sm:grid-cols-3">
         <Stat label={t("custody.holdingNow", "Holding now")} value={String(now.length)} />
         <Stat label={t("custody.everHeld", "Held in total")} value={String(periods.length)} />
-        <Stat
-          label={t("custody.spendTotal", "Spent on them")}
-          value={formatCents(spend)}
-          tone="out"
-        />
+        <Stat label={t("custody.spendTotal", "Spent on them")} value={formatCents(spend)} tone="out" />
       </div>
 
       {now.length > 0 && (
         <Section title={t("custody.holdingNow", "Holding now")}>
-          {now.map((p) => <HoldingRow key={p.id} period={p} />)}
+          {now.map((p) => (
+            <HoldingRow key={p.id} period={p} />
+          ))}
         </Section>
       )}
       {past.length > 0 && (
         <Section title={t("custody.previously", "Previously")}>
-          {past.map((p) => <HoldingRow key={p.id} period={p} />)}
+          {past.map((p) => (
+            <HoldingRow key={p.id} period={p} />
+          ))}
         </Section>
       )}
     </div>
@@ -98,10 +98,12 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "ou
   return (
     <div className="rounded-xl border border-border bg-card p-3">
       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={cn(
-        "text-lg font-semibold tabular-nums",
-        tone === "out" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
-      )}>
+      <p
+        className={cn(
+          "text-lg font-semibold tabular-nums",
+          tone === "out" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
+        )}
+      >
         {value}
       </p>
     </div>
@@ -135,9 +137,7 @@ function HoldingRow({ period }: { period: CustodyPeriodDto }) {
         <p className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
           {formatCents(period.totals.outCents)}
         </p>
-        <p className="text-[11px] text-muted-foreground">
-          {t("custody.whileHeld", "while they had it")}
-        </p>
+        <p className="text-[11px] text-muted-foreground">{t("custody.whileHeld", "while they had it")}</p>
       </div>
     </Link>
   )

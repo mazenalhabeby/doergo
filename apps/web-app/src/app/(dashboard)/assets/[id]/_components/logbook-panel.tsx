@@ -3,10 +3,15 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Gauge, Loader2, Receipt, Trash2} from "lucide-react"
+import { AlertTriangle, Gauge, Loader2, Receipt, Trash2 } from "lucide-react"
 
 import {
-  formatCents, kindMeters, logTypesForKind, findLogType, personName, logValueLines,
+  formatCents,
+  kindMeters,
+  logTypesForKind,
+  findLogType,
+  personName,
+  logValueLines,
   type KindShape,
 } from "@hbcfield/shared/client"
 import { assetsApi, type AssetLogDue, type AssetLogEntry } from "@/lib/api"
@@ -22,6 +27,7 @@ import { dateLocale } from "@/lib/format-date"
 import Link from "next/link"
 import { Inbox } from "lucide-react"
 import { logbookKeys, Kpi, DueRow, EntryRow } from "./entry-row"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * The logbook: what has been done to this thing, by whom, and what comes next.
@@ -96,7 +102,9 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
       {/* ── KPIs ─────────────────────────────────────────────────────── */}
       {summaryQ.isLoading ? (
         <div className="grid gap-2 sm:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
         </div>
       ) : summary ? (
         <div className="grid gap-2 sm:grid-cols-3">
@@ -108,7 +116,9 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
                 const r = summary.readings[m.key]
                 return (
                   <p key={m.key} className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="flex items-center gap-1 text-muted-foreground"><Gauge className="h-3.5 w-3.5" /> {m.label}</span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Gauge className="h-3.5 w-3.5" /> {m.label}
+                    </span>
                     <span className="font-semibold tabular-nums text-foreground">
                       {r ? `${r.value.toLocaleString()}${m.unit ? ` ${m.unit}` : ""}` : "—"}
                     </span>
@@ -145,23 +155,34 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
       {summary && (summary.byAuthor.some((a) => a.outCents > 0) || typeSpend.length > 0) && (
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">{t("assetLog.byPerson", "Who spent what")}</p>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("assetLog.byPerson", "Who spent what")}
+            </p>
             <div className="space-y-2">
-              {summary.byAuthor.filter((a) => a.outCents > 0).map((a) => (
-                <div key={a.authorId ?? "nobody"}>
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="truncate text-foreground">{personName(a.author) || t("assetLog.unknownAuthor", "Not recorded")}</span>
-                    <span className="tabular-nums font-medium text-foreground">{formatCents(a.outCents)}</span>
+              {summary.byAuthor
+                .filter((a) => a.outCents > 0)
+                .map((a) => (
+                  <div key={a.authorId ?? "nobody"}>
+                    <div className="flex items-baseline justify-between text-sm">
+                      <span className="truncate text-foreground">
+                        {personName(a.author) || t("assetLog.unknownAuthor", "Not recorded")}
+                      </span>
+                      <span className="tabular-nums font-medium text-foreground">{formatCents(a.outCents)}</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-foreground/60"
+                        style={{ width: `${(a.outCents / maxAuthorOut) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-foreground/60" style={{ width: `${(a.outCents / maxAuthorOut) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
           <div className="rounded-xl border border-border bg-card p-3">
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">{t("assetLog.byType", "By type")}</p>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t("assetLog.byType", "By type")}
+            </p>
             {typeSpend.length > 0 && (
               <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
                 {typeSpend.map((x) => (
@@ -197,7 +218,11 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
           aria-label={t("assetLog.filterType", "Type")}
         >
           <option value="">{t("assetLog.allTypes", "All types")}</option>
-          {types.map((x) => <option key={x.key} value={x.key}>{logTypeLabel(t, x)}</option>)}
+          {types.map((x) => (
+            <option key={x.key} value={x.key}>
+              {logTypeLabel(t, x)}
+            </option>
+          ))}
         </select>
         <select
           value={authorFilter}
@@ -206,16 +231,22 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
           aria-label={t("assetLog.filterPerson", "Person")}
         >
           <option value="">{t("assetLog.everyone", "Everyone")}</option>
-          {people.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          {people.map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
         </select>
       </div>
 
       {logQ.isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          ))}
         </div>
       ) : entries.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLog.empty", "Nothing logged yet.")}</p>
+        <EmptyNote>{t("assetLog.empty", "Nothing logged yet.")}</EmptyNote>
       ) : (
         <div className="space-y-2">
           {entries.map((e) => (
@@ -231,7 +262,12 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
           ))}
           {logQ.hasNextPage && (
             <div className="flex justify-center pt-1">
-              <Button variant="outline" size="sm" disabled={logQ.isFetchingNextPage} onClick={() => logQ.fetchNextPage()}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={logQ.isFetchingNextPage}
+                onClick={() => logQ.fetchNextPage()}
+              >
                 {logQ.isFetchingNextPage && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                 {t("assetLog.loadMore", "Show older entries")}
               </Button>

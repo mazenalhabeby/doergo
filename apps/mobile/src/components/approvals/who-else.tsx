@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { approvalWhyText, type ApprovalItem, type ApprovalRouting, type ApprovalT } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { approvalsApi } from '../../lib/api';
-import { AText } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, SectionLabel } from '../amazen';
 
 /**
  * Why this member sees the item, who else could decide it, and who is told —

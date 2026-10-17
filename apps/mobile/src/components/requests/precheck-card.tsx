@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDuration, type RequestPrecheck } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
+import { toneTint } from '../../theme/tone-color';
 
 type Tone = 'critical' | 'warn' | 'accent' | 'muted';
 
@@ -42,7 +43,7 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
   if (precheck.secondApproval) lines.push({ tone: 'accent', text: t('requests.precheck.second', { role: precheck.secondApproval }) });
   if (!lines.length) lines.push({ tone: 'muted', text: t(kind === 'LEAVE' ? 'requests.precheck.fineLeave' : 'requests.precheck.fine') });
 
-  const bg = lines[0]!.tone === 'critical' ? c.criticalTint : lines[0]!.tone === 'warn' ? c.warnTint : c.accentTint;
+  const bg = toneTint(c, lines[0]!.tone, c.accentTint);
   return (
     <View
       accessibilityRole="summary"

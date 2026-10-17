@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { PickedImage } from '../../../hooks/useImagePicker';
-import { AText, PrimaryButton } from '../../amazen';
-import { Banner, ChoiceRow, JobField, JobSheet, SectionLabel } from '../job-ui';
+import { AText, PrimaryButton, Banner, ChoiceRow, JobField, SectionLabel } from '../../amazen';
+import { JobSheet } from '../job-ui';
 import { PhotoPicks, usePhotoPicks } from '../photo-picks';
 import { issueReason, type Severity } from '../job-logic';
 

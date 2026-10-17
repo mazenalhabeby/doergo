@@ -20,6 +20,7 @@ import { useSpaceScope } from "@/hooks/use-space-scope"
 import { useAuth } from "@/contexts/auth-context"
 import { SpaceTabs } from "@/components/space-tabs"
 import { PortalTab } from "../locations/[id]/_components/portal-tab"
+import { DashedEmptyBox } from "@/components/ui/empty-note"
 
 export default function PortalsPage() {
   const { t } = useTranslation()
@@ -51,12 +52,9 @@ export default function PortalsPage() {
       )}
 
       {scope.ready && !scope.spaceId ? (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center">
-          <LayoutTemplate className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground">
-            {t("portal.noWorkspace", "No workspace has a client portal switched on yet.")}
-          </p>
-        </div>
+        <DashedEmptyBox icon={LayoutTemplate}>
+          {t("portal.noWorkspace", "No workspace has a client portal switched on yet.")}
+        </DashedEmptyBox>
       ) : scope.spaceId ? (
         <PortalTab
           spaceId={scope.spaceId}

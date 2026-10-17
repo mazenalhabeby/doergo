@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDuration, personName } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import type { JobTimeSplit, JobTimeView } from '../../lib/api';
-import { AText, LiveDot } from '../amazen';
-import { SectionLabel } from './job-ui';
+import { AText, LiveDot, SectionLabel } from '../amazen';
 
 /**
  * Job time on the job page — the mockup's "Working" card.

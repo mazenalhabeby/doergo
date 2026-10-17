@@ -11,8 +11,8 @@ import { canScanCards } from '../../lib/card-scan';
 import { canReadContacts } from '../../lib/phone-contacts';
 import { CLIENT_LOCALE_OPTIONS, newClientInput, type NewClientForm } from '../../lib/client-locale';
 import { useQueuedCreate } from '../../offline/actions/queued-create';
-import { AText, FilterPill, FilterRow, PrimaryButton } from '../amazen';
-import { JobField, JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
+import { AText, FilterPill, FilterRow, PrimaryButton, JobField, SectionLabel, SheetOption } from '../amazen';
+import { JobSheet } from '../job/job-ui';
 import { ImportContactsGlyph, ScanCardGlyph } from '../glyphs/tile-glyphs';
 
 const EMPTY: NewClientForm = { name: '', contactName: '', email: '', phone: '', type: 'COMPANY' };

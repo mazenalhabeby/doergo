@@ -9,6 +9,7 @@ import { BlurSheet } from '../blur-sheet';
 import { SheetPanel } from '../sheet-panel';
 import { AText, Chip, Eyebrow } from '../amazen';
 import { groupIssues, lookFor, severityShown, severityTone, unreadFor } from '../home/issue-status';
+import { toneColor } from '../../theme/tone-color';
 
 /**
  * MY ISSUES — grouped by whether it is still yours to worry about.
@@ -166,7 +167,7 @@ function Row({
   const look = lookFor(issue.status);
   const unread = unreadFor(issue, viewerId);
   const who = issue.assigneeName?.trim() || '';
-  const tone = look.tone === 'warn' ? c.warn : look.tone === 'accent' ? c.accent : c.inkMuted;
+  const tone = toneColor(c, look.tone, c.inkMuted);
   /*
     ⚠️ "SEEN BY" AND "IS ON IT" WITH NOBODY'S NAME IN THEM. The long phrasings
     interpolate `{{name}}` from the ASSIGNEE, and an issue can be acknowledged

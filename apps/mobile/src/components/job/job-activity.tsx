@@ -4,9 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import type { TaskEvent } from '../../lib/api';
-import { AText } from '../amazen';
+import { AText, Initials, JobField, RoundButton, SectionLabel } from '../amazen';
 import { SendGlyph } from './job-glyphs';
-import { Initials, JobField, RoundButton, SectionLabel } from './job-ui';
 import type { JobComment, LocalEvent } from './use-job';
 import { personName } from '@hbcfield/shared/client';
 

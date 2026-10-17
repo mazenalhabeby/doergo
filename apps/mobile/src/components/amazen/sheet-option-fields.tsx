@@ -1,8 +1,9 @@
 /** JobField, ChoiceRow and QuietButton from sheet-option.tsx — moved here unchanged (2026-10-17 line-length split). */
+import { toneColor } from '../../theme/tone-color';
 import React from 'react';
 import { Pressable, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
-import { AText } from '../amazen';
+import { AText } from './text';
 
 /* ---------------- fields ---------------- */
 
@@ -102,7 +103,7 @@ export function QuietButton({
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const ink = tone === 'critical' ? c.critical : tone === 'accent' ? c.accent : c.inkStrong;
+  const ink = toneColor(c, tone, c.inkStrong);
   return (
     <Pressable
       onPress={disabled ? undefined : onPress}

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/theme-context';
 import { useImagePicker, type PickedImage } from '../../hooks/useImagePicker';
 import type { MediaPurpose } from '../../permissions/purposes';
-import { QuietButton } from './job-ui';
+import { QuietButton } from '../amazen';
 
 /**
  * Photos picked for something about to be sent — the camera first, the gallery

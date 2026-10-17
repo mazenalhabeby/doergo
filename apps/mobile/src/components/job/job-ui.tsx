@@ -6,7 +6,7 @@ import { SheetPanel } from '../sheet-panel';
 import { AText, LiveDot } from '../amazen';
 import type { GlyphProps } from '../glyphs/glyphs';
 import { personInitials } from '@hbcfield/shared/client';
-export { SectionLabel, StateEyebrow, Initials } from './state-eyebrow';
+export { SectionLabel, StateEyebrow, Initials } from '../amazen/state-eyebrow';
 export {
   ReceiptRow,
   SheetOption,
@@ -18,7 +18,7 @@ export {
   JobField,
   ChoiceRow,
   QuietButton,
-} from './sheet-option';
+} from '../amazen/sheet-option';
 
 /**
  * The job page's small parts — `docs/design/job-flow.html`, `.disc`, `.banner`,

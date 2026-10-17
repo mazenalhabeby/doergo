@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { useTheme } from '../../contexts/theme-context';
 import { AText } from '../amazen';
+import { toneColor } from '../../theme/tone-color';
 
 /** DocumentsScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export function Fact({
@@ -16,7 +17,7 @@ export function Fact({
 }) {
   const { amazen } = useTheme();
   const c = amazen.color;
-  const color = tone === 'accent' ? c.accent : tone === 'warn' ? c.warn : tone === 'critical' ? c.critical : c.inkStrong;
+  const color = toneColor(c, tone, c.inkStrong);
   return (
     <View
       style={{

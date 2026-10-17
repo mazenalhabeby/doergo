@@ -9,9 +9,9 @@ import { useToast } from '../../island/island-context';
 import { useBiometricUnlock } from '../../hooks/use-biometric-unlock';
 import { openUpdate } from '../../lib/in-app-updates';
 import { accountApi, passwordApi } from '../../lib/api';
-import { AText, PrimaryButton, Well } from '../amazen';
+import { AText, PrimaryButton, Well, SectionLabel, SheetOption } from '../amazen';
 import { BiometricIcon } from '../biometric-icon';
-import { JobSheet, SectionLabel, SheetOption } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 import { SettingsPage, SwitchRow } from './settings-ui';
 import { personName } from '@hbcfield/shared/client';
 

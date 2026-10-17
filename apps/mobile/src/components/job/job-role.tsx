@@ -6,8 +6,7 @@ import { tasksApi } from '../../lib/api';
 import { refusalText } from '../../lib/distance';
 import { useTheme } from '../../contexts/theme-context';
 import { useToast } from '../../island/island-context';
-import { AText } from '../amazen';
-import { QuietButton, SectionLabel } from './job-ui';
+import { AText, QuietButton, SectionLabel } from '../amazen';
 
 type RoleTask = {
   id: string;

@@ -20,13 +20,13 @@ import { useSocketContext } from '../../contexts/socket-context';
 import { chatApi } from '../../lib/api';
 import { useOffline } from '../../offline/offline-context';
 import { useAppResume } from '../../lib/app-resume';
-import { AText, Well, WellDivider, useTabSafe } from '../amazen';
-import { Banner } from '../job/job-ui';
+import { AText, Well, WellDivider, useTabSafe, Banner } from '../amazen';
 import { ConversationAvatar } from '../chat/chat-rows';
 import { Arrive } from '../amazen/motion';
 import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { debounce } from '../chat/live-thread';
 import { refreshChatBadge } from '../../lib/chat-badge';
+import { LoadingLine } from '../loading-line';
 
 /**
  * Search inside the caller's own conversations — ONLINE ONLY: the phone keeps
@@ -186,9 +186,7 @@ export function useTeamMessages({ header }: Pick<{ header: React.ReactElement },
       {search.failed ? (
         <Banner tone="warn" text={t('chat.searchOnline', 'Searching messages needs a connection.')} />
       ) : search.hits === null ? (
-        <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
-          {t('common.loading', 'Loading…')}
-        </AText>
+        <LoadingLine onGlass />
       ) : search.hits.length === 0 ? (
         <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
           {t('chat.noMessagesFound', 'No messages with these words.')}

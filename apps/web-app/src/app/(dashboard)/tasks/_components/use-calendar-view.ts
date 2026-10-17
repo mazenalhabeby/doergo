@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { startOfDay } from "@/lib/local-days"
 import { useStepConfigs } from "@/hooks/use-step-config"
 import type { Task } from "@/lib/api"
-import { dateLocale } from "@/lib/format-date"
+import { formatMonthYear } from "@/lib/format-date"
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ export interface CalendarViewProps {
 }
 
 /** CalendarView's state and handlers — everything before its markup, moved here unchanged. */
-export function useCalendarView({ tasks }: Pick<CalendarViewProps, 'tasks'>) {
+export function useCalendarView({ tasks }: Pick<CalendarViewProps, "tasks">) {
   const { t } = useTranslation()
   const stepOf = useStepConfigs(tasks)
   const today = startOfDay(new Date())
@@ -123,18 +123,13 @@ export function useCalendarView({ tasks }: Pick<CalendarViewProps, 'tasks'>) {
       const rows: MultiDayBar[][] = []
 
       // Find bars that overlap this week
-      const overlapping = multiDayBars.filter(
-        (bar) => bar.startDay <= weekEnd && bar.endDay >= weekStart
-      )
+      const overlapping = multiDayBars.filter((bar) => bar.startDay <= weekEnd && bar.endDay >= weekStart)
 
       for (const bar of overlapping) {
         // Find a row that has no conflict
         let placed = false
         for (const row of rows) {
-          const conflict = row.some(
-            (existing) =>
-              existing.startDay <= bar.endDay && existing.endDay >= bar.startDay
-          )
+          const conflict = row.some((existing) => existing.startDay <= bar.endDay && existing.endDay >= bar.startDay)
           if (!conflict) {
             row.push(bar)
             placed = true
@@ -159,7 +154,7 @@ export function useCalendarView({ tasks }: Pick<CalendarViewProps, 'tasks'>) {
 
   const multiDayAreaHeight = maxMultiDayRows * 28 + 8
 
-  const monthLabel = viewDate.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })
+  const monthLabel = formatMonthYear(viewDate)
   const isCurrentMonth = isSameMonth(today, viewDate)
 
   return {

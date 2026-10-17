@@ -6,6 +6,7 @@ import { AText } from '../amazen';
 import { GlyphTile } from './glyph-tile';
 import type { GlyphProps } from '../glyphs/glyphs';
 import type { StripTone } from './action-strip-state';
+import { toneColor, toneTint } from '../../theme/tone-color';
 
 /**
  * ONE box for every strip under the home header — what the app needs from the
@@ -39,9 +40,9 @@ export function StripBox({
     Animated.timing(arrive, { toValue: 1, duration: 420, useNativeDriver: true }).start();
   }, [arrive]);
 
-  const ink = tone === 'crit' ? c.critical : tone === 'warn' ? c.warn : c.ink;
+  const ink = toneColor(c, tone, c.ink);
   const ground = over(`${amazen.gradient.ground[1]}80`, amazen.gradient.ground[0]);
-  const tint = over(tone === 'crit' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.tile, ground);
+  const tint = over(toneTint(c, tone, c.tile), ground);
 
   return (
     <Animated.View

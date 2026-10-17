@@ -32,6 +32,7 @@ import { STATUS_STYLES, fmt, Stat, Legend } from "./my-time-off-page-helpers"
 import { MyTimeOffPageAllowanceTitleWork } from "./my-time-off-page-allowance-title-work"
 import { MyTimeOffPageMy } from "./my-time-off-page-my"
 import { MyTimeOffPageMy2 } from "./my-time-off-page-my2"
+import { PageNotice } from "@/components/ui/empty-note"
 
 /*
   Requests — this page grew from "time off" into everything a member asks the
@@ -87,9 +88,9 @@ export default function MyTimeOffPage() {
   // After every hook — an early return above them changes the hook order between renders.
   if (!canSee) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center text-sm text-muted-foreground">
+      <PageNotice>
         {t("timeOff.my.noAccess")}
-      </div>
+      </PageNotice>
     )
   }
 

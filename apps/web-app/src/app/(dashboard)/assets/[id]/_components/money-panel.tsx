@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { dateLocale } from "@/lib/format-date"
 import Link from "next/link"
 import { Inbox } from "lucide-react"
+import { EmptyNote } from "@/components/ui/empty-note"
 
 /**
  * What this thing has cost and earned.
@@ -85,9 +86,9 @@ export function MoneyPanel({
 
   if (shape.money.categories.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
+      <EmptyNote>
         {t("assetMoney.noCategories", "This kind tracks money but has no categories yet — add some on the kind.")}
-      </p>
+      </EmptyNote>
     )
   }
 
@@ -161,7 +162,7 @@ export function MoneyPanel({
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
         </div>
       ) : entries.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">{t("assetMoney.empty", "Nothing logged yet.")}</p>
+        <EmptyNote>{t("assetMoney.empty", "Nothing logged yet.")}</EmptyNote>
       ) : (
         <div className="space-y-2">
           {entries.map((e) => {

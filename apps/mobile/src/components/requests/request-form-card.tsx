@@ -10,8 +10,7 @@ import {
   type RequestKind,
 } from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
-import { AText, FilterPill, FilterRow, PrimaryButton, Well } from '../amazen';
-import { JobField, QuietButton, SectionLabel } from '../job/job-ui';
+import { AText, FilterPill, FilterRow, PrimaryButton, Well, JobField, QuietButton, SectionLabel } from '../amazen';
 import { DaySheet, TimeSheet } from '../new-job/when-sheets';
 import type { RequestOptions } from '../../lib/api/technicians';
 import { RequestKindGlyph } from './request-glyphs';

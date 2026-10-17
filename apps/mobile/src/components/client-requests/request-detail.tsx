@@ -11,9 +11,9 @@ import type { TriageInput } from '../../lib/api/portal-office';
 import { holdsIn } from '../../lib/permissions';
 import { formatDay } from '../../lib/money';
 import { useResponsive } from '../../lib/responsive';
-import { AText, ChoicePill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader } from '../amazen';
+import { AText, ChoicePill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader, Pill, SectionLabel, SheetOption } from '../amazen';
 import { centeredContent } from '../screen-container';
-import { JobSheet, Pill, SectionLabel, SheetOption } from '../job/job-ui';
+import { JobSheet } from '../job/job-ui';
 import { knownRequest, requestsOfPortal, type ListedRequest } from './requests-store';
 
 const PRIORITIES: TriageInput['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];

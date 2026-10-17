@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../../contexts/theme-context';
-import { AText } from '../../amazen';
+import { AText, SheetOption } from '../../amazen';
 import { NavigateGlyph } from '../../glyphs';
 import { inkGlyph } from '../../amazen/ink-icon';
 import { EditGlyph, IssueGlyph } from '../job-glyphs';
-import { JobSheet, SheetOption } from '../job-ui';
+import { JobSheet } from '../job-ui';
 import type { MoreOption } from '../job-logic';
 
 const ChatInk = inkGlyph('chat');

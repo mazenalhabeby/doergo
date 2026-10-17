@@ -13,8 +13,7 @@ import {
   type ReminderPresetKey,
 } from '@hbcfield/shared/client';
 import { PressableScale } from '../pressable-scale';
-import { AText, FilterRow } from '../amazen';
-import { SectionLabel } from '../job/job-ui';
+import { AText, FilterRow, SectionLabel } from '../amazen';
 import { DateField } from '../date-field';
 import { TimePickerModal } from '../time-picker-modal';
 import { ChoiceChip } from './client-fields';

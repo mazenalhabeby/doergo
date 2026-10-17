@@ -7,9 +7,9 @@ import { useTimeFormat } from '../../hooks/useTimeFormat';
 import { useToast } from '../../island/island-context';
 import { tasksApi, type CrewView } from '../../lib/api';
 import { refusalText } from '../../lib/distance';
-import { AText, Well } from '../amazen';
+import { AText, Well, SectionLabel, SheetOption } from '../amazen';
 import { TickGlyph } from './job-glyphs';
-import { JobSheet, SectionLabel, SheetOption } from './job-ui';
+import { JobSheet } from './job-ui';
 import { patchOptimistic, tickOptimistic, type CheckItem, type ChecklistMode } from './job-logic';
 
 const firstName = (u?: { firstName: string } | null) => u?.firstName ?? '';
