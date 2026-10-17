@@ -299,3 +299,18 @@ guard-pinned text, one-component files with nothing movable. ⚠️ Full Prettie
 5. Service DTOs that were missing fields the service read through casts (now declared):
    `ListEmployeesDto.scopeSpaceIds`, `GetEmployeeDetailDto.viewerSpaceIds/canViewTracking`,
    `UpdateMemberProfileDto` (11 fields), task history `startDate/endDate`.
+
+**Phase 2b — notification events: string event names 215 → 1** (`event()`, `emitEvent()`, `eventPattern()`).
+Found, kept, for the user:
+6. ⚠️ **Likely lost notification:** `task_comment_added` is emitted (`task-activity.service.ts`) but nothing
+   listens — the handler is `comment_added`.
+7. ⚠️ join_request_approved / _rejected read `userName`, which the gateway never sends.
+8. Read but maybe missing: chat_message `organizationId` on SYSTEM lines; worker_location_updated /
+   presence_changed `organizationId`; invitation_created `invitationCode` may be null.
+9. ~20 events send fields no handler reads (typed `SentNotRead<…>`; list in contracts/events-*.ts).
+
+**Phase 3 — API performance (local, 44 route/role pairs).** Most routes 10–60 ms, few queries; the hot tables
+already have matching indexes. Fixed: the clock-out sheet resolved workspace workflows one query each →
+two queries (~27 → ~15 statements, p50 200 → 106 ms). Not fixed (design changes, for the user): the
+approvals inbox reads each kind's own route (~100 statements; by design); calendar rules read the
+organization/workspace/holidays ~3× per request.
