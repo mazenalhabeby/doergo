@@ -3,7 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { crewPresence, pausesAtClockOut, stepCapabilities, stepStartsWork } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowIds } from '../../../common/space-workflow.util';
 import { JobTimeService } from './job-time.service';
 import { NEVER_WORKING, Candidate } from './job-pause-helpers';
 
@@ -54,14 +54,12 @@ export abstract class JobPauseBase {
     });
     if (rows.length === 0) return [];
 
-    // One workflow lookup per distinct flow, from the per-org cache.
-    const spaceFlow = new Map<string, Promise<string | null>>();
-    const flowOf = (r: Candidate) => {
-      if (r.workflowId) return Promise.resolve(r.workflowId);
-      if (!r.spaceId) return Promise.resolve(null);
-      if (!spaceFlow.has(r.spaceId)) spaceFlow.set(r.spaceId, resolveSpaceDefaultWorkflowId(this.prisma, r.spaceId));
-      return spaceFlow.get(r.spaceId)!;
-    };
+    // One workflow lookup per distinct flow, from the per-org cache; every space's default in one batch.
+    const spaceFlow = await resolveSpaceDefaultWorkflowIds(
+      this.prisma,
+      rows.filter((r) => !r.workflowId).map((r) => r.spaceId),
+    );
+    const flowOf = async (r: Candidate) => r.workflowId ?? (r.spaceId ? (spaceFlow.get(r.spaceId) ?? null) : null);
     const flows = new Map<string | null, Promise<any>>();
     const working = await Promise.all(
       rows.map(async (r) => {

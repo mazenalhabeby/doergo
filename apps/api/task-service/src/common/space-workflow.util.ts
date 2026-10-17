@@ -35,6 +35,38 @@ export async function resolveSpaceDefaultWorkflowId(
 }
 
 /**
+ * The same rule for many spaces at once: two queries, whatever the count.
+ *
+ * Callers resolving per task asked once per space (and once more for a space with
+ * no row) — 26 statements for one employee's clock-out sheet. One default per
+ * space is a unique index (`space_workflows_one_default_per_space`), so the batch
+ * answers exactly what `resolveSpaceDefaultWorkflowId` answers for each space.
+ */
+export async function resolveSpaceDefaultWorkflowIds(
+  prisma: PrismaService,
+  spaceIds: Iterable<string | null | undefined>,
+): Promise<Map<string, string | null>> {
+  const ids = [...new Set([...spaceIds].filter((id): id is string => !!id))];
+  const out = new Map<string, string | null>();
+  if (!ids.length) return out;
+  const offered = await prisma.spaceWorkflow.findMany({
+    where: { spaceId: { in: ids }, isDefault: true },
+    select: { spaceId: true, workflowId: true },
+  });
+  for (const row of offered) out.set(row.spaceId, row.workflowId);
+  const missing = ids.filter((id) => !out.has(id));
+  if (missing.length) {
+    const spaces = await prisma.companyLocation.findMany({
+      where: { id: { in: missing } },
+      select: { id: true, workflowId: true },
+    });
+    const column = new Map(spaces.map((s) => [s.id, s.workflowId ?? null]));
+    for (const id of missing) out.set(id, column.get(id) ?? null);
+  }
+  return out;
+}
+
+/**
  * Every workflow a space offers, default first.
  *
  * Phase 3 uses this to decide what task creation may choose from. Until then it

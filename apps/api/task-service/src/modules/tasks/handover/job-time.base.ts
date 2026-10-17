@@ -18,7 +18,7 @@ import {
 } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
-import { resolveSpaceDefaultWorkflowId } from '../../../common/space-workflow.util';
+import { resolveSpaceDefaultWorkflowId, resolveSpaceDefaultWorkflowIds } from '../../../common/space-workflow.util';
 import {
   TaskRef,
   EventRow,
@@ -45,9 +45,17 @@ export abstract class JobTimeBase {
   ) {}
 
 
-  /** How each step of a job counts, from its flow — one lookup per distinct flow per call. */
-  protected kindsFor(organizationId: string) {
+  /**
+   * How each step of a job counts, from its flow — one lookup per distinct flow per call.
+   * `spaces`: the spaces about to be asked, resolved in one batch instead of one query each.
+   */
+  protected kindsFor(organizationId: string, spaces?: Iterable<string | null | undefined>) {
     const spaceFlow = new Map<string, Promise<string | null>>();
+    const asked = [...new Set(spaces ?? [])].filter((id): id is string => !!id);
+    if (asked.length) {
+      const batch = resolveSpaceDefaultWorkflowIds(this.prisma, asked);
+      for (const id of asked) spaceFlow.set(id, batch.then((m) => m.get(id) ?? null));
+    }
     const flows = new Map<string | null, Promise<(s: string) => JobTimeKind | null>>();
     return async (t: Pick<TaskRef, 'workflowId' | 'spaceId'>) => {
       let flowId: string | null = t.workflowId;
@@ -236,7 +244,7 @@ export abstract class JobTimeBase {
    */
   protected async timesForWorker(userId: string, organizationId: string, from: Date | null, until: Date, include: string[] = []) {
     const tasks = await this.workerTasks(userId, organizationId, from, until, include);
-    const kinds = this.kindsFor(organizationId);
+    const kinds = this.kindsFor(organizationId, tasks.filter((t) => !t.workflowId).map((t) => t.spaceId));
     const events = await this.eventsOf(tasks.map((t) => t.id));
     const jobs = await Promise.all(
       tasks.map(async (t) => {
