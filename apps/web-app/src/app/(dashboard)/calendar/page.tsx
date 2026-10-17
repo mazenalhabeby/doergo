@@ -28,10 +28,15 @@ import { WeekGrid } from "./_components/week-grid"
 import { MonthGrid } from "./_components/month-grid"
 import { AgendaList } from "./_components/agenda-list"
 import { ItemPopover } from "./_components/item-popover"
-import { EventDialog } from "./_components/event-dialog"
-import { CreateTaskDialog } from "../tasks/_components/create-task-dialog"
 import { Rail } from "./_components/rail"
 import { keys } from "@/lib/query-keys"
+import dynamic from "next/dynamic"
+import { useLatched } from "@/hooks/use-latched"
+
+// Both dialogs open on a click; they are downloaded the first time one opens.
+const EventDialog = dynamic(() => import("./_components/event-dialog").then((m) => m.EventDialog), { ssr: false })
+const CreateTaskDialog =
+  dynamic(() => import("../tasks/_components/create-task-dialog").then((m) => m.CreateTaskDialog), { ssr: false })
 
 /**
  * The organization's own calendar.
@@ -51,7 +56,9 @@ export default function CalendarPage() {
   const { spaces, spaceId, setSpaceId } = useSpaceScope({ allowAll: true })
   const [selected, setSelected] = useState<{ item: CalendarItem; el: HTMLElement } | null>(null)
   const [dialog, setDialog] = useState<{ start?: Date | null; eventId?: string | null } | null>(null)
+  const dialogMounted = useLatched(!!dialog)
   const [jobAt, setJobAt] = useState<Date | null>(null)
+  const jobMounted = useLatched(!!jobAt)
   const router = useRouter()
 
   const days = useMemo(() => {
@@ -265,7 +272,7 @@ export default function CalendarPage() {
         onClose={() => setSelected(null)}
         onEdit={(id) => setDialog({ eventId: id })}
       />
-      <EventDialog
+      {dialogMounted && <EventDialog
         open={!!dialog && (!dialog.eventId || !!editing.data)}
         onOpenChange={(o) => !o && setDialog(null)}
         start={dialog?.start ?? null}
@@ -275,8 +282,8 @@ export default function CalendarPage() {
         crm={crm}
         onNewJob={canNewJob ? (at) => setJobAt(at) : undefined}
         onTimeOff={canTimeOff ? (day) => router.push(`/my/time-off?from=${day}`) : undefined}
-      />
-      {canNewJob && (
+      />}
+      {canNewJob && jobMounted && (
         <CreateTaskDialog
           open={!!jobAt}
           onOpenChange={(o) => { if (!o) setJobAt(null) }}

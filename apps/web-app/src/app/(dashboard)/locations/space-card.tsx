@@ -4,6 +4,7 @@ import { keys } from "@/lib/query-keys"
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery } from "@tanstack/react-query"
+import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import {
   Plus,
   MoreHorizontal,
@@ -109,10 +110,11 @@ export const SpaceCard = memo(function SpaceCard({
   canConfigure: boolean
 }) {
   const { t } = useTranslation()
+  const afterFirstLoad = useAfterFirstLoad(1) // the member count waits for the first paint (CLAUDE.md §15)
   const { data: assignments } = useQuery({
     queryKey: keys.locations.roster(space.id),
     queryFn: () => locationsApi.getAssignedMembers(space.id),
-    enabled: space.isActive,
+    enabled: space.isActive && afterFirstLoad,
   })
 
   const memberCount = assignments?.length || 0

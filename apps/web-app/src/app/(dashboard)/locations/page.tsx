@@ -42,7 +42,6 @@ import { Button } from "@/components/ui/button"
 import { CenteredNotice } from "@/components/space-page"
 import { Badge } from "@/components/ui/badge"
 import { useBillingLock } from "@/hooks/use-billing-lock"
-import { SpaceForm } from "./_components/space-form"
 import {
   Dialog,
   DialogContent,
@@ -60,7 +59,12 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PAGE_SHELL } from "@/components/ui/page-width"
 import { useSpaceDirectory } from "@/hooks/use-space-directory"
 import { EmptyState, SpaceCard, LEVEL_BADGE } from "./space-card"
-import { SharedWithUsSection, CreateSpaceDialog } from "./shared-with-us-section"
+import { SharedWithUsSection } from "./shared-with-us-section"
+import dynamic from "next/dynamic"
+import { useLatched } from "@/hooks/use-latched"
+
+// The create dialog carries the whole space form (workflow builder included); downloaded on first open.
+const CreateSpaceDialog = dynamic(() => import("./create-space-dialog").then((m) => m.CreateSpaceDialog), { ssr: false })
 
 // ============================================================================
 // MAIN PAGE
@@ -75,6 +79,7 @@ export default function SpacesPage() {
   const isAdmin = user?.role === "ADMIN"
 
   const [createOpen, setCreateOpen] = useState(false)
+  const createMounted = useLatched(createOpen)
   const [archiveTarget, setArchiveTarget] = useState<CompanyLocation | null>(null)
   const [resyncAllOpen, setResyncAllOpen] = useState(false)
 
@@ -251,14 +256,14 @@ export default function SpacesPage() {
         )}
 
         {/* Create Space Dialog */}
-        <CreateSpaceDialog
+        {createMounted && <CreateSpaceDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: keys.locations.lists() })
             setCreateOpen(false)
           }}
-        />
+        />}
 
         {/* Archive confirmation — same type-to-confirm dialog as space settings. */}
         <SpaceLifecycleDialog
