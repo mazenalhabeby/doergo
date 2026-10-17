@@ -339,3 +339,11 @@ task invalidation copies (different key sets), legacy COLORS (fixed hex vs theme
 **Fixed 2026-10-17 (user asked):** mismatch 1 (assignments scope — shared member-scope rule + narrowed list,
 `member-assignments-scope.spec`), 6 (comments now emit `comment_added` with task facts — pushes and live
 updates work for the first time; verified live), 7 (join-request logs the user id).
+
+**Round 2 (user asked: clones + `any`).** Clones 59 → 3 (locked by `tools/dry-check.mjs`, `pnpm dry:check`): split
+hooks pass one object; copied contract types referenced; shared helpers where identical. `any` ~1,700 → ~25:
+gateway `SessionUser`/`AuthedRequest`, Prisma input/payload types, `unknown` in catches, contract replies, typed
+socket payloads, native-module interfaces. Left (documented in place): external Google/OSRM JSON, BullMQ job inputs
+(no queue contracts yet), runtime-loaded pdf.js, the API clients' generic boundary, approvals' loose `Row`.
+Also fixed: a cleared site boundary stored JSON `null` instead of NULL (`Prisma.DbNull` + data migration
+`20261017210000_geofence_polygon_db_null`, applied locally only).
