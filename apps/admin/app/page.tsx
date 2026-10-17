@@ -116,36 +116,67 @@ export default function ControlCenter() {
             <h1 className="text-xl font-semibold">Platform Control Center</h1>
             <nav className="flex flex-wrap gap-1 rounded-lg border border-slate-800 p-0.5 text-sm" aria-label="Sections">
               {tabs.map((t) => (
-                <button key={t.key} onClick={() => setTab(t.key)} className={`rounded px-3 py-1 ${tab === t.key ? 'bg-slate-800' : 'text-slate-400'}`}>
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`rounded px-3 py-1 ${tab === t.key ? 'bg-slate-800' : 'text-slate-400'}`}>
                   {t.label}
-                  {t.key === 'revenue' && alerts.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">{alerts.length}</span>}
+                  {t.key === 'revenue' &&
+                    alerts.length > 0 &&
+                    <span
+                      className={"ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] " +
+                        "font-semibold text-amber-400"}>{alerts.length}</span>}
                 </button>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <span className="text-slate-400">{me.user.firstName} {me.user.lastName} · <span className="text-blue-400">{me.user.role}</span>{me.user.twoFactorEnabled && <span className="ml-1 text-green-400" title="2FA on">🔒</span>}</span>
+            <span
+              className="text-slate-400">{me.user.firstName} {me.user.lastName} · <span
+                className="text-blue-400">{me.user.role}</span>{me.user.twoFactorEnabled &&
+                  <span className="ml-1 text-green-400" title="2FA on">🔒</span>}</span>
             <button onClick={() => setSecurity(true)} className="text-xs text-slate-400 hover:text-slate-200">Security</button>
             <button onClick={() => void signOut()} className="text-xs text-slate-400 hover:text-slate-200">Sign out</button>
           </div>
         </div>
 
         <MailBanner mail={mail} />
-        {notice && <div className="mb-4 rounded-lg border border-green-900 bg-green-950/40 px-3 py-2 text-sm text-green-300">{notice} <button onClick={() => setNotice(null)} className="ml-2 opacity-60">✕</button></div>}
-        {error && <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-300">{error} <button onClick={() => setError(null)} className="ml-2 opacity-60">✕</button></div>}
+        {notice &&
+          <div
+            className={"mb-4 rounded-lg border border-green-900 bg-green-950/40 px-3 py-2 " +
+              "text-sm text-green-300"}>{notice} <button onClick={() => setNotice(null)} className="ml-2 opacity-60">✕</button></div>}
+        {error &&
+          <div
+            className={"mb-4 rounded-lg border border-red-900 bg-red-950/50 px-3 py-2 text-sm " +
+              "text-red-300"}>{error} <button onClick={() => setError(null)} className="ml-2 opacity-60">✕</button></div>}
 
         {tab === 'orgs' && <OrgsPanel can={can} version={orgsVersion} onChanged={orgsChanged} onOpen={openOrg} onError={onError} />}
         {tab === 'revenue' && <RevenuePanel alerts={alerts} reload={loadAlerts} onOpen={openOrg} onError={onError} />}
         {tab === 'pricing' && <PricingPanel canCheckStripe={can('editPricing')} onError={onError} />}
         {tab === 'library' && <LibraryPanel onError={onError} />}
-        {tab === 'support' && <SupportPanel onError={onError} isSupervisor={!!me.user.isSupportSupervisor} hasTeams={(me.user.supportTeamIds?.length ?? 0) > 0} canListTeams={can('manageSupportTeams')} />}
+        {tab === 'support' &&
+          <SupportPanel
+            onError={onError}
+            isSupervisor={!!me.user.isSupportSupervisor}
+            hasTeams={(me.user.supportTeamIds?.length ?? 0) > 0}
+            canListTeams={can('manageSupportTeams')}
+          />}
         {tab === 'teams' && <TeamsPanel onError={onError} />}
         {tab === 'team' && <StaffPanel meId={me.user.id} onError={onError} />}
         {tab === 'audit' && <AuditPanel onError={onError} onOpenOrg={openOrg} />}
       </div>
 
-      {detailId && <OrgDrawer id={detailId} version={orgsVersion} can={can} onClose={() => setDetailId(null)} onChanged={orgsChanged} onError={onError} />}
-      {security && <SecurityModal me={me} onClose={() => setSecurity(false)} onError={onError} onSession={applySession} onNotice={setNotice} />}
+      {detailId &&
+        <OrgDrawer
+          id={detailId}
+          version={orgsVersion}
+          can={can}
+          onClose={() => setDetailId(null)}
+          onChanged={orgsChanged}
+          onError={onError}
+        />}
+      {security &&
+        <SecurityModal me={me} onClose={() => setSecurity(false)} onError={onError} onSession={applySession} onNotice={setNotice} />}
     </div>
   );
 }

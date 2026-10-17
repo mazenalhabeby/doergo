@@ -48,7 +48,8 @@ export function StepReportsSection({ taskId, workflowStatuses }: { taskId: strin
 }
 
 /** One submission, from its snapshot. Exported for tests. */
-export function StepReport({ submission, workflowStatuses }: { submission: TaskStepSubmission; workflowStatuses?: ReadonlyArray<StatusLike> | null }) {
+export function StepReport(
+  { submission, workflowStatuses }: { submission: TaskStepSubmission; workflowStatuses?: ReadonlyArray<StatusLike> | null }) {
   const { t, i18n } = useTranslation()
   const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
   const form = parseStoredStepForm(submission.form)
@@ -87,12 +88,26 @@ export function StepReport({ submission, workflowStatuses }: { submission: TaskS
             {ids.map((id) => {
               const url = fileUrl(id)
               return url ? (
-                <a key={id} href={url} target="_blank" rel="noopener noreferrer" className="block aspect-square overflow-hidden rounded-lg border bg-muted">
+                <a
+                  key={id}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block aspect-square overflow-hidden rounded-lg border bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={submission.files[id]?.fileName ?? ""} loading="lazy" decoding="async" className="size-full object-cover" />
+                  <img
+                    src={url}
+                    alt={submission.files[id]?.fileName ?? ""}
+                    loading="lazy"
+                    decoding="async"
+                    className="size-full object-cover"
+                  />
                 </a>
               ) : (
-                <div key={id} className="flex aspect-square items-center justify-center rounded-lg border border-dashed text-[10px] text-muted-foreground">
+                <div
+                  key={id}
+                  className={"flex aspect-square items-center justify-center rounded-lg border " +
+                    "border-dashed text-[10px] text-muted-foreground"}>
                   {t("stepForm.report.fileGone", "Removed")}
                 </div>
               )

@@ -104,11 +104,15 @@ export function EmploymentFields({
           (Capacity/"max daily jobs" is now derived automatically from throughput.) */}
       {orgUsesExternalWorkers && (
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">{t("technicians.detail.editDialog.employmentTypeLabel", "Employment type")}</Label>
+          <Label
+            className="text-xs font-medium text-muted-foreground">{t(
+              "technicians.detail.editDialog.employmentTypeLabel",
+              "Employment type")}</Label>
           <Select value={employmentType} onValueChange={setEmploymentType}>
             <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
+              <SelectItem
+                value="EXTERNAL">{t("technicians.detail.editDialog.employmentType.external", "External / freelancer")}</SelectItem>
               <SelectItem value="IN_HOUSE">{t("technicians.detail.editDialog.employmentType.inHouse", "In-house (employed)")}</SelectItem>
             </SelectContent>
           </Select>
@@ -186,7 +190,9 @@ export function EmploymentFields({
           /* From the dated history, like the day rate below: the member object the
              page opened with may not carry the cost, and does not move when a new
              rate is saved — the field then read "Not set" next to its own history. */
-          currentCents={memberRates?.some((r) => r.kind === "COST_HOUR") ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR")) : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)}
+          currentCents={memberRates?.some((r) => r.kind === "COST_HOUR")
+            ? currentOf(memberRates.filter((r) => r.kind === "COST_HOUR"))
+            : ((member as { costRateCents?: number | null } | null)?.costRateCents ?? null)}
           history={memberRates?.filter((r) => r.kind === "COST_HOUR")}
           onSubmit={async (c, from) => {
             await employeesApi.update(member!.id, { costRateCents: c, ...(from ? { rateEffectiveFrom: from } : {}) })

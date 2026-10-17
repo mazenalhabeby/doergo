@@ -116,7 +116,9 @@ export function HolidaysSection() {
               <tbody>
                 {data.workspaces.map((w) => (
                   <tr key={w.id} className="border-t">
-                    <td className="px-2 py-3 font-medium">{w.name}<span className="ml-2 text-xs font-normal text-muted-foreground">{t("holidays.people", { count: w.people })}</span></td>
+                    <td
+                      className="px-2 py-3 font-medium">{w.name}<span
+                        className="ml-2 text-xs font-normal text-muted-foreground">{t("holidays.people", { count: w.people })}</span></td>
                     <td className="px-2 py-3">
                       <span className={cn(w.holidaySource !== "CHOSEN" && "text-muted-foreground")}>
                         {w.country ?? "—"}{w.region ? ` · ${w.region}` : ""}
@@ -127,15 +129,28 @@ export function HolidaysSection() {
                     <td className="px-2 py-3">
                       <span className="flex flex-wrap gap-1">
                         {WEEK.filter((d) => w.weekend.includes(d)).map((d) => (
-                          <span key={d} className={cn("rounded-md px-1.5 py-0.5 text-[11px] font-semibold", w.inherited.weekend ? "bg-muted text-muted-foreground" : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{dayName(d)}</span>
+                          <span
+                            key={d}
+                            className={cn(
+                              "rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
+                              w.inherited.weekend
+                                ? "bg-muted text-muted-foreground"
+                                : "bg-rose-500/10 text-rose-700 dark:text-rose-300")}>{dayName(d)}</span>
                         ))}
                       </span>
                     </td>
                     <td className="px-2 py-3 tabular-nums">
                       {w.holidayCount}
-                      {w.estimatedCount > 0 && <span className="ml-2 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">{t("holidays.estimatedCount", { count: w.estimatedCount })}</span>}
+                      {w.estimatedCount > 0 &&
+                        <span
+                          className={"ml-2 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[11px] font-medium " +
+                            "text-amber-700 dark:text-amber-300"}>{t("holidays.estimatedCount", { count: w.estimatedCount })}</span>}
                     </td>
-                    <td className="px-2 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => setEditWs(w)}><Pencil className="mr-1.5 h-3.5 w-3.5" />{t("common.edit", "Edit")}</Button></td>
+                    <td
+                      className="px-2 py-3 text-right"><Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditWs(w)}><Pencil className="mr-1.5 h-3.5 w-3.5" />{t("common.edit", "Edit")}</Button></td>
                   </tr>
                 ))}
               </tbody>

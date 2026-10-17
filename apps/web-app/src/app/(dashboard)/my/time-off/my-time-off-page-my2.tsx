@@ -52,7 +52,11 @@ export function MyTimeOffPageMy2({ vm }: { vm: MyTimeOffPageState }) {
         </div>
         {kind === "LEAVE" && reasonType === "vacation" && balance && (
           /* Only vacation is deducted: the balance before and after, line by line — the drawer shows the same. */
-          <LeaveBalanceBreakdown balance={balance} requestDays={cost && balance ? leaveCostInBalanceYear(balance, cost) : (cost?.counted ?? dayCount)} compact />
+          <LeaveBalanceBreakdown
+            balance={balance}
+            requestDays={cost && balance ? leaveCostInBalanceYear(balance, cost) : (cost?.counted ?? dayCount)}
+            compact
+          />
         )}
         {kind !== "LEAVE" && (
           /* What approving it will do — said BEFORE sending, the same words the manager reads. */

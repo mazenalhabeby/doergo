@@ -21,7 +21,24 @@ import type { MemberPanelState } from "./use-member-panel"
 import type { MemberPanel } from "./member-panel"
 
 /** Part of MemberPanel's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow, autoClockWorkspace, roster }: { vm: MemberPanelState; member: Parameters<typeof MemberPanel>[0]['member']; spaceId: Parameters<typeof MemberPanel>[0]['spaceId']; isClient: Parameters<typeof MemberPanel>[0]['isClient']; autoClockRow: Parameters<typeof MemberPanel>[0]['autoClockRow']; autoClockWorkspace: Parameters<typeof MemberPanel>[0]['autoClockWorkspace']; roster: Parameters<typeof MemberPanel>[0]['roster'] }) {
+export function MemberPanelMembers(
+  {
+    vm,
+    member,
+    spaceId,
+    isClient,
+    autoClockRow,
+    autoClockWorkspace,
+    roster
+  }: {
+    vm: MemberPanelState;
+    member: Parameters<typeof MemberPanel>[0]['member'];
+    spaceId: Parameters<typeof MemberPanel>[0]['spaceId'];
+    isClient: Parameters<typeof MemberPanel>[0]['isClient'];
+    autoClockRow: Parameters<typeof MemberPanel>[0]['autoClockRow'];
+    autoClockWorkspace: Parameters<typeof MemberPanel>[0]['autoClockWorkspace'];
+    roster: Parameters<typeof MemberPanel>[0]['roster']
+  }) {
   const {
     t,
     builderReplacesPicker,
@@ -85,7 +102,8 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
                       {workRoles.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
                           {r.name}
-                          {r.dayRateCents != null && <span className="ml-1.5 text-xs text-muted-foreground">· {cents(r.dayRateCents)} {t("rates.perDay")}</span>}
+                          {r.dayRateCents != null &&
+                            <span className="ml-1.5 text-xs text-muted-foreground">· {cents(r.dayRateCents)} {t("rates.perDay")}</span>}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -98,7 +116,12 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
                     <Label htmlFor="allow-second" className="text-sm text-muted-foreground">{t("scheduling.workRoles.allowSecond")}</Label>
                     <span className="block text-[11px] text-muted-foreground">{t("scheduling.workRoles.allowSecondHint")}</span>
                   </span>
-                  <Switch id="allow-second" checked={allow} onCheckedChange={(v) => update.mutate({ allowSecondRole: v })} disabled={update.isPending} />
+                  <Switch
+                    id="allow-second"
+                    checked={allow}
+                    onCheckedChange={(v) => update.mutate({ allowSecondRole: v })}
+                    disabled={update.isPending}
+                  />
                 </div>
               )}
               <div className="flex items-center justify-between gap-3">
@@ -148,7 +171,10 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
                 {bill !== "DAY" && (
                   <div className="space-y-1.5 pt-1">
                     <p className="text-xs font-medium text-foreground">{t("scheduling.membersPage.hoursBasis")}</p>
-                    <div role="radiogroup" aria-label={t("scheduling.membersPage.hoursBasis")} className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
+                    <div
+                      role="radiogroup"
+                      aria-label={t("scheduling.membersPage.hoursBasis")}
+                      className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
                       {(["COUNTED", "CLOCKED", "SHIFT"] as const).map((b) => {
                         const on = (member.effectiveHoursBasis ?? "COUNTED") === b
                         return (
@@ -185,7 +211,9 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
                     label={t("rates.spaceBill")}
                     currency={money.bill}
                     currentCents={member.billRateCents ?? null}
-                    emptyLabel={member.inheritedBillRateCents != null ? t("rates.usesDefault", { rate: cents(member.inheritedBillRateCents) }) : undefined}
+                    emptyLabel={member.inheritedBillRateCents != null
+                      ? t("rates.usesDefault", { rate: cents(member.inheritedBillRateCents) })
+                      : undefined}
                     history={rates?.filter((r) => r.kind === "BILL_HOUR")}
                     onSubmit={(c, from) => saveRate({ billRateCents: c }, from)}
                   />
@@ -196,8 +224,15 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
                     <span className="font-semibold tabular-nums">
                       {workRole?.dayRateCents != null
                         ? `${cents(workRole.dayRateCents)} ${t("rates.perDay")}`
-                        : <span className="font-normal text-muted-foreground">{workRole ? t("scheduling.workRoles.dayRateNone") : t("scheduling.membersPage.needsWorkRole")}</span>}
-                      {workRole && <span className="block text-right text-[11px] font-normal text-muted-foreground">{t("scheduling.membersPage.fromRole", { role: workRole.name })}</span>}
+                        : <span
+                          className="font-normal text-muted-foreground">{workRole
+                            ? t("scheduling.workRoles.dayRateNone")
+                            : t("scheduling.membersPage.needsWorkRole")}</span>}
+                      {workRole &&
+                        <span
+                          className="block text-right text-[11px] font-normal text-muted-foreground">{t(
+                            "scheduling.membersPage.fromRole",
+                            { role: workRole.name })}</span>}
                     </span>
                   </div>
                 )}
@@ -222,7 +257,13 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
 
             {/* Only while the workspace has the automatic clock on, and never for an external member. */}
             {autoClockRow !== undefined && (
-              <MemberAutoClock spaceId={spaceId} row={autoClockRow ?? undefined} workspace={autoClockWorkspace} section={section} heading={heading} />
+              <MemberAutoClock
+                spaceId={spaceId}
+                row={autoClockRow ?? undefined}
+                workspace={autoClockWorkspace}
+                section={section}
+                heading={heading}
+              />
             )}
 
             <section className={section}>
@@ -231,7 +272,10 @@ export function MemberPanelMembers({ vm, member, spaceId, isClient, autoClockRow
             </section>
 
             <section className={section}>
-              <Button variant="ghost" className="gap-1.5 px-0 text-red-600 hover:bg-transparent hover:text-red-700" onClick={() => setConfirmRemove(true)}>
+              <Button
+                variant="ghost"
+                className="gap-1.5 px-0 text-red-600 hover:bg-transparent hover:text-red-700"
+                onClick={() => setConfirmRemove(true)}>
                 <Trash2 className="h-4 w-4" />
                 {t("scheduling.membersPage.removeFromWorkspace")}
               </Button>

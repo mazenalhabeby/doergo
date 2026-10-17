@@ -173,7 +173,8 @@ function AuditRow({ log }: { log: AuditLogEntry }) {
   return (
     <li className="flex items-start gap-3 px-2 py-2.5">
       <span
-        className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground"
+        className={"mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full " +
+          "bg-muted text-[10px] font-semibold text-muted-foreground"}
         aria-hidden
       >
         {initials}

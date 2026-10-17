@@ -63,7 +63,8 @@ export function AttachmentsDropzone({ form }: { form: CreateTaskForm }) {
                   <button
                     type="button"
                     onClick={() => removeAttachment(index)}
-                    className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                    className={"absolute top-0.5 right-0.5 p-0.5 rounded-full bg-black/60 text-white " +
+                      "opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"}
                   >
                     <X className="size-2.5" />
                   </button>

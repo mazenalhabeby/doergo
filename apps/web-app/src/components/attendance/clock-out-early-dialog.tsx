@@ -59,10 +59,16 @@ export function ClockOutEarlyDialog({
           </DialogTitle>
           <DialogDescription>
             {expectedClockOutAt
-              ? t("attendance.early.body", "Your shift runs to {{end}}. You can still clock out — tell us why, and it goes to whoever is responsible with the entry.", {
+              ? t(
+                "attendance.early.body",
+                ("Your shift runs to {{end}}. You can still clock out — tell us why, and " +
+                  "it goes to whoever is responsible with the entry."),
+                {
                   end: formatTime(expectedClockOutAt, timezone ?? undefined),
                 })
-              : t("attendance.early.bodyNoEnd", "You can still clock out — tell us why, and it goes to whoever is responsible with the entry.")}
+              : t(
+                "attendance.early.bodyNoEnd",
+                ("You can still clock out — tell us why, and it goes to whoever is " + "responsible with the entry."))}
           </DialogDescription>
         </DialogHeader>
 

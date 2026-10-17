@@ -64,7 +64,21 @@ export function useTaskTableRowInner({
     isOverdue,
     formattedDueDate,
     handleRowClick,
-  } = useTaskTableRowInnerData({ task, index, canAssign, onAssign, sprints, phases, epics, spaces, contextActions, recentAssignees, draggable, onDragStart, isDragging })
+  } = useTaskTableRowInnerData({
+    task,
+    index,
+    canAssign,
+    onAssign,
+    sprints,
+    phases,
+    epics,
+    spaces,
+    contextActions,
+    recentAssignees,
+    draggable,
+    onDragStart,
+    isDragging
+  })
 
   const rowContent = (
     <div
@@ -98,7 +112,9 @@ export function useTaskTableRowInner({
       {/* Title + Status Dot */}
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: statusConfig.hex }} />
-        <span className="text-sm font-medium text-foreground truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-100">
+        <span
+          className={"text-sm font-medium text-foreground truncate group-hover:text-blue-600 " +
+            "dark:group-hover:text-blue-400 transition-colors duration-100"}>
           {task.title}
         </span>
         <PausedChip task={task} className="flex-shrink-0" />
@@ -120,7 +136,8 @@ export function useTaskTableRowInner({
       {/* Assignee(s) — clickable to open assign dialog */}
       <div
         data-no-navigate
-        className="flex items-center gap-2 min-w-0 w-[160px] flex-shrink-0 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-muted/60 cursor-pointer transition-colors"
+        className={"flex items-center gap-2 min-w-0 w-[160px] flex-shrink-0 rounded-md " +
+          "px-1.5 py-1 -mx-1.5 hover:bg-muted/60 cursor-pointer transition-colors"}
         onClick={(e) => { e.stopPropagation(); onAssign(task.id) }}
         /* A truncated name is unreadable on its own, so the tooltip carries who
            is on the task as well as what clicking does. */
@@ -199,7 +216,9 @@ export function useTaskTableRowInner({
               <button
                 type="button"
                 title={t("tasks.menu.status")}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-opacity hover:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] " +
+                  "font-semibold transition-opacity hover:opacity-80 focus:outline-none " +
+                  "focus-visible:ring-2 focus-visible:ring-ring"}
                 style={{ backgroundColor: `${statusConfig.hex}14`, color: statusConfig.hex }}
               >
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />

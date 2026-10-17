@@ -27,13 +27,19 @@ export const joinRequestsApi = {
     specialty?: string;
     maxDailyJobs?: number;
   }) => {
-    const response = await call(joinRequestsEndpoints.approve, { id }, { body: data }) as ApiResponse<{ success: boolean; data: JoinRequest }>;
+    const response = await call(
+      joinRequestsEndpoints.approve,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: JoinRequest }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   reject: async (id: string, data?: { reason?: string }) => {
-    const response = await call(joinRequestsEndpoints.reject, { id }, { body: data || {} }) as ApiResponse<{ success: boolean; data: JoinRequest }>;
+    const response = await call(
+      joinRequestsEndpoints.reject,
+      { id },
+      { body: data || {} }) as ApiResponse<{ success: boolean; data: JoinRequest }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

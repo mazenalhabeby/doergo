@@ -14,7 +14,26 @@ import type { TaskDetailSidebarState } from "./use-task-detail-sidebar"
 import type { TaskDetailSidebar } from "./task-detail-sidebar"
 
 /** Part of TaskDetailSidebar's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLead, onRemoveAssignee, task, canEdit, onFieldSave }: { vm: TaskDetailSidebarState; canAssign: Parameters<typeof TaskDetailSidebar>[0]['canAssign']; onAssignClick: Parameters<typeof TaskDetailSidebar>[0]['onAssignClick']; onSetLead: Parameters<typeof TaskDetailSidebar>[0]['onSetLead']; onRemoveAssignee: Parameters<typeof TaskDetailSidebar>[0]['onRemoveAssignee']; task: Parameters<typeof TaskDetailSidebar>[0]['task']; canEdit: Parameters<typeof TaskDetailSidebar>[0]['canEdit']; onFieldSave: Parameters<typeof TaskDetailSidebar>[0]['onFieldSave'] }) {
+export function TaskDetailSidebarSidebar(
+  {
+    vm,
+    canAssign,
+    onAssignClick,
+    onSetLead,
+    onRemoveAssignee,
+    task,
+    canEdit,
+    onFieldSave
+  }: {
+    vm: TaskDetailSidebarState;
+    canAssign: Parameters<typeof TaskDetailSidebar>[0]['canAssign'];
+    onAssignClick: Parameters<typeof TaskDetailSidebar>[0]['onAssignClick'];
+    onSetLead: Parameters<typeof TaskDetailSidebar>[0]['onSetLead'];
+    onRemoveAssignee: Parameters<typeof TaskDetailSidebar>[0]['onRemoveAssignee'];
+    task: Parameters<typeof TaskDetailSidebar>[0]['task'];
+    canEdit: Parameters<typeof TaskDetailSidebar>[0]['canEdit'];
+    onFieldSave: Parameters<typeof TaskDetailSidebar>[0]['onFieldSave']
+  }) {
   const { t, assignees, leadCount, hasMultiple } = vm
   return (
     <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
@@ -63,12 +82,17 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/members/${a.userId}`} className="text-xs font-medium text-foreground truncate block hover:text-blue-600 transition-colors">
+                      <Link
+                        href={`/members/${a.userId}`}
+                        className={"text-xs font-medium text-foreground truncate block hover:text-blue-600 " + "transition-colors"}>
                         {personName(a.user)}
                       </Link>
                     </div>
                     {isLead && (
-                      <span className="text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider flex-shrink-0">
+                      <span
+                        className={"text-[9px] bg-blue-100 text-blue-700 dark:bg-blue-500/20 " +
+                          "dark:text-blue-400 px-1.5 py-0.5 rounded font-semibold uppercase " +
+                          "tracking-wider flex-shrink-0"}>
                         {t("tasks.sidebar.lead")}
                       </span>
                     )}
@@ -77,7 +101,8 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
                       {canPromote && onSetLead && (
                         <button
                           onClick={() => onSetLead(a.id)}
-                          className="size-5 rounded flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+                          className={"size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
+                            "hover:text-foreground hover:bg-muted transition-colors"}
                           title={t("tasks.sidebar.makeLead")}
                         >
                           <Crown className="size-3" />
@@ -86,7 +111,9 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
                       {canRemove && onRemoveAssignee && (
                         <button
                           onClick={() => onRemoveAssignee(a.id)}
-                          className="size-5 rounded flex items-center justify-center text-muted-foreground/60 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                          className={"size-5 rounded flex items-center justify-center text-muted-foreground/60 " +
+                            "hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 " +
+                            "transition-colors"}
                           title={t("tasks.sidebar.remove")}
                         >
                           <X className="size-3" />
@@ -104,7 +131,9 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
                   {personInitials(task.assignedTo)}
                 </span>
               </div>
-              <Link href={`/members/${task.assignedTo.id}`} className="text-xs font-medium text-foreground hover:text-blue-600 transition-colors">
+              <Link
+                href={`/members/${task.assignedTo.id}`}
+                className={"text-xs font-medium text-foreground hover:text-blue-600 " + "transition-colors"}>
                 {personName(task.assignedTo)}
               </Link>
             </div>
@@ -112,7 +141,8 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
             <button
               onClick={canEdit ? onAssignClick : undefined}
               className={cn(
-                "w-full flex items-center gap-2 px-2 py-2 rounded-lg border border-dashed border-border/60 text-xs text-muted-foreground/50",
+                ("w-full flex items-center gap-2 px-2 py-2 rounded-lg border border-dashed " +
+                  "border-border/60 text-xs text-muted-foreground/50"),
                 canEdit && "hover:border-foreground/20 hover:text-muted-foreground cursor-pointer transition-colors",
               )}
             >
@@ -157,7 +187,10 @@ export function TaskDetailSidebarSidebar({ vm, canAssign, onAssignClick, onSetLe
         <SidebarRow icon={MapPin} label={t("tasks.sidebar.location")}>
           <div className="space-y-1 min-w-0">
             {task.space && (
-              <Link href={`/locations`} className="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 transition-colors">
+              <Link
+                href={`/locations`}
+                className={"text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 " +
+                  "dark:hover:text-blue-300 flex items-center gap-1 transition-colors"}>
                 {task.space.name}
                 <ExternalLink className="size-2.5" />
               </Link>

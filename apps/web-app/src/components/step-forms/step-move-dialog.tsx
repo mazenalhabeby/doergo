@@ -71,7 +71,10 @@ export function StepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit,
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium">{stepFieldLabel(field, tr)}</span>
-                  <span className={cn("text-[10px] font-medium uppercase tracking-wide", field.required ? "text-primary" : "text-muted-foreground")}>
+                  <span
+                    className={cn(
+                      "text-[10px] font-medium uppercase tracking-wide",
+                      field.required ? "text-primary" : "text-muted-foreground")}>
                     {field.required ? t("stepForm.required", "Required") : t("stepForm.optional", "Optional")}
                   </span>
                 </div>

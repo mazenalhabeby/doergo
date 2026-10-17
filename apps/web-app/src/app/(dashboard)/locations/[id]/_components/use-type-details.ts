@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next"
 import { logKeyFrom, type KindLogDue, type KindLogField, type KindLogType } from "@hbcfield/shared/client"
 
 /** TypeDetails's state and handlers — everything before its markup, moved here unchanged. */
-export function useTypeDetails({ type, onChange }: Pick<{ type: KindLogType; onChange: (patch: Partial<KindLogType>) => void }, 'type' | 'onChange'>) {
+export function useTypeDetails(
+  { type, onChange }: Pick<{ type: KindLogType; onChange: (patch: Partial<KindLogType>) => void }, 'type' | 'onChange'>) {
   const { t } = useTranslation()
 
   const setField = (fi: number, patch: Partial<KindLogField>) =>

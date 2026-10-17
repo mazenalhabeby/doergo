@@ -145,14 +145,20 @@ export function InlineEditField({
     if (disabled) {
       return (
         <span className={cn("text-sm text-foreground", className)}>
-          {renderDisplay ? renderDisplay(value) : (value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
+          {renderDisplay
+            ? renderDisplay(value)
+            : (value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>)}
         </span>
       )
     }
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <button className={cn("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded transition-colors group flex items-center gap-1.5", className)}>
+          <button
+            className={cn(
+              ("text-sm text-foreground hover:bg-muted/50 px-1.5 py-0.5 -mx-1.5 rounded " +
+                "transition-colors group flex items-center gap-1.5"),
+              className)}>
             {value ? formatDue(String(value), dateLocale()) : <span className="text-muted-foreground">{resolvedPlaceholder}</span>}
             <Pencil className="size-3 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors" />
           </button>
@@ -165,7 +171,8 @@ export function InlineEditField({
               if (date) {
                 setSaving(true)
                 // Picking a new day keeps whatever hour was already set.
-                try { await onSave(withTime(date, timeOf(value == null ? null : String(value)))!.toISOString()) } finally { setSaving(false) }
+                try { await onSave(
+                  withTime(date, timeOf(value == null ? null : String(value)))!.toISOString()) } finally { setSaving(false) }
               }
             }}
           />

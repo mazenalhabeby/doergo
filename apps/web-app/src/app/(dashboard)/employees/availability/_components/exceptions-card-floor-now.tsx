@@ -52,7 +52,9 @@ export function ExceptionsCardFloorNow({ vm }: { vm: ExceptionsCardState }) {
               {away.map((p) => (
                 <span
                   key={p.id}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 py-0.5 pl-0.5 pr-2.5 text-[11.5px] font-medium text-violet-700 dark:text-violet-300"
+                  className={"inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 py-0.5 " +
+                    "pl-0.5 pr-2.5 text-[11.5px] font-medium text-violet-700 " +
+                    "dark:text-violet-300"}
                 >
                   <Avatar person={p} />
                   {p.firstName}

@@ -26,9 +26,24 @@ export function MembersSection() {
   const queryClient = useQueryClient()
 
   const JOIN_POLICY_OPTIONS = [
-    { value: JoinPolicy.OPEN, label: t("settings.joinPolicy.open"), description: t("settings.joinPolicy.openDescription"), color: "emerald" },
-    { value: JoinPolicy.INVITE_ONLY, label: t("settings.joinPolicy.inviteOnly"), description: t("settings.joinPolicy.inviteOnlyDescription"), color: "blue" },
-    { value: JoinPolicy.CLOSED, label: t("settings.joinPolicy.closed"), description: t("settings.joinPolicy.closedDescription"), color: "slate" },
+    {
+      value: JoinPolicy.OPEN,
+      label: t("settings.joinPolicy.open"),
+      description: t("settings.joinPolicy.openDescription"),
+      color: "emerald"
+    },
+    {
+      value: JoinPolicy.INVITE_ONLY,
+      label: t("settings.joinPolicy.inviteOnly"),
+      description: t("settings.joinPolicy.inviteOnlyDescription"),
+      color: "blue"
+    },
+    {
+      value: JoinPolicy.CLOSED,
+      label: t("settings.joinPolicy.closed"),
+      description: t("settings.joinPolicy.closedDescription"),
+      color: "slate"
+    },
   ] as const
 
   const [copied, setCopied] = useState(false)

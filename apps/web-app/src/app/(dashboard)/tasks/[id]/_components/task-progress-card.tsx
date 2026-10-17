@@ -102,7 +102,13 @@ export function TaskProgressCard({
   const lead = assignees.find(a => a.role === "LEAD")
   const primary = lead ?? assignees[0]
   const primaryUser: AssignedUser | null = primary
-    ? { id: primary.user.id, firstName: primary.user.firstName, lastName: primary.user.lastName, avatarUrl: primary.user.avatarUrl, phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined) }
+    ? {
+      id: primary.user.id,
+      firstName: primary.user.firstName,
+      lastName: primary.user.lastName,
+      avatarUrl: primary.user.avatarUrl,
+      phone: (assignedTo?.id === primary.user.id ? assignedTo?.phone : undefined)
+    }
     : assignedTo
   // Everyone else shown as stacked avatars — EXCLUDE the primary so the same
   // person is never drawn twice (the bug: a lone MEMBER was both the primary
@@ -161,7 +167,12 @@ export function TaskProgressCard({
               />
               {members.length > 0 && (
                 <StackedAvatars
-                  users={members.map(m => ({ id: m.user.id, firstName: m.user.firstName, lastName: m.user.lastName, avatarUrl: m.user.avatarUrl }))}
+                  users={members.map(m => ({
+                    id: m.user.id,
+                    firstName: m.user.firstName,
+                    lastName: m.user.lastName,
+                    avatarUrl: m.user.avatarUrl
+                  }))}
                   max={3}
                   size="xs"
                   className="-ml-1.5"
@@ -175,7 +186,10 @@ export function TaskProgressCard({
               </span>
               {(lead && members.length > 0) && (
                 <span className="text-[10px] text-muted-foreground/60 leading-none mt-0.5">
-                  {t("tasks.progress.lead")} · {members.length} {members.length === 1 ? t("tasks.progress.member") : t("tasks.progress.members")}
+                  {t(
+                    "tasks.progress.lead")} · {members.length} {members.length === 1
+                      ? t("tasks.progress.member")
+                      : t("tasks.progress.members")}
                 </span>
               )}
             </div>
@@ -185,7 +199,9 @@ export function TaskProgressCard({
                 {/* Straight into the conversation — no list, no choosing. */}
                 <button
                   onClick={() => contact.id && message(contact.id)}
-                  className="size-6 rounded-md flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                  className={"size-6 rounded-md flex items-center justify-center " +
+                    "text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 " +
+                    "transition-colors"}
                   title={t("tasks.progress.message")}
                 >
                   <MessageSquare className="size-3" />

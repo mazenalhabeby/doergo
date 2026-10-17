@@ -75,7 +75,12 @@ export function Row({
           active ? "bg-accent" : "hover:bg-accent/50",
         )}
       >
-        <UserAvatar {...nameParts(item.subject.name)} avatarUrl={item.subject.avatarUrl} seed={item.subject.id ?? item.subject.name} size="md" />
+        <UserAvatar
+          {...nameParts(item.subject.name)}
+          avatarUrl={item.subject.avatarUrl}
+          seed={item.subject.id ?? item.subject.name}
+          size="md"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
             <span className="truncate font-medium text-foreground">{item.subject.name || t("approvals.someone")}</span>

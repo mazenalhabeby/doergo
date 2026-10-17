@@ -78,11 +78,19 @@ export function HandoverCard({
         <div className="rounded-2xl border border-border bg-card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-primary">{t("tasks.handover.label")}</p>
           <div className="mt-3 flex items-center gap-2.5">
-            <UserAvatar firstName={latest.author.firstName} lastName={latest.author.lastName} avatarUrl={latest.author.avatarUrl} seed={latest.author.id} size="sm" />
+            <UserAvatar
+              firstName={latest.author.firstName}
+              lastName={latest.author.lastName}
+              avatarUrl={latest.author.avatarUrl}
+              seed={latest.author.id}
+              size="sm"
+            />
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">{personName(latest.author)}</p>
               <p className="text-xs text-muted-foreground">
-                {[formatTimeAgo(latest.createdAt), latest.workedMinutes ? t("tasks.handover.worked", { time: formatDuration(latest.workedMinutes) }) : null]
+                {[
+                  formatTimeAgo(latest.createdAt),
+                  latest.workedMinutes ? t("tasks.handover.worked", { time: formatDuration(latest.workedMinutes) }) : null]
                   .filter(Boolean)
                   .join(" · ")}
               </p>
@@ -101,7 +109,8 @@ export function HandoverCard({
 }
 
 /** "What you did, and what is left" — the web's way to write the note. */
-function HandoverDialog({ open, onOpenChange, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; onSave: (note: string) => Promise<unknown> }) {
+function HandoverDialog(
+  { open, onOpenChange, onSave }: { open: boolean; onOpenChange: (o: boolean) => void; onSave: (note: string) => Promise<unknown> }) {
   const { t } = useTranslation()
   const [note, setNote] = useState("")
   const [saving, setSaving] = useState(false)

@@ -11,7 +11,16 @@ import type { MyAttendancePageState } from "./use-my-attendance-page"
 import type { MyAttendancePageView } from "./my-attendance-page-view"
 
 /** Part of MyAttendancePage's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function MyAttendancePageMy({ vm, shiftTarget, window_ }: { vm: MyAttendancePageState; shiftTarget: ReturnType<typeof MyAttendancePageView>['shiftTarget']; window_: ReturnType<typeof MyAttendancePageView>['window_'] }) {
+export function MyAttendancePageMy(
+  {
+    vm,
+    shiftTarget,
+    window_
+  }: {
+    vm: MyAttendancePageState;
+    shiftTarget: ReturnType<typeof MyAttendancePageView>['shiftTarget'];
+    window_: ReturnType<typeof MyAttendancePageView>['window_']
+  }) {
   const {
     clockedIn,
     t,
@@ -48,7 +57,10 @@ export function MyAttendancePageMy({ vm, shiftTarget, window_ }: { vm: MyAttenda
               */}
               {activeEntry.countedStartAt &&
                 new Date(activeEntry.countedStartAt).getTime() !== new Date(activeEntry.clockInAt).getTime() && (
-                  <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  <p
+                    className={"mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 " +
+                      "py-1 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/50 " +
+                      "dark:text-emerald-400"}>
                     <Clock className="h-3 w-3" />
                     {t("attendance.my.paidFrom", "Counted from {{time}}", {
                       time: formatTime(activeEntry.countedStartAt, activeEntry.timezone ?? activeEntry.location?.timezone),
@@ -119,7 +131,10 @@ export function MyAttendancePageMy({ vm, shiftTarget, window_ }: { vm: MyAttenda
         <ClockInPicker {...pickerProps} />
         <ClockOutEarlyDialog {...earlyProps} />
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-          {t("attendance.my.gpsHintOneButton", "Uses your location to pick your workspace and check you are there. Where you are working through the day is worked out for you.")}
+          {t(
+            "attendance.my.gpsHintOneButton",
+            ("Uses your location to pick your workspace and check you are there. Where " +
+              "you are working through the day is worked out for you."))}
         </p>
       </div>
       {/*

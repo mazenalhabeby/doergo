@@ -34,7 +34,17 @@ export interface StepFormEditorProps {
 }
 
 /** StepFormEditor's state and handlers — everything before its markup, moved here unchanged. */
-export function useStepFormEditor({ stepName, mode, draft, onChange, editable, crmAvailable, serverErrors, standardAvailable }: Pick<StepFormEditorProps, 'stepName' | 'mode' | 'draft' | 'onChange' | 'editable' | 'crmAvailable' | 'serverErrors' | 'standardAvailable'>) {
+export function useStepFormEditor(
+  {
+    stepName,
+    mode,
+    draft,
+    onChange,
+    editable,
+    crmAvailable,
+    serverErrors,
+    standardAvailable
+  }: Pick<StepFormEditorProps, 'stepName' | 'mode' | 'draft' | 'onChange' | 'editable' | 'crmAvailable' | 'serverErrors' | 'standardAvailable'>) {
   const { t } = useTranslation()
   const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
   const [dragFrom, setDragFrom] = useState<number | null>(null)
@@ -45,7 +55,9 @@ export function useStepFormEditor({ stepName, mode, draft, onChange, editable, c
   const errorsFor = (id: string) => [...(live[id] ?? []), ...(serverErrors?.[id] ?? [])]
   const formErrors = [...(live["*"] ?? []), ...(serverErrors?.["*"] ?? [])]
   const defError = (code: string) =>
-    t(`stepForm.definitionError.${code}`, { defaultValue: t("stepForm.definitionError.invalid", "This question is not valid."), max: STEP_FORM_LIMITS.maxFields })
+    t(
+      `stepForm.definitionError.${code}`,
+      { defaultValue: t("stepForm.definitionError.invalid", "This question is not valid."), max: STEP_FORM_LIMITS.maxFields })
 
   const setFields = (next: StepFormField[]) => onChange({ fields: next })
   const update = (i: number, patch: Partial<StepFormField>) => setFields(fields.map((f, j) => (j === i ? { ...f, ...patch } : f)))

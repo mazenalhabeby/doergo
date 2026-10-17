@@ -9,7 +9,10 @@ export const spaceMembersApi = {
     return res.data?.data || [];
   },
   assign: async (spaceId: string, data: { userId: string; spaceRoleId?: string | null }) => {
-    const res = await call(spaceMembersWebEndpoints.assign, { spaceId }, { body: data }) as ApiResponse<{ success: boolean; data: SpaceMember }>;
+    const res = await call(
+      spaceMembersWebEndpoints.assign,
+      { spaceId },
+      { body: data }) as ApiResponse<{ success: boolean; data: SpaceMember }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
@@ -30,7 +33,10 @@ export const spaceMembersApi = {
     memberId: string,
     data: { billRateCents?: number | null; costRateCents?: number | null; costDayCents?: number | null; effectiveFrom?: string },
   ) => {
-    const res = await call(spaceMembersWebEndpoints.updateRate, { spaceId, memberId }, { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const res = await call(
+      spaceMembersWebEndpoints.updateRate,
+      { spaceId, memberId },
+      { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
@@ -49,13 +55,18 @@ export const spaceMembersApi = {
       hoursBasis?: 'COUNTED' | 'CLOCKED' | 'SHIFT' | null
     },
   ) => {
-    const res = await call(spaceMembersWebEndpoints.updateRoles, { spaceId, memberId }, { body: data }) as ApiResponse<{ success: boolean; data: SpaceMember }>;
+    const res = await call(
+      spaceMembersWebEndpoints.updateRoles,
+      { spaceId, memberId },
+      { body: data }) as ApiResponse<{ success: boolean; data: SpaceMember }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
   /** What one person may do in this workspace, as the permission builder shows it. */
   getPermissions: async (spaceId: string, assignmentId: string): Promise<AssignmentPermissionsView> => {
-    const res = await call(spaceMembersWebEndpoints.getPermissions, { spaceId, assignmentId }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
+    const res = await call(
+      spaceMembersWebEndpoints.getPermissions,
+      { spaceId, assignmentId }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -69,7 +80,10 @@ export const spaceMembersApi = {
     assignmentId: string,
     body: { roleId: string } | { permissions: PermissionSet },
   ): Promise<AssignmentPermissionsView> => {
-    const res = await call(spaceMembersWebEndpoints.setPermissions, { spaceId, assignmentId }, { body }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
+    const res = await call(
+      spaceMembersWebEndpoints.setPermissions,
+      { spaceId, assignmentId },
+      { body }) as ApiResponse<{ success: boolean; data: AssignmentPermissionsView }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -85,7 +99,10 @@ export const spaceMembersApi = {
       approveUserIds?: string[]
     },
   ) => {
-    const res = await call(spaceMembersWebEndpoints.updateRouting, { spaceId, memberId }, { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const res = await call(
+      spaceMembersWebEndpoints.updateRouting,
+      { spaceId, memberId },
+      { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },

@@ -76,7 +76,11 @@ export function CommandPalette() {
         {results?.members?.length ? (
           <CommandGroup heading={t("commandPalette.groups.people", "People")}>
             {results.members.map((m) => (
-              <CommandItem key={`member-${m.id}`} value={`member-${m.id}`} onSelect={() => navigate(`/members/${m.id}`)} className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
+              <CommandItem
+                key={`member-${m.id}`}
+                value={`member-${m.id}`}
+                onSelect={() => navigate(`/members/${m.id}`)}
+                className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
                 <UserAvatar size="md" firstName={m.firstName} lastName={m.lastName} avatarUrl={m.avatarUrl} seed={m.id} />
                 <div className="flex flex-col flex-1 min-w-0">
                   <span className="text-sm font-medium truncate">{personName(m) || m.email || "—"}</span>
@@ -91,12 +95,17 @@ export function CommandPalette() {
             {results.tasks.map((tk) => {
               const cfg = (STATUS_CONFIG as Record<string, { label: string; className: string }>)[tk.status]
               return (
-                <CommandItem key={`task-${tk.id}`} value={`task-${tk.id}`} onSelect={() => navigate(`/tasks/${tk.id}`)} className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
+                <CommandItem
+                  key={`task-${tk.id}`}
+                  value={`task-${tk.id}`}
+                  onSelect={() => navigate(`/tasks/${tk.id}`)}
+                  className="gap-3 px-3 py-2.5 rounded-lg cursor-pointer">
                   <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/50 bg-muted/50">
                     <ClipboardList className="size-4 text-muted-foreground" />
                   </div>
                   <span className="flex-1 min-w-0 truncate text-sm font-medium">{tk.title}</span>
-                  {cfg && <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.className)}>{cfg.label}</span>}
+                  {cfg &&
+                    <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium", cfg.className)}>{cfg.label}</span>}
                 </CommandItem>
               )
             })}

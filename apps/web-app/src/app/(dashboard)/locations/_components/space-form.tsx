@@ -8,7 +8,16 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Boxes, MapPin, ChevronDown, ChevronRight, Loader2, Briefcase, Building2, Handshake } from "lucide-react"
 import type { LatLng } from "@hbcfield/shared/client"
-import { ATTENDANCE_CONSTANTS, AVAILABLE_MODULES, DEFAULT_ORG_MODULES, MODULE_GROUPS, MODULE_PRESETS, RADIUS_SLIDER_STEPS, radiusToSliderPosition, sliderPositionToRadius } from "@hbcfield/shared/client"
+import {
+  ATTENDANCE_CONSTANTS,
+  AVAILABLE_MODULES,
+  DEFAULT_ORG_MODULES,
+  MODULE_GROUPS,
+  MODULE_PRESETS,
+  RADIUS_SLIDER_STEPS,
+  radiusToSliderPosition,
+  sliderPositionToRadius
+} from "@hbcfield/shared/client"
 import { locationsApi, workflowsApi, type CreateLocationInput } from "@/lib/api"
 import { ExplainerButton } from "@/components/explainer/explainer-button"
 import { notify } from "@/lib/toast"

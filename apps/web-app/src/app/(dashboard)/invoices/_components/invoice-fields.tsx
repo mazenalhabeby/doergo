@@ -102,7 +102,9 @@ export function TermsFields({
         <div className="flex items-center justify-between gap-2">
           <Label className="text-xs" htmlFor="inv-currency">{t("invoices.create.currency")}</Label>
           {currencySource && (
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+            <span
+              className={"rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold " +
+                "text-blue-700 dark:bg-blue-950/50 dark:text-blue-300"}>
               {t(`currency.from.${currencySource}`)}
             </span>
           )}
@@ -134,7 +136,10 @@ export function TermsFields({
                 : exchange.source === "MANUAL"
                   ? <>
                       {t("currency.rateManual")}{" "}
-                      <button type="button" className="font-medium text-blue-600 hover:underline dark:text-blue-400" onClick={exchange.resetToEcb}>
+                      <button
+                        type="button"
+                        className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        onClick={exchange.resetToEcb}>
                         {t("currency.useEcb")}
                       </button>
                     </>

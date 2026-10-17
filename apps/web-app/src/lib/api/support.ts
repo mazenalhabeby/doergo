@@ -10,7 +10,10 @@ export const supportApi = {
     return res.data!.data;
   },
   list: async (status?: string): Promise<{ data: SupportTicket[]; meta: { total: number } }> => {
-    const res = await call(supportEndpoints.tickets, undefined, { query: { status: status || undefined } }) as ApiResponse<{ data: SupportTicket[]; meta: { total: number } }>;
+    const res = await call(
+      supportEndpoints.tickets,
+      undefined,
+      { query: { status: status || undefined } }) as ApiResponse<{ data: SupportTicket[]; meta: { total: number } }>;
     if (res.error) throw apiError(res);
     return res.data!;
   },

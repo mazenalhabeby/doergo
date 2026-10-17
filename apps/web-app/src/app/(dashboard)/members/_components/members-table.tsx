@@ -64,7 +64,11 @@ export function MembersTable({
           ) : members.length > 0 ? (
             <>
               {/* Table header */}
-              <div className={cn(TABLE_GRID, "hidden md:grid py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border/60")}>
+              <div
+                className={cn(
+                  TABLE_GRID,
+                  ("hidden md:grid py-2.5 text-xs font-medium text-muted-foreground " +
+                    "uppercase tracking-wider border-b border-border/60"))}>
                 <div>
                   {isAdmin && (
                     <Checkbox

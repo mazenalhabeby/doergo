@@ -128,7 +128,9 @@ function SharesSection({ spaceId }: { spaceId: string }) {
               <div key={share.id} className="rounded-xl border p-4 transition-colors hover:bg-muted/40">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
+                    <span
+                      className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 " +
+                        "text-blue-600 dark:bg-blue-950 dark:text-blue-300"}>
                       <Building2 className="h-4 w-4" />
                     </span>
                     <div className="min-w-0">
@@ -150,7 +152,9 @@ function SharesSection({ spaceId }: { spaceId: string }) {
                             </span>
                           ))}
                           {share.allowRequests && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                            <span
+                              className={"inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 " +
+                                "text-[11px] text-muted-foreground"}>
                               <ListChecks className="h-3 w-3" />
                               {t("spaceSharing.scope.requestsAllowed")}
                             </span>

@@ -62,7 +62,8 @@ export function RoleAssignField({
   const setSpots = (n: number) => onChange({ ...value, spots: Math.min(ROLE_SPOTS_MAX, Math.max(1, n)) })
 
   if (!isLoading && roles.length === 0) {
-    return <p className="rounded-lg border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">{t("tasks.role.noRoles")}</p>
+    return <p
+      className={"rounded-lg border border-dashed border-border px-3 py-2 text-xs " + "text-muted-foreground"}>{t("tasks.role.noRoles")}</p>
   }
 
   return (
@@ -86,11 +87,21 @@ export function RoleAssignField({
         <div className="space-y-1">
           <Label className="text-xs font-medium text-muted-foreground">{t("tasks.role.people")}</Label>
           <div className="flex h-9 items-center rounded-lg border border-border bg-card">
-            <button type="button" className="px-2 text-muted-foreground hover:text-foreground disabled:opacity-40" onClick={() => setSpots(value.spots - 1)} disabled={disabled || value.spots <= 1} aria-label={t("tasks.role.fewer")}>
+            <button
+              type="button"
+              className="px-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+              onClick={() => setSpots(value.spots - 1)}
+              disabled={disabled || value.spots <= 1}
+              aria-label={t("tasks.role.fewer")}>
               <Minus className="size-3.5" />
             </button>
             <span className="w-6 text-center text-sm tabular-nums">{value.spots}</span>
-            <button type="button" className="px-2 text-muted-foreground hover:text-foreground disabled:opacity-40" onClick={() => setSpots(value.spots + 1)} disabled={disabled || value.spots >= ROLE_SPOTS_MAX} aria-label={t("tasks.role.more")}>
+            <button
+              type="button"
+              className="px-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
+              onClick={() => setSpots(value.spots + 1)}
+              disabled={disabled || value.spots >= ROLE_SPOTS_MAX}
+              aria-label={t("tasks.role.more")}>
               <Plus className="size-3.5" />
             </button>
           </div>
@@ -110,8 +121,12 @@ export function RoleAssignField({
                 <li key={c.userId} className="flex items-center gap-2 text-xs">
                   <span className="w-3 text-right tabular-nums text-muted-foreground">{i + 1}</span>
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                  {c.distanceKm != null && <span className="tabular-nums text-muted-foreground">{formatDistance(c.distanceKm * 1000)}</span>}
-                  <span className={cn("rounded px-1.5 py-px text-[10px] font-medium", STATE_TONE[c.state])}>{t(`tasks.role.state.${c.state}`)}</span>
+                  {c.distanceKm != null &&
+                    <span className="tabular-nums text-muted-foreground">{formatDistance(c.distanceKm * 1000)}</span>}
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-px text-[10px] font-medium",
+                      STATE_TONE[c.state])}>{t(`tasks.role.state.${c.state}`)}</span>
                 </li>
               ))}
             </ol>

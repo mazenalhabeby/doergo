@@ -48,9 +48,20 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
           {/* Dataset */}
           <div data-tour="reports-dataset" className="flex items-center gap-3">
             <Label className="text-xs w-20 shrink-0">{t("reports.dataset", "Dataset")}</Label>
-            <Select value={active.def.dataset} onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a ? { ...a, detail: false, def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] } } : a)) }}>
+            <Select
+              value={active.def.dataset}
+              onValueChange={(v) => { const d = datasets.find((x) => x.key === v); setActive((a) => (a
+                ? {
+                  ...a,
+                  detail: false,
+                  def: { ...a.def, dataset: v, measures: d?.measures[0] ? [d.measures[0].key] : [], dimensions: [], filters: [] }
+                }
+                : a)) }}>
               <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{datasets.map((d) => <SelectItem key={d.key} value={d.key} className="text-xs">{reportLabel(lang, d.labelKey, d.label)}</SelectItem>)}</SelectContent>
+              <SelectContent>{datasets.map((d) => <SelectItem
+                key={d.key}
+                value={d.key}
+                className="text-xs">{reportLabel(lang, d.labelKey, d.label)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
 
@@ -61,10 +72,19 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
               <div className="flex gap-1">
                 {([["summary", "Summary"], ["detail", "Detailed"]] as const).map(([v, label]) => {
                   const on = (v === "detail") === isDetail
-                  return <button key={v} onClick={() => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))} className={cn("rounded-lg border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{t(`reports.view_${v}`, label)}</button>
+                  return <button
+                    key={v}
+                    onClick={() => setActive((a) => (a ? { ...a, detail: v === "detail" } : a))}
+                    className={cn(
+                      "rounded-lg border px-2.5 py-1 text-xs transition-colors",
+                      on
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground")}>{t(`reports.view_${v}`, label)}</button>
                 })}
               </div>
-              {isDetail && <span className="text-[11px] text-muted-foreground">{t("reports.detailHint", "Day-by-day clock-in/out for one person")}</span>}
+              {isDetail &&
+                <span
+                  className="text-[11px] text-muted-foreground">{t("reports.detailHint", "Day-by-day clock-in/out for one person")}</span>}
             </div>
           )}
 
@@ -74,7 +94,10 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
               <div className="flex items-center gap-3">
                 <Label className="text-xs w-20 shrink-0">{t("reports.user", "User")}</Label>
                 <Select value={active.userId ?? ""} onValueChange={(v) => setActive((a) => (a ? { ...a, userId: v } : a))}>
-                  <SelectTrigger className="h-9 w-[240px] text-xs"><SelectValue placeholder={t("reports.pickUser", "Select a technician…")} /></SelectTrigger>
+                  <SelectTrigger
+                    className="h-9 w-[240px] text-xs"><SelectValue
+                      placeholder={t("reports.pickUser", "Select a technician…")}
+                    /></SelectTrigger>
                   <SelectContent>
                     {members.map((m) => <SelectItem key={m.id} value={m.id} className="text-xs">{personName(m)}</SelectItem>)}
                   </SelectContent>
@@ -92,7 +115,10 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                         key={key}
                         disabled={isLast}
                         onClick={() => setTsCols((cur) => (cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key]))}
-                        className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground", isLast && "cursor-default")}
+                        className={cn(
+                          "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                          on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+                          isLast && "cursor-default")}
                       >
                         {reportLabel(lang, TIMESHEET_LABEL[key] ?? `col.${key}`, key)}
                       </button>
@@ -108,7 +134,14 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                 <div className="flex flex-wrap gap-1.5">
                   {dsMeta.measures.map((m) => {
                     const on = (active.def.measures || []).includes(m.key)
-                    return <button key={m.key} onClick={() => toggleArr("measures", m.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, m.labelKey, m.label)}</button>
+                    return <button
+                      key={m.key}
+                      onClick={() => toggleArr("measures", m.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                        on
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, m.labelKey, m.label)}</button>
                   })}
                 </div>
               </div>
@@ -117,7 +150,17 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                 <div className="flex flex-wrap gap-1.5">
                   {dsMeta.dimensions.map((dim) => {
                     const on = (active.def.dimensions || []).includes(dim.key)
-                    return <button key={dim.key} onClick={() => toggleArr("dimensions", dim.key)} className={cn("rounded-full border px-2.5 py-1 text-xs transition-colors", on ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(lang, dim.labelKey, dim.label)}</button>
+                    return <button
+                      key={dim.key}
+                      onClick={() => toggleArr("dimensions", dim.key)}
+                      className={cn(
+                        "rounded-full border px-2.5 py-1 text-xs transition-colors",
+                        on
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground")}>{reportLabel(
+                            lang,
+                            dim.labelKey,
+                            dim.label)}</button>
                   })}
                 </div>
               </div>
@@ -126,13 +169,20 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
                 <div className="flex items-center gap-3">
                   <Label className="text-xs w-20 shrink-0">{t("reports.customer", "Customer")}</Label>
                   <Select value={customerFilter ?? "__all__"} onValueChange={(v) => setCustomerFilter(v === "__all__" ? undefined : v)}>
-                    <SelectTrigger className="h-9 w-[220px] text-xs"><SelectValue placeholder={t("reports.allCustomers", "All customers")} /></SelectTrigger>
+                    <SelectTrigger
+                      className="h-9 w-[220px] text-xs"><SelectValue
+                        placeholder={t("reports.allCustomers", "All customers")}
+                      /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__all__" className="text-xs">{t("reports.allCustomers", "All customers")}</SelectItem>
                       {customers.map((c) => <SelectItem key={c.id} value={c.name} className="text-xs">{c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  {customerFilter && <span className="text-[11px] text-muted-foreground">{t("reports.customerScoped", "Export shows this customer's details")}</span>}
+                  {customerFilter &&
+                    <span
+                      className="text-[11px] text-muted-foreground">{t(
+                        "reports.customerScoped",
+                        "Export shows this customer's details")}</span>}
                 </div>
               )}
             </>
@@ -165,13 +215,20 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">{t("reports.from", "From")}</label>
               <Input type="date" value={toDateInput(active.def.dateRange?.from)} max={toDateInput(active.def.dateRange?.to) || undefined}
-                onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, from: e.target.value ? new Date(e.target.value).toISOString() : undefined } })}
+                onChange={(e) => patchDef({
+                  dateRange: { ...active.def.dateRange, from: e.target.value ? new Date(e.target.value).toISOString() : undefined }
+                })}
                 className="h-9 w-[150px] text-xs" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">{t("reports.to", "To")}</label>
               <Input type="date" value={toDateInput(active.def.dateRange?.to)} min={toDateInput(active.def.dateRange?.from) || undefined}
-                onChange={(e) => patchDef({ dateRange: { ...active.def.dateRange, to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : undefined } })}
+                onChange={(e) => patchDef({
+                  dateRange: {
+                    ...active.def.dateRange,
+                    to: e.target.value ? new Date(e.target.value + "T23:59:59").toISOString() : undefined
+                  }
+                })}
                 className="h-9 w-[150px] text-xs" />
             </div>
           </>
@@ -181,16 +238,27 @@ export function ReportsPageDataset({ s }: { s: ReportsPageState }) {
             <label className="text-xs text-muted-foreground">{t("reports.timeSplit", "Time split")}</label>
             <Select value={active.def.granularity || "none"} onValueChange={(v) => patchDef({ granularity: v as ReportGranularity })}>
               <SelectTrigger className="h-9 w-[150px] text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{GRANULARITIES.map((g) => <SelectItem key={g.value} value={g.value} className="text-xs">{g.label}</SelectItem>)}</SelectContent>
+              <SelectContent>{GRANULARITIES.map((g) => <SelectItem
+                key={g.value}
+                value={g.value}
+                className="text-xs">{g.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         )}
         {isDetail ? (
-          <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={timesheet.isPending || !active.userId} onClick={runTimesheet}>
+          <Button
+            data-tour="reports-run"
+            className="gap-1.5 h-9 ml-auto"
+            disabled={timesheet.isPending || !active.userId}
+            onClick={runTimesheet}>
             <Play className="h-3.5 w-3.5" />{timesheet.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
           </Button>
         ) : (
-          <Button data-tour="reports-run" className="gap-1.5 h-9 ml-auto" disabled={run.isPending || !(active.def.measures?.length)} onClick={() => run.mutate(active.def)}>
+          <Button
+            data-tour="reports-run"
+            className="gap-1.5 h-9 ml-auto"
+            disabled={run.isPending || !(active.def.measures?.length)}
+            onClick={() => run.mutate(active.def)}>
             <Play className="h-3.5 w-3.5" />{run.isPending ? t("reports.running", "Running…") : t("reports.run", "Run report")}
           </Button>
         )}

@@ -21,7 +21,9 @@ export default function AccountDeletionPage() {
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+            className={"inline-flex items-center gap-1.5 rounded-full border border-slate-200 " +
+              "px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors " +
+              "hover:border-slate-300 hover:text-slate-900"}
           >
             <ArrowLeft className="size-3.5" />
             Back to HBCField
@@ -30,7 +32,9 @@ export default function AccountDeletionPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-16">
-        <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
+        <span
+          className={"inline-flex items-center gap-2 rounded-full border border-slate-200 " +
+            "bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm"}>
           <Trash2 className="size-3.5 text-blue-600" />
           Account &amp; Data Deletion
         </span>

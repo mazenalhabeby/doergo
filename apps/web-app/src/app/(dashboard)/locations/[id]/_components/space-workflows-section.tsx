@@ -87,7 +87,9 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                   <span className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium text-foreground">{wf.name}</span>
                     {isDefault && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      <span
+                        className={"inline-flex shrink-0 items-center gap-1 rounded-md bg-muted px-1.5 " +
+                          "py-0.5 text-[10px] font-medium text-muted-foreground"}>
                         <Check className="size-2.5" />
                         {t("locations.workflows.default", "Default")}
                       </span>
@@ -102,7 +104,9 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                       title={
                         isLocal
                           ? t("locations.workflows.localHint", "Only this workspace uses it. Edits stay here.")
-                          : t("locations.workflows.sharedHint", "Shared with the organization. Editing it changes it everywhere it is offered.")
+                          : t(
+                            "locations.workflows.sharedHint",
+                            ("Shared with the organization. Editing it changes it everywhere it is " + "offered."))
                       }
                     >
                       {isLocal ? <GitFork className="size-2.5" /> : <Globe className="size-2.5" />}
@@ -148,7 +152,9 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
                     size="sm"
                     className="h-7 shrink-0 text-xs"
                     disabled={busy}
-                    title={t("locations.workflows.forkHint", "Take this space's own copy so you can change it without affecting other spaces")}
+                    title={t(
+                      "locations.workflows.forkHint",
+                      ("Take this space's own copy so you can change it without affecting other " + "spaces"))}
                     onClick={() => fork.mutate(wf.id)}
                   >
                     <GitFork className="mr-1 size-3" />
@@ -200,7 +206,9 @@ export function SpaceWorkflowsSection({ spaceId }: { spaceId: string }) {
       {templates.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs text-muted-foreground">
-            {t("locations.workflows.libraryHint", "Or start from a ready-made task type. It is copied into your organization, so you can edit it afterwards.")}
+            {t(
+              "locations.workflows.libraryHint",
+              ("Or start from a ready-made task type. It is copied into your " + "organization, so you can edit it afterwards."))}
           </p>
           <div className="flex items-center gap-2">
             <Select value={picking} onValueChange={setPicking} disabled={busy}>

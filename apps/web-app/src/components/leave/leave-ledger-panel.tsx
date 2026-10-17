@@ -100,7 +100,9 @@ export function LeaveLedgerPanel({
         {editable && (
           <div className="ml-auto flex items-center gap-2">
             {opensOpening && (
-              <Link href="/employees/leave-opening" className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+              <Link
+                href="/employees/leave-opening"
+                className={"text-xs font-medium text-muted-foreground underline-offset-2 " + "hover:text-foreground hover:underline"}>
                 {t("leaveLedger.opening.link")}
               </Link>
             )}
@@ -189,7 +191,12 @@ function LedgerRow({
             {t("leaveLedger.ledger.byWhen", { name: by, date: formatMediumDate(line.createdAt) })}
           </p>
         </div>
-        <span className={cn("shrink-0 font-mono text-[13px] tabular-nums", voided ? "text-muted-foreground line-through" : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400")}>
+        <span
+          className={cn(
+            "shrink-0 font-mono text-[13px] tabular-nums",
+            voided
+              ? "text-muted-foreground line-through"
+              : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400")}>
           {formatSignedDays(line.days, dateLocale())}
         </span>
       </div>
@@ -212,7 +219,9 @@ function LedgerRow({
       )}
       {canUndo && confirming && (
         /* Confirmed in place: the row says what undoing does, and asks once. */
-        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-500/10 px-2.5 py-2 text-[12px] text-amber-800 dark:text-amber-300">
+        <div
+          className={"mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-amber-500/10 px-2.5 " +
+            "py-2 text-[12px] text-amber-800 dark:text-amber-300"}>
           <span className="min-w-0 flex-1">{t("leaveLedger.ledger.undoConfirm")}</span>
           <Button size="sm" variant="ghost" className="h-7" onClick={onCancelUndo} disabled={pending}>
             {t("leaveLedger.ledger.keep")}

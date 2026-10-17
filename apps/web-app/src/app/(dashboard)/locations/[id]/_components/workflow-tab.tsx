@@ -186,7 +186,8 @@ export function WorkflowTab({ space }: { space: CompanyLocation }) {
             type="button"
             onClick={() => setConfirmResync(true)}
             disabled={resyncMutation.isPending}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            className={"inline-flex items-center gap-1.5 text-xs text-muted-foreground " +
+              "hover:text-foreground transition-colors disabled:opacity-50"}
           >
             {resyncMutation.isPending ? (
               <Loader2 className="h-3 w-3 animate-spin" />

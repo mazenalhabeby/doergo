@@ -12,7 +12,10 @@ import { dateLocale } from "@/lib/format-date"
 export function HasItNowBadge() {
   const { t } = useTranslation()
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+    <span
+      className={"inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 " +
+        "text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 " +
+        "dark:text-emerald-300"}>
       <CircleDot className="h-2.5 w-2.5" /> {t("custody.now", "Has it now")}
     </span>
   )

@@ -55,7 +55,12 @@ export function RoundPanel({ id, now, onClose }: { id: string | null; now: Date;
     )
   }
   if (isLoading || !r) {
-    return <section className="space-y-3 rounded-2xl border border-border bg-card p-4">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</section>
+    return <section
+      className="space-y-3 rounded-2xl border border-border bg-card p-4">{[
+        0,
+        1,
+        2,
+        3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</section>
   }
 
   const tz = r.location?.timezone
@@ -77,38 +82,59 @@ export function RoundPanel({ id, now, onClose }: { id: string | null; now: Date;
           </p>
           <p className="truncate text-xs text-muted-foreground">{r.location?.name} · {clock(r.createdAt, tz, i18n.language, true)}</p>
         </div>
-        <button type="button" onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted" aria-label={t("common.close", "Close")}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+          aria-label={t("common.close", "Close")}>
           <X className="size-4" />
         </button>
       </div>
 
-      <span className={cn("self-start rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[state])}>{t(`overtimePage.state.${state}`)}</span>
+      <span
+        className={cn(
+          "self-start rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+          STATE_PILL[state])}>{t(`overtimePage.state.${state}`)}</span>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
         {r.timeEntry?.clockInAt && (
           <>
             <dt className="text-muted-foreground">{t("overtimePage.panel.shift")}</dt>
-            <dd className="text-right tabular-nums">{t("overtimePage.panel.shiftValue", { from: at(r.timeEntry.clockInAt), to: at(r.overtimeStartAt) || "—" })}</dd>
+            <dd
+              className="text-right tabular-nums">{t(
+                "overtimePage.panel.shiftValue",
+                { from: at(r.timeEntry.clockInAt), to: at(r.overtimeStartAt) || "—" })}</dd>
           </>
         )}
         {agreed > 0 && (
           <>
             <dt className="text-muted-foreground">{t("overtimePage.panel.agreed")}</dt>
-            <dd className="text-right tabular-nums">{t("overtimePage.panel.agreedValue", { minutes: mins(agreed), time: at(r.overtimeEndAt) })}</dd>
-            <dt className="text-muted-foreground">{t(state === "RUNNING" || state === "OVER" ? "overtimePage.panel.workedSoFar" : "overtimePage.panel.worked")}</dt>
+            <dd
+              className="text-right tabular-nums">{t(
+                "overtimePage.panel.agreedValue",
+                { minutes: mins(agreed), time: at(r.overtimeEndAt) })}</dd>
+            <dt
+              className="text-muted-foreground">{t(
+                state === "RUNNING" || state === "OVER" ? "overtimePage.panel.workedSoFar" : "overtimePage.panel.worked")}</dt>
             <dd className="text-right font-semibold tabular-nums">{mins(worked)}</dd>
           </>
         )}
         {overBy > 0 && (
           <>
             <dt className="text-muted-foreground">{t("overtimePage.panel.pastAgreed")}</dt>
-            <dd className="text-right tabular-nums text-amber-600 dark:text-amber-400">{t("overtimePage.panel.notCounted", { minutes: mins(overBy) })}</dd>
+            <dd
+              className="text-right tabular-nums text-amber-600 dark:text-amber-400">{t(
+                "overtimePage.panel.notCounted",
+                { minutes: mins(overBy) })}</dd>
           </>
         )}
         {r.rounds.length > 1 && (
           <>
             <dt className="text-muted-foreground">{t("overtimePage.panel.thisShift")}</dt>
-            <dd className="text-right tabular-nums">{t("overtimePage.panel.thisShiftValue", { count: r.rounds.length, minutes: mins(shiftTotal) })}</dd>
+            <dd
+              className="text-right tabular-nums">{t(
+                "overtimePage.panel.thisShiftValue",
+                { count: r.rounds.length, minutes: mins(shiftTotal) })}</dd>
           </>
         )}
       </dl>
@@ -116,7 +142,10 @@ export function RoundPanel({ id, now, onClose }: { id: string | null; now: Date;
       <ol className="flex flex-col">
         {steps.map((s, i) => (
           <li key={i} className="grid grid-cols-[auto_14px_1fr] gap-2 pb-3 text-sm last:pb-0">
-            <time className="whitespace-nowrap pt-px font-mono text-xs text-muted-foreground">{s.at === "now" ? t("overtimePage.panel.now") : at(s.at)}</time>
+            <time
+              className="whitespace-nowrap pt-px font-mono text-xs text-muted-foreground">{s.at === "now"
+                ? t("overtimePage.panel.now")
+                : at(s.at)}</time>
             <span className="relative">
               <span
                 className={cn(
@@ -134,11 +163,15 @@ export function RoundPanel({ id, now, onClose }: { id: string | null; now: Date;
       {r.signature && (
         <figure className="flex flex-col gap-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={r.signature} alt={t("overtimePage.panel.signatureAlt", { name: r.leaderName || "" })} className="h-20 w-full rounded-lg border border-border bg-white object-contain"
+          <img
+            src={r.signature}
+            alt={t("overtimePage.panel.signatureAlt", { name: r.leaderName || "" })}
+            className="h-20 w-full rounded-lg border border-border bg-white object-contain"
             // A picture that will not draw is left out, not shown broken.
             onError={(e) => { const f = e.currentTarget.closest("figure"); if (f) f.hidden = true }}
           />
-          {r.leaderName && <figcaption className="text-xs text-muted-foreground">{t("overtimePage.panel.signedBy", { name: r.leaderName })}</figcaption>}
+          {r.leaderName &&
+            <figcaption className="text-xs text-muted-foreground">{t("overtimePage.panel.signedBy", { name: r.leaderName })}</figcaption>}
         </figure>
       )}
 
@@ -182,16 +215,32 @@ function timeline(t: (k: string, o?: Record<string, unknown>) => string, r: Over
   } else if (r.status === "PENDING_TECHNICIAN" || r.status === "EXPIRED_NO_RESPONSE") {
     steps.push({ at: r.createdAt, text: t("overtimePage.step.phoneAsked", { name }) })
   }
-  if (r.status === "EXPIRED_NO_RESPONSE" && r.technicianTimeoutAt) steps.push({ at: r.technicianTimeoutAt, text: t("overtimePage.step.noReply", { name }), tone: "warn" })
+  if (r.status === "EXPIRED_NO_RESPONSE" &&
+    r.technicianTimeoutAt) steps.push({ at: r.technicianTimeoutAt, text: t("overtimePage.step.noReply", { name }), tone: "warn" })
   if (r.approvedAt && (r.status === "APPROVED" || r.status === "COMPLETED")) {
     const how = methodWords(t, r)
     const minutes = mins(r.maxDurationMinutes ?? 0)
-    steps.push({ at: r.approvedAt, text: how ? t("overtimePage.step.agreedHow", { how: how.charAt(0).toUpperCase() + how.slice(1), minutes }) : t("overtimePage.step.agreed", { minutes }) })
+    steps.push({
+      at: r.approvedAt,
+      text: how
+        ? t("overtimePage.step.agreedHow", { how: how.charAt(0).toUpperCase() + how.slice(1), minutes })
+        : t("overtimePage.step.agreed", { minutes })
+    })
   }
   if (r.status === "REJECTED") {
-    steps.push({ at: r.rejectedAt ?? r.approvedAt ?? r.createdAt, text: r.rejectionReason ? t("overtimePage.step.refusedWhy", { by, reason: r.rejectionReason }) : t("overtimePage.step.refused", { by }), tone: "bad" })
+    steps.push({
+      at: r.rejectedAt ?? r.approvedAt ?? r.createdAt,
+      text: r.rejectionReason
+        ? t("overtimePage.step.refusedWhy", { by, reason: r.rejectionReason })
+        : t("overtimePage.step.refused", { by }),
+      tone: "bad"
+    })
   }
-  if (r.status === "EXPIRED_NO_APPROVAL") steps.push({ at: r.approvalTimeoutAt ?? r.createdAt, text: t("overtimePage.step.noAnswer"), tone: "warn" })
+  if (r.status === "EXPIRED_NO_APPROVAL") steps.push({
+    at: r.approvalTimeoutAt ?? r.createdAt,
+    text: t("overtimePage.step.noAnswer"),
+    tone: "warn"
+  })
   if (r.timeEntry?.clockOutAt) steps.push({ at: r.timeEntry.clockOutAt, text: t("overtimePage.step.clockedOut", { name }), tone: "end" })
   steps.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
   if (state === "RUNNING") steps.push({ at: "now", text: t("overtimePage.step.counting"), tone: "end" })
@@ -208,7 +257,10 @@ export function StateLegend() {
       <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 text-xs">
         {OVERTIME_ROUND_STATES.map((s) => (
           <div key={s} className="contents">
-            <dt><span className={cn("whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[s])}>{t(`overtimePage.state.${s}`)}</span></dt>
+            <dt><span
+              className={cn(
+                "whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                STATE_PILL[s])}>{t(`overtimePage.state.${s}`)}</span></dt>
             <dd className="text-muted-foreground">{t(`overtimePage.legend.${s}`)}</dd>
           </div>
         ))}

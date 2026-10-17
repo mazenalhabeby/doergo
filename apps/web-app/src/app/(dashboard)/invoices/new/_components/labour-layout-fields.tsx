@@ -89,7 +89,10 @@ export function LabourLayoutFields({
               */}
               <div className="mt-4 space-y-3 border-t border-border pt-3">
                 <p className="text-xs font-medium text-foreground">{t("invoices.create.lineStyle")}</p>
-                <div role="radiogroup" aria-label={t("invoices.create.lineStyle")} className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
+                <div
+                  role="radiogroup"
+                  aria-label={t("invoices.create.lineStyle")}
+                  className="grid gap-1 rounded-xl border border-border bg-muted/50 p-1">
                   {(["full", "name"] as const).map((w) => (
                     <button
                       key={w}

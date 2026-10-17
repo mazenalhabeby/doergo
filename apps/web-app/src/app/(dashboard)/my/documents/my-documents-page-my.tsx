@@ -40,7 +40,9 @@ export function MyDocumentsPageMy({ vm }: { vm: MyDocumentsPageState }) {
         </p>
       </div>
     ) : (
-      <ul className="divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+      <ul
+        className={"divide-y divide-slate-200 overflow-hidden rounded-xl border " +
+          "border-slate-200 dark:divide-slate-800 dark:border-slate-800"}>
         {visible.map((d) => {
           const isImage = d.mimeType.startsWith("image/")
           const period =
@@ -67,7 +69,9 @@ export function MyDocumentsPageMy({ vm }: { vm: MyDocumentsPageState }) {
                     {d.title}
                   </span>
                   {d.unread && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                    <span
+                      className={"rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold " +
+                        "text-blue-700 dark:bg-blue-950 dark:text-blue-400"}>
                       {t("documents.new")}
                     </span>
                   )}
@@ -75,12 +79,16 @@ export function MyDocumentsPageMy({ vm }: { vm: MyDocumentsPageState }) {
                       but silence would leave the member unaware they must
                       sign a printed copy and return it. */}
                   {types.find((ty) => ty.id === d.typeId)?.signatureMode === "WET_INK" && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+                    <span
+                      className={"rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold " +
+                        "text-blue-700 dark:bg-blue-950 dark:text-blue-400"}>
                       {t("documents.signOnPaper")}
                     </span>
                   )}
                   {d.needsSignature && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                    <span
+                      className={"rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
+                        "text-amber-700 dark:bg-amber-950 dark:text-amber-400"}>
                       {t("documents.needsSignature")}
                     </span>
                   )}
@@ -92,7 +100,9 @@ export function MyDocumentsPageMy({ vm }: { vm: MyDocumentsPageState }) {
                     one puts their name on somebody else's hours.
                   */}
                   {d.forMember && (
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <span
+                      className={"rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium " +
+                        "text-slate-600 dark:bg-slate-800 dark:text-slate-300"}>
                       {t("documents.onBehalfOf", { name: d.forMember })}
                     </span>
                   )}
@@ -106,13 +116,18 @@ export function MyDocumentsPageMy({ vm }: { vm: MyDocumentsPageState }) {
                     no. The chip is the difference between "sent" and "counts".
                   */}
                   {d.status === "PENDING_VERIFICATION" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                    <span
+                      className={"inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 " +
+                        "text-[11px] font-semibold text-slate-600 dark:bg-slate-800 " +
+                        "dark:text-slate-300"}>
                       <Clock className="h-3 w-3" />
                       {t("documents.status.pendingVerification")}
                     </span>
                   )}
                   {d.status === "REJECTED" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400">
+                    <span
+                      className={"inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 " +
+                        "text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400"}>
                       <XCircle className="h-3 w-3" />
                       {t("documents.status.rejected")}
                     </span>

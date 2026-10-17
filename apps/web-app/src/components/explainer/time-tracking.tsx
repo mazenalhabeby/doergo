@@ -184,7 +184,13 @@ export const Sprints = () => (
     {[0, 1, 2, 3, 4, 5, 6].map((i) => (
       <line key={i} x1={68 + i * 44} y1="14" x2={68 + i * 44} y2="34" className={LINE} strokeWidth="1" opacity="0.5" />
     ))}
-    <path d="M28 50 L112 58 L196 70 L280 76 L364 88" className="stroke-emerald-500/80" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+    <path
+      d="M28 50 L112 58 L196 70 L280 76 L364 88"
+      className="stroke-emerald-500/80"
+      strokeWidth="2.2"
+      fill="none"
+      strokeLinecap="round"
+    />
     {[[28, 50], [112, 58], [196, 70], [280, 76], [364, 88]].map(([x, y], i) => (
       <circle key={i} cx={x} cy={y} r="3" className="fill-emerald-500" />
     ))}

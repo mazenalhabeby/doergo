@@ -112,7 +112,8 @@ export function autoClockFieldError(field: AutoClockField, form: AutoClockForm):
  */
 export type AutoClockAvailability = "ok" | "remote" | "noCoordinates"
 
-export function autoClockAvailability(space: { isRemote?: boolean | null; lat?: number | null; lng?: number | null }): AutoClockAvailability {
+export function autoClockAvailability(
+  space: { isRemote?: boolean | null; lat?: number | null; lng?: number | null }): AutoClockAvailability {
   if (space.isRemote) return "remote"
   if (space.lat == null || space.lng == null) return "noCoordinates"
   return "ok"
@@ -124,7 +125,8 @@ export function autoClockAvailability(space: { isRemote?: boolean | null; lat?: 
  */
 export type AutoClockConsent = { state: "agreed"; at: string } | { state: "notAgreed" } | { state: "unknown" }
 
-export function autoClockConsent(row: { autoClockConsentAt?: string | null; user?: { autoClockConsentAt?: string | null } | null } | null | undefined): AutoClockConsent {
+export function autoClockConsent(
+  row: { autoClockConsentAt?: string | null; user?: { autoClockConsentAt?: string | null } | null } | null | undefined): AutoClockConsent {
   const v = row?.autoClockConsentAt !== undefined ? row.autoClockConsentAt : row?.user?.autoClockConsentAt
   if (v === undefined) return { state: "unknown" }
   return v ? { state: "agreed", at: v } : { state: "notAgreed" }

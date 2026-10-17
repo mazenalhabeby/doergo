@@ -137,7 +137,9 @@ export function NoShiftSection({
                     >
                       −
                     </button>
-                    <span className="min-w-16 border-x px-3 py-1.5 text-center text-sm font-semibold tabular-nums">{formatHours(minutes)}</span>
+                    <span
+                      className={"min-w-16 border-x px-3 py-1.5 text-center text-sm font-semibold " +
+                        "tabular-nums"}>{formatHours(minutes)}</span>
                     <button
                       type="button"
                       className="px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-40"
@@ -183,7 +185,8 @@ export function NoShiftSection({
         <p className="mt-1 text-xs leading-snug text-muted-foreground">
           {t(
             "attendance.noShift.note",
-            "Members with a shift are not affected. The limit counts every hour the member worked today, at any workspace, in this workspace's time zone.",
+            ("Members with a shift are not affected. The limit counts every hour the " +
+              "member worked today, at any workspace, in this workspace's time zone."),
           )}
         </p>
       </div>

@@ -36,7 +36,9 @@ export function WorkRuns({
                 {hourRuns.map((h) => (
                   <div
                     key={h.key}
-                    className={cn("flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors", h.include ? "border-border" : "border-border/40 opacity-60")}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors",
+                      h.include ? "border-border" : "border-border/40 opacity-60")}
                   >
                     <Checkbox
                       checked={h.include}
@@ -46,10 +48,17 @@ export function WorkRuns({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-sm font-medium text-foreground">
-                          <span className="mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-300">{t("invoices.create.tagHours")}</span>
+                          <span
+                            className={"mr-2 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-bold " +
+                              "text-blue-700 dark:text-blue-300"}>{t("invoices.create.tagHours")}</span>
                           {h.workerName}
                           {h.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{h.workRoleName}</span>}
-                          <HoursBasisChip basis={h.hoursBasis} hoursByBasis={h.hoursByBasis} spaceId={gatherSpaceId} assignmentId={h.assignmentId} />
+                          <HoursBasisChip
+                            basis={h.hoursBasis}
+                            hoursByBasis={h.hoursByBasis}
+                            spaceId={gatherSpaceId}
+                            assignmentId={h.assignmentId}
+                          />
                         </p>
                         <span className="shrink-0 text-sm font-semibold tabular-nums">
                           {money(Math.round(h.hours * (h.hourRateCents ?? 0)) / 100, currency)}
@@ -58,7 +67,9 @@ export function WorkRuns({
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="size-3" />
-                          {t("invoices.create.hoursOnSite", { hours: formatHoursMinutes(h.hours), days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
+                          {t(
+                            "invoices.create.hoursOnSite",
+                            { hours: formatHoursMinutes(h.hours), days: h.days })} × {money((h.hourRateCents ?? 0) / 100, currency)}
                         </span>
                         <span>
                           {formatDayKey(h.fromDay, i18n.language)}
@@ -81,7 +92,9 @@ export function WorkRuns({
                 {dayRuns.map((d) => (
                   <div
                     key={d.key}
-                    className={cn("flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors", d.include ? "border-border" : "border-border/40 opacity-60")}
+                    className={cn(
+                      "flex items-start gap-3 rounded-xl border bg-card p-4 transition-colors",
+                      d.include ? "border-border" : "border-border/40 opacity-60")}
                   >
                     <Checkbox
                       checked={d.include}
@@ -91,7 +104,9 @@ export function WorkRuns({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-sm font-medium text-foreground">
-                          <span className="mr-2 rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:text-teal-300">{t("invoices.create.tagDays")}</span>
+                          <span
+                            className={"mr-2 rounded bg-teal-500/15 px-1.5 py-0.5 text-[10px] font-bold " +
+                              "text-teal-700 dark:text-teal-300"}>{t("invoices.create.tagDays")}</span>
                           {d.workerName}
                           {d.workRoleName && <span className="ml-2 text-xs font-normal text-muted-foreground">{d.workRoleName}</span>}
                         </p>

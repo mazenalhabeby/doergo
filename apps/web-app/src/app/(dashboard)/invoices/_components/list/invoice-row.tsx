@@ -52,7 +52,9 @@ export function InvoiceRow({
           onOpen(inv.id)
         }
       }}
-      className="group relative flex cursor-pointer items-center gap-4 border-b border-border/20 px-4 py-3.5 pl-5 transition-colors last:border-0 hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none"
+      className={"group relative flex cursor-pointer items-center gap-4 border-b " +
+        "border-border/20 px-4 py-3.5 pl-5 transition-colors last:border-0 " +
+        "hover:bg-muted/25 focus-visible:bg-muted/25 focus-visible:outline-none"}
     >
       {/*
         A hairline in the age's own colour. The band is already
@@ -145,7 +147,10 @@ export function InvoiceRow({
           <button
             onClick={(e) => { e.stopPropagation(); step(inv, primary) }}
             disabled={stepPending}
-            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground opacity-0 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary focus-visible:opacity-100 disabled:opacity-50 group-hover:opacity-100"
+            className={"rounded-md border border-border px-2 py-1 text-[11px] font-medium " +
+              "text-muted-foreground opacity-0 transition-all hover:border-primary/40 " +
+              "hover:bg-primary/5 hover:text-primary focus-visible:opacity-100 " +
+              "disabled:opacity-50 group-hover:opacity-100"}
           >
             {t(primary.labelKey)}
           </button>
@@ -156,7 +161,8 @@ export function InvoiceRow({
               <button
                 onClick={(e) => e.stopPropagation()}
                 aria-label={t("common.more", "More")}
-                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                className={"flex size-7 items-center justify-center rounded-md text-muted-foreground " +
+                  "transition-colors hover:bg-muted/50 hover:text-foreground"}
               >
                 <MoreHorizontal className="size-3.5" />
               </button>

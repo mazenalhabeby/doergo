@@ -25,7 +25,10 @@ export function Hero({ icon, green }: { icon: string; green?: boolean }) {
 
 export function Kicker({ icon, text }: { icon: string; text: string }) {
   return (
-    <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-[12px] font-bold tracking-wide text-primary">
+    <span
+      className={"mb-4 inline-flex items-center gap-1.5 rounded-full border " +
+        "border-primary/15 bg-primary/5 px-3 py-1.5 text-[12px] font-bold " +
+        "tracking-wide text-primary"}>
       <WizardIcon name={icon} className="size-3.5" /> {text}
     </span>
   )

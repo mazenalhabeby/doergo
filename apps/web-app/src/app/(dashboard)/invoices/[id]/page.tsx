@@ -24,7 +24,8 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   )
 }
 
-export function InvoiceDetailInner({ id }: { id: string }) {
+// Not exported: a Next.js page module may export only the page and its known fields.
+function InvoiceDetailInner({ id }: { id: string }) {
   const vm = useInvoiceDetailInner({ id })
   const {
     t,

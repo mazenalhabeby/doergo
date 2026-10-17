@@ -4,7 +4,18 @@ import { personInitials, personName } from "@hbcfield/shared/client"
 import type { useTopNavbar } from "./use-top-navbar"
 
 /** What TopNavbar works out after its early returns, moved here unchanged; called from the same place. */
-export function TopNavbarView({ user, optionAllows, scheduleAccess, routeAccess }: { user: NonNullable<ReturnType<typeof useTopNavbar>['user']>; optionAllows: ReturnType<typeof useTopNavbar>['optionAllows']; scheduleAccess: ReturnType<typeof useTopNavbar>['scheduleAccess']; routeAccess: ReturnType<typeof useTopNavbar>['routeAccess'] }) {
+export function TopNavbarView(
+  {
+    user,
+    optionAllows,
+    scheduleAccess,
+    routeAccess
+  }: {
+    user: NonNullable<ReturnType<typeof useTopNavbar>['user']>;
+    optionAllows: ReturnType<typeof useTopNavbar>['optionAllows'];
+    scheduleAccess: ReturnType<typeof useTopNavbar>['scheduleAccess'];
+    routeAccess: ReturnType<typeof useTopNavbar>['routeAccess']
+  }) {
   const initials = personInitials(user)
   const fullName = personName(user)
 

@@ -115,7 +115,9 @@ export function BillingBanner() {
       href="/settings/billing"
       className={
         variant.hard
-          ? 'group flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 border-b border-red-600 bg-red-600 px-4 py-2.5 text-white transition-colors hover:bg-red-700'
+          ? ('group flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 ' +
+            'border-b border-red-600 bg-red-600 px-4 py-2.5 text-white ' +
+            'transition-colors hover:bg-red-700')
           : `group flex items-center justify-center gap-2.5 border-b ${variant.border} bg-gradient-to-r ${variant.grad} to-transparent px-4 py-2 backdrop-blur-sm transition-colors`
       }
     >
@@ -141,7 +143,9 @@ export function BillingBanner() {
       <span
         className={
           variant.hard
-            ? 'ml-0.5 inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 text-[12px] font-semibold text-red-700 transition-all group-hover:gap-1.5'
+            ? ('ml-0.5 inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 ' +
+              'text-[12px] font-semibold text-red-700 transition-all ' +
+              'group-hover:gap-1.5')
             : `ml-0.5 inline-flex items-center gap-1 text-[12px] font-semibold ${variant.accent} transition-all group-hover:gap-1.5`
         }
       >

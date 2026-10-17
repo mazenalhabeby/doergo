@@ -15,9 +15,11 @@ export const STATUS_OPTIONS_KEYS = [
 export function getStatusBadge(status: InvitationStatus, t: (key: string) => string) {
   switch (status) {
     case InvitationStatus.PENDING:
-      return <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">{t("invitations.status.pending")}</Badge>
+      return <Badge
+        className="bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-100">{t("invitations.status.pending")}</Badge>
     case InvitationStatus.ACCEPTED:
-      return <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">{t("invitations.status.accepted")}</Badge>
+      return <Badge
+        className="bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-100">{t("invitations.status.accepted")}</Badge>
     case InvitationStatus.EXPIRED:
       return <Badge className="bg-muted text-muted-foreground hover:bg-accent">{t("invitations.status.expired")}</Badge>
     case InvitationStatus.REVOKED:

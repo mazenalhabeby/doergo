@@ -64,7 +64,10 @@ export function TasksTab({ tasks }: TasksTabProps) {
                   <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusConfig.hex }} />
                   {statusConfig.label}
                 </span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                <ChevronRight
+                  className={"h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground " +
+                    "group-hover:translate-x-0.5 transition-all flex-shrink-0"}
+                />
               </button>
             )
           })}

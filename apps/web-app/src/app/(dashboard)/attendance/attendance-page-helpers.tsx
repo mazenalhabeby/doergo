@@ -13,4 +13,6 @@ export const NoShowsTab = dynamic(() => import("./_components/no-shows-tab").the
 
 export const AddDayOffDialog = dynamic(() => import("./_components/add-dayoff-dialog").then((m) => m.AddDayOffDialog), { ssr: false })
 
-export const AddAttendanceDialog = dynamic(() => import("../members/[id]/_components/add-attendance-dialog").then((m) => m.AddAttendanceDialog), { ssr: false })
+export const AddAttendanceDialog = dynamic(
+  () => import("../members/[id]/_components/add-attendance-dialog").then((m) => m.AddAttendanceDialog),
+  { ssr: false })

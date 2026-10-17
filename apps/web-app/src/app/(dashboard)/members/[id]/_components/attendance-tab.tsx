@@ -167,7 +167,9 @@ export function AttendanceTab({
                   {isOpen && (
                     <tr className="border-b border-border/60 bg-muted/20">
                       <td colSpan={columns} className="px-5 py-4">
-                        <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div
+                          className={"mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase " +
+                            "tracking-wide text-muted-foreground"}>
                           <ListChecks className="h-3.5 w-3.5" /> {t('worklog.title', "Activity — what they did")}
                         </div>
                         {/* Managers/admins responsible for this member can add & edit their activity. */}

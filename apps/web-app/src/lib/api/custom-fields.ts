@@ -7,7 +7,10 @@ export const customFieldsApi = {
   // No param → ALL definitions (editor). forWorkflow=<id> → that Task Type's
   // fields + globals. forWorkflow='__none__' → globals only.
   listDefinitions: async (params?: { forWorkflow?: string }) => {
-    const response = await call(customFieldsWebEndpoints.listDefinitions, undefined, { query: { forWorkflow: params?.forWorkflow || undefined } }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition[] }>;
+    const response = await call(
+      customFieldsWebEndpoints.listDefinitions,
+      undefined,
+      { query: { forWorkflow: params?.forWorkflow || undefined } }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -20,13 +23,19 @@ export const customFieldsApi = {
     isRequired?: boolean;
     workflowId?: string | null;
   }) => {
-    const response = await call(customFieldsWebEndpoints.createDefinition, undefined, { body: data }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition }>;
+    const response = await call(
+      customFieldsWebEndpoints.createDefinition,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   updateDefinition: async (id: string, data: Partial<CustomFieldDefinition>) => {
-    const response = await call(customFieldsWebEndpoints.updateDefinition, { id }, { body: data }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition }>;
+    const response = await call(
+      customFieldsWebEndpoints.updateDefinition,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: CustomFieldDefinition }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -44,7 +53,10 @@ export const customFieldsApi = {
   },
 
   setTaskValues: async (taskId: string, values: { definitionId: string; value: string }[]) => {
-    const response = await call(tasksEndpoints.setCustomFields, { id: taskId }, { body: { values } }) as ApiResponse<{ success: boolean; data: CustomFieldValue[] }>;
+    const response = await call(
+      tasksEndpoints.setCustomFields,
+      { id: taskId },
+      { body: { values } }) as ApiResponse<{ success: boolean; data: CustomFieldValue[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },

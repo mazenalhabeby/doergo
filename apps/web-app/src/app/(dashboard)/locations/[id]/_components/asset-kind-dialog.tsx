@@ -109,7 +109,9 @@ export function AssetKindDialog({
                       setName((n) => n.trim() || tpl.name)
                       if (!description.trim()) setDescription(tpl.description)
                     }}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+                    className={"rounded-full border border-border px-3 py-1.5 text-xs font-medium " +
+                      "text-muted-foreground transition-colors hover:border-primary " +
+                      "hover:text-foreground"}
                   >
                     {tpl.name}
                   </button>
@@ -190,7 +192,8 @@ export function AssetKindDialog({
                 type="button"
                 disabled={atFieldCap}
                 onClick={() => set("fields", [...shape.fields, { label: "" }])}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+                className={"inline-flex items-center gap-1 text-xs font-medium text-primary " +
+                  "hover:underline disabled:opacity-40 disabled:no-underline"}
               >
                 <Plus className="h-3.5 w-3.5" /> {t("assetRecords.addField", "Add field")}
               </button>

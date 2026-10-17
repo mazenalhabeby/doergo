@@ -68,7 +68,9 @@ export function getEventConfig(eventType: string) {
   return EVENT_CONFIG[eventType] || EVENT_CONFIG.UPDATED
 }
 
-export function getEventDescription(event: Pick<TaskEvent, "eventType" | "metadata">, t: (key: string, options?: Record<string, unknown>) => string): string {
+export function getEventDescription(
+  event: Pick<TaskEvent, "eventType" | "metadata">,
+  t: (key: string, options?: Record<string, unknown>) => string): string {
   const metadata = event.metadata as Record<string, unknown> | null
 
   if (event.eventType === "STATUS_CHANGED" && metadata) {
@@ -103,7 +105,9 @@ export function getEventDescription(event: Pick<TaskEvent, "eventType" | "metada
     return `${t("tasks.activity.events.SELF_BLOCKED")}: ${reason.length > 40 ? reason.slice(0, 40) + "…" : reason}`
   }
   if (metadata && event.eventType === "CHECKLIST_ITEM_TOGGLED" && metadata.text) {
-    return t(metadata.isCompleted ? "tasks.activity.checklist.ticked" : "tasks.activity.checklist.unticked", { text: String(metadata.text) })
+    return t(
+      metadata.isCompleted ? "tasks.activity.checklist.ticked" : "tasks.activity.checklist.unticked",
+      { text: String(metadata.text) })
   }
   if (metadata && event.eventType === "CHECKLIST_ITEM_ASSIGNED" && metadata.text) {
     return metadata.toName

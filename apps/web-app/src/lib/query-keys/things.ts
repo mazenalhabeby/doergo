@@ -26,7 +26,11 @@ const assetsKeys = {
   orphans: () => named("orphan-assets"),
   expensesPending: () => named("asset-expenses-pending"),
   proposalsPending: (...a: [spaceId?: string]) => named("asset-proposals-pending", a),
-  proposalPreview: (proposalId: string | undefined, categoryId: string, retire: boolean, fields: string) => named("proposal-preview", [proposalId, categoryId, retire, fields]),
+  proposalPreview: (
+    proposalId: string | undefined,
+    categoryId: string,
+    retire: boolean,
+    fields: string) => named("proposal-preview", [proposalId, categoryId, retire, fields]),
   /** What each counted module holds (`assetsApi.getUsage`). */
   usage: () => named("module-usage"),
 } as const
@@ -40,7 +44,11 @@ const spacesKeys = {
   /** Roles as one workspace sees them (holders, day rates). */
   roles: (...a: [spaceId?: string]) => named("space-roles-in-space", a),
   roleOptions: (spaceId: string | null | undefined) => named("role-options", [spaceId]),
-  rolePreview: (spaceId: string | null | undefined, roleId: string | null | undefined, lat: number | null | undefined, lng: number | null | undefined) =>
+  rolePreview: (
+    spaceId: string | null | undefined,
+    roleId: string | null | undefined,
+    lat: number | null | undefined,
+    lng: number | null | undefined) =>
     named("role-preview", [spaceId, roleId, lat, lng]),
   roleStats: (...a: [spaceId?: string | null]) => named("role-stats", a),
   memberUnits: (spaceId: string) => named("space-member-units", [spaceId]),
@@ -101,7 +109,10 @@ const reportsKeys = {
   saved: () => named("savedReports"),
   schedules: (...a: [savedId?: string]) => named("reportSchedules", a),
   auditLogs: (...filters: unknown[]) => named("audit-logs", filters),
-  auditTrail: (resourceType: string, resourceId: string | undefined, limit: number) => named("auditTrail", [resourceType, resourceId, limit]),
+  auditTrail: (
+    resourceType: string,
+    resourceId: string | undefined,
+    limit: number) => named("auditTrail", [resourceType, resourceId, limit]),
 } as const
 
 /** Legal entities — `all()` is the picker's list and reaches the settings list too. */

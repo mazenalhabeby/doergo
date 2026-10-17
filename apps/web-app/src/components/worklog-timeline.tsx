@@ -24,7 +24,13 @@ const MAX_FILES = 5
  * composer (own active session / manager) that creates the note then uploads
  * each photo direct to S3 (presign → PUT → confirm).
  */
-export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }: { entryId: string; editable?: boolean; memberName?: string; clockOutNote?: string | null }) {
+export function WorkLogTimeline(
+  {
+    entryId,
+    editable,
+    memberName,
+    clockOutNote
+  }: { entryId: string; editable?: boolean; memberName?: string; clockOutNote?: string | null }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const q = useQuery({ queryKey: keys.attendance.worklog(entryId), queryFn: () => worklogApi.list(entryId) })
@@ -46,7 +52,9 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
       for (const f of files) {
         const pre = await worklogApi.presignAttachment(note.id, f.name, f.type)
         await uploadToS3(pre.uploadUrl, f)
-        await worklogApi.confirmAttachment(note.id, { fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: f.name, fileSize: f.size, mimeType: f.type })
+        await worklogApi.confirmAttachment(
+          note.id,
+          { fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: f.name, fileSize: f.size, mimeType: f.type })
       }
       setDraft(""); setFiles([]); invalidate()
     } catch (e) {
@@ -65,7 +73,10 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
   return (
     <div className="space-y-3">
       {q.isLoading ? (
-        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {t("common.loading", "Loading…")}</div>
+        <div
+          className="flex items-center gap-2 py-3 text-sm text-muted-foreground"><Loader2
+            className="h-4 w-4 animate-spin"
+          /> {t("common.loading", "Loading…")}</div>
       ) : (
         <>
         {notes.length > 0 && (
@@ -86,7 +97,9 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
                       <span className="truncate text-xs text-muted-foreground">· {n.author.name}</span>
                     )}
                     {n.byManager && (
-                      <span className="shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                      <span
+                        className={"shrink-0 rounded-full border border-primary/30 bg-primary/10 px-1.5 " +
+                          "py-0.5 text-[10px] font-medium text-primary"}>
                         {t("worklog.byManager", "added by manager")}
                       </span>
                     )}
@@ -103,13 +116,32 @@ export function WorkLogTimeline({ entryId, editable, memberName, clockOutNote }:
                   <div className="mt-2 flex flex-wrap gap-2">
                     {n.attachments.map((a) =>
                       isImg(a.mimeType) ? (
-                        <button key={a.id} type="button" onClick={() => setViewer(a.url ?? a.fileUrl)} className="block h-16 w-16 overflow-hidden rounded-lg border border-border transition-transform hover:scale-[1.04]">
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => setViewer(a.url ?? a.fileUrl)}
+                          className={"block h-16 w-16 overflow-hidden rounded-lg border border-border " +
+                            "transition-transform hover:scale-[1.04]"}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={a.url ?? a.fileUrl} alt={a.fileName} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                          <img
+                            src={a.url ?? a.fileUrl}
+                            alt={a.fileName}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
                         </button>
                       ) : (
-                        <a key={a.id} href={a.url ?? a.fileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground hover:bg-muted">
-                          <FileText className="h-3.5 w-3.5 text-muted-foreground" /> <span className="max-w-[140px] truncate">{a.fileName}</span>
+                        <a
+                          key={a.id}
+                          href={a.url ?? a.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={"inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 " +
+                            "py-1.5 text-xs text-foreground hover:bg-muted"}>
+                          <FileText
+                            className="h-3.5 w-3.5 text-muted-foreground"
+                          /> <span className="max-w-[140px] truncate">{a.fileName}</span>
                         </a>
                       ),
                     )}

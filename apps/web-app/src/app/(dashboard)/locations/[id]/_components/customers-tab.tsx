@@ -121,9 +121,16 @@ export function CustomersTab({ spaceId }: { spaceId?: string }) {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Input placeholder={t("common.search", "Search…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-9 max-w-xs" />
+        <Input
+          placeholder={t("common.search", "Search…")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-9 max-w-xs"
+        />
         <div className="inline-flex flex-wrap rounded-lg bg-muted p-0.5">
-          {((spaceId ? ["all", "companies", "people", "contacts", "app"] : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
+          {((spaceId
+            ? ["all", "companies", "people", "contacts", "app"]
+            : ["all", "companies", "people", "contacts"]) as Filter[]).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                 filter === f ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>

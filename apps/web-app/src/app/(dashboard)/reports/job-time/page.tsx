@@ -92,7 +92,9 @@ export default function JobTimeReportPage() {
                     key={k}
                     type="button"
                     onClick={() => setPeriod(k)}
-                    className={cn("rounded-full px-3 py-1 text-sm transition-colors", period === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-sm transition-colors",
+                      period === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
                   >
                     {t(`tasks.jobTime.period.${k}`)}
                   </button>
@@ -111,7 +113,9 @@ export default function JobTimeReportPage() {
           ] as const).map(([k, tone, v]) => (
             <div key={k} className="rounded-xl border border-border bg-card px-4 py-3">
               <p className={cn("text-xs font-medium uppercase tracking-wide", tone)}>{t(`tasks.jobTime.total.${k}`)}</p>
-              {isLoading ? <Skeleton className="mt-2 h-7 w-20" /> : <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{formatDuration(v ?? 0)}</p>}
+              {isLoading
+                ? <Skeleton className="mt-2 h-7 w-20" />
+                : <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{formatDuration(v ?? 0)}</p>}
             </div>
           ))}
         </div>
@@ -135,18 +139,29 @@ export default function JobTimeReportPage() {
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">{t("tasks.jobTime.empty")}</td></tr>
               ) : data.rows.map((r) => (
                 <tr key={r.taskId} className="border-t border-border tabular-nums">
-                  <td className="px-4 py-3"><Link href={`/tasks/${r.taskId}`} className="font-medium text-foreground hover:text-primary">{r.title}</Link></td>
+                  <td
+                    className="px-4 py-3"><Link
+                      href={`/tasks/${r.taskId}`}
+                      className="font-medium text-foreground hover:text-primary">{r.title}</Link></td>
                   <td className="px-4 py-3 text-muted-foreground">{r.travel ? formatDuration(r.travel) : "—"}</td>
                   <td className="px-4 py-3 font-semibold text-foreground">{formatDuration(r.working)}</td>
-                  <td className={cn("px-4 py-3", r.blocked ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>{r.blocked ? formatDuration(r.blocked) : "—"}</td>
+                  <td
+                    className={cn(
+                      "px-4 py-3",
+                      r.blocked
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-muted-foreground")}>{r.blocked ? formatDuration(r.blocked) : "—"}</td>
                   <td className={cn("px-4 py-3", r.startedBy?.office ? "text-amber-600 dark:text-amber-400" : "text-foreground")}>
-                    {r.startedBy?.user ? (r.startedBy.office ? t("tasks.jobTime.office", { name: r.startedBy.user.firstName }) : r.startedBy.user.firstName) : "—"}
+                    {r.startedBy?.user
+                      ? (r.startedBy.office ? t("tasks.jobTime.office", { name: r.startedBy.user.firstName }) : r.startedBy.user.firstName)
+                      : "—"}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {r.officeReason
                       ? `“${r.officeReason}”`
                       : r.pausedAt
-                        ? <span className="text-amber-600 dark:text-amber-400">{t("tasks.jobTime.pausedAt", { time: time(r.pausedAt) })}</span>
+                        ? <span
+                          className="text-amber-600 dark:text-amber-400">{t("tasks.jobTime.pausedAt", { time: time(r.pausedAt) })}</span>
                         : r.blockedReason ?? "—"}
                   </td>
                 </tr>

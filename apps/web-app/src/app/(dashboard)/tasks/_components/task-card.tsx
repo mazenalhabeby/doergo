@@ -80,7 +80,8 @@ export const TaskCard = React.memo(function TaskCard({
       <Link
         href={`/tasks/${task.id}`}
         draggable={false}
-        className="text-sm font-medium text-foreground mb-2.5 line-clamp-2 group-hover/card:text-blue-600 transition-colors duration-150 block"
+        className={"text-sm font-medium text-foreground mb-2.5 line-clamp-2 " +
+          "group-hover/card:text-blue-600 transition-colors duration-150 block"}
         onClick={(e) => e.stopPropagation()}
       >
         {task.title}

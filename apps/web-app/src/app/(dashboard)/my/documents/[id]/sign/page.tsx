@@ -127,7 +127,9 @@ export default function SignDocumentPage() {
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-5 flex items-start gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+          <div
+            className={"grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-100 " +
+              "text-blue-700 dark:bg-blue-950 dark:text-blue-400"}>
             <FileText className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -181,7 +183,10 @@ export default function SignDocumentPage() {
               {t("documents.sign.agreeTitle")}
             </h2>
 
-            <blockquote className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+            <blockquote
+              className={"rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-medium " +
+                "text-slate-800 dark:border-slate-700 dark:bg-slate-950 " +
+                "dark:text-slate-200"}>
               {t("documents.sign.consentText")}
             </blockquote>
 

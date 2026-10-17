@@ -6,7 +6,22 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useTranslation } from "react-i18next"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Boxes, Building2, CheckCircle2, Inbox, Loader2, MapPin, PauseCircle, Briefcase, Handshake, Contact, Package, LayoutTemplate, FileText, ChevronRight } from "lucide-react"
+import {
+  Boxes,
+  Building2,
+  CheckCircle2,
+  Inbox,
+  Loader2,
+  MapPin,
+  PauseCircle,
+  Briefcase,
+  Handshake,
+  Contact,
+  Package,
+  LayoutTemplate,
+  FileText,
+  ChevronRight
+} from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -81,7 +96,9 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
             <Link
               key={href}
               href={`${href}?space=${space.id}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+              className={"inline-flex items-center gap-2 rounded-lg border border-border bg-card " +
+                "px-3 py-2 text-sm font-medium text-foreground transition-colors " +
+                "hover:bg-muted/60"}
             >
               <Icon className="h-4 w-4 text-muted-foreground" />
               {label}
@@ -172,7 +189,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium text-foreground">{t("locations.activeLabel")}</p>
                 {space.isActive ? (
-                  <Badge className="gap-1 border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300">
+                  <Badge className={"gap-1 border-transparent bg-green-100 text-green-700 hover:bg-green-100 " + "dark:bg-green-950 dark:text-green-300"}>
                     <CheckCircle2 className="h-3 w-3" />
                     {t("common.active")}
                   </Badge>
@@ -194,7 +211,7 @@ export function GeneralTab({ space }: { space: CompanyLocation }) {
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
+              <span className={"flex size-9 shrink-0 items-center justify-center rounded-lg " + "bg-violet-100 text-violet-600 dark:bg-violet-950 dark:text-violet-300"}>
                 <Boxes className="h-[18px] w-[18px]" />
               </span>
               <div>

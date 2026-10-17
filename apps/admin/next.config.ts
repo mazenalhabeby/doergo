@@ -32,7 +32,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src ${[...new Set(["'self'", ...apiOrigins(process.env.NEXT_PUBLIC_API_URL), ...apiOrigins(process.env.NEXT_PUBLIC_SOCKET_URL)])].join(' ')}`,
+  `connect-src ${[
+    ...new Set(["'self'", ...apiOrigins(process.env.NEXT_PUBLIC_API_URL), ...apiOrigins(process.env.NEXT_PUBLIC_SOCKET_URL)])].join(
+    ' ')}`,
   "frame-ancestors 'none'",
   "base-uri 'none'",
   "form-action 'self'",

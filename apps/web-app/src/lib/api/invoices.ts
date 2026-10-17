@@ -6,7 +6,10 @@ import { invoicesWebEndpoints } from '@hbcfield/shared/client';
 
 export const invoicesApi = {
   list: async (params?: { status?: string; spaceId?: string; legalEntityId?: string; page?: number; limit?: number }) => {
-    const response = await call(invoicesWebEndpoints.list, undefined, { query: params ?? {} }) as ApiResponse<{ success: boolean; data: Invoice[]; meta?: PaginationMeta }>;
+    const response = await call(
+      invoicesWebEndpoints.list,
+      undefined,
+      { query: params ?? {} }) as ApiResponse<{ success: boolean; data: Invoice[]; meta?: PaginationMeta }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
@@ -18,7 +21,10 @@ export const invoicesApi = {
    * The server refuses the combination rather than guessing which was meant.
    */
   gather: async (source: { spaceId?: string; customerId?: string; from?: string; to?: string }) => {
-    const response = await call(invoicesWebEndpoints.gather, undefined, { query: source }) as ApiResponse<{ success: boolean; data: InvoiceGatherResult }>;
+    const response = await call(
+      invoicesWebEndpoints.gather,
+      undefined,
+      { query: source }) as ApiResponse<{ success: boolean; data: InvoiceGatherResult }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -38,7 +44,15 @@ export const invoicesApi = {
   },
   /** `1 {currency} = rate {the organization's}` on a day (ECB). `rate` null = none known. */
   exchangeRate: async (currency: string, date?: string) => {
-    const response = await call(invoicesWebEndpoints.exchangeRate, undefined, { query: { currency, date } }) as ApiResponse<{ success: boolean; data: { from: string; to: string; rate: number | null; date: string | null; source: 'ECB' | null } }>;
+    const response = await call(
+      invoicesWebEndpoints.exchangeRate,
+      undefined,
+      {
+        query: { currency, date }
+      }) as ApiResponse<{
+        success: boolean;
+        data: { from: string; to: string; rate: number | null; date: string | null; source: 'ECB' | null }
+      }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? null;
   },
@@ -48,7 +62,10 @@ export const invoicesApi = {
     return response.data?.data;
   },
   updateStatus: async (id: string, status: string) => {
-    const response = await call(invoicesWebEndpoints.updateStatus, { id }, { body: { status } }) as ApiResponse<{ success: boolean; data: Invoice }>;
+    const response = await call(
+      invoicesWebEndpoints.updateStatus,
+      { id },
+      { body: { status } }) as ApiResponse<{ success: boolean; data: Invoice }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -58,7 +75,10 @@ export const invoicesApi = {
     return response.data;
   },
   addItem: async (id: string, item: InvoiceItemInput) => {
-    const response = await call(invoicesWebEndpoints.addItem, { id }, { body: item }) as ApiResponse<{ success: boolean; data: InvoiceItem }>;
+    const response = await call(
+      invoicesWebEndpoints.addItem,
+      { id },
+      { body: item }) as ApiResponse<{ success: boolean; data: InvoiceItem }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

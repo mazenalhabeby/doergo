@@ -76,7 +76,9 @@ export function AddWorkerDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("spaceSharing.guest.addWorker", "Add worker")}</DialogTitle>
-          <DialogDescription>{t("spaceSharing.guest.addWorkerDescription", "Add one of your team to this shared workspace.")}</DialogDescription>
+          <DialogDescription>{t(
+            "spaceSharing.guest.addWorkerDescription",
+            "Add one of your team to this shared workspace.")}</DialogDescription>
         </DialogHeader>
         <div className="max-h-80 overflow-y-auto -mx-1 px-1 py-1 space-y-1">
           {list.length === 0 ? (
@@ -90,7 +92,12 @@ export function AddWorkerDialog({
                   <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="h-7 text-xs shrink-0" disabled={mutation.isPending} onClick={() => mutation.mutate(e.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs shrink-0"
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate(e.id)}>
                 {t("spaceSharing.guest.add", "Add")}
               </Button>
             </div>

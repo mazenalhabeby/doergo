@@ -18,7 +18,6 @@ import { InvoiceTopBar } from "../_components/invoice-shell"
 import { isEditable, isDeletable } from "../_lib/lifecycle"
 import type { InvoiceDetailInnerState } from "./use-invoice-detail-inner"
 import type { InvoiceDetailInnerView } from "./invoice-detail-inner-view"
-import type { InvoiceDetailInner } from "./page"
 
 /** Part of InvoiceDetailInner's markup, moved here unchanged; it reads the page's state from `vm`. */
 export function InvoiceDetailInnerPdfLanguage({
@@ -36,7 +35,7 @@ export function InvoiceDetailInnerPdfLanguage({
   primary: ReturnType<typeof InvoiceDetailInnerView>["primary"]
   step: ReturnType<typeof InvoiceDetailInnerView>["step"]
   others: ReturnType<typeof InvoiceDetailInnerView>["others"]
-  id: Parameters<typeof InvoiceDetailInner>[0]["id"]
+  id: string
 }) {
   const {
     inv,

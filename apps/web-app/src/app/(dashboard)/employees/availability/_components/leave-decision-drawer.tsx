@@ -93,12 +93,16 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <RequestKindChip kind={kind} />
           {leave && request.type && (
-            <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span
+              className={"inline-flex items-center rounded-full border border-border px-2 py-0.5 " +
+                "text-[11px] font-medium text-muted-foreground"}>
               {requestDetail(request, t)}
             </span>
           )}
           {request.technician.specialty && (
-            <span className="inline-flex w-fit items-center rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span
+              className={"inline-flex w-fit items-center rounded-full border border-border px-2 " +
+                "py-0.5 text-[11px] font-medium text-muted-foreground"}>
               {request.technician.specialty}
             </span>
           )}
@@ -149,14 +153,20 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
                   <Fact label={t("requests.drawer.newHours")} value={requestDetail(request, t) ?? "—"} />
                   <Fact
                     label={t("requests.drawer.usualHours")}
-                    value={usual ? t("requests.detail.hoursBoth", { start: usual.start, end: usual.end }) : t("requests.drawer.noUsualHours")}
+                    value={usual
+                      ? t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })
+                      : t("requests.drawer.noUsualHours")}
                   />
                 </>
               )}
               {kind === "OVERTIME" && (
                 <>
                   <Fact label={t("requests.drawer.overtime")} value={request.minutes ? formatRequestMinutes(request.minutes, t) : "—"} />
-                  {usual && <Fact label={t("requests.drawer.usualHours")} value={t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })} />}
+                  {usual &&
+                    <Fact
+                      label={t("requests.drawer.usualHours")}
+                      value={t("requests.detail.hoursBoth", { start: usual.start, end: usual.end })}
+                    />}
                 </>
               )}
               {kind === "OTHER" && <Fact label={t("requests.drawer.kind")} value={t("requests.kinds.OTHER.label")} />}
@@ -242,7 +252,8 @@ function DrawerBody({ request, canManage }: { request: OrgTimeOffRequest; canMan
                     <Link
                       key={j.id}
                       href={`/tasks/${j.id}`}
-                      className="flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 text-[12.5px] transition hover:bg-muted/50"
+                      className={"flex items-center gap-2.5 rounded-xl border border-border px-3 py-2 " +
+                        "text-[12.5px] transition hover:bg-muted/50"}
                     >
                       <span className="min-w-0 flex-1">
                         <b className="block truncate font-medium">{j.title}</b>

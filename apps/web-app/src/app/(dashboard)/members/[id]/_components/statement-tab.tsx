@@ -103,7 +103,10 @@ export function StatementTab({ memberId }: { memberId: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label={t("members.statement.period")} className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5">
+        <div
+          role="radiogroup"
+          aria-label={t("members.statement.period")}
+          className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/50 p-0.5">
           {(["lastMonth", "thisMonth", "custom"] as const).map((p) => (
             <button
               key={p}
@@ -112,7 +115,8 @@ export function StatementTab({ memberId }: { memberId: string }) {
               aria-checked={preset === p}
               onClick={() => setPreset(p)}
               className={cn(
-                "rounded-md px-3 py-1 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                ("rounded-md px-3 py-1 text-[13px] transition-colors " +
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"),
                 preset === p ? "bg-card font-semibold text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -172,7 +176,9 @@ export function StatementTab({ memberId }: { memberId: string }) {
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
                       {l.basis === "days" ? (
-                        <span className="text-muted-foreground" title={t("members.statement.onSite", { hours: formatHoursMinutes(l.hours) })}>{formatHoursMinutes(l.hours)}</span>
+                        <span
+                          className="text-muted-foreground"
+                          title={t("members.statement.onSite", { hours: formatHoursMinutes(l.hours) })}>{formatHoursMinutes(l.hours)}</span>
                       ) : formatHoursMinutes(l.hours)}
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums">
@@ -207,7 +213,9 @@ export function StatementTab({ memberId }: { memberId: string }) {
       </div>
 
       {data?.missingRate && (
-        <p className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+        <p
+          className={"flex items-start gap-2 rounded-lg border border-amber-500/30 " +
+            "bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"}>
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {t("members.statement.missingRate")}
         </p>

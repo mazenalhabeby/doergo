@@ -135,7 +135,8 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
                   active
-                    ? "border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                    ? ("border-emerald-600 bg-emerald-50 text-emerald-700 " +
+                      "dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300")
                     : "border-border text-muted-foreground hover:bg-muted/50",
                 )}
               >
@@ -150,8 +151,14 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
       {MODULE_GROUPS.map((grp) => (
         <div key={grp.key} className="space-y-2">
           <div className="px-1 pt-1">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t(moduleI18n.groupLabel(grp.key), { defaultValue: grp.label })}</p>
-            <p className="text-[11px] text-muted-foreground/70">{t(moduleI18n.groupDescription(grp.key), { defaultValue: grp.description })}</p>
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t(
+                moduleI18n.groupLabel(grp.key),
+                { defaultValue: grp.label })}</p>
+            <p
+              className="text-[11px] text-muted-foreground/70">{t(
+                moduleI18n.groupDescription(grp.key),
+                { defaultValue: grp.description })}</p>
           </div>
           {AVAILABLE_MODULES.filter((m) => m.group === grp.key).map((mod) => {
             const isEnabled = enabledModules.includes(mod.key)
@@ -224,7 +231,10 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                           })}
                     </span>
                   )}
-                  <p className="text-xs text-muted-foreground mt-0.5">{t(moduleI18n.description(mod.key), { defaultValue: mod.description })}</p>
+                  <p
+                    className="text-xs text-muted-foreground mt-0.5">{t(
+                      moduleI18n.description(mod.key),
+                      { defaultValue: mod.description })}</p>
                   {locked && (
                     <p className="text-[11px] font-medium text-amber-600 dark:text-amber-500 mt-1">
                       🔒 {t("locations.moduleRequires", "Requires {{modules}}", { modules: unmet.map((r) => t(moduleI18n.label(r), { defaultValue: MODULE_LABEL[r] || r })).join(", ") })}
@@ -240,7 +250,9 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
                     onChange={() => toggleModule(mod.key)}
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 peer-disabled:opacity-50 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                  <div
+                    className={"w-9 h-5 bg-muted rounded-full peer peer-checked:bg-emerald-600 " + "peer-disabled:opacity-50 transition-colors after:content-[''] " + "after:absolute after:top-0.5 after:left-[2px] after:bg-white " + "after:rounded-full after:h-4 after:w-4 after:transition-all " + "peer-checked:after:translate-x-full"}
+                  />
                 </div>
               </label>
             )
@@ -253,7 +265,7 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
           thinks a toggle auto-saved. */}
       {dirty && (
         <div className="sticky bottom-3 z-20 pt-2">
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <div className={"flex flex-wrap items-center gap-3 rounded-xl border border-border " + "bg-card/95 p-3 shadow-lg backdrop-blur " + "supports-[backdrop-filter]:bg-card/80"}>
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
@@ -261,12 +273,12 @@ export function ModulesTab({ space }: { space: CompanyLocation }) {
               </p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {added.map((m) => (
-                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  <span key={m} className={"inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 " + "py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400"}>
                     <Plus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
                   </span>
                 ))}
                 {removed.map((m) => (
-                  <span key={m} className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-400">
+                  <span key={m} className={"inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 " + "text-[11px] font-medium text-red-600 dark:text-red-400"}>
                     <Minus className="h-3 w-3" />{t(moduleI18n.label(m), { defaultValue: MODULE_LABEL[m] || m })}
                   </span>
                 ))}

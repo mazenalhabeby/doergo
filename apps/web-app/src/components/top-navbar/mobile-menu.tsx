@@ -79,7 +79,10 @@ export function MobileMenu({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger className="md:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none">
+      <DropdownMenuTrigger
+        className={"md:hidden mr-2 flex items-center justify-center h-8 w-8 rounded-md " +
+          "text-muted-foreground hover:text-foreground hover:bg-muted/50 " +
+          "transition-colors outline-none"}>
         <Menu className="h-5 w-5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" sideOffset={10} className="min-w-[200px] rounded-lg p-1">

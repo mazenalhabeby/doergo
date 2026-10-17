@@ -88,10 +88,15 @@ export function useCustomerForm({ spaceId, existing, onSaved, trigger, personOnl
       return existing
         // Sent only when it actually changed — an unchanged workspace has no
         // business in a PATCH, and the server refuses a move for an app user.
-        ? customersApi.update(existing.id, { ...payload, ...(canMoveSpace && chosenSpace !== (existing.spaceId ?? "") ? { spaceId: chosenSpace || null } : {}) })
+        ? customersApi.update(
+          existing.id,
+          { ...payload, ...(canMoveSpace && chosenSpace !== (existing.spaceId ?? "") ? { spaceId: chosenSpace || null } : {}) })
         : customersApi.create({ ...payload, spaceId: targetSpace })
     },
-    onSuccess: (customer) => { notify.success(existing ? t("customers.updated", "Customer updated") : t("customers.created", "Customer added")); onSaved(customer); setOpen(false) },
+    onSuccess: (customer) => { notify.success(
+      existing
+        ? t("customers.updated", "Customer updated")
+        : t("customers.created", "Customer added")); onSaved(customer); setOpen(false) },
     onError: (e: Error) => notify.error(e.message || "Could not save"),
   })
 

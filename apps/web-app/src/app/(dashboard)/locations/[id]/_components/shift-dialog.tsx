@@ -98,7 +98,12 @@ export function ShiftDialog({
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label htmlFor="shift-name">{t("scheduling.shifts.fields.name")}</Label>
-            <Input id="shift-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("scheduling.shifts.namePlaceholder")} />
+            <Input
+              id="shift-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("scheduling.shifts.namePlaceholder")}
+            />
           </div>
 
           <div className="space-y-2">
@@ -134,7 +139,8 @@ export function ShiftDialog({
           {crosses && (
             <Badge
               variant="outline"
-              className="gap-1 border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"
+              className={"gap-1 border-indigo-200 bg-indigo-50 text-indigo-700 " +
+                "dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"}
             >
               <Moon className="h-3 w-3" />
               {t("scheduling.shifts.crossesMidnight")}
@@ -152,7 +158,13 @@ export function ShiftDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-interval">{t("scheduling.shifts.fields.reminderIntervalMin")}</Label>
-              <Input id="shift-interval" type="number" min={0} value={reminderIntervalMin} onChange={(e) => setReminderIntervalMin(e.target.value)} />
+              <Input
+                id="shift-interval"
+                type="number"
+                min={0}
+                value={reminderIntervalMin}
+                onChange={(e) => setReminderIntervalMin(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-max">{t("scheduling.shifts.fields.maxReminders")}</Label>
@@ -160,11 +172,20 @@ export function ShiftDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="shift-tolerance">{t("scheduling.shifts.fields.flagToleranceMin", "Late/overtime tolerance (min)")}</Label>
-              <Input id="shift-tolerance" type="number" min={0} value={flagToleranceMin} onChange={(e) => setFlagToleranceMin(e.target.value)} />
+              <Input
+                id="shift-tolerance"
+                type="number"
+                min={0}
+                value={flagToleranceMin}
+                onChange={(e) => setFlagToleranceMin(e.target.value)}
+              />
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">{t("scheduling.shifts.reminderHint")}</p>
-          <p className="text-[11px] text-muted-foreground">{t("scheduling.shifts.toleranceHint", "Grace before an entry is flagged Late Arrival, Early Departure or Overtime.")}</p>
+          <p
+            className="text-[11px] text-muted-foreground">{t(
+              "scheduling.shifts.toleranceHint",
+              ("Grace before an entry is flagged Late Arrival, Early Departure or " + "Overtime."))}</p>
         </div>
 
         <DialogFooter>

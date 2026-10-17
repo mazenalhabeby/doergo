@@ -20,7 +20,17 @@ import { useTimeFormat } from "@/hooks/use-time-format"
 import { notify } from "@/lib/toast"
 import { localDateKey } from "@hbcfield/shared/client"
 
-export const TIMESHEET_DEFAULT = ["date", "day", "shiftStart", "shiftEnd", "clockIn", "clockOut", "break", "hours", "hoursInShift", "status"]
+export const TIMESHEET_DEFAULT = [
+  "date",
+  "day",
+  "shiftStart",
+  "shiftEnd",
+  "clockIn",
+  "clockOut",
+  "break",
+  "hours",
+  "hoursInShift",
+  "status"]
 
 export interface ActiveReport {
   def: ReportDefinition
@@ -52,7 +62,15 @@ export function useReportsPageData() {
   const [saveOpen, setSaveOpen] = useState(false)
   const [saveMeta, setSaveMeta] = useState({ name: "", description: "", isShared: true })
   const [schedOpen, setSchedOpen] = useState(false)
-  const [schedForm, setSchedForm] = useState<{ cadence: ReportCadence; hour: number; dayOfWeek: number; dayOfMonth: number; recipients: string }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
+  const [
+    schedForm,
+    setSchedForm] = useState<{
+      cadence: ReportCadence;
+      hour: number;
+      dayOfWeek: number;
+      dayOfMonth: number;
+      recipients: string
+    }>({ cadence: "weekly", hour: 7, dayOfWeek: 1, dayOfMonth: 1, recipients: "" })
   const [pdfOpen, setPdfOpen] = useState(false)
   const [tsCols, setTsCols] = useState<string[]>(TIMESHEET_DEFAULT)
 
@@ -60,7 +78,9 @@ export function useReportsPageData() {
   const { data: saved } = useQuery({ queryKey: keys.reports.saved(), queryFn: () => analyticsApi.listSaved() })
   // Letterhead from what this reader may read (the profile is ADMIN-only) — hooks/use-org-letterhead.
   const { data: orgProfile } = useOrgLetterhead()
-  const { data: customersData } = useQuery({ queryKey: keys.customers.list({ limit: 200 }), queryFn: () => customersApi.list({ limit: 200 }) })
+  const {
+    data: customersData
+  } = useQuery({ queryKey: keys.customers.list({ limit: 200 }), queryFn: () => customersApi.list({ limit: 200 }) })
   const customers = customersData?.data || []
   // People to report on: the directory for whoever may read it, else the rosters they can see.
   const { members } = useAssignableMembers({})
@@ -102,7 +122,9 @@ export function useReportsPageData() {
   })
   const del = useMutation({
     mutationFn: (id: string) => analyticsApi.deleteSaved(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.saved() }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
+    onSuccess: () => { qc.invalidateQueries({
+      queryKey: keys.reports.saved()
+    }); setActive(null); setResult(null); notify.success(t("reports.deleted", "Report deleted")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to delete"),
   })
 
@@ -120,7 +142,9 @@ export function useReportsPageData() {
       dayOfMonth: schedForm.cadence === "monthly" ? schedForm.dayOfMonth : null,
       recipients: schedForm.recipients.split(/[,\s]+/).map((s) => s.trim()).filter(Boolean),
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.reports.schedules() }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
+    onSuccess: () => { qc.invalidateQueries({
+      queryKey: keys.reports.schedules()
+    }); setSchedForm((f) => ({ ...f, recipients: "" })); notify.success(t("reports.scheduled", "Schedule created")) },
     onError: (e) => notify.error(e instanceof Error ? e.message : "Failed to schedule"),
   })
   const delSched = useMutation({
@@ -133,7 +157,17 @@ export function useReportsPageData() {
     setResult(null)
     const ds = datasets[0]
     if (!ds) return
-    setActive({ def: { dataset: ds.key, measures: ds.measures[0] ? [ds.measures[0].key] : [], dimensions: [], granularity: "none", dateRange: { preset: "last_30d" } }, name: t("reports.untitled", "Untitled report"), builder: true })
+    setActive({
+      def: {
+        dataset: ds.key,
+        measures: ds.measures[0] ? [ds.measures[0].key] : [],
+        dimensions: [],
+        granularity: "none",
+        dateRange: { preset: "last_30d" }
+      },
+      name: t("reports.untitled", "Untitled report"),
+      builder: true
+    })
   }
   // Default to the builder on first load (no templates — the dataset selector is always the entry point).
   useEffect(() => {

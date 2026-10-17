@@ -152,11 +152,21 @@ export function AllAssetsList({ spaceNames }: { spaceNames: Record<string, strin
 
       {totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} aria-label={t("common.previous", "Previous")}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            aria-label={t("common.previous", "Previous")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="tabular-nums">{page} / {totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} aria-label={t("common.next", "Next")}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            aria-label={t("common.next", "Next")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

@@ -71,7 +71,10 @@ const WorkflowSelector = memo(function WorkflowSelector({
         <PopoverTrigger asChild disabled={disabled}>
           <button
             type="button"
-            className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            className={"flex h-9 w-full items-center justify-between rounded-md border " +
+              "border-input bg-transparent px-3 py-2 text-sm shadow-sm " +
+              "ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring " +
+              "disabled:cursor-not-allowed disabled:opacity-50"}
           >
             <span className={selectedWorkflow ? "text-foreground" : "text-muted-foreground"}>
               {selectedWorkflow
@@ -121,7 +124,9 @@ const WorkflowSelector = memo(function WorkflowSelector({
               <button
                 type="button"
                 onClick={handleCreateClick}
-                className="flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className={"flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-sm " +
+                  "text-muted-foreground hover:text-foreground hover:bg-muted " +
+                  "transition-colors"}
               >
                 <Plus className="h-4 w-4" />
                 {t('locations.createNewWorkflow')}

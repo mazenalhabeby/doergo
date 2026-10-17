@@ -167,15 +167,71 @@ export function useClientDashboard() {
     activeCount: 7,
     totalAssigned: 12,
     people: [
-      { initials: "AM", color: "#2563EB", status: "on", clockedIn: true, name: "Ahmed M.", role: "Admin", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "SW", color: "#7c3aed", status: "on", clockedIn: true, name: "Sara W.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "OF", color: "#0891b2", status: "on", clockedIn: true, name: "Omar F.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "ER", color: "#16a34a", status: "on", clockedIn: true, name: "Emma R.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
-      { initials: "LK", color: "#ea580c", status: "on", clockedIn: true, name: "Leo K.", role: "Employee", tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" } },
+      {
+        initials: "AM",
+        color: "#2563EB",
+        status: "on",
+        clockedIn: true,
+        name: "Ahmed M.",
+        role: "Admin",
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+      },
+      {
+        initials: "SW",
+        color: "#7c3aed",
+        status: "on",
+        clockedIn: true,
+        name: "Sara W.",
+        role: "Employee",
+        currentTask: t("dashboard.client.exampleJob"),
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+      },
+      {
+        initials: "OF",
+        color: "#0891b2",
+        status: "on",
+        clockedIn: true,
+        name: "Omar F.",
+        role: "Employee",
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+      },
+      {
+        initials: "ER",
+        color: "#16a34a",
+        status: "on",
+        clockedIn: true,
+        name: "Emma R.",
+        role: "Employee",
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+      },
+      {
+        initials: "LK",
+        color: "#ea580c",
+        status: "on",
+        clockedIn: true,
+        name: "Leo K.",
+        role: "Employee",
+        tag: { text: t("dashboard.client.exampleOnShift"), variant: "hrs" }
+      },
     ],
     onRoadPeople: [
-      { initials: "MB", color: "#CA8A04", status: "busy", name: "Mike B.", role: "Employee", currentTask: t("dashboard.client.exampleJob"), tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
-      { initials: "JP", color: "#db2777", status: "busy", name: "Jonas P.", role: "Employee", tag: { text: t("dashboard.client.exampleInField"), variant: "task" } },
+      {
+        initials: "MB",
+        color: "#CA8A04",
+        status: "busy",
+        name: "Mike B.",
+        role: "Employee",
+        currentTask: t("dashboard.client.exampleJob"),
+        tag: { text: t("dashboard.client.exampleInField"), variant: "task" }
+      },
+      {
+        initials: "JP",
+        color: "#db2777",
+        status: "busy",
+        name: "Jonas P.",
+        role: "Employee",
+        tag: { text: t("dashboard.client.exampleInField"), variant: "task" }
+      },
     ],
     remotePeople: [
       { initials: "NK", color: "#0ea5e9", status: "away", name: "Nora K.", role: "Employee" },

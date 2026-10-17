@@ -22,19 +22,28 @@ export const StatusIcon = React.memo(function StatusIcon({ status }: { status: s
   }
 })
 
-export const SideStatusBox = React.memo(function SideStatusBox({ label, people, variant = "cells", onClick, dataTour }: { label: string; people: PersonNodeProps[]; variant?: "cells" | "dots"; onClick?: () => void; dataTour?: string }) {
+export const SideStatusBox = React.memo(function SideStatusBox(
+  {
+    label,
+    people,
+    variant = "cells",
+    onClick,
+    dataTour
+  }: { label: string; people: PersonNodeProps[]; variant?: "cells" | "dots"; onClick?: () => void; dataTour?: string }) {
   if (people.length === 0) return null
   return (
     <div
       data-tour={dataTour}
       className={cn(
-        "rounded-lg bg-secondary border border-border/60 dark:bg-background/20 dark:border-border/20 p-2.5 flex-1 flex flex-col min-h-0 overflow-auto",
+        ("rounded-lg bg-secondary border border-border/60 dark:bg-background/20 " +
+          "dark:border-border/20 p-2.5 flex-1 flex flex-col min-h-0 overflow-auto"),
         onClick && "cursor-pointer hover:border-primary/30 hover:bg-secondary/80 dark:hover:bg-background/30 transition-colors",
       )}
       onClick={(e) => { e.stopPropagation(); onClick?.() }}
     >
       <div
-        className="flex items-center justify-between shrink-0 sticky -top-2.5 z-10 pt-2 pb-2 mb-1.5 -mx-2.5 px-2.5 -mt-2.5 bg-secondary/80 dark:bg-background/60"
+        className={"flex items-center justify-between shrink-0 sticky -top-2.5 z-10 pt-2 " +
+          "pb-2 mb-1.5 -mx-2.5 px-2.5 -mt-2.5 bg-secondary/80 dark:bg-background/60"}
         style={{ backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
       >
         <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">
@@ -55,7 +64,8 @@ export const SideStatusBox = React.memo(function SideStatusBox({ label, people, 
           {people.map((person, i) => (
             <div key={`${person.name}-${i}`} className="flex flex-col items-center gap-1" title={person.name}>
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white opacity-40 shrink-0 overflow-hidden"
+                className={"w-7 h-7 rounded-full flex items-center justify-center text-[9px] " +
+                  "font-bold text-white opacity-40 shrink-0 overflow-hidden"}
                 style={{ background: person.color }}
               >
                 {person.imageUrl ? (
@@ -76,7 +86,10 @@ export const SideStatusBox = React.memo(function SideStatusBox({ label, people, 
 const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: PersonNodeProps }) {
   const { t } = useTranslation()
   return (
-    <div className="rounded-md bg-card dark:bg-accent/40 border border-border/40 dark:border-border/30 flex flex-col h-[60px] min-w-[90px] shadow-sm dark:shadow-none">
+    <div
+      className={"rounded-md bg-card dark:bg-accent/40 border border-border/40 " +
+        "dark:border-border/30 flex flex-col h-[60px] min-w-[90px] shadow-sm " +
+        "dark:shadow-none"}>
       <div className="flex items-center justify-between px-1.5 pt-1 shrink-0">
         <span className="text-[8px] font-semibold text-foreground/60 truncate">{person.name}</span>
         {person.status === "busy" && (
@@ -98,7 +111,9 @@ const MiniWorkerCell = React.memo(function MiniWorkerCell({ person }: { person: 
           clockedIn={person.clockedIn}
           imageUrl={person.imageUrl}
           hideDot
-          className="[&>div:first-child]:!w-[30px] [&>div:first-child]:!h-[30px] [&>div:first-child]:!min-w-[30px] [&>div:first-child]:!min-h-[30px] [&>div:first-child]:!text-[11px]"
+          className={"[&>div:first-child]:!w-[30px] [&>div:first-child]:!h-[30px] " +
+            "[&>div:first-child]:!min-w-[30px] [&>div:first-child]:!min-h-[30px] " +
+            "[&>div:first-child]:!text-[11px]"}
         />
       </div>
     </div>

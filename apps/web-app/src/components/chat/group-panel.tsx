@@ -132,7 +132,9 @@ export function GroupPanel({
             type="button"
             disabled={!picked.size || add.isPending}
             onClick={() => add.mutate()}
-            className="w-full rounded-lg bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 px-3 py-2 text-sm font-medium text-white shadow-sm shadow-blue-500/30 transition active:scale-95 disabled:opacity-50"
+            className={"w-full rounded-lg bg-gradient-to-br from-sky-500 via-blue-500 " +
+              "to-indigo-500 px-3 py-2 text-sm font-medium text-white shadow-sm " +
+              "shadow-blue-500/30 transition active:scale-95 disabled:opacity-50"}
           >
             {t("chat.addCount", { count: picked.size, defaultValue: "Add ({{count}})" })}
           </button>
@@ -210,7 +212,9 @@ export function GroupPanel({
       {conversation.type === "TASK" && conversation.task && (
         <Link
           href={`/tasks/${conversation.task.id}`}
-          className="icon-motion flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-center text-xs font-medium transition-colors hover:bg-muted"
+          className={"icon-motion flex items-center justify-center gap-1.5 rounded-lg border " +
+            "border-border px-3 py-1.5 text-center text-xs font-medium " +
+            "transition-colors hover:bg-muted"}
         >
           <GradientIcon name="job" size={16} />
           {t("chat.openJob", "Open the job")}
@@ -224,7 +228,8 @@ export function GroupPanel({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="icon-motion flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+              className={"icon-motion flex items-center gap-1 rounded px-1.5 py-0.5 text-xs " +
+                "font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10"}
             >
               <GradientIcon name="addUser" size={16} />
               {t("chat.addPeople", "Add people")}
@@ -235,7 +240,9 @@ export function GroupPanel({
           {members.map((m) => (
             <li
               key={m.id}
-              className={`group flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-muted/60 ${leaving === m.id ? "motion-leave" : ""}`}
+              className={`group flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-muted/60 ${leaving === m.id
+                ? "motion-leave"
+                : ""}`}
             >
               <ChatAvatar u={m} size={30} />
               <span className="min-w-0 flex-1">
@@ -269,7 +276,9 @@ export function GroupPanel({
           type="button"
           onClick={askLeave}
           disabled={leave.isPending}
-          className="icon-motion mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+          className={"icon-motion mt-auto flex items-center justify-center gap-1.5 rounded-lg " +
+            "border border-border px-3 py-1.5 text-xs font-medium text-red-600 " +
+            "transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"}
         >
           <GradientIcon name="leave" size={16} />
           {t("chat.leaveGroup", "Leave the group")}

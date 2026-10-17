@@ -132,7 +132,8 @@ export function InviteSection({ spaceId, spaceName }: { spaceId: string; spaceNa
             {SCOPE_FLAGS.map(({ key, icon: Icon, label }) => (
               <label
                 key={key}
-                className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 cursor-pointer hover:bg-muted/40 transition-colors"
+                className={"flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
+                  "cursor-pointer hover:bg-muted/40 transition-colors"}
               >
                 <span className="flex items-center gap-2 text-sm text-foreground">
                   <Icon className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +148,9 @@ export function InviteSection({ spaceId, spaceName }: { spaceId: string; spaceNa
           </div>
         </div>
 
-        <label className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 cursor-pointer hover:bg-muted/40 transition-colors">
+        <label
+          className={"flex items-center justify-between gap-3 rounded-lg border bg-card p-3 " +
+            "cursor-pointer hover:bg-muted/40 transition-colors"}>
           <span className="min-w-0">
             <span className="flex items-center gap-2 text-sm text-foreground">
               <ListChecks className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +211,9 @@ export function RequestsSection({ spaceId }: { spaceId: string }) {
             <div key={req.id} className="rounded-xl border p-4 transition-colors hover:bg-muted/40">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+                  <span
+                    className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
+                      "text-amber-600 dark:bg-amber-950 dark:text-amber-300"}>
                     {req.type === "WORKER" ? <UserPlus className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
                   </span>
                   <div className="min-w-0">
@@ -220,7 +225,9 @@ export function RequestsSection({ spaceId }: { spaceId: string }) {
                     </div>
                     {req.note && <p className="mt-1 text-xs text-muted-foreground">{req.note}</p>}
                     <p className="mt-1 text-[11px] text-muted-foreground/70">
-                      {new Date(req.createdAt).toLocaleString(i18n.language, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(req.createdAt).toLocaleString(
+                        i18n.language,
+                        { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>

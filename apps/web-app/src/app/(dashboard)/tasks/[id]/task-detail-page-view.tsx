@@ -4,7 +4,18 @@ import { assigneeIds } from "@/lib/task-assignment"
 import type { useTaskDetailPage } from "./use-task-detail-page"
 
 /** What TaskDetailPage works out after its early returns, moved here unchanged; called from the same place. */
-export function TaskDetailPageView({ id, user, task, isCompleted }: { id: ReturnType<typeof useTaskDetailPage>['id']; user: ReturnType<typeof useTaskDetailPage>['user']; task: NonNullable<ReturnType<typeof useTaskDetailPage>['task']>; isCompleted: ReturnType<typeof useTaskDetailPage>['isCompleted'] }) {
+export function TaskDetailPageView(
+  {
+    id,
+    user,
+    task,
+    isCompleted
+  }: {
+    id: ReturnType<typeof useTaskDetailPage>['id'];
+    user: ReturnType<typeof useTaskDetailPage>['user'];
+    task: NonNullable<ReturnType<typeof useTaskDetailPage>['task']>;
+    isCompleted: ReturnType<typeof useTaskDetailPage>['isCompleted']
+  }) {
   const comments = task.comments || []
   const checklistDone = task.checklistItems?.filter((i) => i.isCompleted).length ?? 0
   const checklistTotal = task.checklistItems?.length ?? 0

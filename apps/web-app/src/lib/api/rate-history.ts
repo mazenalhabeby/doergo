@@ -10,7 +10,12 @@ export const rateHistoryApi = {
   list: async (q: { target: 'ORGANIZATION' | 'SPACE' | 'MEMBER' | 'ASSIGNMENT'; targetId: string; spaceId?: string }) => {
     const res = await call(rateHistoryWebEndpoints.list, undefined, { query: q }) as ApiResponse<{
       success: boolean;
-      data: Array<{ kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY'; cents: number | null; effectiveFrom: string; state: 'past' | 'scheduled' }>;
+      data: Array<{
+        kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY';
+        cents: number | null;
+        effectiveFrom: string;
+        state: 'past' | 'scheduled'
+      }>;
     }>;
     if (res.error) throw apiError(res);
     return res.data?.data || [];

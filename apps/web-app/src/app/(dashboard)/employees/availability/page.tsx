@@ -140,7 +140,12 @@ export default function ScheduleAndTimeOffPage() {
               <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>
                 {t("common.today")}
               </Button>
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => step(-1)} aria-label={t("common.previous", "Previous")}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => step(-1)}
+                aria-label={t("common.previous", "Previous")}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="min-w-[10.5rem] text-center text-sm font-semibold text-foreground">{rangeLabel}</span>
@@ -260,11 +265,17 @@ export default function ScheduleAndTimeOffPage() {
               {t("common.approved")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <i className="h-3 w-5 rounded-sm border border-amber-500/80 bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)] dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]" />
+              <i
+                className={"h-3 w-5 rounded-sm border border-amber-500/80 " +
+                  "bg-[repeating-linear-gradient(45deg,theme(colors.amber.200)_0_4px,theme(colors.amber.300)_4px_8px)] " +
+                  "dark:bg-[repeating-linear-gradient(45deg,theme(colors.amber.950)_0_4px,theme(colors.amber.900)_4px_8px)]"}
+              />
               {t("cover.legend.pending", "Pending — yours to decide")}
             </span>
             <span className="inline-flex items-center gap-2">
-              <i className="inline-flex h-4 items-center rounded-full border border-dashed border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300">
+              <i
+                className={"inline-flex h-4 items-center rounded-full border border-dashed " +
+                  "border-amber-500/80 bg-card px-1 text-amber-800 dark:text-amber-300"}>
                 <House className="h-2.5 w-2.5" />
               </i>
               {t("requests.legendNotLeave")}

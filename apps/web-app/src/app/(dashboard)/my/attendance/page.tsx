@@ -116,7 +116,10 @@ export default function MyAttendancePage() {
           <div className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <ListChecks className="h-4 w-4 text-primary" /> {t("worklog.myTitle", "What I'm doing today")}
           </div>
-          <p className="mb-3 text-xs text-muted-foreground">{t("worklog.myHint", "Note what you finish through the shift (add a photo if useful) — it becomes your clock-out summary.")}</p>
+          <p
+            className="mb-3 text-xs text-muted-foreground">{t(
+              "worklog.myHint",
+              ("Note what you finish through the shift (add a photo if useful) — it " + "becomes your clock-out summary."))}</p>
           <WorkLogTimeline entryId={activeEntry.id} editable />
         </div>
       )}
@@ -176,7 +179,9 @@ export default function MyAttendancePage() {
       )}
 
       {isLoading ? (
-        <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">{t("common.loading")}</div>
+        <div
+          className={"rounded-2xl border border-border bg-card py-12 text-center text-sm " +
+            "text-muted-foreground"}>{t("common.loading")}</div>
       ) : entries.length === 0 ? (
         <div className="rounded-2xl border border-border bg-card py-12 text-center text-sm text-muted-foreground">
           {/* Which window is empty — "no records" alone reads as "you have never
@@ -207,7 +212,12 @@ export default function MyAttendancePage() {
                     e.clockOutAt ? "bg-muted-foreground/40" : "bg-emerald-500",
                   )}
                 />
-                {formatTime(e.clockInAt, (e.timezone ?? e.location?.timezone))} → {e.clockOutAt ? formatTime(e.clockOutAt, (e.timezone ?? e.location?.timezone)) : <span className="text-green-600">{t("attendance.my.active")}</span>}
+                {formatTime(
+                  e.clockInAt,
+                  (e.timezone ??
+                    e.location?.timezone))} → {e.clockOutAt
+                      ? formatTime(e.clockOutAt, (e.timezone ?? e.location?.timezone))
+                      : <span className="text-green-600">{t("attendance.my.active")}</span>}
                 {/*
                   An away day still belongs to a workspace, so it names the site
                   AND says they were away from it. The old branch showed one or

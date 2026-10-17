@@ -35,7 +35,9 @@ export function NoteBox({ assetId, onAdded }: { assetId: string; onAdded: () => 
         placeholder={t("assetRecords.notePh", "Add a note — inspection, damage, handover…")}
       />
       <Button disabled={!body.trim() || add.isPending} onClick={() => add.mutate()}>
-        {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("assetRecords.addNote", "Add note")}</>}
+        {add.isPending
+          ? <Loader2 className="h-4 w-4 animate-spin" />
+          : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("assetRecords.addNote", "Add note")}</>}
       </Button>
     </div>
   )
@@ -52,7 +54,8 @@ export function Timeline({ loading, activities }: { loading: boolean; activities
     )
   }
   if (activities.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">{t("assetRecords.noActivity", "Nothing has happened to this one yet.")}</p>
+    return <p
+      className="py-8 text-center text-sm text-muted-foreground">{t("assetRecords.noActivity", "Nothing has happened to this one yet.")}</p>
   }
 
   return (

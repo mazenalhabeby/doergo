@@ -10,7 +10,12 @@ import type { TypeDetailsState } from "./use-type-details"
 import type { TypeDetails } from "./log-types-editor"
 
 /** Part of TypeDetails's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TypeDetailsEditor({ vm, type, onChange }: { vm: TypeDetailsState; type: Parameters<typeof TypeDetails>[0]['type']; onChange: Parameters<typeof TypeDetails>[0]['onChange'] }) {
+export function TypeDetailsEditor(
+  {
+    vm,
+    type,
+    onChange
+  }: { vm: TypeDetailsState; type: Parameters<typeof TypeDetails>[0]['type']; onChange: Parameters<typeof TypeDetails>[0]['onChange'] }) {
   const { t, setField, hasMoney, hasPhoto, due } = vm
   return (
     <div>
@@ -20,7 +25,8 @@ export function TypeDetailsEditor({ vm, type, onChange }: { vm: TypeDetailsState
           type="button"
           disabled={type.fields.length >= KIND_SHAPE_LIMITS.maxLogFields}
           onClick={() => onChange({ fields: [...type.fields, { key: "", label: "", type: "text", required: false }] })}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+          className={"inline-flex items-center gap-1 text-[11px] font-medium text-primary " +
+            "hover:underline disabled:opacity-40 disabled:no-underline"}
         >
           <Plus className="h-3 w-3" /> {t("common.add", "Add")}
         </button>
@@ -91,7 +97,12 @@ export function TypeDetailsEditor({ vm, type, onChange }: { vm: TypeDetailsState
                     maxLength={KIND_SHAPE_LIMITS.maxUnit}
                     className="h-7 w-20 text-xs"
                   />
-                  <label className="inline-flex items-center gap-1.5" title={t("assetLog.editor.meterHint", "A counter the asset keeps, like mileage or operating hours. The record shows the latest one, and a due rule can count in it.")}>
+                  <label
+                    className="inline-flex items-center gap-1.5"
+                    title={t(
+                      "assetLog.editor.meterHint",
+                      ("A counter the asset keeps, like mileage or operating hours. The record " +
+                        "shows the latest one, and a due rule can count in it."))}>
                     <input type="checkbox" checked={!!f.meter} onChange={(e) => setField(fi, { meter: e.target.checked || undefined })} />
                     {t("assetLog.editor.meter", "It is a counter reading")}
                   </label>
@@ -100,8 +111,18 @@ export function TypeDetailsEditor({ vm, type, onChange }: { vm: TypeDetailsState
 
               {f.type === "money" && (
                 <div className="flex overflow-hidden rounded-md border border-border">
-                  <DirBtn active={f.direction === "in"} onClick={() => setField(fi, { direction: "in" })} icon={ArrowDownLeft} label={t("assetKinds.moneyIn", "Money in")} />
-                  <DirBtn active={f.direction !== "in"} onClick={() => setField(fi, { direction: "out" })} icon={ArrowUpRight} label={t("assetKinds.moneyOut", "Money out")} />
+                  <DirBtn
+                    active={f.direction === "in"}
+                    onClick={() => setField(fi, { direction: "in" })}
+                    icon={ArrowDownLeft}
+                    label={t("assetKinds.moneyIn", "Money in")}
+                  />
+                  <DirBtn
+                    active={f.direction !== "in"}
+                    onClick={() => setField(fi, { direction: "out" })}
+                    icon={ArrowUpRight}
+                    label={t("assetKinds.moneyOut", "Money out")}
+                  />
                 </div>
               )}
             </div>

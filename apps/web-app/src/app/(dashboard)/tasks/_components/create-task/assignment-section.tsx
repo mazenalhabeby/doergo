@@ -44,7 +44,9 @@ export function AssignmentSection({ form }: { form: CreateTaskForm }) {
       indicator={isSelfScope ? t("tasks.create.assignedToYou") : null}
     >
       {isSelfScope ? (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+        <div
+          className={"flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 " +
+            "dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"}>
           <User className="size-3.5 text-blue-600" />
           <span className="text-xs text-blue-700 dark:text-blue-400 font-medium">
             {t("tasks.create.assignedToYouFull")}
@@ -53,7 +55,10 @@ export function AssignmentSection({ form }: { form: CreateTaskForm }) {
       ) : (
         <div className="space-y-1.5">
           {roleModeAvailable && (
-            <div role="group" aria-label={t("tasks.role.who")} className="mb-1 inline-grid grid-cols-2 gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5">
+            <div
+              role="group"
+              aria-label={t("tasks.role.who")}
+              className={"mb-1 inline-grid grid-cols-2 gap-0.5 rounded-lg border border-border " + "bg-muted/40 p-0.5"}>
               {(["people", "role"] as const).map((m) => (
                 <button
                   key={m}
@@ -136,7 +141,9 @@ export function AssignmentSection({ form }: { form: CreateTaskForm }) {
                 return (
                   <SelectItem key={member.id} value={member.id} disabled={!assignable}>
                     <div className="flex items-center gap-2">
-                      <div className="size-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0">
+                      <div
+                        className={"size-5 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex " +
+                          "items-center justify-center flex-shrink-0"}>
                         <span className="text-[8px] font-semibold text-white">
                           {personInitials(member)}
                         </span>

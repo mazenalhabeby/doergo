@@ -46,7 +46,8 @@ export const TaskTooltip = React.memo(function TaskTooltip({
   const { t } = useTranslation()
   return (
     <div
-      className="fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border border-border rounded-xl shadow-xl min-w-[200px] max-w-[280px]"
+      className={"fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border " +
+        "border-border rounded-xl shadow-xl min-w-[200px] max-w-[280px]"}
       style={{ ...style, animation: `fadeSlideIn 0.15s ${APPLE_EASE} both` }}
     >
       <p className="text-sm font-semibold text-foreground line-clamp-2 mb-1.5">{task.title}</p>
@@ -63,12 +64,16 @@ export const TaskTooltip = React.memo(function TaskTooltip({
       </div>
       {task.startDate && (
         <p className="text-[11px] text-muted-foreground">
-          {t("tasks.timeline.startLabel", { date: new Date(task.startDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
+          {t(
+            "tasks.timeline.startLabel",
+            { date: new Date(task.startDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.dueDate && (
         <p className="text-[11px] text-muted-foreground">
-          {t("tasks.timeline.dueLabel", { date: new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
+          {t(
+            "tasks.timeline.dueLabel",
+            { date: new Date(task.dueDate).toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })}
         </p>
       )}
       {task.estimatedHours != null && (

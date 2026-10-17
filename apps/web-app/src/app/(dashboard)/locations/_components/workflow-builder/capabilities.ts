@@ -23,11 +23,53 @@ export const TYPE_CAPABILITY_CHIPS = [
 ] as const
 
 export const BUILDER_CAPABILITIES = [
-  { key: "gps", labelKey: "workflows.capabilities.gps", label: "GPS", hintKey: "workflows.capabilities.gpsHint", hint: "Records the route while the member is at this step. Needs Route tracking." },
-  { key: "timer", labelKey: "workflows.capabilities.timer", label: "Timer", hintKey: "workflows.capabilities.timerHint", hint: "Counts time on the job. Needs Time tracking." },
-  { key: "checklist", labelKey: "workflows.capabilities.checklist", label: "Checklist", hintKey: "workflows.capabilities.checklistHint", hint: "A list to work through. Needs Checklists." },
-  { key: "photos", labelKey: "workflows.capabilities.photos", label: "Photos", hintKey: "workflows.capabilities.photosHint", hint: "Before/after or evidence photos. Needs Attachments." },
-  { key: "signature", labelKey: "workflows.capabilities.signature", label: "Signature", hintKey: "workflows.capabilities.signatureHint", hint: "Customer sign-off. Needs Service reports." },
-  { key: "report", labelKey: "workflows.capabilities.report", label: "Report", hintKey: "workflows.capabilities.reportHint", hint: "Work performed and parts used. Needs Service reports." },
-  { key: "form", labelKey: "workflows.capabilities.form", label: "Form", hintKey: "workflows.capabilities.formHint", hint: "Visit notes or an outcome form. Needs Custom fields." },
+  {
+    key: "gps",
+    labelKey: "workflows.capabilities.gps",
+    label: "GPS",
+    hintKey: "workflows.capabilities.gpsHint",
+    hint: ("Records the route while the member is at this step. Needs Route " + "tracking.")
+  },
+  {
+    key: "timer",
+    labelKey: "workflows.capabilities.timer",
+    label: "Timer",
+    hintKey: "workflows.capabilities.timerHint",
+    hint: "Counts time on the job. Needs Time tracking."
+  },
+  {
+    key: "checklist",
+    labelKey: "workflows.capabilities.checklist",
+    label: "Checklist",
+    hintKey: "workflows.capabilities.checklistHint",
+    hint: "A list to work through. Needs Checklists."
+  },
+  {
+    key: "photos",
+    labelKey: "workflows.capabilities.photos",
+    label: "Photos",
+    hintKey: "workflows.capabilities.photosHint",
+    hint: "Before/after or evidence photos. Needs Attachments."
+  },
+  {
+    key: "signature",
+    labelKey: "workflows.capabilities.signature",
+    label: "Signature",
+    hintKey: "workflows.capabilities.signatureHint",
+    hint: "Customer sign-off. Needs Service reports."
+  },
+  {
+    key: "report",
+    labelKey: "workflows.capabilities.report",
+    label: "Report",
+    hintKey: "workflows.capabilities.reportHint",
+    hint: "Work performed and parts used. Needs Service reports."
+  },
+  {
+    key: "form",
+    labelKey: "workflows.capabilities.form",
+    label: "Form",
+    hintKey: "workflows.capabilities.formHint",
+    hint: "Visit notes or an outcome form. Needs Custom fields."
+  },
 ] as const

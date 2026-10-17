@@ -92,7 +92,9 @@ const FieldRow = memo(function FieldRow({
             {field.key}
           </span>
           {field.isRequired && (
-            <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            <span
+              className={"text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full " +
+                "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}>
               {t("common.required")}
             </span>
           )}

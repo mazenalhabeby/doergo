@@ -79,7 +79,9 @@ export function PendingInvitations({
                       )}>
                         {isExpired
                           ? t("members.pendingInvitations.expired")
-                          : t("members.pendingInvitations.expires", { date: expiresDate.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })
+                          : t(
+                            "members.pendingInvitations.expires",
+                            { date: expiresDate.toLocaleDateString(dateLocale(), { month: "short", day: "numeric" }) })
                         }
                       </span>
                       <Button

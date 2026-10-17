@@ -135,23 +135,26 @@ export default function PortalDetailPage() {
                   key={x.key}
                   disabled={isCurrent || locked}
                   onClick={() => { setTypePickerOpen(false); setSwitchOpen(x.key) }}
-                  className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent ? "border-primary/40 bg-primary/5 cursor-default" : locked ? "cursor-not-allowed border-border opacity-60" : "border-border hover:bg-accent/40"}`}
+                  className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors ${isCurrent
+                    ? "border-primary/40 bg-primary/5 cursor-default"
+                    : locked ? "cursor-not-allowed border-border opacity-60" : "border-border hover:bg-accent/40"}`}
                 >
                   <span className="flex items-center gap-2.5 min-w-0">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(x.accent)}`}>{x.badge}</span>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(x.accent)}`}>{x.badge}</span>
                     <span className="min-w-0">
                       <span className="block text-sm text-foreground truncate">{x.label}</span>
                       {locked && <span className="block text-[11px] text-muted-foreground">{t("portal.apartmentModuleRequired", "Enable the Apartments module for this workspace to use this type.")}</span>}
                     </span>
                   </span>
                   {isCurrent
-                    ? <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary shrink-0"><Check className="h-3.5 w-3.5" />{t("portal.currentType", "Current")}</span>
+                    ? <span className={"inline-flex items-center gap-1 text-[11px] font-medium text-primary " + "shrink-0"}><Check className="h-3.5 w-3.5" />{t("portal.currentType", "Current")}</span>
                     : !locked && <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
                 </button>
               )
             })}
           </div>
-          <p className="text-[11px] text-muted-foreground">{t("portal.changeTypeHint", "Switching replaces the issue categories with the new type's defaults. Clients and their requests are kept.")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("portal.changeTypeHint", ("Switching replaces the issue categories with the new type's defaults. " + "Clients and their requests are kept."))}</p>
         </DialogContent>
       </Dialog>
 
@@ -160,7 +163,7 @@ export default function PortalDetailPage() {
         onOpenChange={(o) => !o && setSwitchOpen(null)}
         titleClassName="flex items-center gap-2"
         title={<><AlertTriangle className="h-4 w-4 text-amber-500" />{t("portal.switchTitle", "Switch portal type?")}</>}
-        description={t("portal.switchWarn", "This replaces the issue categories with the new type’s defaults. Clients and their requests are kept.")}
+        description={t("portal.switchWarn", ("This replaces the issue categories with the new type’s defaults. Clients " + "and their requests are kept."))}
         cancelLabel={t("common.cancel", "Cancel")}
         confirmLabel={t("portal.switchConfirm", "Switch & reset categories")}
         onConfirm={() => switchOpen && switchM.mutate(switchOpen)}
@@ -172,12 +175,12 @@ export default function PortalDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("portal.deleteDialogTitle", "Delete “{{name}}”?", { name: portal?.name })}</DialogTitle>
-            <DialogDescription>{t("portal.deletePortalWarn", "Deleting removes the portal and its categories. Clients keep their accounts but lose portal access.")}</DialogDescription>
+            <DialogDescription>{t("portal.deletePortalWarn", ("Deleting removes the portal and its categories. Clients keep their " + "accounts but lose portal access."))}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-1">
             <p className="text-sm text-muted-foreground">
               {clientCount > 0 || requestCount > 0
-                ? t("portal.deletePortalStats", "This portal has {{clients}} client(s) and {{requests}} request(s). Their history is kept but they lose access here.", { clients: clientCount, requests: requestCount })
+                ? t("portal.deletePortalStats", ("This portal has {{clients}} client(s) and {{requests}} request(s). Their " + "history is kept but they lose access here."), { clients: clientCount, requests: requestCount })
                 : t("portal.deletePortalEmpty", "This portal has no clients or requests yet.")}
             </p>
             <div className="space-y-1.5">
@@ -202,7 +205,7 @@ export default function PortalDetailPage() {
             <div><Label>{t("portal.catLabel", "Label")}</Label><Input value={catForm.label} onChange={(e) => setCatForm({ ...catForm, label: e.target.value })} placeholder={t("portal.catLabelPlaceholder", "Air Conditioning")} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{t("portal.catColor", "Colour")}</Label>
-                <select value={catForm.color} onChange={(e) => setCatForm({ ...catForm, color: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                <select value={catForm.color} onChange={(e) => setCatForm({ ...catForm, color: e.target.value })} className={"mt-1 w-full h-10 rounded-md border border-border bg-background px-3 " + "text-sm"}>
                   {COLORS.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select></div>
               <div><Label>{t("portal.catTeam", "Route to team")}</Label><Input value={catForm.team ?? ""} onChange={(e) => setCatForm({ ...catForm, team: e.target.value })} placeholder={t("portal.catTeamPlaceholder", "HVAC team")} /></div>
@@ -224,7 +227,7 @@ export default function PortalDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("portal.triageTitle", "Route request")}</DialogTitle>
-            <DialogDescription>{t("portal.triageHint", "Send this request into a workspace and choose how it should flow, then assign a worker.")}</DialogDescription>
+            <DialogDescription>{t("portal.triageHint", ("Send this request into a workspace and choose how it should flow, then " + "assign a worker."))}</DialogDescription>
           </DialogHeader>
           {triageReq && (
             <div className="space-y-3">
@@ -235,28 +238,28 @@ export default function PortalDetailPage() {
                 {triageReq.description && <p className="text-xs text-muted-foreground mt-1.5 whitespace-pre-wrap line-clamp-4">{triageReq.description}</p>}
               </div>
               <div><Label>{t("portal.triageSpace", "Workspace")} <span className="text-red-500">*</span></Label>
-                <select value={triageForm.spaceId} onChange={(e) => setTriageSpace(e.target.value)} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                <select value={triageForm.spaceId} onChange={(e) => setTriageSpace(e.target.value)} className={"mt-1 w-full h-10 rounded-md border border-border bg-background px-3 " + "text-sm"}>
                   <option value="">{t("portal.triagePickSpace", "Pick a workspace…")}</option>
                   {spaces.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>{t("portal.triageFlow", "Flow")}</Label>
-                  <select value={triageForm.workflowId} onChange={(e) => setTriageForm({ ...triageForm, workflowId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                  <select value={triageForm.workflowId} onChange={(e) => setTriageForm({ ...triageForm, workflowId: e.target.value })} className={"mt-1 w-full h-10 rounded-md border border-border bg-background px-3 " + "text-sm"}>
                     <option value="">{t("portal.triageFlowDefault", "Workspace default")}</option>
                     {flows.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
                   </select></div>
                 <div><Label>{t("portal.triagePriority", "Priority")}</Label>
-                  <select value={triageForm.priority} onChange={(e) => setTriageForm({ ...triageForm, priority: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                  <select value={triageForm.priority} onChange={(e) => setTriageForm({ ...triageForm, priority: e.target.value })} className={"mt-1 w-full h-10 rounded-md border border-border bg-background px-3 " + "text-sm"}>
                     {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => <option key={p} value={p}>{p.charAt(0) + p.slice(1).toLowerCase()}</option>)}
                   </select></div>
               </div>
               <div><Label>{t("portal.triageWorker", "Assign worker")}</Label>
-                <select value={triageForm.assignedToId} disabled={!triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className="mt-1 w-full h-10 rounded-md border border-border bg-background px-3 text-sm disabled:opacity-50">
+                <select value={triageForm.assignedToId} disabled={!triageForm.spaceId} onChange={(e) => setTriageForm({ ...triageForm, assignedToId: e.target.value })} className={"mt-1 w-full h-10 rounded-md border border-border bg-background px-3 " + "text-sm disabled:opacity-50"}>
                   <option value="">{!triageForm.spaceId ? t("portal.triagePickSpaceFirst", "Pick a workspace first") : t("portal.triageUnassigned", "Leave unassigned")}</option>
                   {spaceWorkers.map((m) => <option key={m.userId} value={m.userId}>{personName(m.user)}</option>)}
                 </select>
                 {triageForm.spaceId && !spaceMembersQ.isLoading && spaceWorkers.length === 0 ? (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", "No workers assigned to this workspace yet. Add members to the workspace, or leave unassigned.")}</p>
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t("portal.triageNoMembers", ("No workers assigned to this workspace yet. Add members to the workspace, " + "or leave unassigned."))}</p>
                 ) : null}
               </div>
             </div>
@@ -271,7 +274,7 @@ export default function PortalDetailPage() {
         open={!!catRemove}
         onOpenChange={(o) => !o && setCatRemove(null)}
         title={t("portal.deleteCategoryTitle", "Delete “{{label}}”?", { label: catRemove?.label })}
-        description={t("portal.deleteCategoryWarn", "Clients can no longer pick this category for new requests. Existing requests keep their category.")}
+        description={t("portal.deleteCategoryWarn", ("Clients can no longer pick this category for new requests. Existing " + "requests keep their category."))}
         cancelLabel={t("common.cancel", "Cancel")}
         confirmLabel={t("common.delete", "Delete")}
         onConfirm={() => catRemove && delCatM.mutate(catRemove.id)}
@@ -284,7 +287,7 @@ export default function PortalDetailPage() {
         target={clientToRemove}
         onClose={() => setClientToRemove(null)}
         title={t("portal.removeClientTitle", "Remove {{name}} from this portal?", { name: clientToRemove?.name })}
-        description={t("portal.removeClientWarn", "They immediately lose app access and are detached from this portal (any apartment they held is freed). Their record and history are kept — you can invite them again later.")}
+        description={t("portal.removeClientWarn", ("They immediately lose app access and are detached from this portal (any " + "apartment they held is freed). Their record and history are kept — you " + "can invite them again later."))}
         cancelLabel={t("common.cancel", "Cancel")}
         confirmLabel={t("portal.removeClientConfirm", "Remove client")}
         mutation={removeClientM}

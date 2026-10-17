@@ -102,7 +102,9 @@ export default function JoinOrgPage() {
       </button>
 
       <div className="mb-6 flex flex-col items-center text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-lg shadow-violet-600/25">
+        <div
+          className={"mb-4 flex h-16 w-16 items-center justify-center rounded-2xl " +
+            "bg-violet-600 text-white shadow-lg shadow-violet-600/25"}>
           <Users className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-semibold text-slate-900">{t('onboarding.joinOrg.title')}</h1>
@@ -153,7 +155,8 @@ export default function JoinOrgPage() {
           <button
             type="button"
             onClick={() => router.push(`/onboarding/use-invitation?code=${encodeURIComponent(code.trim().toUpperCase())}`)}
-            className="flex w-full items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-left transition-colors hover:bg-blue-100"
+            className={"flex w-full items-center gap-3 rounded-lg border border-blue-200 " +
+              "bg-blue-50 p-3 text-left transition-colors hover:bg-blue-100"}
           >
             <MailOpen className="h-5 w-5 shrink-0 text-blue-600" />
             <span className="min-w-0 flex-1">
@@ -188,7 +191,9 @@ export default function JoinOrgPage() {
                 placeholder={t('onboarding.joinOrg.messagePlaceholder')}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="w-full resize-none rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-900 outline-none transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                className={"w-full resize-none rounded-md border border-slate-200 bg-white p-3 " +
+                  "text-sm text-slate-900 outline-none transition-colors " +
+                  "focus:border-blue-600 focus:ring-2 focus:ring-blue-100"}
                 disabled={isSubmitting}
               />
               <p className="text-right text-[11px] text-slate-400">{message.length}/500</p>

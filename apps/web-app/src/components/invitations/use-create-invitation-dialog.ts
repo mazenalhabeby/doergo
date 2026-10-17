@@ -147,7 +147,21 @@ export function useCreateInvitationDialog({ open, onOpenChange }: Pick<CreateInv
     }
     input.accessProfile = serializeAccessDraft(access)
     createMutation.mutate(input)
-  }, [mode, email, position, scheduleType, scheduleRows, monthlyHourBudget, spaceId, access, isExternal, externalMode, externalChoice, externalRoleId, builderModules, createMutation])
+  }, [
+    mode,
+    email,
+    position,
+    scheduleType,
+    scheduleRows,
+    monthlyHourBudget,
+    spaceId,
+    access,
+    isExternal,
+    externalMode,
+    externalChoice,
+    externalRoleId,
+    builderModules,
+    createMutation])
 
   // Keep the feature tabs in sync with the position until the admin edits access
   // themselves (then their choices win).

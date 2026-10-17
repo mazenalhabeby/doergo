@@ -58,7 +58,9 @@ export function DueRow({ due }: { due: AssetLogDue }) {
         </span>
         <span className={cn(
           "shrink-0 text-xs",
-          due.stage === "overdue" ? "text-destructive" : due.stage === "soon" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
+          due.stage === "overdue"
+            ? "text-destructive"
+            : due.stage === "soon" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
         )}>
           {parts.join(" · ")}
         </span>
@@ -145,12 +147,18 @@ export function EntryRow({
           </p>
           {shown.length > 0 && <p className="mt-0.5 text-xs text-foreground/80">{shown.join(" · ")}</p>}
           {refused && entry.reviewNote && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{t("assetLog.refusedBecause", "Refused: {{reason}}", { reason: entry.reviewNote })}</p>
+            <p
+              className="mt-0.5 text-xs text-muted-foreground">{t(
+                "assetLog.refusedBecause",
+                "Refused: {{reason}}",
+                { reason: entry.reviewNote })}</p>
           )}
         </div>
 
         {waiting && (
-          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+          <span
+            className={"shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold " +
+              "text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"}>
             {t("expenses.pending", "Waiting")}
           </span>
         )}
@@ -183,7 +191,8 @@ export function EntryRow({
           <button
             onClick={() => remove.mutate()}
             disabled={remove.isPending}
-            className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+            className={"shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+              "hover:text-destructive group-hover:opacity-100"}
             aria-label={t("common.remove", "Remove")}
           >
             <Trash2 className="h-4 w-4" />

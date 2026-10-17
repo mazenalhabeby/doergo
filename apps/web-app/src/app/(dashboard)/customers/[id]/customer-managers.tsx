@@ -78,15 +78,19 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
       </div>
 
       {assigned.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("customers.unassigned", "Unassigned — no manager is working this customer yet.")}</p>
+        <p
+          className="text-sm text-muted-foreground">{t("customers.unassigned", "Unassigned — no manager is working this customer yet.")}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {assigned.map((m) => (
-            <span key={m.id} className={cn("group inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2 text-xs font-medium",
+            <span
+              key={m.id}
+              className={cn(("group inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 " + "pr-2 text-xs font-medium"),
               m.id === ownerId ? "border-primary/30 bg-primary/5 text-foreground" : "border-border bg-background text-foreground")}>
               <Avatar m={m} />
               <span className="max-w-[9rem] truncate">{personName(m)}</span>
-              {m.id === ownerId && <span title={t("customers.primaryOwner", "Primary owner")}><Star className="h-3 w-3 fill-primary text-primary" /></span>}
+              {m.id === ownerId &&
+                <span title={t("customers.primaryOwner", "Primary owner")}><Star className="h-3 w-3 fill-primary text-primary" /></span>}
               {canEdit && <button onClick={() => toggle(m.id)} title={t("common.remove", "Remove")}
                 className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive">
                 <X className="h-3 w-3" />
@@ -100,6 +104,16 @@ export function ManagersPanel({ customer, ownerId, onChanged, canEdit = true }: 
 }
 
 function Avatar({ m }: { m: AssignablePerson }) {
-  if (m.avatarUrl) return <img src={m.avatarUrl} alt="" width={24} height={24} loading="lazy" decoding="async" className="h-6 w-6 shrink-0 rounded-full object-cover" />
-  return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{personInitials(m)}</span>
+  if (m.avatarUrl) return <img
+    src={m.avatarUrl}
+    alt=""
+    width={24}
+    height={24}
+    loading="lazy"
+    decoding="async"
+    className="h-6 w-6 shrink-0 rounded-full object-cover"
+  />
+  return <span
+    className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
+      "bg-primary/10 text-[10px] font-semibold text-primary"}>{personInitials(m)}</span>
 }

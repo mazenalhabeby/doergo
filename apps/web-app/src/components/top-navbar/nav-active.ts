@@ -14,7 +14,14 @@ const NAV_HREFS = [
   "/dashboard", "/tasks", "/calendar", "/schedule", "/attendance", "/overtime", "/issues",
   "/locations", "/members", "/clients", "/assets", "/portals", "/invoices", "/reports", "/manage",
   "/invitations", "/join-requests", "/team", "/settings", "/settings/billing",
-  "/my/attendance", "/my/time-off", "/my/documents", "/documents", "/documents/review", "/documents/types", "/documents/templates", "/documents/compliance",
+  "/my/attendance",
+    "/my/time-off",
+    "/my/documents",
+    "/documents",
+    "/documents/review",
+    "/documents/types",
+    "/documents/templates",
+    "/documents/compliance",
 ] as const
 
 function matches(pathname: string, href: string): boolean {

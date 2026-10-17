@@ -146,7 +146,10 @@ export function AuditLogPageInner() {
         {/* Table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 bg-muted/30 text-[11px] font-medium text-muted-foreground uppercase tracking-wider border-b border-border/30">
+          <div
+            className={"grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 bg-muted/30 " +
+              "text-[11px] font-medium text-muted-foreground uppercase tracking-wider " +
+              "border-b border-border/30"}>
             <div>{t("auditLog.event")}</div>
             <div>{t("auditLog.user")}</div>
             <div>{t("auditLog.resource")}</div>
@@ -167,7 +170,11 @@ export function AuditLogPageInner() {
             logs.map((log) => {
               const evt = { label: evtLabel(log.eventType), color: EVENT_COLORS[log.eventType] || "text-foreground" }
               return (
-                <div key={log.id} className="grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b border-border/20 last:border-0 hover:bg-muted/20 transition-colors text-sm">
+                <div
+                  key={log.id}
+                  className={"grid grid-cols-[1fr_140px_140px_100px] gap-3 px-4 py-2.5 border-b " +
+                    "border-border/20 last:border-0 hover:bg-muted/20 transition-colors " +
+                    "text-sm"}>
                   {/* Event */}
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={cn("text-xs font-semibold", evt.color)}>{evt.label}</span>
@@ -183,7 +190,9 @@ export function AuditLogPageInner() {
                   {/* User */}
                   <div className="flex items-center gap-1.5 min-w-0">
                     {log.user ? (
-                      <Link href={`/members/${log.user.id}`} className="text-xs text-foreground truncate hover:text-blue-600 transition-colors">
+                      <Link
+                        href={`/members/${log.user.id}`}
+                        className="text-xs text-foreground truncate hover:text-blue-600 transition-colors">
                         {personName(log.user)}
                       </Link>
                     ) : (

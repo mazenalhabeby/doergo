@@ -25,7 +25,9 @@ const graph = {
         url: `${SITE}/favicon.png`,
       },
       description:
-        "HBCField is a field service management platform that unifies task dispatch, GPS tracking, employee time & attendance, and reporting for field teams.",
+        ("HBCField is a field service management platform that unifies task " +
+          "dispatch, GPS tracking, employee time & attendance, and reporting for " +
+          "field teams."),
       address: {
         "@type": "PostalAddress",
         addressCountry: "AT",
@@ -54,7 +56,10 @@ const graph = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web, iOS, Android",
       description:
-        "Field service management software that unifies task dispatch and assignment, GPS route tracking, employee time & attendance with geofencing, service reports, scheduling and invoicing — in real time on web and mobile.",
+        ("Field service management software that unifies task dispatch and " +
+          "assignment, GPS route tracking, employee time & attendance with " +
+          "geofencing, service reports, scheduling and invoicing — in real time on " +
+          "web and mobile."),
       featureList: [
         "Task dispatch and technician assignment",
         "Real-time GPS route tracking",

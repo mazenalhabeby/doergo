@@ -85,7 +85,8 @@ export function LogTypesEditor({
             onChange([...value, { key: "", label: "", color: "slate", fields: [], needsApproval: false, holderOnly: false, due: null }])
             setOpen(value.length)
           }}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+          className={"inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary " +
+            "hover:underline disabled:opacity-40 disabled:no-underline"}
         >
           <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
         </button>
@@ -110,10 +111,20 @@ export function LogTypesEditor({
               maxLength={KIND_SHAPE_LIMITS.maxLabel}
               className="h-8"
             />
-            <button type="button" disabled={i === 0} onClick={() => move(i, -1)} className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30" aria-label={t("assetLog.editor.up", "Move up")}>
+            <button
+              type="button"
+              disabled={i === 0}
+              onClick={() => move(i, -1)}
+              className={"shrink-0 rounded p-1 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
+              aria-label={t("assetLog.editor.up", "Move up")}>
               <ChevronUp className="h-4 w-4" />
             </button>
-            <button type="button" disabled={i === value.length - 1} onClick={() => move(i, 1)} className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground disabled:opacity-30" aria-label={t("assetLog.editor.down", "Move down")}>
+            <button
+              type="button"
+              disabled={i === value.length - 1}
+              onClick={() => move(i, 1)}
+              className={"shrink-0 rounded p-1 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
+              aria-label={t("assetLog.editor.down", "Move down")}>
               <ChevronDown className="h-4 w-4" />
             </button>
             <button
@@ -178,7 +189,9 @@ export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (
       <div className="space-y-2">
         <FlagRow
           title={t("assetLog.editor.needsApproval", "Needs approval")}
-          hint={t("assetLog.editor.needsApprovalHint", "An entry from a member waits for somebody who manages assets, and counts for nothing until then.")}
+          hint={t(
+            "assetLog.editor.needsApprovalHint",
+            ("An entry from a member waits for somebody who manages assets, and counts " + "for nothing until then."))}
           checked={type.needsApproval}
           onChange={(v) => onChange({ needsApproval: v })}
         />
@@ -197,7 +210,9 @@ export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (
       <div className="rounded-md border border-border/70 p-2">
         <FlagRow
           title={t("assetLog.editor.due", "It comes due again")}
-          hint={t("assetLog.editor.dueHint", "After some months or a meter reading, whichever comes first. Holders and whoever looks after it are reminded.")}
+          hint={t(
+            "assetLog.editor.dueHint",
+            ("After some months or a meter reading, whichever comes first. Holders and " + "whoever looks after it are reminded."))}
           checked={!!due}
           onChange={(v) => setDue(v ? { months: 12, leadDays: 30 } : null)}
         />
@@ -205,16 +220,38 @@ export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.months", "Every … months")}</Label>
-              <Input type="number" min={1} max={120} value={due.months ?? ""} onChange={(e) => setDue({ months: num(e.target.value) })} className="mt-1 h-8" />
+              <Input
+                type="number"
+                min={1}
+                max={120}
+                value={due.months ?? ""}
+                onChange={(e) => setDue({ months: num(e.target.value) })}
+                className="mt-1 h-8"
+              />
             </div>
             <div>
               <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.leadDays", "Remind … days before")}</Label>
-              <Input type="number" min={0} max={365} value={due.leadDays ?? ""} disabled={!due.months} onChange={(e) => setDue({ leadDays: num(e.target.value) })} className="mt-1 h-8" />
+              <Input
+                type="number"
+                min={0}
+                max={365}
+                value={due.leadDays ?? ""}
+                disabled={!due.months}
+                onChange={(e) => setDue({ leadDays: num(e.target.value) })}
+                className="mt-1 h-8"
+              />
             </div>
             <div>
               <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.units", "Or every …")}</Label>
               <div className="mt-1 flex gap-1.5">
-                <Input type="number" min={1} value={due.units ?? ""} disabled={meters.length === 0} onChange={(e) => setDue({ units: num(e.target.value) })} className="h-8" />
+                <Input
+                  type="number"
+                  min={1}
+                  value={due.units ?? ""}
+                  disabled={meters.length === 0}
+                  onChange={(e) => setDue({ units: num(e.target.value) })}
+                  className="h-8"
+                />
                 <select
                   value={due.meterKey ?? ""}
                   disabled={meters.length === 0}
@@ -241,7 +278,14 @@ export function TypeDetails({ type, onChange }: { type: KindLogType; onChange: (
             </div>
             <div>
               <Label className="text-[11px] text-muted-foreground">{t("assetLog.editor.leadUnits", "Remind … before")}</Label>
-              <Input type="number" min={0} value={due.leadUnits ?? ""} disabled={!due.units || !due.meterKey} onChange={(e) => setDue({ leadUnits: num(e.target.value) })} className="mt-1 h-8" />
+              <Input
+                type="number"
+                min={0}
+                value={due.leadUnits ?? ""}
+                disabled={!due.units || !due.meterKey}
+                onChange={(e) => setDue({ leadUnits: num(e.target.value) })}
+                className="mt-1 h-8"
+              />
             </div>
           </div>
         )}

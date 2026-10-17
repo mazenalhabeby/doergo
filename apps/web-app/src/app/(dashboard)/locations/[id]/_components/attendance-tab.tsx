@@ -73,7 +73,10 @@ export function AttendanceTab({ space }: { space: CompanyLocation }) {
 
       {/* Time clock — the universal baseline (informational). */}
       <Card className="flex items-start gap-3 border-dashed bg-muted/30 p-4">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+        <span
+          className={"flex size-9 shrink-0 items-center justify-center rounded-lg " +
+            "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 " +
+            "dark:text-emerald-300"}>
           <Clock className="h-[18px] w-[18px]" />
         </span>
         <div>

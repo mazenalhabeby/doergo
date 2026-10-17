@@ -117,7 +117,8 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                       {!shift.spaceId && (
                         <Badge
                           variant="outline"
-                          className="text-[11px] border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                          className={"text-[11px] border-slate-200 bg-slate-50 text-slate-600 " +
+                            "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"}
                         >
                           {t("scheduling.shifts.orgWide")}
                         </Badge>
@@ -125,7 +126,8 @@ export function ShiftsTab({ spaceId }: { spaceId: string }) {
                       {crosses && (
                         <Badge
                           variant="outline"
-                          className="text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                          className={"text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700 " +
+                            "dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300"}
                         >
                           <Moon className="h-3 w-3" />
                           {t("scheduling.shifts.crossesMidnight")}

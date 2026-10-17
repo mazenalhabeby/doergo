@@ -177,7 +177,29 @@ export function TopNavbar() {
           right. 1024–1280px now uses the hamburger, which carries every item.
           (The `MoreDropdown` overflow path below never ran — `overflowItems` is
           initialised empty and never populated, so `hasOverflow` is always false.) */}
-      <TopNavbarSidebar vm={vm} showCalendar={showCalendar} showCrm={showCrm} showAssets={showAssets} showPortals={showPortals} showTeam={showTeam} teamItems={teamItems} showSpaces={showSpaces} showSchedule={showSchedule} showAttendance={showAttendance} showOvertime={showOvertime} showIssues={showIssues} showReports={showReports} showInvoices={showInvoices} showMyDocuments={showMyDocuments} showIssueDocuments={showIssueDocuments} showAllDocuments={showAllDocuments} showDocumentTypes={showDocumentTypes} showDocumentTemplates={showDocumentTemplates} showDocumentCompliance={showDocumentCompliance} showManage={showManage} />
+      <TopNavbarSidebar
+        vm={vm}
+        showCalendar={showCalendar}
+        showCrm={showCrm}
+        showAssets={showAssets}
+        showPortals={showPortals}
+        showTeam={showTeam}
+        teamItems={teamItems}
+        showSpaces={showSpaces}
+        showSchedule={showSchedule}
+        showAttendance={showAttendance}
+        showOvertime={showOvertime}
+        showIssues={showIssues}
+        showReports={showReports}
+        showInvoices={showInvoices}
+        showMyDocuments={showMyDocuments}
+        showIssueDocuments={showIssueDocuments}
+        showAllDocuments={showAllDocuments}
+        showDocumentTypes={showDocumentTypes}
+        showDocumentTemplates={showDocumentTemplates}
+        showDocumentCompliance={showDocumentCompliance}
+        showManage={showManage}
+      />
       </div>
     </header>
   )

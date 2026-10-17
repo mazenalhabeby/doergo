@@ -65,7 +65,8 @@ export function SavedWorkflowExtras({
             setSubmitting(false)
           }
         }}
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+        className={"inline-flex items-center gap-1.5 text-xs text-muted-foreground " +
+          "hover:text-foreground transition-colors disabled:opacity-50"}
       >
         {submitting ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
         {t("workflows.page.submitToLibrary", "Offer to library")}

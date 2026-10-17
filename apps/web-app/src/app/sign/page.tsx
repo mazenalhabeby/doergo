@@ -171,7 +171,11 @@ function SignPageInner() {
               <p className="mb-1 font-medium text-foreground">
                 {t("signLink.agree.recordedTitle", "When you sign, this is recorded")}
               </p>
-              {t("signLink.agree.recorded", "The name you typed · your IP address and browser · the exact time · a fingerprint of each document, so any later change shows · and which of them you opened.")}
+              {t(
+                "signLink.agree.recorded",
+                ("The name you typed · your IP address and browser · the exact time · a " +
+                  "fingerprint of each document, so any later change shows · and which of " +
+                  "them you opened."))}
             </div>
 
             <Button className="w-full" disabled={!agreed || name.trim().length < 2} onClick={() => setStep("draw")}>

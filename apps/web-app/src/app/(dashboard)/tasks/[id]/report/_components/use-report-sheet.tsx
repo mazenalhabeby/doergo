@@ -34,7 +34,9 @@ export function useReportSheet({ report: r, visible, showPrices, generatedBy, he
 
   const section = (key: NumberedSection, title: string, body: ReactNode) => (
     <section key={key} className="break-inside-avoid-page pt-7" aria-labelledby={`report-${key}`}>
-      <h2 id={`report-${key}`} className="flex items-baseline gap-2 border-b border-slate-200 pb-2 text-[15px] font-semibold text-slate-900">
+      <h2
+        id={`report-${key}`}
+        className={"flex items-baseline gap-2 border-b border-slate-200 pb-2 text-[15px] " + "font-semibold text-slate-900"}>
         <span className="tabular-nums text-blue-600">{numbers[key]}.</span>
         {title}
       </h2>

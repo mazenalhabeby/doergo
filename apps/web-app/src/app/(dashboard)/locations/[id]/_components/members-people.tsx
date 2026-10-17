@@ -23,7 +23,15 @@ import {
   spaceUnitsApi,
   type SpaceUnit,
 } from "@/lib/api"
-import { personInitials, personName, jobTitleOf, mayGrantSpaceRoles, mayManageSpaceMembers, type SpaceMember, type SpaceRoleInSpace } from "@hbcfield/shared/client"
+import {
+  personInitials,
+  personName,
+  jobTitleOf,
+  mayGrantSpaceRoles,
+  mayManageSpaceMembers,
+  type SpaceMember,
+  type SpaceRoleInSpace
+} from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -176,7 +184,8 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                     onClick={() => setOpenId(m.id)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenId(m.id) } }}
                     className={cn(
-                      "cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none",
+                      ("cursor-pointer border-b transition-colors last:border-0 " +
+                        "hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"),
                       openId === m.id && "bg-muted/40",
                     )}
                   >
@@ -188,9 +197,15 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                         </Avatar>
                         <div className="min-w-0">
                           <span className="flex items-center gap-1.5">
-                            <span className="truncate font-medium text-foreground">{m.user ? personName(m.user) : t("scheduling.members.unknownMember")}</span>
+                            <span
+                              className="truncate font-medium text-foreground">{m.user
+                                ? personName(m.user)
+                                : t("scheduling.members.unknownMember")}</span>
                             {external && (
-                              <Badge variant="outline" className="shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] text-amber-700 dark:text-amber-400">
+                              <Badge
+                                variant="outline"
+                                className={"shrink-0 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] " +
+                                  "text-amber-700 dark:text-amber-400"}>
                                 {t("members.external.badge")}
                               </Badge>
                             )}
@@ -222,13 +237,17 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                       <td className="px-4 py-3 text-right">
                         {external ? <span className="text-muted-foreground">—</span> : (
                           <div className="inline-flex flex-col items-end gap-1">
-                            <span className="whitespace-nowrap rounded-md border bg-muted/50 px-2 py-0.5 text-[11px] font-semibold">{billByLabel(bill)}</span>
+                            <span
+                              className={"whitespace-nowrap rounded-md border bg-muted/50 px-2 py-0.5 text-[11px] " +
+                                "font-semibold"}>{billByLabel(bill)}</span>
                             {/* Only what is charged: no hourly figure for day-only, no day figure for hour-only. */}
                             <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
                               {bill !== "DAY" && (
                                 <span
                                   className={cn(m.billRateCents != null && "font-semibold text-blue-600 dark:text-blue-400")}
-                                  title={m.billRateCents != null ? t("scheduling.membersPage.setForPerson") : t("scheduling.membersPage.inherited")}
+                                  title={m.billRateCents != null
+                                    ? t("scheduling.membersPage.setForPerson")
+                                    : t("scheduling.membersPage.inherited")}
                                 >
                                   {hourly != null ? `${cents(hourly)} ${t("rates.perHour")}` : "—"}
                                 </span>
@@ -248,7 +267,9 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
                 )
               })}
               {rows.length === 0 && (
-                <tr><td colSpan={3} className="px-3 py-8 text-center text-sm text-muted-foreground">{t("scheduling.membersPage.noMatch")}</td></tr>
+                <tr><td
+                  colSpan={3}
+                  className="px-3 py-8 text-center text-sm text-muted-foreground">{t("scheduling.membersPage.noMatch")}</td></tr>
               )}
             </tbody>
           </table>
@@ -266,7 +287,13 @@ export function PeopleSection({ spaceId, hasApartments }: { spaceId: string; has
         onClose={() => setOpenId(null)}
       />
       {adding && (
-        <AddMemberDialog spaceId={spaceId} roles={roles ?? []} members={members ?? []} isClient={isClient} onClose={() => setAdding(false)} />
+        <AddMemberDialog
+          spaceId={spaceId}
+          roles={roles ?? []}
+          members={members ?? []}
+          isClient={isClient}
+          onClose={() => setAdding(false)}
+        />
       )}
     </div>
   )

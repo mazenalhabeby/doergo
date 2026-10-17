@@ -8,7 +8,38 @@ import type { TrackingTabState } from "./use-tracking-tab"
 import type { TrackingTab } from "./tracking-tab"
 
 /** Part of TrackingTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TrackingTabTracking2({ vm, searchQuery, setSearchQuery, selectedLocationId, setSelectedLocationId, setPage, locations, selectedStatus, setSelectedStatus, selectedDate, endDate, setSelectedDate, setEndDate, refetch }: { vm: TrackingTabState; searchQuery: Parameters<typeof TrackingTab>[0]['searchQuery']; setSearchQuery: Parameters<typeof TrackingTab>[0]['setSearchQuery']; selectedLocationId: Parameters<typeof TrackingTab>[0]['selectedLocationId']; setSelectedLocationId: Parameters<typeof TrackingTab>[0]['setSelectedLocationId']; setPage: Parameters<typeof TrackingTab>[0]['setPage']; locations: Parameters<typeof TrackingTab>[0]['locations']; selectedStatus: Parameters<typeof TrackingTab>[0]['selectedStatus']; setSelectedStatus: Parameters<typeof TrackingTab>[0]['setSelectedStatus']; selectedDate: Parameters<typeof TrackingTab>[0]['selectedDate']; endDate: Parameters<typeof TrackingTab>[0]['endDate']; setSelectedDate: Parameters<typeof TrackingTab>[0]['setSelectedDate']; setEndDate: Parameters<typeof TrackingTab>[0]['setEndDate']; refetch: Parameters<typeof TrackingTab>[0]['refetch'] }) {
+export function TrackingTabTracking2(
+  {
+    vm,
+    searchQuery,
+    setSearchQuery,
+    selectedLocationId,
+    setSelectedLocationId,
+    setPage,
+    locations,
+    selectedStatus,
+    setSelectedStatus,
+    selectedDate,
+    endDate,
+    setSelectedDate,
+    setEndDate,
+    refetch
+  }: {
+    vm: TrackingTabState;
+    searchQuery: Parameters<typeof TrackingTab>[0]['searchQuery'];
+    setSearchQuery: Parameters<typeof TrackingTab>[0]['setSearchQuery'];
+    selectedLocationId: Parameters<typeof TrackingTab>[0]['selectedLocationId'];
+    setSelectedLocationId: Parameters<typeof TrackingTab>[0]['setSelectedLocationId'];
+    setPage: Parameters<typeof TrackingTab>[0]['setPage'];
+    locations: Parameters<typeof TrackingTab>[0]['locations'];
+    selectedStatus: Parameters<typeof TrackingTab>[0]['selectedStatus'];
+    setSelectedStatus: Parameters<typeof TrackingTab>[0]['setSelectedStatus'];
+    selectedDate: Parameters<typeof TrackingTab>[0]['selectedDate'];
+    endDate: Parameters<typeof TrackingTab>[0]['endDate'];
+    setSelectedDate: Parameters<typeof TrackingTab>[0]['setSelectedDate'];
+    setEndDate: Parameters<typeof TrackingTab>[0]['setEndDate'];
+    refetch: Parameters<typeof TrackingTab>[0]['refetch']
+  }) {
   const { t, presets, applyRange } = vm
   return (
     <div data-tour="tracking-filters" className="flex flex-wrap items-center gap-3 mb-6">
@@ -65,7 +96,11 @@ export function TrackingTabTracking2({ vm, searchQuery, setSearchQuery, selected
       </Select>
 
       {/* Date range — unified From → To pill */}
-      <div className="group inline-flex items-center h-11 gap-1 rounded-xl border border-border/80 bg-card/80 px-3 shadow-sm transition-colors focus-within:border-foreground/30 focus-within:ring-2 focus-within:ring-foreground/10">
+      <div
+        className={"group inline-flex items-center h-11 gap-1 rounded-xl border " +
+          "border-border/80 bg-card/80 px-3 shadow-sm transition-colors " +
+          "focus-within:border-foreground/30 focus-within:ring-2 " +
+          "focus-within:ring-foreground/10"}>
         <Calendar className="size-4 shrink-0 text-muted-foreground" />
         <Input
           type="date"

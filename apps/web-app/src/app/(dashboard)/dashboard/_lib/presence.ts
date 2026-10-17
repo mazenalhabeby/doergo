@@ -86,14 +86,20 @@ export function getEmployeeStatus(opts: {
     if (opts.workPresence) {
       if (opts.freshness === "NO_SIGNAL" && opts.lastSeenAt) {
         const time = new Date(opts.lastSeenAt).toLocaleTimeString(i18n.language, { hour: "2-digit", minute: "2-digit" })
-        return { status: "on", tag: { text: i18n.t("dashboard.presence.noSignalSince", { time, defaultValue: `No signal since ${time}` }), variant: "hrs-warn" } }
+        return {
+          status: "on",
+          tag: { text: i18n.t("dashboard.presence.noSignalSince", { time, defaultValue: `No signal since ${time}` }), variant: "hrs-warn" }
+        }
       }
       if (opts.freshness === "NO_LIVE_UPDATES") {
         return { status: "on", tag: { text: i18n.t("dashboard.presence.noLiveUpdates", "No live updates"), variant: "hrs" } }
       }
       if (opts.workPresence === "REMOTE") return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
       if (opts.workPresence === "FIELD") return { status: "on", tag: { text: i18n.t("dashboard.presence.inField"), variant: "task" } }
-      return { status: "on", tag: { text: i18n.t(opts.isShiftBased ? "dashboard.presence.onShift" : "dashboard.presence.working", "Working"), variant: "hrs" } }
+      return {
+        status: "on",
+        tag: { text: i18n.t(opts.isShiftBased ? "dashboard.presence.onShift" : "dashboard.presence.working", "Working"), variant: "hrs" }
+      }
     }
     if (opts.isRemote) return { status: "on", tag: { text: i18n.t("dashboard.presence.remote"), variant: "task" } }
     if (!opts.isShiftBased) return { status: "on", tag: { text: i18n.t("dashboard.presence.working", "Working"), variant: "hrs" } }

@@ -98,7 +98,9 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
                 type="button"
                 className={cn(
                   "flex-shrink-0 text-xs rounded-full px-2.5 py-1 border transition-colors",
-                  item.assignee ? "border-border text-foreground hover:bg-accent" : "border-dashed border-border text-muted-foreground hover:text-foreground",
+                  item.assignee
+                    ? "border-border text-foreground hover:bg-accent"
+                    : "border-dashed border-border text-muted-foreground hover:text-foreground",
                 )}
               >
                 {item.assignee ? personName(item.assignee) : t("tasks.checklist.giveTo")}
@@ -116,11 +118,18 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
           </DropdownMenu>
         ) : meId && item.assigneeId === meId && !item.isCompleted ? (
           // My own item: give it back (shared mayChangeChecklistOwner — a member may).
-          <button type="button" onClick={() => onOwner(item.id, null)} className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 border border-border text-foreground hover:bg-accent" title={t("tasks.checklist.giveBack")}>
+          <button
+            type="button"
+            onClick={() => onOwner(item.id, null)}
+            className={"flex-shrink-0 text-xs rounded-full px-2.5 py-1 border border-border " + "text-foreground hover:bg-accent"}
+            title={t("tasks.checklist.giveBack")}>
             {t("tasks.checklist.you")} ×
           </button>
         ) : !item.assigneeId && !item.isCompleted && meId && crew.members.some((m) => m.user.id === meId) ? (
-          <button type="button" onClick={() => onOwner(item.id, meId)} className="flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-primary text-primary-foreground hover:opacity-90">
+          <button
+            type="button"
+            onClick={() => onOwner(item.id, meId)}
+            className={"flex-shrink-0 text-xs rounded-full px-2.5 py-1 bg-primary " + "text-primary-foreground hover:opacity-90"}>
             {t("tasks.checklist.takeIt")}
           </button>
         ) : item.assignee ? (
@@ -133,7 +142,9 @@ export const ChecklistItemRow = React.memo(function ChecklistItemRow({
         type="button"
         onClick={() => onDelete(item.id)}
         disabled={isDeleting}
-        className="flex-shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
+        className={"flex-shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 " +
+          "text-muted-foreground hover:text-red-500 hover:bg-red-50 " +
+          "dark:hover:bg-red-500/10 transition-all duration-150"}
       >
         <Trash2 className="size-3.5" />
       </button>}

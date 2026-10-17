@@ -36,7 +36,8 @@ export const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
           role="button"
           tabIndex={0}
           className={cn(
-            "rounded-lg bg-muted/50 dark:bg-background/30 border border-border/50 dark:border-border/30 flex flex-col h-[110px] outline-none",
+            ("rounded-lg bg-muted/50 dark:bg-background/30 border border-border/50 " +
+              "dark:border-border/30 flex flex-col h-[110px] outline-none"),
             "cursor-pointer hover:border-primary/40 hover:bg-accent/40 transition-colors",
           )}
           style={{ animation: `expandCardIn 0.5s ${APPLE_EASE} ${delay}s both` }}
@@ -62,7 +63,9 @@ export const ExpandedWorkerCell = React.memo(function ExpandedWorkerCell({
               clockedIn={person.clockedIn}
               imageUrl={person.imageUrl}
               hideDot
-              className="[&>div:first-child]:!w-[58px] [&>div:first-child]:!h-[58px] [&>div:first-child]:!min-w-[58px] [&>div:first-child]:!min-h-[58px] [&>div:first-child]:!text-xl"
+              className={"[&>div:first-child]:!w-[58px] [&>div:first-child]:!h-[58px] " +
+                "[&>div:first-child]:!min-w-[58px] [&>div:first-child]:!min-h-[58px] " +
+                "[&>div:first-child]:!text-xl"}
             />
           </div>
         </div>

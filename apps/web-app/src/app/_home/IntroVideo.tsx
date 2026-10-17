@@ -49,7 +49,11 @@ export function IntroVideo() {
             className="pointer-events-none absolute inset-0"
             style={{ background: 'radial-gradient(60% 60% at 50% 50%, rgba(0,0,0,0.35), rgba(0,0,0,0.15) 60%, transparent)' }}
           />
-          <span className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm transition-all duration-300 group-hover:scale-105 group-hover:border-white/60 group-hover:bg-white/20">
+          <span
+            className={"relative flex h-20 w-20 items-center justify-center rounded-full border " +
+              "border-white/30 bg-white/10 backdrop-blur-sm transition-all duration-300 " +
+              "group-hover:scale-105 group-hover:border-white/60 " +
+              "group-hover:bg-white/20"}>
             <Play className="ml-1 h-7 w-7 fill-white text-white" />
           </span>
         </button>

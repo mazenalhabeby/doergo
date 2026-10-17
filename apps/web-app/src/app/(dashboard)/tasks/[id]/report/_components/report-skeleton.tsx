@@ -13,12 +13,17 @@ export function ReportSheetSkeleton() {
       <Skeleton className="mt-6 h-7 w-2/3" />
       <div className="mt-3 flex gap-2"><Skeleton className="h-6 w-24 rounded-full" /><Skeleton className="h-6 w-16 rounded-full" /></div>
       <div className="mt-6 grid grid-cols-2 gap-4 rounded-lg bg-slate-50 p-4 md:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => <div key={i} className="space-y-1.5"><Skeleton className="h-2.5 w-14" /><Skeleton className="h-4 w-24" /></div>)}
+        {Array.from({
+          length: 8
+        }).map((_, i) => <div key={i} className="space-y-1.5"><Skeleton className="h-2.5 w-14" /><Skeleton className="h-4 w-24" /></div>)}
       </div>
       {Array.from({ length: 2 }).map((_, i) => (
         <div key={i} className="pt-7">
           <Skeleton className="h-5 w-40" />
-          <div className="mt-3 space-y-2"><Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-5/6" /><Skeleton className="h-3 w-2/3" /></div>
+          <div
+            className="mt-3 space-y-2"><Skeleton
+              className="h-3 w-full"
+            /><Skeleton className="h-3 w-5/6" /><Skeleton className="h-3 w-2/3" /></div>
         </div>
       ))}
     </div>

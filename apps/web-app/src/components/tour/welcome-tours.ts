@@ -14,9 +14,16 @@ export const WELCOME_TOURS: TourDef[] = [
       step("welcomeAdmin", "dashboard", "nav-dashboard"),
       { ...step("welcomeAdmin", "yourSpaces", "dash-spaces"), optional: true, dynamic: true }, // the spaces grid on the dashboard
       // ── Deep dive into an opened space (each step skips fast if that group is empty) ──
-      { ...step("welcomeAdmin", "spaceHeader", "dash-space-header"), enter: "dash-space-box", optional: true }, // live headcount (opens the space)
+      {
+        ...step("welcomeAdmin", "spaceHeader", "dash-space-header"),
+        enter: "dash-space-box",
+        optional: true
+      }, // live headcount (opens the space)
       { ...step("welcomeAdmin", "openSpace", "dash-space-members"), optional: true }, // on-site team (present now)
-      { ...step("welcomeAdmin", "member", "dash-space-member"), optional: true }, // one teammate → tap to message / see jobs / manage access
+      {
+        ...step("welcomeAdmin", "member", "dash-space-member"),
+        optional: true
+      }, // one teammate → tap to message / see jobs / manage access
       { ...step("welcomeAdmin", "field", "dash-space-field"), optional: true }, // out on a job
       { ...step("welcomeAdmin", "offSite", "dash-space-offsite"), optional: true }, // working remotely
       { ...step("welcomeAdmin", "offDuty", "dash-space-offduty"), optional: true }, // off today + reason

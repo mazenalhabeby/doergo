@@ -121,7 +121,10 @@ export function AddMemberDialog({
                     <SelectItem key={e.id} value={e.id}>
                       <span className="flex flex-col items-start">
                         <span>{personName(e)}</span>
-                        {(title || showEmail) && <span className="text-xs text-muted-foreground">{[title, showEmail ? e.email : null].filter(Boolean).join(" · ")}</span>}
+                        {(title || showEmail) &&
+                          <span
+                            className="text-xs text-muted-foreground">{[title, showEmail ? e.email : null].filter(Boolean).join(
+                              " · ")}</span>}
                       </span>
                     </SelectItem>
                   )
@@ -135,9 +138,12 @@ export function AddMemberDialog({
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value={NONE}>{t("scheduling.members.noRole")}</SelectItem>
-                {([["WORK", t("scheduling.workRoles.groupWork")], ["MANAGEMENT", t("scheduling.workRoles.groupManagement")]] as const).map(([kind, label]) => {
+                {([
+                  ["WORK", t("scheduling.workRoles.groupWork")],
+                  ["MANAGEMENT", t("scheduling.workRoles.groupManagement")]] as const).map(([kind, label]) => {
                   // Work roles: only those this workspace uses.
-                  const group = roles.filter((r) => (r.kind === "WORK") === (kind === "WORK") && (r.kind !== "WORK" || r.activeHere !== false))
+                  const group = roles.filter((r) => (r.kind === "WORK") === (kind === "WORK") &&
+                    (r.kind !== "WORK" || r.activeHere !== false))
                   if (group.length === 0) return null
                   return (
                     <SelectGroup key={kind}>
@@ -153,7 +159,12 @@ export function AddMemberDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">{t("scheduling.workRoles.billBy")}</Label>
               <div>
-                <Segmented ariaLabel={t("scheduling.workRoles.billBy")} value={bill} onChange={setBill} options={BILL_BY.map((b) => ({ value: b, label: billByLabel(b) }))} />
+                <Segmented
+                  ariaLabel={t("scheduling.workRoles.billBy")}
+                  value={bill}
+                  onChange={setBill}
+                  options={BILL_BY.map((b) => ({ value: b, label: billByLabel(b) }))}
+                />
               </div>
             </div>
           )}

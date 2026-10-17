@@ -96,7 +96,11 @@ export function AddOvertimeDialog({ entry }: { entry: TimeEntry }) {
               end: formatTime(entry.expectedClockOutAt ?? null, hour12, locale, tz),
               out: formatTime(entry.clockOutAt, hour12, locale, tz),
               minutes: initial.pastEnd,
-              defaultValue: `Shift ended ${formatTime(entry.expectedClockOutAt ?? null, hour12, locale, tz)} · clocked out ${formatTime(entry.clockOutAt, hour12, locale, tz)} (${initial.pastEnd} min later)`,
+              defaultValue: `Shift ended ${formatTime(
+                entry.expectedClockOutAt ?? null,
+                hour12,
+                locale,
+                tz)} · clocked out ${formatTime(entry.clockOutAt, hour12, locale, tz)} (${initial.pastEnd} min later)`,
             })}
           </DialogDescription>
         </DialogHeader>

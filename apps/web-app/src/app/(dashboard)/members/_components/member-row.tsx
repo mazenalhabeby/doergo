@@ -95,7 +95,15 @@ export const MemberRow = memo(function MemberRow({
         <div><RoleBadge member={member} /></div>
         <div><ScheduleBadge member={member} /></div>
         <div className="min-w-0"><SpacesCell spaceNames={spaceNames} /></div>
-        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} onTransfer={onTransfer} canTransferOwnership={canTransferOwnership} />
+        <RowActions
+          show={isAdmin}
+          isSelf={isSelf}
+          member={member}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          onTransfer={onTransfer}
+          canTransferOwnership={canTransferOwnership}
+        />
       </div>
 
       {/* \u2500\u2500 Mobile: stacked card \u2500\u2500 */}
@@ -117,7 +125,16 @@ export const MemberRow = memo(function MemberRow({
             {spaceNames.length > 0 && <SpacesCell spaceNames={spaceNames} />}
           </div>
         </div>
-        <RowActions show={isAdmin} isSelf={isSelf} member={member} onEdit={onEdit} onRemove={onRemove} onTransfer={onTransfer} canTransferOwnership={canTransferOwnership} alwaysVisible />
+        <RowActions
+          show={isAdmin}
+          isSelf={isSelf}
+          member={member}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          onTransfer={onTransfer}
+          canTransferOwnership={canTransferOwnership}
+          alwaysVisible
+        />
       </div>
     </div>
   )

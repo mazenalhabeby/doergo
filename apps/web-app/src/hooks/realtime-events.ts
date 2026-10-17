@@ -61,7 +61,12 @@ export const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   // Only queries in use refetch, so this is the one job on screen, not every job.
   [Events.TASK_UPDATED]: [keys.tasks.lists(), keys.tasks.counts(), keys.portal.allRequests(), keys.tasks.details(), keys.tasks.times()],
   [Events.TASK_ASSIGNED]: [keys.tasks.lists(), keys.tasks.counts()],
-  [Events.TASK_STATUS_CHANGED]: [keys.tasks.lists(), keys.tasks.counts(), keys.attendance.active(), keys.attendance.locationBatch(), keys.portal.allRequests()],
+  [Events.TASK_STATUS_CHANGED]: [
+    keys.tasks.lists(),
+    keys.tasks.counts(),
+    keys.attendance.active(),
+    keys.attendance.locationBatch(),
+    keys.portal.allRequests()],
   [Events.TASK_COMMENT_ADDED]: [keys.tasks.lists()],
   [Events.TASK_ATTACHMENT_ADDED]: [keys.tasks.lists()],
   [Events.TASK_DECLINED]: [keys.tasks.lists(), keys.tasks.counts()],
@@ -155,7 +160,15 @@ export const EVENT_INVALIDATIONS: Record<string, QueryKey[]> = {
   */
   [Events.CALENDAR_CHANGED]: [keys.calendar.all(), keys.calendar.event()],
   // A moved Eid or a new weekend changes counts and shading everywhere at once.
-  [Events.CALENDAR_SETTINGS_CHANGED]: [keys.calendar.all(), keys.calendar.settings(), keys.calendar.holidays(), keys.timeOff.count(), keys.timeOff.myBalance(), keys.timeOff.coverRange(), keys.calendar.team(), keys.timeOff.org()],
+  [Events.CALENDAR_SETTINGS_CHANGED]: [
+    keys.calendar.all(),
+    keys.calendar.settings(),
+    keys.calendar.holidays(),
+    keys.timeOff.count(),
+    keys.timeOff.myBalance(),
+    keys.timeOff.coverRange(),
+    keys.calendar.team(),
+    keys.timeOff.org()],
   [Events.DOCUMENT_TYPES_CHANGED]: [
     keys.documents.types(),                  // the picker on every documents screen
     keys.documents.browse(),                // the folder register

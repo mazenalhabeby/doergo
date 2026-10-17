@@ -25,7 +25,10 @@ export const attendanceEntriesApi = {
    * three weeks.
    */
   getMyHistory: async (params?: { startDate?: string; endDate?: string; page?: number; limit?: number }) => {
-    const response = await call(attendanceEndpoints.history, undefined, { query: params ?? {} }) as ApiResponse<{ data: TimeEntry[]; meta?: unknown }>;
+    const response = await call(
+      attendanceEndpoints.history,
+      undefined,
+      { query: params ?? {} }) as ApiResponse<{ data: TimeEntry[]; meta?: unknown }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
@@ -34,7 +37,9 @@ export const attendanceEntriesApi = {
   // Batched: today's entries for many spaces in one request (member-scoped).
   getEntriesBatch: async (locationIds: string[], date?: string) => {
     if (locationIds.length === 0) return [] as TimeEntry[];
-    const response = await call(attendanceEndpoints.entries, { ids: locationIds, date }) as ApiResponse<{ success: boolean; data: TimeEntry[] }>;
+    const response = await call(
+      attendanceEndpoints.entries,
+      { ids: locationIds, date }) as ApiResponse<{ success: boolean; data: TimeEntry[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -135,7 +140,9 @@ export const attendanceEntriesApi = {
    * crash it prevents, because nothing ever says the guess was wrong.
    */
   entryBreaks: async (entryId: string) => {
-    const response = await call(attendanceEndpoints.entryBreaks, { id: entryId }) as ApiResponse<{ success: boolean; data: { breaks?: EntryBreak[] } }>;
+    const response = await call(
+      attendanceEndpoints.entryBreaks,
+      { id: entryId }) as ApiResponse<{ success: boolean; data: { breaks?: EntryBreak[] } }>;
     if (response.error) throw apiError(response);
     return response.data?.data?.breaks ?? [];
   },
@@ -162,7 +169,10 @@ export const attendanceEntriesApi = {
     entryId: string,
     input: { type?: string; startedAt: string; endedAt: string; reason: string },
   ) => {
-    const response = await call(attendanceEndpoints.addEntryBreak, { id: entryId }, { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const response = await call(
+      attendanceEndpoints.addEntryBreak,
+      { id: entryId },
+      { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
@@ -173,7 +183,10 @@ export const attendanceEntriesApi = {
     entryId: string,
     input: { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string }
   ) => {
-    const response = await call(attendanceEndpoints.editEntry, { id: entryId }, { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const response = await call(
+      attendanceEndpoints.editEntry,
+      { id: entryId },
+      { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (response.error) {
       throw apiError(response);
     }
@@ -182,7 +195,18 @@ export const attendanceEntriesApi = {
 
   // Where a member worked through one entry: groups, reasons and times — never a position.
   getEntryPresence: async (entryId: string) => {
-    const response = await call(attendanceEndpoints.entryPresence, { id: entryId }) as ApiResponse<{ success: boolean; data: { presence: string | null; lastSeenAt: string | null; changes: { at: string; presence: "ON_SITE" | "FIELD" | "REMOTE"; reason: string; sentLate: boolean }[] } }>;
+    const response = await call(
+      attendanceEndpoints.entryPresence,
+      {
+        id: entryId
+      }) as ApiResponse<{
+        success: boolean;
+        data: {
+          presence: string | null;
+          lastSeenAt: string | null;
+          changes: { at: string; presence: "ON_SITE" | "FIELD" | "REMOTE"; reason: string; sentLate: boolean }[]
+        }
+      }>;
     if (response.error) {
       throw apiError(response);
     }
@@ -191,7 +215,10 @@ export const attendanceEntriesApi = {
 
   // Approved overtime on a closed shift: minutes counted from the shift end.
   addOvertime: async (entryId: string, input: { minutes: number; reason?: string }) => {
-    const response = await call(attendanceEndpoints.entryOvertime, { id: entryId }, { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const response = await call(
+      attendanceEndpoints.entryOvertime,
+      { id: entryId },
+      { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (response.error) {
       throw apiError(response);
     }
@@ -209,7 +236,9 @@ export const attendanceEntriesApi = {
 
   // Full edit history (per-edit audit rows) for a time entry.
   getEntryHistory: async (entryId: string) => {
-    const response = await call(attendanceEndpoints.entryHistory, { id: entryId }) as ApiResponse<{ success: boolean; data: EntryEditHistoryItem[] }>;
+    const response = await call(
+      attendanceEndpoints.entryHistory,
+      { id: entryId }) as ApiResponse<{ success: boolean; data: EntryEditHistoryItem[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? []
   },

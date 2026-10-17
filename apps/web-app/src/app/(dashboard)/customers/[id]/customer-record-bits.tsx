@@ -13,12 +13,15 @@ import {
 import { stageDot } from "./customer-record-lib"
 
 // ── Status pill (clean, Attio-style) ──────────────────────────────────────────
-export function StatusPill({ current, onSet, pending, readOnly }: { current: string; onSet: (s: string) => void; pending: boolean; readOnly?: boolean }) {
+export function StatusPill(
+  { current, onSet, pending, readOnly }: { current: string; onSet: (s: string) => void; pending: boolean; readOnly?: boolean }) {
   const { t } = useTranslation()
   // Somebody who may read the stage but not move it sees the stage, not a menu.
   if (readOnly) {
     return (
-      <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground">
+      <span
+        className={"inline-flex items-center gap-2 rounded-full border border-border " +
+          "bg-background px-3 py-1.5 text-sm font-medium text-foreground"}>
         <span className={cn("h-2 w-2 rounded-full", stageDot(current))} />
         {customerStageLabel(current)}
       </span>
@@ -27,7 +30,10 @@ export function StatusPill({ current, onSet, pending, readOnly }: { current: str
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={pending}>
-        <button className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-60">
+        <button
+          className={"inline-flex items-center gap-2 rounded-full border border-border " +
+            "bg-background px-3 py-1.5 text-sm font-medium text-foreground " +
+            "transition-colors hover:bg-muted disabled:opacity-60"}>
           <span className={cn("h-2 w-2 rounded-full", stageDot(current))} />
           {customerStageLabel(current)}
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -48,7 +54,11 @@ export function StatusPill({ current, onSet, pending, readOnly }: { current: str
 
 export function IconBtn({ icon: Icon, href, label }: { icon: LucideIcon; href: string; label: string }) {
   return (
-    <a href={href} title={label} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20">
+    <a
+      href={href}
+      title={label}
+      className={"inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/10 px-3 " +
+        "text-xs font-medium text-primary transition-colors hover:bg-primary/20"}>
       <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{label}</span>
     </a>
   )

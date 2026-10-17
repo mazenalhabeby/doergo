@@ -91,7 +91,9 @@ export function CommentsSection({
           onChange={(e) => onCommentChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t("tasks.comments.placeholder")}
-          className="resize-none text-[13px] min-h-[72px] rounded-xl border-border/60 focus:border-foreground/20 focus:ring-foreground/5 placeholder:text-muted-foreground/40"
+          className={"resize-none text-[13px] min-h-[72px] rounded-xl border-border/60 " +
+            "focus:border-foreground/20 focus:ring-foreground/5 " +
+            "placeholder:text-muted-foreground/40"}
           rows={2}
         />
         <Button

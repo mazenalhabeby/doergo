@@ -29,7 +29,8 @@ import type { TaskDetailPageState } from "./use-task-detail-page"
 import type { TaskDetailPageView } from "./task-detail-page-view"
 
 /** Part of TaskDetailPage's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskDetailPageSections({ vm, onTheJob, subtaskCount, openIfPresent, checklistTotal, checklistDone, attachmentCount, depCount, comments }: { vm: TaskDetailPageState; onTheJob: ReturnType<typeof TaskDetailPageView>['onTheJob']; subtaskCount: ReturnType<typeof TaskDetailPageView>['subtaskCount']; openIfPresent: ReturnType<typeof TaskDetailPageView>['openIfPresent']; checklistTotal: ReturnType<typeof TaskDetailPageView>['checklistTotal']; checklistDone: ReturnType<typeof TaskDetailPageView>['checklistDone']; attachmentCount: ReturnType<typeof TaskDetailPageView>['attachmentCount']; depCount: ReturnType<typeof TaskDetailPageView>['depCount']; comments: ReturnType<typeof TaskDetailPageView>['comments'] }) {
+export function TaskDetailPageSections(
+  { vm, onTheJob, subtaskCount, openIfPresent, checklistTotal, checklistDone, attachmentCount, depCount, comments }: { vm: TaskDetailPageState; onTheJob: ReturnType<typeof TaskDetailPageView>['onTheJob']; subtaskCount: ReturnType<typeof TaskDetailPageView>['subtaskCount']; openIfPresent: ReturnType<typeof TaskDetailPageView>['openIfPresent']; checklistTotal: ReturnType<typeof TaskDetailPageView>['checklistTotal']; checklistDone: ReturnType<typeof TaskDetailPageView>['checklistDone']; attachmentCount: ReturnType<typeof TaskDetailPageView>['attachmentCount']; depCount: ReturnType<typeof TaskDetailPageView>['depCount']; comments: ReturnType<typeof TaskDetailPageView>['comments'] }) {
   const {
     task,
     user,
@@ -145,7 +146,12 @@ export function TaskDetailPageSections({ vm, onTheJob, subtaskCount, openIfPrese
           {/* Subtasks — module: subtasks */}
           {hasModule("subtasks") && (
             <div data-tour="task-subtasks">
-            <CollapsibleSection id="subtasks" icon={GitBranch} title={t("tasks.sections.subtasks")} count={subtaskCount || undefined} defaultOpen={openIfPresent(subtaskCount)}>
+            <CollapsibleSection
+              id="subtasks"
+              icon={GitBranch}
+              title={t("tasks.sections.subtasks")}
+              count={subtaskCount || undefined}
+              defaultOpen={openIfPresent(subtaskCount)}>
               <SubtasksSection taskId={id} subtasks={task.subtasks} subtaskCount={task._count?.subtasks} canEdit={canAddWork} workflowStatuses={workflowStatuses} />
             </CollapsibleSection>
             </div>

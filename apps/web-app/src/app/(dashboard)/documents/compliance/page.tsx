@@ -142,7 +142,9 @@ function Effect({ row }: { row: ComplianceRow }) {
 
   if (row.blocksDispatch) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400">
+      <span
+        className={"inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 " +
+          "text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-400"}>
         <ShieldX className="h-3.5 w-3.5" />
         {t("documents.compliance.removedFromDispatch")}
       </span>
@@ -150,7 +152,10 @@ function Effect({ row }: { row: ComplianceRow }) {
   }
   if (row.standing === "EXPIRED") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+      <span
+        className={"inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 " +
+          "text-[11px] font-semibold text-slate-600 dark:bg-slate-800 " +
+          "dark:text-slate-400"}>
         <ShieldX className="h-3.5 w-3.5" />
         {t("documents.compliance.expiredNoGate")}
       </span>
@@ -158,14 +163,20 @@ function Effect({ row }: { row: ComplianceRow }) {
   }
   if (row.standing === "EXPIRING") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+      <span
+        className={"inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 " +
+          "text-[11px] font-semibold text-amber-700 dark:bg-amber-950 " +
+          "dark:text-amber-400"}>
         <ShieldAlert className="h-3.5 w-3.5" />
         {t("documents.compliance.reminderSent", { count: row.daysLeft ?? 0 })}
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-950 dark:text-green-400">
+    <span
+      className={"inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 " +
+        "text-[11px] font-semibold text-green-700 dark:bg-green-950 " +
+        "dark:text-green-400"}>
       <ShieldCheck className="h-3.5 w-3.5" />
       {t("documents.compliance.noAction")}
     </span>

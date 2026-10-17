@@ -34,7 +34,9 @@ export function ConversationList({
                 data-flip={c.id}
                 onClick={() => onOpen(c.id)}
                 aria-current={c.id === activeId ? "true" : undefined}
-                className={`relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-200 hover:bg-accent ${c.id === activeId ? "motion-marker bg-blue-500/10" : ""}`}
+                className={`relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors duration-200 hover:bg-accent ${c.id === activeId
+                  ? "motion-marker bg-blue-500/10"
+                  : ""}`}
               >
                 <ConversationAvatar c={c} size={44} />
                 <span className="min-w-0 flex-1">
@@ -69,13 +71,17 @@ export function ConversationList({
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-500/10 dark:to-indigo-500/10">
+            <div
+              className={"flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br " +
+                "from-sky-50 to-indigo-50 dark:from-sky-500/10 dark:to-indigo-500/10"}>
               <GradientIcon name="chat" size={30} />
             </div>
             <p className="text-sm text-muted-foreground">{t("chat.empty", "No conversations yet.")}</p>
             <button
               onClick={onNew}
-              className="rounded-xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-500/30 transition active:scale-95"
+              className={"rounded-xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 " +
+                "px-4 py-2 text-sm font-medium text-white shadow-sm shadow-blue-500/30 " +
+                "transition active:scale-95"}
             >
               {t("chat.newMessage", "New message")}
             </button>
@@ -93,7 +99,9 @@ function UnreadBadge({ count }: { count: number }) {
   return (
     <span
       key={changed ? count : "first"}
-      className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 px-1.5 text-[10px] font-bold tabular-nums text-white ${changed ? "motion-bump" : ""}`}
+      className={`flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 px-1.5 text-[10px] font-bold tabular-nums text-white ${changed
+        ? "motion-bump"
+        : ""}`}
     >
       {count}
     </span>

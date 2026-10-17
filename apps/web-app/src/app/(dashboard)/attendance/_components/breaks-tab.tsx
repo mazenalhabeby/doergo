@@ -31,7 +31,23 @@ export function BreaksTab({
   endBreakManually,
   canReconcile,
 }: BreaksTabProps) {
-  const vm = useBreaksTab({ isAdmin, breakSummary, loadingBreakSummary, activeBreaks, loadingActiveBreaks, refetchActiveBreaks, breakHistoryData, loadingBreakHistory, refetchBreakHistory, breakDate, setBreakDate, breakTypeFilter, setBreakTypeFilter, endBreakManually, canReconcile })
+  const vm = useBreaksTab({
+    isAdmin,
+    breakSummary,
+    loadingBreakSummary,
+    activeBreaks,
+    loadingActiveBreaks,
+    refetchActiveBreaks,
+    breakHistoryData,
+    loadingBreakHistory,
+    refetchBreakHistory,
+    breakDate,
+    setBreakDate,
+    breakTypeFilter,
+    setBreakTypeFilter,
+    endBreakManually,
+    canReconcile
+  })
   const { t, hour12, locale, breakTypeKey, breakTz } = vm
 
   return (
@@ -78,15 +94,21 @@ export function BreaksTab({
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.count || 0}</p>
+                        <p
+                          className="text-lg font-bold text-amber-900 dark:text-amber-300">{breakSummary.breaksByType?.LUNCH?.count ||
+                            0}</p>
                         <p className="text-xs text-amber-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(
+                            breakSummary.breaksByType?.LUNCH?.totalMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(breakSummary.breaksByType?.LUNCH?.averageMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-amber-900 dark:text-amber-300">{formatDuration(
+                            breakSummary.breaksByType?.LUNCH?.averageMinutes || 0)}</p>
                         <p className="text-xs text-amber-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -102,11 +124,15 @@ export function BreaksTab({
                         <p className="text-xs text-blue-600">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(
+                            breakSummary.breaksByType?.SHORT?.totalMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(breakSummary.breaksByType?.SHORT?.averageMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-blue-900 dark:text-blue-300">{formatDuration(
+                            breakSummary.breaksByType?.SHORT?.averageMinutes || 0)}</p>
                         <p className="text-xs text-blue-600">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -122,11 +148,15 @@ export function BreaksTab({
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.count")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-foreground">{formatDuration(breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-foreground">{formatDuration(
+                            breakSummary.breaksByType?.OTHER?.totalMinutes || 0)}</p>
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.total")}</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-foreground">{formatDuration(breakSummary.breaksByType?.OTHER?.averageMinutes || 0)}</p>
+                        <p
+                          className="text-lg font-bold text-foreground">{formatDuration(
+                            breakSummary.breaksByType?.OTHER?.averageMinutes || 0)}</p>
                         <p className="text-xs text-muted-foreground">{t("attendance.breaks.avg")}</p>
                       </div>
                     </div>
@@ -200,7 +230,9 @@ export function BreaksTab({
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{t(`attendance.breaks.typeBreak.${breakTypeKey(breakItem.type)}`)}</span>
                             <span>•</span>
-                            <span>{t("attendance.breaks.startedAt", { time: formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem)) })}</span>
+                            <span>{t(
+                              "attendance.breaks.startedAt",
+                              { time: formatTime(breakItem.startedAt, hour12, locale, breakTz(breakItem)) })}</span>
                           </div>
                         </div>
                       </div>
@@ -235,7 +267,16 @@ export function BreaksTab({
             </div>
 
             {/* Break History Section */}
-            <BreaksTabBreaks vm={vm} breakTypeFilter={breakTypeFilter} setBreakTypeFilter={setBreakTypeFilter} breakDate={breakDate} setBreakDate={setBreakDate} refetchBreakHistory={refetchBreakHistory} loadingBreakHistory={loadingBreakHistory} breakHistoryData={breakHistoryData} />
+            <BreaksTabBreaks
+              vm={vm}
+              breakTypeFilter={breakTypeFilter}
+              setBreakTypeFilter={setBreakTypeFilter}
+              breakDate={breakDate}
+              setBreakDate={setBreakDate}
+              refetchBreakHistory={refetchBreakHistory}
+              loadingBreakHistory={loadingBreakHistory}
+              breakHistoryData={breakHistoryData}
+            />
     </div>
   )
 }

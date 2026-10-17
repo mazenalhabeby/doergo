@@ -62,7 +62,10 @@ export const approvalsApi = {
   },
   /** `stage: 'FIRST_STEP'` = approved by them, still waiting for the second person (`waitingFor`). */
   decide: async (decision: ApprovalDecision): Promise<{ stage?: 'FIRST_STEP'; waitingFor?: string }> => {
-    const res = await call(approvalsEndpoints.decide, undefined, { body: decision }) as ApiResponse<{ data: { stage?: 'FIRST_STEP'; waitingFor?: string } }>;
+    const res = await call(
+      approvalsEndpoints.decide,
+      undefined,
+      { body: decision }) as ApiResponse<{ data: { stage?: 'FIRST_STEP'; waitingFor?: string } }>;
     if (res.error) throw apiError(res);
     return res.data?.data ?? {};
   },

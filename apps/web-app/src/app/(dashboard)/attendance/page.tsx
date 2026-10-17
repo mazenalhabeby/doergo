@@ -121,7 +121,9 @@ export default function AttendancePage() {
           <TabsList data-tour="attendance-tabs" className="bg-card border border-border/60 rounded-xl p-1 shadow-sm h-auto">
             <TabsTrigger
               value="tracking"
-              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all"
+              className={"data-[state=active]:bg-foreground data-[state=active]:text-background " +
+                "data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium " +
+                "transition-all"}
             >
               <Clock className="size-3.5 mr-1.5" />
               {t('attendance.tabs.tracking')}
@@ -130,12 +132,16 @@ export default function AttendancePage() {
               value="breaks"
               data-tour="attendance-tab-breaks"
               onClick={() => setActiveTab("breaks")}
-              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className={"data-[state=active]:bg-foreground data-[state=active]:text-background " +
+                "data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium " +
+                "transition-all relative"}
             >
               <Coffee className="size-3.5 mr-1.5" />
               {t('attendance.tabs.breaks')}
               {activeBreaks.length > 0 ? (
-                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-orange-400 text-white rounded-full px-1">
+                <span
+                  className={"ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] " +
+                    "text-[10px] font-bold bg-orange-400 text-white rounded-full px-1"}>
                   {activeBreaks.length}
                 </span>
               ) : null}
@@ -143,12 +149,16 @@ export default function AttendancePage() {
             <TabsTrigger
               value="noshows"
               onClick={() => setActiveTab("noshows")}
-              className="data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all relative"
+              className={"data-[state=active]:bg-foreground data-[state=active]:text-background " +
+                "data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium " +
+                "transition-all relative"}
             >
               <UserX className="size-3.5 mr-1.5" />
               {t('attendance.tabs.noShows', 'No-shows')}
               {openNoShows > 0 ? (
-                <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold bg-red-500 text-white rounded-full px-1">
+                <span
+                  className={"ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] " +
+                    "text-[10px] font-bold bg-red-500 text-white rounded-full px-1"}>
                   {openNoShows}
                 </span>
               ) : null}

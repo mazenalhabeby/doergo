@@ -61,7 +61,9 @@ export default function PricingClient() {
               type="button"
               onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
               aria-label={t('home.nav.toggleTheme', 'Toggle theme')}
-              className="inline-flex size-8 items-center justify-center rounded-full text-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+              className={"inline-flex size-8 items-center justify-center rounded-full " +
+                "text-foreground/50 transition-colors hover:bg-foreground/10 " +
+                "hover:text-foreground"}
             >
               {resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
@@ -89,7 +91,9 @@ export default function PricingClient() {
           <p className="mt-6 max-w-[58ch] text-[17px] leading-relaxed text-foreground/55">
             {t(
               'pricing.lead',
-              'No plans, no tiers, nothing hidden behind “contact sales”. Your bill is three things added together, and you can work it out yourself in under a minute.',
+              ('No plans, no tiers, nothing hidden behind “contact sales”. Your bill is ' +
+                'three things added together, and you can work it out yourself in under a ' +
+                'minute.'),
             )}
           </p>
 
@@ -99,21 +103,27 @@ export default function PricingClient() {
               n="1"
               title={t('pricing.parts.seats.title', 'The people')}
               price={t('pricing.parts.seats.price', '{{price}} each', { price: formatCents(SEAT_MONTHLY_CENTS) })}
-              body={t('pricing.parts.seats.body', 'Per person, per month. Office, field or owner — the same price, so there is nothing to argue about.')}
+              body={t(
+                'pricing.parts.seats.body',
+                ('Per person, per month. Office, field or owner — the same price, so there ' + 'is nothing to argue about.'))}
             />
             <PartCard
               icon={<Blocks className="h-4 w-4" />}
               n="2"
               title={t('pricing.parts.modules.title', 'What each site does')}
               price={t('pricing.parts.modules.price', 'from {{price}}', { price: formatCents(300) })}
-              body={t('pricing.parts.modules.body', 'Switch a capability on where you need it. A site that does not need GPS never pays for GPS.')}
+              body={t(
+                'pricing.parts.modules.body',
+                ('Switch a capability on where you need it. A site that does not need GPS ' + 'never pays for GPS.'))}
             />
             <PartCard
               icon={<Building2 className="h-4 w-4" />}
               n="3"
               title={t('pricing.parts.addOns.title', 'Company-wide extras')}
               price={t('pricing.parts.addOns.price', 'from {{price}}', { price: formatCents(900) })}
-              body={t('pricing.parts.addOns.body', 'Invoicing, rotas, audit trail. Bought once for the business, however many sites you run.')}
+              body={t(
+                'pricing.parts.addOns.body',
+                ('Invoicing, rotas, audit trail. Bought once for the business, however ' + 'many sites you run.'))}
             />
           </div>
         </header>
@@ -123,7 +133,10 @@ export default function PricingClient() {
           <SectionHead
             n="01"
             title={t('pricing.calcHeading', 'Work out what it costs you')}
-            lead={t('pricing.calcLead', 'Set it up the way your business actually runs. Every figure is calculated by the same code that produces a real invoice.')}
+            lead={t(
+              'pricing.calcLead',
+              ('Set it up the way your business actually runs. Every figure is ' +
+                'calculated by the same code that produces a real invoice.'))}
           />
           <div className="mt-12">
             <Calculator />
@@ -178,7 +191,10 @@ export default function PricingClient() {
             title={t('pricing.laddersHeading', 'The three things priced by how many you have')}
             lead={t(
               'pricing.laddersLead',
-              'Everything else is a flat switch. These three grow with you — and get cheaper per item as they do, like a tax band: passing a threshold only re-prices the ones above it, so adding one can never make your bill jump.',
+              ('Everything else is a flat switch. These three grow with you — and get ' +
+                'cheaper per item as they do, like a tax band: passing a threshold only ' +
+                're-prices the ones above it, so adding one can never make your bill ' +
+                'jump.'),
             )}
           />
           <div className="mt-12 grid gap-5 lg:grid-cols-3">

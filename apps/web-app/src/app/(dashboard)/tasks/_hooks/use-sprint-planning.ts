@@ -143,7 +143,9 @@ export function useSprintPlanning({
     const taskCount = sprintScopedTasks.length
     const doneCount = sprintScopedTasks.filter((t: Task) => t.status === "COMPLETED" || t.status === "CLOSED").length
     const totalPoints = sprintScopedTasks.reduce((sum: number, t: Task) => sum + (t.storyPoints || 0), 0)
-    const donePoints = sprintScopedTasks.filter((t: Task) => t.status === "COMPLETED" || t.status === "CLOSED").reduce((sum: number, t: Task) => sum + (t.storyPoints || 0), 0)
+    const donePoints = sprintScopedTasks.filter((t: Task) => t.status === "COMPLETED" || t.status === "CLOSED").reduce(
+      (sum: number, t: Task) => sum + (t.storyPoints || 0),
+      0)
     const pct = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0
     return { taskCount, doneCount, pct, totalPoints, donePoints }
   }, [selectedSprint, sprintScopedTasks])

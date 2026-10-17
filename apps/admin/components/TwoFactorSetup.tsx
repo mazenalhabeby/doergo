@@ -51,8 +51,14 @@ export function TwoFactorSetup({ enabled, onSession, onError }: {
         <p className="break-all font-mono text-[11px] text-slate-500">secret: {pending.secret}</p>
         <div className="flex items-center gap-2">
           <input aria-label="Authenticator code" placeholder="6-digit code" inputMode="numeric" autoComplete="one-time-code" value={code}
-            onChange={(e) => setCode(e.target.value.trim())} onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && confirm()} className={input} />
-          <button disabled={busy === 'enable' || code.length !== 6} onClick={confirm} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm hover:bg-green-500 disabled:opacity-40">Confirm</button>
+            onChange={(e) => setCode(e.target.value.trim())}
+              onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && confirm()}
+              className={input}
+            />
+          <button
+            disabled={busy === 'enable' || code.length !== 6}
+            onClick={confirm}
+            className={"rounded-lg bg-green-600 px-3 py-1.5 text-sm hover:bg-green-500 " + "disabled:opacity-40"}>Confirm</button>
         </div>
         {enabled && <p className="text-[11px] text-slate-500">Your current authenticator keeps working until this one is confirmed.</p>}
       </div>
@@ -66,13 +72,23 @@ export function TwoFactorSetup({ enabled, onSession, onError }: {
         <div className="flex flex-wrap items-center gap-2">
           <input aria-label="Current code" placeholder="current code" inputMode="numeric" autoComplete="one-time-code" value={current}
             onChange={(e) => setCurrent(e.target.value.trim())} className={input} />
-          <button disabled={busy === 'setup' || current.length !== 6} onClick={start} className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600 disabled:opacity-40">Replace</button>
-          <button disabled={busy === 'disable' || current.length !== 6} onClick={disable} className="rounded-lg bg-red-600/80 px-3 py-1.5 text-sm hover:bg-red-600 disabled:opacity-40">Remove</button>
+          <button
+            disabled={busy === 'setup' || current.length !== 6}
+            onClick={start}
+            className={"rounded-lg bg-slate-700 px-3 py-1.5 text-sm hover:bg-slate-600 " + "disabled:opacity-40"}>Replace</button>
+          <button
+            disabled={busy === 'disable' || current.length !== 6}
+            onClick={disable}
+            className={"rounded-lg bg-red-600/80 px-3 py-1.5 text-sm hover:bg-red-600 " + "disabled:opacity-40"}>Remove</button>
         </div>
-        <p className="text-[11px] text-slate-500">A second factor is required for every operator: without one, the console offers only this screen.</p>
+        <p
+          className="text-[11px] text-slate-500">A second factor is required for every operator: without one, the console offers only this screen.</p>
       </div>
     );
   }
 
-  return <button disabled={busy === 'setup'} onClick={start} className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500 disabled:opacity-40">Set up an authenticator</button>;
+  return <button
+    disabled={busy === 'setup'}
+    onClick={start}
+    className={"rounded-lg bg-blue-600 px-3 py-1.5 text-sm hover:bg-blue-500 " + "disabled:opacity-40"}>Set up an authenticator</button>;
 }

@@ -5,7 +5,10 @@ import { shiftIssuesEndpoints } from '@hbcfield/shared/client';
 
 export const shiftIssuesApi = {
   list: async (params?: { status?: string; scope?: string }): Promise<ShiftIssue[]> => {
-    const res = await call(shiftIssuesEndpoints.list, undefined, { query: { status: params?.status || undefined, scope: params?.scope || undefined } }) as ApiResponse<{ data: ShiftIssue[] }>
+    const res = await call(
+      shiftIssuesEndpoints.list,
+      undefined,
+      { query: { status: params?.status || undefined, scope: params?.scope || undefined } }) as ApiResponse<{ data: ShiftIssue[] }>
     if (res.error) throw apiError(res)
     return res.data?.data ?? []
   },
@@ -35,7 +38,12 @@ export const shiftIssuesApi = {
     return res.data!.data
   },
   presignAttachment: async (id: string, fileName: string, mimeType: string) => {
-    const res = await call(shiftIssuesEndpoints.attachmentPresign, { id }, { body: { fileName, mimeType } }) as ApiResponse<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>
+    const res = await call(
+      shiftIssuesEndpoints.attachmentPresign,
+      { id },
+      {
+        body: { fileName, mimeType }
+      }) as ApiResponse<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>
     if (res.error) throw apiError(res)
     return res.data!.data
   },

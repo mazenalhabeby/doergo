@@ -233,7 +233,10 @@ export function useAccessFields({
           </SelectContent>
         </Select>
         {lockRole ? (
-          <p className="mt-1.5 text-xs text-muted-foreground">{t("members.memberEditor.cantChangeOwnRole", "You can't change your own role.")}</p>
+          <p
+            className="mt-1.5 text-xs text-muted-foreground">{t(
+              "members.memberEditor.cantChangeOwnRole",
+              "You can't change your own role.")}</p>
         ) : null}
       </Field>
   ) : null

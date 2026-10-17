@@ -158,7 +158,9 @@ export default function DocumentTypesPage() {
                 <button
                   key={st.key}
                   onClick={() => setStarter(st)}
-                  className="rounded-xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-400 dark:border-slate-800 dark:bg-slate-900"
+                  className={"rounded-xl border border-slate-200 bg-white p-4 text-left " +
+                    "transition-colors hover:border-blue-400 dark:border-slate-800 " +
+                    "dark:bg-slate-900"}
                 >
                   <div className="mb-1.5 flex items-center gap-2">
                     <DirectionIcon direction={st.direction} />
@@ -177,7 +179,8 @@ export default function DocumentTypesPage() {
 
               <button
                 onClick={() => setStarter(BLANK)}
-                className="rounded-xl border border-dashed border-slate-300 p-4 text-left transition-colors hover:border-slate-400 dark:border-slate-700"
+                className={"rounded-xl border border-dashed border-slate-300 p-4 text-left " +
+                  "transition-colors hover:border-slate-400 dark:border-slate-700"}
               >
                 <div className="mb-1.5 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-slate-400" />
@@ -205,7 +208,8 @@ export default function DocumentTypesPage() {
                   {retired.map((ty) => (
                     <li
                       key={ty.id}
-                      className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-slate-200 p-4 dark:border-slate-800"
+                      className={"flex flex-wrap items-center gap-3 rounded-xl border border-dashed " +
+                        "border-slate-200 p-4 dark:border-slate-800"}
                     >
                       <span className="flex-1 text-slate-500 line-through dark:text-slate-400">{ty.label}</span>
                       <Button size="sm" variant="ghost"

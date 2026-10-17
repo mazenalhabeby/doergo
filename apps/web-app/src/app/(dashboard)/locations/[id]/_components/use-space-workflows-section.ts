@@ -78,7 +78,9 @@ export function useSpaceWorkflowsSection({ spaceId }: Pick<{ spaceId: string }, 
     mutationFn: (workflowId: string) => workflowsApi.forkForSpace(spaceId, workflowId),
     onSuccess: (r) => {
       notify.success(
-        t("locations.workflows.forked", { name: r?.name ?? "", defaultValue: '"{{name}}" is now this space\'s own copy — edit it freely.' }),
+        t(
+          "locations.workflows.forked",
+          { name: r?.name ?? "", defaultValue: '"{{name}}" is now this space\'s own copy — edit it freely.' }),
       )
       refresh()
     },

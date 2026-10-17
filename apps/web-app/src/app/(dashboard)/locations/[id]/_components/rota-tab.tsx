@@ -5,7 +5,19 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { addDays, format, startOfWeek } from "date-fns"
-import { AlertTriangle, Plus, CalendarClock, CalendarDays, ChevronLeft, ChevronRight, Pencil, Trash2, Loader2, User, Users } from "lucide-react"
+import {
+  AlertTriangle,
+  Plus,
+  CalendarClock,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Trash2,
+  Loader2,
+  User,
+  Users
+} from "lucide-react"
 
 import { notify } from "@/lib/toast"
 import {

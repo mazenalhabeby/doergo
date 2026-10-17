@@ -7,7 +7,9 @@ export function Step({ n, title, children }: { n: number; title: string; childre
   return (
     <section>
       <div className="mb-3 flex items-center gap-2.5">
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900">
+        <span
+          className={"grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 " +
+            "text-xs font-bold text-white dark:bg-slate-100 dark:text-slate-900"}>
           {n}
         </span>
         <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>

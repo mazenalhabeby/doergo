@@ -1,6 +1,13 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { CreateSpaceShareInput, SharedSpace, SpaceShare, SpaceShareRequest, SpaceShareRequestType, UpdateSpaceShareInput } from './types/space-sharing';
+import type {
+  CreateSpaceShareInput,
+  SharedSpace,
+  SpaceShare,
+  SpaceShareRequest,
+  SpaceShareRequestType,
+  UpdateSpaceShareInput
+} from './types/space-sharing';
 import { spaceSharingWebEndpoints } from '@hbcfield/shared/client';
 
 export const spaceSharingApi = {
@@ -18,7 +25,10 @@ export const spaceSharingApi = {
     return res.data!.data;
   },
   updateShare: async (spaceId: string, shareId: string, input: UpdateSpaceShareInput): Promise<SpaceShare> => {
-    const res = await call(spaceSharingWebEndpoints.updateShare, { spaceId, shareId }, { body: input }) as ApiResponse<{ data: SpaceShare }>;
+    const res = await call(
+      spaceSharingWebEndpoints.updateShare,
+      { spaceId, shareId },
+      { body: input }) as ApiResponse<{ data: SpaceShare }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -29,7 +39,10 @@ export const spaceSharingApi = {
   },
   /** Incoming "request more" requests raised by guests on a space the owner owns. */
   listShareRequests: async (spaceId: string, status = 'PENDING'): Promise<SpaceShareRequest[]> => {
-    const res = await call(spaceSharingWebEndpoints.listShareRequests, { spaceId }, { query: { status } }) as ApiResponse<{ data: SpaceShareRequest[] }>;
+    const res = await call(
+      spaceSharingWebEndpoints.listShareRequests,
+      { spaceId },
+      { query: { status } }) as ApiResponse<{ data: SpaceShareRequest[] }>;
     if (res.error) throw apiError(res);
     return res.data?.data ?? [];
   },
@@ -56,13 +69,19 @@ export const spaceSharingApi = {
     shareId: string,
     input: { type: SpaceShareRequestType; title: string; note?: string },
   ): Promise<SpaceShareRequest> => {
-    const res = await call(spaceSharingWebEndpoints.createGuestRequest, { shareId }, { body: input }) as ApiResponse<{ data: SpaceShareRequest }>;
+    const res = await call(
+      spaceSharingWebEndpoints.createGuestRequest,
+      { shareId },
+      { body: input }) as ApiResponse<{ data: SpaceShareRequest }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
   /** The guest org's own requests on a shared space. */
   listGuestRequests: async (spaceId: string, status?: string): Promise<SpaceShareRequest[]> => {
-    const res = await call(spaceSharingWebEndpoints.listGuestRequests, { spaceId }, { query: { status } }) as ApiResponse<{ data: SpaceShareRequest[] }>;
+    const res = await call(
+      spaceSharingWebEndpoints.listGuestRequests,
+      { spaceId },
+      { query: { status } }) as ApiResponse<{ data: SpaceShareRequest[] }>;
     if (res.error) throw apiError(res);
     return res.data?.data ?? [];
   },

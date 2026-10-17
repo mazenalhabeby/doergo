@@ -126,7 +126,8 @@ export default function SharedSpaceViewPage() {
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this workspace")}</h2>
+              <h2
+                className="text-sm font-semibold text-foreground">{t("spaceSharing.guest.workersHeading", "Workers on this workspace")}</h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {workers.map((w) => (
@@ -196,7 +197,9 @@ export default function SharedSpaceViewPage() {
             </div>
             <div className="rounded-xl border bg-card overflow-hidden">
               {attendanceEntries.slice(0, 25).map((e) => {
-                const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString(dateLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—")
+                const fmt = (d?: string | null) => (d
+                  ? new Date(d).toLocaleString(dateLocale(), { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+                  : "—")
                 return (
                   <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/20 last:border-0">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -206,7 +209,9 @@ export default function SharedSpaceViewPage() {
                     <div className="flex items-center gap-3 shrink-0 text-[11px] text-muted-foreground tabular-nums">
                       <span>{fmt(e.clockInAt)}</span>
                       <span>→</span>
-                      <span>{e.clockOutAt ? fmt(e.clockOutAt) : <span className="text-emerald-600 dark:text-emerald-400">{t("attendance.status.active", "Active")}</span>}</span>
+                      <span>{e.clockOutAt
+                        ? fmt(e.clockOutAt)
+                        : <span className="text-emerald-600 dark:text-emerald-400">{t("attendance.status.active", "Active")}</span>}</span>
                     </div>
                   </div>
                 )

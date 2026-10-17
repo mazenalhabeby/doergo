@@ -61,7 +61,8 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       role="switch"
       aria-checked={checked}
-      className="flex w-full items-start gap-3 rounded-lg border border-slate-200 p-3 text-left transition-colors hover:border-slate-300 dark:border-slate-800"
+      className={"flex w-full items-start gap-3 rounded-lg border border-slate-200 p-3 " +
+        "text-left transition-colors hover:border-slate-300 dark:border-slate-800"}
     >
       <span
         className={cn(

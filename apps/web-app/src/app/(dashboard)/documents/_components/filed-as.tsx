@@ -52,7 +52,9 @@ export function FiledAs({
           }}
           placeholder={row.docTitle || t("documents.issue.namePlaceholder")}
           aria-label={t("documents.issue.rename")}
-          className="h-7 w-full max-w-sm rounded-md border border-blue-500 bg-white px-2 text-xs text-slate-900 outline-none dark:bg-slate-900 dark:text-slate-100"
+          className={"h-7 w-full max-w-sm rounded-md border border-blue-500 bg-white px-2 " +
+            "text-xs text-slate-900 outline-none dark:bg-slate-900 " +
+            "dark:text-slate-100"}
         />
         <p className="mt-0.5 text-[10.5px] text-slate-400">{t("documents.issue.renameHint")}</p>
       </div>
@@ -68,7 +70,8 @@ export function FiledAs({
           onClick={() => { setDraft(baseName); setEditing(true) }}
           aria-label={t("documents.issue.rename")}
           title={t("documents.issue.rename")}
-          className="shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className={"shrink-0 rounded p-0.5 text-slate-400 hover:bg-slate-100 " +
+            "hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"}
         >
           <Pencil className="h-3 w-3" />
         </button>

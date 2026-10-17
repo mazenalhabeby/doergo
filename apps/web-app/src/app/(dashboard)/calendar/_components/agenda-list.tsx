@@ -58,7 +58,12 @@ export function AgendaList({ days, items, dayKinds, onSelect }: Props) {
                   <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
                     {x.allDay
                       ? t("calendar.allDay")
-                      : `${new Date(x.start).toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })}–${new Date(x.end).toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })}`}
+                      : `${new Date(x.start).toLocaleTimeString(
+                        dateLocale(),
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}–${new Date(x.end).toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })}`}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{x.title}</span>

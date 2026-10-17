@@ -34,7 +34,11 @@ export function Rail({ anchor, setAnchor, visibleKeys, layers, toggleLayer, coun
 
   return (
     <aside className="flex flex-col gap-6">
-      <Button onClick={onNew} className="h-10 gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 font-semibold shadow-[0_8px_24px_-8px_rgba(37,99,235,.7)] hover:from-blue-500 hover:to-blue-700">
+      <Button
+        onClick={onNew}
+        className={"h-10 gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 " +
+          "font-semibold shadow-[0_8px_24px_-8px_rgba(37,99,235,.7)] " +
+          "hover:from-blue-500 hover:to-blue-700"}>
         <Plus className="h-4 w-4" />{t("calendar.new")}
       </Button>
 
@@ -44,8 +48,16 @@ export function Rail({ anchor, setAnchor, visibleKeys, layers, toggleLayer, coun
             {anchor.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" })}
           </span>
           <span className="flex">
-            <button type="button" aria-label={t("calendar.previous")} onClick={() => shift(-1)} className="rounded p-1 text-muted-foreground hover:bg-accent"><ChevronLeft className="h-4 w-4" /></button>
-            <button type="button" aria-label={t("calendar.next")} onClick={() => shift(1)} className="rounded p-1 text-muted-foreground hover:bg-accent"><ChevronRight className="h-4 w-4" /></button>
+            <button
+              type="button"
+              aria-label={t("calendar.previous")}
+              onClick={() => shift(-1)}
+              className="rounded p-1 text-muted-foreground hover:bg-accent"><ChevronLeft className="h-4 w-4" /></button>
+            <button
+              type="button"
+              aria-label={t("calendar.next")}
+              onClick={() => shift(1)}
+              className="rounded p-1 text-muted-foreground hover:bg-accent"><ChevronRight className="h-4 w-4" /></button>
           </span>
         </div>
         <div className="grid grid-cols-7 gap-y-0.5 text-center text-xs tabular-nums">
@@ -87,7 +99,9 @@ export function Rail({ anchor, setAnchor, visibleKeys, layers, toggleLayer, coun
                 role="checkbox"
                 aria-checked={on}
                 onClick={() => toggleLayer(l)}
-                className={cn("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition hover:bg-accent", !on && "text-muted-foreground")}
+                className={cn(
+                  ("flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm " + "transition hover:bg-accent"),
+                  !on && "text-muted-foreground")}
               >
                 <span
                   className="grid h-4 w-4 place-items-center rounded-[5px] ring-1 ring-inset ring-black/10"
@@ -105,17 +119,24 @@ export function Rail({ anchor, setAnchor, visibleKeys, layers, toggleLayer, coun
 
       {offToday.length > 0 && (
         <div>
-          <div className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("calendar.offToday")} · {offToday.length}</div>
+          <div
+            className={"mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider " +
+              "text-muted-foreground"}>{t("calendar.offToday")} · {offToday.length}</div>
           <div className="space-y-1">
             {offToday.slice(0, 8).map((x) => (
               <div key={x.id} className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm">
-                <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-500/15 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                <span
+                  className={"relative grid h-7 w-7 shrink-0 place-items-center rounded-full " +
+                    "bg-amber-500/15 text-[10px] font-semibold text-amber-700 " +
+                    "dark:text-amber-300"}>
                   {(x.personName ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("")}
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate">{x.personName}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {t(`calendar.leaveType.${x.note ?? "VACATION"}`, x.note ?? "")}{x.status === "PENDING" ? ` · ${t("calendar.requested")}` : ""}
+                    {t(
+                      `calendar.leaveType.${x.note ?? "VACATION"}`,
+                      x.note ?? "")}{x.status === "PENDING" ? ` · ${t("calendar.requested")}` : ""}
                   </span>
                 </span>
               </div>

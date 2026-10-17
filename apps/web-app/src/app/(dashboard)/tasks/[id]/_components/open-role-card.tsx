@@ -136,15 +136,30 @@ export function OpenRoleCard({ task }: { task: Task }) {
         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-violet-500/20 pt-3 text-xs text-muted-foreground">
           <span>{t("tasks.role.people")}</span>
           <div className="flex h-7 items-center rounded-md border border-border bg-card">
-            <button type="button" className="px-1.5 disabled:opacity-40" disabled={setRole.isPending || of <= Math.max(1, taken)} onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of - 1 })} aria-label={t("tasks.role.fewer")}>
+            <button
+              type="button"
+              className="px-1.5 disabled:opacity-40"
+              disabled={setRole.isPending || of <= Math.max(1, taken)}
+              onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of - 1 })}
+              aria-label={t("tasks.role.fewer")}>
               <Minus className="size-3" />
             </button>
             <span className="w-5 text-center tabular-nums text-foreground">{of}</span>
-            <button type="button" className="px-1.5 disabled:opacity-40" disabled={setRole.isPending || of >= ROLE_SPOTS_MAX} onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of + 1 })} aria-label={t("tasks.role.more")}>
+            <button
+              type="button"
+              className="px-1.5 disabled:opacity-40"
+              disabled={setRole.isPending || of >= ROLE_SPOTS_MAX}
+              onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of + 1 })}
+              aria-label={t("tasks.role.more")}>
               <Plus className="size-3" />
             </button>
           </div>
-          <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={setRole.isPending} onClick={() => setRole.mutate({ roleId: null })}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-xs"
+            disabled={setRole.isPending}
+            onClick={() => setRole.mutate({ roleId: null })}>
             {t("tasks.role.close")}
           </Button>
         </div>

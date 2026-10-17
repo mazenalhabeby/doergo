@@ -25,7 +25,10 @@ export function Markdown({ children }: { children: string }) {
         li: (p) => <li className="leading-relaxed" {...p} />,
         strong: (p) => <strong className="font-semibold text-slate-800" {...p} />,
         blockquote: (p) => (
-          <blockquote className="my-4 rounded-r-lg border-l-4 border-blue-300 bg-blue-50/60 px-4 py-2.5 text-[14px] text-slate-600 [&_p]:my-0" {...p} />
+          <blockquote
+            className={"my-4 rounded-r-lg border-l-4 border-blue-300 bg-blue-50/60 px-4 py-2.5 " + "text-[14px] text-slate-600 [&_p]:my-0"}
+            {...p}
+          />
         ),
         code: (p) => <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] text-slate-800" {...p} />,
         // `node` is react-markdown's own AST handle — it is not a DOM prop and
@@ -35,7 +38,13 @@ export function Markdown({ children }: { children: string }) {
           return isSameAppPath(href) ? (
             <Link href={href} className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
           ) : (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 underline-offset-2 hover:underline" {...rest} />
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 underline-offset-2 hover:underline"
+              {...rest}
+            />
           );
         },
         table: (p) => <table className="my-4 w-full border-collapse text-[14px]" {...p} />,

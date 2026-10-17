@@ -64,7 +64,10 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-800/60 dark:bg-amber-950/30">
+      <div
+        className={"flex flex-wrap items-center justify-between gap-3 rounded-xl border " +
+          "border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-800/60 " +
+          "dark:bg-amber-950/30"}>
         <div className="flex min-w-0 items-start gap-2.5">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500" />
           <div className="min-w-0">
@@ -90,7 +93,9 @@ export function OrphanAssetsCard({ spaceId, types }: { spaceId: string; types: A
             <DialogTitle>{t("orphanAssets.dialogTitle", "Assets without a workspace")}</DialogTitle>
             <DialogDescription>
               {types.length > 0
-                ? t("orphanAssets.dialogHint", "Pick a type to move an asset into this workspace, or delete it. Its history and tasks come with it.")
+                ? t(
+                  "orphanAssets.dialogHint",
+                  ("Pick a type to move an asset into this workspace, or delete it. Its " + "history and tasks come with it."))
                 : t("orphanAssets.noTypes", "This workspace has no asset types yet. Create one first, or delete these records.")}
             </DialogDescription>
           </DialogHeader>

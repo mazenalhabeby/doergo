@@ -120,7 +120,12 @@ function OvertimePageInner() {
                 <h1 data-tour="page-overtime" className="text-3xl font-bold tracking-tight text-foreground">{t("overtimePage.title")}</h1>
                 <p className="mt-1.5 max-w-3xl text-muted-foreground">{t("overtimePage.explain")}</p>
               </div>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl" onClick={() => summary.refetch()} aria-label={t("common.refresh", "Refresh")}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-xl"
+                onClick={() => summary.refetch()}
+                aria-label={t("common.refresh", "Refresh")}>
                 <RefreshCw className="size-4" />
               </Button>
             </div>
@@ -135,7 +140,10 @@ function OvertimePageInner() {
           </header>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1" role="tablist" aria-label={t("overtimePage.periodLabel")}>
+            <div
+              className="inline-flex rounded-xl border border-border bg-muted/40 p-1"
+              role="tablist"
+              aria-label={t("overtimePage.periodLabel")}>
               {(["week", "lastWeek", "month"] as Period[]).map((p) => (
                 <button
                   key={p}
@@ -169,14 +177,31 @@ function OvertimePageInner() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Figure value={totals ? mins(totals.workedMinutes) : "—"} label={t("overtimePage.num.worked", { period: periodLabel.toLowerCase() })} />
+            <Figure
+              value={totals ? mins(totals.workedMinutes) : "—"}
+              label={t("overtimePage.num.worked", { period: periodLabel.toLowerCase() })}
+            />
             <Figure value={totals ? String(totals.rounds) : "—"} label={t("overtimePage.num.rounds", { count: totals?.people ?? 0 })} />
-            <Figure value={summary.data ? String(summary.data.running.length) : "—"} label={t("overtimePage.num.running")} tone={summary.data?.running.length ? "run" : undefined} />
-            <Figure value={totals ? String(totals.noAnswer) : "—"} label={t("overtimePage.num.noAnswer")} tone={totals?.noAnswer ? "warn" : undefined} />
+            <Figure
+              value={summary.data ? String(summary.data.running.length) : "—"}
+              label={t("overtimePage.num.running")}
+              tone={summary.data?.running.length ? "run" : undefined}
+            />
+            <Figure
+              value={totals ? String(totals.noAnswer) : "—"}
+              label={t("overtimePage.num.noAnswer")}
+              tone={totals?.noAnswer ? "warn" : undefined}
+            />
           </div>
 
           <RunningNow rounds={summary.data?.running ?? []} now={now} onOpen={setSelected} />
-          <ByPerson people={summary.data?.people ?? []} from={range.from} periodLabel={periodLabel} loading={summary.isLoading} showDays={period !== "month"} />
+          <ByPerson
+            people={summary.data?.people ?? []}
+            from={range.from}
+            periodLabel={periodLabel}
+            loading={summary.isLoading}
+            showDays={period !== "month"}
+          />
           <RoundsList filters={filters} now={now} selected={selected} onSelect={setSelected} />
         </div>
 
@@ -195,7 +220,9 @@ function Figure({ value, label, tone }: { value: string; label: string; tone?: "
       <p
         className={cn(
           "text-2xl font-semibold tabular-nums",
-          tone === "run" ? "text-emerald-600 dark:text-emerald-400" : tone === "warn" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
+          tone === "run"
+            ? "text-emerald-600 dark:text-emerald-400"
+            : tone === "warn" ? "text-amber-600 dark:text-amber-400" : "text-foreground",
         )}
       >
         {value}

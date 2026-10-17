@@ -119,7 +119,10 @@ export function useReportsPage() {
     if (!customerFilter) return undefined
     const c = customers.find((x) => x.name === customerFilter)
     if (!c) return { name: customerFilter, lines: [] as string[] }
-    return { name: c.name, lines: [c.contactName || "", c.address || "", [c.phone, c.email].filter(Boolean).join("  •  ")].filter(Boolean) as string[] }
+    return {
+      name: c.name,
+      lines: [c.contactName || "", c.address || "", [c.phone, c.email].filter(Boolean).join("  •  ")].filter(Boolean) as string[]
+    }
   })()
   const pdfMeta = active
     ? { title: active.name, subtitle: rangeLabel, preparedFor }
@@ -161,19 +164,51 @@ export function useReportsPage() {
   const labelCol = displayResult?.columns.find((c) => c.kind === "period" || c.kind === "dimension")
   const chartMeasure = measureCols[0]
   const chartData = chartMeasure && labelCol
-    ? (displayResult?.rows.slice(0, 12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) || [])
+    ? (displayResult?.rows.slice(
+      0,
+      12).map((r) => ({ label: String(fmt(r[labelCol.key], labelCol.format)), value: Number(r[chartMeasure.key]) || 0 })) ||
+      [])
     : []
 
-  const NavBtn = ({ activeKey, onClick, icon: Icon, label, desc, onDelete, dataTour }: { activeKey: boolean; onClick: () => void; icon: typeof Clock; label: string; desc?: string; onDelete?: () => void; dataTour?: string }) => (
-    <div data-tour={dataTour} className={cn("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all cursor-pointer flex items-start gap-2.5", activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")} onClick={onClick}>
-      <div className={cn("grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors", activeKey ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover/nav:text-foreground")}>
+  const NavBtn = (
+    {
+      activeKey,
+      onClick,
+      icon: Icon,
+      label,
+      desc,
+      onDelete,
+      dataTour
+    }: {
+      activeKey: boolean;
+      onClick: () => void;
+      icon: typeof Clock;
+      label: string;
+      desc?: string;
+      onDelete?: () => void;
+      dataTour?: string
+    }) => (
+    <div
+      data-tour={dataTour}
+      className={cn(
+        ("group/nav w-full rounded-xl border px-2.5 py-2.5 transition-all " + "cursor-pointer flex items-start gap-2.5"),
+        activeKey ? "border-primary/50 bg-primary/[0.05] shadow-sm" : "border-transparent hover:bg-accent/50")}
+      onClick={onClick}>
+      <div
+        className={cn(
+          "grid place-items-center h-8 w-8 rounded-lg shrink-0 transition-colors",
+          activeKey ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover/nav:text-foreground")}>
         <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="text-sm font-medium text-foreground truncate">{label}</div>
         {desc && <p className="text-xs text-muted-foreground mt-0.5 leading-snug line-clamp-2">{desc}</p>}
       </div>
-      {onDelete && <button onClick={(e) => { e.stopPropagation(); onDelete() }} className="opacity-0 group-hover/nav:opacity-100 text-muted-foreground hover:text-red-600 shrink-0 pt-0.5"><Trash2 className="h-3.5 w-3.5" /></button>}
+      {onDelete &&
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete() }}
+          className={"opacity-0 group-hover/nav:opacity-100 text-muted-foreground " +
+            "hover:text-red-600 shrink-0 pt-0.5"}><Trash2 className="h-3.5 w-3.5" /></button>}
     </div>
   )
 

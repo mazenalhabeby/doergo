@@ -37,7 +37,19 @@ export function EmptyWorkspace({
         { w:450, h:450, bg:'#8b5cf6', x:'50%', y:'50%',  anim:'tileFloat3', dur:'20s', blur:120 },
         { w:400, h:400, bg:'#10b981', x:'60%', y:'-5%',  anim:'tileFloat2', dur:'22s', blur:100 },
       ].map((blob, i) => (
-        <div key={i} className="absolute rounded-full" style={{ width:blob.w, height:blob.h, background:blob.bg, left:blob.x, top:blob.y, filter:`blur(${blob.blur}px)`, animation:`${blob.anim} ${blob.dur} ease-in-out infinite` }} />
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width:blob.w,
+            height:blob.h,
+            background:blob.bg,
+            left:blob.x,
+            top:blob.y,
+            filter:`blur(${blob.blur}px)`,
+            animation:`${blob.anim} ${blob.dur} ease-in-out infinite`
+          }}
+        />
       ))}
     </div>
 
@@ -82,7 +94,9 @@ export function EmptyWorkspace({
       })().map((box, i) => (
         <div
           key={i}
-          className="absolute rounded-2xl border border-foreground/[0.06] bg-card/50 backdrop-blur-md -translate-x-1/2 -translate-y-1/2 shadow-lg shadow-black/10"
+          className={"absolute rounded-2xl border border-foreground/[0.06] bg-card/50 " +
+            "backdrop-blur-md -translate-x-1/2 -translate-y-1/2 shadow-lg " +
+            "shadow-black/10"}
           style={{
             left: box.x,
             top: box.y,
@@ -122,7 +136,9 @@ export function EmptyWorkspace({
       {isAdminOrDispatcher ? (
         <>
           <div className="space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
+            <h1
+              className={"text-4xl font-bold tracking-tight leading-tight bg-gradient-to-b " +
+                "from-foreground to-foreground/60 bg-clip-text text-transparent"}>
               {t("dashboard.client.setupTitleLine1")}<br />{t("dashboard.client.setupTitleLine2")}
             </h1>
             <p className="text-muted-foreground text-base leading-relaxed max-w-sm mx-auto">

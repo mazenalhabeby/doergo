@@ -51,7 +51,9 @@ export function WeekendPicker({ value, onChange, disabled }: { value: number[]; 
               onChange(next)
             }}
             className={cn(
-              "h-10 rounded-xl border text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              ("h-10 rounded-xl border text-xs font-medium transition " +
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                "disabled:opacity-50"),
               on
                 ? "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
                 : "text-muted-foreground hover:bg-accent",
@@ -93,7 +95,9 @@ export function PlacePicker({
   const { data: countries = [] } = useCountries()
   const { data: regions = [] } = useRegions(country)
   const countryOptions = useMemo(
-    () => [...(inheritLabel ? [{ value: "", label: inheritLabel }] : []), ...countries.map((c) => ({ value: c.code, label: `${c.name} (${c.code})` }))],
+    () => [
+      ...(inheritLabel ? [{ value: "", label: inheritLabel }] : []),
+      ...countries.map((c) => ({ value: c.code, label: `${c.name} (${c.code})` }))],
     [countries, inheritLabel],
   )
   return (
@@ -144,7 +148,9 @@ export function WorkspaceDialog({ ws, onClose, onSaved }: { ws: Ws | null; onClo
     setWeekend(ws.weekendDays.length ? ws.weekendDays : ws.weekend)
   }
   const save = useMutation({
-    mutationFn: () => calendarApi.updateWorkspace(ws!.id, { holidayCountry: country, holidayRegion: country ? region : null, weekendDays: ownWeekend ? weekend : [] }),
+    mutationFn: () => calendarApi.updateWorkspace(
+      ws!.id,
+      { holidayCountry: country, holidayRegion: country ? region : null, weekendDays: ownWeekend ? weekend : [] }),
     onSuccess: () => { onSaved(); toast.success(t("holidays.saved")); onClose(); setSeen(null) },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
@@ -156,11 +162,22 @@ export function WorkspaceDialog({ ws, onClose, onSaved }: { ws: Ws | null; onClo
           <DialogDescription>{t("holidays.workspaceDialogBody")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-5">
-          <PlacePicker country={country} region={region} onChange={(c, r) => { setCountry(c); setRegion(r) }} inheritLabel={ws?.detectedCountry ? t("holidays.useLocation", { place: `${ws.detectedCountry}${ws.detectedRegion ? ` · ${ws.detectedRegion}` : ""}` }) : t("holidays.useOrganization")} />
+          <PlacePicker
+            country={country}
+            region={region}
+            onChange={(c, r) => { setCountry(c); setRegion(r) }}
+            inheritLabel={ws?.detectedCountry
+              ? t("holidays.useLocation", { place: `${ws.detectedCountry}${ws.detectedRegion ? ` · ${ws.detectedRegion}` : ""}` })
+              : t("holidays.useOrganization")}
+          />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>{t("holidays.weekend")}</Label>
-              {ownWeekend && <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => { setOwnWeekend(false); setWeekend(ws?.weekend ?? []) }}>{t("holidays.useOrganization")}</button>}
+              {ownWeekend &&
+                <button
+                  type="button"
+                  className="text-xs font-medium text-primary hover:underline"
+                  onClick={() => { setOwnWeekend(false); setWeekend(ws?.weekend ?? []) }}>{t("holidays.useOrganization")}</button>}
             </div>
             <WeekendPicker value={weekend} onChange={(v) => { if (v.length) { setWeekend(v); setOwnWeekend(true) } }} />
             {!ownWeekend && <p className="text-xs text-muted-foreground">{t("holidays.inheritsWeekend")}</p>}

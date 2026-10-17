@@ -43,7 +43,9 @@ export function ArticleView({ title, excerpt, categoryTitle, related, body }: Ar
           </Link>
           <Link
             href="/help"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+            className={"inline-flex items-center gap-1.5 rounded-full border border-slate-200 " +
+              "px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors " +
+              "hover:border-slate-300 hover:text-slate-900"}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t('help.allArticles', 'All articles')}
@@ -81,7 +83,9 @@ export function ArticleView({ title, excerpt, categoryTitle, related, body }: Ar
                 <Link
                   key={a.slug}
                   href={`/help/${a.slug}`}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 p-3.5 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                  className={"flex items-center justify-between gap-3 rounded-xl border " +
+                    "border-slate-200 p-3.5 transition-colors hover:border-slate-300 " +
+                    "hover:bg-slate-50"}
                 >
                   <span className="text-[14px] font-medium text-slate-700">{pick(a.title, lang)}</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />

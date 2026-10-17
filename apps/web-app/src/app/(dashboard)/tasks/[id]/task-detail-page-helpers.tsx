@@ -15,7 +15,9 @@ import dynamic from "next/dynamic"
 */
 export const EditTaskDialog = dynamic(() => import("./_components/edit-task-dialog").then((m) => m.EditTaskDialog), { ssr: false })
 
-export const AssignMemberDialog = dynamic(() => import("@/components/assign-member-dialog").then((m) => m.AssignMemberDialog), { ssr: false })
+export const AssignMemberDialog = dynamic(
+  () => import("@/components/assign-member-dialog").then((m) => m.AssignMemberDialog),
+  { ssr: false })
 
 export const ClockGateDialog = dynamic(() => import("@/components/clock-gate-dialog").then((m) => m.ClockGateDialog), { ssr: false })
 
@@ -37,19 +39,33 @@ export const RouteTrackingSection = dynamic(() => import("./_components/route-tr
   waits for its code, holding a placeholder. The two that hide themselves when
   empty (custom fields, step reports) hold nothing.
 */
-export const SubtasksSection = dynamic(() => import("./_components/subtasks-section").then((m) => m.SubtasksSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+export const SubtasksSection = dynamic(
+  () => import("./_components/subtasks-section").then((m) => m.SubtasksSection),
+  { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
 
-export const ChecklistSection = dynamic(() => import("./_components/checklist-section").then((m) => m.ChecklistSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+export const ChecklistSection = dynamic(
+  () => import("./_components/checklist-section").then((m) => m.ChecklistSection),
+  { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
 
-export const AttachmentsSection = dynamic(() => import("./_components/attachments-section").then((m) => m.AttachmentsSection), { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
+export const AttachmentsSection = dynamic(
+  () => import("./_components/attachments-section").then((m) => m.AttachmentsSection),
+  { ssr: false, loading: () => <SectionPlaceholder rows={3} /> })
 
-export const DependenciesSection = dynamic(() => import("./_components/dependencies-section").then((m) => m.DependenciesSection), { ssr: false, loading: () => <SectionPlaceholder rows={2} /> })
+export const DependenciesSection = dynamic(
+  () => import("./_components/dependencies-section").then((m) => m.DependenciesSection),
+  { ssr: false, loading: () => <SectionPlaceholder rows={2} /> })
 
-export const ActivitySection = dynamic(() => import("./_components/activity-section").then((m) => m.ActivitySection), { ssr: false, loading: () => <SectionPlaceholder rows={4} /> })
+export const ActivitySection = dynamic(
+  () => import("./_components/activity-section").then((m) => m.ActivitySection),
+  { ssr: false, loading: () => <SectionPlaceholder rows={4} /> })
 
-export const CustomFieldsSection = dynamic(() => import("./_components/custom-fields-section").then((m) => m.CustomFieldsSection), { ssr: false })
+export const CustomFieldsSection = dynamic(
+  () => import("./_components/custom-fields-section").then((m) => m.CustomFieldsSection),
+  { ssr: false })
 
-export const StepReportsSection = dynamic(() => import("@/components/step-forms/step-reports-section").then((m) => m.StepReportsSection), { ssr: false })
+export const StepReportsSection = dynamic(
+  () => import("@/components/step-forms/step-reports-section").then((m) => m.StepReportsSection),
+  { ssr: false })
 
 /** The shape a lazily loaded section holds while its code arrives. */
 export function SectionPlaceholder({ rows }: { rows: number }) {

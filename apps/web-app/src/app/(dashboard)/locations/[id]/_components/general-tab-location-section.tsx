@@ -32,7 +32,9 @@ export function GeneralTabLocationSection({ vm }: { vm: GeneralTabState }) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-300">
+          <span
+            className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 " +
+              "text-sky-600 dark:bg-sky-950 dark:text-sky-300"}>
             <MapPin className="h-[18px] w-[18px]" />
           </span>
           <div>
@@ -120,7 +122,10 @@ export function GeneralTabLocationSection({ vm }: { vm: GeneralTabState }) {
           // clock-in timezone. Pin it on the map (make it physical) to fix a
           // site timezone + geofence.
           <p className="text-sm text-muted-foreground">
-            {t("locations.logicalNoTimezone", "No fixed location — attendance uses each worker's own timezone. Add a location to set a fixed site timezone and geofence.")}
+            {t(
+              "locations.logicalNoTimezone",
+              ("No fixed location — attendance uses each worker's own timezone. Add a " +
+                "location to set a fixed site timezone and geofence."))}
           </p>
         )}
       </CardContent>

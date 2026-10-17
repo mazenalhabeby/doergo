@@ -149,7 +149,9 @@ export function LeaveWallchart({
         <div className="min-w-max">
           {/* Dates */}
           <div className="grid bg-muted/50 border-b border-border" style={template}>
-            <div className="sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border">
+            <div
+              className={"sticky left-0 z-20 bg-muted/50 px-3 py-1.5 text-[11px] font-semibold " +
+                "uppercase tracking-wider text-muted-foreground border-r border-border"}>
               {t("cover.chart.team", "Team")}
             </div>
             {days.map((d) => (

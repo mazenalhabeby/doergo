@@ -31,7 +31,10 @@ export const logColor = (name: string | null | undefined) =>
  * derived, not typed by anybody), so it is translated by its KEY. Every other
  * label is the organization's own word and is shown as they wrote it.
  */
-export function logTypeLabel(t: TFunction, type: Pick<KindLogType, "key" | "label"> | null | undefined, fallbackKey?: string | null): string {
+export function logTypeLabel(
+  t: TFunction,
+  type: Pick<KindLogType, "key" | "label"> | null | undefined,
+  fallbackKey?: string | null): string {
   const key = type?.key ?? fallbackKey ?? COST_LOG_KEY
   if (key === COST_LOG_KEY) return t("assetLog.cost", "Cost")
   if (type?.label) return type.label

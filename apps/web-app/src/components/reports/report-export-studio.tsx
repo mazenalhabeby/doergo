@@ -131,11 +131,23 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={print} disabled={!hasPreview}><Printer className="h-3.5 w-3.5" />{t("reports.print", "Print")}</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-9"
+            onClick={print}
+            disabled={!hasPreview}><Printer className="h-3.5 w-3.5" />{t("reports.print", "Print")}</Button>
           <Button size="sm" className="gap-1.5 h-9" onClick={download} disabled={!result || custEmpty || downloading}>
-            {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}{t("reports.downloadPdf", "Download PDF")}
+            {downloading
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <FileText className="h-3.5 w-3.5" />}{t("reports.downloadPdf", "Download PDF")}
           </Button>
-          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => onOpenChange(false)} aria-label={t("common.close", "Close")}><X className="h-5 w-5" /></Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => onOpenChange(false)}
+            aria-label={t("common.close", "Close")}><X className="h-5 w-5" /></Button>
         </div>
       </div>
 
@@ -144,7 +156,9 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
         {/* Left: template gallery + custom options */}
         <div className="border-r border-border overflow-y-auto p-4 space-y-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-0.5">{t("reports.templates", "Templates")}</p>
+            <p
+              className={"text-[11px] font-semibold uppercase tracking-wide text-muted-foreground " +
+                "mb-2 px-0.5"}>{t("reports.templates", "Templates")}</p>
             <div className="grid grid-cols-2 gap-2.5">
               {templates.map((tpl) => {
                 const on = template === tpl.key
@@ -159,7 +173,8 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                     </div>
                     <div className="flex items-center gap-1 px-0.5">
                       <span className="text-xs font-medium text-foreground truncate">{t(`reports.pdfTpl.${tpl.key}.name`, tpl.name)}</span>
-                      {tpl.key === "custom" && <span className="rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 font-semibold shrink-0">PRO</span>}
+                      {tpl.key === "custom" &&
+                        <span className={"rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 " + "font-semibold shrink-0"}>PRO</span>}
                     </div>
                   </button>
                 )
@@ -178,7 +193,7 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
                     {ACCENTS.map((hex) => (
                       <button key={hex} type="button" onClick={() => setC({ accent: hex })} className={cn("h-6 w-6 rounded-full border-2 transition-transform hover:scale-110", custom.accent.toLowerCase() === hex.toLowerCase() ? "border-foreground" : "border-transparent")} style={{ backgroundColor: hex }} aria-label={hex} />
                     ))}
-                    <label className="relative h-6 w-6 rounded-full overflow-hidden border-2 border-dashed border-border cursor-pointer grid place-items-center" title={t("reports.pdfCustomColor", "Custom color")}>
+                    <label className={"relative h-6 w-6 rounded-full overflow-hidden border-2 border-dashed " + "border-border cursor-pointer grid place-items-center"} title={t("reports.pdfCustomColor", "Custom color")}>
                       <span className="h-3 w-3 rounded-full" style={{ background: "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }} />
                       <input type="color" value={custom.accent} onChange={(e) => setC({ accent: e.target.value })} className="absolute inset-0 opacity-0 cursor-pointer" />
                     </label>
@@ -274,7 +289,7 @@ export function ReportExportStudio({ open, onOpenChange, result, meta, branding,
             </div>
           )}
           {busy && hasPreview && (
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md bg-background/90 border border-border px-2.5 py-1.5 text-[11px] text-muted-foreground shadow-sm">
+            <div className={"absolute top-3 right-3 z-20 flex items-center gap-1.5 rounded-md " + "bg-background/90 border border-border px-2.5 py-1.5 text-[11px] " + "text-muted-foreground shadow-sm"}>
               <Loader2 className="h-3 w-3 animate-spin" />{t("reports.pdfUpdating", "Updating…")}
             </div>
           )}

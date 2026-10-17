@@ -122,7 +122,9 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
             <p className="text-xs text-muted-foreground">
               {t("assetLog.entriesCount", "{{count}} entries", { count: monthEntries })}
               {monthIn > 0 ? ` · + ${formatCents(monthIn)}` : ""}
-              {summary.waitingCount > 0 ? ` · ${t("expenses.waitingHere", "{{count}} waiting on a decision", { count: summary.waitingCount })}` : ""}
+              {summary.waitingCount > 0
+                ? ` · ${t("expenses.waitingHere", "{{count}} waiting on a decision", { count: summary.waitingCount })}`
+                : ""}
             </p>
           </Kpi>
           <Kpi label={t("assetLog.nextDue", "Next due")}>
@@ -163,7 +165,11 @@ export function LogbookPanel({ assetId, shape, canManage }: { assetId: string; s
             {typeSpend.length > 0 && (
               <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
                 {typeSpend.map((x) => (
-                  <div key={x.logType} className={logColor(x.color).bar} style={{ width: `${(x.outCents / Math.max(1, monthOut)) * 100}%` }} />
+                  <div
+                    key={x.logType}
+                    className={logColor(x.color).bar}
+                    style={{ width: `${(x.outCents / Math.max(1, monthOut)) * 100}%` }}
+                  />
                 ))}
               </div>
             )}

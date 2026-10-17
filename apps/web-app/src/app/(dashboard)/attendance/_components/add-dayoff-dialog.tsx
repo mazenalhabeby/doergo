@@ -159,7 +159,9 @@ export function AddDayOffDialog() {
                     key={key}
                     type="button"
                     onClick={() => setReason(label)}
-                    className="rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    className={"rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-xs " +
+                      "text-muted-foreground transition-colors hover:bg-background " +
+                      "hover:text-foreground"}
                   >
                     {label}
                   </button>

@@ -85,7 +85,9 @@ export function ClockInPicker({
 
         {!position && (
           <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-muted-foreground">
-            {t("attendance.my.picker.noFix", "Your location could not be read. You can still choose — your site is checked when you clock in.")}
+            {t(
+              "attendance.my.picker.noFix",
+              ("Your location could not be read. You can still choose — your site is " + "checked when you clock in."))}
           </p>
         )}
 

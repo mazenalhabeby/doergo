@@ -98,7 +98,16 @@ export function useAttendancePageData() {
     error,
     refetch,
   } = useQuery({
-    queryKey: keys.attendance.list(selectedLocationId, selectedStatus, selectedDate, endDate, debouncedSearch, page, limit, sort?.key ?? null, sort?.dir ?? null),
+    queryKey: keys.attendance.list(
+      selectedLocationId,
+      selectedStatus,
+      selectedDate,
+      endDate,
+      debouncedSearch,
+      page,
+      limit,
+      sort?.key ?? null,
+      sort?.dir ?? null),
     queryFn: () => {
       if (selectedLocationId === "all") {
         // Use getAllEntries for organization-wide view

@@ -124,7 +124,8 @@ export function invoiceDayKey(d: string | Date | null | undefined): string | nul
 export function formatDocumentDate(d: string | Date | null | undefined, locale: unknown): string {
   const dt = invoiceDayInstant(d)
   if (!dt) return "—"
-  return pdfText(dt.toLocaleDateString(INTL_LOCALE[documentLocaleOf(locale)].date, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }))
+  return pdfText(
+    dt.toLocaleDateString(INTL_LOCALE[documentLocaleOf(locale)].date, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }))
 }
 
 /** A line's quantity: "1.5" in English, "1,5" in German — at most two decimals. */
@@ -173,7 +174,10 @@ export interface DocumentIssuer {
  * The invoice's `issuer` (frozen when issued, the live company for a draft) wins; the
  * organization profile is only the fallback for a screen that has no invoice yet.
  */
-export function documentIssuer(issuer: IssuerSnapshot | null | undefined, fallback: LetterheadFallback | null | undefined, L: InvoiceDocumentLabels): DocumentIssuer {
+export function documentIssuer(
+  issuer: IssuerSnapshot | null | undefined,
+  fallback: LetterheadFallback | null | undefined,
+  L: InvoiceDocumentLabels): DocumentIssuer {
   if (issuer) {
     const ids = [
       issuer.vatId && `${L.vatId}: ${issuer.vatId}`,

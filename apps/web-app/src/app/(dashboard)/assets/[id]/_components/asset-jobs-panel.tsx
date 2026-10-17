@@ -45,7 +45,8 @@ export function AssetJobsPanel({
         <button
           key={tk.id}
           onClick={() => router.push(`/tasks/${tk.id}`)}
-          className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
+          className={"flex w-full items-center gap-3 rounded-xl border border-border bg-card " +
+            "p-3 text-left transition-colors hover:border-primary/40"}
         >
           <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">

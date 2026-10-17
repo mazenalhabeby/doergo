@@ -1,6 +1,29 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { ChecklistItem, Comment, CreateTaskInput, CrewView, JobTimeReport, JobTimeView, OnBehalf, OpenRoleTask, RoleOption, RolePreview, RoleStats, StatusCountsResponse, Task, TaskAssignee, TaskDependency, TaskEvent, TaskHandover, TaskResponse, TaskStepSubmission, TasksListResponse, TasksQueryParams, UpdateTaskInput } from './types/tasks';
+import type {
+  ChecklistItem,
+  Comment,
+  CreateTaskInput,
+  CrewView,
+  JobTimeReport,
+  JobTimeView,
+  OnBehalf,
+  OpenRoleTask,
+  RoleOption,
+  RolePreview,
+  RoleStats,
+  StatusCountsResponse,
+  Task,
+  TaskAssignee,
+  TaskDependency,
+  TaskEvent,
+  TaskHandover,
+  TaskResponse,
+  TaskStepSubmission,
+  TasksListResponse,
+  TasksQueryParams,
+  UpdateTaskInput
+} from './types/tasks';
 import { tasksEndpoints, type ClientCopyOption, type StepFormAnswers, type TaskReport, type TaskReportCopy } from '@hbcfield/shared/client';
 import { taskWorkApi } from './tasks-work';
 import { taskPartsApi } from './tasks-parts';
@@ -10,7 +33,10 @@ export const tasksApi = {
   /** Task counts grouped by status (default) or by space, over everything the
    *  caller may see — not just the loaded page. */
   getStatusCounts: async (params?: { groupBy?: 'status' | 'space'; spaceId?: string }) => {
-    const response = await call(tasksEndpoints.counts, undefined, { query: { groupBy: params?.groupBy, spaceId: params?.spaceId } }) as ApiResponse<StatusCountsResponse>;
+    const response = await call(
+      tasksEndpoints.counts,
+      undefined,
+      { query: { groupBy: params?.groupBy, spaceId: params?.spaceId } }) as ApiResponse<StatusCountsResponse>;
 
     if (response.error) {
       throw apiError(response);

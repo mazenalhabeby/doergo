@@ -17,13 +17,16 @@ export const isHeading = (row: DocumentRow) => row.lineKind === "HEADING"
 /** "Hours · 200 h · €5,000 | Days · 20 days · €3,000" — the two figures a reader looks for first. */
 export function HoursDaysSummary({ items, currency }: { items: DocumentRow[]; currency: string }) {
   const { t } = useTranslation()
-  const tot = hoursAndDaysTotals(Array.from(items, (r) => ({ lineKind: r.lineKind, quantity: r.quantity, amount: roundedLineAmount(r.quantity, r.unitPrice) })))
+  const tot = hoursAndDaysTotals(
+    Array.from(items, (r) => ({ lineKind: r.lineKind, quantity: r.quantity, amount: roundedLineAmount(r.quantity, r.unitPrice) })))
   if (tot.hours === 0 && tot.days === 0) return null
   return (
     <div className="flex flex-wrap gap-1.5">
       {tot.hours > 0 && (
         <span className="rounded-lg bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-          {t("invoices.create.summaryHours", { hours: formatHoursMinutes(tot.hours), amount: formatMoney(tot.hoursCents, currency, MONEY_LOCALE) })}
+          {t(
+            "invoices.create.summaryHours",
+            { hours: formatHoursMinutes(tot.hours), amount: formatMoney(tot.hoursCents, currency, MONEY_LOCALE) })}
         </span>
       )}
       {tot.days > 0 && (

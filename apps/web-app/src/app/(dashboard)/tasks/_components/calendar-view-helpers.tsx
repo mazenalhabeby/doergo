@@ -29,7 +29,8 @@ export const PillTooltip = React.memo(function PillTooltip({
 }) {
   return (
     <div
-      className="fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border border-border rounded-xl shadow-xl min-w-[180px] max-w-[260px]"
+      className={"fixed z-[100] pointer-events-none px-3 py-2.5 bg-popover border " +
+        "border-border rounded-xl shadow-xl min-w-[180px] max-w-[260px]"}
       style={{ ...style, animation: `fadeSlideIn 0.15s ${APPLE_EASE} both` }}
     >
       <p className="text-sm font-semibold text-foreground line-clamp-2 mb-1">{task.title}</p>

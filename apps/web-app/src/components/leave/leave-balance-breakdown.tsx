@@ -74,7 +74,9 @@ export function LeaveBalanceBreakdown({
             <dd
               className={cn(
                 "shrink-0 font-mono tabular-nums",
-                line.key === "ALLOWANCE" ? "text-foreground" : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400",
+                line.key === "ALLOWANCE"
+                  ? "text-foreground"
+                  : line.days < 0 ? "text-foreground/80" : "text-emerald-700 dark:text-emerald-400",
               )}
             >
               {formatLineDays(line, locale)}
@@ -83,7 +85,10 @@ export function LeaveBalanceBreakdown({
         ))}
         <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-border pt-2 pb-1">
           <dt className="font-medium text-foreground">{t("leaveLedger.remaining")}</dt>
-          <dd className={cn("font-mono text-[15px] font-semibold tabular-nums", view.remaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>
+          <dd
+            className={cn(
+              "font-mono text-[15px] font-semibold tabular-nums",
+              view.remaining < 0 ? "text-red-600 dark:text-red-400" : "text-foreground")}>
             {formatDays(view.remaining, locale)}
           </dd>
         </div>

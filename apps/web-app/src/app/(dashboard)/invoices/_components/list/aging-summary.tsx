@@ -46,7 +46,9 @@ function Stat({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-border bg-card px-4 py-3.5 text-left transition-colors hover:border-slate-400 focus-visible:border-slate-400 focus-visible:outline-none"
+      className={"rounded-2xl border border-border bg-card px-4 py-3.5 text-left " +
+        "transition-colors hover:border-slate-400 focus-visible:border-slate-400 " +
+        "focus-visible:outline-none"}
     >
       {body}
     </button>

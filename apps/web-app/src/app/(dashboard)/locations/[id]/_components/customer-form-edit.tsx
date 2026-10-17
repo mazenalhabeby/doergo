@@ -17,7 +17,16 @@ import type { CustomerFormState } from "./use-customer-form"
 import type { CustomerForm } from "./customers-tab"
 
 /** Part of CustomerForm's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFormState; existing: Parameters<typeof CustomerForm>[0]['existing']; personOnly: Parameters<typeof CustomerForm>[0]['personOnly'] }) {
+export function CustomerFormEdit(
+  {
+    vm,
+    existing,
+    personOnly
+  }: {
+    vm: CustomerFormState;
+    existing: Parameters<typeof CustomerForm>[0]['existing'];
+    personOnly: Parameters<typeof CustomerForm>[0]['personOnly']
+  }) {
   const {
     t,
     setType,
@@ -47,12 +56,16 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
   } = vm
   return (
     <DialogContent className="max-h-[88vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>{existing ? t("customers.edit", "Edit customer") : t("customers.add", "Add customer")}</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>{existing
+        ? t("customers.edit", "Edit customer")
+        : t("customers.add", "Add customer")}</DialogTitle></DialogHeader>
       <div className="grid gap-3">
         {/* Person / Company segmented toggle (hidden when locked to Person) */}
         {!personOnly && (
         <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-          {([["PERSON", User, t("customers.typePerson", "Person")], ["COMPANY", Building2, t("customers.typeCompany", "Company")]] as const).map(([val, Icon, label]) => (
+          {([
+            ["PERSON", User, t("customers.typePerson", "Person")],
+            ["COMPANY", Building2, t("customers.typeCompany", "Company")]] as const).map(([val, Icon, label]) => (
             <button key={val} type="button" onClick={() => setType(val)}
               className={cn("inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                 type === val ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
@@ -71,7 +84,9 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
             <select
               value={chosenSpace}
               onChange={(e) => setChosenSpace(e.target.value)}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className={"h-9 w-full rounded-md border border-input bg-background px-3 text-sm " +
+                "text-foreground focus-visible:outline-none focus-visible:ring-1 " +
+                "focus-visible:ring-ring"}
             >
               <option value="">
                 {existing
@@ -97,7 +112,12 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
           </p>
         )}
 
-        <Field label={isCompany ? t("customers.companyName", "Company name") : t("customers.name", "Name")} required value={form.name} onChange={(v) => set("name", v)} />
+        <Field
+          label={isCompany ? t("customers.companyName", "Company name") : t("customers.name", "Name")}
+          required
+          value={form.name}
+          onChange={(v) => set("name", v)}
+        />
         <div className="space-y-1">
           <Label>{isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")}</Label>
           <Input type="email" inputMode="email" value={form.email} onChange={(e) => set("email", e.target.value)}
@@ -131,7 +151,9 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
             id="client-locale"
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className={"h-9 w-full rounded-md border border-input bg-background px-3 text-sm " +
+              "text-foreground focus-visible:outline-none focus-visible:ring-1 " +
+              "focus-visible:ring-ring"}
           >
             <option value="">{t("customers.localeSame", "Same as the organization")}</option>
             {CLIENT_LOCALE_OPTIONS.map((o) => (
@@ -139,7 +161,12 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
             ))}
           </select>
           <p className="text-[11px] text-muted-foreground">
-            {t("customers.localeHint", "Invitations and signing links to this client are written in this language. If the client picked a language in the app, that one is used. With “Same as the organization”, emails follow your organization’s country, otherwise English.")}
+            {t(
+              "customers.localeHint",
+              ("Invitations and signing links to this client are written in this " +
+                "language. If the client picked a language in the app, that one is used. " +
+                "With “Same as the organization”, emails follow your organization’s " +
+                "country, otherwise English."))}
           </p>
         </div>
 
@@ -172,18 +199,50 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
             <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <Building2 className="h-3.5 w-3.5" /> {t("customers.companyInfo", "Company info")}
             </p>
-            <IconField icon={Landmark} label={t("customers.legalName", "Legal name")} placeholder={t("customers.legalNamePh", "Registered entity name")} value={form.legalName} onChange={(v) => set("legalName", v)} />
+            <IconField
+              icon={Landmark}
+              label={t("customers.legalName", "Legal name")}
+              placeholder={t("customers.legalNamePh", "Registered entity name")}
+              value={form.legalName}
+              onChange={(v) => set("legalName", v)}
+            />
             <div className="grid grid-cols-2 gap-3">
-              <IconField icon={Globe} label={t("customers.website", "Website")} placeholder="example.com" value={form.website} onChange={(v) => set("website", v)} />
+              <IconField
+                icon={Globe}
+                label={t("customers.website", "Website")}
+                placeholder="example.com"
+                value={form.website}
+                onChange={(v) => set("website", v)}
+              />
               <div className="space-y-1">
-                <Label className="flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-muted-foreground" /> {t("customers.industry", "Industry")}</Label>
-                <Input list="crm-industries" value={form.industry} onChange={(e) => set("industry", e.target.value)} placeholder={t("customers.industryPh", "e.g. Construction")} />
+                <Label
+                  className="flex items-center gap-1.5"><Briefcase
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                  /> {t("customers.industry", "Industry")}</Label>
+                <Input
+                  list="crm-industries"
+                  value={form.industry}
+                  onChange={(e) => set("industry", e.target.value)}
+                  placeholder={t("customers.industryPh", "e.g. Construction")}
+                />
                 <datalist id="crm-industries">{INDUSTRIES.map((i) => <option key={i} value={i} />)}</datalist>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <IconField icon={Hash} label={t("customers.vatId", "VAT / UID no.")} placeholder="ATU12345678" value={form.vatId} onChange={(v) => set("vatId", v)} />
-              <IconField icon={Landmark} label={t("customers.regNumber", "Register no.")} placeholder={t("customers.regNumberPh", "FN 123456x")} value={form.regNumber} onChange={(v) => set("regNumber", v)} />
+              <IconField
+                icon={Hash}
+                label={t("customers.vatId", "VAT / UID no.")}
+                placeholder="ATU12345678"
+                value={form.vatId}
+                onChange={(v) => set("vatId", v)}
+              />
+              <IconField
+                icon={Landmark}
+                label={t("customers.regNumber", "Register no.")}
+                placeholder={t("customers.regNumberPh", "FN 123456x")}
+                value={form.regNumber}
+                onChange={(v) => set("regNumber", v)}
+              />
             </div>
           </div>
         )}
@@ -204,7 +263,9 @@ export function CustomerFormEdit({ vm, existing, personOnly }: { vm: CustomerFor
       <DialogFooter>
         <Button variant="outline" onClick={() => setOpen(false)}>{t("common.cancel", "Cancel")}</Button>
         {/* A client with no workspace is the bug this dialog exists to stop. */}
-        <Button disabled={!form.name.trim() || emailInvalid || (needsSpace && !targetSpace) || save.isPending} onClick={() => save.mutate()}>
+        <Button
+          disabled={!form.name.trim() || emailInvalid || (needsSpace && !targetSpace) || save.isPending}
+          onClick={() => save.mutate()}>
           {save.isPending ? t("common.saving", "Saving…") : t("common.save", "Save")}
         </Button>
       </DialogFooter>

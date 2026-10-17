@@ -232,7 +232,10 @@ export const WorkspaceBox = React.memo(
                 )}
               </div>
             )}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/box:opacity-100 transition-opacity duration-200 bg-card/80 dark:bg-card/60 backdrop-blur-[2px] rounded-xl">
+            <div
+              className={"absolute inset-0 flex items-center justify-center opacity-0 " +
+                "group-hover/box:opacity-100 transition-opacity duration-200 bg-card/80 " +
+                "dark:bg-card/60 backdrop-blur-[2px] rounded-xl"}>
               <Maximize2 className="h-3 w-3 text-foreground/40" />
             </div>
           </>
@@ -283,8 +286,10 @@ export const WorkspaceBox = React.memo(
 
         {/* Expand hint — normal boxes on hover */}
         {mode === "normal" && (
-          <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover/box:opacity-100 transition-all duration-200 scale-90 group-hover/box:scale-100">
-            <div className="w-6 h-6 rounded-md bg-foreground/[0.06] dark:bg-foreground/[0.1] backdrop-blur-sm flex items-center justify-center">
+          <div
+            className={"absolute bottom-1.5 right-1.5 opacity-0 group-hover/box:opacity-100 " +
+              "transition-all duration-200 scale-90 group-hover/box:scale-100"}>
+            <div className={"w-6 h-6 rounded-md bg-foreground/[0.06] dark:bg-foreground/[0.1] " + "backdrop-blur-sm flex items-center justify-center"}>
               <Maximize2 className="h-3 w-3 text-foreground/30" />
             </div>
           </div>

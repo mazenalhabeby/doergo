@@ -113,7 +113,9 @@ export function SiteCard({
             type="button"
             onClick={onRemove}
             aria-label={t('pricing.calc.removeSite', 'Remove this site')}
-            className="inline-flex size-7 items-center justify-center rounded-full text-foreground/35 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className={"inline-flex size-7 items-center justify-center rounded-full " +
+              "text-foreground/35 transition-colors hover:bg-foreground/10 " +
+              "hover:text-foreground"}
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -128,7 +130,11 @@ export function SiteCard({
           const counted = g.modules.filter((k) => billsByUsage(k) && site.modules.includes(k));
 
           return (
-            <div key={g.key} className={`rounded-lg border transition-colors ${on || partial ? 'border-[#5B9BD5]/40 bg-[#5B9BD5]/[0.05]' : 'border-foreground/[0.09]'}`}>
+            <div
+              key={g.key}
+              className={`rounded-lg border transition-colors ${on || partial
+                ? 'border-[#5B9BD5]/40 bg-[#5B9BD5]/[0.05]'
+                : 'border-foreground/[0.09]'}`}>
               <div className="flex items-center gap-3 p-3">
                 <button
                   type="button"

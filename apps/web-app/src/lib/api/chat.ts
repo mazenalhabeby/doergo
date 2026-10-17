@@ -62,7 +62,10 @@ export const chatApi = {
     return res.data!.data
   },
   history: async (conversationId: string, before?: string): Promise<{ data: ChatMessage[]; hasMore: boolean }> => {
-    const res = await call(chatEndpoints.messages, { id: conversationId }, { query: { before: before || undefined } }) as ApiResponse<{ data: ChatMessage[]; hasMore: boolean }>;
+    const res = await call(
+      chatEndpoints.messages,
+      { id: conversationId },
+      { query: { before: before || undefined } }) as ApiResponse<{ data: ChatMessage[]; hasMore: boolean }>;
     if (res.error) throw apiError(res);
     return res.data!;
   },

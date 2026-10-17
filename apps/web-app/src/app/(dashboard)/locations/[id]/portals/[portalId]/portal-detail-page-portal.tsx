@@ -68,19 +68,26 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
-          <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(meta.accent)}`}>{personInitials(portal?.name)}</div>
+          <div
+            className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 text-sm font-semibold ${portalTile(
+              meta.accent)}`}>{personInitials(portal?.name)}</div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-3xl font-bold text-foreground tracking-tight truncate">{portal?.name || "…"}</h1>
-              {portal && <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(meta.accent)}`}>{t(`portal.type.${meta.key}`, meta.badge)}</span>}
+              {portal &&
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${portalTile(
+                    meta.accent)}`}>{t(`portal.type.${meta.key}`, meta.badge)}</span>}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground capitalize">{t("portal.entityIs", "Entity: {{e}}", { e: portal?.entityLabel })}</p>
+            <p
+              className="mt-1 text-sm text-muted-foreground capitalize">{t("portal.entityIs", "Entity: {{e}}", { e: portal?.entityLabel })}</p>
             <p className="mt-1 text-sm text-muted-foreground">
               <span className="font-medium text-foreground tabular-nums">{openCount}</span> {t("portal.statOpen", "open")}
               <span className="mx-1.5 text-border">·</span>
               <span className="font-medium text-foreground tabular-nums">{requestCount}</span> {t("portal.statTotal", "total")}
               <span className="mx-1.5 text-border">·</span>
-              <span className="font-medium text-foreground tabular-nums">{clientCount}</span> {t("portal.tabClients", "Clients").toLowerCase()}
+              <span
+                className="font-medium text-foreground tabular-nums">{clientCount}</span> {t("portal.tabClients", "Clients").toLowerCase()}
             </p>
           </div>
         </div>
@@ -90,7 +97,8 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
               <Repeat className="h-4 w-4" />{t("portal.changeType", "Change type")}
             </Button>
           )}
-          {mayInvite && <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>}
+          {mayInvite &&
+            <Button onClick={() => setInviteOpen(true)} className="h-11 rounded-xl shadow-sm gap-1.5"><Ticket className="h-4 w-4" />{t("portal.inviteResident", "Invite client")}</Button>}
         </div>
       </div>
 
@@ -98,7 +106,7 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
           portrait background on the client's home), so it looks right on web too. */}
       <div className="mb-6 flex flex-col items-center gap-5 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-stretch">
         {/* Phone-frame preview */}
-        <div className="relative aspect-[9/16] w-[168px] shrink-0 overflow-hidden rounded-[24px] border-[5px] border-foreground/15 bg-muted shadow-lg">
+        <div className={"relative aspect-[9/16] w-[168px] shrink-0 overflow-hidden rounded-[24px] " + "border-[5px] border-foreground/15 bg-muted shadow-lg"}>
           {portal?.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={portal.coverImageUrl} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
@@ -121,7 +129,7 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 text-center sm:text-left">
           <p className="text-sm font-semibold text-foreground">{t("portal.coverTitle", "Client home cover")}</p>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {t("portal.coverHint2", "Fills the background of the client's home screen in the app. Use a tall (portrait) image — this preview shows exactly how they'll see it.")}
+            {t("portal.coverHint2", ("Fills the background of the client's home screen in the app. Use a tall " + "(portrait) image — this preview shows exactly how they'll see it."))}
           </p>
           <input
             ref={coverInputRef}
@@ -175,7 +183,7 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
                 {requestsQ.data!.map((r: PortalRequestView) => {
                   const pending = r.triaged === false
                   return (
-                  <button key={r.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 transition-colors text-left" onClick={() => pending ? (mayAnswer && openTriage(r)) : router.push(`/tasks/${r.id}`)}>
+                  <button key={r.id} className={"w-full flex items-center gap-4 px-5 py-3.5 hover:bg-accent/30 " + "transition-colors text-left"} onClick={() => pending ? (mayAnswer && openTriage(r)) : router.push(`/tasks/${r.id}`)}>
                     <span className={`h-2 w-2 rounded-full shrink-0 ${r.priority ? "" : "bg-slate-400"}`} style={r.priority ? { backgroundColor: getPriorityConfig(r.priority).hex } : undefined} title={r.priority ? getPriorityConfig(r.priority).label : undefined} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">{r.title}</p>
@@ -184,7 +192,7 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
                       </p>
                     </div>
                     {pending ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2.5 py-1 shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                      <span className={"inline-flex items-center gap-1 text-[11px] font-semibold rounded-full " + "px-2.5 py-1 shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400"}>
                         <Inbox className="h-3 w-3" />{t("portal.pendingTriage", "Route it")}
                       </span>
                     ) : (
@@ -212,13 +220,13 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
                 {residentsQ.data!.map((r: Customer) => (
                   <div key={r.id} className="group flex items-center gap-2 px-5 py-3.5 hover:bg-accent/30 transition-colors">
                     <button className="flex min-w-0 flex-1 items-center gap-4 text-left" onClick={() => router.push(`/customers/${r.id}`)}>
-                      <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">{personInitials(r.name)}</div>
+                      <div className={"h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center " + "justify-center shrink-0 text-sm font-semibold"}>{personInitials(r.name)}</div>
                       <div className="min-w-0 flex-1"><p className="text-sm font-medium text-foreground truncate">{r.name}</p>{r.email && <p className="text-xs text-muted-foreground truncate">{r.email}</p>}</div>
                     </button>
                     <button
                       onClick={() => setClientToRemove(r)}
                       aria-label={t("portal.removeClient", "Remove client")}
-                      className="shrink-0 rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+                      className={"shrink-0 rounded-lg p-2 text-muted-foreground opacity-0 transition-all " + "hover:bg-red-500/10 hover:text-red-600 focus:opacity-100 " + "group-hover:opacity-100"}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -244,7 +252,7 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
                     <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 text-xs font-semibold ${portalTile(c.color)}`}>{personInitials(c.label)}</div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">{c.label}
-                        {c.urgent && <span className="text-[10px] font-semibold rounded-full bg-red-500/10 text-red-600 dark:text-red-400 px-1.5 py-0.5">URGENT</span>}
+                        {c.urgent && <span className={"text-[10px] font-semibold rounded-full bg-red-500/10 text-red-600 " + "dark:text-red-400 px-1.5 py-0.5"}>URGENT</span>}
                       </p>
                       <p className="text-xs text-muted-foreground truncate mt-0.5">{(c.issues || []).join(" · ") || t("portal.noIssues", "no sub-issues")}{c.team ? ` — ${c.team}` : ""}</p>
                     </div>
@@ -275,10 +283,10 @@ export function PortalDetailPagePortal({ vm }: { vm: PortalDetailPageState }) {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className={"flex flex-col gap-3 rounded-xl border border-destructive/30 " + "bg-destructive/5 px-4 py-3 sm:flex-row sm:items-center " + "sm:justify-between"}>
               <div className="pr-4">
                 <p className="text-sm font-medium text-foreground">{t("portal.deletePortalTitle", "Delete this portal")}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{t("portal.deletePortalWarn", "Deleting removes the portal and its categories. Clients keep their accounts but lose portal access.")}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t("portal.deletePortalWarn", ("Deleting removes the portal and its categories. Clients keep their " + "accounts but lose portal access."))}</p>
               </div>
               <Button variant="destructive" className="shrink-0" onClick={() => { setDelConfirmText(""); setDelPortalOpen(true) }}>
                 <Trash2 className="mr-2 h-4 w-4" />{t("portal.deletePortalButton", "Delete portal")}

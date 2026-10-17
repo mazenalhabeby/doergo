@@ -75,7 +75,9 @@ export function headline(t: T, r: OvertimeRequest, state: OvertimeRoundState, wo
     case "OVER":
       return t("overtimePage.line.given", { name, minutes: mins(agreed), place })
     case "DONE":
-      return worked > 0 ? t("overtimePage.line.worked", { name, minutes: mins(worked), place }) : t("overtimePage.line.given", { name, minutes: mins(agreed), place })
+      return worked > 0
+        ? t("overtimePage.line.worked", { name, minutes: mins(worked), place })
+        : t("overtimePage.line.given", { name, minutes: mins(agreed), place })
     case "WAITING_PERSON":
       return t("overtimePage.line.asked", { name, place })
     case "WAITING_DECISION":

@@ -24,7 +24,12 @@ export interface CalendarSettings {
   year: number;
   organization: {
     weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; addressCountry: string | null;
-    calendarFeedsEnabled: boolean; holidayCount: number; estimatedCount: number; country: string | null; region: string | null; weekend: number[];
+    calendarFeedsEnabled: boolean;
+      holidayCount: number;
+      estimatedCount: number;
+      country: string | null;
+      region: string | null;
+      weekend: number[];
   };
   workspaces: {
     id: string; name: string; weekendDays: number[]; holidayCountry: string | null; holidayRegion: string | null; people: number;

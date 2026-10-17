@@ -31,7 +31,10 @@ export function PhotoGallery({
       <div className="flex items-center justify-center h-32 bg-muted rounded-lg border-2 border-dashed border-border">
         <div className="text-center">
           <Camera className="size-6 text-muted-foreground mx-auto mb-1" />
-          <p className="text-xs text-muted-foreground">{type === "BEFORE" ? t("tasks.serviceReport.noBeforePhotos") : t("tasks.serviceReport.noAfterPhotos")}</p>
+          <p
+            className="text-xs text-muted-foreground">{type === "BEFORE"
+              ? t("tasks.serviceReport.noBeforePhotos")
+              : t("tasks.serviceReport.noAfterPhotos")}</p>
         </div>
       </div>
     )

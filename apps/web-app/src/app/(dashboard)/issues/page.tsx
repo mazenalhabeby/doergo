@@ -5,7 +5,15 @@ import { useEffect, useRef, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { AlertTriangle, Loader2, Send, Check, UserPlus, CircleCheck, Cog, Inbox, ChevronLeft, ImagePlus } from "lucide-react"
 
-import { shiftIssuesApi, employeesApi, uploadToS3, type ShiftIssue, type ShiftIssueEvent, type EmployeeListItem, type WorkLogAttachmentInput } from "@/lib/api"
+import {
+  shiftIssuesApi,
+  employeesApi,
+  uploadToS3,
+  type ShiftIssue,
+  type ShiftIssueEvent,
+  type EmployeeListItem,
+  type WorkLogAttachmentInput
+} from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocketContext } from "@/contexts/socket-context"
 import { notify } from "@/lib/toast"
@@ -27,10 +35,13 @@ const STATUS: Record<string, string> = {
   CANCELED: "text-slate-500 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:text-slate-400",
 }
 const RESOLVE_REASONS = ["Fixed on site", "Parts not available", "Needs a specialist", "Customer unavailable", "Duplicate", "Not an issue"]
-const fmt = (iso: string) => new Date(iso).toLocaleString(dateLocale(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
+const fmt = (iso: string) => new Date(iso).toLocaleString(
+  dateLocale(),
+  { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
 const isImg = (m?: string) => !!m && m.startsWith("image/")
 const Chip = ({ status }: { status: string }) => (
-  <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", STATUS[status])}>{status.replace("_", " ")}</span>
+  <span
+    className={cn(("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] " + "font-semibold uppercase tracking-wide"), STATUS[status])}>{status.replace("_", " ")}</span>
 )
 
 export default function IssuesPage() {
@@ -68,13 +79,14 @@ export default function IssuesPage() {
           <p className="text-sm text-muted-foreground">Blockers reported during shifts — acknowledge, dispatch, and resolve.</p>
         </div>
         {openCount > 0 && (
-          <span className="ml-auto rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700 dark:bg-red-950/50 dark:text-red-300">{openCount} open</span>
+          <span
+            className={"ml-auto rounded-full bg-red-100 px-3 py-1 text-sm font-semibold " + "text-red-700 dark:bg-red-950/50 dark:text-red-300"}>{openCount} open</span>
         )}
       </div>
 
       <div className="grid h-[72vh] grid-cols-1 gap-4 md:grid-cols-[20rem_1fr]">
         {/* Inbox */}
-        <aside className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm", selectedId && "hidden md:flex")}>
+        <aside className={cn(("flex min-h-0 flex-col overflow-hidden rounded-2xl border " + "border-border/60 bg-card shadow-sm"), selectedId && "hidden md:flex")}>
           <header className="flex items-center gap-2 border-b border-border/60 px-4 py-3">
             <Inbox className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">Inbox</h2>
@@ -90,7 +102,7 @@ export default function IssuesPage() {
               </div>
             ) : issues.map((i) => (
               <button key={i.id} onClick={() => setSelectedId(i.id)}
-                className={cn("flex w-full gap-3 border-b border-border/40 px-4 py-3 text-left transition-colors hover:bg-accent/50", selectedId === i.id && "bg-accent/70")}>
+                className={cn(("flex w-full gap-3 border-b border-border/40 px-4 py-3 text-left " + "transition-colors hover:bg-accent/50"), selectedId === i.id && "bg-accent/70")}>
                 <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", SEV_DOT[i.severity])} title={i.severity} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -105,7 +117,7 @@ export default function IssuesPage() {
         </aside>
 
         {/* Thread */}
-        <section className={cn("flex min-h-0 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm", !selectedId && "hidden md:flex")}>
+        <section className={cn(("flex min-h-0 flex-col overflow-hidden rounded-2xl border " + "border-border/60 bg-card shadow-sm"), !selectedId && "hidden md:flex")}>
           {!issue ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
               {detailQ.isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (<><AlertTriangle className="h-8 w-8 text-muted-foreground/40" /><span>Select an issue to view the conversation</span></>)}
@@ -159,7 +171,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
       <header className="border-b border-border/60 px-4 py-3.5 md:px-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-2">
-            <button onClick={onBack} className="mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-accent md:hidden"><ChevronLeft className="h-4 w-4" /></button>
+            <button onClick={onBack} className={"mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-accent " + "md:hidden"}><ChevronLeft className="h-4 w-4" /></button>
             <div className="min-w-0">
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <span className={cn("inline-flex items-center gap-1 text-[11px] font-bold uppercase", SEV_TEXT[issue.severity])}>
@@ -181,7 +193,7 @@ function IssueThread({ issue, canManage, currentUserId, onChanged, onBack }: { i
               <div className="relative">
                 <Button size="sm" variant="outline" onClick={() => setAssignOpen((v) => !v)}><UserPlus className="mr-1.5 h-3.5 w-3.5" /> {issue.assigneeName ? "Reassign" : "Dispatch"}</Button>
                 {assignOpen && (
-                  <div className="absolute right-0 z-10 mt-1 max-h-64 w-56 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg">
+                  <div className={"absolute right-0 z-10 mt-1 max-h-64 w-56 overflow-y-auto rounded-lg " + "border border-border bg-popover p-1 shadow-lg"}>
                     {membersQ.isLoading ? (
                       <div className="p-3 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
                     ) : members.length === 0 ? (<p className="p-2 text-xs text-muted-foreground">No members</p>) : members.map((m) => (

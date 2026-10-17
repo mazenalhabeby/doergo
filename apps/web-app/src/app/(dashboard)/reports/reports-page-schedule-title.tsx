@@ -33,9 +33,14 @@ export function ReportsPageScheduleTitle({ s }: { s: ReportsPageState }) {
               <div key={s.id} className="flex items-center gap-2 text-xs">
                 <CalendarClock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="flex-1 min-w-0 truncate">
-                  <span className="font-medium capitalize">{s.cadence}</span> @ {String(s.hour).padStart(2, "0")}:00 UTC → {s.recipients.join(", ")}
+                  <span
+                    className="font-medium capitalize">{s.cadence}</span> @ {String(s.hour).padStart(
+                      2,
+                      "0")}:00 UTC → {s.recipients.join(", ")}
                 </span>
-                <button onClick={() => delSched.mutate(s.id)} className="text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button
+                  onClick={() => delSched.mutate(s.id)}
+                  className="text-muted-foreground hover:text-red-600 shrink-0"><Trash2 className="h-3.5 w-3.5" /></button>
               </div>
             ))}
           </div>
@@ -57,7 +62,13 @@ export function ReportsPageScheduleTitle({ s }: { s: ReportsPageState }) {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">{t("reports.hour", "Hour (UTC)")}</Label>
-              <Input type="number" min={0} max={23} value={schedForm.hour} onChange={(e) => setSchedForm({ ...schedForm, hour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) })} />
+              <Input
+                type="number"
+                min={0}
+                max={23}
+                value={schedForm.hour}
+                onChange={(e) => setSchedForm({ ...schedForm, hour: Math.min(23, Math.max(0, Number(e.target.value) || 0)) })}
+              />
             </div>
           </div>
           {schedForm.cadence === "weekly" && (
@@ -65,25 +76,46 @@ export function ReportsPageScheduleTitle({ s }: { s: ReportsPageState }) {
               <Label className="text-xs">{t("reports.dayOfWeek", "Day of week")}</Label>
               <Select value={String(schedForm.dayOfWeek)} onValueChange={(v) => setSchedForm({ ...schedForm, dayOfWeek: Number(v) })}>
                 <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>{["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => <SelectItem key={i} value={String(i)} className="text-xs">{d}</SelectItem>)}</SelectContent>
+                <SelectContent>{[
+                  "Sunday",
+                  "Monday",
+                  "Tuesday",
+                  "Wednesday",
+                  "Thursday",
+                  "Friday",
+                  "Saturday"].map((d, i) => <SelectItem key={i} value={String(i)} className="text-xs">{d}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           )}
           {schedForm.cadence === "monthly" && (
             <div className="space-y-1.5">
               <Label className="text-xs">{t("reports.dayOfMonth", "Day of month (1–28)")}</Label>
-              <Input type="number" min={1} max={28} value={schedForm.dayOfMonth} onChange={(e) => setSchedForm({ ...schedForm, dayOfMonth: Math.min(28, Math.max(1, Number(e.target.value) || 1)) })} />
+              <Input
+                type="number"
+                min={1}
+                max={28}
+                value={schedForm.dayOfMonth}
+                onChange={(e) => setSchedForm({ ...schedForm, dayOfMonth: Math.min(28, Math.max(1, Number(e.target.value) || 1)) })}
+              />
             </div>
           )}
           <div className="space-y-1.5">
             <Label className="text-xs">{t("reports.recipients", "Recipients (comma-separated emails)")}</Label>
-            <Input value={schedForm.recipients} onChange={(e) => setSchedForm({ ...schedForm, recipients: e.target.value })} placeholder="anna@example.com, john@example.com" />
+            <Input
+              value={schedForm.recipients}
+              onChange={(e) => setSchedForm({ ...schedForm, recipients: e.target.value })}
+              placeholder="anna@example.com, john@example.com"
+            />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setSchedOpen(false)}>{t("common.close", "Close")}</Button>
-          <Button disabled={!schedForm.recipients.trim() || createSched.isPending} onClick={() => createSched.mutate()}>{createSched.isPending ? t("common.saving", "Saving…") : t("reports.addSchedule", "Add schedule")}</Button>
+          <Button
+            disabled={!schedForm.recipients.trim() || createSched.isPending}
+            onClick={() => createSched.mutate()}>{createSched.isPending
+              ? t("common.saving", "Saving…")
+              : t("reports.addSchedule", "Add schedule")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -30,7 +30,9 @@ import { PAGE_WIDTH } from "@/components/ui/page-width"
 function SectionHead({ step, title, hint }: { step: number; title: string; hint?: string }) {
   return (
     <div className="mb-3.5 flex items-center gap-2.5">
-      <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-semibold tabular-nums text-muted-foreground">
+      <span
+        className={"flex size-5 shrink-0 items-center justify-center rounded-full bg-muted " +
+          "text-[10px] font-semibold tabular-nums text-muted-foreground"}>
         {step}
       </span>
       <div className="min-w-0">

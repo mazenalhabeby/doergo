@@ -30,7 +30,8 @@ export function RequestKindChip({ kind, className }: { kind: string | null | und
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground",
+        ("inline-flex items-center gap-1 rounded-full border border-border " +
+          "bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"),
         className,
       )}
     >
@@ -60,7 +61,10 @@ export function RequestKindPicker({
   if (kinds.length < 2) return null
   return (
     <div>
-      <div role="radiogroup" aria-label={t("requests.form.kindQuestion")} className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-2">
+      <div
+        role="radiogroup"
+        aria-label={t("requests.form.kindQuestion")}
+        className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-2">
         {kinds.map((k) => {
           const Icon = REQUEST_KIND_ICON[k]
           const active = value === k

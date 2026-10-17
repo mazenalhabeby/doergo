@@ -150,7 +150,10 @@ export function ResetPasswordForm({
         type="submit"
         disabled={isLoading}
         className={cn(
-          'relative w-full h-11 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-brand-600/20',
+          ('relative w-full h-11 bg-gradient-to-r from-brand-600 to-brand-500 ' +
+            'hover:from-brand-700 hover:to-brand-600 text-white font-semibold text-sm ' +
+            'rounded-lg transition-all duration-300 border-0 shadow-sm ' +
+            'hover:shadow-md hover:shadow-brand-600/20'),
           !isLoading && 'active:scale-[0.98]'
         )}
       >

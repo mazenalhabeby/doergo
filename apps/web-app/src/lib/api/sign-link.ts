@@ -14,13 +14,19 @@ import { signLinkEndpoints } from '@hbcfield/shared/client';
 */
 export const signLinkApi = {
   open: async (token: string): Promise<LinkOpenResult> => {
-    const res = await call(signLinkEndpoints.open, undefined, { body: { token } }) as ApiResponse<{ success: boolean; data: LinkOpenResult }>
+    const res = await call(
+      signLinkEndpoints.open,
+      undefined,
+      { body: { token } }) as ApiResponse<{ success: boolean; data: LinkOpenResult }>
     if (res.error) throw apiError(res)
     return (res.data?.data ?? { ok: false, refusal: "unknown" }) as LinkOpenResult
   },
 
   file: async (token: string, signerId: string) => {
-    const res = await call(signLinkEndpoints.file, undefined, { body: { token, signerId } }) as ApiResponse<{ success: boolean; data: { ok: boolean; url?: string } }>
+    const res = await call(
+      signLinkEndpoints.file,
+      undefined,
+      { body: { token, signerId } }) as ApiResponse<{ success: boolean; data: { ok: boolean; url?: string } }>
     if (res.error) throw apiError(res)
     return res.data?.data
   },
@@ -33,7 +39,10 @@ export const signLinkApi = {
     role?: string | null
     idempotencyKey: string
   }) => {
-    const res = await call(signLinkEndpoints.submit, undefined, { body: data }) as ApiResponse<{ success: boolean; data: { ok: boolean; signed: number; failed: unknown[] } }>
+    const res = await call(
+      signLinkEndpoints.submit,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: { ok: boolean; signed: number; failed: unknown[] } }>
     if (res.error) throw apiError(res)
     return res.data?.data
   },

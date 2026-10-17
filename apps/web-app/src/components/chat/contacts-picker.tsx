@@ -48,7 +48,8 @@ export function ContactsPicker({
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("chat.searchContacts", "Search people…")}
             aria-label={t("chat.searchContacts", "Search people…")}
-            className="w-full rounded-full border border-border bg-muted py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-blue-400 focus:bg-background"
+            className={"w-full rounded-full border border-border bg-muted py-2 pl-9 pr-3 text-sm " +
+              "outline-none transition-colors focus:border-blue-400 focus:bg-background"}
           />
         </div>
       </div>
@@ -65,7 +66,8 @@ export function ContactsPicker({
               disabled={picking}
               onClick={() => onPick(u.id)}
               aria-pressed={multi ? selected!.has(u.id) : undefined}
-              className="motion-stagger flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-accent disabled:opacity-50"
+              className={"motion-stagger flex w-full items-center gap-3 rounded-xl px-2.5 py-2 " +
+                "text-left transition-colors hover:bg-accent disabled:opacity-50"}
             >
               <ChatAvatar u={u} size={38} />
               <span className="min-w-0 flex-1">
@@ -78,7 +80,10 @@ export function ContactsPicker({
               </span>
               {multi && (
                 <span
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${selected!.has(u.id) ? "border-transparent bg-gradient-to-br from-sky-400 to-indigo-500 text-white" : "border-border"}`}
+                  className={`flex size-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${selected!.has(
+                    u.id)
+                    ? ("border-transparent bg-gradient-to-br from-sky-400 to-indigo-500 " + "text-white")
+                    : "border-border"}`}
                 >
                   {selected!.has(u.id) && <Check className="motion-chip size-3.5" />}
                 </span>

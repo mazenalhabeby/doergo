@@ -32,8 +32,15 @@ export function WizardShell({
   const pct = step >= 1 ? (Math.min(step, total) / total) * 100 : 0
 
   return (
-    <div className="force-light fixed inset-0 z-10 flex items-center justify-center overflow-y-auto bg-slate-50 bg-[radial-gradient(900px_500px_at_12%_-8%,#eef4ff_0,transparent_60%),radial-gradient(800px_460px_at_108%_0%,#f0fdf6_0,transparent_55%)] p-5 text-slate-900">
-      <div className="my-auto w-full max-w-[680px] overflow-hidden rounded-3xl border border-border bg-card shadow-[0_1px_2px_rgba(16,24,40,.04),0_24px_60px_-18px_rgba(16,24,40,.18)]">
+    <div
+      className={"force-light fixed inset-0 z-10 flex items-center justify-center " +
+        "overflow-y-auto bg-slate-50 " +
+        "bg-[radial-gradient(900px_500px_at_12%_-8%,#eef4ff_0,transparent_60%),radial-gradient(800px_460px_at_108%_0%,#f0fdf6_0,transparent_55%)] " +
+        "p-5 text-slate-900"}>
+      <div
+        className={"my-auto w-full max-w-[680px] overflow-hidden rounded-3xl border " +
+          "border-border bg-card " +
+          "shadow-[0_1px_2px_rgba(16,24,40,.04),0_24px_60px_-18px_rgba(16,24,40,.18)]"}>
         {/* progress */}
         <div className="h-1 bg-slate-100">
           <div
@@ -62,14 +69,17 @@ export function WizardShell({
               type="button"
               onClick={onBack}
               disabled={!canBack}
-              className="rounded-lg px-2 py-1.5 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground disabled:pointer-events-none disabled:opacity-0"
+              className={"rounded-lg px-2 py-1.5 text-[13.5px] font-semibold text-muted-foreground " +
+                "transition-colors hover:bg-slate-100 hover:text-foreground " +
+                "disabled:pointer-events-none disabled:opacity-0"}
             >
               ← {t("common.back")}
             </button>
             <button
               type="button"
               onClick={onSkip}
-              className="rounded-lg px-2 py-1.5 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground"
+              className={"rounded-lg px-2 py-1.5 text-[13.5px] font-semibold text-muted-foreground " +
+                "transition-colors hover:bg-slate-100 hover:text-foreground"}
             >
               {t("setup.skip")}
             </button>

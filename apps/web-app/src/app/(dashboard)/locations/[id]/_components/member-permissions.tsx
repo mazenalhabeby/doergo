@@ -179,7 +179,8 @@ export function MemberPermissions({
                   onValueChange={(roleId) => save.mutate({ roleId })}
                   disabled={save.isPending}
                 >
-                  <SelectTrigger className="h-8 w-48"><SelectValue placeholder={t("permissionBuilder.panel.useRolePlaceholder")} /></SelectTrigger>
+                  <SelectTrigger
+                    className="h-8 w-48"><SelectValue placeholder={t("permissionBuilder.panel.useRolePlaceholder")} /></SelectTrigger>
                   <SelectContent>
                     {sharedRoles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
                   </SelectContent>

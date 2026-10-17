@@ -14,24 +14,45 @@ export const spaceRolesApi = {
    * rate they were worked at — nothing is written over.
    */
   setDayRate: async (spaceId: string, roleId: string, data: { cents: number | null; effectiveFrom?: string }) => {
-    const res = await call(spaceRolesWebEndpoints.setDayRate, { spaceId, roleId }, { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const res = await call(
+      spaceRolesWebEndpoints.setDayRate,
+      { spaceId, roleId },
+      { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
   /** A work role's DEFAULT day rate — for every workspace without its own. */
   setDefaultDayRate: async (roleId: string, data: { cents: number | null; effectiveFrom?: string }) => {
-    const res = await call(spaceRolesWebEndpoints.setDefaultDayRate, { roleId }, { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const res = await call(
+      spaceRolesWebEndpoints.setDefaultDayRate,
+      { roleId },
+      { body: data }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
-  create: async (data: { name: string; description?: string; color?: string; permissions?: PermissionSet; kind?: 'WORK' | 'MANAGEMENT'; spaceId?: string }) => {
+  create: async (
+    data: {
+      name: string;
+      description?: string;
+      color?: string;
+      permissions?: PermissionSet;
+      kind?: 'WORK' | 'MANAGEMENT';
+      spaceId?: string
+    }) => {
     const res = await call(spaceRolesWebEndpoints.create, undefined, { body: data }) as ApiResponse<{ success: boolean; data: SpaceRole }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
   update: async (
     id: string,
-    data: { name?: string; description?: string; color?: string; permissions?: PermissionSet; isActive?: boolean; kind?: 'WORK' | 'MANAGEMENT' },
+    data: {
+      name?: string;
+      description?: string;
+      color?: string;
+      permissions?: PermissionSet;
+      isActive?: boolean;
+      kind?: 'WORK' | 'MANAGEMENT'
+    },
   ) => {
     const res = await call(spaceRolesWebEndpoints.update, { id }, { body: data }) as ApiResponse<{ success: boolean; data: SpaceRole }>;
     if (res.error) throw apiError(res);

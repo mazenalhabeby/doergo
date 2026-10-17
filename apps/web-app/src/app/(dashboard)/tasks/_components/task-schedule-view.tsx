@@ -42,7 +42,8 @@ export function TaskScheduleView({
               return (
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.roadmap")}</span>
+                    <span
+                      className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("tasks.schedule.roadmap")}</span>
                     <div className="flex-1 h-px bg-border/50" />
                   </div>
                   <EpicRoadmap

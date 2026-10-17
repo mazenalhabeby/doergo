@@ -33,7 +33,9 @@ export default function HelpCenterPage() {
           </Link>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+            className={"inline-flex items-center gap-1.5 rounded-full border border-slate-200 " +
+              "px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors " +
+              "hover:border-slate-300 hover:text-slate-900"}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t('help.backToApp', 'Back to app')}
@@ -57,7 +59,9 @@ export default function HelpCenterPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('help.searchPlaceholder', 'Search for answers…')}
-              className="w-full rounded-full border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-[15px] text-slate-800 shadow-sm outline-none transition-colors focus:border-blue-400"
+              className={"w-full rounded-full border border-slate-200 bg-white py-3.5 pl-11 pr-4 " +
+                "text-[15px] text-slate-800 shadow-sm outline-none transition-colors " +
+                "focus:border-blue-400"}
             />
           </div>
         </div>
@@ -82,7 +86,10 @@ export default function HelpCenterPage() {
                 </Link>
               ))}
               {results.length === 0 && (
-                <p className="py-10 text-center text-sm text-slate-400">{t('help.noResults', 'No articles matched. Try different words.')}</p>
+                <p
+                  className="py-10 text-center text-sm text-slate-400">{t(
+                    'help.noResults',
+                    'No articles matched. Try different words.')}</p>
               )}
             </div>
           </div>
@@ -109,13 +116,18 @@ export default function HelpCenterPage() {
                       <Link
                         key={a.slug}
                         href={`/help/${a.slug}`}
-                        className="group flex items-start justify-between gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-slate-300 hover:bg-slate-50"
+                        className={"group flex items-start justify-between gap-3 rounded-xl border " +
+                          "border-slate-200 p-4 transition-colors hover:border-slate-300 " +
+                          "hover:bg-slate-50"}
                       >
                         <span>
                           <span className="block font-medium text-slate-800">{pick(a.title, lang)}</span>
                           <span className="mt-0.5 block text-[13px] leading-snug text-slate-500">{pick(a.excerpt, lang)}</span>
                         </span>
-                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-500" />
+                        <ArrowRight
+                          className={"mt-1 h-4 w-4 shrink-0 text-slate-300 transition-transform " +
+                            "group-hover:translate-x-0.5 group-hover:text-slate-500"}
+                        />
                       </Link>
                     ))}
                   </div>

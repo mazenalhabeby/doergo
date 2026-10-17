@@ -179,7 +179,9 @@ export function KanbanBoard({
         />
         <button
           onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
-          className="relative ml-2 w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className={"relative ml-2 w-7 h-7 rounded-full bg-card border border-border " +
+            "shadow-md flex items-center justify-center text-muted-foreground " +
+            "hover:text-foreground hover:bg-accent transition-colors"}
         >
           <ChevronLeft className="size-3.5" />
         </button>
@@ -197,7 +199,9 @@ export function KanbanBoard({
         />
         <button
           onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-          className="relative mr-2 w-7 h-7 rounded-full bg-card border border-border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className={"relative mr-2 w-7 h-7 rounded-full bg-card border border-border " +
+            "shadow-md flex items-center justify-center text-muted-foreground " +
+            "hover:text-foreground hover:bg-accent transition-colors"}
         >
           <ChevronRight className="size-3.5" />
         </button>

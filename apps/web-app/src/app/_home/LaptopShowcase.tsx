@@ -64,14 +64,21 @@ export function LaptopShowcase() {
     return (
       <section className="border-t border-border px-6 py-24 sm:px-10 sm:py-32">
         <div className="mx-auto max-w-[1600px]">
-          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
-          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-foreground">{t('home.product.reducedHeading')}</h2>
+          <span
+            style={{ fontFamily: MONO }}
+            className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
+          <h2
+            style={{ fontFamily: DISPLAY }}
+            className={"mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight " +
+              "text-foreground"}>{t('home.product.reducedHeading')}</h2>
           <div className="grid gap-10 lg:grid-cols-2">
             <Laptop activeSrc={SHOTS[0].img} lidStatic />
             <ul className="space-y-8">
               {SHOTS.map((s) => (
                 <li key={s.img}>
-                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
+                  <span
+                    style={{ fontFamily: MONO }}
+                    className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
                   <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-foreground">{s.title}</h3>
                   <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-foreground/55">{s.body}</p>
                 </li>
@@ -96,7 +103,9 @@ export function LaptopShowcase() {
 
           {/* descriptions (cross-fade with the active shot) */}
           <div>
-            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
+            <span
+              style={{ fontFamily: MONO }}
+              className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.product.label')}</span>
             {/* FIXED-height crossfade area — every slide's text is top-aligned in the
                 same box, so the kicker and the dots below never shift. */}
             <CrossfadeCopy items={SHOTS} active={active} titleMaxCls="max-w-[20ch]" />
@@ -131,26 +140,48 @@ function Laptop({
       {/* screen / lid — hinged at the bottom edge */}
       <div
         ref={lidRef}
-        className="relative aspect-[16/10] w-full origin-bottom rounded-[14px] border border-white/12 bg-[#0a0b0e] p-[6px] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] will-change-transform [backface-visibility:hidden]"
+        className={"relative aspect-[16/10] w-full origin-bottom rounded-[14px] border " +
+          "border-white/12 bg-[#0a0b0e] p-[6px] " +
+          "shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] will-change-transform " +
+          "[backface-visibility:hidden]"}
         style={{ transformOrigin: 'center bottom', transform: lidStatic ? 'none' : 'rotateX(-92deg)' }}
       >
         <div className="relative h-full w-full overflow-hidden rounded-[9px] bg-black">
           {shots
             ? shots.map((s, i) => (
-                <Image key={s.img} src={s.img} alt={s.title} fill sizes="(max-width: 1024px) 90vw, 680px" className="object-cover transition-opacity duration-500" style={{ opacity: i === active ? 1 : 0 }} />
+                <Image
+                  key={s.img}
+                  src={s.img}
+                  alt={s.title}
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 680px"
+                  className="object-cover transition-opacity duration-500"
+                  style={{ opacity: i === active ? 1 : 0 }}
+                />
               ))
             : activeSrc && (
                 <Image src={activeSrc} alt="" fill sizes="(max-width: 1024px) 90vw, 680px" className="object-cover" />
               )}
           {/* screen light-up glow while opening */}
-          <div ref={screenGlowRef} aria-hidden className="pointer-events-none absolute inset-0" style={{ opacity: lidStatic ? 0 : 0, background: 'radial-gradient(120% 80% at 50% 0%, rgba(120,170,255,0.12), transparent 60%)' }} />
+          <div
+            ref={screenGlowRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              opacity: lidStatic ? 0 : 0,
+              background: ('radial-gradient(120% 80% at 50% 0%, rgba(120,170,255,0.12), transparent ' + '60%)')
+            }}
+          />
           {/* subtle screen sheen */}
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.06] to-transparent" />
         </div>
       </div>
 
       {/* base / deck — a foreshortened keyboard deck below the hinge */}
-      <div className="relative mx-auto h-[22px] w-[106%] rounded-b-[12px] rounded-t-[4px] border border-t-0 border-white/10 bg-gradient-to-b from-[#1b1c20] via-[#131418] to-[#0a0b0e] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]">
+      <div
+        className={"relative mx-auto h-[22px] w-[106%] rounded-b-[12px] rounded-t-[4px] " +
+          "border border-t-0 border-white/10 bg-gradient-to-b from-[#1b1c20] " +
+          "via-[#131418] to-[#0a0b0e] shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]"}>
         {/* hinge lip */}
         <div className="absolute inset-x-[16%] top-0 h-[4px] rounded-b-md bg-black/50" />
         {/* trackpad notch */}

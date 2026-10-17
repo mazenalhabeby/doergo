@@ -60,7 +60,9 @@ export function CountryChip({ country, className }: { country?: string | null; c
   return (
     <span
       className={cn(
-        "inline-flex h-5 min-w-7 items-center justify-center rounded-md border border-border px-1 text-[10px] font-semibold tracking-wide text-muted-foreground",
+        ("inline-flex h-5 min-w-7 items-center justify-center rounded-md border " +
+          "border-border px-1 text-[10px] font-semibold tracking-wide " +
+          "text-muted-foreground"),
         className,
       )}
     >
@@ -199,7 +201,16 @@ export function useIssuerPreview(companyId: string | null | undefined, currency:
     return issuerSnapshotOf(
       identity,
       bank
-        ? { label: bank.label, holder: bank.holder, bankName: bank.bankName, iban: bank.iban, bic: bank.bic, accountNumber: bank.accountNumber, routingNumber: bank.routingNumber, currency: bank.currency }
+        ? {
+          label: bank.label,
+          holder: bank.holder,
+          bankName: bank.bankName,
+          iban: bank.iban,
+          bic: bank.bic,
+          accountNumber: bank.accountNumber,
+          routingNumber: bank.routingNumber,
+          currency: bank.currency
+        }
         : null,
     )
   }, [companies, companyId, currency])

@@ -71,7 +71,9 @@ export function AwayPolicySection({
       title: t("attendance.away.allowed", "Away is possible here"),
       body: t(
         "attendance.away.allowedHint",
-        "Only for members who are individually allowed it. Everyone else is still refused outside the ring. The day keeps its shift and its rests, and is flagged for review.",
+        ("Only for members who are individually allowed it. Everyone else is still " +
+          "refused outside the ring. The day keeps its shift and its rests, and is " +
+          "flagged for review."),
       ),
     },
     {

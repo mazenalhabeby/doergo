@@ -228,7 +228,11 @@ export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">{t("tasks.edit.flowHint", "Changing the flow updates the task's stages. Its status moves to the new flow's first stage if the current one doesn't exist there.")}</p>
+            <p
+              className="text-xs text-muted-foreground">{t(
+                "tasks.edit.flowHint",
+                ("Changing the flow updates the task's stages. Its status moves to the new " +
+                  "flow's first stage if the current one doesn't exist there."))}</p>
           </div>
 
           {/* Phase & Sprint — only for spaces with the agile modules enabled */}

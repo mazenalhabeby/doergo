@@ -10,7 +10,18 @@ import type { AccessFieldsState } from "./use-access-fields"
 import type { AccessFields } from "./access-fields"
 
 /** Part of AccessFields's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function AccessFieldsPermissions({ vm, external, value, onChange }: { vm: AccessFieldsState; external: NonNullable<Parameters<typeof AccessFields>[0]['external']>; value: Parameters<typeof AccessFields>[0]['value']; onChange: Parameters<typeof AccessFields>[0]['onChange'] }) {
+export function AccessFieldsPermissions(
+  {
+    vm,
+    external,
+    value,
+    onChange
+  }: {
+    vm: AccessFieldsState;
+    external: NonNullable<Parameters<typeof AccessFields>[0]['external']>;
+    value: Parameters<typeof AccessFields>[0]['value'];
+    onChange: Parameters<typeof AccessFields>[0]['onChange']
+  }) {
   const { t, permView, selectedRole } = vm
   return (
     <>{!external && (
@@ -18,7 +29,9 @@ export function AccessFieldsPermissions({ vm, external, value, onChange }: { vm:
       <div className="space-y-3">
         {permView.groups.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-            {t("accessBuilder.noPermissions", "This role grants no permissions yet. Choose a role above, or add permissions to it in Roles.")}
+            {t(
+              "accessBuilder.noPermissions",
+              ("This role grants no permissions yet. Choose a role above, or add " + "permissions to it in Roles."))}
           </p>
         ) : (
           <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -44,13 +57,17 @@ export function AccessFieldsPermissions({ vm, external, value, onChange }: { vm:
                           <span className="text-muted-foreground"> — {p.description}</span>
                           {p.direct && (
                             <>
-                              <span className="ml-1.5 whitespace-nowrap rounded border border-amber-600/40 bg-amber-600/10 px-1 py-px text-[10px] font-medium text-amber-700 dark:text-amber-500">
+                              <span
+                                className={"ml-1.5 whitespace-nowrap rounded border border-amber-600/40 " +
+                                  "bg-amber-600/10 px-1 py-px text-[10px] font-medium text-amber-700 " +
+                                  "dark:text-amber-500"}>
                                 {t("accessBuilder.directGrant", "Granted to this member only")}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => onChange({ [p.key]: false } as Partial<AccessDraft>)}
-                                className="ml-1.5 text-[10px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                                className={"ml-1.5 text-[10px] font-medium text-muted-foreground underline " +
+                                  "underline-offset-2 hover:text-foreground"}
                               >
                                 {t("accessBuilder.removeDirectGrant", "Remove")}
                               </button>
@@ -65,7 +82,11 @@ export function AccessFieldsPermissions({ vm, external, value, onChange }: { vm:
             </div>
             <p className="mt-3 text-[11px] text-muted-foreground">
               {permView.directCount > 0
-                ? t("accessBuilder.directGrantHint", "Highlighted permissions were granted to this member directly, not by the role. They can be removed here but not added — put them on a role instead, so it is visible who holds them.")
+                ? t(
+                  "accessBuilder.directGrantHint",
+                  ("Highlighted permissions were granted to this member directly, not by the " +
+                    "role. They can be removed here but not added — put them on a role " +
+                    "instead, so it is visible who holds them."))
                 : t("accessBuilder.fromRoleHint", "Change these on the role itself — they apply to everyone who holds it.")}
             </p>
           </div>
@@ -77,7 +98,10 @@ export function AccessFieldsPermissions({ vm, external, value, onChange }: { vm:
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border px-4 py-3">
             <div className="min-w-0">
               <p className="text-sm font-medium text-foreground">{t("accessBuilder.taskScope.title", "Where they can create tasks")}</p>
-              <p className="text-xs text-muted-foreground">{t("accessBuilder.taskScope.desc", "Narrows task creation for this member only.")}</p>
+              <p
+                className="text-xs text-muted-foreground">{t(
+                  "accessBuilder.taskScope.desc",
+                  "Narrows task creation for this member only.")}</p>
             </div>
             <Select value={value.taskCreationScope} onValueChange={(v) => onChange({ taskCreationScope: v })}>
               <SelectTrigger className="h-8 w-[190px] shrink-0 text-xs"><SelectValue /></SelectTrigger>

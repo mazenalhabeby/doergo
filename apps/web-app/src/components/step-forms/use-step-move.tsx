@@ -24,7 +24,9 @@ export interface StepMoveRequest {
   /** The step's key. */
   status: string
   /** The workflow the job runs on, as this page knows it (statuses with their forms). */
-  workflow: (MoverWorkflow & { statuses?: ReadonlyArray<{ key: string; name?: string; nameKey?: string | null }> | null }) | null | undefined
+  workflow: (MoverWorkflow & {
+    statuses?: ReadonlyArray<{ key: string; name?: string; nameKey?: string | null }> | null
+  }) | null | undefined
   /** Send the status change — with the answers when the step asked something. Throws the refusal. */
   send: (answers?: StepFormAnswers) => Promise<unknown>
 }

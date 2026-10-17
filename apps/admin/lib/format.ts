@@ -35,5 +35,7 @@ export function date(s: string | Date | null | undefined): string {
 export function dateTime(s: string | Date | null | undefined): string {
   if (!s) return '';
   const d = new Date(s);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }

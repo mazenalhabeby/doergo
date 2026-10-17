@@ -244,13 +244,19 @@ export function AssetRecordDialog({
                     thing they care about is in it. */}
                 {dropped.length > 0 && (
                   <p className="text-[11.5px] leading-relaxed text-amber-700 dark:text-amber-400">
-                    {t("assetRecords.moveDrops", "{{kind}} does not have these fields, and they will be deleted:", { kind: chosenKind?.name ?? "" })}{" "}
+                    {t(
+                      "assetRecords.moveDrops",
+                      "{{kind}} does not have these fields, and they will be deleted:",
+                      { kind: chosenKind?.name ?? "" })}{" "}
                     <b>{dropped.join(", ")}</b>
                   </p>
                 )}
                 {chosenKind && dropped.length === 0 && (
                   <p className="text-[11.5px] text-muted-foreground">
-                    {t("assetRecords.moveKeeps", "Every field on this record exists in {{kind}} — nothing is lost.", { kind: chosenKind.name })}
+                    {t(
+                      "assetRecords.moveKeeps",
+                      "Every field on this record exists in {{kind}} — nothing is lost.",
+                      { kind: chosenKind.name })}
                   </p>
                 )}
 

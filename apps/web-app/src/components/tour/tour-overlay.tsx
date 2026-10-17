@@ -93,7 +93,10 @@ export function TourOverlay({
         // tooltip (rendered outside the dialog) doesn't close an open modal.
         onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
-        className="pointer-events-auto fixed z-[73] w-[344px] overflow-hidden rounded-2xl border border-border bg-card shadow-[0_24px_60px_-12px_rgba(15,23,42,0.45)] animate-in fade-in zoom-in-95 duration-200 ease-out"
+        className={"pointer-events-auto fixed z-[73] w-[344px] overflow-hidden rounded-2xl " +
+          "border border-border bg-card " +
+          "shadow-[0_24px_60px_-12px_rgba(15,23,42,0.45)] animate-in fade-in " +
+          "zoom-in-95 duration-200 ease-out"}
         style={{
           left: tip.left,
           top: tip.top,
@@ -121,7 +124,9 @@ export function TourOverlay({
               type="button"
               onClick={onSkip}
               aria-label={t("tours.skip")}
-              className="-mr-1.5 -mt-1.5 grid size-7 place-items-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
+              className={"-mr-1.5 -mt-1.5 grid size-7 place-items-center rounded-lg " +
+                "text-muted-foreground/60 transition-colors hover:bg-muted " +
+                "hover:text-foreground"}
             >
               <X className="size-4" />
             </button>
@@ -131,7 +136,9 @@ export function TourOverlay({
           <p className="text-[13px] leading-relaxed text-muted-foreground">{t(step.bodyKey)}</p>
 
           {isClick && (
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-[11.5px] font-semibold text-primary">
+            <div
+              className={"mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 " +
+                "py-1.5 text-[11.5px] font-semibold text-primary"}>
               <MousePointerClick className="size-3.5 animate-pulse" /> {t("tours.clickHint")}
             </div>
           )}
@@ -142,7 +149,9 @@ export function TourOverlay({
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12.5px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                className={"inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12.5px] " +
+                  "font-semibold text-muted-foreground transition-colors " +
+                  "hover:text-foreground"}
               >
                 <ArrowLeft className="size-3.5" /> {t("common.back")}
               </button>
@@ -155,7 +164,9 @@ export function TourOverlay({
               <button
                 type="button"
                 onClick={onNext}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[13px] font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-colors hover:bg-primary/90"
+                className={"inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 " +
+                  "text-[13px] font-bold text-primary-foreground shadow-sm " +
+                  "shadow-primary/25 transition-colors hover:bg-primary/90"}
               >
                 {index === total - 1 ? t("tours.finish") : t("tours.next")} <ArrowRight className="size-3.5" />
               </button>

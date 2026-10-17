@@ -37,7 +37,16 @@ export interface StepMoveDialogProps {
 }
 
 /** useStepMoveDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useStepMoveDialogData({ open, taskId, stepName, form, legacy, onSubmit, onCancel }: Pick<Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>) {
+export function useStepMoveDialogData(
+  {
+    open,
+    taskId,
+    stepName,
+    form,
+    legacy,
+    onSubmit,
+    onCancel
+  }: Pick<Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>) {
   const { t, i18n } = useTranslation()
   const tr = (key: string, fallback: string) => t(key, { defaultValue: fallback })
 
@@ -65,7 +74,9 @@ export function useStepMoveDialogData({ open, taskId, stepName, form, legacy, on
     })
   }
 
-  const errorText = (code: string) => t(`stepForm.answerError.${code}`, { defaultValue: t("stepForm.answerError.invalid", "This answer is not valid.") })
+  const errorText = (code: string) => t(
+    `stepForm.answerError.${code}`,
+    { defaultValue: t("stepForm.answerError.invalid", "This answer is not valid.") })
 
   const addPhotos = (field: StepFormField, list: FileList | null) => {
     if (!list) return
@@ -74,8 +85,11 @@ export function useStepMoveDialogData({ open, taskId, stepName, form, legacy, on
     const refused: string[] = []
     for (const file of Array.from(list)) {
       if (items.length >= STEP_FORM_LIMITS.maxPhotos) break
-      if (!PHOTO_TYPES.includes(file.type)) { refused.push(t("stepForm.dialog.notAPhoto", { name: file.name, defaultValue: "{{name}} is not a photo." })); continue }
-      if (file.size > MAX_PHOTO_BYTES) { refused.push(t("stepForm.dialog.photoTooBig", { name: file.name, defaultValue: "{{name}} is larger than 20 MB." })); continue }
+      if (!PHOTO_TYPES.includes(
+        file.type)) { refused.push(
+          t("stepForm.dialog.notAPhoto", { name: file.name, defaultValue: "{{name}} is not a photo." })); continue }
+      if (file.size > MAX_PHOTO_BYTES) { refused.push(
+        t("stepForm.dialog.photoTooBig", { name: file.name, defaultValue: "{{name}} is larger than 20 MB." })); continue }
       const key = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
       files.current.set(key, { file, preview: URL.createObjectURL(file) })
       items.push({ key })
@@ -126,7 +140,10 @@ export function useStepMoveDialogData({ open, taskId, stepName, form, legacy, on
       setValues(next)
     } catch (err) {
       setBusy(null)
-      setGeneral(t("stepForm.dialog.uploadFailed", { error: serverErrorMessage(err, t, i18n.language), defaultValue: "A file could not be uploaded: {{error}}" }))
+      setGeneral(
+        t(
+          "stepForm.dialog.uploadFailed",
+          { error: serverErrorMessage(err, t, i18n.language), defaultValue: "A file could not be uploaded: {{error}}" }))
       return
     }
 

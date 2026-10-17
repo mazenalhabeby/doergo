@@ -119,7 +119,9 @@ export function KindContents({
 
   return (
     <div className="space-y-5">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      <button
+        onClick={onBack}
+        className={"inline-flex items-center gap-1.5 text-sm text-muted-foreground " + "transition-colors hover:text-foreground"}>
         <ArrowLeft className="h-4 w-4" /> {t("assetKinds.title", "Assets")}
       </button>
 
@@ -196,12 +198,17 @@ export function KindContents({
             // about the thing rather than only its name.
             const facts = detailRowsForKind(shape, r.details).filter((d) => d.value).slice(0, 2)
             return (
-              <div key={r.id} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40">
+              <div
+                key={r.id}
+                className={"group flex items-center gap-3 rounded-xl border border-border bg-card " +
+                  "p-3 transition-colors hover:border-primary/40"}>
                 <button
                   onClick={() => router.push(`/assets/${r.id}`)}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                  <span
+                    className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-lg " +
+                      "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"}>
                     <Package className="h-4 w-4" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -225,7 +232,9 @@ export function KindContents({
                   existing={r}
                   onSaved={refresh}
                   trigger={
-                    <button className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100">
+                    <button
+                      className={"rounded p-1 text-muted-foreground opacity-0 transition-opacity " +
+                        "hover:text-foreground group-hover:opacity-100"}>
                       <Pencil className="h-4 w-4" />
                     </button>
                   }

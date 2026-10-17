@@ -12,7 +12,10 @@ export const spacePortalApi = {
     return res.data ?? [];
   },
   createPortal: async (spaceId: string, templateKey: string, name?: string): Promise<{ id: string }> => {
-    const res = await call(spacePortalWebEndpoints.createPortal, { spaceId }, { body: { templateKey, name } }) as ApiResponse<{ id: string }>;
+    const res = await call(
+      spacePortalWebEndpoints.createPortal,
+      { spaceId },
+      { body: { templateKey, name } }) as ApiResponse<{ id: string }>;
     if (res.error) throw apiError(res);
     return res.data!;
   },
@@ -32,7 +35,10 @@ export const spacePortalApi = {
     return res.data!.data ?? [];
   },
   assign: async (spaceId: string, unitId: string, customerId: string) => {
-    const res = await call(spacePortalWebEndpoints.assign, { spaceId, unitId }, { body: { customerId } }) as ApiResponse<{ data: { success: boolean } }>;
+    const res = await call(
+      spacePortalWebEndpoints.assign,
+      { spaceId, unitId },
+      { body: { customerId } }) as ApiResponse<{ data: { success: boolean } }>;
     if (res.error) throw apiError(res);
     return res.data;
   },

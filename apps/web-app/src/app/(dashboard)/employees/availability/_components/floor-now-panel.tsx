@@ -146,7 +146,13 @@ function LanesCard({ space, formatTime }: { space: FloorSpace; formatTime: Fmt }
     space.people.filter((p) => states.includes(p.state)).sort(byUsefulness)
 
   const lanes: Array<{ key: string; label: string; tone: string; people: FloorPerson[]; alarm?: boolean }> = [
-    { key: "expected", label: t("cover.lane.notIn", "Not in"), tone: "text-red-600 dark:text-red-400", people: of("expected"), alarm: true },
+    {
+      key: "expected",
+      label: t("cover.lane.notIn", "Not in"),
+      tone: "text-red-600 dark:text-red-400",
+      people: of("expected"),
+      alarm: true
+    },
     { key: "working", label: t("cover.lane.free", "Free now"), tone: "text-emerald-600 dark:text-emerald-400", people: of("working") },
     { key: "busy", label: t("cover.lane.onJob", "On a job"), tone: "text-blue-600 dark:text-blue-400", people: of("busy") },
     { key: "break", label: t("cover.lane.break", "On a break"), tone: "text-amber-600 dark:text-amber-400", people: of("break") },

@@ -136,7 +136,12 @@ export function useGeneralTab({ space }: Pick<{ space: CompanyLocation }, 'space
   const contentLinks = [
     { href: "/clients", label: t("customers.title", "Customers"), Icon: Contact, show: mods.includes("crm") && access.may("/clients") },
     { href: "/assets", label: t("assetKinds.title", "Assets"), Icon: Package, show: mods.includes("assets") && access.may("/assets") },
-    { href: "/portals", label: t("portal.title", "Client portal"), Icon: LayoutTemplate, show: mods.includes("b2c_portal") && access.may("/portals") },
+    {
+      href: "/portals",
+      label: t("portal.title", "Client portal"),
+      Icon: LayoutTemplate,
+      show: mods.includes("b2c_portal") && access.may("/portals")
+    },
     /*
       ⚠️ Invoicing is an organization OPTION, not a per-space module, so it is
       not in `mods` — and what decides whether this workspace can be billed is

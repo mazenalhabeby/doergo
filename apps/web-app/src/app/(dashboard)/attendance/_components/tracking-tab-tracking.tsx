@@ -28,7 +28,27 @@ import type { TrackingTabState } from "./use-tracking-tab"
 import type { TrackingTab } from "./tracking-tab"
 
 /** Part of TrackingTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TrackingTabTracking({ vm, loadingEntries, loadingLocations, isError, error, refetch, daysOff, canReconcile, isAdmin, filteredEntries, selectedLocationId, sort, onSort, canDelete, meta, page, limit, setPage }: { vm: TrackingTabState; loadingEntries: Parameters<typeof TrackingTab>[0]['loadingEntries']; loadingLocations: Parameters<typeof TrackingTab>[0]['loadingLocations']; isError: Parameters<typeof TrackingTab>[0]['isError']; error: Parameters<typeof TrackingTab>[0]['error']; refetch: Parameters<typeof TrackingTab>[0]['refetch']; daysOff: Parameters<typeof TrackingTab>[0]['daysOff']; canReconcile: Parameters<typeof TrackingTab>[0]['canReconcile']; isAdmin: Parameters<typeof TrackingTab>[0]['isAdmin']; filteredEntries: Parameters<typeof TrackingTab>[0]['filteredEntries']; selectedLocationId: Parameters<typeof TrackingTab>[0]['selectedLocationId']; sort: Parameters<typeof TrackingTab>[0]['sort']; onSort: Parameters<typeof TrackingTab>[0]['onSort']; canDelete: Parameters<typeof TrackingTab>[0]['canDelete']; meta: Parameters<typeof TrackingTab>[0]['meta']; page: Parameters<typeof TrackingTab>[0]['page']; limit: Parameters<typeof TrackingTab>[0]['limit']; setPage: Parameters<typeof TrackingTab>[0]['setPage'] }) {
+export function TrackingTabTracking(
+  {
+    vm,
+    loadingEntries,
+    loadingLocations,
+    isError,
+    error,
+    refetch,
+    daysOff,
+    canReconcile,
+    isAdmin,
+    filteredEntries,
+    selectedLocationId,
+    sort,
+    onSort,
+    canDelete,
+    meta,
+    page,
+    limit,
+    setPage
+  }: { vm: TrackingTabState; loadingEntries: Parameters<typeof TrackingTab>[0]['loadingEntries']; loadingLocations: Parameters<typeof TrackingTab>[0]['loadingLocations']; isError: Parameters<typeof TrackingTab>[0]['isError']; error: Parameters<typeof TrackingTab>[0]['error']; refetch: Parameters<typeof TrackingTab>[0]['refetch']; daysOff: Parameters<typeof TrackingTab>[0]['daysOff']; canReconcile: Parameters<typeof TrackingTab>[0]['canReconcile']; isAdmin: Parameters<typeof TrackingTab>[0]['isAdmin']; filteredEntries: Parameters<typeof TrackingTab>[0]['filteredEntries']; selectedLocationId: Parameters<typeof TrackingTab>[0]['selectedLocationId']; sort: Parameters<typeof TrackingTab>[0]['sort']; onSort: Parameters<typeof TrackingTab>[0]['onSort']; canDelete: Parameters<typeof TrackingTab>[0]['canDelete']; meta: Parameters<typeof TrackingTab>[0]['meta']; page: Parameters<typeof TrackingTab>[0]['page']; limit: Parameters<typeof TrackingTab>[0]['limit']; setPage: Parameters<typeof TrackingTab>[0]['setPage'] }) {
   const {
     t,
     effectiveView,
@@ -78,7 +98,8 @@ export function TrackingTabTracking({ vm, loadingEntries, loadingLocations, isEr
           <div className="p-12 text-center">
             <CalendarOff className="size-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-foreground">{t("attendance.daysOff.none", "No days off in this range")}</h3>
-            <p className="text-muted-foreground mt-1">{t("attendance.daysOff.noneHint", "Approved time off for the selected dates shows here.")}</p>
+            <p
+              className="text-muted-foreground mt-1">{t("attendance.daysOff.noneHint", "Approved time off for the selected dates shows here.")}</p>
           </div>
         ) : (
           <Table>
@@ -110,7 +131,8 @@ export function TrackingTabTracking({ vm, loadingEntries, loadingLocations, isEr
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2.5 py-1 text-xs font-medium text-violet-600 dark:text-violet-300">
+                      <span
+                        className={"inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2.5 py-1 " + "text-xs font-medium text-violet-600 dark:text-violet-300"}>
                         <CalendarOff className="size-3.5" />
                         {t("attendance.dayOff.label")}
                       </span>
@@ -225,7 +247,7 @@ export function TrackingTabTracking({ vm, loadingEntries, loadingLocations, isEr
                         hour12={hour12}
                         locale={locale}
                       />
-                      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <div className={"mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase " + "tracking-wide text-muted-foreground"}>
                         <ListChecks className="h-3.5 w-3.5" /> {t("worklog.title", "Activity — what they did")}
                       </div>
                       {/* Managers/admins can add & edit a member's activity (with photos). */}

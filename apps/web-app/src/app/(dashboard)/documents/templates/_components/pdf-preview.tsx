@@ -126,7 +126,9 @@ export function PdfPreview({
         somebody is waiting for their contract.
       */}
       {missing.length > 0 && !error && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+        <div
+          className={"flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
+            "p-3 dark:border-amber-900 dark:bg-amber-950/40"}>
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {t("documents.templates.previewMissing", {

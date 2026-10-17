@@ -17,7 +17,12 @@ import type { RestDialogState } from "./use-rest-dialog"
 import type { RestDialog } from "./rests-section"
 
 /** Part of RestDialog's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function RestDialogRests({ vm, rule, onClose }: { vm: RestDialogState; rule: Parameters<typeof RestDialog>[0]['rule']; onClose: Parameters<typeof RestDialog>[0]['onClose'] }) {
+export function RestDialogRests(
+  {
+    vm,
+    rule,
+    onClose
+  }: { vm: RestDialogState; rule: Parameters<typeof RestDialog>[0]['rule']; onClose: Parameters<typeof RestDialog>[0]['onClose'] }) {
   const {
     t,
     name,
@@ -157,19 +162,25 @@ export function RestDialogRests({ vm, rule, onClose }: { vm: RestDialogState; ru
         <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
           <ToggleRow
             label={t("attendance.rests.paidLabel", "Counts as work")}
-            hint={t("attendance.rests.paidHint", "A rest that doesn't count as work comes off the counted hours. The statutory break usually doesn't count.")}
+            hint={t(
+              "attendance.rests.paidHint",
+              ("A rest that doesn't count as work comes off the counted hours. The " + "statutory break usually doesn't count."))}
             checked={isPaid}
             onChange={setIsPaid}
           />
           <ToggleRow
             label={t("attendance.rests.requiredLabel", "Required")}
-            hint={t("attendance.rests.requiredHint", "A required rest that is not taken flags the entry for review. Nothing is ever deducted for it.")}
+            hint={t(
+              "attendance.rests.requiredHint",
+              ("A required rest that is not taken flags the entry for review. Nothing is " + "ever deducted for it."))}
             checked={isRequired}
             onChange={setIsRequired}
           />
           <ToggleRow
             label={t("attendance.rests.remindLabel", "Remind the member")}
-            hint={t("attendance.rests.remindHint", "Asks when it falls due, and again if they say later — three times, then it stops and records it as not taken.")}
+            hint={t(
+              "attendance.rests.remindHint",
+              ("Asks when it falls due, and again if they say later — three times, then " + "it stops and records it as not taken."))}
             checked={remind}
             onChange={setRemind}
           />

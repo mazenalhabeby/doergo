@@ -153,7 +153,12 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
             {text("label", t("companies.shortLabel"), { placeholder: "USA" })}
             <div className="space-y-1.5">
               <Label>{t("companies.country")}</Label>
-              <Combobox value={f.country} onChange={(v) => set("country", v)} options={countries} placeholder={t("companies.chooseCountry")} />
+              <Combobox
+                value={f.country}
+                onChange={(v) => set("country", v)}
+                options={countries}
+                placeholder={t("companies.chooseCountry")}
+              />
             </div>
             {text("addressLine1", t("companies.street"), { className: "sm:col-span-2" })}
             {text("addressLine2", t("companies.street2"), { className: "sm:col-span-2" })}
@@ -174,7 +179,12 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
           <section className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{t("companies.currency")}</Label>
-              <CurrencySelect value={f.currency} onChange={(v) => set("currency", v)} inheritFrom="org" inheritLabel={t("companies.orgCurrency")} />
+              <CurrencySelect
+                value={f.currency}
+                onChange={(v) => set("currency", v)}
+                inheritFrom="org"
+                inheritLabel={t("companies.orgCurrency")}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="co-invoicePrefix">{t("companies.prefix")}</Label>
@@ -195,7 +205,11 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">{t("companies.bankAccounts")}</h4>
               {f.bankAccounts.length < MAX_BANK_ACCOUNTS && (
-                <Button type="button" variant="outline" size="sm" onClick={() => set("bankAccounts", [...f.bankAccounts, { ...EMPTY_BANK, isDefault: f.bankAccounts.length === 0 }])}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => set("bankAccounts", [...f.bankAccounts, { ...EMPTY_BANK, isDefault: f.bankAccounts.length === 0 }])}>
                   <Plus className="size-4 mr-1" />{t("companies.addBank")}
                 </Button>
               )}
@@ -204,16 +218,41 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
             {f.bankAccounts.map((b, i) => (
               <div key={i} className="rounded-xl border border-border p-4 space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <BankInput label={t("companies.bankLabel")} value={b.label} onChange={(v) => setBank(i, { label: v })} placeholder="USD account" />
+                  <BankInput
+                    label={t("companies.bankLabel")}
+                    value={b.label}
+                    onChange={(v) => setBank(i, { label: v })}
+                    placeholder="USD account"
+                  />
                   <BankInput label={t("companies.bankName")} value={b.bankName} onChange={(v) => setBank(i, { bankName: v })} />
-                  <BankInput label={t("companies.holder")} value={b.holder} onChange={(v) => setBank(i, { holder: v })} className="sm:col-span-2" />
+                  <BankInput
+                    label={t("companies.holder")}
+                    value={b.holder}
+                    onChange={(v) => setBank(i, { holder: v })}
+                    className="sm:col-span-2"
+                  />
                   <BankInput label="IBAN" value={b.iban} onChange={(v) => setBank(i, { iban: v })} mono />
                   <BankInput label="BIC / SWIFT" value={b.bic} onChange={(v) => setBank(i, { bic: v })} mono />
-                  <BankInput label={t("companies.accountNumber")} value={b.accountNumber} onChange={(v) => setBank(i, { accountNumber: v })} mono />
-                  <BankInput label={t("companies.routing")} value={b.routingNumber} onChange={(v) => setBank(i, { routingNumber: v })} mono />
+                  <BankInput
+                    label={t("companies.accountNumber")}
+                    value={b.accountNumber}
+                    onChange={(v) => setBank(i, { accountNumber: v })}
+                    mono
+                  />
+                  <BankInput
+                    label={t("companies.routing")}
+                    value={b.routingNumber}
+                    onChange={(v) => setBank(i, { routingNumber: v })}
+                    mono
+                  />
                   <div className="space-y-1.5">
                     <Label>{t("companies.bankCurrency")}</Label>
-                    <CurrencySelect value={b.currency} onChange={(v) => setBank(i, { currency: v })} inheritFrom="any" inheritLabel={t("companies.anyCurrency")} />
+                    <CurrencySelect
+                      value={b.currency}
+                      onChange={(v) => setBank(i, { currency: v })}
+                      inheritFrom="any"
+                      inheritLabel={t("companies.anyCurrency")}
+                    />
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
@@ -221,7 +260,11 @@ function CompanyDialog({ company, onClose, onSaved }: { company: LegalEntity | n
                     <input type="radio" name="default-bank" checked={b.isDefault} onChange={() => setBank(i, { isDefault: true })} />
                     {t("companies.defaultBank")}
                   </label>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => set("bankAccounts", f.bankAccounts.filter((_, j) => j !== i))}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => set("bankAccounts", f.bankAccounts.filter((_, j) => j !== i))}>
                     <Trash2 className="size-4 mr-1" />{t("common.remove", "Remove")}
                   </Button>
                 </div>

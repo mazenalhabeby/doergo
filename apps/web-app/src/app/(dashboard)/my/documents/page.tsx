@@ -131,7 +131,9 @@ export default function MyDocumentsPage() {
                   {t(`documents.required.state.${r.state}`)}
                 </span>
                 {r.blocksWork && (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                  <span
+                    className={"rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold " +
+                      "text-amber-700 dark:bg-amber-950 dark:text-amber-400"}>
                     {t("documents.required.blocksWork")}
                   </span>
                 )}
@@ -220,7 +222,9 @@ export default function MyDocumentsPage() {
             value={year ?? ""}
             onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
             aria-label={t("documents.year")}
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className={"h-10 rounded-md border border-slate-200 bg-white px-3 text-sm " +
+              "text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
+              "dark:text-slate-100"}
           >
             <option value="">{t("documents.allYears")}</option>
             {years.map((y) => (

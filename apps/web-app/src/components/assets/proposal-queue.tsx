@@ -222,7 +222,8 @@ function ReviewDialog({
                         name: step.asset.name, kind: usable.find((k) => k.id === categoryId)?.name ?? "",
                       })}
                       {step.kind === "hand-over" && t("contract.stepHand", "Hands it to {{name}} from today.", { name: whoName })}
-                      {step.kind === "close" && t("contract.stepClose", "Closes their custody of {{name}} — later costs stop landing on it.", {
+                      {step.kind === "close" &&
+                        t("contract.stepClose", "Closes their custody of {{name}} — later costs stop landing on it.", {
                         name: step.assetName,
                       })}
                       {step.kind === "retire" && t("contract.stepRetire", "Retires {{name}}. Its history stays; it stops being billed.", {

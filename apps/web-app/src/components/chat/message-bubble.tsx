@@ -84,7 +84,9 @@ export function MessageBubble({
     <div>
       {dayLine}
       <div
-        className={`group flex items-end gap-2 ${grouped ? "mt-0.5" : "mt-2.5"} ${mine ? "justify-end" : "justify-start"} ${arriving ? (mine ? "motion-msg-sent" : "motion-msg-in") : ""}`}
+        className={`group flex items-end gap-2 ${grouped
+          ? "mt-0.5"
+          : "mt-2.5"} ${mine ? "justify-end" : "justify-start"} ${arriving ? (mine ? "motion-msg-sent" : "motion-msg-in") : ""}`}
       >
         {!mine && (
           <span className="w-7 shrink-0">{lastOfGroup ? <ChatAvatar u={sender} size={28} dot={false} /> : null}</span>
@@ -120,7 +122,9 @@ export function MessageBubble({
               removed
                 ? "rounded-2xl border border-dashed border-border bg-transparent italic text-muted-foreground"
                 : mine
-                  ? `bg-gradient-to-br from-blue-500 to-blue-600 text-white ${lastOfGroup ? "rounded-2xl rounded-br-md" : "rounded-2xl"} ${pending ? "opacity-70" : ""}`
+                  ? `bg-gradient-to-br from-blue-500 to-blue-600 text-white ${lastOfGroup
+                    ? "rounded-2xl rounded-br-md"
+                    : "rounded-2xl"} ${pending ? "opacity-70" : ""}`
                   : `bg-muted text-foreground ${lastOfGroup ? "rounded-2xl rounded-bl-md" : "rounded-2xl"}`
             }`}
           >

@@ -87,7 +87,8 @@ export function useVisitClient({
     they are already looking at. Failure is not an error: the text still names
     the place, the pin stays empty, and the note below says so.
   */
-  const applyVisitAddress = useCallback(async (opt: { address: string | null; name: string; id: string; lat: number | null; lng: number | null } | null) => {
+  const applyVisitAddress = useCallback(async (
+    opt: { address: string | null; name: string; id: string; lat: number | null; lng: number | null } | null) => {
     setVisitAddressId(opt?.id ?? "none")
     if (!opt) return
     const text = opt.address ?? opt.name ?? ""

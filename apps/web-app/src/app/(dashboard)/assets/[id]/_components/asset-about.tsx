@@ -77,7 +77,9 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
                     onClick={() => router.push(`/members/${h.user!.id}`)}
                     className="flex w-full items-center gap-2 text-left"
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                    <span
+                      className={"flex h-8 w-8 shrink-0 items-center justify-center rounded-full " +
+                        "bg-primary/10 text-[11px] font-semibold text-primary"}>
                       {personInitials(h.user)}
                     </span>
                     <span className="min-w-0">
@@ -94,17 +96,24 @@ export function AssetAbout({ asset, shape }: { asset: AssetDetail; shape: KindSh
                       className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary"
                     >
                       {h.customer.name}
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                      <span
+                        className={"inline-flex items-center gap-1 rounded-full bg-emerald-100 px-1.5 py-0.5 " +
+                          "text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 " +
+                          "dark:text-emerald-300"}>
                         <Smartphone className="h-2.5 w-2.5" /> {t("assetRecords.appAccess", "App access")}
                       </span>
                     </button>
                     {h.customer.email && (
-                      <a href={`mailto:${h.customer.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
+                      <a
+                        href={`mailto:${h.customer.email}`}
+                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}>
                         <Mail className="h-3 w-3" /> {h.customer.email}
                       </a>
                     )}
                     {h.customer.phone && (
-                      <a href={`tel:${h.customer.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
+                      <a
+                        href={`tel:${h.customer.phone}`}
+                        className={"flex items-center gap-1.5 text-xs text-muted-foreground " + "hover:text-primary"}>
                         <Phone className="h-3 w-3" /> {h.customer.phone}
                       </a>
                     )}

@@ -12,7 +12,24 @@ import {
   MEETING_PROVIDER_NAMES, REMINDER_OFFSETS, cleanPhone, meetingProvider, spanMinutes, spanProblem, moveEndWithStart, durationText,
   type CallDirection, type MeetingMode, type PlaceKind, type Repeat, type RepeatFreq, type EventVisibility,
 } from "@hbcfield/shared/client"
-import { AlertTriangle, Bell, Briefcase, Building2, CalendarDays, Link2, Lock, MapPin, Palmtree, Phone, Repeat as RepeatIcon, Search, UserPlus, Users, Video, X } from "lucide-react"
+import {
+  AlertTriangle,
+  Bell,
+  Briefcase,
+  Building2,
+  CalendarDays,
+  Link2,
+  Lock,
+  MapPin,
+  Palmtree,
+  Phone,
+  Repeat as RepeatIcon,
+  Search,
+  UserPlus,
+  Users,
+  Video,
+  X
+} from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -126,7 +143,9 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                 role="tab"
                 aria-selected={kind === k}
                 onClick={() => setKind(k)}
-                className={cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition", kind === k && "bg-background text-foreground shadow-sm ring-1 ring-border")}
+                className={cn(
+                  ("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm " + "font-medium text-muted-foreground transition"),
+                  kind === k && "bg-background text-foreground shadow-sm ring-1 ring-border")}
               >
                 {k === "APPOINTMENT" ? <Users className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                 {t(k === "APPOINTMENT" ? "calendar.appointment" : "calendar.reminder")}
@@ -134,12 +153,15 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
             ))}
             {/* The two that already have their own forms open those, filled with this moment. */}
             {!editing && onTimeOff && (
-              <button type="button" onClick={() => { onOpenChange(false); onTimeOff(date) }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+              <button
+                type="button"
+                onClick={() => { onOpenChange(false); onTimeOff(date) }}
+                className={"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm " + "font-medium text-muted-foreground transition hover:text-foreground"}>
                 <Palmtree className="h-4 w-4" />{t("calendar.kindTimeOff")}
               </button>
             )}
             {!editing && onNewJob && (
-              <button type="button" onClick={() => { onOpenChange(false); onNewJob(allDay ? at(date, "00:00") : startAt) }} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+              <button type="button" onClick={() => { onOpenChange(false); onNewJob(allDay ? at(date, "00:00") : startAt) }} className={"inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm " + "font-medium text-muted-foreground transition hover:text-foreground"}>
                 <Briefcase className="h-4 w-4" />{t("calendar.kindJob")}
               </button>
             )}
@@ -190,7 +212,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
           <EventDialogInvite vm={vm} />
 
           {(clashes.length > 0 || findTime.data) && (
-            <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.07] p-3 text-sm text-amber-800 dark:text-amber-200">
+            <div className={"flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/[0.07] p-3 " + "text-sm text-amber-800 dark:text-amber-200"}>
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div className="min-w-0 flex-1">
                 {clashes.length > 0 && <p>{t("calendar.clash", { names: clashes.map((c) => c.firstName).join(", ") })}</p>}
@@ -205,7 +227,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                         key={s.start}
                         type="button"
                         onClick={() => { const d = new Date(s.start); setStart(dayKey(d), hm(d)) }}
-                        className="rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-500/30 transition hover:bg-emerald-500/20 dark:text-emerald-300"
+                        className={"rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-xs font-semibold " + "text-emerald-700 ring-1 ring-emerald-500/30 transition " + "hover:bg-emerald-500/20 dark:text-emerald-300"}
                       >
                         {fmtTime(s.start)}
                       </button>
@@ -226,7 +248,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                     type="button"
                     aria-pressed={reminders.includes(m)}
                     onClick={() => toggleReminder(m)}
-                    className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition", reminders.includes(m) ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}
+                    className={cn(("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs " + "transition"), reminders.includes(m) ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}
                   >
                     {reminders.includes(m) && <Bell className="h-3 w-3" />}{offsetLabel(m, t)}
                   </button>
@@ -248,7 +270,7 @@ export function EventDialog({ open, onOpenChange, start, event, spaceId, offices
                     type="button"
                     aria-pressed={visibility === v}
                     onClick={() => setVisibility(v)}
-                    className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition", visibility === v ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}
+                    className={cn(("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs " + "transition"), visibility === v ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent")}
                   >
                     {v === "BUSY" && <Lock className="h-3 w-3" />}{t(v === "BUSY" ? "calendar.showBusy" : "calendar.showDetails")}
                   </button>

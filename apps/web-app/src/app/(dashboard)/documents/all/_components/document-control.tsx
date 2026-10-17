@@ -203,7 +203,9 @@ function VisibilityDialog({
                           }
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                            on ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+                            on
+                              ? "border-primary bg-primary/10 text-foreground"
+                              : "border-border text-muted-foreground hover:text-foreground",
                           )}
                         >
                           {on && <Check className="h-3 w-3" />}

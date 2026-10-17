@@ -142,7 +142,9 @@ export function CreateInvitationDialog({ open, onOpenChange }: CreateInvitationD
               </Button>
               {mode === "code" && (
                 <Button variant="outline" onClick={handleCopyCode} className="rounded-lg">
-                  {codeCopied ? <><Check className="h-4 w-4 mr-1.5 text-green-600" />{t("common.copied")}</> : <><Copy className="h-4 w-4 mr-1.5" />{t("common.copy")}</>}
+                  {codeCopied
+                    ? <><Check className="h-4 w-4 mr-1.5 text-green-600" />{t("common.copied")}</>
+                    : <><Copy className="h-4 w-4 mr-1.5" />{t("common.copy")}</>}
                 </Button>
               )}
               <Button onClick={handleClose} className="flex-1 rounded-lg">{t("common.done")}</Button>

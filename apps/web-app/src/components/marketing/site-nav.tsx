@@ -32,7 +32,9 @@ export function SiteNav({ active }: { active?: 'blog' | 'industries' }) {
   }, []);
 
   const tone = (isActive?: boolean) =>
-    `${MONO} text-[11px] uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-foreground' : 'text-foreground/60 hover:text-foreground'}`;
+    `${MONO} text-[11px] uppercase tracking-[0.2em] transition-colors ${isActive
+      ? 'text-foreground'
+      : 'text-foreground/60 hover:text-foreground'}`;
 
   return (
     <nav
@@ -63,7 +65,9 @@ export function SiteNav({ active }: { active?: 'blog' | 'industries' }) {
             type="button"
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
             aria-label={t('home.nav.toggleTheme', 'Toggle theme')}
-            className="inline-flex size-8 items-center justify-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            className={"inline-flex size-8 items-center justify-center rounded-full " +
+              "text-foreground/60 transition-colors hover:bg-foreground/10 " +
+              "hover:text-foreground"}
           >
             {mounted && resolvedTheme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>

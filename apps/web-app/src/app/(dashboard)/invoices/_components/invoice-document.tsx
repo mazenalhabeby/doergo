@@ -114,7 +114,10 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
               <tbody>
                 {items.map((row, i) => isHeading(row) ? (
                   <tr key={`h-${i}`} className="border-b border-border">
-                    <td colSpan={4} className="bg-muted/40 px-5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:px-7">
+                    <td
+                      colSpan={4}
+                      className={"bg-muted/40 px-5 pb-1.5 pt-3 text-[11px] font-semibold uppercase " +
+                        "tracking-[0.12em] text-muted-foreground sm:px-7"}>
                       {row.description}
                     </td>
                   </tr>
@@ -128,14 +131,18 @@ export function InvoiceDocument(props: InvoiceDocumentProps) {
                       {units.tag(row)}
                       {row.description}
                       {row.lineKind === "HOURS" && row.hoursBasis && (props.renderBasis ? props.renderBasis(row) : (
-                        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 align-[1px] text-[10px] font-semibold text-muted-foreground">
+                        <span
+                          className={"ml-2 rounded-full bg-muted px-2 py-0.5 align-[1px] text-[10px] " +
+                            "font-semibold text-muted-foreground"}>
                           {t(`scheduling.membersPage.basis.${row.hoursBasis}`)}
                         </span>
                       ))}
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-right tabular-nums">
-                      {row.descriptive ? "" : <>{money(row.unitPrice, currency)}<span className="text-xs text-muted-foreground">{units.per(row)}</span></>}
+                      {row.descriptive
+                        ? ""
+                        : <>{money(row.unitPrice, currency)}<span className="text-xs text-muted-foreground">{units.per(row)}</span></>}
                     </td>
                     <td className="px-5 py-2.5 text-right tabular-nums sm:px-7">
                       {row.descriptive

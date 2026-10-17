@@ -27,10 +27,18 @@ export function IssueRowsTable({
       <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="bg-slate-50 dark:bg-slate-900/60">
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("documents.issue.file")}</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("documents.issue.member")}</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("documents.issue.match")}</th>
-            <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("documents.issue.period")}</th>
+            <th
+              className={"px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider " +
+                "text-slate-500"}>{t("documents.issue.file")}</th>
+            <th
+              className={"px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider " +
+                "text-slate-500"}>{t("documents.issue.member")}</th>
+            <th
+              className={"px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider " +
+                "text-slate-500"}>{t("documents.issue.match")}</th>
+            <th
+              className={"px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider " +
+                "text-slate-500"}>{t("documents.issue.period")}</th>
             <th className="w-10" />
           </tr>
         </thead>
@@ -83,7 +91,8 @@ export function IssueRowsTable({
                     })
                   }
                   aria-label={t("documents.issue.member")}
-                  className="w-full max-w-[220px] rounded border border-slate-200 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                  className={"w-full max-w-[220px] rounded border border-slate-200 bg-white px-2 py-1 " +
+                    "text-sm dark:border-slate-700 dark:bg-slate-900"}
                 >
                   <option value="">{t("documents.issue.pickMember")}</option>
                   {candidates.map((c) => (

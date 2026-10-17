@@ -49,7 +49,20 @@ export function labourCostRows(
     const key = id || `name:${name}`
     let r = rows.get(key)
     if (!r) {
-      r = { key, workerId: id ?? null, name, role: role ?? null, hours: 0, days: 0, hourRateCents: null, dayRateCents: null, costCents: 0, hasHours: false, hasDays: false, known: false }
+      r = {
+        key,
+        workerId: id ?? null,
+        name,
+        role: role ?? null,
+        hours: 0,
+        days: 0,
+        hourRateCents: null,
+        dayRateCents: null,
+        costCents: 0,
+        hasHours: false,
+        hasDays: false,
+        known: false
+      }
       rows.set(key, r)
     }
     return r

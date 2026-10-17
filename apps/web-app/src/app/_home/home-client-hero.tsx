@@ -12,7 +12,9 @@ import type { HomeClientState } from './use-home-client';
 export function HomeClientHero({ vm }: { vm: HomeClientState }) {
   const { reduced, t } = vm;
   return (
-    <section id="top" className="relative flex min-h-screen flex-col justify-center overflow-hidden bg-[#0e1116] px-6 text-[#d8d8d8] sm:px-10">
+    <section
+      id="top"
+      className={"relative flex min-h-screen flex-col justify-center overflow-hidden " + "bg-[#0e1116] px-6 text-[#d8d8d8] sm:px-10"}>
       {/* the logo, rebuilt as an interactive 3D faceted gemstone / crystal mark, is the centrepiece */}
       <div className="absolute inset-0"><HeroCanvas interactive={!reduced} /></div>
 
@@ -27,7 +29,9 @@ export function HomeClientHero({ vm }: { vm: HomeClientState }) {
         </Reveal>
         {/* desktop/tablet: CTA sits under the headline. On mobile it moves to the bottom-right (below) */}
         <Reveal delay={0.15} className="pointer-events-auto mt-8 hidden sm:block">
-          <Link href="/login?mode=register" className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+          <Link
+            href="/login?mode=register"
+            className={`${MONO} group inline-flex items-center gap-3 border-b border-white/25 pb-1 text-[12px] uppercase tracking-[0.22em] text-white/80 transition-colors hover:border-white hover:text-white`}>
             {t('home.hero.requestDemo')}
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
           </Link>
@@ -37,7 +41,9 @@ export function HomeClientHero({ vm }: { vm: HomeClientState }) {
 
       {/* mobile-only CTA — pinned bottom-right, balancing the scroll cue on the left */}
       <div className="pointer-events-none absolute inset-x-6 bottom-8 flex justify-end sm:hidden">
-        <Link href="/login?mode=register" className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
+        <Link
+          href="/login?mode=register"
+          className={`${MONO} group pointer-events-auto inline-flex items-center gap-2.5 whitespace-nowrap border-b border-white/25 pb-1 text-[11px] uppercase tracking-[0.18em] text-white/80 transition-colors hover:border-white hover:text-white`}>
           {t('home.hero.requestDemo')}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
         </Link>

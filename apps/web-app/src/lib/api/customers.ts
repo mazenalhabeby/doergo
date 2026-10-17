@@ -1,11 +1,43 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { Customer, CustomerActivity, CustomerAddress, CustomerCompanyLink, CustomerContactLink, CustomerInput } from './types/customers';
+import type {
+  Customer,
+  CustomerActivity,
+  CustomerAddress,
+  CustomerCompanyLink,
+  CustomerContactLink,
+  CustomerInput
+} from './types/customers';
 import { customersEndpoints } from '@hbcfield/shared/client';
 
 export const customersApi = {
-  list: async (params?: { search?: string; status?: "active" | "inactive" | "all"; portalResident?: boolean; spaceId?: string; includeUnfiled?: boolean; page?: number; limit?: number; contacts?: "exclude" | "only" | "all"; type?: "PERSON" | "COMPANY" }) => {
-    const res = await call(customersEndpoints.list, undefined, { query: params || {} }) as ApiResponse<{ data: Customer[]; meta: { total: number; page: number; limit: number; totalPages: number; crmCaps?: { view: "none" | "own" | "all"; work: boolean; editInfo: boolean; manage: boolean; canAccess: boolean } } }>;
+  list: async (
+    params?: {
+      search?: string;
+      status?: "active" | "inactive" | "all";
+      portalResident?: boolean;
+      spaceId?: string;
+      includeUnfiled?: boolean;
+      page?: number;
+      limit?: number;
+      contacts?: "exclude" | "only" | "all";
+      type?: "PERSON" | "COMPANY"
+    }) => {
+    const res = await call(
+      customersEndpoints.list,
+      undefined,
+      {
+        query: params || {}
+      }) as ApiResponse<{
+        data: Customer[];
+        meta: {
+          total: number;
+          page: number;
+          limit: number;
+          totalPages: number;
+          crmCaps?: { view: "none" | "own" | "all"; work: boolean; editInfo: boolean; manage: boolean; canAccess: boolean }
+        }
+      }>;
     if (res.error) throw apiError(res);
     return res.data!;
   },
@@ -13,7 +45,10 @@ export const customersApi = {
    *  portalId to bind them to a specific portal (= entity + categories) when the
    *  space runs several. Omit to auto-resolve (their unit's portal / the default). */
   invite: async (id: string, opts?: { email?: string; portalId?: string }) => {
-    const res = await call(customersEndpoints.invite, { id }, { body: { email: opts?.email, portalId: opts?.portalId } }) as ApiResponse<{ data: { code?: string; email?: string } }>;
+    const res = await call(
+      customersEndpoints.invite,
+      { id },
+      { body: { email: opts?.email, portalId: opts?.portalId } }) as ApiResponse<{ data: { code?: string; email?: string } }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -23,13 +58,37 @@ export const customersApi = {
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  addActivity: async (id: string, input: { type?: string; body?: string; dueAt?: string; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }) => {
+  addActivity: async (
+    id: string,
+    input: {
+      type?: string;
+      body?: string;
+      dueAt?: string;
+      reminderKind?: string;
+      remindBeforeMin?: number;
+      reminderAssigneeId?: string | null;
+      repeat?: string
+    }) => {
     const res = await call(customersEndpoints.addActivity, { id }, { body: input }) as ApiResponse<{ data: CustomerActivity }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  updateActivity: async (id: string, activityId: string, input: { body?: string; dueAt?: string | null; done?: boolean; reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string }) => {
-    const res = await call(customersEndpoints.updateActivity, { id, activityId }, { body: input }) as ApiResponse<{ data: CustomerActivity }>;
+  updateActivity: async (
+    id: string,
+    activityId: string,
+    input: {
+      body?: string;
+      dueAt?: string | null;
+      done?: boolean;
+      reminderKind?: string;
+      remindBeforeMin?: number;
+      reminderAssigneeId?: string | null;
+      repeat?: string
+    }) => {
+    const res = await call(
+      customersEndpoints.updateActivity,
+      { id, activityId },
+      { body: input }) as ApiResponse<{ data: CustomerActivity }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -80,12 +139,25 @@ export const customersApi = {
     if (res.error) throw apiError(res);
     return res.data ?? [];
   },
-  addAddress: async (id: string, input: { name?: string; address?: string; lat?: number; lng?: number; isPrimary?: boolean; contactName?: string | null; contactPhone?: string | null }) => {
+  addAddress: async (
+    id: string,
+    input: {
+      name?: string;
+      address?: string;
+      lat?: number;
+      lng?: number;
+      isPrimary?: boolean;
+      contactName?: string | null;
+      contactPhone?: string | null
+    }) => {
     const res = await call(customersEndpoints.addAddress, { id }, { body: input }) as ApiResponse<CustomerAddress>;
     if (res.error) throw apiError(res);
     return res.data;
   },
-  updateAddress: async (id: string, unitId: string, input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null }) => {
+  updateAddress: async (
+    id: string,
+    unitId: string,
+    input: { name?: string; address?: string; lat?: number; lng?: number; contactName?: string | null; contactPhone?: string | null }) => {
     const res = await call(customersEndpoints.updateAddress, { id, unitId }, { body: input }) as ApiResponse<CustomerAddress>;
     if (res.error) throw apiError(res);
     return res.data;

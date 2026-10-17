@@ -10,7 +10,9 @@ export const navItemBase =
 export const navItemInactive = "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 export const navItemActiveStyle = "text-foreground font-semibold"
 export const bottomIndicator =
-  "after:absolute after:bottom-[-13px] after:left-1/2 after:-translate-x-1/2 after:h-[2px] after:w-4/5 after:rounded-full after:bg-foreground"
+  ("after:absolute after:bottom-[-13px] after:left-1/2 " +
+    "after:-translate-x-1/2 after:h-[2px] after:w-4/5 after:rounded-full " +
+    "after:bg-foreground")
 
 // Mobile menu
 export const mobileItemBase =

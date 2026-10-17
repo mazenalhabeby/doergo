@@ -11,7 +11,14 @@ import { mins } from "../_lib/round-words"
  * Each person's overtime in the period: rounds, minutes agreed, minutes
  * counted — and, for a week, a small bar per day so a pattern shows.
  */
-export function ByPerson({ people, from, periodLabel, loading, showDays }: { people: OvertimePersonRow[]; from: Date; periodLabel: string; loading: boolean; showDays: boolean }) {
+export function ByPerson(
+  {
+    people,
+    from,
+    periodLabel,
+    loading,
+    showDays
+  }: { people: OvertimePersonRow[]; from: Date; periodLabel: string; loading: boolean; showDays: boolean }) {
   const { t, i18n } = useTranslation()
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i))
   const weekday = new Intl.DateTimeFormat(i18n.language, { weekday: "narrow" })

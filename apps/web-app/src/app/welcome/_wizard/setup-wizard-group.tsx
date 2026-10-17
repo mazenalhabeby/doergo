@@ -55,7 +55,11 @@ export function SetupWizardGroup({ vm }: { vm: SetupWizardState }) {
               <button
                 type="button"
                 onClick={() => pickGroup("pickForMe")}
-                className="group flex w-full items-center gap-4 rounded-2xl border-[1.5px] border-primary/25 bg-gradient-to-br from-primary/[0.07] via-card to-card p-4 text-left shadow-sm ring-1 ring-inset ring-primary/5 transition-all duration-150 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-md"
+                className={"group flex w-full items-center gap-4 rounded-2xl border-[1.5px] " +
+                  "border-primary/25 bg-gradient-to-br from-primary/[0.07] via-card to-card " +
+                  "p-4 text-left shadow-sm ring-1 ring-inset ring-primary/5 transition-all " +
+                  "duration-150 hover:-translate-y-0.5 hover:border-primary/45 " +
+                  "hover:shadow-md"}
               >
                 <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                   <WizardIcon name="wand" className="size-6" />
@@ -63,7 +67,9 @@ export function SetupWizardGroup({ vm }: { vm: SetupWizardState }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="text-[15.5px] font-bold tracking-tight">{t("setup.group.pickForMe")}</span>
-                    <span className="rounded-full bg-primary px-2 py-[2px] text-[10px] font-extrabold uppercase tracking-wide text-primary-foreground">
+                    <span
+                      className={"rounded-full bg-primary px-2 py-[2px] text-[10px] font-extrabold " +
+                        "uppercase tracking-wide text-primary-foreground"}>
                       {t("setup.badges.recommended")}
                     </span>
                   </span>
@@ -75,9 +81,24 @@ export function SetupWizardGroup({ vm }: { vm: SetupWizardState }) {
               <Divider text={t("setup.group.orManual")} />
 
               <div className="grid grid-cols-3 gap-3">
-                <ChoiceCard icon="grid" label={t("setup.group.byType")} hint={t("setup.group.byTypeHint")} onClick={() => pickGroup("byType")} />
-                <ChoiceCard icon="mapPin" label={t("setup.group.byPlace")} hint={t("setup.group.byPlaceHint")} onClick={() => pickGroup("byPlace")} />
-                <ChoiceCard icon="users" label={t("setup.group.byTeam")} hint={t("setup.group.byTeamHint")} onClick={() => pickGroup("byTeam")} />
+                <ChoiceCard
+                  icon="grid"
+                  label={t("setup.group.byType")}
+                  hint={t("setup.group.byTypeHint")}
+                  onClick={() => pickGroup("byType")}
+                />
+                <ChoiceCard
+                  icon="mapPin"
+                  label={t("setup.group.byPlace")}
+                  hint={t("setup.group.byPlaceHint")}
+                  onClick={() => pickGroup("byPlace")}
+                />
+                <ChoiceCard
+                  icon="users"
+                  label={t("setup.group.byTeam")}
+                  hint={t("setup.group.byTeamHint")}
+                  onClick={() => pickGroup("byTeam")}
+                />
               </div>
             </div>
           </>

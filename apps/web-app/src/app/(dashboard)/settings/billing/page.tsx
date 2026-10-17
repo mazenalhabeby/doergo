@@ -171,7 +171,9 @@ export default function BillingPage() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t(
                     'billing.byAgreementHint',
-                    'Nothing is charged automatically. The figures below are what this organization would cost at list price — useful for a renewal, not an invoice.',
+                    ('Nothing is charged automatically. The figures below are what this ' +
+                      'organization would cost at list price — useful for a renewal, not an ' +
+                      'invoice.'),
                   )}
                 </p>
               </div>

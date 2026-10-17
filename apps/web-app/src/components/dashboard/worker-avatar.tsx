@@ -89,7 +89,11 @@ export const WorkerAvatar = React.memo(function WorkerAvatar({
       )}
 
       {/* Hover tooltip */}
-      {!hideDot && <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-200 pointer-events-none z-20">
+      {!hideDot &&
+        <div
+          className={"absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 " +
+            "group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all " +
+            "duration-200 pointer-events-none z-20"}>
         <div
           className="px-2.5 py-1 rounded-lg text-[10px] font-semibold text-white whitespace-nowrap backdrop-blur-sm border border-white/10"
           style={{ backgroundColor: `${st.color}dd`, boxShadow: `0 4px 12px ${st.color}40` }}

@@ -109,7 +109,9 @@ export default function ReportsPage() {
         {/* Page Header — matches the app's standard page header */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <h1 data-tour="reports-header" className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
+            <h1
+              data-tour="reports-header"
+              className="text-3xl font-bold text-foreground tracking-tight">{t("reports.title", "Reports")}</h1>
             <p className="mt-1.5 text-muted-foreground">{t("reports.subtitle", "Run reports on your team, jobs, tasks and customers.")}</p>
           </div>
           {/* Job time — travel, working, blocked per job, beside the time on the clock. */}
@@ -126,7 +128,9 @@ export default function ReportsPage() {
             </div>
             {(saved && saved.length > 0) && (
               <div data-tour="reports-saved-list">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">{t("reports.myTemplates", "My templates")}</p>
+                <p
+                  className={"text-[11px] font-semibold uppercase tracking-wider text-muted-foreground " +
+                    "mb-2 px-1"}>{t("reports.myTemplates", "My templates")}</p>
                 <div className="space-y-1">
                   {saved.map((r) => (
                     <NavBtn key={r.id} activeKey={active?.savedId === r.id} onClick={() => pickSaved(r)} icon={BarChart3} label={r.name} desc={r.description || undefined} onDelete={canBuild ? () => del.mutate(r.id) : undefined} />
@@ -144,8 +148,10 @@ export default function ReportsPage() {
           {/* Right: builder/runner + results */}
           <div className="space-y-4">
             {!active ? (
-              <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-16 text-center">
-                <div className="grid place-items-center h-12 w-12 rounded-2xl bg-primary/10 text-primary mx-auto mb-4"><BarChart3 className="h-6 w-6" /></div>
+              <div
+                className={"rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " +
+                  "dark:border-white/[0.08] p-16 text-center"}>
+                <div className={"grid place-items-center h-12 w-12 rounded-2xl bg-primary/10 text-primary " + "mx-auto mb-4"}><BarChart3 className="h-6 w-6" /></div>
                 <p className="text-base font-semibold text-foreground">{t("reports.pickOneTitle", "No report selected")}</p>
                 <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">{t("reports.pickOne", "Pick a report on the left, or build a custom one.")}</p>
               </div>
@@ -203,7 +209,7 @@ export default function ReportsPage() {
 
                 {/* ── Results ─────────────────────────────────────────────────── */}
                 {displayResult && (displayResult.rows.length === 0 ? (
-                  <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-14 text-center">
+                  <div className={"rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " + "dark:border-white/[0.08] p-14 text-center"}>
                     <div className="grid place-items-center h-10 w-10 rounded-xl bg-muted mx-auto mb-3"><BarChart3 className="h-5 w-5 text-muted-foreground" /></div>
                     <p className="text-sm text-muted-foreground">{t("reports.noData", "No data for this period.")}</p>
                   </div>
@@ -213,7 +219,7 @@ export default function ReportsPage() {
                     {statCards(displayResult).length > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                         {statCards(displayResult).map((s, i) => (
-                          <div key={i} className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] p-4">
+                          <div key={i} className={"rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " + "dark:border-white/[0.08] p-4"}>
                             <div className="flex items-center gap-2">
                               <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground truncate">{s.label}</p>
@@ -240,14 +246,14 @@ export default function ReportsPage() {
                     )}
 
                     {/* Table card */}
-                    <div className="rounded-2xl border border-border bg-card shadow-sm dark:shadow-none dark:border-white/[0.08] overflow-hidden">
+                    <div className={"rounded-2xl border border-border bg-card shadow-sm dark:shadow-none " + "dark:border-white/[0.08] overflow-hidden"}>
                       <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/70">
                         <p className="text-sm font-semibold text-foreground">{t("reports.details", "Details")}</p>
                         <p className="text-xs text-muted-foreground">{t("reports.rowCount", "{{count}} rows", { count: displayResult.rows.length })}</p>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead><tr className="text-left">{displayResult.columns.map((c) => <th key={c.key} className={cn("px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40", c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
+                          <thead><tr className="text-left">{displayResult.columns.map((c) => <th key={c.key} className={cn(("px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground bg-muted/40"), c.kind === "measure" && "text-right")}>{c.label}</th>)}</tr></thead>
                           <tbody>{displayResult.rows.map((r, i) => <tr key={i} className="border-t border-border/50 hover:bg-accent/30 transition-colors">{displayResult.columns.map((c) => <td key={c.key} className={cn("px-5 py-3 text-foreground", c.kind === "measure" && "text-right tabular-nums font-semibold")}>{fmt(r[c.key], c.format)}</td>)}</tr>)}</tbody>
                         </table>
                       </div>

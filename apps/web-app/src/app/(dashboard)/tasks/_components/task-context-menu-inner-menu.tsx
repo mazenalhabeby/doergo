@@ -12,7 +12,16 @@ import type { TaskContextMenuInnerState } from "./use-task-context-menu-inner"
 import type { TaskContextMenuInner } from "./task-context-menu"
 
 /** Part of TaskContextMenuInner's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskContextMenuInnerMenu({ vm, actions, task }: { vm: TaskContextMenuInnerState; actions: Parameters<typeof TaskContextMenuInner>[0]['actions']; task: Parameters<typeof TaskContextMenuInner>[0]['task'] }) {
+export function TaskContextMenuInnerMenu(
+  {
+    vm,
+    actions,
+    task
+  }: {
+    vm: TaskContextMenuInnerState;
+    actions: Parameters<typeof TaskContextMenuInner>[0]['actions'];
+    task: Parameters<typeof TaskContextMenuInner>[0]['task']
+  }) {
   const { flowStatuses, t, statusOptions, allowedTargets, isManager, currentIsFinished } = vm
   return (
     <>{actions.onStatusChange && (

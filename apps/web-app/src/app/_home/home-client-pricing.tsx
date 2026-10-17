@@ -40,7 +40,8 @@ export function HomeClientPricing({ vm }: { vm: HomeClientState }) {
           out of the way of the full price list below it.
         */}
         <div className="mt-16 grid gap-5 sm:grid-cols-3">
-          {asArray<{ name: string; price: string; unit: string; desc: string }>(t('home.pricing.parts', { returnObjects: true })).map((p, i) => (
+          {asArray<{ name: string; price: string; unit: string; desc: string }>(
+            t('home.pricing.parts', { returnObjects: true })).map((p, i) => (
             <Reveal key={p.name} delay={i * 0.08} className="h-full">
               <div className="h-full rounded-[20px] bg-gradient-to-b from-foreground/[0.14] to-foreground/[0.02] p-px">
                 <div className="flex h-full flex-col rounded-[19px] bg-card p-8">

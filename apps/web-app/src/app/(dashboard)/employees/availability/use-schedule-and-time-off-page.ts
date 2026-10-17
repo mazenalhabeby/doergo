@@ -91,7 +91,11 @@ export function useScheduleAndTimeOffPage() {
   */
   const calendarDays = useQuery({
     queryKey: keys.calendar.team(space, format(days[0]!, "yyyy-MM-dd"), format(days[days.length - 1]!, "yyyy-MM-dd")),
-    queryFn: () => calendarApi.team({ spaceId: space, from: format(days[0]!, "yyyy-MM-dd"), to: format(days[days.length - 1]!, "yyyy-MM-dd") }),
+    queryFn: () => calendarApi.team({
+      spaceId: space,
+      from: format(days[0]!, "yyyy-MM-dd"),
+      to: format(days[days.length - 1]!, "yyyy-MM-dd")
+    }),
     enabled: !!space,
     staleTime: 5 * 60_000,
   })
@@ -102,7 +106,8 @@ export function useScheduleAndTimeOffPage() {
   const holidayNames = useMemo(() => {
     const m = new Map<string, string>()
     for (const h of calendarDays.data?.holidays ?? []) {
-      for (let d = new Date(`${h.date}T12:00:00`); format(d, "yyyy-MM-dd") <= h.endDate; d = addDays(d, 1)) m.set(format(d, "yyyy-MM-dd"), h.name)
+      for (let d = new Date(
+        `${h.date}T12:00:00`); format(d, "yyyy-MM-dd") <= h.endDate; d = addDays(d, 1)) m.set(format(d, "yyyy-MM-dd"), h.name)
     }
     return m
   }, [calendarDays.data])

@@ -60,11 +60,14 @@ export function TicketList({
           href="/help"
           target="_blank"
           rel="noreferrer"
-          className="mb-2 block rounded-lg border border-border py-2 text-center text-[13px] font-medium text-muted-foreground transition hover:bg-accent"
+          className={"mb-2 block rounded-lg border border-border py-2 text-center text-[13px] " +
+            "font-medium text-muted-foreground transition hover:bg-accent"}
         >
           {t('support.browseHelp', 'Browse the help center')}
         </a>
-        <button onClick={onNew} className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700">
+        <button
+          onClick={onNew}
+          className={"w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white " + "transition hover:bg-blue-700"}>
           {t('support.newTicket', 'New request')}
         </button>
       </div>
@@ -96,7 +99,9 @@ export function NewTicket({ onDone, liveChat }: { onDone: (id: string) => void; 
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        placeholder={liveChat ? t('support.chatPlaceholder', 'Describe your issue — an agent is online') : t('support.bodyPlaceholder', 'How can we help?')}
+        placeholder={liveChat
+          ? t('support.chatPlaceholder', 'Describe your issue — an agent is online')
+          : t('support.bodyPlaceholder', 'How can we help?')}
         rows={7}
         className="flex-1 resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
       />
@@ -104,7 +109,9 @@ export function NewTicket({ onDone, liveChat }: { onDone: (id: string) => void; 
       <button
         disabled={!canSend}
         onClick={() => mut.mutate()}
-        className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50"
+        className={"flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 " +
+          "text-sm font-medium text-white transition hover:bg-blue-700 " +
+          "disabled:opacity-50"}
       >
         {mut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         {t('support.send', 'Send')}
@@ -142,7 +149,10 @@ export function Thread({ ticket }: { ticket?: SupportTicket }) {
           const mine = m.authorType === 'CUSTOMER';
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-blue-600 text-white' : m.authorType === 'SYSTEM' ? 'bg-muted text-muted-foreground' : 'bg-muted text-foreground'}`}>
+              <div
+                className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${mine
+                  ? 'bg-blue-600 text-white'
+                  : m.authorType === 'SYSTEM' ? 'bg-muted text-muted-foreground' : 'bg-muted text-foreground'}`}>
                 {m.body}
               </div>
             </div>
@@ -159,7 +169,10 @@ export function Thread({ ticket }: { ticket?: SupportTicket }) {
           rows={1}
           className="max-h-24 flex-1 resize-none rounded-lg border border-border px-3 py-2 text-sm outline-none focus:border-primary"
         />
-        <button disabled={!canSend} onClick={() => mut.mutate()} className="rounded-lg bg-blue-600 p-2.5 text-white transition hover:bg-blue-700 disabled:opacity-50">
+        <button
+          disabled={!canSend}
+          onClick={() => mut.mutate()}
+          className={"rounded-lg bg-blue-600 p-2.5 text-white transition hover:bg-blue-700 " + "disabled:opacity-50"}>
           {mut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </div>

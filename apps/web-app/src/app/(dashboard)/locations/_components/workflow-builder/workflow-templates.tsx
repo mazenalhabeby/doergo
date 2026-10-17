@@ -23,7 +23,9 @@ export function WorkflowTemplates({
             type="button"
             onClick={() => onApply(tpl)}
             title={tpl.statuses.map((st) => st.name).join(" → ")}
-            className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className={"inline-flex items-center rounded-md border border-border px-2.5 py-1 " +
+              "text-xs font-medium text-muted-foreground hover:text-foreground " +
+              "hover:bg-muted transition-colors"}
           >
             {tpl.name}
           </button>

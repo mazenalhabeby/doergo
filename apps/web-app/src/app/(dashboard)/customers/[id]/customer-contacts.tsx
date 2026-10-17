@@ -156,7 +156,9 @@ function ContactRow({
   const p = link.person
   return (
     <li className="group flex items-start gap-2.5 py-2.5 first:pt-0.5">
-      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+      <span
+        className={"mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
+          "bg-primary/10 text-[10px] font-semibold text-primary"}>
         {personInitials(p.name)}
       </span>
       <span className="min-w-0 flex-1">

@@ -77,7 +77,9 @@ export function DeleteDialog({
           </div>
 
           <ul className="space-y-2 text-sm">
-            <li>{t("documents.control.goneForEveryone", "They disappear for the member and for everyone else. The member is not told.")}</li>
+            <li>{t(
+              "documents.control.goneForEveryone",
+              ("They disappear for the member and for everyone else. The member is not " + "told."))}</li>
             <li>{t("documents.control.goneForGood", "The files and any signatures on them are erased. This cannot be undone.")}</li>
             <li className="text-muted-foreground">
               {t("documents.control.auditKept", "A line stays in the audit log: who deleted what, and when.")}
@@ -198,7 +200,8 @@ export function ReplaceDialog({
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
-            className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border px-4 py-5 text-left text-sm hover:bg-accent/30"
+            className={"flex w-full items-center gap-3 rounded-lg border border-dashed " +
+              "border-border px-4 py-5 text-left text-sm hover:bg-accent/30"}
           >
             <Upload className="h-5 w-5 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">
@@ -214,7 +217,8 @@ export function ReplaceDialog({
           <p className="text-xs text-muted-foreground">
             {t(
               "documents.control.replaceNote",
-              "The member is asked to sign the new version if its type needs a signature. The old one is kept for your records and hidden from them.",
+              ("The member is asked to sign the new version if its type needs a " +
+                "signature. The old one is kept for your records and hidden from them."),
             )}
           </p>
           {replace.isPending && progress > 0 && (

@@ -106,7 +106,9 @@ export function ExplainerDialog({
                     : tc('explainer.scope.organization', 'Whole organization')}
                 </span>
                 {priceLabel && (
-                  <span className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                  <span
+                    className={"rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] " +
+                      "font-medium tabular-nums text-muted-foreground"}>
                     {priceLabel}
                   </span>
                 )}
@@ -147,7 +149,9 @@ export function ExplainerDialog({
                   <ol className="space-y-2.5">
                     {steps.map((s, i) => (
                       <li key={i} className="flex gap-3 text-sm leading-relaxed text-foreground/85">
-                        <span className="mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
+                        <span
+                          className={"mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full " +
+                            "bg-primary/10 text-[11px] font-bold text-primary"}>
                           {i + 1}
                         </span>
                         <span>{s}</span>

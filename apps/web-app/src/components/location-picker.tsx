@@ -105,7 +105,9 @@ export function LocationPicker({
             disabled={disabled}
             className={
               isAddress
-                ? "h-12 pl-10 pr-10 rounded-xl border-border bg-card text-base placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20"
+                ? ("h-12 pl-10 pr-10 rounded-xl border-border bg-card text-base " +
+                  "placeholder:text-muted-foreground focus:border-blue-500 " +
+                  "focus:ring-blue-500/20")
                 : "pl-9 pr-9"
             }
           />

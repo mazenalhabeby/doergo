@@ -16,7 +16,9 @@ export const epicsApi = {
     return response.data?.data;
   },
 
-  update: async (id: string, data: Partial<{ name: string; description: string; color: string; startDate: string; targetDate: string }>) => {
+  update: async (
+    id: string,
+    data: Partial<{ name: string; description: string; color: string; startDate: string; targetDate: string }>) => {
     const response = await call(epicsWebEndpoints.update, { id }, { body: data }) as ApiResponse<{ success: boolean; data: Epic }>;
     if (response.error) throw apiError(response);
     return response.data?.data;

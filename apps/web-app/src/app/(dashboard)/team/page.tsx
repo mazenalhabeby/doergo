@@ -52,7 +52,9 @@ export default function TeamPage() {
               type="button"
               onClick={() => setPresence(f)}
               aria-pressed={presence === f}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${presence === f ? "border-foreground bg-foreground text-background" : "border-border text-muted-foreground hover:text-foreground"}`}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${presence === f
+                ? "border-foreground bg-foreground text-background"
+                : "border-border text-muted-foreground hover:text-foreground"}`}
             >
               {f !== "all" && <span className={`size-2 rounded-full ${DOT[f]}`} />}
               {f === "all"

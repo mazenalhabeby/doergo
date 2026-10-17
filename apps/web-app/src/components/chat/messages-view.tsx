@@ -122,7 +122,11 @@ export function MessagesView() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("chat.searchConversations", "Search conversations")}
               aria-label={t("chat.searchConversations", "Search conversations")}
-              className="w-full rounded-full border border-border bg-muted py-1.5 pl-9 pr-3 text-sm outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:border-blue-400 focus:bg-background focus:shadow-[0_0_0_4px_rgb(59_130_246/0.15)]"
+              className={"w-full rounded-full border border-border bg-muted py-1.5 pl-9 pr-3 " +
+                "text-sm outline-none " +
+                "transition-[border-color,background-color,box-shadow] duration-200 " +
+                "focus:border-blue-400 focus:bg-background " +
+                "focus:shadow-[0_0_0_4px_rgb(59_130_246/0.15)]"}
             />
           </div>
           {caps?.mayCreateGroup && (
@@ -131,7 +135,8 @@ export function MessagesView() {
               onClick={() => setPicking("group")}
               aria-label={t("chat.newGroup", "New group")}
               title={t("chat.newGroup", "New group")}
-              className="icon-motion flex size-9 items-center justify-center rounded-full transition-colors hover:bg-blue-500/10 active:scale-90"
+              className={"icon-motion flex size-9 items-center justify-center rounded-full " +
+                "transition-colors hover:bg-blue-500/10 active:scale-90"}
             >
               <GradientIcon name="group" size={22} />
             </button>
@@ -141,7 +146,8 @@ export function MessagesView() {
             onClick={() => setPicking("direct")}
             aria-label={t("chat.newMessage", "New message")}
             title={t("chat.newMessage", "New message")}
-            className="icon-motion flex size-9 items-center justify-center rounded-full transition-colors hover:bg-blue-500/10 active:scale-90"
+            className={"icon-motion flex size-9 items-center justify-center rounded-full " +
+              "transition-colors hover:bg-blue-500/10 active:scale-90"}
           >
             <GradientIcon name="compose" size={22} />
           </button>
@@ -207,7 +213,9 @@ export function MessagesView() {
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-            <div className="flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-500/10 dark:to-indigo-500/10">
+            <div
+              className={"flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br " +
+                "from-sky-50 to-indigo-50 dark:from-sky-500/10 dark:to-indigo-500/10"}>
               <GradientIcon name="chat" size={34} />
             </div>
             <p className="text-sm text-muted-foreground">

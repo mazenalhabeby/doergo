@@ -28,7 +28,9 @@ interface ClientAddressOption {
  *
  * `known` is the client when the caller already has its record (from a list), so it is not read again.
  */
-export function useClientAddresses(customerId: string | null, opts: { enabled: boolean; known?: { id: string; name: string; address?: string | null } | null }) {
+export function useClientAddresses(
+  customerId: string | null,
+  opts: { enabled: boolean; known?: { id: string; name: string; address?: string | null } | null }) {
   const id = customerId && customerId !== "none" ? customerId : null
   const { data: pinned } = useQuery({
     queryKey: keys.customers.detail(id),
@@ -49,7 +51,14 @@ export function useClientAddresses(customerId: string | null, opts: { enabled: b
     const own = chosen?.address ?? null
     if (own) out.push({ id: "client", name: own, address: own, lat: null, lng: null, isPrimary: false })
     for (const a of rows) {
-      out.push({ id: a.id, name: a.name || a.address || "", address: a.address ?? null, lat: a.lat ?? null, lng: a.lng ?? null, isPrimary: a.isPrimary })
+      out.push({
+        id: a.id,
+        name: a.name || a.address || "",
+        address: a.address ?? null,
+        lat: a.lat ?? null,
+        lng: a.lng ?? null,
+        isPrimary: a.isPrimary
+      })
     }
     return out
   }, [id, opts.known, pinned, rows])

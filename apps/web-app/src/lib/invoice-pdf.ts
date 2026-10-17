@@ -156,7 +156,13 @@ export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): 
         ? [{
             content: it.description.toUpperCase(),
             colSpan: 4,
-            styles: { fontStyle: "bold" as const, fontSize: 7.5, textColor: [MUTED.r, MUTED.g, MUTED.b] as [number, number, number], fillColor: [248, 250, 252] as [number, number, number], cellPadding: { top: 3.5, bottom: 1.5, left: 2.5, right: 2.5 } },
+            styles: {
+              fontStyle: "bold" as const,
+              fontSize: 7.5,
+              textColor: [MUTED.r, MUTED.g, MUTED.b] as [number, number, number],
+              fillColor: [248, 250, 252] as [number, number, number],
+              cellPadding: { top: 3.5, bottom: 1.5, left: 2.5, right: 2.5 }
+            },
           }]
         : [
             // Hours and days said out loud: a tag, a unit on the quantity, per hour / per day on the price.
@@ -166,7 +172,8 @@ export async function buildDoc(inv: InvoicePdfData, branding: InvoiceBranding): 
             it.lineKind === "HOURS" ? formatHoursMinutes(it.quantity)
               : it.lineKind === "DAYS" ? `${formatDocumentQuantity(it.quantity, locale)} ${it.quantity === 1 ? L.units.day : L.units.days}`
                 : formatDocumentQuantity(it.quantity, locale),
-            fmtMoney(it.unitPrice, inv.currency) + (it.lineKind === "HOURS" ? ` ${L.units.perHour}` : it.lineKind === "DAYS" ? ` ${L.units.perDay}` : ""),
+            fmtMoney(it.unitPrice, inv.currency) +
+              (it.lineKind === "HOURS" ? ` ${L.units.perHour}` : it.lineKind === "DAYS" ? ` ${L.units.perDay}` : ""),
             fmtMoney(it.amount, inv.currency),
           ],
     ),

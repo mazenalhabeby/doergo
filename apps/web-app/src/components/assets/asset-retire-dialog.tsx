@@ -55,7 +55,9 @@ export function AssetRetireDialog({
             {" — "}
             {t(
               "assetFacts.retire.body",
-              "This has {{count}} job(s) in its history, so it cannot be deleted. Retiring keeps the record, its jobs, money and custody — it stops counting on the bill and leaves pickers.",
+              ("This has {{count}} job(s) in its history, so it cannot be deleted. " +
+                "Retiring keeps the record, its jobs, money and custody — it stops " +
+                "counting on the bill and leaves pickers."),
               { count: asset?.jobs ?? 0 },
             )}
           </DialogDescription>

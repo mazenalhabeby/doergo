@@ -59,12 +59,22 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 shrink-0 rounded-xl border border-border bg-muted/40 grid place-items-center overflow-hidden">
               {profile?.logoUrl
-                ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={profile.logoUrl} alt="Logo" decoding="async" className="h-full w-full object-contain" />
+                ? /* eslint-disable-next-line @next/next/no-img-element */ <img
+                  src={profile.logoUrl}
+                  alt="Logo"
+                  decoding="async"
+                  className="h-full w-full object-contain"
+                />
                 : <ImageIcon className="h-6 w-6 text-muted-foreground/50" />}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <label className={cn("inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-sm font-medium cursor-pointer hover:bg-accent/50 transition-colors", logoBusy && "opacity-60 pointer-events-none")}>
+                <label
+                  className={cn(
+                    ("inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border " +
+                      "border-border text-sm font-medium cursor-pointer hover:bg-accent/50 " +
+                      "transition-colors"),
+                    logoBusy && "opacity-60 pointer-events-none")}>
                   {logoBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   {profile?.logoUrl ? t("settings.general.logoReplace", "Replace") : t("settings.general.logoUpload", "Upload logo")}
                   <input type="file" accept="image/*" className="hidden" disabled={logoBusy}
@@ -76,7 +86,10 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
                   </Button>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5">{t("settings.general.logoHint", "PNG or JPG. Shows on report & statement PDFs. Saved instantly.")}</p>
+              <p
+                className="text-xs text-muted-foreground mt-1.5">{t(
+                  "settings.general.logoHint",
+                  "PNG or JPG. Shows on report & statement PDFs. Saved instantly.")}</p>
             </div>
           </div>
         </FormField>
@@ -113,7 +126,7 @@ export function GeneralSectionGeneral({ vm }: { vm: GeneralSectionState }) {
             <p className="mt-1 text-xs text-muted-foreground">
               {t(
                 "settings.general.externalWorkers.hint",
-                "Turn on to mark field technicians as in-house or external. In-house field seats are billed at the discounted €9 rate; external at €15. Leave off if all your field techs are the same.",
+                ("Turn on to mark field technicians as in-house or external. In-house " + "field seats are billed at the discounted €9 rate; external at €15. Leave " + "off if all your field techs are the same."),
               )}
             </p>
           </div>

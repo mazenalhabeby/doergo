@@ -35,7 +35,8 @@ export function AssetKindDialogMoney({ vm }: { vm: AssetKindDialogState }) {
               type="button"
               disabled={shape.money.categories.length >= KIND_SHAPE_LIMITS.maxMoneyCategories}
               onClick={() => setMoney({ categories: [...shape.money.categories, { label: "", direction: "out" }] })}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+              className={"inline-flex items-center gap-1 text-xs font-medium text-primary " +
+                "hover:underline disabled:opacity-40 disabled:no-underline"}
             >
               <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
             </button>

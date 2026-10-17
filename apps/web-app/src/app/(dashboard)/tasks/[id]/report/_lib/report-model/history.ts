@@ -159,7 +159,10 @@ export function signatureRole(g: TaskReportSignature, r: TaskReport, t: Translat
 /** A step answer as plain text (photos and signatures point at their own sections). */
 export function answerText(f: TaskReportStepAnswer, t: Translate, locale: string): string {
   const v = f.value
-  if (v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0)) return t("stepForm.report.notAnswered", { defaultValue: "Not answered" })
+  if (v === null ||
+    v === undefined ||
+    v === "" ||
+    (Array.isArray(v) && v.length === 0)) return t("stepForm.report.notAnswered", { defaultValue: "Not answered" })
   switch (f.type) {
     case "yesno": return v === true ? t("stepForm.dialog.yes", { defaultValue: "Yes" }) : t("stepForm.dialog.no", { defaultValue: "No" })
     case "number": return typeof v === "number" ? v.toLocaleString(locale) : String(v)
@@ -176,7 +179,9 @@ export function answerText(f: TaskReportStepAnswer, t: Translate, locale: string
 /** The road-snapped path when the tracker had one, else the recorded points. */
 export function routePath(rt: TaskReportRoute): Array<[number, number]> {
   const m = rt.matchedPath
-  if (Array.isArray(m) && m.length > 1 && m.every((p) => Array.isArray(p) && p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]))) {
+  if (Array.isArray(m) &&
+    m.length > 1 &&
+    m.every((p) => Array.isArray(p) && p.length >= 2 && Number.isFinite(p[0]) && Number.isFinite(p[1]))) {
     return (m as Array<[number, number]>).map((p) => [p[0], p[1]])
   }
   return rt.points.map((p) => [p.lat, p.lng])

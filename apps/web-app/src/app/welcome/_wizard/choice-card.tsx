@@ -43,7 +43,10 @@ export function ChoiceCard({
       )}
     >
       {badge && (
-        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-600 px-3 py-[3px] text-[10.5px] font-extrabold uppercase tracking-wide text-white shadow-sm">
+        <span
+          className={"absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap " +
+            "rounded-full bg-green-600 px-3 py-[3px] text-[10.5px] font-extrabold " +
+            "uppercase tracking-wide text-white shadow-sm"}>
           {badge}
         </span>
       )}

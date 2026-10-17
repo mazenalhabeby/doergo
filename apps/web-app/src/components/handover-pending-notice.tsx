@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label"
 
 /** The amber "something is owed" surface — the handover card and the reassign warning share it. */
 export const HANDOVER_WARN_CLASS =
-  "rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
+  ("rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm " +
+    "text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 " +
+    "dark:text-amber-300")
 
 
 /**
@@ -48,7 +50,13 @@ export function HandoverPendingNotice({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="reassign-note" className="text-xs">{t("tasks.handover.noteForNew")}</Label>
-        <Input id="reassign-note" value={note} maxLength={500} onChange={(e) => onNoteChange(e.target.value)} placeholder={t("tasks.handover.noteForNewPlaceholder")} />
+        <Input
+          id="reassign-note"
+          value={note}
+          maxLength={500}
+          onChange={(e) => onNoteChange(e.target.value)}
+          placeholder={t("tasks.handover.noteForNewPlaceholder")}
+        />
       </div>
       <Button size="sm" variant="outline" onClick={onWait}>{t("tasks.handover.wait")}</Button>
     </div>

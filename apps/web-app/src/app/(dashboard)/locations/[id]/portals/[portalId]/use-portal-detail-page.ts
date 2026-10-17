@@ -57,13 +57,20 @@ export function usePortalDetailPage() {
   */
   const { user } = useAuth()
   const holdsHere = (key: string) =>
-    !!user && (isAdmin(user) || (user as unknown as Record<string, unknown>)[key] === true || accessAllows(user.access as never, key as never, spaceId))
+    !!user &&
+      (isAdmin(user) ||
+        (user as unknown as Record<string, unknown>)[key] === true ||
+        accessAllows(user.access as never, key as never, spaceId))
   const mayManage = holdsHere("canManagePortals")
   const mayAnswer = mayManage || holdsHere("canAnswerPortal")
   const mayInvite = mayManage && user?.isExternal !== true
 
   const portalQ = useQuery({ queryKey: keys.portal.detail(portalId), queryFn: () => portalAdminApi.getPortal(portalId) })
-  const residentsQ = useQuery({ queryKey: keys.portal.residents(portalId), queryFn: () => portalAdminApi.residents(portalId), enabled: mayManage })
+  const residentsQ = useQuery({
+    queryKey: keys.portal.residents(portalId),
+    queryFn: () => portalAdminApi.residents(portalId),
+    enabled: mayManage
+  })
   const requestsQ = useQuery({ queryKey: keys.portal.allRequests(portalId), queryFn: () => portalAdminApi.portalRequests(portalId) })
   // Triage lookups (spaces to route to, flows/task-types, workers). Small + cached.
   const { data: spaces = [] } = useActiveSpaces()
@@ -87,7 +94,9 @@ export function usePortalDetailPage() {
   })
   const delPortalM = useMutation({
     mutationFn: () => portalAdminApi.deletePortal(portalId),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: keys.spaces.portals(spaceId) }); notify.success(t("portal.deleted", "Portal deleted")); backToSpace() },
+    onSuccess: () => { qc.invalidateQueries({
+      queryKey: keys.spaces.portals(spaceId)
+    }); notify.success(t("portal.deleted", "Portal deleted")); backToSpace() },
     onError: (e) => notify.error(e instanceof Error ? e.message : t("common.error", "Something went wrong")),
   })
   const [delPortalOpen, setDelPortalOpen] = useState(false)
@@ -99,7 +108,14 @@ export function usePortalDetailPage() {
   const [catForm, setCatForm] = useState<PortalCategoryInput>(EMPTY_CAT)
   const [catRemove, setCatRemove] = useState<PortalIntakeCategory | null>(null)
   const openNewCat = () => { setCatForm(EMPTY_CAT); setCatEdit("new") }
-  const openEditCat = (c: PortalIntakeCategory) => { setCatForm({ label: c.label, icon: c.icon ?? "plus", color: c.color ?? "slate", urgent: c.urgent, team: c.team ?? "", issues: c.issues ?? [] }); setCatEdit(c) }
+  const openEditCat = (c: PortalIntakeCategory) => { setCatForm({
+    label: c.label,
+    icon: c.icon ?? "plus",
+    color: c.color ?? "slate",
+    urgent: c.urgent,
+    team: c.team ?? "",
+    issues: c.issues ?? []
+  }); setCatEdit(c) }
   const saveCatM = useMutation({
     mutationFn: () => catEdit === "new"
       ? portalAdminApi.createCategory({ ...catForm, portalId, key: catForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_") })
@@ -115,7 +131,9 @@ export function usePortalDetailPage() {
 
   // Triage a pending request → live task (space + flow + priority + worker)
   const [triageReq, setTriageReq] = useState<PortalRequestView | null>(null)
-  const [triageForm, setTriageForm] = useState<{ spaceId: string; workflowId: string; priority: string; assignedToId: string }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
+  const [
+    triageForm,
+    setTriageForm] = useState<{ spaceId: string; workflowId: string; priority: string; assignedToId: string }>({ spaceId: "", workflowId: "", priority: "", assignedToId: "" })
   const openTriage = (r: PortalRequestView) => {
     // Pre-route to the portal's linked space (if any) so the admin only confirms
     // the flow + assigns — no re-picking the space for every request.

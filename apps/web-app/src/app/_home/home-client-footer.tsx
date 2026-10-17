@@ -52,7 +52,9 @@ export function HomeClientFooter({ vm }: { vm: HomeClientState }) {
 
         {/* oversized brand accent + app badges on one line */}
         <div className="mt-14 flex flex-wrap items-end justify-between gap-x-10 gap-y-8">
-          <span aria-hidden className={`${DISPLAY} pointer-events-none select-none whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-foreground/[0.045]`}>
+          <span
+            aria-hidden
+            className={`${DISPLAY} pointer-events-none select-none whitespace-nowrap text-[clamp(4rem,17vw,15rem)] font-normal leading-[0.78] tracking-[-0.04em] text-foreground/[0.045]`}>
             HBCField
           </span>
           <div className="shrink-0 pb-2">

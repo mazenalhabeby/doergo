@@ -60,17 +60,46 @@ interface ReportFact { key: FactKey; label: string; value: string; sub: string |
  * whatever its switch — and "Worked time" with a counted total of 0 says
  * nothing a client should read ("0 min" on a finished job reads as wrong).
  */
-export function reportFacts(r: TaskReport, off: ReadonlySet<HeadToggle>, t: Translate, when: (iso: string | null | undefined) => string): ReportFact[] {
+export function reportFacts(
+  r: TaskReport,
+  off: ReadonlySet<HeadToggle>,
+  t: Translate,
+  when: (iso: string | null | undefined) => string): ReportFact[] {
   const h = r.header
   const all: Array<ReportFact | null> = [
-    h.client ? { key: "client", label: t("tasks.report.facts.client"), value: h.client.name, sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null } : null,
-    h.site.address || h.unit ? { key: "site", label: t("tasks.report.facts.site"), value: h.unit?.name ?? h.site.address ?? "", sub: h.unit ? (h.unit.address ?? h.site.address ?? null) : null } : null,
-    h.asset ? { key: "equipment", label: t("tasks.report.facts.equipment"), value: h.asset.name, sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null } : null,
+    h.client
+      ? {
+        key: "client",
+        label: t("tasks.report.facts.client"),
+        value: h.client.name,
+        sub: h.contact?.name ? [h.contact.name, h.contact.phone].filter(Boolean).join(" · ") : null
+      }
+      : null,
+    h.site.address || h.unit
+      ? {
+        key: "site",
+        label: t("tasks.report.facts.site"),
+        value: h.unit?.name ?? h.site.address ?? "",
+        sub: h.unit ? (h.unit.address ?? h.site.address ?? null) : null
+      }
+      : null,
+    h.asset
+      ? {
+        key: "equipment",
+        label: t("tasks.report.facts.equipment"),
+        value: h.asset.name,
+        sub: h.asset.serialNumber ? t("tasks.report.facts.serial", { serial: h.asset.serialNumber }) : null
+      }
+      : null,
     h.workspace ? { key: "workspace", label: t("tasks.report.facts.workspace"), value: h.workspace.name, sub: null } : null,
     h.dueDate ? { key: "due", label: t("tasks.report.facts.due"), value: when(h.dueDate), sub: null } : null,
-    h.startedAt ? { key: "started", label: t("tasks.report.facts.started"), value: when(h.startedAt), sub: personName(h.startedBy) || null } : null,
+    h.startedAt
+      ? { key: "started", label: t("tasks.report.facts.started"), value: when(h.startedAt), sub: personName(h.startedBy) || null }
+      : null,
     h.finishedAt ? { key: "finished", label: t("tasks.report.facts.finished"), value: when(h.finishedAt), sub: null } : null,
-    h.totalMinutes > 0 ? { key: "worked", label: t("tasks.report.facts.worked"), value: formatReportMinutes(h.totalMinutes, t), sub: null } : null,
+    h.totalMinutes > 0
+      ? { key: "worked", label: t("tasks.report.facts.worked"), value: formatReportMinutes(h.totalMinutes, t), sub: null }
+      : null,
   ]
   return all.filter((f): f is ReportFact => !!f && !off.has(f.key))
 }
@@ -193,7 +222,9 @@ function originLabel(r: TaskReport, t: Translate): string | null {
     case "CUSTOMER_PORTAL":
       return t("tasks.report.origin.portal", { ref: o.portalReference ?? r.header.reference })
     case "RECURRING":
-      return o.recurringTemplate?.title ? t("tasks.report.origin.recurringNamed", { name: o.recurringTemplate.title }) : t("tasks.report.origin.recurring")
+      return o.recurringTemplate?.title
+        ? t("tasks.report.origin.recurringNamed", { name: o.recurringTemplate.title })
+        : t("tasks.report.origin.recurring")
     case "SUBTASK":
       return o.parent ? t("tasks.report.origin.subtask", { title: o.parent.title }) : null
     default:

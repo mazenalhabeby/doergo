@@ -124,7 +124,8 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
                   <div>
                     <Label className="mb-6 block">{t('home.video.label')}</Label>
-                    <h2 className={`${DISPLAY} max-w-[16ch] text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal leading-[1.03] tracking-[-0.01em] text-foreground`}>
+                    <h2
+                      className={`${DISPLAY} max-w-[16ch] text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal leading-[1.03] tracking-[-0.01em] text-foreground`}>
                       {t('home.video.title')}
                     </h2>
                   </div>
@@ -169,15 +170,22 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
             <div className="mx-auto max-w-[1600px] px-6 sm:px-10">
               <div className="mb-14">
                 <Label className="mb-6 block">{t('home.process.label')}</Label>
-                <h2 className={`${DISPLAY} max-w-[18ch] text-[clamp(1.7rem,4vw,3rem)] font-normal leading-[1.05] tracking-[-0.01em] text-foreground`}>
+                <h2
+                  className={`${DISPLAY} max-w-[18ch] text-[clamp(1.7rem,4vw,3rem)] font-normal leading-[1.05] tracking-[-0.01em] text-foreground`}>
                   {t('home.process.heading')}
                 </h2>
               </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
                 {steps.map((s, i) => (
-                  <div key={s.key} className="flex min-h-[14rem] flex-col justify-between border border-foreground/[0.1] bg-foreground/[0.015] p-7">
-                    <div className={`${MONO} text-[11px] uppercase tracking-[0.22em] text-foreground/40`}>{String(i + 1).padStart(2, '0')} / {s.key}</div>
-                    <p className={`${DISPLAY} mt-8 text-[clamp(1.15rem,1.5vw,1.4rem)] font-normal leading-[1.15] text-foreground`}>{s.desc}</p>
+                  <div
+                    key={s.key}
+                    className={"flex min-h-[14rem] flex-col justify-between border " + "border-foreground/[0.1] bg-foreground/[0.015] p-7"}>
+                    <div
+                      className={`${MONO} text-[11px] uppercase tracking-[0.22em] text-foreground/40`}>{String(i + 1).padStart(
+                        2,
+                        '0')} / {s.key}</div>
+                    <p
+                      className={`${DISPLAY} mt-8 text-[clamp(1.15rem,1.5vw,1.4rem)] font-normal leading-[1.15] text-foreground`}>{s.desc}</p>
                   </div>
                 ))}
               </div>
@@ -227,7 +235,10 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
                 {t('home.compare.heading', 'Switch on only what you need')}
               </h2>
               <p className="mt-6 max-w-[50ch] text-[15px] leading-relaxed text-foreground/50">
-                {t('home.compare.lead', 'Nothing is locked behind a plan. Turn something on when you need it, off when you do not — the bill follows the same day.')}
+                {t(
+                  'home.compare.lead',
+                  ('Nothing is locked behind a plan. Turn something on when you need it, off ' +
+                    'when you do not — the bill follows the same day.'))}
               </p>
               <Reveal className="mt-14">
                 <FeatureMatrix />
@@ -242,7 +253,9 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
               <h2 className={`${DISPLAY} text-[clamp(1.8rem,5vw,3.6rem)] font-normal leading-[1.02] tracking-[-0.02em] text-foreground`}>
                 {t('home.faq.heading', 'Questions, answered.')}
               </h2>
-              <div className="mt-14 grid gap-px overflow-hidden rounded-lg border border-foreground/[0.08] bg-foreground/[0.08] sm:grid-cols-2">
+              <div
+                className={"mt-14 grid gap-px overflow-hidden rounded-lg border " +
+                  "border-foreground/[0.08] bg-foreground/[0.08] sm:grid-cols-2"}>
                 {asArray<{ q: string; a: string }>(t('home.faq.items', { returnObjects: true })).map((item, i) => (
                   <Reveal key={i} className="bg-background p-7 sm:p-9">
                     <h3 className={`${DISPLAY} text-[19px] leading-snug tracking-[-0.01em] text-foreground`}>{item.q}</h3>
@@ -262,7 +275,9 @@ export default function HomeClient({ lang = 'en' }: { lang?: string }) {
               </h2>
               <Reveal delay={0.2} className="mt-14">
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-5">
-                  <Link href="/login?mode=register" className={`${MONO} group inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full bg-foreground px-9 py-4 text-[12px] uppercase tracking-[0.2em] text-background shadow-lg shadow-foreground/10 transition-all hover:scale-[1.02] hover:bg-foreground/90`}>
+                  <Link
+                    href="/login?mode=register"
+                    className={`${MONO} group inline-flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full bg-foreground px-9 py-4 text-[12px] uppercase tracking-[0.2em] text-background shadow-lg shadow-foreground/10 transition-all hover:scale-[1.02] hover:bg-foreground/90`}>
                     {t('home.cta.requestDemo')}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>

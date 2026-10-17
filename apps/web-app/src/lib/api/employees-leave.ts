@@ -21,7 +21,10 @@ export const employeeLeaveApi = {
   // verdict, so the list can be decided without opening anything.
   getOrgTimeOff: async (status?: TimeOffStatus, range?: { from: string; to: string }) => {
 
-    const response = await call(timeOffEndpoints.listOrg, undefined, { query: { status, from: range?.from, to: range?.to } }) as ApiResponse<{
+    const response = await call(
+      timeOffEndpoints.listOrg,
+      undefined,
+      { query: { status, from: range?.from, to: range?.to } }) as ApiResponse<{
       success: boolean;
       data: OrgTimeOffRequest[];
     }>;
@@ -46,7 +49,9 @@ export const employeeLeaveApi = {
   // the footer and the verdict above it read the same rule — a count derived in
   // the browser would be a second implementation of "who is rostered".
   getCoverRange: async (start: string, end: string) => {
-    const response = await call(employeesEndpoints.coverRange, { start, end }) as ApiResponse<{ success: boolean; data: CoverRangeSpace[] }>;
+    const response = await call(
+      employeesEndpoints.coverRange,
+      { start, end }) as ApiResponse<{ success: boolean; data: CoverRangeSpace[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -154,7 +159,10 @@ export const employeeLeaveApi = {
     timeOffId: string,
     input: { startDate?: string; endDate?: string; reason?: string | null },
   ) => {
-    const response = await call(timeOffEndpoints.update, { timeOffId }, { body: input }) as ApiResponse<{ success: boolean; data: TimeOffRequest }>;
+    const response = await call(
+      timeOffEndpoints.update,
+      { timeOffId },
+      { body: input }) as ApiResponse<{ success: boolean; data: TimeOffRequest }>;
     if (response.error) {
       throw apiError(response);
     }

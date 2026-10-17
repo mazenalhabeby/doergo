@@ -81,7 +81,8 @@ export function AttendanceStatusCell({
       {hidden.length > 0 && (
         <span
           title={hidden.map(label).join(" · ")}
-          className="inline-flex cursor-help items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+          className={"inline-flex cursor-help items-center rounded-full border border-border " +
+            "bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"}
         >
           +{hidden.length}
         </span>

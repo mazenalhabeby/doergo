@@ -82,7 +82,13 @@ export function CreateInvitationDialogInviteDialog({ vm }: { vm: CreateInvitatio
       {mode === "email" && (
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-muted-foreground">{t("invitations.inviteDialog.emailLabel")}</Label>
-          <Input type="email" placeholder={t("invitations.inviteDialog.emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} className="h-9" />
+          <Input
+            type="email"
+            placeholder={t("invitations.inviteDialog.emailPlaceholder")}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-9"
+          />
         </div>
       )}
 

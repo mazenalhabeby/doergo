@@ -81,7 +81,10 @@ export function GroupCreator({
           type="button"
           disabled={!ready || create.isPending}
           onClick={() => create.mutate()}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm shadow-blue-500/30 transition active:scale-95 disabled:opacity-50"
+          className={"flex items-center gap-1.5 rounded-lg bg-gradient-to-br from-sky-500 " +
+            "via-blue-500 to-indigo-500 px-3.5 py-2 text-sm font-medium text-white " +
+            "shadow-sm shadow-blue-500/30 transition active:scale-95 " +
+            "disabled:opacity-50"}
         >
           {create.isPending && <Loader2 className="size-3.5 animate-spin" />}
           {t("chat.createGroup", { count: picked.size, defaultValue: "Create ({{count}})" })}

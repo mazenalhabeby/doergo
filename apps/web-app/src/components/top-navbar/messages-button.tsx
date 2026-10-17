@@ -34,7 +34,10 @@ export function MessagesButton() {
     >
       <MessageSquare className="h-5 w-5 text-muted-foreground" />
       {unread > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold tabular-nums text-white ring-2 ring-background">
+        <span
+          className={"absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center " +
+            "justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold " +
+            "tabular-nums text-white ring-2 ring-background"}>
           {unread > 99 ? "99+" : unread}
         </span>
       )}

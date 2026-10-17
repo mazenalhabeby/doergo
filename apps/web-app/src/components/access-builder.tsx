@@ -16,19 +16,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { AccessFields, Field } from "@/components/access-fields"
 import { notify } from "@/lib/toast"
 import { runBulk, isFailure, firstFailureReason } from "@/lib/concurrency"
-
-/** Stable, order-insensitive canonical form of a draft's PERSISTED shape — so
- *  dirty tracking ignores field ordering and collapsed values (e.g. task scope
- *  when create is off). Reuses `serializeAccessDraft` (single source of truth). */
-function canon(d: AccessDraft): string {
-  const p = serializeAccessDraft(d)
-  return JSON.stringify({
-    ...p,
-    systemRole: d.systemRole, // role tier isn't in the persisted shape — track it explicitly
-    enabledModules: { ...p.enabledModules, modules: [...p.enabledModules.modules].sort() },
-    contactAllowedIds: [...p.contactAllowedIds].sort(),
-  })
-}
+import { canon } from "./access-builder-parts"
 
 /**
  * Access Builder — the single place to configure a member: reach (platform,
@@ -149,7 +137,9 @@ export function AccessBuilder({
         return
       }
       if (isBulk) {
-        notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.bulkAppliedDesc", "Access applied to {{count}} members", { count: targetIds.length }))
+        notify.success(
+          t("accessBuilder.accessUpdated"),
+          t("accessBuilder.bulkAppliedDesc", "Access applied to {{count}} members", { count: targetIds.length }))
       } else {
         notify.success(t("accessBuilder.accessUpdated"), t("accessBuilder.accessUpdatedDesc", { name: member.firstName }))
       }
@@ -169,7 +159,10 @@ export function AccessBuilder({
           <h3 className="text-sm font-semibold text-foreground">{t("accessBuilder.title")}</h3>
           <p className="text-xs text-muted-foreground">
             {isBulk
-              ? t("accessBuilder.bulkSubtitle", "Applies these access values to {{count}} selected members.", { count: bulkCount ?? applyToIds!.length })
+              ? t(
+                "accessBuilder.bulkSubtitle",
+                "Applies these access values to {{count}} selected members.",
+                { count: bulkCount ?? applyToIds!.length })
               : t("accessBuilder.subtitle", { name: member.firstName })}
           </p>
         </div>
@@ -201,7 +194,8 @@ export function AccessBuilder({
               <p className="text-sm text-muted-foreground mt-0.5">
                 {t(
                   "accessBuilder.adminFullAccessDesc",
-                  "Admins have every permission and module across the whole organization — including remote clock-in. There's nothing to configure here.",
+                  ("Admins have every permission and module across the whole organization — " +
+                    "including remote clock-in. There's nothing to configure here."),
                 )}
               </p>
             </div>
@@ -231,12 +225,22 @@ export function AccessBuilder({
             routing configured on the member's workspaces, and when neither is
             set nobody is told. That is deliberate — the automatic fallback to
             every admin is what put the owner on every late departure. */}
-        <Field dataTour="access-watchers" label={t("members.watchers.title", "Notifications about {{name}}", { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
+        <Field
+          dataTour="access-watchers"
+          label={t(
+            "members.watchers.title",
+            "Notifications about {{name}}",
+            { name: isBulk ? t("accessBuilder.selectedMembers", "selected members") : member.firstName })}>
           <div className="rounded-xl border border-border overflow-hidden">
             <div className="flex items-start gap-2 px-4 py-2.5 border-b border-border/60">
               <Bell className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                {t("members.watchers.hint", "Choose who is alerted about this member (approvals, geofence, leave, …). If no one is selected here, only the recipients configured on the member's workspaces are notified — there is no automatic fallback to org admins.")}
+                {t(
+                  "members.watchers.hint",
+                  ("Choose who is alerted about this member (approvals, geofence, leave, …). " +
+                    "If no one is selected here, only the recipients configured on the " +
+                    "member's workspaces are notified — there is no automatic fallback to org " +
+                    "admins."))}
               </p>
             </div>
             {watcherCandidates.length === 0 ? (
@@ -270,7 +274,10 @@ export function AccessBuilder({
         header "Apply to all" button, so only show this in single-member edit. */}
     {!isBulk && dirty && (
       <div className="sticky bottom-3 z-20 pt-2">
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div
+          className={"flex flex-wrap items-center gap-3 rounded-xl border border-border " +
+            "bg-card/95 p-3 shadow-lg backdrop-blur " +
+            "supports-[backdrop-filter]:bg-card/80"}>
           <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold text-foreground">
             <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500" />
             {t("accessBuilder.unsaved", "You have unsaved changes")}

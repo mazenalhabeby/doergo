@@ -87,7 +87,9 @@ export function ClockWidget() {
           title={billingLocked ? billingLockReason : undefined}
           onClick={clockOut}
         >
-          {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><LogOut className="h-3.5 w-3.5" />{t("attendance.my.clockOut", "Clock Out")}</>}
+          {pending
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            : <><LogOut className="h-3.5 w-3.5" />{t("attendance.my.clockOut", "Clock Out")}</>}
         </Button>
       </div>
     )

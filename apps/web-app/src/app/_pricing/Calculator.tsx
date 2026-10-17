@@ -59,7 +59,8 @@ export function Calculator() {
               onChange={(e) => setPeople(Number(e.target.value))}
               className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-foreground/10 accent-[#5B9BD5]"
             />
-            <span className={`${DISPLAY} w-14 shrink-0 text-right text-[2rem] leading-none text-foreground [font-variant-numeric:tabular-nums]`}>
+            <span
+              className={`${DISPLAY} w-14 shrink-0 text-right text-[2rem] leading-none text-foreground [font-variant-numeric:tabular-nums]`}>
               {people}
             </span>
           </div>
@@ -73,7 +74,9 @@ export function Calculator() {
           <p className="text-[13.5px] leading-relaxed text-foreground/50">
             {t(
               'pricing.calc.sitesBody',
-              'A site is one place or operation you run — a branch, a building, a contract, a crew. Each one pays only for what it switches on, so a quiet site stays cheap.',
+              ('A site is one place or operation you run — a branch, a building, a ' +
+                'contract, a crew. Each one pays only for what it switches on, so a quiet ' +
+                'site stays cheap.'),
             )}
           </p>
 
@@ -133,7 +136,8 @@ export function Calculator() {
       {/* ═══ what it costs ═══════════════════════════════════════════════ */}
       <div className="lg:sticky lg:top-24">
         <div className="rounded-2xl border border-foreground/[0.12] bg-background p-6 sm:p-7">
-          <p className={`${DISPLAY} text-[clamp(2.4rem,7vw,3.4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
+          <p
+            className={`${DISPLAY} text-[clamp(2.4rem,7vw,3.4rem)] font-normal leading-none tracking-[-0.02em] text-foreground [font-variant-numeric:tabular-nums]`}>
             {formatCents(bill.monthlyCents)}
           </p>
           <p className={`${MONO} mt-2 text-[11.5px] text-foreground/45`}>
@@ -227,7 +231,9 @@ export function Calculator() {
           )}
 
           <p className="mt-6 border-t border-foreground/[0.08] pt-5 text-[12.5px] leading-relaxed text-foreground/45">
-            {t('pricing.calc.footnote', 'Prices exclude VAT. 14 days free, no card. Change anything any time — the bill follows the same day.')}
+            {t(
+              'pricing.calc.footnote',
+              ('Prices exclude VAT. 14 days free, no card. Change anything any time — ' + 'the bill follows the same day.'))}
           </p>
         </div>
       </div>

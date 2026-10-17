@@ -27,7 +27,16 @@ import { useStepMoveDialogData, PHOTO_TYPES, type StepMoveDialogProps } from "./
 export { PHOTO_TYPES, type StepMoveDialogProps, MAX_PHOTO_BYTES } from "./use-step-move-dialog-data"
 
 /** StepMoveDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useStepMoveDialog({ open, taskId, stepName, form, legacy, onSubmit, onCancel }: Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>) {
+export function useStepMoveDialog(
+  {
+    open,
+    taskId,
+    stepName,
+    form,
+    legacy,
+    onSubmit,
+    onCancel
+  }: Pick<StepMoveDialogProps, 'open' | 'taskId' | 'stepName' | 'form' | 'legacy' | 'onSubmit' | 'onCancel'>) {
   const {
     t,
     tr,
@@ -163,7 +172,9 @@ export function useStepMoveDialog({ open, taskId, stepName, form, legacy, onSubm
             {items.length < STEP_FORM_LIMITS.maxPhotos && (
               <label
                 className={cn(
-                  "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed text-[11px] text-muted-foreground hover:bg-muted/50",
+                  ("flex aspect-square cursor-pointer flex-col items-center justify-center " +
+                    "gap-1 rounded-lg border border-dashed text-[11px] text-muted-foreground " +
+                    "hover:bg-muted/50"),
                   disabled && "pointer-events-none opacity-50",
                 )}
               >

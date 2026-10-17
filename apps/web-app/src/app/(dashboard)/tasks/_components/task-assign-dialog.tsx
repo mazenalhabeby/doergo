@@ -34,7 +34,14 @@ export function TaskAssignDialog({
       currentAssigneeId={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignedToId ?? null) : null}
       currentAssigneeIds={selectedTaskId ? (tasks.find((t: Task) => t.id === selectedTaskId)?.assignees?.map((a) => a.userId) ?? []) : []}
       isAssigning={assignMutation.isPending}
-      notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => { setAssignDialogOpen(false); setSelectedTaskId(null) }} note={reassignNote} onNoteChange={setReassignNote} /> : null}
+      notice={handoverPending
+        ? <HandoverPendingNotice
+          text={handoverPending}
+          onWait={() => { setAssignDialogOpen(false); setSelectedTaskId(null) }}
+          note={reassignNote}
+          onNoteChange={setReassignNote}
+        />
+        : null}
       onAssign={(memberId) => assignMutation.mutate(memberId)}
       onSave={saveAssignees}
     />

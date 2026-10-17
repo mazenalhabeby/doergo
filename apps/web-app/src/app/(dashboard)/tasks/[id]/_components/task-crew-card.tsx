@@ -45,7 +45,11 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
   const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "")
 
   const status = (m: Member): { text: string; tone: "on" | "stopped" | "off" } => {
-    if (m.joined && m.selfBlockedSince) return { text: m.selfBlockReason ? t("tasks.crew.stoppedWhy", { reason: m.selfBlockReason }) : t("tasks.crew.stopped"), tone: "stopped" }
+    if (m.joined &&
+      m.selfBlockedSince) return {
+        text: m.selfBlockReason ? t("tasks.crew.stoppedWhy", { reason: m.selfBlockReason }) : t("tasks.crew.stopped"),
+        tone: "stopped"
+      }
     if (m.joined) return { text: t("tasks.crew.onSince", { time: time(m.since) }), tone: "on" }
     return { text: m.onClock ? t("tasks.crew.notOnJob") : t("tasks.crew.notClockedIn"), tone: "off" }
   }
@@ -90,13 +94,19 @@ export function TaskCrewCard({ taskId, paused }: { taskId: string; paused: boole
                 </p>
               </div>
               {office && (m.joined || m.onClock) ? (
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setForMember({ member: m, action: m.joined ? "leave" : "join" })}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                  onClick={() => setForMember({ member: m, action: m.joined ? "leave" : "join" })}>
                   {m.joined ? t("tasks.crew.takeOff") : t("tasks.crew.putOn")}
                 </Button>
               ) : null}
               {leads ? (
                 <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                  crew.leader.acting ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" : "bg-primary/10 text-primary")}>
+                  crew.leader.acting
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                    : "bg-primary/10 text-primary")}>
                   <Crown className="size-3" />
                   {crew.leader.acting ? t("tasks.crew.actingChip") : t("tasks.crew.leaderChip")}
                 </span>
@@ -145,7 +155,8 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-primary" />{t("tasks.crew.changeLeaderTitle")}</DialogTitle>
+          <DialogTitle
+            className="flex items-center gap-2"><Crown className="h-5 w-5 text-primary" />{t("tasks.crew.changeLeaderTitle")}</DialogTitle>
           <DialogDescription>{t("tasks.crew.changeLeaderBody")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -158,7 +169,9 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
                 role="radio"
                 aria-checked={to === m.user.id}
                 onClick={() => setTo(m.user.id)}
-                className={cn("flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                className={cn(("flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left " +
+                  "text-sm transition-colors focus-visible:outline-none " +
+                  "focus-visible:ring-2 focus-visible:ring-ring"),
                   to === m.user.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50")}
               >
                 <UserAvatar firstName={m.user.firstName} lastName={m.user.lastName} seed={m.user.id} size="xs" />
@@ -175,7 +188,9 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
                 role="radio"
                 aria-checked={scope === k}
                 onClick={() => setScope(k)}
-                className={cn("flex-1 rounded-full px-3 py-1 text-sm transition-colors", scope === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn(
+                  "flex-1 rounded-full px-3 py-1 text-sm transition-colors",
+                  scope === k ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
               >
                 {k === "TODAY" ? t("tasks.crew.forToday") : t("tasks.crew.forGood")}
               </button>
@@ -183,7 +198,13 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="crew-lead-reason">{t("tasks.crew.reason")}</Label>
-            <Input id="crew-lead-reason" value={reason} maxLength={CREW_REASON_MAX} placeholder={t("tasks.crew.reasonPlaceholder")} onChange={(e) => setReason(e.target.value)} />
+            <Input
+              id="crew-lead-reason"
+              value={reason}
+              maxLength={CREW_REASON_MAX}
+              placeholder={t("tasks.crew.reasonPlaceholder")}
+              onChange={(e) => setReason(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -203,7 +224,8 @@ function ChangeLeaderDialog({ open, onClose, taskId, crew }: { open: boolean; on
  * or taking them off it — the job's history says who did it and why. The
  * server holds them to the clock gate and their own last leave.
  */
-function MemberOnJobDialog({ request, onClose, taskId }: { request: { member: Member; action: "join" | "leave" } | null; onClose: () => void; taskId: string }) {
+function MemberOnJobDialog(
+  { request, onClose, taskId }: { request: { member: Member; action: "join" | "leave" } | null; onClose: () => void; taskId: string }) {
   const { t } = useTranslation()
   const client = useQueryClient()
   const [reason, setReason] = useState("")

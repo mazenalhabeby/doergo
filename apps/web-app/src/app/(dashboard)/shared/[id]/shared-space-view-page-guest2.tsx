@@ -31,7 +31,10 @@ export function SharedSpaceViewPageGuest2({ vm }: { vm: SharedSpaceViewPageState
           <div className="min-w-0">
             <h1 className="text-2xl font-bold text-foreground tracking-tight truncate">{share.spaceName}</h1>
             <div className="mt-1 flex items-center gap-2 flex-wrap">
-              <Badge variant="outline" className="gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+              <Badge
+                variant="outline"
+                className={"gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 " +
+                  "dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"}>
                 <Share2 className="h-3 w-3" />
                 {t("spaceSharing.guest.sharedFrom", { org: share.ownerOrgName })}
               </Badge>

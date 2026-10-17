@@ -127,7 +127,15 @@ export interface OpeningDraftRow {
 const cell = (n: number | null | undefined) => (n ? String(n) : "")
 
 export function openingDraft(
-  rows: ReadonlyArray<{ userId: string; firstName: string; lastName: string; email: string; used: number; carried: number; leaveYear?: LeaveYear }>,
+  rows: ReadonlyArray<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    used: number;
+    carried: number;
+    leaveYear?: LeaveYear
+  }>,
 ): OpeningDraftRow[] {
   return rows
     .map((r) => ({

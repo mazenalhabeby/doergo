@@ -209,7 +209,9 @@ export function TypeEditor({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t(
                     "documents.types.route.hint",
-                    "Leave empty and the member signs it alone. Add steps and the document travels — each person signs in turn, and all their signatures end up on it.",
+                    ("Leave empty and the member signs it alone. Add steps and the document " +
+                      "travels — each person signs in turn, and all their signatures end up on " +
+                      "it."),
                   )}
                 </p>
                 <RouteEditor route={route} onChange={setRoute} />

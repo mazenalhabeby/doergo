@@ -83,7 +83,9 @@ function UseInvitationPageContent() {
       </button>
 
       <div className="mb-6 flex flex-col items-center text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/25">
+        <div
+          className={"mb-4 flex h-16 w-16 items-center justify-center rounded-2xl " +
+            "bg-emerald-600 text-white shadow-lg shadow-emerald-600/25"}>
           <Ticket className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-semibold text-slate-900">{t('onboarding.useInvitation.title')}</h1>

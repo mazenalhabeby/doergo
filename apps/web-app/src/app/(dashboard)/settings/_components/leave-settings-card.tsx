@@ -91,7 +91,8 @@ export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | un
       {ledger && profile?.leaveTrackingStartedOn === null && opensOpening && (
         <Link
           href="/employees/leave-opening"
-          className="group mb-5 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"
+          className={"group mb-5 flex items-center gap-3 rounded-xl border border-primary/30 " +
+            "bg-primary/5 px-4 py-3 transition-colors hover:bg-primary/10"}
         >
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium text-foreground">{t("leaveLedger.banner.title")}</span>
@@ -198,7 +199,9 @@ export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | un
             {t("common.save")}
           </Button>
           {ledger && opensOpening && (
-            <Link href="/employees/leave-opening" className="text-xs font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+            <Link
+              href="/employees/leave-opening"
+              className={"text-xs font-medium text-muted-foreground underline-offset-2 " + "hover:text-foreground hover:underline"}>
               {t("leaveLedger.opening.link")}
             </Link>
           )}
@@ -208,7 +211,8 @@ export function LeaveSettingsCard({ profile }: { profile: LeavePolicyFields | un
   )
 }
 
-function Choice({ name, checked, onChange, title, hint }: { name: string; checked: boolean; onChange: () => void; title: string; hint?: string }) {
+function Choice(
+  { name, checked, onChange, title, hint }: { name: string; checked: boolean; onChange: () => void; title: string; hint?: string }) {
   return (
     <label
       className={cn(

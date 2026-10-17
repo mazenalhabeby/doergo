@@ -33,8 +33,20 @@ export function useLine(formatTime: Fmt, tz?: string) {
         case "expected":
           if (!late) return { text: t("cover.chip.notIn", "Not clocked in") }
           return late.minutes < 0
-            ? { text: t("cover.chip.dueIn", "Due {{time}} · in {{ago}}", { time: p.dueAt ? formatTime(p.dueAt, tz) : "—", ago: lateLabel(late.minutes) }), tone: LATE_TEXT[late.tone] }
-            : { text: t("cover.chip.lateBy", "Due {{time}} · {{ago}} ago", { time: p.dueAt ? formatTime(p.dueAt, tz) : "—", ago: lateLabel(late.minutes) }), tone: LATE_TEXT[late.tone] }
+            ? {
+              text: t(
+                "cover.chip.dueIn",
+                "Due {{time}} · in {{ago}}",
+                { time: p.dueAt ? formatTime(p.dueAt, tz) : "—", ago: lateLabel(late.minutes) }),
+              tone: LATE_TEXT[late.tone]
+            }
+            : {
+              text: t(
+                "cover.chip.lateBy",
+                "Due {{time}} · {{ago}} ago",
+                { time: p.dueAt ? formatTime(p.dueAt, tz) : "—", ago: lateLabel(late.minutes) }),
+              tone: LATE_TEXT[late.tone]
+            }
         case "leave":
           return { text: t("cover.chip.leave", "On leave until {{date}}", { date: p.leaveUntil ?? "—" }) }
         default:

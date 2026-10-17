@@ -51,7 +51,13 @@ export function Reveal({ children, className = '', delay = 0 }: { children: Reac
 
 /** Masked line-rise reveal — each line slides up from behind a clip (the
  *  studio-grade headline effect). Lines are explicit strings. */
-export function LineReveal({ lines, className = '', delayStep = 0.08, nowrap = false }: { lines: string[]; className?: string; delayStep?: number; nowrap?: boolean }) {
+export function LineReveal(
+  {
+    lines,
+    className = '',
+    delayStep = 0.08,
+    nowrap = false
+  }: { lines: string[]; className?: string; delayStep?: number; nowrap?: boolean }) {
   const ref = useReveal<HTMLSpanElement>();
   return (
     <span ref={ref} className={`lr ${className}`}>
@@ -126,7 +132,8 @@ export function CyclingWord({ words, className = '' }: { words: string[]; classN
 
 /** A titled column of footer links — on-page anchors (#) smooth-scroll, routes
  *  use Next's client nav. */
-export function FooterCol({ title, links }: { title: string; links: { label: string; href: string; onClick?: (e: React.MouseEvent) => void }[] }) {
+export function FooterCol(
+  { title, links }: { title: string; links: { label: string; href: string; onClick?: (e: React.MouseEvent) => void }[] }) {
   const linkCls = 'text-[14px] text-foreground/55 transition-colors hover:text-foreground';
   return (
     <div>

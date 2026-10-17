@@ -128,7 +128,8 @@ export function RoleCard({
             {role.isSystem && (
               <Badge
                 variant="outline"
-                className="gap-1 border-slate-200 bg-slate-50 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                className={"gap-1 border-slate-200 bg-slate-50 text-[11px] text-slate-600 " +
+                  "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"}
               >
                 <Lock className="h-3 w-3" />
                 {t("scheduling.roles.builtIn")}

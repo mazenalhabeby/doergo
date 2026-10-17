@@ -125,7 +125,8 @@ function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSumm
             <span className="block truncate font-medium text-foreground">{p.userName}</span>
             <span className="block truncate text-xs text-muted-foreground">{p.spaceNames.join(" · ")}</span>
           </span>
-          {p.closed.length > 0 && <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")} />}
+          {p.closed.length > 0 &&
+            <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")} />}
         </button>
       </td>
       <td className="px-3 py-3">
@@ -138,7 +139,8 @@ function PersonRow({ person: p, expanded, onToggle }: { person: NoShowPersonSumm
         {p.open > 0 ? (
           <Link
             href="/approvals?kind=noShow"
-            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/15"
+            className={"inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
+              "text-xs font-semibold text-primary hover:bg-primary/15"}
           >
             {t("attendance.noShows.inApprovals", { count: p.open })}
             <ArrowRight className="size-3" />
@@ -191,7 +193,9 @@ function ClosedDays({ person, busy, onReopen }: { person: NoShowPersonSummary; b
           <span
             className={cn(
               "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-              c.state === "ABSENT" ? "bg-red-500/10 text-red-600 dark:text-red-400" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+              c.state === "ABSENT"
+                ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
             )}
           >
             {closedLabel(t, c)}

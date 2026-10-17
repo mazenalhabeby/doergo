@@ -76,7 +76,10 @@ export function useWorkflowSave({
     const badForm = statuses.findIndex((s) => s.name.trim() && Object.keys(definitionErrors(s.form)).length > 0)
     if (badForm >= 0) {
       setOpenForm(badForm)
-      notify.error(t("stepForm.saveInvalid", { step: statuses[badForm]!.name.trim(), defaultValue: "{{step}}: fix the questions marked in red before saving." }))
+      notify.error(
+        t(
+          "stepForm.saveInvalid",
+          { step: statuses[badForm]!.name.trim(), defaultValue: "{{step}}: fix the questions marked in red before saving." }))
       return
     }
 
@@ -159,7 +162,8 @@ export function useWorkflowSave({
                 original.position !== i ||
                 formChanged)
             ) {
-              await workflowsApi.updateStatus(workflowId, s.id, stepBody(s, i, formChanged ? { form: draftToPayload(s.form) } : {})).catch(onStep(s))
+              await workflowsApi.updateStatus(workflowId, s.id, stepBody(s, i, formChanged ? { form: draftToPayload(s.form) } : {})).catch(
+                onStep(s))
             }
           } else {
             // Add new

@@ -11,13 +11,19 @@ export const overtimeApi = {
   },
 
   approve: async (id: string, data: { maxDurationMinutes: number; notes?: string }) => {
-    const response = await call(overtimeEndpoints.approve, { id }, { body: data }) as ApiResponse<{ success: boolean; data: OvertimeRequest }>;
+    const response = await call(
+      overtimeEndpoints.approve,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: OvertimeRequest }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   reject: async (id: string, data: { reason: string }) => {
-    const response = await call(overtimeEndpoints.reject, { id }, { body: data }) as ApiResponse<{ success: boolean; data: OvertimeRequest }>;
+    const response = await call(
+      overtimeEndpoints.reject,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: OvertimeRequest }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -28,7 +34,8 @@ export const overtimeApi = {
     return response.data;
   },
 
-  getHistory: async (params?: { technicianId?: string; spaceId?: string; status?: string; from?: string; to?: string; page?: number; limit?: number }) => {
+  getHistory: async (
+    params?: { technicianId?: string; spaceId?: string; status?: string; from?: string; to?: string; page?: number; limit?: number }) => {
     const response = await call(overtimeEndpoints.history, undefined, { query: {
       technicianId: params?.technicianId,
       spaceId: params?.spaceId,
@@ -44,7 +51,10 @@ export const overtimeApi = {
 
   /** The period's numbers, who is running now, and per person. */
   getSummary: async (params: { from: string; to: string; spaceId?: string; technicianId?: string }) => {
-    const response = await call(overtimeEndpoints.summary, undefined, { query: params }) as ApiResponse<{ success: boolean; data: OvertimeSummary }>;
+    const response = await call(
+      overtimeEndpoints.summary,
+      undefined,
+      { query: params }) as ApiResponse<{ success: boolean; data: OvertimeSummary }>;
     if (response.error) throw apiError(response);
     return response.data?.data as OvertimeSummary;
   },

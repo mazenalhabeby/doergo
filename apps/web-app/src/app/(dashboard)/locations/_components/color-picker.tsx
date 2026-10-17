@@ -32,7 +32,9 @@ const ColorPicker = memo(function ColorPicker({
       <PopoverTrigger asChild disabled={disabled}>
         <button
           type="button"
-          className="w-5 h-5 rounded-full border border-border shrink-0 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 disabled:opacity-50"
+          className={"w-5 h-5 rounded-full border border-border shrink-0 transition-transform " +
+            "hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring " +
+            "focus:ring-offset-1 disabled:opacity-50"}
           style={{ backgroundColor: value }}
           aria-label={t('common.pickColor')}
         />

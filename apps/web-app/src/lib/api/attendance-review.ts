@@ -14,7 +14,10 @@ import {
 export const attendanceReviewApi = {
   // No-shows: scheduled shifts with no clock-in (reminded/escalated/excused).
   listNoShows: async (params?: { days?: number; spaceId?: string }) => {
-    const response = await call(attendanceEndpoints.noShows, undefined, { query: { days: params?.days, spaceId: params?.spaceId } }) as ApiResponse<{ success: boolean; data: NoShowRow[] }>;
+    const response = await call(
+      attendanceEndpoints.noShows,
+      undefined,
+      { query: { days: params?.days, spaceId: params?.spaceId } }) as ApiResponse<{ success: boolean; data: NoShowRow[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? [];
   },
@@ -27,7 +30,10 @@ export const attendanceReviewApi = {
 
   /** The no-show record: one row per person who missed a planned shift in the period. */
   noShowSummary: async (params?: { days?: number; spaceId?: string }) => {
-    const response = await call(attendanceEndpoints.noShowSummary, undefined, { query: { days: params?.days, spaceId: params?.spaceId } }) as ApiResponse<{ success: boolean; data: NoShowPersonSummary[] }>;
+    const response = await call(
+      attendanceEndpoints.noShowSummary,
+      undefined,
+      { query: { days: params?.days, spaceId: params?.spaceId } }) as ApiResponse<{ success: boolean; data: NoShowPersonSummary[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? [];
   },
@@ -39,7 +45,10 @@ export const attendanceReviewApi = {
   // Get pending approvals
   getPendingApprovals: async (params?: { page?: number; limit?: number }) => {
 
-    const response = await call(attendanceEndpoints.pendingApprovals, undefined, { query: params ?? {} }) as ApiResponse<AttendanceListResponse>;
+    const response = await call(
+      attendanceEndpoints.pendingApprovals,
+      undefined,
+      { query: params ?? {} }) as ApiResponse<AttendanceListResponse>;
 
     if (response.error) {
       throw apiError(response);
@@ -81,21 +90,30 @@ export const attendanceReviewApi = {
   // ── Geofence excursions ("out of ring") ──
   // List active (PENDING/APPROVED) out-of-ring requests for the approver surface.
   listExcursions: async (status?: "active" | "pending" | "approved") => {
-    const response = await call(attendanceEndpoints.excursions, undefined, { query: status ? { status } : {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion[] }>;
+    const response = await call(
+      attendanceEndpoints.excursions,
+      undefined,
+      { query: status ? { status } : {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? [];
   },
 
   // Approve an out-of-ring request (optionally adjusting the granted minutes).
   approveExcursion: async (excursionId: string, grantedMinutes?: number) => {
-    const response = await call(attendanceEndpoints.approveExcursion, { id: excursionId }, { body: grantedMinutes != null ? { grantedMinutes } : {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
+    const response = await call(
+      attendanceEndpoints.approveExcursion,
+      { id: excursionId },
+      { body: grantedMinutes != null ? { grantedMinutes } : {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
 
   // Reject an out-of-ring request → the worker is clocked out.
   rejectExcursion: async (excursionId: string) => {
-    const response = await call(attendanceEndpoints.rejectExcursion, { id: excursionId }, { body: {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
+    const response = await call(
+      attendanceEndpoints.rejectExcursion,
+      { id: excursionId },
+      { body: {} }) as ApiResponse<{ success: boolean; data: GeofenceExcursion }>;
     if (response.error) throw apiError(response);
     return response.data;
   },

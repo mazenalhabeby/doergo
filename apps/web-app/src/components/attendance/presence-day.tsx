@@ -77,7 +77,10 @@ export function PresenceDay({
       <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         <MapPin className="h-3.5 w-3.5" /> {t("attendance.presence.title", "Where they worked")}
       </div>
-      <div className="relative h-3 overflow-hidden rounded-full bg-muted" role="img" aria-label={t("attendance.presence.title", "Where they worked")}>
+      <div
+        className="relative h-3 overflow-hidden rounded-full bg-muted"
+        role="img"
+        aria-label={t("attendance.presence.title", "Where they worked")}>
         {segments.map((s) => (
           <div key={s.at} className={cn("absolute inset-y-0", TONE[s.presence].bar)} style={{ left: `${s.left}%`, width: `${s.width}%` }} />
         ))}

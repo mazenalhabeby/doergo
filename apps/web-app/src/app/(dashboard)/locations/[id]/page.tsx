@@ -28,6 +28,7 @@ import { PlanGate } from "@/components/plan-gate"
 import { cn } from "@/lib/utils"
 
 import dynamic from "next/dynamic"
+import { MOVED_TABS } from "./page-parts"
 
 // Every tab is lazy (audit S-C1). This page has ten of them and they reach ~6,400
 // lines with their dialogs — the asset-kind editor alone is 670, the rota 733 — and
@@ -38,27 +39,6 @@ const ModulesTab = dynamic(() => import("./_components/modules-tab").then((m) =>
 const WorkflowTab = dynamic(() => import("./_components/workflow-tab").then((m) => m.WorkflowTab), { ssr: false })
 const MembersTab = dynamic(() => import("./_components/members-tab").then((m) => m.MembersTab), { ssr: false })
 const SharingTab = dynamic(() => import("./_components/sharing-tab").then((m) => m.SharingTab), { ssr: false })
-
-
-/**
- * Tabs that are no longer here, and where their screen lives now.
- *
- * Kept as data rather than three ifs so adding or reversing a move is one line,
- * and so the redirect and the removal cannot disagree about which tabs moved.
- */
-const MOVED_TABS: Record<string, string> = {
-  customers: "/clients",
-  assets: "/assets",
-  portal: "/portals",
-  /*
-    ⚠️ Invoices was left behind when the other three moved, on the grounds that
-    "per-space billing IS a setting". That is true of the MODULE and was never
-    true of the invoices: reaching one meant Spaces → a workspace → Configure →
-    Invoices, and the same four steps again for the next workspace. The list at
-    /invoices asks which workspace the way every other content screen does.
-  */
-  invoices: "/invoices",
-}
 
 export default function SpaceSettingsPage() {
   const { t } = useTranslation()
@@ -226,7 +206,8 @@ export default function SpaceSettingsPage() {
                 className={cn(
                   "flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl bg-muted/40 p-1",
                   "[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                  "lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur",
+                  ("lg:flex-col lg:gap-0.5 lg:overflow-visible lg:rounded-2xl lg:border " +
+                    "lg:border-border/60 lg:bg-card/80 lg:p-2 lg:shadow-sm lg:backdrop-blur"),
                 )}
               >
                 {SECTIONS.map((s) => (
@@ -235,22 +216,36 @@ export default function SpaceSettingsPage() {
                     value={s.value}
                     className={cn(
                       "group shrink-0 gap-2 whitespace-nowrap",
-                      "lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 lg:text-[13px] lg:font-medium lg:text-muted-foreground lg:transition-all lg:duration-150",
+                      ("lg:relative lg:w-full lg:justify-start lg:rounded-xl lg:px-3 lg:py-2.5 " +
+                        "lg:text-[13px] lg:font-medium lg:text-muted-foreground lg:transition-all " +
+                        "lg:duration-150"),
                       "lg:hover:bg-muted/70 lg:hover:text-foreground",
-                      "lg:data-[state=active]:bg-primary/10 lg:data-[state=active]:font-semibold lg:data-[state=active]:text-primary lg:data-[state=active]:shadow-none",
+                      ("lg:data-[state=active]:bg-primary/10 " +
+                        "lg:data-[state=active]:font-semibold lg:data-[state=active]:text-primary " +
+                        "lg:data-[state=active]:shadow-none"),
                       // Active left-accent bar.
-                      "lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 lg:before:w-[3px] lg:before:-translate-y-1/2 lg:before:rounded-r-full lg:before:bg-primary lg:before:opacity-0 lg:before:transition-opacity lg:data-[state=active]:before:opacity-100",
+                      ("lg:before:absolute lg:before:left-0 lg:before:top-1/2 lg:before:h-5 " +
+                        "lg:before:w-[3px] lg:before:-translate-y-1/2 lg:before:rounded-r-full " +
+                        "lg:before:bg-primary lg:before:opacity-0 lg:before:transition-opacity " +
+                        "lg:data-[state=active]:before:opacity-100"),
                     )}
                   >
                     {/* Icon in a soft tile that tints to primary on the active item. */}
-                    <span className="hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 text-muted-foreground transition-colors group-hover:text-foreground group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary lg:flex">
+                    <span
+                      className={"hidden h-6 w-6 items-center justify-center rounded-md bg-muted/70 " +
+                        "text-muted-foreground transition-colors group-hover:text-foreground " +
+                        "group-data-[state=active]:bg-primary/15 " +
+                        "group-data-[state=active]:text-primary lg:flex"}>
                       <s.icon className="h-3.5 w-3.5" />
                     </span>
                     {/* Inline icon on mobile (no tile). */}
                     <s.icon className="h-4 w-4 shrink-0 lg:hidden" />
                     {s.label}
                     {/* Trailing chevron hints the active section. */}
-                    <ChevronRightNav className="ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity group-data-[state=active]:opacity-60 lg:block" />
+                    <ChevronRightNav
+                      className={"ml-auto hidden h-3.5 w-3.5 opacity-0 transition-opacity " +
+                        "group-data-[state=active]:opacity-60 lg:block"}
+                    />
                   </TabsTrigger>
                 ))}
               </TabsList>

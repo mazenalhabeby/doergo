@@ -102,7 +102,9 @@ function ApprovedRow({ ex }: { ex: GeofenceExcursion }) {
       </div>
       <div className="shrink-0 text-right">
         {expired ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 dark:text-red-400 tabular-nums">
+          <span
+            className={"inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 " +
+              "text-xs font-semibold text-red-600 dark:text-red-400 tabular-nums"}>
             <Timer className="size-3.5" />
             {t("attendance.outOfRing.timeExpired", "Time expired")}
           </span>

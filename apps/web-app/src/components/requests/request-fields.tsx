@@ -75,11 +75,23 @@ export function RequestFields({
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
               <Label htmlFor="req-start" className="text-xs text-muted-foreground">{t("requests.form.startAt")}</Label>
-              <Input id="req-start" type="time" value={value.startTime} onChange={(e) => onChange({ startTime: e.target.value })} className="h-9 rounded-xl tabular-nums" />
+              <Input
+                id="req-start"
+                type="time"
+                value={value.startTime}
+                onChange={(e) => onChange({ startTime: e.target.value })}
+                className="h-9 rounded-xl tabular-nums"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="req-end" className="text-xs text-muted-foreground">{t("requests.form.finishAt")}</Label>
-              <Input id="req-end" type="time" value={value.endTime} onChange={(e) => onChange({ endTime: e.target.value })} className="h-9 rounded-xl tabular-nums" />
+              <Input
+                id="req-end"
+                type="time"
+                value={value.endTime}
+                onChange={(e) => onChange({ endTime: e.target.value })}
+                className="h-9 rounded-xl tabular-nums"
+              />
             </div>
           </div>
           <p className="mt-1.5 text-[11.5px] text-muted-foreground">{t("requests.form.hoursHint")}</p>

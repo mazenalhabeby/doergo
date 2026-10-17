@@ -191,11 +191,15 @@ export function CurrencySetting({
           <CurrencySelect id={`${id}-select`} value={next} onChange={setNext} inheritFrom={inheritFrom} />
           {changes && (
             <ul className="space-y-1.5 text-sm">
-              <li className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-900 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200">
+              <li
+                className={"rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-900 " +
+                  "dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-200"}>
                 {t("currency.invoicesKeep")}
               </li>
               {ratesSet > 0 && (
-                <li className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                <li
+                  className={"rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 " +
+                    "dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"}>
                   {t("currency.ratesReread", { count: ratesSet, from: effective, to: nextEffective })}
                 </li>
               )}

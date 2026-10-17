@@ -43,25 +43,40 @@ export const organizationsApi = {
   updateLeavePolicy: async (input: Omit<LeavePolicyFields, 'leaveTrackingStartedOn'>) => {
     const body = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
     // The shared entry still types only the allowance; the route takes the ledger's rules beside it.
-    const response = await call(organizationsEndpoints.updateLeavePolicy, undefined, { body: body as { defaultLeaveAllowance: number } }) as ApiResponse<unknown>;
+    const response = await call(
+      organizationsEndpoints.updateLeavePolicy,
+      undefined,
+      { body: body as { defaultLeaveAllowance: number } }) as ApiResponse<unknown>;
     if (response.error) throw apiError(response);
     return response.data;
   },
 
   getRoles: async (scope?: "org" | "space"): Promise<AccessRole[]> => {
-    const response = await call(organizationsEndpoints.roles, undefined, { query: { scope: scope === "space" ? "space" : undefined } }) as ApiResponse<{ success: boolean; data: AccessRole[] }>;
+    const response = await call(
+      organizationsEndpoints.roles,
+      undefined,
+      { query: { scope: scope === "space" ? "space" : undefined } }) as ApiResponse<{ success: boolean; data: AccessRole[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
 
-  createRole: async (input: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
-    const response = await call(organizationsEndpoints.createRole, undefined, { body: input }) as ApiResponse<{ success: boolean; data: AccessRole }>;
+  createRole: async (
+    input: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
+    const response = await call(
+      organizationsEndpoints.createRole,
+      undefined,
+      { body: input }) as ApiResponse<{ success: boolean; data: AccessRole }>;
     if (response.error) throw apiError(response);
     return response.data!.data;
   },
 
-  updateRole: async (id: string, input: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
-    const response = await call(organizationsEndpoints.updateRole, { id }, { body: input }) as ApiResponse<{ success: boolean; data: AccessRole }>;
+  updateRole: async (
+    id: string,
+    input: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> }): Promise<AccessRole> => {
+    const response = await call(
+      organizationsEndpoints.updateRole,
+      { id },
+      { body: input }) as ApiResponse<{ success: boolean; data: AccessRole }>;
     if (response.error) throw apiError(response);
     return response.data!.data;
   },
@@ -73,7 +88,10 @@ export const organizationsApi = {
    * admin who could take ownership could then remove the founder.
    */
   transferOwnership: async (newOwnerId: string): Promise<void> => {
-    const response = await call(organizationsEndpoints.transferOwnership, undefined, { body: { newOwnerId } }) as ApiResponse<{ success: boolean }>;
+    const response = await call(
+      organizationsEndpoints.transferOwnership,
+      undefined,
+      { body: { newOwnerId } }) as ApiResponse<{ success: boolean }>;
     if (response.error) throw apiError(response);
   },
 
@@ -131,7 +149,10 @@ export const organizationsApi = {
    * period. Needs `canViewLabourCost`. Read-only — nothing is stored.
    */
   getStatement: async (memberId: string, period: { from?: string; to?: string }) => {
-    const res = await call(organizationsEndpoints.statement, { id: memberId }, { query: period }) as ApiResponse<{ success: boolean; data: MemberStatement }>;
+    const res = await call(
+      organizationsEndpoints.statement,
+      { id: memberId },
+      { query: period }) as ApiResponse<{ success: boolean; data: MemberStatement }>;
     if (res.error) throw apiError(res);
     return res.data?.data;
   },
@@ -182,7 +203,10 @@ export const organizationsApi = {
     return response.data?.data || [];
   },
   setMemberWatchers: async (memberId: string, watcherIds: string[]) => {
-    const response = await call(organizationsEndpoints.setWatchers, { id: memberId }, { body: { watcherIds } }) as ApiResponse<{ data: MemberWatcher[] }>;
+    const response = await call(
+      organizationsEndpoints.setWatchers,
+      { id: memberId },
+      { body: { watcherIds } }) as ApiResponse<{ data: MemberWatcher[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -194,13 +218,19 @@ export const organizationsApi = {
   },
 
   updateProfile: async (updates: Partial<OrganizationProfile>) => {
-    const response = await call(organizationsEndpoints.updateProfile, undefined, { body: updates }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
+    const response = await call(
+      organizationsEndpoints.updateProfile,
+      undefined,
+      { body: updates }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   updateNotificationPrefs: async (prefs: Record<string, boolean>) => {
-    const response = await call(organizationsEndpoints.updateNotificationPrefs, undefined, { body: prefs }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
+    const response = await call(
+      organizationsEndpoints.updateNotificationPrefs,
+      undefined,
+      { body: prefs }) as ApiResponse<{ success: boolean; data: OrganizationProfile }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

@@ -27,7 +27,10 @@ export const workflowsApi = {
       templateId: string,
       opts?: { name?: string; isDefault?: boolean; spaceId?: string; shareWithOrganization?: boolean },
     ): Promise<StatusWorkflow | undefined> => {
-      const response = await call(workflowsWebEndpoints.libraryUse, { templateId }, { body: opts ?? {} }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
+      const response = await call(
+        workflowsWebEndpoints.libraryUse,
+        { templateId },
+        { body: opts ?? {} }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
       if (response.error) throw apiError(response);
       return response.data?.data;
     },
@@ -37,14 +40,19 @@ export const workflowsApi = {
 
   /** This space's task types, default first. */
   listForSpace: async (spaceId: string) => {
-    const response = await call(workflowsWebEndpoints.listForSpace, { spaceId }) as ApiResponse<{ success: boolean; data: (StatusWorkflow & { isDefault?: boolean })[] }>;
+    const response = await call(
+      workflowsWebEndpoints.listForSpace,
+      { spaceId }) as ApiResponse<{ success: boolean; data: (StatusWorkflow & { isDefault?: boolean })[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
 
   /** Offer a task type here. Refused when the space lacks a module its steps need. */
   attachToSpace: async (spaceId: string, workflowId: string, makeDefault?: boolean) => {
-    const response = await call(workflowsWebEndpoints.attachToSpace, { spaceId, workflowId }, { body: { makeDefault } }) as ApiResponse<unknown>;
+    const response = await call(
+      workflowsWebEndpoints.attachToSpace,
+      { spaceId, workflowId },
+      { body: { makeDefault } }) as ApiResponse<unknown>;
     if (response.error) throw apiError(response);
     return response.data;
   },
@@ -57,7 +65,10 @@ export const workflowsApi = {
 
   /** Take this space's own copy of a shared task type, so it can diverge. */
   forkForSpace: async (spaceId: string, workflowId: string) => {
-    const response = await call(workflowsWebEndpoints.forkForSpace, { spaceId, workflowId }, { body: {} }) as ApiResponse<{ success: boolean; data: { workflowId: string; name: string } }>;
+    const response = await call(
+      workflowsWebEndpoints.forkForSpace,
+      { spaceId, workflowId },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { workflowId: string; name: string } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -106,7 +117,10 @@ export const workflowsApi = {
       capabilities?: string[];
     }>;
   }) => {
-    const response = await call(workflowsWebEndpoints.create, undefined, { body: data }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
+    const response = await call(
+      workflowsWebEndpoints.create,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -116,13 +130,19 @@ export const workflowsApi = {
    * reads it before any other organization is offered it.
    */
   submitToLibrary: async (id: string, note?: string) => {
-    const response = await call(workflowsWebEndpoints.submitToLibrary, { id }, { body: { note } }) as ApiResponse<{ success: boolean; data: { id: string; resubmitted: boolean } }>;
+    const response = await call(
+      workflowsWebEndpoints.submitToLibrary,
+      { id },
+      { body: { note } }) as ApiResponse<{ success: boolean; data: { id: string; resubmitted: boolean } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   update: async (id: string, data: Partial<StatusWorkflow>) => {
-    const response = await call(workflowsWebEndpoints.update, { id }, { body: data }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
+    const response = await call(
+      workflowsWebEndpoints.update,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: StatusWorkflow }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -143,7 +163,10 @@ export const workflowsApi = {
       form?: StepFormInput;
     },
   ) => {
-    const response = await call(workflowsWebEndpoints.addStatus, { workflowId }, { body: data }) as ApiResponse<{ success: boolean; data: WorkflowStatus }>;
+    const response = await call(
+      workflowsWebEndpoints.addStatus,
+      { workflowId },
+      { body: data }) as ApiResponse<{ success: boolean; data: WorkflowStatus }>;
     // Coded: a bad step form is refused as STEP_FORM_DEFINITION_INVALID with
     // the fields it objects to, which the builder shows on the field.
     if (response.error) throw apiError(response);
@@ -155,13 +178,18 @@ export const workflowsApi = {
     statusId: string,
     data: Omit<Partial<WorkflowStatus>, 'form'> & { form?: StepFormInput },
   ) => {
-    const response = await call(workflowsWebEndpoints.updateStatus, { workflowId, statusId }, { body: data }) as ApiResponse<{ success: boolean; data: WorkflowStatus }>;
+    const response = await call(
+      workflowsWebEndpoints.updateStatus,
+      { workflowId, statusId },
+      { body: data }) as ApiResponse<{ success: boolean; data: WorkflowStatus }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   deleteStatus: async (workflowId: string, statusId: string) => {
-    const response = await call(workflowsWebEndpoints.deleteStatus, { workflowId, statusId }) as ApiResponse<{ success: boolean; message: string }>;
+    const response = await call(
+      workflowsWebEndpoints.deleteStatus,
+      { workflowId, statusId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
   },

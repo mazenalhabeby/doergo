@@ -74,7 +74,8 @@ export function AttachmentDeleteButton({
         if (confirm(t("tasks.serviceReport.removePhotoConfirm"))) deleteMutation.mutate()
       }}
       disabled={deleteMutation.isPending}
-      className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+      className={"absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 " +
+        "group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"}
     >
       {deleteMutation.isPending ? (
         <Loader2 className="size-3 animate-spin" />

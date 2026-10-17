@@ -119,7 +119,8 @@ export function EpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: EpicRoa
               {months.map((m, i) => (
                 <div
                   key={i}
-                  className="absolute top-0 flex items-center justify-center border-r border-border/20 text-[11px] font-medium text-muted-foreground"
+                  className={"absolute top-0 flex items-center justify-center border-r " +
+                    "border-border/20 text-[11px] font-medium text-muted-foreground"}
                   style={{ left: m.offsetDays * DAY_WIDTH, width: m.widthDays * DAY_WIDTH, height: HEADER_HEIGHT }}
                 >
                   {m.label}

@@ -81,7 +81,10 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
     const pct = target ? Math.min(100, (elapsed / target) * 100) : 100
 
     return (
-      <div className={cn("rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 dark:border-emerald-900 dark:bg-emerald-950/30", className)}>
+      <div
+        className={cn(
+          ("rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 " + "dark:border-emerald-900 dark:bg-emerald-950/30"),
+          className)}>
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
           <Coffee className="h-4 w-4" />
           {planned?.name ?? t("attendance.rest.onRest", "On rest")}
@@ -93,7 +96,10 @@ export function RestPanel({ plan, activeBreak, dense, className }: RestPanelProp
         <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80">
           {target
             ? over
-              ? t("attendance.rest.overBy", "{{over}} past your {{total}}", { over: formatDuration(elapsed - target), total: formatDuration(target) })
+              ? t(
+                "attendance.rest.overBy",
+                "{{over}} past your {{total}}",
+                { over: formatDuration(elapsed - target), total: formatDuration(target) })
               : t("attendance.rest.ofTotal", "of {{total}}", { total: formatDuration(target) })
             : t("attendance.rest.untimed", "Untimed")}
           {planned && !planned.isPaid ? ` · ${t("attendance.rest.unpaid", "not counted")}` : ""}

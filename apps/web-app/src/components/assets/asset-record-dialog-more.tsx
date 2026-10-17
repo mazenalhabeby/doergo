@@ -26,11 +26,19 @@ export function AssetRecordDialogMore({ vm }: { vm: AssetRecordDialogState }) {
         <div className="grid gap-2.5 border-t border-border p-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label className="text-xs">{t("assetFacts.more.serial", "Serial number")}</Label>
-            <Input value={facts.serialNumber} maxLength={ASSET_RECORD_LIMITS.serialNumber} onChange={(e) => setFact("serialNumber", e.target.value)} />
+            <Input
+              value={facts.serialNumber}
+              maxLength={ASSET_RECORD_LIMITS.serialNumber}
+              onChange={(e) => setFact("serialNumber", e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t("assetFacts.more.manufacturer", "Manufacturer")}</Label>
-            <Input value={facts.manufacturer} maxLength={ASSET_RECORD_LIMITS.manufacturer} onChange={(e) => setFact("manufacturer", e.target.value)} />
+            <Input
+              value={facts.manufacturer}
+              maxLength={ASSET_RECORD_LIMITS.manufacturer}
+              onChange={(e) => setFact("manufacturer", e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t("assetFacts.more.model", "Model")}</Label>

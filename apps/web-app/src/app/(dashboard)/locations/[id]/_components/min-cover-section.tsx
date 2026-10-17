@@ -65,7 +65,9 @@ export function MinCoverSection({ space }: { space: { id: string; minCover?: num
         title={t("cover.minCover.title", "Minimum cover")}
         description={t(
           "cover.minCover.description",
-          "How many people must be on the floor here on a working day. Leave requests that would take this workspace below it are flagged before they are approved.",
+          ("How many people must be on the floor here on a working day. Leave " +
+            "requests that would take this workspace below it are flagged before they " +
+            "are approved."),
         )}
       />
 

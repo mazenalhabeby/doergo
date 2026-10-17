@@ -47,7 +47,23 @@ function TaskTableRowInner({
   onDragStart,
   isDragging = false,
 }: TaskTableRowProps) {
-  const { rowContent } = useTaskTableRowInner({ task, index, canAssign, onAssign, sprints, phases, epics, spaces, contextActions, recentAssignees, draggable, onDragStart, isDragging })
+  const {
+    rowContent
+  } = useTaskTableRowInner({
+    task,
+    index,
+    canAssign,
+    onAssign,
+    sprints,
+    phases,
+    epics,
+    spaces,
+    contextActions,
+    recentAssignees,
+    draggable,
+    onDragStart,
+    isDragging
+  })
 
   if (contextActions) {
     return (

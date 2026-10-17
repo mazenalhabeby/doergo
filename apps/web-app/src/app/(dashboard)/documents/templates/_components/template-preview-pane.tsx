@@ -73,10 +73,14 @@ export function TemplatePreviewPane({
       ) : (
         /* A page, not a code block: the point is that it reads like the
            letter somebody receives, with the tokens already gone. */
-        <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div
+          className={"max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white " +
+            "p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"}>
           {body.trim() ? (
             <>
-              <p className="mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 dark:border-slate-800 dark:text-slate-100">
+              <p
+                className={"mb-4 border-b border-slate-200 pb-3 text-lg font-semibold text-slate-900 " +
+                  "dark:border-slate-800 dark:text-slate-100"}>
                 {types.find((ty) => ty.id === typeId)?.label || name || t("documents.templates.untitled")}
               </p>
               <pre className="whitespace-pre-wrap font-sans text-[13px] leading-relaxed text-slate-700 dark:text-slate-300">

@@ -45,7 +45,9 @@ export function OfficeStartDialog({
   const outside = !!chosen && ((clockInAt && chosen < new Date(clockInAt)) || chosen.getTime() > Date.now() + 60_000)
   const me = personName(user)
   const preview = useMemo(
-    () => t("tasks.officeStart.preview", { me, name, time: chosen ? chosen.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "", reason: reason.trim() }),
+    () => t(
+      "tasks.officeStart.preview",
+      { me, name, time: chosen ? chosen.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "", reason: reason.trim() }),
     [t, me, name, chosen, reason],
   )
 
@@ -83,12 +85,17 @@ export function OfficeStartDialog({
             <Input id="office-start-at" type="datetime-local" value={at} min={min} max={max} onChange={(e) => setAt(e.target.value)} />
             <p className={outside ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
               {clockInAt
-                ? t("tasks.officeStart.notBefore", { name, time: new Date(clockInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })
+                ? t(
+                  "tasks.officeStart.notBefore",
+                  { name, time: new Date(clockInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })
                 : t("tasks.officeStart.noClock")}
             </p>
           </div>
           {reason.trim() ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">{preview}</div>
+            <div
+              className={"rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm " +
+                "text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 " +
+                "dark:text-amber-300"}>{preview}</div>
           ) : null}
         </div>
         <DialogFooter>

@@ -33,7 +33,13 @@ type AutoClockPatch = Partial<Pick<UpdateAssignmentInput, "autoClock" | "autoClo
  */
 export function useWorkspaceAutoClock(
   spaceId: string,
-  space: { isRemote?: boolean | null; lat?: number | null; lng?: number | null; autoClock?: unknown; noShiftDailyMinutes?: number | null } | undefined,
+  space: {
+    isRemote?: boolean | null;
+    lat?: number | null;
+    lng?: number | null;
+    autoClock?: unknown;
+    noShiftDailyMinutes?: number | null
+  } | undefined,
 ) {
   const settings = savedAutoClock(space?.autoClock)
   const on = !!space && autoClockAvailability(space) === "ok" && settings.enabled
@@ -176,9 +182,23 @@ function MemberAutoClockMode({
           <div className="space-y-1.5">
             <Label className="text-sm">{t("attendance.autoClock.startWindow")}</Label>
             <div className="flex flex-wrap items-center gap-2">
-              <Input id="auto-clock-from" type="time" className="h-8 w-28" value={from} disabled={anyTime || pending} onChange={(e) => setFrom(e.target.value)} />
+              <Input
+                id="auto-clock-from"
+                type="time"
+                className="h-8 w-28"
+                value={from}
+                disabled={anyTime || pending}
+                onChange={(e) => setFrom(e.target.value)}
+              />
               <span className="text-muted-foreground">–</span>
-              <Input id="auto-clock-to" type="time" className="h-8 w-28" value={to} disabled={anyTime || pending} onChange={(e) => setTo(e.target.value)} />
+              <Input
+                id="auto-clock-to"
+                type="time"
+                className="h-8 w-28"
+                value={to}
+                disabled={anyTime || pending}
+                onChange={(e) => setTo(e.target.value)}
+              />
               <label htmlFor="auto-clock-any" className="flex items-center gap-1.5 text-sm">
                 <Checkbox id="auto-clock-any" checked={anyTime} disabled={pending} onCheckedChange={(v) => setAnyTime(v === true)} />
                 {t("attendance.autoClock.anyTime")}

@@ -54,7 +54,8 @@ export function PersonDialog({ userId, onClose }: { userId: string | null; onClo
                   onClose()
                   message(data.id)
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className={"flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm " +
+                  "font-semibold text-primary-foreground hover:opacity-90"}
               >
                 <MessageSquare className="size-4" />
                 {t("chat.message", "Message")}

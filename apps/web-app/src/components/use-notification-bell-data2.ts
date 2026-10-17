@@ -205,7 +205,9 @@ export function useNotificationBellData2() {
           d.assetId ? `/assets/${d.assetId}` : "/assets",
         )
       }),
-      subscribe<{ assetId?: string; assetName?: string; category?: string; decision?: string; note?: string | null }>("asset.expense_decided", (d) => {
+      subscribe<{ assetId?: string; assetName?: string; category?: string; decision?: string; note?: string | null }>(
+        "asset.expense_decided",
+        (d) => {
         const accepted = d.decision === "accept"
         add(
           "asset_expense_decided",
@@ -245,11 +247,19 @@ export function useNotificationBellData2() {
       // Attendance events
       subscribe<AttendanceEventPayload>("attendance.clockIn", (d) => {
         const { name, place } = attendanceInfo(d, t)
-        add("clock_in", name || t("notifications.clockIn"), [t("notifications.clockInAction", "Clocked in"), place].filter(Boolean).join(" · "), attendanceHref)
+        add(
+          "clock_in",
+          name || t("notifications.clockIn"),
+          [t("notifications.clockInAction", "Clocked in"), place].filter(Boolean).join(" · "),
+          attendanceHref)
       }),
       subscribe<AttendanceEventPayload>("attendance.clockOut", (d) => {
         const { name, place } = attendanceInfo(d, t)
-        add("clock_out", name || t("notifications.clockOut"), [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "), attendanceHref)
+        add(
+          "clock_out",
+          name || t("notifications.clockOut"),
+          [t("notifications.clockOutAction", "Clocked out"), place].filter(Boolean).join(" · "),
+          attendanceHref)
       }),
       subscribe<AttendanceEventPayload>("attendance_geofence_alert", (d) => {
         add("geofence_alert", t("notifications.geofenceAlert"), d.userName || "", attendanceHref)

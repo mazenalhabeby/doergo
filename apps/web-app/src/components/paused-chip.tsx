@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils"
  * tasks/handover.ts), flagged for the office wherever the job is listed. ONE
  * chip for the board and the list. Nothing for a job that is not paused.
  */
-export function PausedChip({ task, className }: { task: { pausedAt?: string | null; handoverDueById?: string | null }; className?: string }) {
+export function PausedChip(
+  { task, className }: { task: { pausedAt?: string | null; handoverDueById?: string | null }; className?: string }) {
   const { t } = useTranslation()
   if (!isJobPaused(task)) return null
   const owed = !!task.handoverDueById

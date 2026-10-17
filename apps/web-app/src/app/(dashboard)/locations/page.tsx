@@ -165,24 +165,63 @@ export default function SpacesPage() {
               <div key={i} className="bg-card rounded-xl border border-border p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="relative overflow-hidden rounded-lg bg-muted size-10 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                    <div
+                      className={"relative overflow-hidden rounded-lg bg-muted size-10 before:absolute " +
+                        "before:inset-0 before:-translate-x-full " +
+                        "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                    />
                     <div className="space-y-1.5">
-                      <div className="relative overflow-hidden rounded bg-muted h-4 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" style={{ width: `${100 + i * 30}px` }} />
-                      <div className="relative overflow-hidden rounded bg-muted h-3 w-48 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                      <div
+                        className={"relative overflow-hidden rounded bg-muted h-4 before:absolute " +
+                          "before:inset-0 before:-translate-x-full " +
+                          "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                          "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                        style={{ width: `${100 + i * 30}px` }}
+                      />
+                      <div
+                        className={"relative overflow-hidden rounded bg-muted h-3 w-48 before:absolute " +
+                          "before:inset-0 before:-translate-x-full " +
+                          "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                          "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                      />
                     </div>
                   </div>
-                  <div className="relative overflow-hidden rounded-full bg-muted h-6 w-16 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                  <div
+                    className={"relative overflow-hidden rounded-full bg-muted h-6 w-16 before:absolute " +
+                      "before:inset-0 before:-translate-x-full " +
+                      "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                      "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                  />
                 </div>
                 <div className="flex items-center gap-3 mt-4">
                   {Array.from({ length: 3 + i }).map((_, j) => (
-                    <div key={j} className="relative overflow-hidden rounded-full bg-muted h-5 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" style={{ width: `${50 + j * 15}px` }} />
+                    <div
+                      key={j}
+                      className={"relative overflow-hidden rounded-full bg-muted h-5 before:absolute " +
+                        "before:inset-0 before:-translate-x-full " +
+                        "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                      style={{ width: `${50 + j * 15}px` }}
+                    />
                   ))}
                 </div>
                 <div className="flex items-center gap-2 mt-4">
                   {Array.from({ length: 3 }).map((_, j) => (
-                    <div key={j} className="relative overflow-hidden rounded-full bg-muted size-7 -ml-1 first:ml-0 ring-2 ring-card before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                    <div
+                      key={j}
+                      className={"relative overflow-hidden rounded-full bg-muted size-7 -ml-1 first:ml-0 " +
+                        "ring-2 ring-card before:absolute before:inset-0 before:-translate-x-full " +
+                        "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                        "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                    />
                   ))}
-                  <div className="relative overflow-hidden rounded bg-muted h-3 w-20 ml-2 before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-foreground/5 before:to-transparent" />
+                  <div
+                    className={"relative overflow-hidden rounded bg-muted h-3 w-20 ml-2 before:absolute " +
+                      "before:inset-0 before:-translate-x-full " +
+                      "before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r " +
+                      "before:from-transparent before:via-foreground/5 before:to-transparent"}
+                  />
                 </div>
               </div>
             ))}

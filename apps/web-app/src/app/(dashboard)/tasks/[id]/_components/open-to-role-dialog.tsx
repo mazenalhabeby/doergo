@@ -55,7 +55,9 @@ export function OpenToRoleAction({ task, canAssign }: { task: Task & { spaceId?:
       <button
         type="button"
         onClick={() => { setValue({ roleId: null, spots: 1 }); setOpen(true) }}
-        className="mt-1.5 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        className={"mt-1.5 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs " +
+          "text-muted-foreground transition-colors hover:bg-muted/60 " +
+          "hover:text-foreground"}
       >
         <UsersRound className="size-3.5" />
         {t("tasks.role.openExisting")}

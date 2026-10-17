@@ -37,8 +37,11 @@ export const taskWorkApi = {
     return response.data?.data ?? [];
   },
   /** Before saving: who holds the role here, who is free now, the best ten. */
-  rolePreview: async (q: { spaceId: string; roleId: string; lat?: number | null; lng?: number | null }): Promise<RolePreview | undefined> => {
-    const response = await call(tasksEndpoints.rolePreview, { ...q, lat: q.lat ?? undefined, lng: q.lng ?? undefined }) as ApiResponse<{ success: boolean; data: RolePreview }>;
+  rolePreview: async (
+    q: { spaceId: string; roleId: string; lat?: number | null; lng?: number | null }): Promise<RolePreview | undefined> => {
+    const response = await call(
+      tasksEndpoints.rolePreview,
+      { ...q, lat: q.lat ?? undefined, lng: q.lng ?? undefined }) as ApiResponse<{ success: boolean; data: RolePreview }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -50,19 +53,30 @@ export const taskWorkApi = {
   },
   /** Take a place — refused with ROLE_TASK_TAKEN (params.takers) when somebody was faster. */
   take: async (id: string): Promise<{ id: string; spotsLeft: number; waitedMinutes: number | null } | undefined> => {
-    const response = await call(tasksEndpoints.take, { id }, { body: {} }) as ApiResponse<{ success: boolean; data: { id: string; spotsLeft: number; waitedMinutes: number | null } }>;
+    const response = await call(
+      tasksEndpoints.take,
+      { id },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { id: string; spotsLeft: number; waitedMinutes: number | null } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
   /** Hand a role task back to its role (before the work starts); it is offered again. */
   returnToRole: async (id: string, reason?: string) => {
-    const response = await call(tasksEndpoints.returnToRole, { id }, { body: reason ? { reason } : {} }) as ApiResponse<{ success: boolean }>;
+    const response = await call(
+      tasksEndpoints.returnToRole,
+      { id },
+      { body: reason ? { reason } : {} }) as ApiResponse<{ success: boolean }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
   /** Open to a role, change how many it needs, or close it (roleId null). */
   setOpenRole: async (id: string, body: { roleId: string | null; spots?: number }) => {
-    const response = await call(tasksEndpoints.setOpenRole, { id }, { body: body }) as ApiResponse<{ success: boolean; data: { id: string; openRoleId: string | null; openSpots?: number; openSpotsLeft?: number } }>;
+    const response = await call(
+      tasksEndpoints.setOpenRole,
+      { id },
+      {
+        body: body
+      }) as ApiResponse<{ success: boolean; data: { id: string; openRoleId: string | null; openSpots?: number; openSpotsLeft?: number } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -74,14 +88,19 @@ export const taskWorkApi = {
   },
 
   /** Hand THIS job's lead to somebody on its crew — for today, or for good. */
-  changeLead: async (id: string, body: { toUserId: string; scope: "TODAY" | "PERMANENT"; reason?: string }): Promise<CrewView | undefined> => {
+  changeLead: async (
+    id: string,
+    body: { toUserId: string; scope: "TODAY" | "PERMANENT"; reason?: string }): Promise<CrewView | undefined> => {
     const response = await call(tasksEndpoints.changeLead, { id }, { body: body }) as ApiResponse<{ success: boolean; data: CrewView }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   /** The office joining or taking somebody off a crew job, with the reason the history keeps. */
-  crewForMember: async (id: string, action: "join" | "leave", body: { forUserId: string; reason: string }): Promise<CrewView | undefined> => {
+  crewForMember: async (
+    id: string,
+    action: "join" | "leave",
+    body: { forUserId: string; reason: string }): Promise<CrewView | undefined> => {
     const response = await call(tasksEndpoints.crew, { id, action }, { body: body }) as ApiResponse<{ success: boolean; data: CrewView }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
@@ -89,7 +108,9 @@ export const taskWorkApi = {
 
   /** One worker's job time over a period, beside their time on the clock. */
   jobTimeReport: async (params: { userId?: string; from: string; to: string }): Promise<JobTimeReport | undefined> => {
-    const response = await call(tasksEndpoints.jobTimeReport, { from: params.from, to: params.to, userId: params.userId || undefined }) as ApiResponse<{ success: boolean; data: JobTimeReport }>;
+    const response = await call(
+      tasksEndpoints.jobTimeReport,
+      { from: params.from, to: params.to, userId: params.userId || undefined }) as ApiResponse<{ success: boolean; data: JobTimeReport }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -103,7 +124,10 @@ export const taskWorkApi = {
 
   /** "What I did, and what is left." */
   writeHandover: async (id: string, note: string): Promise<TaskHandover | undefined> => {
-    const response = await call(tasksEndpoints.writeHandover, { id }, { body: { note } }) as ApiResponse<{ success: boolean; data: TaskHandover }>;
+    const response = await call(
+      tasksEndpoints.writeHandover,
+      { id },
+      { body: { note } }) as ApiResponse<{ success: boolean; data: TaskHandover }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -121,7 +145,11 @@ export const taskWorkApi = {
    * what the office chose to add back to it (`?include=`).
    * The thrown error carries `status` so a 404 can say "not available".
    */
-  getFullReport: async (id: string, copy: TaskReportCopy, include: readonly ClientCopyOption[] = [], issuer: string | null = null): Promise<TaskReport> => {
+  getFullReport: async (
+    id: string,
+    copy: TaskReportCopy,
+    include: readonly ClientCopyOption[] = [],
+    issuer: string | null = null): Promise<TaskReport> => {
     const response = await call(tasksEndpoints.fullReport, { id }, { query: {
         copy,
         // What the office adds back to the client copy; the office copy ignores it.

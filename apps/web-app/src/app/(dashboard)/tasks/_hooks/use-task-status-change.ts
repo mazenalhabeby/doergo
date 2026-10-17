@@ -56,7 +56,8 @@ export function useTaskStatusChange({
 
   // Kanban drag-and-drop status change
   const statusChangeMutation = useMutation({
-    mutationFn: ({ taskId, status, answers, onBehalf }: { taskId: string; status: string; answers?: StepFormAnswers; onBehalf?: OnBehalf }) =>
+    mutationFn: (
+      { taskId, status, answers, onBehalf }: { taskId: string; status: string; answers?: StepFormAnswers; onBehalf?: OnBehalf }) =>
       tasksApi.updateStatus(taskId, status, undefined, answers, onBehalf),
     onMutate: async ({ taskId, status }) => {
       await queryClient.cancelQueries({ queryKey: keys.tasks.lists() })

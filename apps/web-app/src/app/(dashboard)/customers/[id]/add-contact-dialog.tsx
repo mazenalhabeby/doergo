@@ -127,7 +127,9 @@ export function AddContactDialog({
                               personId === r.id ? "bg-primary/5" : "hover:bg-muted/50",
                             )}
                           >
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                            <span
+                              className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full " +
+                                "bg-primary/10 text-[10px] font-semibold text-primary"}>
                               {personInitials(r.name)}
                             </span>
                             <span className="min-w-0 flex-1">
@@ -177,7 +179,9 @@ export function AddContactDialog({
               <p className="rounded-lg bg-muted/50 p-2.5 text-[11.5px] leading-relaxed text-muted-foreground">
                 {t(
                   "customers.contactNotAClient",
-                  "Saved as a contact of this company. They stay out of your client list and don’t count towards your client total — until you make them a client in their own right.",
+                  ("Saved as a contact of this company. They stay out of your client list " +
+                    "and don’t count towards your client total — until you make them a client " +
+                    "in their own right."),
                 )}
               </p>
             </>

@@ -13,7 +13,52 @@ import type { TopNavbarState } from "./use-top-navbar"
 import type { TopNavbarView } from "./top-navbar-view"
 
 /** Part of TopNavbar's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TopNavbarSidebar({ vm, showCalendar, showCrm, showAssets, showPortals, showTeam, teamItems, showSpaces, showSchedule, showAttendance, showOvertime, showIssues, showReports, showInvoices, showMyDocuments, showIssueDocuments, showAllDocuments, showDocumentTypes, showDocumentTemplates, showDocumentCompliance, showManage }: { vm: TopNavbarState; showCalendar: ReturnType<typeof TopNavbarView>['showCalendar']; showCrm: ReturnType<typeof TopNavbarView>['showCrm']; showAssets: ReturnType<typeof TopNavbarView>['showAssets']; showPortals: ReturnType<typeof TopNavbarView>['showPortals']; showTeam: ReturnType<typeof TopNavbarView>['showTeam']; teamItems: ReturnType<typeof TopNavbarView>['teamItems']; showSpaces: ReturnType<typeof TopNavbarView>['showSpaces']; showSchedule: ReturnType<typeof TopNavbarView>['showSchedule']; showAttendance: ReturnType<typeof TopNavbarView>['showAttendance']; showOvertime: ReturnType<typeof TopNavbarView>['showOvertime']; showIssues: ReturnType<typeof TopNavbarView>['showIssues']; showReports: ReturnType<typeof TopNavbarView>['showReports']; showInvoices: ReturnType<typeof TopNavbarView>['showInvoices']; showMyDocuments: ReturnType<typeof TopNavbarView>['showMyDocuments']; showIssueDocuments: ReturnType<typeof TopNavbarView>['showIssueDocuments']; showAllDocuments: ReturnType<typeof TopNavbarView>['showAllDocuments']; showDocumentTypes: ReturnType<typeof TopNavbarView>['showDocumentTypes']; showDocumentTemplates: ReturnType<typeof TopNavbarView>['showDocumentTemplates']; showDocumentCompliance: ReturnType<typeof TopNavbarView>['showDocumentCompliance']; showManage: ReturnType<typeof TopNavbarView>['showManage'] }) {
+export function TopNavbarSidebar(
+  {
+    vm,
+    showCalendar,
+    showCrm,
+    showAssets,
+    showPortals,
+    showTeam,
+    teamItems,
+    showSpaces,
+    showSchedule,
+    showAttendance,
+    showOvertime,
+    showIssues,
+    showReports,
+    showInvoices,
+    showMyDocuments,
+    showIssueDocuments,
+    showAllDocuments,
+    showDocumentTypes,
+    showDocumentTemplates,
+    showDocumentCompliance,
+    showManage
+  }: {
+    vm: TopNavbarState;
+    showCalendar: ReturnType<typeof TopNavbarView>['showCalendar'];
+    showCrm: ReturnType<typeof TopNavbarView>['showCrm'];
+    showAssets: ReturnType<typeof TopNavbarView>['showAssets'];
+    showPortals: ReturnType<typeof TopNavbarView>['showPortals'];
+    showTeam: ReturnType<typeof TopNavbarView>['showTeam'];
+    teamItems: ReturnType<typeof TopNavbarView>['teamItems'];
+    showSpaces: ReturnType<typeof TopNavbarView>['showSpaces'];
+    showSchedule: ReturnType<typeof TopNavbarView>['showSchedule'];
+    showAttendance: ReturnType<typeof TopNavbarView>['showAttendance'];
+    showOvertime: ReturnType<typeof TopNavbarView>['showOvertime'];
+    showIssues: ReturnType<typeof TopNavbarView>['showIssues'];
+    showReports: ReturnType<typeof TopNavbarView>['showReports'];
+    showInvoices: ReturnType<typeof TopNavbarView>['showInvoices'];
+    showMyDocuments: ReturnType<typeof TopNavbarView>['showMyDocuments'];
+    showIssueDocuments: ReturnType<typeof TopNavbarView>['showIssueDocuments'];
+    showAllDocuments: ReturnType<typeof TopNavbarView>['showAllDocuments'];
+    showDocumentTypes: ReturnType<typeof TopNavbarView>['showDocumentTypes'];
+    showDocumentTemplates: ReturnType<typeof TopNavbarView>['showDocumentTemplates'];
+    showDocumentCompliance: ReturnType<typeof TopNavbarView>['showDocumentCompliance'];
+    showManage: ReturnType<typeof TopNavbarView>['showManage']
+  }) {
   const {
     navRef,
     t,

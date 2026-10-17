@@ -17,7 +17,8 @@ export function fieldTypeLabel(t: (k: string, d: string) => string, ft: LogField
   }
 }
 
-export function FlagRow({ title, hint, checked, onChange }: { title: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+export function FlagRow(
+  { title, hint, checked, onChange }: { title: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-start gap-3">
       <div className="min-w-0 flex-1">
@@ -29,7 +30,8 @@ export function FlagRow({ title, hint, checked, onChange }: { title: string; hin
   )
 }
 
-export function DirBtn({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof ArrowDownLeft; label: string }) {
+export function DirBtn(
+  { active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof ArrowDownLeft; label: string }) {
   return (
     <button
       type="button"

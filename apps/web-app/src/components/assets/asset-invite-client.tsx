@@ -91,7 +91,9 @@ export function AssetInviteClient({
           <div className="space-y-2 py-2">
             <Label className="text-xs text-muted-foreground">{t("assetInvite.code", "Their code")}</Label>
             <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-lg tracking-widest text-foreground">
+              <code
+                className={"flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono " +
+                  "text-lg tracking-widest text-foreground"}>
                 {code}
               </code>
               <Button

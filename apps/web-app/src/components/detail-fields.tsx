@@ -34,7 +34,10 @@ export function DetailFields({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label>{title}</Label>
-        <button type="button" onClick={() => setDetails((d) => [...d, { label: "", value: "" }])} className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+        <button
+          type="button"
+          onClick={() => setDetails((d) => [...d, { label: "", value: "" }])}
+          className={"inline-flex items-center gap-1 text-xs font-medium text-primary " + "hover:underline"}>
           <Plus className="h-3.5 w-3.5" /> {t("customers.addField", "Add field")}
         </button>
       </div>
@@ -44,9 +47,22 @@ export function DetailFields({
         <div className="space-y-2">
           {details.map((d, i) => (
             <div key={i} className="flex items-center gap-2">
-              <Input value={d.label} onChange={(e) => setDetail(i, "label", e.target.value)} placeholder={t("customers.fieldLabel", "Label")} className="w-2/5" />
-              <Input value={d.value} onChange={(e) => setDetail(i, "value", e.target.value)} placeholder={t("customers.fieldValue", "Value")} className="flex-1" />
-              <button type="button" onClick={() => setDetails((arr) => arr.filter((_, idx) => idx !== i))} className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <Input
+                value={d.label}
+                onChange={(e) => setDetail(i, "label", e.target.value)}
+                placeholder={t("customers.fieldLabel", "Label")}
+                className="w-2/5"
+              />
+              <Input
+                value={d.value}
+                onChange={(e) => setDetail(i, "value", e.target.value)}
+                placeholder={t("customers.fieldValue", "Value")}
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => setDetails((arr) => arr.filter((_, idx) => idx !== i))}
+                className="shrink-0 rounded p-1.5 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
             </div>
           ))}
         </div>

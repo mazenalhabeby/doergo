@@ -91,8 +91,12 @@ export function WorkerDropdownContent({
   const hasData = totalTasks > 0 || hoursWeek > 0
   const displayScore = hasData ? perfScore : null
 
-  const perfColor = displayScore === null ? "text-muted-foreground" : displayScore >= 80 ? "text-green-500" : displayScore >= 60 ? "text-amber-500" : "text-red-500"
-  const perfBg = displayScore === null ? "stroke-muted" : displayScore >= 80 ? "stroke-green-500" : displayScore >= 60 ? "stroke-amber-500" : "stroke-red-500"
+  const perfColor = displayScore === null
+    ? "text-muted-foreground"
+    : displayScore >= 80 ? "text-green-500" : displayScore >= 60 ? "text-amber-500" : "text-red-500"
+  const perfBg = displayScore === null
+    ? "stroke-muted"
+    : displayScore >= 80 ? "stroke-green-500" : displayScore >= 60 ? "stroke-amber-500" : "stroke-red-500"
 
   return (
     <>
@@ -108,7 +112,9 @@ export function WorkerDropdownContent({
               clockedIn={person.clockedIn}
               imageUrl={person.imageUrl}
               hideDot
-              className="[&>div:first-child]:!w-[48px] [&>div:first-child]:!h-[48px] [&>div:first-child]:!min-w-[48px] [&>div:first-child]:!min-h-[48px] [&>div:first-child]:!text-base"
+              className={"[&>div:first-child]:!w-[48px] [&>div:first-child]:!h-[48px] " +
+                "[&>div:first-child]:!min-w-[48px] [&>div:first-child]:!min-h-[48px] " +
+                "[&>div:first-child]:!text-base"}
             />
           </div>
           <div className="flex-1 min-w-0 pb-0.5">
@@ -164,10 +170,14 @@ export function WorkerDropdownContent({
       {/* ── Current Task ── */}
       {person.currentTask && (
         <div className="px-4 pb-3">
-          <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">{t("workspace.workingOn")}</p>
+          <p
+            className={"text-[9px] font-semibold text-muted-foreground uppercase tracking-wider " +
+              "mb-1.5 px-0.5"}>{t("workspace.workingOn")}</p>
           <button
             onClick={(e) => { e.stopPropagation(); onClose(); router.push(`/tasks`) }}
-            className="w-full text-left group flex items-center gap-2.5 px-3 py-2 rounded-xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 hover:border-blue-500/25 transition-colors"
+            className={"w-full text-left group flex items-center gap-2.5 px-3 py-2 rounded-xl " +
+              "bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/10 " +
+              "hover:border-blue-500/25 transition-colors"}
           >
             <div className="size-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
             <p className="text-[11px] font-medium text-foreground truncate flex-1">{person.currentTask}</p>
@@ -214,7 +224,10 @@ export function WorkerDropdownContent({
               {selfClock && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/attendance") }}
-                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className={"flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl " +
+                    "bg-muted/60 border border-border/50 text-[11px] font-medium " +
+                    "text-muted-foreground hover:text-foreground hover:bg-accent " +
+                    "transition-colors"}
                 >
                   <Clock className="size-3.5" />
                   {t("workspace.attendance")}
@@ -223,7 +236,10 @@ export function WorkerDropdownContent({
               {selfTimeOff && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onClose(); router.push("/my/time-off") }}
-                  className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-muted/60 border border-border/50 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  className={"flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl " +
+                    "bg-muted/60 border border-border/50 text-[11px] font-medium " +
+                    "text-muted-foreground hover:text-foreground hover:bg-accent " +
+                    "transition-colors"}
                 >
                   <CalendarOff className="size-3.5" />
                   {t("workspace.timeOff")}
@@ -240,7 +256,9 @@ export function WorkerDropdownContent({
           <div className="px-3 py-2 flex items-center gap-1.5">
             <button
               onClick={(e) => { e.stopPropagation(); message(userId) }}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl bg-foreground text-background text-[11px] font-semibold hover:bg-foreground/90 transition-colors"
+              className={"flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl " +
+                "bg-foreground text-background text-[11px] font-semibold " +
+                "hover:bg-foreground/90 transition-colors"}
             >
               <MessageCircle className="size-3.5" />
               {t("workspace.message")}
@@ -253,7 +271,9 @@ export function WorkerDropdownContent({
           <div className="px-3 py-1.5 flex items-center gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); onClose(); onPersonClick?.(userId) }}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className={"flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl " +
+                "text-[11px] font-medium text-muted-foreground hover:text-foreground " +
+                "hover:bg-muted/50 transition-colors"}
             >
               <User className="size-3" />
               {t("workspace.profile")}
@@ -261,7 +281,9 @@ export function WorkerDropdownContent({
             <div className="w-px h-4 bg-border" />
             <button
               onClick={(e) => { e.stopPropagation(); onClose(); router.push(`/tasks`) }}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              className={"flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl " +
+                "text-[11px] font-medium text-muted-foreground hover:text-foreground " +
+                "hover:bg-muted/50 transition-colors"}
             >
               <ClipboardList className="size-3" />
               {t("workspace.tasks")}

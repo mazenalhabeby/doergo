@@ -32,7 +32,8 @@ export function SectionHead({ n, title, lead }: { n: string; title: string; lead
   );
 }
 
-export function PartCard({ icon, n, title, price, body }: { icon: React.ReactNode; n: string; title: string; price: string; body: string }) {
+export function PartCard(
+  { icon, n, title, price, body }: { icon: React.ReactNode; n: string; title: string; price: string; body: string }) {
   return (
     <div className="rounded-2xl border border-foreground/[0.10] p-6">
       <div className="flex items-center justify-between">

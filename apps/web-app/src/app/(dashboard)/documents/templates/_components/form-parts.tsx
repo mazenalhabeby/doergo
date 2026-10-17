@@ -25,7 +25,9 @@ export function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+      className={"h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm " +
+        "text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
+        "dark:text-slate-100"}
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>

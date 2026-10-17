@@ -21,12 +21,17 @@ async function signInCall<T>(run: () => Promise<T>, fallback: string): Promise<T
   } catch (e) {
     if (isApiError(e)) {
       if (e.kind === 'timeout') {
-        throw new ApiError('Request timed out. Please check your connection and try again.', { status: 0, kind: 'timeout', code: TRANSPORT_CODES.timeout });
+        throw new ApiError(
+          'Request timed out. Please check your connection and try again.',
+          { status: 0, kind: 'timeout', code: TRANSPORT_CODES.timeout });
       }
       if (e.kind === 'network') {
-        throw new ApiError('Unable to connect to server. Please check if the API is running.', { status: 0, kind: 'network', code: TRANSPORT_CODES.network });
+        throw new ApiError(
+          'Unable to connect to server. Please check if the API is running.',
+          { status: 0, kind: 'network', code: TRANSPORT_CODES.network });
       }
-      if (e.kind === 'http') return Promise.reject(localizeApiError(e.message ? e : new ApiError(fallback, { status: e.status, kind: 'http' })));
+      if (e.kind === 'http') return Promise.reject(
+        localizeApiError(e.message ? e : new ApiError(fallback, { status: e.status, kind: 'http' })));
     }
     throw e;
   }
@@ -111,7 +116,9 @@ export const authApi = {
   },
 
   forgotPassword: async (email: string) => {
-    return signInCall(() => authHttp.call(authEndpoints.forgotPassword, undefined, { body: { email }, unwrap: 'raw' }), 'Failed to send reset email');
+    return signInCall(
+      () => authHttp.call(authEndpoints.forgotPassword, undefined, { body: { email }, unwrap: 'raw' }),
+      'Failed to send reset email');
   },
 
   resetPassword: async (token: string, newPassword: string) => {

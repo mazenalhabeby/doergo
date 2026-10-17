@@ -116,9 +116,27 @@ export function StandInDialog({ open, onOpenChange }: { open: boolean; onOpenCha
 
         {data && (
           <div className="space-y-4 border-t border-border pt-4">
-            <StandInList title={t("approvals.standIn.yours")} rows={data.given} show="to" onEnd={(id) => end.mutate(id)} busy={end.isPending} />
-            <StandInList title={t("approvals.standIn.forYou")} rows={data.received} show="from" onEnd={(id) => end.mutate(id)} busy={end.isPending} />
-            <StandInList title={t("approvals.standIn.others")} rows={data.others} show="both" onEnd={(id) => end.mutate(id)} busy={end.isPending} />
+            <StandInList
+              title={t("approvals.standIn.yours")}
+              rows={data.given}
+              show="to"
+              onEnd={(id) => end.mutate(id)}
+              busy={end.isPending}
+            />
+            <StandInList
+              title={t("approvals.standIn.forYou")}
+              rows={data.received}
+              show="from"
+              onEnd={(id) => end.mutate(id)}
+              busy={end.isPending}
+            />
+            <StandInList
+              title={t("approvals.standIn.others")}
+              rows={data.others}
+              show="both"
+              onEnd={(id) => end.mutate(id)}
+              busy={end.isPending}
+            />
             {!data.given.length && !data.received.length && !data.others.length && (
               <p className="text-sm text-muted-foreground">{t("approvals.standIn.none")}</p>
             )}

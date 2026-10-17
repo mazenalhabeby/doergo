@@ -127,7 +127,14 @@ export type CandidateState = "FREE" | "BUSY" | "NOT_WORKING" | "ON_LEAVE";
 export interface RolePreview {
   role: { id: string; name: string };
   total: number; free: number; busy: number; notWorking: number; onLeave: number;
-  candidates: { userId: string; name: string; state: CandidateState; distanceKm: number | null; jobsToday: number; takenThisWeek: number }[];
+  candidates: {
+    userId: string;
+    name: string;
+    state: CandidateState;
+    distanceKm: number | null;
+    jobsToday: number;
+    takenThisWeek: number
+  }[];
 }
 
 export interface OpenRoleTask {
@@ -137,7 +144,16 @@ export interface OpenRoleTask {
 }
 
 export interface RoleStats {
-  roles: { roleId: string; roleName: string; opened: number; taken: number; avgMinutesToTake: number | null; openNow: number; overdue: number; topTakers: { name: string; count: number }[] }[];
+  roles: {
+    roleId: string;
+    roleName: string;
+    opened: number;
+    taken: number;
+    avgMinutesToTake: number | null;
+    openNow: number;
+    overdue: number;
+    topTakers: { name: string; count: number }[]
+  }[];
 }
 
 export interface CreateTaskInput {

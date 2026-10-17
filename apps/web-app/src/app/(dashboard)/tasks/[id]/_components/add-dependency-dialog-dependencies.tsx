@@ -73,7 +73,8 @@ export function AddDependencyDialogDependencies({ vm }: { vm: AddDependencyDialo
                 key={task.id}
                 onClick={() => addMutation.mutate(task.id)}
                 disabled={addMutation.isPending}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0"
+                className={"w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/50 " +
+                  "transition-colors border-b border-border/30 last:border-b-0"}
               >
                 <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: step.hex }} title={step.label} />
                 <span className="text-sm font-medium text-foreground truncate flex-1">

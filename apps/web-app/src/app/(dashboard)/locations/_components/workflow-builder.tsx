@@ -158,7 +158,8 @@ const WorkflowBuilder = memo(function WorkflowBuilder({
     // Capabilities come across with the steps. Dropping them was what made a
     // template applied here a hollow copy of the same one applied elsewhere.
     // Forms too: a template's steps arrive with what they ask.
-    setStatuses(template.statuses.map((s, i) => ({ ...s, position: i, nameKey: s.nameKey ?? null, form: s.form ?? null, initialForm: null })))
+    setStatuses(
+      template.statuses.map((s, i) => ({ ...s, position: i, nameKey: s.nameKey ?? null, form: s.form ?? null, initialForm: null })))
     setName((prev) => prev.trim() || template.name)
     setLastAddedIndex(null)
   }, [])

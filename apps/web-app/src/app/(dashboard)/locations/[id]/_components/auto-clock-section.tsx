@@ -92,7 +92,10 @@ export function AutoClockSection({
     return (
       <div>
         {header}
-        <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-dashed bg-muted/20 px-4 py-3 text-sm text-muted-foreground" style={{ maxWidth: 680 }}>
+        <div
+          className={"mt-3 flex items-start gap-2.5 rounded-xl border border-dashed " +
+            "bg-muted/20 px-4 py-3 text-sm text-muted-foreground"}
+          style={{ maxWidth: 680 }}>
           <MapPinOff className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>{t("attendance.autoClock.noCoordinates")}</span>
         </div>

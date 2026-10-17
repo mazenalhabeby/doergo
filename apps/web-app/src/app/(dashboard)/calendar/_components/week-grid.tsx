@@ -77,7 +77,10 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
                   className={cn(
                     "text-xl font-medium tabular-nums tracking-tight",
                     rest && "text-muted-foreground/60",
-                    isToday && "grid h-8 min-w-8 place-items-center rounded-lg bg-primary px-1.5 text-base font-semibold text-primary-foreground shadow-[0_6px_16px_-6px_hsl(var(--primary))]",
+                    isToday &&
+                      ("grid h-8 min-w-8 place-items-center rounded-lg bg-primary px-1.5 " +
+                        "text-base font-semibold text-primary-foreground " +
+                        "shadow-[0_6px_16px_-6px_hsl(var(--primary))]"),
                   )}
                 >
                   {d.getDate()}
@@ -98,7 +101,9 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
             className="grid gap-y-1 border-b py-1.5"
             style={{ gridTemplateColumns: cols, gridTemplateRows: `repeat(${band.lanes}, 24px)` }}
           >
-            <div className="row-span-full pr-2 pt-1 text-right font-mono text-[10px] uppercase text-muted-foreground/70" style={{ gridRow: `1 / span ${band.lanes}` }}>
+            <div
+              className={"row-span-full pr-2 pt-1 text-right font-mono text-[10px] uppercase " + "text-muted-foreground/70"}
+              style={{ gridRow: `1 / span ${band.lanes}` }}>
               {t("calendar.allDay")}
             </div>
             {band.bars.map((b) => {
@@ -109,11 +114,19 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
                   key={b.item.id}
                   type="button"
                   onClick={(e) => onSelect(b.item, e.currentTarget)}
-                  style={{ "--k": KIND_COLOR[b.item.kind], gridColumn: `${b.col + 2} / span ${b.span}`, gridRow: b.lane + 1 } as React.CSSProperties}
+                  style={{
+                    "--k": KIND_COLOR[b.item.kind],
+                    gridColumn: `${b.col + 2} / span ${b.span}`,
+                    gridRow: b.lane + 1
+                  } as React.CSSProperties}
                   className={cn(
-                    "mx-1 flex min-w-0 items-center gap-1.5 truncate rounded-md px-2 text-left text-[11.5px] font-medium transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    ("mx-1 flex min-w-0 items-center gap-1.5 truncate rounded-md px-2 " +
+                      "text-left text-[11.5px] font-medium transition hover:brightness-110 " +
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"),
                     tint, tintText,
-                    pending && "bg-[repeating-linear-gradient(-45deg,color-mix(in_oklab,var(--k)_16%,transparent)_0_6px,transparent_6px_12px)] ring-[color-mix(in_oklab,var(--k)_55%,transparent)]",
+                    pending &&
+                      ("bg-[repeating-linear-gradient(-45deg,color-mix(in_oklab,var(--k)_16%,transparent)_0_6px,transparent_6px_12px)] " +
+                        "ring-[color-mix(in_oklab,var(--k)_55%,transparent)]"),
                     estimated && "border border-dashed border-[color-mix(in_oklab,var(--k)_50%,transparent)]",
                     selectedId === b.item.id && "ring-2 ring-[var(--k)]",
                   )}
@@ -121,7 +134,9 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
                 >
                   {b.item.kind === "holiday" && <Flag className="h-3 w-3 shrink-0" />}
                   <span className="truncate">
-                    {b.item.kind === "leave" ? `${b.item.title} · ${t(`calendar.leaveType.${b.item.note ?? "VACATION"}`, b.item.note ?? "")}` : b.item.title}
+                    {b.item.kind === "leave"
+                      ? `${b.item.title} · ${t(`calendar.leaveType.${b.item.note ?? "VACATION"}`, b.item.note ?? "")}`
+                      : b.item.title}
                     {pending ? ` · ${t("calendar.requested")}` : ""}
                     {estimated ? ` · ${t("calendar.estimated")}` : ""}
                   </span>
@@ -136,7 +151,10 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
           <div className="grid" style={{ gridTemplateColumns: cols, height: 24 * HOUR_PX }}>
             <div className="relative">
               {HOURS.slice(1).map((h) => (
-                <span key={h} className="absolute right-2 -translate-y-1.5 font-mono text-[10px] text-muted-foreground/70" style={{ top: h * HOUR_PX }}>
+                <span
+                  key={h}
+                  className={"absolute right-2 -translate-y-1.5 font-mono text-[10px] " + "text-muted-foreground/70"}
+                  style={{ top: h * HOUR_PX }}>
                   {String(h).padStart(2, "0")}:00
                 </span>
               ))}
@@ -198,15 +216,23 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
                           width: `calc(${width} - 2px)`,
                         } as React.CSSProperties}
                         className={cn(
-                          "absolute overflow-hidden rounded-lg px-2 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:-translate-y-px hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          ("absolute overflow-hidden rounded-lg px-2 text-left " +
+                            "shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition " +
+                            "hover:-translate-y-px hover:shadow-md focus-visible:outline-none " +
+                            "focus-visible:ring-2 focus-visible:ring-ring"),
                           tint,
                           short ? "flex items-center gap-1.5 py-0" : "py-1.5",
                           p.item.status === "DECLINED" && "opacity-50 line-through",
-                          selectedId === p.item.id && "ring-2 ring-[var(--k)] shadow-[0_0_0_4px_color-mix(in_oklab,var(--k)_20%,transparent)]",
+                          selectedId === p.item.id &&
+                            ("ring-2 ring-[var(--k)] " + "shadow-[0_0_0_4px_color-mix(in_oklab,var(--k)_20%,transparent)]"),
                         )}
                       >
-                        <time className={cn("shrink-0 whitespace-nowrap font-mono text-[10.5px] font-medium", tintText)}>{timeLabel(st)}</time>
-                        <span className={cn("block truncate text-[12px] font-semibold leading-tight text-foreground", short && "min-w-0")}>{p.item.title}</span>
+                        <time
+                          className={cn("shrink-0 whitespace-nowrap font-mono text-[10.5px] font-medium", tintText)}>{timeLabel(st)}</time>
+                        <span
+                          className={cn(
+                            "block truncate text-[12px] font-semibold leading-tight text-foreground",
+                            short && "min-w-0")}>{p.item.title}</span>
                         {!short && p.height >= 62 && (p.item.location || p.item.meetingUrl) && (
                           <span className="mt-1 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
                             {p.item.meetingUrl ? <Video className="h-3 w-3 shrink-0" /> : <MapPin className="h-3 w-3 shrink-0" />}
@@ -217,7 +243,9 @@ export function WeekGrid({ days, items, dayKinds, selectedId, onSelect, onCreate
                     )
                   })}
                   {k === today && (
-                    <div className="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.6)]" style={{ top: nowTop }}>
+                    <div
+                      className={"pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-rose-500 " + "shadow-[0_0_10px_rgba(244,63,94,0.6)]"}
+                      style={{ top: nowTop }}>
                       <span className="absolute -left-1 -top-[3px] h-2 w-2 rounded-full bg-rose-500" />
                     </div>
                   )}

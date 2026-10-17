@@ -26,7 +26,9 @@ export function CostFromProfile({
   const { t } = useTranslation()
   const costMoney = useCents(costCurrency)
   const rows = [
-    ...(bill !== "DAY" ? [{ key: "hour", label: t("rates.perHourLabel"), cost: member.profileCostRateCents ?? null, price: hourPrice }] : []),
+    ...(bill !== "DAY"
+      ? [{ key: "hour", label: t("rates.perHourLabel"), cost: member.profileCostRateCents ?? null, price: hourPrice }]
+      : []),
     ...(bill !== "HOUR" ? [{ key: "day", label: t("rates.perDayLabel"), cost: member.profileCostDayCents ?? null, price: dayPrice }] : []),
   ]
   const sameCurrency = priceCurrency === costCurrency
@@ -48,7 +50,10 @@ export function CostFromProfile({
                 ? <span className="font-semibold tabular-nums">{costMoney(r.cost)}</span>
                 : <span className="text-amber-700 dark:text-amber-400">{t("rates.costNotSet")}</span>}
               {margin != null && (
-                <span className={cn("block text-[11px] tabular-nums", margin <= 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
+                <span
+                  className={cn(
+                    "block text-[11px] tabular-nums",
+                    margin <= 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
                   {margin <= 0 ? t("rates.costsMoreThanPrice") : t("rates.marginEach", { amount: costMoney(margin) })}
                 </span>
               )}

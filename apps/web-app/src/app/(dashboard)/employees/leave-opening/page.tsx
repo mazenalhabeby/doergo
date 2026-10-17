@@ -153,7 +153,11 @@ export default function LeaveOpeningPage() {
         ) : opening.isLoading || (opening.data && draft === null) ? (
           <Skeleton className="h-80 w-full rounded-2xl" />
         ) : opening.isError ? (
-          <Notice text={(opening.error as Error)?.message || t("common.error")} onRetry={() => void opening.refetch()} retryLabel={t("common.retry", "Retry")} />
+          <Notice
+            text={(opening.error as Error)?.message || t("common.error")}
+            onRetry={() => void opening.refetch()}
+            retryLabel={t("common.retry", "Retry")}
+          />
         ) : opening.data === null ? (
           <Notice text={t("leaveLedger.opening.unavailable")} />
         ) : (
@@ -163,7 +167,13 @@ export default function LeaveOpeningPage() {
                 <label htmlFor="opening-on" className="mb-1 block text-xs font-medium text-muted-foreground">
                   {t("leaveLedger.opening.startedOn")}
                 </label>
-                <Input id="opening-on" type="date" value={on} onChange={(e) => chooseDay(e.target.value)} className="h-8 w-44 bg-background" />
+                <Input
+                  id="opening-on"
+                  type="date"
+                  value={on}
+                  onChange={(e) => chooseDay(e.target.value)}
+                  className="h-8 w-44 bg-background"
+                />
               </div>
               <p className="min-w-0 flex-1 text-[13px] text-muted-foreground">
                 {t("leaveLedger.opening.yearNote", { date: formatMediumDate(`${on}T12:00:00`) })}
@@ -212,10 +222,18 @@ export default function LeaveOpeningPage() {
                           </p>
                         </td>
                         <td className="px-4 py-2 text-right">
-                          <DaysCell label={t("leaveLedger.opening.colUsed")} value={r.used} onChange={(v) => setCell(r.userId, "used", v)} />
+                          <DaysCell
+                            label={t("leaveLedger.opening.colUsed")}
+                            value={r.used}
+                            onChange={(v) => setCell(r.userId, "used", v)}
+                          />
                         </td>
                         <td className="px-4 py-2 text-right">
-                          <DaysCell label={t("leaveLedger.opening.colCarried")} value={r.carried} onChange={(v) => setCell(r.userId, "carried", v)} />
+                          <DaysCell
+                            label={t("leaveLedger.opening.colCarried")}
+                            value={r.carried}
+                            onChange={(v) => setCell(r.userId, "carried", v)}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -229,7 +247,9 @@ export default function LeaveOpeningPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="border-t border-border/60 px-4 py-2.5 text-[11.5px] text-muted-foreground">{t("leaveLedger.opening.halfDays")}</p>
+              <p
+                className={"border-t border-border/60 px-4 py-2.5 text-[11.5px] " +
+                  "text-muted-foreground"}>{t("leaveLedger.opening.halfDays")}</p>
             </section>
           </>
         )}
@@ -250,7 +270,8 @@ function DaysCell({ label, value, onChange }: { label: string; value: string; on
       placeholder="0"
       onChange={(e) => onChange(e.target.value)}
       className={cn(
-        "h-8 w-24 rounded-lg border bg-background px-2.5 text-right font-mono text-sm tabular-nums outline-none transition-colors focus:border-primary",
+        ("h-8 w-24 rounded-lg border bg-background px-2.5 text-right font-mono " +
+          "text-sm tabular-nums outline-none transition-colors focus:border-primary"),
         bad ? "border-red-500 text-red-600" : "border-border",
       )}
     />

@@ -59,7 +59,9 @@ export function Avatar({ person, size = "sm" }: { person: FloorPerson; size?: "s
   return (
     <span
       className={cn(
-        "relative grid shrink-0 place-items-center rounded-full bg-muted font-semibold text-muted-foreground ring-2 ring-offset-2 ring-offset-card",
+        ("relative grid shrink-0 place-items-center rounded-full bg-muted " +
+          "font-semibold text-muted-foreground ring-2 ring-offset-2 " +
+          "ring-offset-card"),
         size === "md" ? "h-9 w-9 text-[12.5px]" : "h-7 w-7 text-[10.5px]",
         ring,
         person.state === "rest" && "opacity-50",

@@ -85,7 +85,9 @@ export default function UpdateClient({ latest }: { latest: string }) {
         className="min-h-screen bg-no-repeat"
         style={{
           backgroundImage:
-            'radial-gradient(900px 500px at 50% -10%, rgba(37,99,235,.20), transparent 62%), radial-gradient(700px 420px at 12% 8%, rgba(22,163,74,.13), transparent 60%)',
+            ('radial-gradient(900px 500px at 50% -10%, rgba(37,99,235,.20), ' +
+              'transparent 62%), radial-gradient(700px 420px at 12% 8%, ' +
+              'rgba(22,163,74,.13), transparent 60%)'),
         }}
       >
         <div className="mx-auto max-w-[520px] px-5 pb-16 pt-8">
@@ -133,7 +135,11 @@ export default function UpdateClient({ latest }: { latest: string }) {
           {/* the one button */}
           <a
             href={target}
-            className="flex w-full items-center justify-center gap-3 rounded-[15px] bg-gradient-to-r from-green-600 to-blue-600 px-5 py-[19px] text-[17.5px] font-bold text-white shadow-[0_18px_50px_rgba(0,0,0,.45)] transition hover:brightness-110 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-blue-400"
+            className={"flex w-full items-center justify-center gap-3 rounded-[15px] " +
+              "bg-gradient-to-r from-green-600 to-blue-600 px-5 py-[19px] text-[17.5px] " +
+              "font-bold text-white shadow-[0_18px_50px_rgba(0,0,0,.45)] transition " +
+              "hover:brightness-110 focus-visible:outline focus-visible:outline-[3px] " +
+              "focus-visible:outline-offset-[3px] focus-visible:outline-blue-400"}
           >
             {platform === 'ios' ? (
               <AppleGlyph className="h-[22px] w-[22px] shrink-0" />
@@ -160,7 +166,10 @@ export default function UpdateClient({ latest }: { latest: string }) {
                 key={i}
                 className={`flex items-start gap-3.5 py-2.5 ${i > 0 ? 'border-t border-[#25344A]' : ''}`}
               >
-                <span className="mt-px grid h-[25px] w-[25px] shrink-0 place-items-center rounded-full border border-[#25344A] bg-[#1B2739] text-[12.5px] font-bold tabular-nums text-slate-400">
+                <span
+                  className={"mt-px grid h-[25px] w-[25px] shrink-0 place-items-center rounded-full " +
+                    "border border-[#25344A] bg-[#1B2739] text-[12.5px] font-bold " +
+                    "tabular-nums text-slate-400"}>
                   {i + 1}
                 </span>
                 <p className="m-0 text-[15.5px] leading-[1.55] text-slate-300">{body}</p>
@@ -169,7 +178,9 @@ export default function UpdateClient({ latest }: { latest: string }) {
           </ol>
 
           {/* the reassurance that actually matters to a field member */}
-          <div className="mt-7 flex items-start gap-3 rounded-xl border border-[#25344A] border-l-[3px] border-l-emerald-500 bg-[#141E2E] px-4 py-3.5">
+          <div
+            className={"mt-7 flex items-start gap-3 rounded-xl border border-[#25344A] " +
+              "border-l-[3px] border-l-emerald-500 bg-[#141E2E] px-4 py-3.5"}>
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -214,14 +225,18 @@ export default function UpdateClient({ latest }: { latest: string }) {
             <div className="flex gap-2.5">
               <a
                 href={APP_STORE_URL}
-                className="flex flex-1 items-center justify-center gap-2 rounded-[11px] border border-[#25344A] bg-[#141E2E] px-2.5 py-3 text-sm font-semibold text-slate-400 transition hover:border-blue-600 hover:text-slate-100"
+                className={"flex flex-1 items-center justify-center gap-2 rounded-[11px] border " +
+                  "border-[#25344A] bg-[#141E2E] px-2.5 py-3 text-sm font-semibold " +
+                  "text-slate-400 transition hover:border-blue-600 hover:text-slate-100"}
               >
                 <AppleGlyph className="h-4 w-4 shrink-0" />
                 {t.iphone}
               </a>
               <a
                 href={GOOGLE_PLAY_URL}
-                className="flex flex-1 items-center justify-center gap-2 rounded-[11px] border border-[#25344A] bg-[#141E2E] px-2.5 py-3 text-sm font-semibold text-slate-400 transition hover:border-blue-600 hover:text-slate-100"
+                className={"flex flex-1 items-center justify-center gap-2 rounded-[11px] border " +
+                  "border-[#25344A] bg-[#141E2E] px-2.5 py-3 text-sm font-semibold " +
+                  "text-slate-400 transition hover:border-blue-600 hover:text-slate-100"}
               >
                 <PlayGlyph className="h-4 w-4 shrink-0" />
                 {t.android}

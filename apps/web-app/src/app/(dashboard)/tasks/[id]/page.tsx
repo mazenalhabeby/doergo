@@ -180,7 +180,14 @@ export default function TaskDetailPage({
         currentAssigneeId={task?.assignedToId}
         currentAssigneeIds={task?.assignees?.map((a) => a.userId) || []}
         isAssigning={assignMutation.isPending}
-        notice={handoverPending ? <HandoverPendingNotice text={handoverPending} onWait={() => setShowAssignModal(false)} note={reassignNote} onNoteChange={setReassignNote} /> : null}
+        notice={handoverPending
+          ? <HandoverPendingNotice
+            text={handoverPending}
+            onWait={() => setShowAssignModal(false)}
+            note={reassignNote}
+            onNoteChange={setReassignNote}
+          />
+          : null}
         onAssign={(memberId) => assignMutation.mutate(memberId)}
         onSave={async (added, removed) => {
           const ops: Promise<unknown>[] = [
@@ -202,7 +209,17 @@ export default function TaskDetailPage({
       {officeStartMounted && <OfficeStartDialog {...officeStart.dialogProps} />}
       {stepMove.dialog}
 
-      <TaskDetailPageSections vm={vm} onTheJob={onTheJob} subtaskCount={subtaskCount} openIfPresent={openIfPresent} checklistTotal={checklistTotal} checklistDone={checklistDone} attachmentCount={attachmentCount} depCount={depCount} comments={comments} />
+      <TaskDetailPageSections
+        vm={vm}
+        onTheJob={onTheJob}
+        subtaskCount={subtaskCount}
+        openIfPresent={openIfPresent}
+        checklistTotal={checklistTotal}
+        checklistDone={checklistDone}
+        attachmentCount={attachmentCount}
+        depCount={depCount}
+        comments={comments}
+      />
     </div>
   )
 }

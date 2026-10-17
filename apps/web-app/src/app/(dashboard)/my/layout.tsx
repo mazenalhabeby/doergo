@@ -43,7 +43,9 @@ export default function MyLayout({ children }: { children: React.ReactNode }) {
       */}
       {sections.length > 1 && (
         <div className="mb-5">
-          <div className="flex items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            className={"flex items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] " +
+              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}>
             {sections.map((s) => {
               // startsWith, so a document's own page keeps its tab lit.
               const active = pathname === s.href || pathname.startsWith(`${s.href}/`)

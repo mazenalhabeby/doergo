@@ -202,7 +202,9 @@ export function useClockInData({
         out too late to explain it.
       */
       const entry = (data as { isRemote?: boolean } | undefined) ?? {}
-      const name = typeof action === "object" && "locationId" in action ? locations.find((l) => l.id === action.locationId)?.name : undefined
+      const name = typeof action === "object" && "locationId" in action
+        ? locations.find((l) => l.id === action.locationId)?.name
+        : undefined
       toast.success(
         entry.isRemote
           ? t("attendance.my.clockedInAwayToast", "Clocked in — away from the site. This shift will be reviewed.")

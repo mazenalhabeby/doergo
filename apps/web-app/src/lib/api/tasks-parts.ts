@@ -27,7 +27,10 @@ export const taskPartsApi = {
 
   // Add a comment to a task
   addComment: async (taskId: string, content: string) => {
-    const response = await call(tasksEndpoints.addComment, { id: taskId }, { body: { content } }) as ApiResponse<{ success: boolean; data: Comment }>;
+    const response = await call(
+      tasksEndpoints.addComment,
+      { id: taskId },
+      { body: { content } }) as ApiResponse<{ success: boolean; data: Comment }>;
 
     if (response.error) {
       throw apiError(response);
@@ -38,20 +41,28 @@ export const taskPartsApi = {
 
   // ── Assignees ──────────────────────────────────────────────────────────────
   addAssignee: async (taskId: string, userId: string, role?: string) => {
-    const response = await call(tasksEndpoints.addAssignee, { id: taskId }, { body: { userId, role: role || 'MEMBER' } }) as ApiResponse<{ success: boolean; data: TaskAssignee }>;
+    const response = await call(
+      tasksEndpoints.addAssignee,
+      { id: taskId },
+      { body: { userId, role: role || 'MEMBER' } }) as ApiResponse<{ success: boolean; data: TaskAssignee }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   removeAssignee: async (taskId: string, userId: string) => {
-    const response = await call(tasksEndpoints.removeAssignee, { id: taskId, userId }) as ApiResponse<{ success: boolean; message: string }>;
+    const response = await call(
+      tasksEndpoints.removeAssignee,
+      { id: taskId, userId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
 
   // ── Checklist ─────────────────────────────────────────────────────────────
   addChecklistItem: async (taskId: string, text: string) => {
-    const response = await call(tasksEndpoints.addChecklistItem, { id: taskId }, { body: { text } }) as ApiResponse<{ success: boolean; data: ChecklistItem }>;
+    const response = await call(
+      tasksEndpoints.addChecklistItem,
+      { id: taskId },
+      { body: { text } }) as ApiResponse<{ success: boolean; data: ChecklistItem }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -61,13 +72,18 @@ export const taskPartsApi = {
     itemId: string,
     data: { text?: string; isCompleted?: boolean; assigneeId?: string | null },
   ) => {
-    const response = await call(tasksEndpoints.updateChecklistItem, { id: taskId, itemId }, { body: data }) as ApiResponse<{ success: boolean; data: ChecklistItem }>;
+    const response = await call(
+      tasksEndpoints.updateChecklistItem,
+      { id: taskId, itemId },
+      { body: data }) as ApiResponse<{ success: boolean; data: ChecklistItem }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   deleteChecklistItem: async (taskId: string, itemId: string) => {
-    const response = await call(tasksEndpoints.removeChecklistItem, { id: taskId, itemId }) as ApiResponse<{ success: boolean; message: string }>;
+    const response = await call(
+      tasksEndpoints.removeChecklistItem,
+      { id: taskId, itemId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
   },
@@ -87,13 +103,18 @@ export const taskPartsApi = {
 
   // ── Dependencies ────────────────────────────────────────────────────────
   addDependency: async (taskId: string, predecessorId: string, type?: string, lagDays?: number) => {
-    const response = await call(tasksEndpoints.addDependency, { id: taskId }, { body: { predecessorId, type, lagDays } }) as ApiResponse<{ success: boolean; data: TaskDependency }>;
+    const response = await call(
+      tasksEndpoints.addDependency,
+      { id: taskId },
+      { body: { predecessorId, type, lagDays } }) as ApiResponse<{ success: boolean; data: TaskDependency }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   removeDependency: async (taskId: string, depId: string) => {
-    const response = await call(tasksEndpoints.removeDependency, { id: taskId, depId }) as ApiResponse<{ success: boolean; message: string }>;
+    const response = await call(
+      tasksEndpoints.removeDependency,
+      { id: taskId, depId }) as ApiResponse<{ success: boolean; message: string }>;
     if (response.error) throw apiError(response);
     return response.data;
   },

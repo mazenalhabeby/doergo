@@ -155,8 +155,15 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
     return (
       <div className="mx-auto flex max-w-md flex-col items-center px-6 py-24 text-center">
         {notFound ? <FileQuestion className="size-10 text-muted-foreground" /> : <AlertCircle className="size-10 text-red-500" />}
-        <h1 className="mt-4 text-lg font-semibold text-foreground">{notFinished ? t("tasks.report.notFinished") : notFound ? t("tasks.report.notAvailable") : t("tasks.report.loadFailed")}</h1>
-        {notFound ? <p className="mt-1 text-sm text-muted-foreground">{t(notFinished ? "tasks.report.notFinishedHint" : "tasks.report.notAvailableHint")}</p> : null}
+        <h1
+          className="mt-4 text-lg font-semibold text-foreground">{notFinished
+            ? t("tasks.report.notFinished")
+            : notFound ? t("tasks.report.notAvailable") : t("tasks.report.loadFailed")}</h1>
+        {notFound
+          ? <p
+            className="mt-1 text-sm text-muted-foreground">{t(
+              notFinished ? "tasks.report.notFinishedHint" : "tasks.report.notAvailableHint")}</p>
+          : null}
         <div className="mt-6 flex gap-2">
           {!notFound ? (
             <Button variant="outline" onClick={() => query.refetch()}>
@@ -164,7 +171,9 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
               {t("tasks.report.retry")}
             </Button>
           ) : null}
-          <Button onClick={() => router.push(notFound ? "/tasks" : `/tasks/${id}`)}>{notFound ? t("tasks.page.heading") : t("tasks.report.back")}</Button>
+          <Button
+            onClick={() => router.push(
+              notFound ? "/tasks" : `/tasks/${id}`)}>{notFound ? t("tasks.page.heading") : t("tasks.report.back")}</Button>
         </div>
       </div>
     )
@@ -172,7 +181,10 @@ export default function JobReportPage({ params }: { params: Promise<{ id: string
 
   return (
     <div>
-      <InvoiceTopBar title={report?.header.title ?? t("tasks.report.title")} subtitle={report ? `${t("tasks.report.title")} · ${report.header.reference}` : undefined} onBack={back}>
+      <InvoiceTopBar
+        title={report?.header.title ?? t("tasks.report.title")}
+        subtitle={report ? `${t("tasks.report.title")} · ${report.header.reference}` : undefined}
+        onBack={back}>
         <CopySwitch copy={copy} onChange={setCopy} />
         <Button size="sm" className="h-8" onClick={download} disabled={!report || building || query.isFetching}>
           {building ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />}

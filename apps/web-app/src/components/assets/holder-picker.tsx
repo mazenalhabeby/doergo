@@ -123,7 +123,8 @@ export function HolderPicker({
               key={h}
               type="button"
               onClick={() => toggle(h)}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              className={"inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 " +
+                "text-xs font-medium text-primary transition-colors hover:bg-primary/20"}
             >
               {nameOf(h)}
               <X className="h-3 w-3" />

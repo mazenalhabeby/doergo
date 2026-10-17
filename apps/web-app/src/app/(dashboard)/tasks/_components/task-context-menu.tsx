@@ -254,7 +254,12 @@ export function TaskContextMenuInner({
           </ContextMenuSub>
         )}
 
-        {(actions.onSprintChange || actions.onPhaseChange || actions.onEpicChange || actions.onStoryPointsChange || actions.onSpaceChange) && <ContextMenuSeparator />}
+        {(actions.onSprintChange ||
+          actions.onPhaseChange ||
+          actions.onEpicChange ||
+          actions.onStoryPointsChange ||
+          actions.onSpaceChange) &&
+          <ContextMenuSeparator />}
 
         {/* Delete */}
         {actions.onDelete && (

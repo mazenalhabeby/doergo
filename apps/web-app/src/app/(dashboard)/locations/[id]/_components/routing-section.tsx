@@ -67,7 +67,10 @@ export function RoutingSection({ spaceId }: { spaceId: string }) {
         icon={Bell}
         accent="amber"
         title={t("scheduling.routing.heading", "Notifications & contact")}
-        description={t("scheduling.routing.intro", "Choose which space roles are notified about members here, and which roles members here can contact. Empty = the space's leaders.")}
+        description={t(
+          "scheduling.routing.intro",
+          ("Choose which space roles are notified about members here, and which " +
+            "roles members here can contact. Empty = the space's leaders."))}
         action={
           <Button size="sm" className="gap-1.5" disabled={!dirty || saveMutation.isPending} onClick={() => saveMutation.mutate()}>
             {saveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -131,7 +134,9 @@ function RolePicker({
         {roles.map((r) => (
           <label key={r.id} className="flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-accent/40 transition-colors">
             <Checkbox checked={selected.includes(r.id)} onCheckedChange={() => onToggle(r.id)} />
-            <span className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center" style={{ backgroundColor: `${r.color || "#6b7280"}20` }}>
+            <span
+              className="h-6 w-6 rounded-md shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: `${r.color || "#6b7280"}20` }}>
               <Shield className="h-3 w-3" style={{ color: r.color || "#6b7280" }} />
             </span>
             <span className="text-sm text-foreground">{r.name}</span>

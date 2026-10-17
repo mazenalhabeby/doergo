@@ -80,7 +80,10 @@ export function MobileAppInterstitial() {
           }`}
         >
           {/* Authentic app-icon squircle — the real brand mark on white */}
-          <div className="mx-auto flex h-[76px] w-[76px] items-center justify-center rounded-[22px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+          <div
+            className={"mx-auto flex h-[76px] w-[76px] items-center justify-center " +
+              "rounded-[22px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.35)] " +
+              "ring-1 ring-black/5"}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/favicon.svg" alt="" width={44} height={44} className="h-11 w-11" />
           </div>
@@ -101,14 +104,18 @@ export function MobileAppInterstitial() {
             {t("appPrompt.titleRequired", "Get the HBCField app")}
           </h1>
           <p className="mx-auto mt-2.5 max-w-[300px] text-[15px] leading-relaxed text-muted-foreground text-pretty">
-            {t("appPrompt.subtitleRequired", "On your phone, HBCField runs in the app. Install it to continue — on a computer or tablet, use the web.")}
+            {t(
+              "appPrompt.subtitleRequired",
+              ("On your phone, HBCField runs in the app. Install it to continue — on a " + "computer or tablet, use the web."))}
           </p>
 
           {/* Benefits card */}
           <div className="mt-7 space-y-3 rounded-2xl border border-border/70 bg-card/70 p-4 text-left shadow-sm backdrop-blur">
             {benefits.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-blue-600/15 text-foreground">
+                <span
+                  className={"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl " +
+                    "bg-gradient-to-br from-emerald-500/15 to-blue-600/15 text-foreground"}>
                   <Icon className="h-[18px] w-[18px]" />
                 </span>
                 <span className="min-w-0 flex-1 text-sm font-medium text-foreground">{label}</span>
@@ -122,7 +129,9 @@ export function MobileAppInterstitial() {
             href={storeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-white shadow-lg shadow-black/20 transition-transform active:scale-[0.98]"
+            className={"mt-7 flex h-14 w-full items-center justify-center gap-3 rounded-2xl " +
+              "bg-black text-white shadow-lg shadow-black/20 transition-transform " +
+              "active:scale-[0.98]"}
           >
             {isIOS ? <AppleGlyph className="h-6 w-6" /> : <GooglePlayGlyph className="h-6 w-6" />}
             <span className="flex flex-col items-start leading-none">

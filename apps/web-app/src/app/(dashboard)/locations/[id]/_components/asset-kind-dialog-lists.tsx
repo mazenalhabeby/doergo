@@ -35,8 +35,11 @@ export function AssetKindDialogLists({ vm }: { vm: AssetKindDialogState }) {
         <button
           type="button"
           disabled={shape.lists.length >= KIND_SHAPE_LIMITS.maxLists}
-          onClick={() => set("lists", [...shape.lists, { label: "", columns: [{ label: "", type: "text" as const }], display: "table" as const, shared: false }])}
-          className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+          onClick={() => set(
+            "lists",
+            [...shape.lists, { label: "", columns: [{ label: "", type: "text" as const }], display: "table" as const, shared: false }])}
+          className={"shrink-0 inline-flex items-center gap-1 text-xs font-medium text-primary " +
+            "hover:underline disabled:opacity-40 disabled:no-underline"}
         >
           <Plus className="h-3.5 w-3.5" /> {t("common.add", "Add")}
         </button>
@@ -96,7 +99,8 @@ export function AssetKindDialogLists({ vm }: { vm: AssetKindDialogState }) {
                 type="button"
                 disabled={list.columns.length >= KIND_SHAPE_LIMITS.maxColumns}
                 onClick={() => setList(i, { columns: [...list.columns, { label: "", type: "text" as const }] })}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+                className={"inline-flex items-center gap-1 text-[11px] font-medium text-primary " +
+                  "hover:underline disabled:opacity-40 disabled:no-underline"}
               >
                 <Plus className="h-3 w-3" /> {t("common.add", "Add")}
               </button>

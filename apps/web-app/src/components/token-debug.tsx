@@ -126,7 +126,8 @@ export function TokenDebugPanel() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex-1 h-7 rounded-lg bg-blue-600 text-white text-[11px] font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className={"flex-1 h-7 rounded-lg bg-blue-600 text-white text-[11px] font-medium " +
+              "hover:bg-blue-700 disabled:opacity-50 transition-colors"}
           >
             {refreshing ? "Refreshing..." : "Force Refresh"}
           </button>

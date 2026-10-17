@@ -9,7 +9,10 @@ import { sprintsWebEndpoints } from '@hbcfield/shared/client';
 
 export const sprintsApi = {
   list: async (status?: string) => {
-    const response = await call(sprintsWebEndpoints.list, undefined, { query: { status: status || undefined } }) as ApiResponse<{ success: boolean; data: Sprint[] }>;
+    const response = await call(
+      sprintsWebEndpoints.list,
+      undefined,
+      { query: { status: status || undefined } }) as ApiResponse<{ success: boolean; data: Sprint[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -45,7 +48,8 @@ export const sprintsApi = {
   },
 
   getVelocity: async (): Promise<{ sprintName: string; velocity: number }[]> => {
-    const response = await call(sprintsWebEndpoints.getVelocity) as ApiResponse<{ success: boolean; data: { sprintName: string; velocity: number }[] }>;
+    const response = await call(
+      sprintsWebEndpoints.getVelocity) as ApiResponse<{ success: boolean; data: { sprintName: string; velocity: number }[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },

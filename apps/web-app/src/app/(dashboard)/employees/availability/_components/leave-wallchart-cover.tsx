@@ -29,7 +29,10 @@ export function SpaceCoverFooter({
   return (
     <>
       <div className="grid border-t border-border bg-muted/50" style={template}>
-        <div className="sticky left-0 z-10 flex items-center gap-1.5 border-r border-border bg-muted/50 px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground">
+        <div
+          className={"sticky left-0 z-10 flex items-center gap-1.5 border-r border-border " +
+            "bg-muted/50 px-3 py-1.5 text-[11.5px] font-semibold " +
+            "text-muted-foreground"}>
           {t("cover.chart.onFloor", "On the floor")}
         </div>
         {days.map((d) => {
@@ -82,7 +85,9 @@ export function SpaceCoverFooter({
 
       {minCover > 0 && (
         <div className="grid border-t border-border bg-muted/50" style={template}>
-          <div className="sticky left-0 z-10 flex items-center border-r border-border bg-muted/50 px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground">
+          <div
+            className={"sticky left-0 z-10 flex items-center border-r border-border bg-muted/50 " +
+              "px-3 py-1.5 text-[11.5px] font-semibold text-muted-foreground"}>
             {t("cover.chart.againstMinimum", "Against minimum {{n}}", { n: minCover })}
           </div>
           {days.map((d) => {

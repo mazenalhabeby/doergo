@@ -41,20 +41,29 @@ export const assetReviewApi = {
     id: string,
     input: { categoryId?: string; typeId?: string; fields?: ContractFields; retireReplaced?: boolean },
   ) => {
-    const response = await call(assetsEndpoints.acceptProposal, { id }, { body: input }) as ApiResponse<{ success: boolean; data: { id: string; assetId: string | null } }>;
+    const response = await call(
+      assetsEndpoints.acceptProposal,
+      { id },
+      { body: input }) as ApiResponse<{ success: boolean; data: { id: string; assetId: string | null } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   rejectProposal: async (id: string, note?: string) => {
-    const response = await call(assetsEndpoints.rejectProposal, { id }, { body: { note } }) as ApiResponse<{ success: boolean; data: { id: string } }>;
+    const response = await call(
+      assetsEndpoints.rejectProposal,
+      { id },
+      { body: { note } }) as ApiResponse<{ success: boolean; data: { id: string } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   /** A short-lived link to the page. A POST, and nothing lists these. */
   getProposalDocumentUrl: async (id: string) => {
-    const response = await call(assetsEndpoints.proposalDocumentUrl, { id }, { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; mimeType: string | null } }>;
+    const response = await call(
+      assetsEndpoints.proposalDocumentUrl,
+      { id },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; mimeType: string | null } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -65,7 +74,10 @@ export const assetReviewApi = {
 
   /** Text → fields. Decides nothing; the browser has no reader of its own. */
   readContract: async (text: string) => {
-    const response = await call(assetsEndpoints.contractRead, undefined, { body: { text } }) as ApiResponse<{ success: boolean; data: ContractReading }>;
+    const response = await call(
+      assetsEndpoints.contractRead,
+      undefined,
+      { body: { text } }) as ApiResponse<{ success: boolean; data: ContractReading }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -79,7 +91,10 @@ export const assetReviewApi = {
    * record to retire, and nothing here could.
    */
   previewContract: async (input: ContractProposalInput) => {
-    const response = await call(assetsEndpoints.contractPreview, undefined, { body: input }) as ApiResponse<{ success: boolean; data: ContractPreview }>;
+    const response = await call(
+      assetsEndpoints.contractPreview,
+      undefined,
+      { body: input }) as ApiResponse<{ success: boolean; data: ContractPreview }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -99,13 +114,17 @@ export const assetReviewApi = {
   // ============================================
 
   getPendingExpenses: async () => {
-    const response = await call(assetsEndpoints.pendingExpenses) as ApiResponse<{ success: boolean; data: { entries: PendingExpense[]; totalCents: number } }>;
+    const response = await call(
+      assetsEndpoints.pendingExpenses) as ApiResponse<{ success: boolean; data: { entries: PendingExpense[]; totalCents: number } }>;
     if (response.error) throw apiError(response);
     return response.data?.data ?? { entries: [], totalCents: 0 };
   },
 
   reviewExpense: async (entryId: string, decision: 'accept' | 'reject', note?: string) => {
-    const response = await call(assetsEndpoints.reviewExpense, { entryId }, { body: { decision, note } }) as ApiResponse<{ success: boolean; data: { id: string; status: AssetExpenseStatus } }>;
+    const response = await call(
+      assetsEndpoints.reviewExpense,
+      { entryId },
+      { body: { decision, note } }) as ApiResponse<{ success: boolean; data: { id: string; status: AssetExpenseStatus } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -118,7 +137,10 @@ export const assetReviewApi = {
    * spending an act rather than a side effect of opening a page.
    */
   getReceiptUrl: async (entryId: string) => {
-    const response = await call(assetsEndpoints.receiptUrl, { entryId }, { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; mimeType: string | null } }>;
+    const response = await call(
+      assetsEndpoints.receiptUrl,
+      { entryId },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; mimeType: string | null } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -126,7 +148,10 @@ export const assetReviewApi = {
   // scope 'all' includes work still open — the record page needs it, or a
   // technician cannot tell that a job is already raised.
   getAssetHistory: async (assetId: string, scope: 'done' | 'all' = 'all') => {
-    const response = await call(assetsEndpoints.history, { id: assetId }, { query: { scope } }) as ApiResponse<{ success: boolean; data: MaintenanceHistoryItem[] }>;
+    const response = await call(
+      assetsEndpoints.history,
+      { id: assetId },
+      { query: { scope } }) as ApiResponse<{ success: boolean; data: MaintenanceHistoryItem[] }>;
 
     if (response.error) {
       throw apiError(response);

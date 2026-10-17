@@ -42,7 +42,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <div className="force-light fixed inset-0 z-10 overflow-y-auto bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 text-slate-900">
+    <div
+      className={"force-light fixed inset-0 z-10 overflow-y-auto bg-gradient-to-br " +
+        "from-slate-100 via-slate-50 to-slate-100 text-slate-900"}>
       {/* Brand header — shown on every onboarding step (path chooser, create/join
           org, invitation, choose plan, pending approval) so the flow stays
           consistently branded. */}

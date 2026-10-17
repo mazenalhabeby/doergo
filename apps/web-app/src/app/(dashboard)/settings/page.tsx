@@ -98,7 +98,9 @@ export default function SettingsPage() {
               {/* Organization section — only for admins */}
               {showOrgGroup && (
                 <>
-                  <p data-tour="settings-org-group" className="px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p
+                    data-tour="settings-org-group"
+                    className={"px-3.5 pb-1.5 text-[11px] font-semibold uppercase tracking-wider " + "text-muted-foreground"}>
                     {t("settings.nav.organizationGroup")}
                   </p>
                   {orgNavItems.map(item => {

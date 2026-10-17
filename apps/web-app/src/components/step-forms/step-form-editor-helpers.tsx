@@ -67,10 +67,20 @@ export function OptionsEditor({ options, editable, onChange }: { options: string
           )}
           {editable && (
             <>
-              <button type="button" disabled={i === 0} onClick={() => onChange(moveField(options, i, i - 1))} aria-label={t("stepForm.moveUp", "Move up")} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30">
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => onChange(moveField(options, i, i - 1))}
+                aria-label={t("stepForm.moveUp", "Move up")}
+                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30">
                 <ArrowUp className="size-3" />
               </button>
-              <button type="button" disabled={i === options.length - 1} onClick={() => onChange(moveField(options, i, i + 1))} aria-label={t("stepForm.moveDown", "Move down")} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30">
+              <button
+                type="button"
+                disabled={i === options.length - 1}
+                onClick={() => onChange(moveField(options, i, i + 1))}
+                aria-label={t("stepForm.moveDown", "Move down")}
+                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30">
                 <ArrowDown className="size-3" />
               </button>
               <button
@@ -87,7 +97,10 @@ export function OptionsEditor({ options, editable, onChange }: { options: string
         </div>
       ))}
       {editable && options.length < STEP_FORM_LIMITS.maxOptions && (
-        <button type="button" onClick={() => onChange([...options, ""])} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
+        <button
+          type="button"
+          onClick={() => onChange([...options, ""])}
+          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
           <Plus className="size-3" />
           {t("stepForm.addOption", "Add option")}
         </button>
@@ -112,7 +125,9 @@ export function StepFormPreview({ stepName, fields }: { stepName: string; fields
           <p className="text-sm font-light">{stepName || "—"}</p>
           <p className="text-[10px] text-slate-400">
             {fields.length
-              ? t("stepForm.dialog.caption", { required, count: fields.length, defaultValue: "{{required}} required · {{count}} fields, from the workflow" })
+              ? t(
+                "stepForm.dialog.caption",
+                { required, count: fields.length, defaultValue: "{{required}} required · {{count}} fields, from the workflow" })
               : t("stepForm.previewNothing", "This step asks nothing — one tap and the job moves.")}
           </p>
           {fields.map((f) => (
@@ -143,12 +158,16 @@ export function StepFormPreview({ stepName, fields }: { stepName: string; fields
                 </div>
               ) : (
                 <div className={box}>
-                  {f.type === "date" ? t("stepForm.dialog.datePlaceholder", "Pick a day") : f.type === "number" ? "0" : t("stepForm.dialog.notePlaceholder", "Type here…")}
+                  {f.type === "date"
+                    ? t("stepForm.dialog.datePlaceholder", "Pick a day")
+                    : f.type === "number" ? "0" : t("stepForm.dialog.notePlaceholder", "Type here…")}
                 </div>
               )}
             </div>
           ))}
-          <div className="rounded-full bg-gradient-to-b from-[#7fe6c8] to-[#10b993] py-1.5 text-center text-[11px] font-medium text-[#001810]">
+          <div
+            className={"rounded-full bg-gradient-to-b from-[#7fe6c8] to-[#10b993] py-1.5 " +
+              "text-center text-[11px] font-medium text-[#001810]"}>
             {stepName || "—"}
           </div>
         </div>

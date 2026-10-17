@@ -85,7 +85,9 @@ const DependencyRow = memo(function DependencyRow({
         <button
           onClick={() => onRemove(dep.id)}
           disabled={isRemoving}
-          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 transition-all shrink-0"
+          className={"opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 " +
+            "dark:hover:bg-red-500/10 text-muted-foreground hover:text-red-600 " +
+            "transition-all shrink-0"}
         >
           <X className="size-3.5" />
         </button>

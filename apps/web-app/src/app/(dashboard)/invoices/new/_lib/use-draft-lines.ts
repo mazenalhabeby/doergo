@@ -104,7 +104,16 @@ export function useDraftLines({
           (() => {
             const people = new Map<string, PersonWork>()
             const person = (id: string, name: string, roleId?: string | null, roleName?: string | null) => {
-              const p = people.get(id) ?? { workerId: id, workerName: name, workRoleId: roleId ?? null, workRoleName: roleName ?? null, hours: [], days: [], jobs: [] }
+              const p = people.get(id) ??
+                {
+                  workerId: id,
+                  workerName: name,
+                  workRoleId: roleId ?? null,
+                  workRoleName: roleName ?? null,
+                  hours: [],
+                  days: [],
+                  jobs: []
+                }
               if (!p.workRoleId && roleId) { p.workRoleId = roleId; p.workRoleName = roleName ?? null }
               people.set(id, p)
               return p

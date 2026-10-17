@@ -5,7 +5,14 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { hasAccessModule, moduleAnywhere, resolveCrmCaps, type CalendarItem, type CalendarLayer, type DayKind } from "@hbcfield/shared/client"
+import {
+  hasAccessModule,
+  moduleAnywhere,
+  resolveCrmCaps,
+  type CalendarItem,
+  type CalendarLayer,
+  type DayKind
+} from "@hbcfield/shared/client"
 import { AlertCircle, ChevronLeft, ChevronRight, Users } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -60,7 +67,8 @@ export default function CalendarPage() {
   const dayKinds = useMemo(() => new Map<string, DayKind>((data?.days ?? []).map((d) => [d.day, d.kind])), [data])
   const holidayKeys = useMemo(() => {
     const s = new Set<string>()
-    for (const i of items) if (i.kind === "holiday") for (let d = i.start; d <= i.end; d = dayKey(addDays(new Date(`${d}T12:00:00`), 1))) s.add(d)
+    for (const i of items) if (i.kind === "holiday") for (let d = i.start; d <= i.end; d = dayKey(
+      addDays(new Date(`${d}T12:00:00`), 1))) s.add(d)
     return s
   }, [items])
   const counts = useMemo(() => {
@@ -93,7 +101,12 @@ export default function CalendarPage() {
     if (view === "day") return anchor.toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long" })
     const a = days[0]!, b = days[days.length - 1]!
     const sameMonth = a.getMonth() === b.getMonth()
-    return `${a.toLocaleDateString(loc, { day: "numeric", ...(sameMonth ? {} : { month: "short" }) })} – ${b.toLocaleDateString(loc, { day: "numeric", month: "short", year: "numeric" })}`
+    return `${a.toLocaleDateString(
+      loc,
+      {
+        day: "numeric",
+        ...(sameMonth ? {} : { month: "short" })
+      })} – ${b.toLocaleDateString(loc, { day: "numeric", month: "short", year: "numeric" })}`
   }, [anchor, days, view])
 
   const week = view === "week" ? isoWeek(anchor) : null
@@ -102,7 +115,9 @@ export default function CalendarPage() {
   // Deciding a leave is the same permission the approve route asks; the server still narrows it to the people they lead.
   const canDecideLeave = user?.role === "ADMIN" || hasPermission("canManageRota")
   // What New may offer — each the same gate the server asks (it refuses the rest anyway).
-  const crm = !!user && moduleAnywhere(user, "crm") && resolveCrmCaps(String(user.role), (user as { access?: { org?: unknown } }).access?.org as never).canAccess
+  const crm = !!user &&
+    moduleAnywhere(user, "crm") &&
+    resolveCrmCaps(String(user.role), (user as { access?: { org?: unknown } }).access?.org as never).canAccess
   const canNewJob = user?.role === "ADMIN" || hasPermission("canCreateTasks")
   const canTimeOff = !!user && hasAccessModule(user, "time_off")
   const offices = spaces.map((s) => ({ id: s.id, name: s.name }))
@@ -139,12 +154,25 @@ export default function CalendarPage() {
         <main className="order-1 min-w-0 space-y-4 lg:order-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
-            {week && <span className="rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs text-muted-foreground">{t("calendar.weekNo", { n: week })}</span>}
+            {week &&
+              <span
+                className={"rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs " +
+                  "text-muted-foreground"}>{t("calendar.weekNo", { n: week })}</span>}
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1">
-                <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t("calendar.previous")} onClick={() => step(-1)}><ChevronLeft className="h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label={t("calendar.previous")}
+                  onClick={() => step(-1)}><ChevronLeft className="h-4 w-4" /></Button>
                 <Button variant="outline" size="sm" className="h-8" onClick={() => setAnchor(new Date())}>{t("calendar.today")}</Button>
-                <Button variant="outline" size="icon" className="h-8 w-8" aria-label={t("calendar.next")} onClick={() => step(1)}><ChevronRight className="h-4 w-4" /></Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label={t("calendar.next")}
+                  onClick={() => step(1)}><ChevronRight className="h-4 w-4" /></Button>
               </div>
               <div role="tablist" className="inline-flex rounded-xl border bg-muted/40 p-0.5">
                 {views.map((v) => (
@@ -154,7 +182,9 @@ export default function CalendarPage() {
                     type="button"
                     aria-selected={view === v}
                     onClick={() => setView(v)}
-                    className={cn("rounded-lg px-3 py-1 text-[13px] font-medium text-muted-foreground transition", view === v && "bg-background text-foreground shadow-sm ring-1 ring-border")}
+                    className={cn(
+                      ("rounded-lg px-3 py-1 text-[13px] font-medium text-muted-foreground " + "transition"),
+                      view === v && "bg-background text-foreground shadow-sm ring-1 ring-border")}
                   >
                     {t(`calendar.view.${v}`)}
                   </button>
@@ -162,7 +192,8 @@ export default function CalendarPage() {
                 {scheduleAccess && (
                   <Link
                     href={spaceId ? `/employees/availability?space=${spaceId}` : "/employees/availability"}
-                    className="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-[13px] font-medium text-muted-foreground transition hover:text-foreground"
+                    className={"inline-flex items-center gap-1 rounded-lg px-3 py-1 text-[13px] " +
+                      "font-medium text-muted-foreground transition hover:text-foreground"}
                   >
                     <Users className="h-3.5 w-3.5" />{t("calendar.view.team")}
                   </Link>
@@ -173,8 +204,13 @@ export default function CalendarPage() {
 
           {data?.places && data.places.length > 0 && (() => {
             // One line when every place agrees; otherwise one chip per place.
-            const wk = (p: (typeof data.places)[number]) => [...p.weekend].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => new Date(2026, 1, 1 + d).toLocaleDateString(dateLocale(), { weekday: "short" })).join(" · ")
-            const same = data.places.every((p) => wk(p) === wk(data.places[0]!) && p.country === data.places[0]!.country && p.region === data.places[0]!.region)
+            const wk = (p: (typeof data.places)[number]) => [
+              ...p.weekend].sort((a, b) => ((a +
+                6) % 7) - ((b + 6) % 7)).map((d) => new Date(2026, 1, 1 + d).toLocaleDateString(dateLocale(), { weekday: "short" })).join(
+              " · ")
+            const same = data.places.every((p) => wk(p) === wk(data.places[0]!) &&
+              p.country === data.places[0]!.country &&
+              p.region === data.places[0]!.region)
             const list = same ? [data.places[0]!] : data.places
             return (
               <div className="-mt-2 flex flex-wrap gap-1.5 text-xs text-muted-foreground">
@@ -197,7 +233,14 @@ export default function CalendarPage() {
           ) : !data && isLoading && layers.length ? (
             <div className="h-[640px] animate-pulse rounded-2xl border bg-muted/30" />
           ) : view === "month" ? (
-            <MonthGrid anchor={anchor} days={days} items={items} dayKinds={dayKinds} onSelect={select} onOpenDay={(d) => { setAnchor(d); setView("day") }} />
+            <MonthGrid
+              anchor={anchor}
+              days={days}
+              items={items}
+              dayKinds={dayKinds}
+              onSelect={select}
+              onOpenDay={(d) => { setAnchor(d); setView("day") }}
+            />
           ) : view === "agenda" ? (
             <AgendaList days={days} items={items} dayKinds={dayKinds} onSelect={select} />
           ) : (
@@ -234,7 +277,12 @@ export default function CalendarPage() {
         onTimeOff={canTimeOff ? (day) => router.push(`/my/time-off?from=${day}`) : undefined}
       />
       {canNewJob && (
-        <CreateTaskDialog open={!!jobAt} onOpenChange={(o) => { if (!o) setJobAt(null) }} defaultSpaceId={spaceId ?? null} defaultDueDate={jobAt} />
+        <CreateTaskDialog
+          open={!!jobAt}
+          onOpenChange={(o) => { if (!o) setJobAt(null) }}
+          defaultSpaceId={spaceId ?? null}
+          defaultDueDate={jobAt}
+        />
       )}
     </div>
   )

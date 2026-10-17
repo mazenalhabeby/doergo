@@ -145,7 +145,9 @@ export function VisibilityChip({ row }: { row: IssuedRow }) {
   if (row.hiddenFromMember) {
     const first = row.memberName.split(" ")[0] || row.memberName
     return (
-      <span className="hidden shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+      <span
+        className={"hidden shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 " +
+          "text-xs font-medium text-muted-foreground sm:inline-flex"}>
         <EyeOff className="h-3 w-3" />
         {t("documents.control.hiddenFrom", { defaultValue: "Hidden from {{name}}", name: first })}
       </span>
@@ -153,7 +155,9 @@ export function VisibilityChip({ row }: { row: IssuedRow }) {
   }
   if (row.rolesOverridden) {
     return (
-      <span className="hidden shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground sm:inline-flex">
+      <span
+        className={"hidden shrink-0 items-center gap-1 rounded-full bg-muted px-2.5 py-1 " +
+          "text-xs font-medium text-muted-foreground sm:inline-flex"}>
         <Eye className="h-3 w-3" />
         {t("documents.control.limited", "Limited")}
       </span>

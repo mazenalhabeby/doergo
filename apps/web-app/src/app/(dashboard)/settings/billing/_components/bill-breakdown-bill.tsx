@@ -8,7 +8,16 @@ import type { BillBreakdownState } from "./use-bill-breakdown";
 import type { BillBreakdown } from "./bill-breakdown";
 
 /** Part of BillBreakdown's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function BillBreakdownBill({ vm, estimate, bill }: { vm: BillBreakdownState; estimate: Parameters<typeof BillBreakdown>[0]['estimate']; bill: Parameters<typeof BillBreakdown>[0]['bill'] }) {
+export function BillBreakdownBill(
+  {
+    vm,
+    estimate,
+    bill
+  }: {
+    vm: BillBreakdownState;
+    estimate: Parameters<typeof BillBreakdown>[0]['estimate'];
+    bill: Parameters<typeof BillBreakdown>[0]['bill']
+  }) {
   const { t, listTotal, share, spacesCents, peopleCents } = vm;
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card p-5">

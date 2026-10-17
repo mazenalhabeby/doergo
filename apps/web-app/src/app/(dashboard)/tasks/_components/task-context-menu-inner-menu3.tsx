@@ -10,7 +10,18 @@ import type { TaskContextMenuInnerState } from "./use-task-context-menu-inner"
 import type { TaskContextMenuInner } from "./task-context-menu"
 
 /** Part of TaskContextMenuInner's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskContextMenuInnerMenu3({ vm, actions, phases, task }: { vm: TaskContextMenuInnerState; actions: Parameters<typeof TaskContextMenuInner>[0]['actions']; phases: NonNullable<Parameters<typeof TaskContextMenuInner>[0]['phases']>; task: Parameters<typeof TaskContextMenuInner>[0]['task'] }) {
+export function TaskContextMenuInnerMenu3(
+  {
+    vm,
+    actions,
+    phases,
+    task
+  }: {
+    vm: TaskContextMenuInnerState;
+    actions: Parameters<typeof TaskContextMenuInner>[0]['actions'];
+    phases: NonNullable<Parameters<typeof TaskContextMenuInner>[0]['phases']>;
+    task: Parameters<typeof TaskContextMenuInner>[0]['task']
+  }) {
   const { hasModule, t } = vm
   return (
     <>{hasModule('phases') && actions.onPhaseChange && phases.length > 0 && (

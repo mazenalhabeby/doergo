@@ -164,7 +164,8 @@ export const KanbanColumn = React.memo(function KanbanColumn({
           role="listitem"
           tabIndex={0}
           aria-label={`${task.title} — ${label}`}
-          className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+          className={"rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-primary " +
+            "focus-visible:ring-offset-1 focus-visible:ring-offset-background"}
           onDragOver={(e) => handleCardDragOver(e, i)}
           onDrop={handleCardDrop}
         >

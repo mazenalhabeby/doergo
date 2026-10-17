@@ -133,7 +133,15 @@ export type Form = {
 }
 
 export const EMPTY_BANK: LegalEntityBankAccount = {
-  label: null, holder: null, bankName: null, iban: null, bic: null, accountNumber: null, routingNumber: null, currency: null, isDefault: false,
+  label: null,
+    holder: null,
+    bankName: null,
+    iban: null,
+    bic: null,
+    accountNumber: null,
+    routingNumber: null,
+    currency: null,
+    isDefault: false,
 }
 
 export function formOf(c: LegalEntity | null): Form {
@@ -148,12 +156,25 @@ export function formOf(c: LegalEntity | null): Form {
 
 export function BankInput({
   label, value, onChange, placeholder, mono, className,
-}: { label: string; value: string | null; onChange: (v: string | null) => void; placeholder?: string; mono?: boolean; className?: string }) {
+}: {
+  label: string;
+  value: string | null;
+  onChange: (v: string | null) => void;
+  placeholder?: string;
+  mono?: boolean;
+  className?: string
+}) {
   const id = useId()
   return (
     <div className={cn("space-y-1.5", className)}>
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} value={value ?? ""} placeholder={placeholder} className={mono ? "font-mono" : undefined} onChange={(e) => onChange(e.target.value || null)} />
+      <Input
+        id={id}
+        value={value ?? ""}
+        placeholder={placeholder}
+        className={mono ? "font-mono" : undefined}
+        onChange={(e) => onChange(e.target.value || null)}
+      />
     </div>
   )
 }

@@ -152,7 +152,9 @@ export function InvoiceDocumentCreate({ vm }: { vm: InvoiceDocumentState }) {
                     </td>
                     <td className="whitespace-nowrap py-2.5 text-right tabular-nums">{row.descriptive ? "" : units.qty(row)}</td>
                     <td className="whitespace-nowrap py-2.5 text-right tabular-nums">
-                      {row.descriptive ? "" : <>{money(row.unitPrice, currency)}<span className="text-[11px] text-muted-foreground">{units.per(row)}</span></>}
+                      {row.descriptive
+                        ? ""
+                        : <>{money(row.unitPrice, currency)}<span className="text-[11px] text-muted-foreground">{units.per(row)}</span></>}
                     </td>
                     <td className="py-2.5 text-right tabular-nums">
                       {row.descriptive

@@ -14,7 +14,10 @@ import type { HeadToggle, HeadToggleGroup, ReportToggle } from "../_lib/report-m
 export function CopySwitch({ copy, onChange }: { copy: TaskReportCopy; onChange: (c: TaskReportCopy) => void }) {
   const { t } = useTranslation()
   return (
-    <div role="radiogroup" aria-label={t("tasks.report.copy.label")} className="inline-grid grid-flow-col gap-0.5 rounded-lg border border-border bg-muted/60 p-0.5">
+    <div
+      role="radiogroup"
+      aria-label={t("tasks.report.copy.label")}
+      className={"inline-grid grid-flow-col gap-0.5 rounded-lg border border-border " + "bg-muted/60 p-0.5"}>
       {(["office", "client"] as const).map((c) => (
         <button
           key={c}

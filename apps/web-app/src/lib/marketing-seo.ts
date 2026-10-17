@@ -17,27 +17,37 @@ const LOCALE_META: Record<string, Meta> = {
   en: {
     title: "HBCField — Field Service Management, Time & Attendance Software",
     description:
-      "HBCField unifies task dispatch, GPS tracking, employee time & attendance, service reports and invoicing for field teams — in real time on web and mobile.",
+      ("HBCField unifies task dispatch, GPS tracking, employee time & " +
+        "attendance, service reports and invoicing for field teams — in real time " +
+        "on web and mobile."),
   },
   de: {
     title: "HBCField — Außendienst-Management, Zeit- & Anwesenheitssoftware",
     description:
-      "HBCField vereint Auftragsdisposition, GPS-Tracking, Arbeitszeit- & Anwesenheitserfassung, Serviceberichte und Rechnungsstellung für Außendienstteams — in Echtzeit auf Web und Mobile.",
+      ("HBCField vereint Auftragsdisposition, GPS-Tracking, Arbeitszeit- & " +
+        "Anwesenheitserfassung, Serviceberichte und Rechnungsstellung für " +
+        "Außendienstteams — in Echtzeit auf Web und Mobile."),
   },
   es: {
     title: "HBCField — Software de gestión de servicios de campo y control horario",
     description:
-      "HBCField unifica la asignación de tareas, el seguimiento GPS, el control horario y de asistencia, los informes de servicio y la facturación para equipos de campo, en tiempo real en web y móvil.",
+      ("HBCField unifica la asignación de tareas, el seguimiento GPS, el control " +
+        "horario y de asistencia, los informes de servicio y la facturación para " +
+        "equipos de campo, en tiempo real en web y móvil."),
   },
   fr: {
     title: "HBCField — Gestion des interventions terrain, temps & présence",
     description:
-      "HBCField réunit la répartition des tâches, le suivi GPS, le temps et la présence, les rapports d’intervention et la facturation pour les équipes terrain — en temps réel sur le web et le mobile.",
+      ("HBCField réunit la répartition des tâches, le suivi GPS, le temps et la " +
+        "présence, les rapports d’intervention et la facturation pour les équipes " +
+        "terrain — en temps réel sur le web et le mobile."),
   },
   it: {
     title: "HBCField — Gestione servizi sul campo, presenze e orari",
     description:
-      "HBCField unifica l’assegnazione dei lavori, il tracciamento GPS, presenze e orari, i rapporti di servizio e la fatturazione per i team sul campo, in tempo reale su web e mobile.",
+      ("HBCField unifica l’assegnazione dei lavori, il tracciamento GPS, " +
+        "presenze e orari, i rapporti di servizio e la fatturazione per i team " +
+        "sul campo, in tempo reale su web e mobile."),
   },
 };
 

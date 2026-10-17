@@ -38,7 +38,13 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
   // (e.g. the portal invite, where the resident IS the client being invited).
   // entityLabel = generalize the copy for non-apartment portals (Order/Workspace…);
   // falls back to "Apartment" when absent (the space Apartments tab).
-  spaceId: string; apartmentPortalIds?: string[]; existing?: SpaceUnit; onSaved: (unit?: SpaceUnit) => void; trigger: React.ReactNode; hideResident?: boolean; entityLabel?: string
+  spaceId: string;
+    apartmentPortalIds?: string[];
+    existing?: SpaceUnit;
+    onSaved: (unit?: SpaceUnit) => void;
+    trigger: React.ReactNode;
+    hideResident?: boolean;
+    entityLabel?: string
 }) {
   const hasApartmentPortal = !hideResident && (apartmentPortalIds?.length ?? 0) > 0
   const { t } = useTranslation()
@@ -69,12 +75,22 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
       const residentUserId = resident.startsWith("u:") ? resident.slice(2) : null
       const customerId = resident.startsWith("c:") ? resident.slice(2) : null
       const cleanDetails = details.map((d) => ({ label: d.label.trim(), value: d.value.trim() })).filter((d) => d.label)
-      const base = { name: name.trim() || address, address, lat: lat ?? undefined, lng: lng ?? undefined, residentUserId, customerId, details: cleanDetails }
+      const base = {
+        name: name.trim() || address,
+        address,
+        lat: lat ?? undefined,
+        lng: lng ?? undefined,
+        residentUserId,
+        customerId,
+        details: cleanDetails
+      }
       return existing ? spaceUnitsApi.update(spaceId, existing.id, base) : spaceUnitsApi.create(spaceId, base)
     },
     onSuccess: (unit) => {
       notify.success(entityLabel
-        ? (existing ? t("apartments.updatedEntity", "{{e}} updated", { e: entityLabel }) : t("apartments.addedEntity", "{{e}} added", { e: entityLabel }))
+        ? (existing
+          ? t("apartments.updatedEntity", "{{e}} updated", { e: entityLabel })
+          : t("apartments.addedEntity", "{{e}} added", { e: entityLabel }))
         : (existing ? t("apartments.updated", "Apartment updated") : t("apartments.added", "Apartment added")))
       onSaved(unit); setOpen(false)
     },
@@ -93,7 +109,9 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[88vh] overflow-y-auto">
         <DialogHeader><DialogTitle>{entityLabel
-          ? (existing ? t("apartments.editEntity", "Edit {{e}}", { e: entityLabel }) : t("apartments.addEntity", "Add {{e}}", { e: entityLabel }))
+          ? (existing
+            ? t("apartments.editEntity", "Edit {{e}}", { e: entityLabel })
+            : t("apartments.addEntity", "Add {{e}}", { e: entityLabel }))
           : (existing ? t("apartments.edit", "Edit apartment") : t("apartments.add", "Add apartment"))}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1">
@@ -115,8 +133,19 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
             <div className="rounded-xl border border-border">
               {/* Tabs */}
               <div className="flex items-center gap-1 border-b border-border p-1">
-                <TabBtn active={tab === "members"} onClick={() => { setTab("members"); setQ("") }} icon={User} label={t("apartments.members", "Members")} />
-                {hasApartmentPortal && <TabBtn active={tab === "clients"} onClick={() => { setTab("clients"); setQ("") }} icon={Smartphone} label={t("apartments.clients", "Clients")} />}
+                <TabBtn
+                  active={tab === "members"}
+                  onClick={() => { setTab("members"); setQ("") }}
+                  icon={User}
+                  label={t("apartments.members", "Members")}
+                />
+                {hasApartmentPortal &&
+                  <TabBtn
+                    active={tab === "clients"}
+                    onClick={() => { setTab("clients"); setQ("") }}
+                    icon={Smartphone}
+                    label={t("apartments.clients", "Clients")}
+                  />}
                 <button type="button" onClick={() => setResident("none")}
                   className={cn("ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
                     resident === "none" ? "text-primary" : "text-muted-foreground hover:text-foreground")}>
@@ -135,10 +164,18 @@ export function ApartmentDialog({ spaceId, apartmentPortalIds, existing, onSaved
                   <p className="py-6 text-center text-xs text-muted-foreground">{t("common.loading", "Loading…")}</p>
                 ) : rows.length === 0 ? (
                   <p className="py-6 text-center text-xs text-muted-foreground">
-                    {tab === "clients" ? t("apartments.noAppResidents", "No app clients yet — invite one from the portal.") : t("apartments.noMembers", "No members")}
+                    {tab === "clients"
+                      ? t("apartments.noAppResidents", "No app clients yet — invite one from the portal.")
+                      : t("apartments.noMembers", "No members")}
                   </p>
                 ) : rows.map((r) => (
-                  <PersonPickRow key={r.value} name={r.name} sub={r.sub} selected={resident === r.value} onClick={() => setResident(r.value)} />
+                  <PersonPickRow
+                    key={r.value}
+                    name={r.name}
+                    sub={r.sub}
+                    selected={resident === r.value}
+                    onClick={() => setResident(r.value)}
+                  />
                 ))}
               </div>
             </div>

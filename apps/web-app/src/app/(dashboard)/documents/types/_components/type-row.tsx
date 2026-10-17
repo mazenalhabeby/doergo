@@ -23,19 +23,27 @@ export function TypeRow({
   const visibleTo = roles.filter((r) => type.visibleToRoleIds.includes(r.id))
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+    <li
+      className={"flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 " +
+        "bg-white p-4 dark:border-slate-800 dark:bg-slate-900"}>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <DirectionIcon direction={type.direction} />
           <span className="font-medium text-slate-900 dark:text-slate-100">{type.label}</span>
           {type.isCredential && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+            <span
+              className={"inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 " +
+                "text-[11px] font-semibold text-amber-700 dark:bg-amber-950 " +
+                "dark:text-amber-400"}>
               <ShieldCheck className="h-3 w-3" />
               {t("documents.types.credential")}
             </span>
           )}
           {visibleTo.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span
+              className={"inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 " +
+                "text-[11px] font-semibold text-slate-600 dark:bg-slate-800 " +
+                "dark:text-slate-300"}>
               <EyeOff className="h-3 w-3" />
               {t("documents.types.visibleToBadge", {
                 roles: visibleTo.map((r) => r.name).join(", "),

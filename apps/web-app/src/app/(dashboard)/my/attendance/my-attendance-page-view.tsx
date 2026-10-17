@@ -4,7 +4,20 @@ import { localDateKey, todayKey } from "@hbcfield/shared/client"
 import type { useMyAttendancePage } from "./use-my-attendance-page"
 
 /** What MyAttendancePage works out after its early returns, moved here unchanged; called from the same place. */
-export function MyAttendancePageView({ locale, clockedIn, activeEntry, effectiveRange, entries }: { locale: ReturnType<typeof useMyAttendancePage>['locale']; clockedIn: ReturnType<typeof useMyAttendancePage>['clockedIn']; activeEntry: ReturnType<typeof useMyAttendancePage>['activeEntry']; effectiveRange: ReturnType<typeof useMyAttendancePage>['effectiveRange']; entries: ReturnType<typeof useMyAttendancePage>['entries'] }) {
+export function MyAttendancePageView(
+  {
+    locale,
+    clockedIn,
+    activeEntry,
+    effectiveRange,
+    entries
+  }: {
+    locale: ReturnType<typeof useMyAttendancePage>['locale'];
+    clockedIn: ReturnType<typeof useMyAttendancePage>['clockedIn'];
+    activeEntry: ReturnType<typeof useMyAttendancePage>['activeEntry'];
+    effectiveRange: ReturnType<typeof useMyAttendancePage>['effectiveRange'];
+    entries: ReturnType<typeof useMyAttendancePage>['entries']
+  }) {
   /*
     The chosen window, as days rather than as a list.
 

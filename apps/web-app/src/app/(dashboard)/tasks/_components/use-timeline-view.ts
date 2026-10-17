@@ -221,7 +221,9 @@ export function useTimelineView({ tasks, phases }: Pick<TimelineViewProps, 'task
           // Successor start
           const succTask = tasks.find((t) => t.id === dep.successorId)
           if (!succTask) continue
-          const succStart = succTask.startDate ? startOfDay(new Date(succTask.startDate)) : succTask.dueDate ? startOfDay(new Date(succTask.dueDate)) : null
+          const succStart = succTask.startDate
+            ? startOfDay(new Date(succTask.startDate))
+            : succTask.dueDate ? startOfDay(new Date(succTask.dueDate)) : null
           if (!succStart) continue
 
           const x1 = (diffDays(predEnd, rangeStart) + 1) * colWidth

@@ -68,7 +68,9 @@ export function RouteEditor({ route, onChange }: { route: string[]; onChange: (r
                 key={role}
                 className="flex items-center gap-3 rounded-lg border border-border/80 bg-card px-3 py-2.5"
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary tabular-nums">
+                <span
+                  className={"flex size-7 shrink-0 items-center justify-center rounded-md " +
+                    "bg-primary/10 text-xs font-semibold text-primary tabular-nums"}>
                   {i + 1}
                 </span>
                 <Icon className="size-4 shrink-0 text-muted-foreground" />

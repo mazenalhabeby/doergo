@@ -5,7 +5,24 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { personName, MEETING_PROVIDER_NAMES, meetingProvider, telHref, type CalendarItem } from "@hbcfield/shared/client"
-import { Bell, Building2, CalendarClock, Check, Clock, ExternalLink, Flag, HelpCircle, MapPin, Navigation, Pencil, Phone, Trash2, Users, Video, X } from "lucide-react"
+import {
+  Bell,
+  Building2,
+  CalendarClock,
+  Check,
+  Clock,
+  ExternalLink,
+  Flag,
+  HelpCircle,
+  MapPin,
+  Navigation,
+  Pencil,
+  Phone,
+  Trash2,
+  Users,
+  Video,
+  X
+} from "lucide-react"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -16,6 +33,7 @@ import { serverErrorMessage } from "@/lib/server-error"
 import { KIND_COLOR } from "../_lib/kinds"
 import { fromKey } from "../_lib/layout"
 import { Inbox } from "lucide-react"
+import { whenText } from "./item-popover-parts"
 
 interface Props {
   item: CalendarItem | null
@@ -27,17 +45,6 @@ interface Props {
   canDecideLeave?: boolean
   /** May open Schedule & Time Off — the only page a colleague's leave links to. */
   scheduleAccess?: boolean
-}
-
-function whenText(item: CalendarItem): string {
-  const loc = dateLocale()
-  if (item.allDay) {
-    const s = fromKey(item.start), e = fromKey(item.end)
-    const f = (d: Date) => d.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short" })
-    return item.start === item.end ? f(s) : `${f(s)} – ${f(e)}`
-  }
-  const s = new Date(item.start), e = new Date(item.end)
-  return `${s.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short" })} · ${s.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })} – ${e.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`
 }
 
 const RSVP = [
@@ -95,30 +102,57 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
         <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color }}>
           <span className="h-2 w-2 rounded-[3px]" style={{ background: color }} />
           {t(`calendar.kind.${item.kind}`)}
-          {item.kind === "holiday" && item.status === "ESTIMATED" && <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-amber-600 dark:text-amber-300">{t("calendar.estimated")}</span>}
-          {item.kind === "leave" && item.status === "PENDING" && <span className="ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-amber-600 dark:text-amber-300">{t("calendar.requested")}</span>}
+          {item.kind === "holiday" &&
+            item.status === "ESTIMATED" &&
+            <span
+              className={"ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] normal-case " +
+                "tracking-normal text-amber-600 dark:text-amber-300"}>{t("calendar.estimated")}</span>}
+          {item.kind === "leave" &&
+            item.status === "PENDING" &&
+            <span
+              className={"ml-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] normal-case " +
+                "tracking-normal text-amber-600 dark:text-amber-300"}>{t("calendar.requested")}</span>}
         </div>
         <h4 className="mt-2 text-base font-semibold leading-snug tracking-tight">{ev?.title ?? item.title}</h4>
 
         <div className="mt-3 space-y-2 text-[13px] text-muted-foreground">
-          <div className="flex items-center gap-2.5"><Clock className="h-4 w-4 shrink-0" /><span className="text-foreground">{whenText(item)}</span></div>
+          <div
+            className="flex items-center gap-2.5"><Clock
+              className="h-4 w-4 shrink-0"
+            /><span className="text-foreground">{whenText(item)}</span></div>
           {item.kind === "leave" && item.note && (
-            <div className="flex items-center gap-2.5"><Flag className="h-4 w-4 shrink-0" />{t(`calendar.leaveType.${item.note}`, item.note)}</div>
+            <div
+              className="flex items-center gap-2.5"><Flag
+                className="h-4 w-4 shrink-0"
+              />{t(`calendar.leaveType.${item.note}`, item.note)}</div>
           )}
           {item.kind === "shift" && item.note && (
             <div className="flex items-center gap-2.5"><MapPin className="h-4 w-4 shrink-0" />{item.note}</div>
           )}
           {ev?.meetingMode === "IN_PERSON" && ev.placeKind === "OFFICE" && ev.placeSpace && (
-            <div className="flex items-center gap-2.5"><Building2 className="h-4 w-4 shrink-0" /><span className="truncate text-foreground">{ev.placeSpace.name}{ev.room ? ` · ${ev.room}` : ""}</span></div>
+            <div
+              className="flex items-center gap-2.5"><Building2
+                className="h-4 w-4 shrink-0"
+              /><span className="truncate text-foreground">{ev.placeSpace.name}{ev.room ? ` · ${ev.room}` : ""}</span></div>
           )}
           {(ev?.location || item.location) && ev?.meetingMode !== "PHONE" && (
-            <div className="flex items-center gap-2.5"><MapPin className="h-4 w-4 shrink-0" /><span className="truncate text-foreground">{ev?.location ?? item.location}</span></div>
+            <div
+              className="flex items-center gap-2.5"><MapPin
+                className="h-4 w-4 shrink-0"
+              /><span className="truncate text-foreground">{ev?.location ?? item.location}</span></div>
           )}
           {ev?.meetingMode === "ONLINE" && ev.meetingUrl && meetingProvider(ev.meetingUrl) && (
-            <div className="flex items-center gap-2.5"><Video className="h-4 w-4 shrink-0" />{MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]}</div>
+            <div
+              className="flex items-center gap-2.5"><Video
+                className="h-4 w-4 shrink-0"
+              />{MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]}</div>
           )}
           {ev?.meetingMode === "PHONE" && ev.phone && (
-            <div className="flex items-center gap-2.5"><Phone className="h-4 w-4 shrink-0" /><span className="text-foreground">{ev.phone}</span><span>· {t(`calendar.call.${ev.callDirection ?? "OUTGOING"}`)}</span></div>
+            <div
+              className="flex items-center gap-2.5"><Phone
+                className="h-4 w-4 shrink-0"
+              /><span
+                className="text-foreground">{ev.phone}</span><span>· {t(`calendar.call.${ev.callDirection ?? "OUTGOING"}`)}</span></div>
           )}
           {ev && ev.attendees.length > 1 && (
             <div className="flex items-start gap-2.5">
@@ -146,7 +180,10 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
             </div>
           )}
           {ev?.reminders?.length ? (
-            <div className="flex items-center gap-2.5"><Bell className="h-4 w-4 shrink-0" />{ev.reminders.map((m) => t("calendar.reminderBefore", { label: offsetLabel(m, t) })).join(", ")}</div>
+            <div
+              className="flex items-center gap-2.5"><Bell
+                className="h-4 w-4 shrink-0"
+              />{ev.reminders.map((m) => t("calendar.reminderBefore", { label: offsetLabel(m, t) })).join(", ")}</div>
           ) : null}
           {ev?.description && <p className="whitespace-pre-wrap border-t pt-2 text-[13px] text-foreground/90">{ev.description}</p>}
         </div>
@@ -162,7 +199,11 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
           </a>
         )}
         {ev?.meetingMode === "IN_PERSON" && ev.location && (
-          <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" className="ml-2 mt-3 inline-flex">
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 mt-3 inline-flex">
             <Button size="sm" variant="outline" className="gap-1.5"><Navigation className="h-4 w-4" />{t("calendar.directions")}</Button>
           </a>
         )}
@@ -196,14 +237,44 @@ export function ItemPopover({ item, anchor, onClose, onEdit, myId, canDecideLeav
         <div className="mt-3 flex gap-2 border-t pt-3">
           {ev?.canEdit && (
             <>
-              <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => { onEdit(ev.id); onClose() }}><Pencil className="h-3.5 w-3.5" />{t("common.edit", "Edit")}</Button>
-              <Button size="sm" variant="ghost" className="gap-1.5 text-destructive hover:text-destructive" disabled={cancel.isPending} onClick={() => cancel.mutate()}><Trash2 className="h-3.5 w-3.5" />{t("calendar.cancelEvent")}</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 gap-1.5"
+                onClick={() => { onEdit(ev.id); onClose() }}><Pencil className="h-3.5 w-3.5" />{t("common.edit", "Edit")}</Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-1.5 text-destructive hover:text-destructive"
+                disabled={cancel.isPending}
+                onClick={() => cancel.mutate()}><Trash2 className="h-3.5 w-3.5" />{t("calendar.cancelEvent")}</Button>
             </>
           )}
-          {item.ref?.type === "task" && <Link href={`/tasks/${item.ref.id}`} className="flex-1"><Button size="sm" className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openJob")}</Button></Link>}
-          {item.ref?.type === "customer" && <Link href={`/clients/${item.ref.id}`} className="flex-1"><Button size="sm" className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openClient")}</Button></Link>}
-          {item.ref?.type === "document" && <Link href="/documents" className="flex-1"><Button size="sm" variant="outline" className="w-full">{t("calendar.openDocuments")}</Button></Link>}
-          {leaveHref && <Link href={leaveHref} className="flex-1"><Button size="sm" variant="outline" className="w-full gap-1.5"><CalendarClock className="h-3.5 w-3.5" />{t(othersLeave ? "calendar.openSchedule" : "calendar.openTimeOff")}</Button></Link>}
+          {item.ref?.type === "task" &&
+            <Link
+              href={`/tasks/${item.ref.id}`}
+              className="flex-1"><Button
+                size="sm"
+                className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openJob")}</Button></Link>}
+          {item.ref?.type === "customer" &&
+            <Link
+              href={`/clients/${item.ref.id}`}
+              className="flex-1"><Button
+                size="sm"
+                className="w-full gap-1.5"><ExternalLink className="h-3.5 w-3.5" />{t("calendar.openClient")}</Button></Link>}
+          {item.ref?.type === "document" &&
+            <Link
+              href="/documents"
+              className="flex-1"><Button size="sm" variant="outline" className="w-full">{t("calendar.openDocuments")}</Button></Link>}
+          {leaveHref &&
+            <Link
+              href={leaveHref}
+              className="flex-1"><Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-1.5"><CalendarClock
+                  className="h-3.5 w-3.5"
+                />{t(othersLeave ? "calendar.openSchedule" : "calendar.openTimeOff")}</Button></Link>}
         </div>
       </PopoverContent>
     </Popover>

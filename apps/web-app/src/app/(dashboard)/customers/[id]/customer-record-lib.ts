@@ -41,7 +41,9 @@ export function dayLabel(iso: string, t: TFunction) {
   return new Date(iso).toLocaleDateString(dateLocale(), { weekday: "long", month: "short", day: "numeric" })
 }
 export const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString(dateLocale(), { dateStyle: "medium" }) : "")
-export const fmtDateTime = (d?: string | null) => (d ? new Date(d).toLocaleString(dateLocale(), { dateStyle: "medium", timeStyle: "short" }) : "")
+export const fmtDateTime = (d?: string | null) => (d
+  ? new Date(d).toLocaleString(dateLocale(), { dateStyle: "medium", timeStyle: "short" })
+  : "")
 
 export const COMPOSER = [
   { type: "NOTE", label: "Note", icon: StickyNote },

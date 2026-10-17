@@ -121,7 +121,9 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
                 type="button"
                 onClick={() => onPolygonChange?.(ring.slice(0, -1))}
                 disabled={ring.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                className={"flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 " +
+                  "py-1.5 text-xs font-medium text-muted-foreground transition-colors " +
+                  "hover:bg-muted disabled:opacity-50"}
               >
                 <Undo2 className="h-3.5 w-3.5" />
                 {t("locations.boundary.undo", "Undo point")}
@@ -130,7 +132,9 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
                 type="button"
                 onClick={() => onPolygonChange?.(null)}
                 disabled={ring.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+                className={"flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 " +
+                  "py-1.5 text-xs font-medium text-muted-foreground transition-colors " +
+                  "hover:bg-muted disabled:opacity-50"}
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t("locations.boundary.clear", "Clear")}
@@ -183,7 +187,9 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
           title={
             expanded ? t("locations.boundary.collapseMap", "Done") : t("locations.boundary.expandMap", "Bigger map")
           }
-          className="absolute bottom-2 left-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card"
+          className={"absolute bottom-2 left-2 z-[20] flex items-center gap-1.5 rounded-lg " +
+            "border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium " +
+            "text-foreground shadow-md backdrop-blur transition-colors hover:bg-card"}
         >
           {expanded ? (
             <Minimize2 className="h-3.5 w-3.5 text-blue-600" />
@@ -199,7 +205,10 @@ export function LocationPickerPanel({ s }: { s: LocationPickerState }) {
             onClick={useMyLocation}
             disabled={locating}
             title={t("locations.picker.useMyLocation")}
-            className="absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium text-foreground shadow-md backdrop-blur transition-colors hover:bg-card disabled:opacity-60"
+            className={"absolute right-2 top-2 z-[20] flex items-center gap-1.5 rounded-lg " +
+              "border border-border bg-card/95 px-2.5 py-1.5 text-xs font-medium " +
+              "text-foreground shadow-md backdrop-blur transition-colors hover:bg-card " +
+              "disabled:opacity-60"}
           >
             {locating ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />

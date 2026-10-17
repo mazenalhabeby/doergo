@@ -126,7 +126,10 @@ export function ProfileSection() {
               size="2xl"
             />
             {/* Upload overlay */}
-            <label className="absolute inset-0 rounded-full cursor-pointer bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+            <label
+              className={"absolute inset-0 rounded-full cursor-pointer bg-black/0 " +
+                "group-hover:bg-black/40 transition-colors flex items-center " +
+                "justify-center"}>
               <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                 {avatarUploading ? "..." : t("settings.profile.editAvatar")}
               </span>

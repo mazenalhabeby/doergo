@@ -180,7 +180,9 @@ export function DecisionPanel({
                 onClick={() => send(a)}
                 className={cn("rounded-lg", a.tone === "danger" && !isArmed && "text-destructive hover:text-destructive")}
               >
-                {busy && isArmed ? <Loader2 className="size-4 animate-spin" /> : a.id === "approve" ? <Check className="size-4" /> : <X className="size-4" />}
+                {busy && isArmed
+                  ? <Loader2 className="size-4 animate-spin" />
+                  : a.id === "approve" ? <Check className="size-4" /> : <X className="size-4" />}
                 {t(`approvals.actions.${a.labelKey}`)}
               </Button>
             )

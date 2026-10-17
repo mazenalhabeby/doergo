@@ -17,7 +17,10 @@ export function BlogMarkdown({ children }: { children: string }) {
         h3: (p) => <h3 className="mt-8 mb-3 text-[19px] leading-snug text-[#f2f2f0]" {...p} />,
         p: (p) => <p className="my-4 text-[16.5px] leading-[1.75] text-white/70" {...p} />,
         ul: (p) => <ul className="my-4 ml-5 list-disc space-y-2 text-[16.5px] leading-[1.75] text-white/70 marker:text-white/30" {...p} />,
-        ol: (p) => <ol className="my-4 ml-5 list-decimal space-y-2 text-[16.5px] leading-[1.75] text-white/70 marker:text-white/30" {...p} />,
+        ol: (p) => <ol
+          className={"my-4 ml-5 list-decimal space-y-2 text-[16.5px] leading-[1.75] " + "text-white/70 marker:text-white/30"}
+          {...p}
+        />,
         li: (p) => <li className="pl-1" {...p} />,
         strong: (p) => <strong className="font-semibold text-[#f2f2f0]" {...p} />,
         blockquote: (p) => (
@@ -41,9 +44,19 @@ export function BlogMarkdown({ children }: { children: string }) {
         a: ({ href, ...rest }) => {
           // `//host` is another site, not a path here (isSameAppPath).
           return isSameAppPath(href) ? (
-            <Link href={href} className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...(rest as React.ComponentProps<"a">)} />
+            <Link
+              href={href}
+              className={"text-[#f2f2f0] underline decoration-white/30 underline-offset-4 " + "hover:decoration-white/70"}
+              {...(rest as React.ComponentProps<"a">)}
+            />
           ) : (
-            <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#f2f2f0] underline decoration-white/30 underline-offset-4 hover:decoration-white/70" {...rest} />
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={"text-[#f2f2f0] underline decoration-white/30 underline-offset-4 " + "hover:decoration-white/70"}
+              {...rest}
+            />
           );
         },
         table: (p) => (

@@ -64,12 +64,18 @@ export function FieldInput({
             onChange={(e) => onFile(e.target.files?.[0] ?? null)}
           />
           <Button type="button" variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
-            <Camera className="mr-1.5 h-3.5 w-3.5" /> {file ? t("assetLog.replacePhoto", "Replace") : t("assetLog.choosePhoto", "Choose a file")}
+            <Camera
+              className="mr-1.5 h-3.5 w-3.5"
+            /> {file ? t("assetLog.replacePhoto", "Replace") : t("assetLog.choosePhoto", "Choose a file")}
           </Button>
           {file && (
             <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
               <span className="truncate">{file.name}</span>
-              <button type="button" onClick={() => onFile(null)} aria-label={t("common.remove", "Remove")} className="rounded p-0.5 hover:text-destructive">
+              <button
+                type="button"
+                onClick={() => onFile(null)}
+                aria-label={t("common.remove", "Remove")}
+                className="rounded p-0.5 hover:text-destructive">
                 <X className="h-3 w-3" />
               </button>
             </span>

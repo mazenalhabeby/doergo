@@ -44,7 +44,10 @@ export function HoursBasisChip({
   })
   if (!basis) return null
   const chip = (
-    <span className={cn("ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold", BASIS_TONE[basis] ?? BASIS_TONE.COUNTED)}>
+    <span
+      className={cn(
+        ("ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] " + "font-semibold"),
+        BASIS_TONE[basis] ?? BASIS_TONE.COUNTED)}>
       {save.isPending ? <Loader2 className="size-3 animate-spin" /> : null}
       {t(`scheduling.membersPage.basis.${basis}`)}
       {spaceId && assignmentId && hoursByBasis && <ChevronDown className="size-3" />}
@@ -53,7 +56,9 @@ export function HoursBasisChip({
   if (!spaceId || !assignmentId || !hoursByBasis) return chip
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("scheduling.membersPage.hoursBasis")}>
+      <DropdownMenuTrigger
+        className={"rounded-full focus-visible:outline-none focus-visible:ring-2 " + "focus-visible:ring-ring"}
+        aria-label={t("scheduling.membersPage.hoursBasis")}>
         {chip}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">

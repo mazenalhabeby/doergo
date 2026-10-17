@@ -37,7 +37,8 @@ export function HelpButton() {
           type="button"
           aria-label={t("tours.help.button")}
           title={t("tours.help.button")}
-          className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className={"flex size-9 items-center justify-center rounded-lg text-muted-foreground " +
+            "transition-colors hover:bg-muted hover:text-foreground"}
         >
           <Compass className="size-[19px]" />
         </button>
@@ -60,7 +61,9 @@ export function HelpButton() {
             <button
               type="button"
               onClick={() => run(contextual.id)}
-              className="flex w-full items-center gap-3 rounded-lg border border-primary/25 bg-gradient-to-r from-primary/[0.06] to-transparent p-3 text-left transition-colors hover:border-primary/40"
+              className={"flex w-full items-center gap-3 rounded-lg border border-primary/25 " +
+                "bg-gradient-to-r from-primary/[0.06] to-transparent p-3 text-left " +
+                "transition-colors hover:border-primary/40"}
             >
               <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <Play className="size-4" />

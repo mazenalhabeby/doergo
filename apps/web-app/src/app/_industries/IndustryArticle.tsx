@@ -83,15 +83,20 @@ export function IndustryArticle({ lang, slug }: { lang: string; slug: string }) 
           <p className={`${DISPLAY} max-w-[24ch] text-[clamp(1.6rem,4vw,2.8rem)] leading-[1.05] tracking-[-0.02em] text-[#f2f2f0]`}>
             {home.industries?.heading ?? "Built for field teams of every kind."}
           </p>
-          <Link href="/register" className="mt-8 inline-block rounded-full bg-[#f2f2f0] px-6 py-3 text-[14px] font-semibold text-[#0e1116] transition-opacity hover:opacity-90">
+          <Link
+            href="/register"
+            className={"mt-8 inline-block rounded-full bg-[#f2f2f0] px-6 py-3 text-[14px] " +
+              "font-semibold text-[#0e1116] transition-opacity hover:opacity-90"}>
             {home.cta?.requestDemo ?? "Start free trial"}
           </Link>
-          {home.cta?.trialNote && <p className={`${MONO} mt-4 text-[11px] uppercase tracking-[0.18em] text-white/35`}>{home.cta.trialNote}</p>}
+          {home.cta?.trialNote &&
+            <p className={`${MONO} mt-4 text-[11px] uppercase tracking-[0.18em] text-white/35`}>{home.cta.trialNote}</p>}
         </section>
 
         {/* Other industries — internal links */}
         <section className="border-t border-white/[0.08] px-6 py-16 sm:px-10">
-          <div className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-white/35`}>{home.industries?.more ?? "More industries"}</div>
+          <div
+            className={`${MONO} text-[10px] uppercase tracking-[0.16em] text-white/35`}>{home.industries?.more ?? "More industries"}</div>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {others.map((s) => {
               const oi = INDUSTRY_SLUGS.indexOf(s);

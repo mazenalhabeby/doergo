@@ -129,7 +129,8 @@ export function EditMemberDialog({
                   {isExternalMember && (
                     <Badge
                       variant="outline"
-                      className="shrink-0 text-[10px] font-medium border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0"
+                      className={"shrink-0 text-[10px] font-medium border-amber-500/50 bg-amber-500/10 " +
+                        "text-amber-700 dark:text-amber-400 px-1.5 py-0"}
                     >
                       {t("members.external.badge")}
                     </Badge>
@@ -146,17 +147,33 @@ export function EditMemberDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="editFirstName" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.firstName")}</Label>
-              <Input id="editFirstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="h-9 focus-visible:ring-offset-0" />
+              <Label
+                htmlFor="editFirstName"
+                className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.firstName")}</Label>
+              <Input
+                id="editFirstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="h-9 focus-visible:ring-offset-0"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="editLastName" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.lastName")}</Label>
-              <Input id="editLastName" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-9 focus-visible:ring-offset-0" />
+              <Label
+                htmlFor="editLastName"
+                className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.lastName")}</Label>
+              <Input
+                id="editLastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="h-9 focus-visible:ring-offset-0"
+              />
             </div>
             {/* Login email — spans both columns. Changing it changes how the
                 member signs in, hence the inline hint. */}
             <div className="space-y-1.5 col-span-2">
-              <Label htmlFor="editEmail" className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.email", "Email")}</Label>
+              <Label
+                htmlFor="editEmail"
+                className="text-xs font-medium text-muted-foreground">{t("members.memberEditor.email", "Email")}</Label>
               <Input
                 id="editEmail"
                 type="email"

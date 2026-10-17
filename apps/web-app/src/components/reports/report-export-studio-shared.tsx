@@ -13,12 +13,15 @@ export const ACCENTS = ["#2563EB", "#334155", "#059669", "#7C3AED", "#E11D48", "
 
 // Module-scope so they keep a stable identity across renders (defining these
 // inside the component would remount the inputs on every keystroke).
-export function Seg<T extends string>({ value, options, onChange }: { value: T; options: { v: T; label: string }[]; onChange: (v: T) => void }) {
+export function Seg<T extends string>(
+  { value, options, onChange }: { value: T; options: { v: T; label: string }[]; onChange: (v: T) => void }) {
   return (
     <div className="flex gap-0.5 rounded-lg bg-muted/70 p-0.5">
       {options.map((o) => (
         <button key={o.v} type="button" onClick={() => onChange(o.v)}
-          className={cn("flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors", value === o.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+          className={cn(
+            "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+            value === o.v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
           {o.label}
         </button>
       ))}

@@ -94,7 +94,13 @@ export const Overtime = () => (
     <Arrow x={306} y={44} w={24} />
     <circle cx="356" cy="44" r="17" className={DONE} strokeWidth="1.6" />
     <Tick x={349} y={43} />
-    <path d="M30 70 c 12 -12, 22 6, 34 -6 s 16 10, 26 -2" className="stroke-primary/60" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+    <path
+      d="M30 70 c 12 -12, 22 6, 34 -6 s 16 10, 26 -2"
+      className="stroke-primary/60"
+      strokeWidth="1.8"
+      fill="none"
+      strokeLinecap="round"
+    />
   </Frame>
 );
 
@@ -168,7 +174,13 @@ export const Documents = () => (
     <rect x="118" y="6" width="164" height="92" rx="9" className={GHOST} strokeWidth="1.5" />
     {[0, 1, 2].map((i) => <Bar key={i} x={134} y={20 + i * 12} w={i === 2 ? 74 : 130} h={5} />)}
     <line x1="134" y1="66" x2="266" y2="66" className={LINE} strokeWidth="1" strokeDasharray="3 3" />
-    <path d="M140 84 c 10 -14, 20 5, 30 -7 s 15 11, 24 -2" className="stroke-primary/80" strokeWidth="2" fill="none" strokeLinecap="round" />
+    <path
+      d="M140 84 c 10 -14, 20 5, 30 -7 s 15 11, 24 -2"
+      className="stroke-primary/80"
+      strokeWidth="2"
+      fill="none"
+      strokeLinecap="round"
+    />
     <circle cx="294" cy="24" r="17" className={WARN} strokeWidth="1.5" />
     <path d="M294 15 v10 l6 4" className="stroke-amber-600 dark:stroke-amber-400" strokeWidth="2" fill="none" strokeLinecap="round" />
   </Frame>
@@ -181,7 +193,14 @@ export const PriorityRouting = () => (
     ))}
     <rect x="30" y="52" width="78" height="30" rx="7" className={DONE} strokeWidth="1.6" />
     <Bar x={44} y={64} w={50} o={0.35} />
-    <path d="M250 42 C 210 18, 120 18, 78 42" className="stroke-emerald-500/70" strokeWidth="2" fill="none" strokeDasharray="5 4" strokeLinecap="round" />
+    <path
+      d="M250 42 C 210 18, 120 18, 78 42"
+      className="stroke-emerald-500/70"
+      strokeWidth="2"
+      fill="none"
+      strokeDasharray="5 4"
+      strokeLinecap="round"
+    />
     <path d="M78 42 l10 -5 l-1 9 z" className="fill-emerald-500/80" />
   </Frame>
 );

@@ -37,8 +37,13 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <p className="mb-4 text-sm text-slate-400">
           {chunk ? 'A new version was just deployed — reloading to pick it up.' : 'A client-side error occurred. Reload to continue.'}
         </p>
-        <button onClick={() => window.location.reload()} className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium hover:bg-blue-500">Reload</button>
-        <button onClick={() => reset()} className="mt-2 w-full rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400 hover:bg-slate-800">Try again without reloading</button>
+        <button
+          onClick={() => window.location.reload()}
+          className={"w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium " + "hover:bg-blue-500"}>Reload</button>
+        <button
+          onClick={() => reset()}
+          className={"mt-2 w-full rounded-lg border border-slate-700 px-3 py-2 text-xs " +
+            "text-slate-400 hover:bg-slate-800"}>Try again without reloading</button>
       </div>
     </div>
   );

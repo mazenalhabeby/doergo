@@ -20,11 +20,26 @@ export const worklogApi = {
     return res.data;
   },
   presignAttachment: async (noteId: string, fileName: string, mimeType: string) => {
-    const res = await call(worklogEndpoints.attachmentPresign, { noteId }, { body: { fileName, mimeType } }) as ApiResponse<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>;
+    const res = await call(
+      worklogEndpoints.attachmentPresign,
+      { noteId },
+      {
+        body: { fileName, mimeType }
+      }) as ApiResponse<{ data: { uploadUrl: string; fileKey: string; fileUrl: string; expiresIn: number; maxFileSize: number } }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
-  confirmAttachment: async (noteId: string, data: { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number; height?: number }): Promise<WorkLogAttachment> => {
+  confirmAttachment: async (
+    noteId: string,
+    data: {
+      fileKey: string;
+      fileUrl: string;
+      fileName: string;
+      fileSize: number;
+      mimeType: string;
+      width?: number;
+      height?: number
+    }): Promise<WorkLogAttachment> => {
     const res = await call(worklogEndpoints.attachmentConfirm, { noteId }, { body: data }) as ApiResponse<{ data: WorkLogAttachment }>;
     if (res.error) throw apiError(res);
     return res.data!.data;

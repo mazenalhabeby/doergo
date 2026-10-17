@@ -1,9 +1,31 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { CoverRangeSpace, FloorSpace, LeaveBalance, OrgTimeOffRequest, ScheduleEntry, ScheduleEntryInput, TimeOffRequest, TimeOffStatus } from './types/employees';
+import type {
+  CoverRangeSpace,
+  FloorSpace,
+  LeaveBalance,
+  OrgTimeOffRequest,
+  ScheduleEntry,
+  ScheduleEntryInput,
+  TimeOffRequest,
+  TimeOffStatus
+} from './types/employees';
 import type { Task } from './types/tasks';
 import { LEAVE_ONLY_OPTIONS, normalizeRequestOptions, type RequestOptions } from '../requests';
-import { employeesEndpoints, timeOffEndpoints, type RequestInput, type CompanyLocation, type CreateEmployeeInput, type EmployeeListItem, type EmployeeProfile, type EmployeeStats, type EmployeesQueryParams, type PerformanceMetrics, type TimeEntry, type UpdateEmployeeInput } from '@hbcfield/shared/client';
+import {
+  employeesEndpoints,
+  timeOffEndpoints,
+  type RequestInput,
+  type CompanyLocation,
+  type CreateEmployeeInput,
+  type EmployeeListItem,
+  type EmployeeProfile,
+  type EmployeeStats,
+  type EmployeesQueryParams,
+  type PerformanceMetrics,
+  type TimeEntry,
+  type UpdateEmployeeInput
+} from '@hbcfield/shared/client';
 import { employeeRecordsApi } from './employees-records';
 import { employeeLeaveApi } from './employees-leave';
 

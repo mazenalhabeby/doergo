@@ -1,8 +1,18 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
 import type { Customer } from './types/customers';
-import type { PortalAssignableCustomer, PortalAvailableUnit, PortalCategoryInput, PortalDetail, PortalRequestView } from './types/portal-admin';
-import { portalAdminWebEndpoints, type CustomerUnit as PortalCustomerUnit, type IntakeCategory as PortalIntakeCategory } from '@hbcfield/shared/client';
+import type {
+  PortalAssignableCustomer,
+  PortalAvailableUnit,
+  PortalCategoryInput,
+  PortalDetail,
+  PortalRequestView
+} from './types/portal-admin';
+import {
+  portalAdminWebEndpoints,
+  type CustomerUnit as PortalCustomerUnit,
+  type IntakeCategory as PortalIntakeCategory
+} from '@hbcfield/shared/client';
 
 export const portalAdminApi = {
   // ── Portals ──
@@ -41,7 +51,10 @@ export const portalAdminApi = {
 
   // ── Residents (per portal) ──
   residents: async (portalId: string, search?: string) => {
-    const res = await call(portalAdminWebEndpoints.residents, undefined, { query: { portalId, search } }) as ApiResponse<{ data: Customer[] }>;
+    const res = await call(
+      portalAdminWebEndpoints.residents,
+      undefined,
+      { query: { portalId, search } }) as ApiResponse<{ data: Customer[] }>;
     if (res.error) throw apiError(res);
     return res.data?.data ?? [];
   },
@@ -59,15 +72,22 @@ export const portalAdminApi = {
   },
   // Pass customerId to promote an existing CRM customer, or name/email to create one.
   // Pass unitId to assign an existing vacant apartment, or unitName/unitAddress to create one.
-  inviteResident: async (portalId: string, input: { customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string }) => {
-    const res = await call(portalAdminWebEndpoints.inviteResident, undefined, { body: { portalId, ...input } }) as ApiResponse<{ customer: Customer; unit: PortalCustomerUnit; code?: string }>;
+  inviteResident: async (
+    portalId: string,
+    input: { customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string }) => {
+    const res = await call(
+      portalAdminWebEndpoints.inviteResident,
+      undefined,
+      { body: { portalId, ...input } }) as ApiResponse<{ customer: Customer; unit: PortalCustomerUnit; code?: string }>;
     if (res.error) throw apiError(res);
     return res.data!;
   },
 
   // Remove a client from the portal — revokes app access + detaches (record kept).
   removeResident: async (customerId: string) => {
-    const res = await call(portalAdminWebEndpoints.removeResident, { customerId }) as ApiResponse<{ data?: { success: boolean; deactivatedUserIds: string[] } }>;
+    const res = await call(
+      portalAdminWebEndpoints.removeResident,
+      { customerId }) as ApiResponse<{ data?: { success: boolean; deactivatedUserIds: string[] } }>;
     if (res.error) throw apiError(res);
     return res.data;
   },
@@ -92,7 +112,10 @@ export const portalAdminApi = {
   uploadCover: async (portalId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await call(portalAdminWebEndpoints.uploadCover, { portalId }, { body: formData }) as ApiResponse<{ data: { coverImageUrl: string } }>;
+    const response = await call(
+      portalAdminWebEndpoints.uploadCover,
+      { portalId },
+      { body: formData }) as ApiResponse<{ data: { coverImageUrl: string } }>;
     if (response.error) throw apiError({ ...response, error: response.error || "Upload failed" });
     return response.data?.data as { coverImageUrl: string };
   },

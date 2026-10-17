@@ -95,8 +95,11 @@ export function ContractDialog({
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={10}
-              placeholder={t("contract.pastePh", "Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 DK\nMietbeginn: 15.09.2026")}
-              className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs text-foreground outline-none focus:border-primary"
+              placeholder={t(
+                "contract.pastePh",
+                ("Hersteller: Ford\nModell: Transit Custom\nAmtliches Kennzeichen: GM-472 " + "DK\nMietbeginn: 15.09.2026"))}
+              className={"w-full rounded-xl border border-border bg-background p-3 font-mono " +
+                "text-xs text-foreground outline-none focus:border-primary"}
             />
             <DialogFooter className="gap-2">
               <Button variant="ghost" onClick={() => setStage("fields")}>
@@ -208,7 +211,8 @@ export function ContractDialog({
                           ? personName(members.find((m) => m.id === holderUserId)!)
                           : "",
                       })}
-                      {step.kind === "close" && t("contract.stepClose", "Closes their custody of {{name}} — later costs stop landing on it.", {
+                      {step.kind === "close" &&
+                        t("contract.stepClose", "Closes their custody of {{name}} — later costs stop landing on it.", {
                         name: step.assetName,
                       })}
                       {step.kind === "retire" && t("contract.stepRetire", "Retires {{name}}. Its history stays; it stops being billed.", {
@@ -227,8 +231,15 @@ export function ContractDialog({
               would fall out of both custodies.
             */}
             {preview.startClamped && (
-              <p className="rounded-xl border border-amber-300/70 bg-amber-50/60 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-200">
-                {t("contract.clamped", "The term starts later than today, so custody is recorded from today — nothing can be held by nobody in between. The term’s own dates are kept on the record.")}
+              <p
+                className={"rounded-xl border border-amber-300/70 bg-amber-50/60 p-3 text-xs " +
+                  "text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/20 " +
+                  "dark:text-amber-200"}>
+                {t(
+                  "contract.clamped",
+                  ("The term starts later than today, so custody is recorded from today — " +
+                    "nothing can be held by nobody in between. The term’s own dates are kept " +
+                    "on the record."))}
               </p>
             )}
 

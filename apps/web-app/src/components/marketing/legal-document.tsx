@@ -62,7 +62,9 @@ export function LegalDocument({
             <LanguageSwitcher />
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+              className={"inline-flex items-center gap-1.5 rounded-full border border-slate-200 " +
+                "px-3.5 py-1.5 text-[13px] font-medium text-slate-600 transition-colors " +
+                "hover:border-slate-300 hover:text-slate-900"}
             >
               <ArrowLeft className="size-3.5" />
               {t(`${ns}.backToHbcfield`)}
@@ -82,7 +84,9 @@ export function LegalDocument({
           }}
         />
         <div className="relative mx-auto max-w-6xl px-6 py-16 sm:py-20">
-          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm">
+          <span
+            className={"inline-flex items-center gap-2 rounded-full border border-slate-200 " +
+              "bg-white px-3 py-1 text-xs font-medium text-slate-500 shadow-sm"}>
             <BadgeIcon className="size-3.5 text-blue-600" />
             {t(`${ns}.lastUpdated`)}
           </span>
@@ -94,14 +98,17 @@ export function LegalDocument({
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-slate-700"
+              className={"inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 " +
+                "text-[13px] font-medium text-white transition-colors hover:bg-slate-700"}
             >
               <Printer className="size-3.5" />
               {t(`${ns}.print`, "Print / Save as PDF")}
             </button>
             <a
               href={`mailto:${email}`}
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-[13px] font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+              className={"inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 " +
+                "py-2 text-[13px] font-medium text-slate-600 transition-colors " +
+                "hover:border-slate-300 hover:text-slate-900"}
             >
               <Mail className="size-3.5" />
               {email}
@@ -147,9 +154,12 @@ export function LegalDocument({
               // paragraphs
               "[&_p]:my-4 [&_p]:leading-[1.75] [&_p]:text-slate-600",
               // section headings (h2)
-              "[&_h2]:mt-14 [&_h2]:mb-5 [&_h2]:scroll-mt-28 [&_h2]:border-t [&_h2]:border-slate-100 [&_h2]:pt-8 [&_h2]:text-[1.6rem] [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-slate-900",
+              ("[&_h2]:mt-14 [&_h2]:mb-5 [&_h2]:scroll-mt-28 [&_h2]:border-t " +
+                "[&_h2]:border-slate-100 [&_h2]:pt-8 [&_h2]:text-[1.6rem] " +
+                "[&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-slate-900"),
               // sub-headings (h3)
-              "[&_h3]:mb-2.5 [&_h3]:mt-8 [&_h3]:text-[12px] [&_h3]:font-semibold [&_h3]:uppercase [&_h3]:tracking-[0.1em] [&_h3]:text-slate-500",
+              ("[&_h3]:mb-2.5 [&_h3]:mt-8 [&_h3]:text-[12px] [&_h3]:font-semibold " +
+                "[&_h3]:uppercase [&_h3]:tracking-[0.1em] [&_h3]:text-slate-500"),
               // lists
               "[&_ul]:my-4 [&_ul]:list-disc [&_ul]:space-y-2.5 [&_ul]:pl-5",
               "[&_ul_ul]:mb-1 [&_ul_ul]:mt-2.5 [&_ul_ul]:space-y-1.5",

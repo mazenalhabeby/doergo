@@ -1,6 +1,12 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { AssignMemberInput, CreateLocationInput, LocationAssignment, UpdateAssignmentInput, UpdateLocationInput } from './types/locations';
+import type {
+  AssignMemberInput,
+  CreateLocationInput,
+  LocationAssignment,
+  UpdateAssignmentInput,
+  UpdateLocationInput
+} from './types/locations';
 import { locationsEndpoints, tasksEndpoints, type CompanyLocation } from '@hbcfield/shared/client';
 
 export const locationsApi = {
@@ -32,13 +38,19 @@ export const locationsApi = {
   },
 
   create: async (data: CreateLocationInput) => {
-    const response = await call(locationsEndpoints.create, undefined, { body: data }) as ApiResponse<{ success: boolean; data: CompanyLocation }>;
+    const response = await call(
+      locationsEndpoints.create,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: CompanyLocation }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   update: async (id: string, data: UpdateLocationInput) => {
-    const response = await call(locationsEndpoints.update, { id }, { body: data }) as ApiResponse<{ success: boolean; data: CompanyLocation }>;
+    const response = await call(
+      locationsEndpoints.update,
+      { id },
+      { body: data }) as ApiResponse<{ success: boolean; data: CompanyLocation }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -57,7 +69,10 @@ export const locationsApi = {
    * property of this one.
    */
   makeDefault: async (id: string) => {
-    const response = await call(locationsEndpoints.setDefault, { id }, { body: {} }) as ApiResponse<{ success: boolean; data: { id: string; isDefault: boolean } }>;
+    const response = await call(
+      locationsEndpoints.setDefault,
+      { id },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { id: string; isDefault: boolean } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -71,7 +86,9 @@ export const locationsApi = {
 
   // Member assignments
   getAssignedMembers: async (locationId: string) => {
-    const response = await call(locationsEndpoints.members, { id: locationId }) as ApiResponse<{ success: boolean; data: LocationAssignment[] }>;
+    const response = await call(
+      locationsEndpoints.members,
+      { id: locationId }) as ApiResponse<{ success: boolean; data: LocationAssignment[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
@@ -79,19 +96,27 @@ export const locationsApi = {
   // Batched: rosters (with current task) for many spaces in one request.
   getRosters: async (locationIds: string[]) => {
     if (locationIds.length === 0) return [] as LocationAssignment[];
-    const response = await call(locationsEndpoints.rosters, { ids: locationIds }) as ApiResponse<{ success: boolean; data: LocationAssignment[] }>;
+    const response = await call(
+      locationsEndpoints.rosters,
+      { ids: locationIds }) as ApiResponse<{ success: boolean; data: LocationAssignment[] }>;
     if (response.error) throw apiError(response);
     return response.data?.data || [];
   },
 
   assignMember: async (locationId: string, data: AssignMemberInput) => {
-    const response = await call(locationsEndpoints.assignMember, { id: locationId }, { body: data }) as ApiResponse<{ success: boolean; data: LocationAssignment }>;
+    const response = await call(
+      locationsEndpoints.assignMember,
+      { id: locationId },
+      { body: data }) as ApiResponse<{ success: boolean; data: LocationAssignment }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   updateAssignment: async (locationId: string, assignmentId: string, data: UpdateAssignmentInput) => {
-    const response = await call(locationsEndpoints.updateMember, { id: locationId, assignmentId }, { body: data }) as ApiResponse<{ success: boolean; data: LocationAssignment }>;
+    const response = await call(
+      locationsEndpoints.updateMember,
+      { id: locationId, assignmentId },
+      { body: data }) as ApiResponse<{ success: boolean; data: LocationAssignment }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
@@ -103,21 +128,29 @@ export const locationsApi = {
   },
 
   getEffectiveModules: async (spaceId: string) => {
-    const response = await call(locationsEndpoints.modules, { id: spaceId }) as ApiResponse<{ success: boolean; data: { enabledModules: string[]; workflowId?: string } }>;
+    const response = await call(
+      locationsEndpoints.modules,
+      { id: spaceId }) as ApiResponse<{ success: boolean; data: { enabledModules: string[]; workflowId?: string } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   // Re-sync existing tasks in a space onto the space's workflow (ADMIN only).
   resyncTasks: async (spaceId: string) => {
-    const response = await call(tasksEndpoints.resyncSpace, { spaceId }, { body: {} }) as ApiResponse<{ success: boolean; data: { updated: number; remapped: number; reason?: string } }>;
+    const response = await call(
+      tasksEndpoints.resyncSpace,
+      { spaceId },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { updated: number; remapped: number; reason?: string } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },
 
   // Re-sync EVERY space's tasks onto their workflows in one action (ADMIN only).
   resyncAllTasks: async () => {
-    const response = await call(tasksEndpoints.resyncAll, undefined, { body: {} }) as ApiResponse<{ success: boolean; data: { spacesProcessed: number; updated: number; remapped: number } }>;
+    const response = await call(
+      tasksEndpoints.resyncAll,
+      undefined,
+      { body: {} }) as ApiResponse<{ success: boolean; data: { spacesProcessed: number; updated: number; remapped: number } }>;
     if (response.error) throw apiError(response);
     return response.data?.data;
   },

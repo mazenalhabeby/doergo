@@ -188,9 +188,13 @@ export function GroupedList({
                 isGroupOver && "bg-blue-50/50 dark:bg-blue-500/[0.05]",
               )}
             >
-              <ChevronRight className={cn("size-3.5 text-muted-foreground transition-transform duration-200", !isCollapsed && "rotate-90")} />
+              <ChevronRight
+                className={cn("size-3.5 text-muted-foreground transition-transform duration-200", !isCollapsed && "rotate-90")}
+              />
               {group.icon && <span className="flex-shrink-0">{group.icon}</span>}
-              {group.dotColor && !group.icon && <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: group.dotColor }} />}
+              {group.dotColor &&
+                !group.icon &&
+                <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: group.dotColor }} />}
               <span className="text-sm font-semibold text-foreground">{group.label}</span>
               {group.sublabel && <span className="text-xs text-muted-foreground">{group.sublabel}</span>}
               <span className="text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md font-medium tabular-nums">
@@ -265,7 +269,10 @@ export function GroupedList({
       {canCreate && createLabel && (
         <button
           onClick={handleCreate}
-          className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-border/60 text-sm text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted/30 transition-colors"
+          className={"w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border " +
+            "border-dashed border-border/60 text-sm text-muted-foreground " +
+            "hover:text-foreground hover:border-border hover:bg-muted/30 " +
+            "transition-colors"}
         >
           <Plus className="size-3.5" />
           {createLabel}

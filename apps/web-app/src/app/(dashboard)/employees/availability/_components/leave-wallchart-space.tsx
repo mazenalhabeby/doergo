@@ -82,7 +82,9 @@ export function SpaceBlock({
         return (
           <div key={p.id} className="grid border-b border-border last:border-b-0" style={template}>
             <div className="sticky left-0 z-10 flex min-h-[2.9rem] items-center gap-2 border-r border-border bg-card px-3 py-1.5">
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-[10.5px] font-semibold text-muted-foreground">
+              <span
+                className={"grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted " +
+                  "text-[10.5px] font-semibold text-muted-foreground"}>
                 {p.firstName[0]}
                 {p.lastName[0]}
               </span>
@@ -128,7 +130,8 @@ export function SpaceBlock({
               }`
 
               const common =
-                "row-start-1 self-center mx-0.5 h-6 rounded-md px-1.5 flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap overflow-hidden"
+                ("row-start-1 self-center mx-0.5 h-6 rounded-md px-1.5 flex items-center " +
+                  "gap-1 text-[11px] font-semibold whitespace-nowrap overflow-hidden")
 
               return pending ? (
                 <button
@@ -172,7 +175,8 @@ export function SpaceBlock({
               const k = requestKindOf(m.kind)
               const Icon = REQUEST_KIND_ICON[k]
               const detail = requestDetail(m, t)
-              const tip = `${personName(p)} — ${t(requestKindLabelKey(k))}${detail ? ` (${detail})` : ""} · ${format(parseISO(m.startDate), "d MMM")}${
+              const tip = `${personName(
+                p)} — ${t(requestKindLabelKey(k))}${detail ? ` (${detail})` : ""} · ${format(parseISO(m.startDate), "d MMM")}${
                 from !== to ? ` – ${format(parseISO(m.endDate), "d MMM")}` : ""
               } · ${pending ? t("cover.chart.pendingTip", "pending — click to decide") : t("common.approved")}`
               return (
@@ -184,7 +188,9 @@ export function SpaceBlock({
                   onClick={() => onSelect(m.id)}
                   style={{ gridColumn: `${startIdx + 2} / ${endIdx + 3}` }}
                   className={cn(
-                    "row-start-1 z-[3] mx-0.5 mb-0.5 flex h-4 items-center gap-1 self-end overflow-hidden whitespace-nowrap rounded-full border bg-card px-1 text-[10px] font-medium transition hover:-translate-y-px",
+                    ("row-start-1 z-[3] mx-0.5 mb-0.5 flex h-4 items-center gap-1 self-end " +
+                      "overflow-hidden whitespace-nowrap rounded-full border bg-card px-1 " +
+                      "text-[10px] font-medium transition hover:-translate-y-px"),
                     pending
                       ? "border-dashed border-amber-500/80 text-amber-800 dark:text-amber-300"
                       : "border-border text-muted-foreground",

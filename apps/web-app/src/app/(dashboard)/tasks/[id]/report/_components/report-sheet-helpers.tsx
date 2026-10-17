@@ -75,7 +75,9 @@ export function TimeBlock({ report: r, t, when }: { report: TaskReport; t: Trans
               <div key={p.person.id} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-3 text-sm">
                 <span className="truncate">{personName(p.person)}</span>
                 <span className="flex h-2.5 overflow-hidden rounded-full bg-slate-100">
-                  {TIME_KINDS.map((k) => (p[k] > 0 ? <span key={k} className={TIME_BAR[k]} style={{ width: `${(p[k] / max) * 100}%` }} /> : null))}
+                  {TIME_KINDS.map((k) => (p[k] > 0
+                    ? <span key={k} className={TIME_BAR[k]} style={{ width: `${(p[k] / max) * 100}%` }} />
+                    : null))}
                 </span>
                 <span className="tabular-nums text-xs text-slate-500">{formatReportMinutes(sum, t)}</span>
               </div>
@@ -101,7 +103,13 @@ export function TimeBlock({ report: r, t, when }: { report: TaskReport; t: Trans
   )
 }
 
-export function Photo({ photo, t, when, tag }: { photo: TaskReportPhoto; t: Translate; when: (iso: string | null | undefined) => string; tag?: "before" | "after" }) {
+export function Photo(
+  {
+    photo,
+    t,
+    when,
+    tag
+  }: { photo: TaskReportPhoto; t: Translate; when: (iso: string | null | undefined) => string; tag?: "before" | "after" }) {
   const src = safeImageUrl(photo.url)
   const meta = [personName(photo.by), when(photo.createdAt)].filter((x) => x && x !== "—").join(" · ")
   const label = photo.caption ?? (photo.source === "STEP" ? photo.fieldLabel : null)
@@ -111,13 +119,24 @@ export function Photo({ photo, t, when, tag }: { photo: TaskReportPhoto; t: Tran
         {src ? (
           <a href={src} target="_blank" rel="noopener noreferrer">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={label ?? photo.fileName} loading="lazy" decoding="async" width={400} height={300} className="size-full object-cover" />
+            <img
+              src={src}
+              alt={label ?? photo.fileName}
+              loading="lazy"
+              decoding="async"
+              width={400}
+              height={300}
+              className="size-full object-cover"
+            />
           </a>
         ) : (
           <span className="flex size-full items-center justify-center text-xs text-slate-400">{t("tasks.report.photos.unavailable")}</span>
         )}
         {tag ? (
-          <span className={cn("absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider", tag === "before" ? "bg-slate-900/75 text-white" : "bg-green-600 text-white")}>
+          <span
+            className={cn(
+              ("absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-bold " + "uppercase tracking-wider"),
+              tag === "before" ? "bg-slate-900/75 text-white" : "bg-green-600 text-white")}>
             {t(tag === "before" ? "tasks.report.photos.before" : "tasks.report.photos.after")}
           </span>
         ) : null}
@@ -130,7 +149,8 @@ export function Photo({ photo, t, when, tag }: { photo: TaskReportPhoto; t: Tran
   )
 }
 
-export function PhotosBlock({ photos, t, when }: { photos: TaskReportPhoto[]; t: Translate; when: (iso: string | null | undefined) => string }) {
+export function PhotosBlock(
+  { photos, t, when }: { photos: TaskReportPhoto[]; t: Translate; when: (iso: string | null | undefined) => string }) {
   const { pairs, rest } = pairPhotos(photos)
   return (
     <div className="space-y-5">
@@ -143,7 +163,13 @@ export function PhotosBlock({ photos, t, when }: { photos: TaskReportPhoto[]; t:
       {rest.length ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {rest.map((p) => (
-            <Photo key={p.id} photo={p} t={t} when={when} tag={p.source === "BEFORE" ? "before" : p.source === "AFTER" ? "after" : undefined} />
+            <Photo
+              key={p.id}
+              photo={p}
+              t={t}
+              when={when}
+              tag={p.source === "BEFORE" ? "before" : p.source === "AFTER" ? "after" : undefined}
+            />
           ))}
         </div>
       ) : null}
@@ -155,19 +181,29 @@ export function DocumentCard({ file, locale }: { file: TaskReportFile; locale: s
   const href = safeImageUrl(file.url)
   const body = (
     <>
-      <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-md text-[10px] font-bold", isImageFile(file) ? "bg-indigo-50 text-indigo-700" : "bg-blue-50 text-blue-700")}>
+      <span
+        className={cn(
+          ("flex size-9 shrink-0 items-center justify-center rounded-md text-[10px] " + "font-bold"),
+          isImageFile(file) ? "bg-indigo-50 text-indigo-700" : "bg-blue-50 text-blue-700")}>
         {fileTypeBadge(file)}
       </span>
       <span className="min-w-0">
         <span className="block truncate font-medium text-slate-900">{file.fileName}</span>
-        <span className="block truncate text-xs text-slate-500">{[formatFileSize(file.fileSize, locale), personName(file.by)].filter(Boolean).join(" · ")}</span>
+        <span
+          className="block truncate text-xs text-slate-500">{[formatFileSize(file.fileSize, locale), personName(file.by)].filter(
+            Boolean).join(
+            " · ")}</span>
       </span>
     </>
   )
   return (
     <li>
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-slate-200 p-2.5 hover:bg-slate-50">{body}</a>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={"flex items-center gap-3 rounded-lg border border-slate-200 p-2.5 " + "hover:bg-slate-50"}>{body}</a>
       ) : (
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-2.5">{body}</div>
       )}

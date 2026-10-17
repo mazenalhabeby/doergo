@@ -89,7 +89,8 @@ export default function ChoosePathPage() {
             type="button"
             onClick={() => router.push(p.href)}
             className={cn(
-              'group flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all hover:shadow-md',
+              ('group flex w-full items-center gap-4 rounded-2xl border border-slate-200 ' +
+                'bg-white p-4 text-left shadow-sm transition-all hover:shadow-md'),
               p.ring,
             )}
           >

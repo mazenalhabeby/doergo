@@ -40,7 +40,10 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger
         aria-label={t("common.language")}
         title={t("common.language")}
-        className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={"flex items-center justify-center h-8 w-8 rounded-md " +
+          "text-muted-foreground hover:text-foreground hover:bg-muted/50 " +
+          "transition-colors outline-none focus-visible:ring-2 " +
+          "focus-visible:ring-ring"}
       >
         <Languages className="h-4 w-4" />
         <span className="sr-only">{t("common.language")}</span>

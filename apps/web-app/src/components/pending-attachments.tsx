@@ -44,7 +44,9 @@ export function PendingFileChips({
       {files.map((f, i) => (
         <span key={i} className={cn("inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-[11px]", chipClassName)}>
           <span className="max-w-[120px] truncate">{f.name}</span>
-          <button onClick={() => setFiles((p) => p.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
+          <button
+            onClick={() => setFiles((p) => p.filter((_, idx) => idx !== i))}
+            className="text-muted-foreground hover:text-destructive"><X className="h-3 w-3" /></button>
         </span>
       ))}
     </div>

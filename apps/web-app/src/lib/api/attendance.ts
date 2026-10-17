@@ -1,7 +1,24 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { AttendanceListResponse, AttendanceQueryParams, BreakRuleRow, BreakSummary, EntryBreak, EntryEditHistoryItem, NoShowRow } from './types/attendance';
-import { BreakType, attendanceEndpoints, locationsEndpoints, type Break, type CompanyLocation, type GeofenceExcursion, type NoShowPersonSummary, type TimeEntry } from '@hbcfield/shared/client';
+import type {
+  AttendanceListResponse,
+  AttendanceQueryParams,
+  BreakRuleRow,
+  BreakSummary,
+  EntryBreak,
+  EntryEditHistoryItem,
+  NoShowRow
+} from './types/attendance';
+import {
+  BreakType,
+  attendanceEndpoints,
+  locationsEndpoints,
+  type Break,
+  type CompanyLocation,
+  type GeofenceExcursion,
+  type NoShowPersonSummary,
+  type TimeEntry
+} from '@hbcfield/shared/client';
 import { attendanceBreaksApi } from './attendance-breaks';
 import { attendanceEntriesApi } from './attendance-entries';
 import { attendanceReviewApi } from './attendance-review';
@@ -17,7 +34,10 @@ export const attendanceApi = {
   // Employee self-service: clock in at a company location. GPS comes from the
   // browser Geolocation API (device location, NOT IP) so it works over a VPN.
   clockIn: async (input: { locationId?: string; lat: number; lng: number; accuracy?: number; isRemote?: boolean }) => {
-    const response = await call(attendanceEndpoints.clockIn, undefined, { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const response = await call(
+      attendanceEndpoints.clockIn,
+      undefined,
+      { body: input }) as ApiResponse<{ success: boolean; data: unknown }>;
     // Coded (OUTSIDE_GEOFENCE, AWAY_NOT_ALLOWED …) so the refusal is said in the reader's language.
     if (response.error) throw apiError(response);
     return (response.data as { data?: unknown })?.data ?? response.data;
@@ -35,7 +55,10 @@ export const attendanceApi = {
     notes?: string;
     earlyReason?: string;
   }) => {
-    const response = await call(attendanceEndpoints.clockOut, undefined, { body: input }) as ApiResponse<{ success: boolean; data: unknown; message?: string }>;
+    const response = await call(
+      attendanceEndpoints.clockOut,
+      undefined,
+      { body: input }) as ApiResponse<{ success: boolean; data: unknown; message?: string }>;
     if (response.error) throw apiError(response);
     /*
       The envelope's MESSAGE comes back with the entry.
@@ -56,7 +79,10 @@ export const attendanceApi = {
    * temporary clock-out; the server checks it is after clock-in and not ahead.
    */
   resolveForgotClockOut: async (entryId: string, clockOutAt: string) => {
-    const response = await call(attendanceEndpoints.forgotClockOut, { id: entryId }, { body: { clockOutAt } }) as ApiResponse<{ success: boolean; data: unknown }>;
+    const response = await call(
+      attendanceEndpoints.forgotClockOut,
+      { id: entryId },
+      { body: { clockOutAt } }) as ApiResponse<{ success: boolean; data: unknown }>;
     if (response.error) throw apiError(response);
     return (response.data as { data?: unknown })?.data ?? response.data;
   },

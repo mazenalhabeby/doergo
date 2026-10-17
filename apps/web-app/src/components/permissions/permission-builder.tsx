@@ -111,7 +111,8 @@ export function PermissionBuilder({ name, isExternal, value, onChange, spaceModu
                 disabled={disabled || id === null}
                 onClick={() => id && pickPreset(id)}
                 className={cn(
-                  "rounded-lg border p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  ("rounded-lg border p-2.5 text-left transition-colors " +
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"),
                   on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-muted/40 hover:bg-muted",
                   id === null && !on && "cursor-default opacity-60 hover:bg-muted/40",
                 )}

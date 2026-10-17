@@ -88,7 +88,10 @@ export function RotaTabRota({ vm }: { vm: RotaTabState }) {
 
         {/* Conflict summary — overlapping shifts in the visible week */}
         {weekConflicts > 0 && (
-          <div className="flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+          <div
+            className={"flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 " +
+              "px-4 py-2.5 text-sm text-amber-800 dark:border-amber-800 " +
+              "dark:bg-amber-950/40 dark:text-amber-300"}>
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {t("scheduling.rota.grid.conflictSummary", { count: weekConflicts })}
           </div>
@@ -99,7 +102,9 @@ export function RotaTabRota({ vm }: { vm: RotaTabState }) {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-muted/50">
-                <th className="sticky left-0 z-10 bg-muted/50 px-3 py-2 text-left text-xs font-semibold text-muted-foreground min-w-[140px]">
+                <th
+                  className={"sticky left-0 z-10 bg-muted/50 px-3 py-2 text-left text-xs font-semibold " +
+                    "text-muted-foreground min-w-[140px]"}>
                   {t("scheduling.rota.grid.member")}
                 </th>
                 {days.map((d, i) => (
@@ -140,7 +145,9 @@ export function RotaTabRota({ vm }: { vm: RotaTabState }) {
                       >
                         <div className="flex flex-col items-stretch gap-1">
                           {conflict && (
-                            <span className="inline-flex items-center justify-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                            <span
+                              className={"inline-flex items-center justify-center gap-1 text-[10px] font-medium " +
+                                "text-amber-600 dark:text-amber-400"}>
                               <AlertTriangle className="h-3 w-3" />
                               {t("scheduling.rota.grid.conflictLabel")}
                             </span>
@@ -151,7 +158,8 @@ export function RotaTabRota({ vm }: { vm: RotaTabState }) {
                               type="button"
                               title={a.shift ? `${a.shift.startLocal}–${a.shift.endLocal}` : undefined}
                               onClick={() => { setEditTarget(a); setDialogOpen(true) }}
-                              className="rounded-md px-1.5 py-1 text-[11px] font-medium leading-tight truncate transition-opacity hover:opacity-80"
+                              className={"rounded-md px-1.5 py-1 text-[11px] font-medium leading-tight truncate " +
+                                "transition-opacity hover:opacity-80"}
                               style={{
                                 backgroundColor: `${a.shift?.color || "#2563eb"}22`,
                                 color: a.shift?.color || "#2563eb",

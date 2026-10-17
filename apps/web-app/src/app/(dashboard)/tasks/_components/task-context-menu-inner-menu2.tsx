@@ -12,7 +12,18 @@ import type { TaskContextMenuInnerState } from "./use-task-context-menu-inner"
 import type { TaskContextMenuInner } from "./task-context-menu"
 
 /** Part of TaskContextMenuInner's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function TaskContextMenuInnerMenu2({ vm, actions, recentAssignees, task }: { vm: TaskContextMenuInnerState; actions: Parameters<typeof TaskContextMenuInner>[0]['actions']; recentAssignees: NonNullable<Parameters<typeof TaskContextMenuInner>[0]['recentAssignees']>; task: Parameters<typeof TaskContextMenuInner>[0]['task'] }) {
+export function TaskContextMenuInnerMenu2(
+  {
+    vm,
+    actions,
+    recentAssignees,
+    task
+  }: {
+    vm: TaskContextMenuInnerState;
+    actions: Parameters<typeof TaskContextMenuInner>[0]['actions'];
+    recentAssignees: NonNullable<Parameters<typeof TaskContextMenuInner>[0]['recentAssignees']>;
+    task: Parameters<typeof TaskContextMenuInner>[0]['task']
+  }) {
   const { t } = vm
   return (
     <>{actions.onAssigneeChange && recentAssignees.length > 0 && (

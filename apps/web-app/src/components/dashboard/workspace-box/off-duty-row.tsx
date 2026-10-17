@@ -8,13 +8,34 @@ import type { PersonNodeProps } from "../person-node"
 import { APPLE_EASE } from "./constants"
 
 const ABSENCE_INFO: Record<string, { labelKey: string; color: string; bgColor: string; icon: React.ReactNode }> = {
-  time_off: { labelKey: "workspace.absenceReason.time_off", color: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
-  sick: { labelKey: "workspace.absenceReason.sick", color: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10", icon: <AlertTriangle className="h-3.5 w-3.5" /> },
-  day_off: { labelKey: "workspace.absenceReason.day_off", color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10", icon: <CalendarOff className="h-3.5 w-3.5" /> },
-  unexcused: { labelKey: "workspace.absenceReason.unexcused", color: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10", icon: <ShieldAlert className="h-3.5 w-3.5" /> },
+  time_off: {
+    labelKey: "workspace.absenceReason.time_off",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-500/10",
+    icon: <CalendarOff className="h-3.5 w-3.5" />
+  },
+  sick: {
+    labelKey: "workspace.absenceReason.sick",
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-500/10",
+    icon: <AlertTriangle className="h-3.5 w-3.5" />
+  },
+  day_off: {
+    labelKey: "workspace.absenceReason.day_off",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-500/10",
+    icon: <CalendarOff className="h-3.5 w-3.5" />
+  },
+  unexcused: {
+    labelKey: "workspace.absenceReason.unexcused",
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-500/10",
+    icon: <ShieldAlert className="h-3.5 w-3.5" />
+  },
 }
 
-export const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0, canSeeAbsenceReason = false }: { person: PersonNodeProps; delay?: number; canSeeAbsenceReason?: boolean }) {
+export const OffDutyRow = React.memo(function OffDutyRow(
+  { person, delay = 0, canSeeAbsenceReason = false }: { person: PersonNodeProps; delay?: number; canSeeAbsenceReason?: boolean }) {
   const { t } = useTranslation()
   // Absence reason (Sick / Unexcused / …) is HR-sensitive — admins & managers
   // only. And only when the reason is actually KNOWN (never default to
@@ -31,7 +52,13 @@ export const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0, ca
         style={{ background: person.color }}
       >
         {person.imageUrl ? (
-          <img src={person.imageUrl} alt={person.initials} loading="lazy" decoding="async" className="w-full h-full object-cover opacity-100" />
+          <img
+            src={person.imageUrl}
+            alt={person.initials}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover opacity-100"
+          />
         ) : (
           person.initials
         )}
@@ -40,7 +67,11 @@ export const OffDutyRow = React.memo(function OffDutyRow({ person, delay = 0, ca
         <div className="text-sm font-medium text-foreground/70">{person.name}</div>
       </div>
       {info && (
-        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shrink-0", info.color, info.bgColor)}>
+        <div
+          className={cn(
+            ("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] " + "font-semibold shrink-0"),
+            info.color,
+            info.bgColor)}>
           {info.icon}
           {t(info.labelKey)}
         </div>

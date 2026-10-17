@@ -16,7 +16,16 @@ import { keys } from "@/lib/query-keys"
 import { useAfterFirstLoad } from "@/hooks/use-after-first-load"
 import { useNotificationBellData, type Notification } from "./use-notification-bell-data"
 import { useNotificationBellData2 } from "./use-notification-bell-data2"
-export { evTaskTitle, taskLink, type ChatEventPayload, type JoinRequestEventPayload, type AttendanceEventPayload, attendanceInfo, type BreakEventPayload, evTaskId } from "./use-notification-bell-data2"
+export {
+  evTaskTitle,
+  taskLink,
+  type ChatEventPayload,
+  type JoinRequestEventPayload,
+  type AttendanceEventPayload,
+  attendanceInfo,
+  type BreakEventPayload,
+  evTaskId
+} from "./use-notification-bell-data2"
 export { type Notification, mapInboxItem, type NotificationType, eventTypeToNotifType } from "./use-notification-bell-data"
 
 /** NotificationBell's state and handlers — everything before its markup, moved here unchanged. */

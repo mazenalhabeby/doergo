@@ -215,7 +215,10 @@ export function RegisterForm({ isActive, isMobile = false }: RegisterFormProps) 
             type="submit"
             disabled={isLoading}
             className={cn(
-              'relative w-full h-9 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-sm rounded-lg transition-all duration-300 border-0 shadow-sm hover:shadow-md hover:shadow-blue-600/20',
+              ('relative w-full h-9 sm:h-10 bg-gradient-to-r from-blue-600 to-blue-500 ' +
+                'hover:from-blue-700 hover:to-blue-600 text-white font-semibold text-sm ' +
+                'rounded-lg transition-all duration-300 border-0 shadow-sm ' +
+                'hover:shadow-md hover:shadow-blue-600/20'),
               !isLoading && 'active:scale-[0.98]'
             )}
           >

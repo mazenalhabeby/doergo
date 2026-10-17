@@ -150,7 +150,9 @@ export function SupplyDocumentDialog({
 
             {/* Its expiry — read off the document, not asked for */}
             {prompt.state === "READING" && (
-              <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-400">
+              <div
+                className={"flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-sm " +
+                  "text-slate-600 dark:bg-slate-900 dark:text-slate-400"}>
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 {t("documents.supply.reading")}
               </div>
@@ -196,7 +198,8 @@ export function SupplyDocumentDialog({
                   <button
                     type="button"
                     onClick={() => setOverriding(true)}
-                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-slate-600 underline-offset-2 hover:underline dark:text-slate-300"
+                    className={"inline-flex shrink-0 items-center gap-1 text-xs font-medium " +
+                      "text-slate-600 underline-offset-2 hover:underline dark:text-slate-300"}
                   >
                     <Pencil className="h-3 w-3" />
                     {t("documents.supply.changeDate")}
@@ -240,7 +243,9 @@ export function SupplyDocumentDialog({
 
             {/* What happens next — not decoration. Somebody who thinks an upload
                 covers them for the work will find out on site that it does not. */}
-            <div className="flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+            <div
+              className={"flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 " +
+                "p-3 dark:border-amber-900 dark:bg-amber-950/40"}>
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <p className="text-sm text-slate-700 dark:text-slate-300">
                 {t("documents.supply.reviewNotice")}

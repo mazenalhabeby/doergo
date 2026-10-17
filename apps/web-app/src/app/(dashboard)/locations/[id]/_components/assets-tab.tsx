@@ -207,10 +207,14 @@ export function AssetsTab({
             if (shape.money.enabled) bits.push(t("assetKinds.summaryMoney", "money"))
 
             return (
-              <div key={kind.id} className="group relative rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40">
+              <div
+                key={kind.id}
+                className={"group relative rounded-2xl border border-border bg-card p-4 " + "transition-colors hover:border-primary/40"}>
                 <button onClick={() => showKind(kind.id)} className="block w-full text-left">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                    <span
+                      className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-xl " +
+                        "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400"}>
                       <Package className="h-4.5 w-4.5" />
                     </span>
                     <div className="min-w-0 flex-1">

@@ -52,10 +52,14 @@ export function SharedWithUsSection() {
           {pending.map((invite) => (
             <div
               key={invite.id}
-              className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900 dark:bg-indigo-950/40 sm:flex-row sm:items-center sm:justify-between"
+              className={"flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 " +
+                "p-4 dark:border-indigo-900 dark:bg-indigo-950/40 sm:flex-row " +
+                "sm:items-center sm:justify-between"}
             >
               <div className="flex items-start gap-3 min-w-0">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300">
+                <span
+                  className={"flex size-9 shrink-0 items-center justify-center rounded-lg " +
+                    "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300"}>
                   <Share2 className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
@@ -112,7 +116,10 @@ export function SharedWithUsSection() {
                   <div className="min-w-0">
                     <h3 className="text-base font-semibold text-foreground truncate">{s.spaceName}</h3>
                     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                      <Badge variant="outline" className="gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">
+                      <Badge
+                        variant="outline"
+                        className={"gap-1 text-xs font-medium border-indigo-200 bg-indigo-50 text-indigo-700 " +
+                          "dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-300"}>
                         <Handshake className="h-3 w-3" />
                         {t("spaceSharing.guest.sharedFrom", { org: s.ownerOrgName })}
                       </Badge>

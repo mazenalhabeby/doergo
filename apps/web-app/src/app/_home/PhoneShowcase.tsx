@@ -59,13 +59,20 @@ export function PhoneShowcase() {
     return (
       <section className="border-t border-border px-6 py-24 sm:px-10 sm:py-32">
         <div className="mx-auto max-w-[1600px]">
-          <span style={{ fontFamily: MONO }} className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
-          <h2 style={{ fontFamily: DISPLAY }} className="mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight text-foreground">{t('home.app.reducedHeading')}</h2>
+          <span
+            style={{ fontFamily: MONO }}
+            className="mb-6 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
+          <h2
+            style={{ fontFamily: DISPLAY }}
+            className={"mb-12 text-[clamp(1.8rem,4.4vw,3.4rem)] font-normal tracking-tight " +
+              "text-foreground"}>{t('home.app.reducedHeading')}</h2>
           <div className="grid items-center gap-10 lg:grid-cols-2">
             <ul className="space-y-8">
               {SHOTS.map((s) => (
                 <li key={s.img}>
-                  <span style={{ fontFamily: MONO }} className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
+                  <span
+                    style={{ fontFamily: MONO }}
+                    className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{s.kicker}</span>
                   <h3 style={{ fontFamily: DISPLAY }} className="mt-2 text-[1.4rem] font-normal text-foreground">{s.title}</h3>
                   <p className="mt-2 max-w-[44ch] text-[14px] leading-relaxed text-foreground/55">{s.body}</p>
                 </li>
@@ -84,7 +91,9 @@ export function PhoneShowcase() {
         <div className="mx-auto grid w-full max-w-[1600px] items-center gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           {/* descriptions (left) */}
           <div className="order-2 lg:order-1">
-            <span style={{ fontFamily: MONO }} className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
+            <span
+              style={{ fontFamily: MONO }}
+              className="mb-8 block text-[11px] uppercase tracking-[0.28em] text-muted-foreground">{t('home.app.label')}</span>
             <CrossfadeCopy items={SHOTS} active={active} titleMaxCls="max-w-[18ch]" />
             {/* progress dots — reflect the scroll position */}
             <ProgressDots count={SHOTS.length} active={active} />
@@ -117,11 +126,21 @@ function Phone({
   return (
     <div className="relative mx-auto aspect-[1170/2532] w-[clamp(240px,27vw,320px)]">
       {/* body */}
-      <div className="absolute inset-0 rounded-[2.8rem] border-[3px] border-white/15 bg-[#0a0b0e] p-[10px] shadow-[0_50px_120px_-30px_rgba(0,0,0,0.9)]">
+      <div
+        className={"absolute inset-0 rounded-[2.8rem] border-[3px] border-white/15 " +
+          "bg-[#0a0b0e] p-[10px] shadow-[0_50px_120px_-30px_rgba(0,0,0,0.9)]"}>
         <div className="relative h-full w-full overflow-hidden rounded-[2.2rem] bg-black">
           {shots
             ? shots.map((s, i) => (
-                <Image key={s.img} src={s.img} alt={s.title} fill sizes="(max-width: 1024px) 40vw, 320px" className="object-cover transition-opacity duration-500" style={{ opacity: i === active ? 1 : 0 }} />
+                <Image
+                  key={s.img}
+                  src={s.img}
+                  alt={s.title}
+                  fill
+                  sizes="(max-width: 1024px) 40vw, 320px"
+                  className="object-cover transition-opacity duration-500"
+                  style={{ opacity: i === active ? 1 : 0 }}
+                />
               ))
             : activeSrc && (
                 <Image src={activeSrc} alt="" fill sizes="(max-width: 1024px) 40vw, 320px" className="object-cover" />

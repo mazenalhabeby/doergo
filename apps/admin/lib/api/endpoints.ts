@@ -100,7 +100,10 @@ export const teamsApi = {
     api.call(P.supportTeams.upsertRule, { teamId }, { body: rule }),
   deleteRule: (ruleId: string) => api.call(P.supportTeams.deleteRule, { ruleId }),
   pinnedOrgs: (teamId: string): Promise<PinnedOrg[]> => api.call(P.supportTeams.pinnedOrgs, { teamId }),
-  pinOrg: (organizationId: string, teamId: string | null) => api.call(P.supportTeams.pinOrg, undefined, { body: { organizationId, teamId } }),
+  pinOrg: (organizationId: string, teamId: string | null) => api.call(
+    P.supportTeams.pinOrg,
+    undefined,
+    { body: { organizationId, teamId } }),
 };
 
 export const libraryApi = {

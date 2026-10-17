@@ -35,8 +35,17 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
   const currency = user?.orgCurrency ?? "EUR"
 
   const { data: rules } = useQuery({ queryKey: keys.approvals.rules(), queryFn: approvalsApi.rules, enabled: open })
-  const { data: orgRoles } = useQuery({ queryKey: keys.organization.roles(), queryFn: () => organizationsApi.getRoles(), enabled: open, staleTime: 60_000 })
-  const { data: spaceRoles } = useQuery({ queryKey: keys.organization.roles("space"), queryFn: () => organizationsApi.getRoles("space"), enabled: open, staleTime: 60_000 })
+  const {
+    data: orgRoles
+  } = useQuery({ queryKey: keys.organization.roles(), queryFn: () => organizationsApi.getRoles(), enabled: open, staleTime: 60_000 })
+  const {
+    data: spaceRoles
+  } = useQuery({
+    queryKey: keys.organization.roles("space"),
+    queryFn: () => organizationsApi.getRoles("space"),
+    enabled: open,
+    staleTime: 60_000
+  })
   const { data: spaces } = useSpaceDirectory({ enabled: open })
 
   const roles = useMemo(() => {
@@ -90,16 +99,24 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
 
   const describe = (r: ApprovalRuleView) => {
     const when = [
-      r.kind === "overtime" && r.minMinutes != null ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 }) : null,
+      r.kind === "overtime" && r.minMinutes != null
+        ? t("approvals.rules.whenOvertime", { hours: Math.round((r.minMinutes / 60) * 10) / 10 })
+        : null,
       r.kind === "request" && r.minDays != null ? t("approvals.rules.whenDays", { count: r.minDays }) : null,
-      r.kind === "expense" && r.minAmountCents != null ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) }) : null,
+      r.kind === "expense" && r.minAmountCents != null
+        ? t("approvals.rules.whenAmount", { amount: formatMoney(r.minAmountCents, currency, dateLocale()) })
+        : null,
       r.whenCoverShort ? t("approvals.rules.whenCover") : null,
     ].filter(Boolean).join(", ") || t("approvals.rules.always")
-    const head = t("approvals.rules.head", { what: t(`approvals.rules.kind.${r.kind}`), when, where: r.spaceName ?? t("approvals.rules.everywhere") })
+    const head = t(
+      "approvals.rules.head",
+      { what: t(`approvals.rules.kind.${r.kind}`), when, where: r.spaceName ?? t("approvals.rules.everywhere") })
     const parts = [
       r.secondRoleId ? t("approvals.rules.needs", { role: r.secondRoleName ?? "?" }) : null,
       r.remindAfterHours != null ? t("approvals.rules.reminds", { hours: r.remindAfterHours }) : null,
-      r.escalateAfterHours != null ? t("approvals.rules.escalates", { hours: r.escalateAfterHours, role: r.escalateRoleName ?? "?" }) : null,
+      r.escalateAfterHours != null
+        ? t("approvals.rules.escalates", { hours: r.escalateAfterHours, role: r.escalateRoleName ?? "?" })
+        : null,
     ].filter(Boolean)
     return `${head} ${parts.join(" ")}`
   }
@@ -118,8 +135,19 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           {(rules ?? []).map((r) => (
             <li key={r.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">
               <p className={r.isActive ? "flex-1 text-foreground" : "flex-1 text-muted-foreground line-through"}>{describe(r)}</p>
-              <Switch checked={r.isActive} disabled={toggle.isPending} onCheckedChange={() => toggle.mutate(r)} aria-label={t("approvals.rules.active")} />
-              <Button variant="ghost" size="icon" className="size-8" disabled={remove.isPending} onClick={() => remove.mutate(r.id)} aria-label={t("approvals.rules.remove")}>
+              <Switch
+                checked={r.isActive}
+                disabled={toggle.isPending}
+                onCheckedChange={() => toggle.mutate(r)}
+                aria-label={t("approvals.rules.active")}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                disabled={remove.isPending}
+                onClick={() => remove.mutate(r.id)}
+                aria-label={t("approvals.rules.remove")}>
                 <Trash2 className="size-4" />
               </Button>
             </li>
@@ -151,7 +179,16 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="rule-threshold">{t(`approvals.rules.threshold.${kind}`, { currency })}</Label>
-              <Input id="rule-threshold" type="number" inputMode="decimal" min={0} step={kind === "request" ? 1 : 0.5} value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder={t("approvals.rules.thresholdHint")} />
+              <Input
+                id="rule-threshold"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step={kind === "request" ? 1 : 0.5}
+                value={threshold}
+                onChange={(e) => setThreshold(e.target.value)}
+                placeholder={t("approvals.rules.thresholdHint")}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.secondRole")}</Label>
@@ -174,11 +211,27 @@ export function RulesDialog({ open, onOpenChange }: { open: boolean; onOpenChang
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label htmlFor="rule-remind">{t("approvals.rules.remindAfter")}</Label>
-              <Input id="rule-remind" type="number" min={1} max={720} value={remind} onChange={(e) => setRemind(e.target.value)} placeholder="—" />
+              <Input
+                id="rule-remind"
+                type="number"
+                min={1}
+                max={720}
+                value={remind}
+                onChange={(e) => setRemind(e.target.value)}
+                placeholder="—"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="rule-escalate">{t("approvals.rules.escalateAfter")}</Label>
-              <Input id="rule-escalate" type="number" min={1} max={720} value={escalate} onChange={(e) => setEscalate(e.target.value)} placeholder="—" />
+              <Input
+                id="rule-escalate"
+                type="number"
+                min={1}
+                max={720}
+                value={escalate}
+                onChange={(e) => setEscalate(e.target.value)}
+                placeholder="—"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>{t("approvals.rules.escalateTo")}</Label>

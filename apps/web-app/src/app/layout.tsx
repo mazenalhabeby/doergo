@@ -19,7 +19,9 @@ const martian = Martian_Mono({ subsets: ['latin'], variable: '--font-martian', w
 
 const SITE_URL = 'https://hbcfield.com';
 const SITE_DESCRIPTION =
-  'HBCField unifies task dispatch, GPS tracking, employee time & attendance, service reports and invoicing for field teams — in real time on web and mobile.';
+  ('HBCField unifies task dispatch, GPS tracking, employee time & ' +
+    'attendance, service reports and invoicing for field teams — in real time ' +
+    'on web and mobile.');
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

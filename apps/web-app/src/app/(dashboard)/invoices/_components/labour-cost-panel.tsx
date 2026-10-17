@@ -72,7 +72,10 @@ export function LabourCostPanel({
             <p className="text-xl font-semibold tabular-nums text-muted-foreground">—</p>
           ) : (
             <>
-              <p className={cn("text-xl font-semibold tabular-nums", keep < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
+              <p
+                className={cn(
+                  "text-xl font-semibold tabular-nums",
+                  keep < 0 ? "text-red-600 dark:text-red-400" : "text-teal-700 dark:text-teal-400")}>
                 {money(keep, baseCurrency)}
               </p>
               {keepPct != null && (
@@ -124,7 +127,9 @@ export function LabourCostPanel({
                       <span className="text-amber-700 dark:text-amber-400">
                         {t("invoices.create.costNoRate")}
                         {r.workerId && (
-                          <Link href={`/members/${r.workerId}?edit=1`} className="ml-2 font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                          <Link
+                            href={`/members/${r.workerId}?edit=1`}
+                            className="ml-2 font-semibold text-blue-600 hover:underline dark:text-blue-400">
                             {t("invoices.create.costSetRate")}
                           </Link>
                         )}
@@ -132,16 +137,30 @@ export function LabourCostPanel({
                     ) : (
                       <span className="flex flex-col gap-0.5">
                         {r.hourRateCents != null && (
-                          <span><span className="mr-1.5 rounded bg-blue-100 px-1.5 py-px text-[10px] font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">{t("invoices.create.tagHour")}</span>{formatMoney(r.hourRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perHour")}</span>
+                          <span><span
+                            className={"mr-1.5 rounded bg-blue-100 px-1.5 py-px text-[10px] font-bold " +
+                              "text-blue-700 dark:bg-blue-950 dark:text-blue-300"}>{t(
+                                "invoices.create.tagHour")}</span>{formatMoney(
+                                  r.hourRateCents,
+                                  baseCurrency,
+                                  MONEY_LOCALE)} {t("invoices.create.perHour")}</span>
                         )}
                         {r.dayRateCents != null && (
-                          <span><span className="mr-1.5 rounded bg-violet-100 px-1.5 py-px text-[10px] font-bold text-violet-700 dark:bg-violet-950 dark:text-violet-300">{t("invoices.create.tagDay")}</span>{formatMoney(r.dayRateCents, baseCurrency, MONEY_LOCALE)} {t("invoices.create.perDay")}</span>
+                          <span><span
+                            className={"mr-1.5 rounded bg-violet-100 px-1.5 py-px text-[10px] font-bold " +
+                              "text-violet-700 dark:bg-violet-950 dark:text-violet-300"}>{t(
+                                "invoices.create.tagDay")}</span>{formatMoney(
+                                  r.dayRateCents,
+                                  baseCurrency,
+                                  MONEY_LOCALE)} {t("invoices.create.perDay")}</span>
                         )}
                       </span>
                     )}
                   </td>
                   <td className="py-2.5 pl-2 text-right tabular-nums">
-                    {r.costCents == null ? <span className="text-muted-foreground">—</span> : formatMoney(r.costCents, baseCurrency, MONEY_LOCALE)}
+                    {r.costCents == null
+                      ? <span className="text-muted-foreground">—</span>
+                      : formatMoney(r.costCents, baseCurrency, MONEY_LOCALE)}
                   </td>
                 </tr>
               ))}

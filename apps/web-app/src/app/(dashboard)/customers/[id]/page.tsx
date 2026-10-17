@@ -123,19 +123,28 @@ export default function CustomerRecordPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           {/* left: avatar + name (+ app access under) */}
           <div className="flex min-w-0 items-center gap-3">
-            <span className={cn("flex h-14 w-14 shrink-0 items-center justify-center bg-gradient-to-br text-lg font-bold text-white shadow-sm",
+            <span
+              className={cn(("flex h-14 w-14 shrink-0 items-center justify-center bg-gradient-to-br " +
+                "text-lg font-bold text-white shadow-sm"),
               isCompany ? "rounded-xl" : "rounded-full", grad)}>
               {isCompany ? <Building2 className="h-6 w-6" /> : personInitials(customer.name)}
             </span>
             <div className="min-w-0">
               <h1 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">{customer.name}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                  {isCompany ? <><Building2 className="h-3 w-3" /> {t("customers.typeCompany", "Company")}</> : <><Users className="h-3 w-3" /> {t("customers.typePerson", "Person")}</>}
+                <span
+                  className={"inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 " +
+                    "text-[11px] font-semibold text-muted-foreground"}>
+                  {isCompany
+                    ? <><Building2 className="h-3 w-3" /> {t("customers.typeCompany", "Company")}</>
+                    : <><Users className="h-3 w-3" /> {t("customers.typePerson", "Person")}</>}
                 </span>
                 {customer.industry && <span className="text-[11px] text-muted-foreground">{customer.industry}</span>}
                 {customer.isPortalResident && !isCompany && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                  <span
+                    className={"inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 " +
+                      "text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 " +
+                      "dark:text-emerald-300"}>
                     <Smartphone className="h-3 w-3" /> {t("customers.appAccess", "App access")}
                   </span>
                 )}
@@ -147,7 +156,10 @@ export default function CustomerRecordPage() {
             {customer.phone && <IconBtn icon={Phone} href={`tel:${customer.phone}`} label={t("customers.call", "Call")} />}
             {customer.email && <IconBtn icon={Mail} href={`mailto:${customer.email}`} label={t("customers.email", "Email")} />}
             {customer.isPortalResident && !isCompany ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400">
+              <span
+                className={"inline-flex items-center gap-1.5 rounded-full border border-emerald-200 " +
+                  "bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 " +
+                  "dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400"}>
                 <CheckCircle2 className="h-4 w-4" /> {t("customers.activeCustomer", "Active customer")}
               </span>
             ) : (
@@ -168,8 +180,16 @@ export default function CustomerRecordPage() {
           <Panel>
             <PanelHead>{t("customers.about", "About")}</PanelHead>
             <dl className="divide-y divide-border/60 text-sm">
-              <PropRow label={isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")} value={customer.email} href={customer.email ? `mailto:${customer.email}` : undefined} />
-              <PropRow label={isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")} value={customer.phone} href={customer.phone ? `tel:${customer.phone}` : undefined} />
+              <PropRow
+                label={isCompany ? t("customers.companyEmail", "Company email") : t("customers.email", "Email")}
+                value={customer.email}
+                href={customer.email ? `mailto:${customer.email}` : undefined}
+              />
+              <PropRow
+                label={isCompany ? t("customers.companyPhone", "Company phone") : t("customers.phone", "Phone")}
+                value={customer.phone}
+                href={customer.phone ? `tel:${customer.phone}` : undefined}
+              />
               {isCompany && <>
                 <PropRow label={t("customers.website", "Website")} value={website?.replace(/^https?:\/\//, "")} href={websiteHref} />
                 <PropRow label={t("customers.legalName", "Legal name")} value={customer.legalName} />
@@ -187,7 +207,8 @@ export default function CustomerRecordPage() {
               ))}
               <PropRow label={t("customers.added", "Added")} value={fmtDate(customer.createdAt)} />
             </dl>
-            {customer.notes && <p className="mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed text-muted-foreground">{customer.notes}</p>}
+            {customer.notes &&
+              <p className={"mt-3 rounded-lg bg-muted/50 p-3 text-[13px] leading-relaxed " + "text-muted-foreground"}>{customer.notes}</p>}
           </Panel>
 
           {/*
@@ -208,9 +229,16 @@ export default function CustomerRecordPage() {
             : <WorksAtPanel customer={customer} canEdit={can.editInfo} />}
 
           {/* Sales managers — only while the customer is worked by sales (no app access). */}
-          {!customer.isPortalResident && <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} canEdit={can.assignManagers} />}
+          {!customer.isPortalResident &&
+            <ManagersPanel customer={customer} ownerId={customer.ownerId ?? undefined} onChanged={refresh} canEdit={can.assignManagers} />}
 
-          <AddressesPanel customerId={id} spaceId={customer.spaceId ?? undefined} hasPortal={hasB2C} portalId={customer.portalId ?? undefined} isPortalResident={customer.isPortalResident} />
+          <AddressesPanel
+            customerId={id}
+            spaceId={customer.spaceId ?? undefined}
+            hasPortal={hasB2C}
+            portalId={customer.portalId ?? undefined}
+            isPortalResident={customer.isPortalResident}
+          />
 
           {/*
             App access is for a PERSON.
@@ -229,7 +257,7 @@ export default function CustomerRecordPage() {
 
           {/* Smart nudges — keep the relationship moving. */}
           {showNoNextStep && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+            <div className={"flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 " + "bg-amber-50 px-4 py-2.5 text-sm text-amber-800 dark:border-amber-900/50 " + "dark:bg-amber-950/30 dark:text-amber-300"}>
               <Bell className="h-4 w-4 shrink-0" />
               <span className="flex-1">{t("customers.nudgeNoNext", "No follow-up scheduled.")}{staleDays != null && staleDays > 0 ? ` ${t("customers.lastActivityDays", "Last activity {{d}}d ago.", { d: staleDays })}` : ""}</span>
               {can.work && <QuickRemind customerId={id} onAdded={refresh} />}
@@ -259,7 +287,7 @@ export default function CustomerRecordPage() {
           </div>
 
           {overdue.length > 0 && tab !== "reminders" && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+            <div className={"flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 " + "py-2.5 text-sm font-medium text-red-700 dark:border-red-900/50 " + "dark:bg-red-950/30 dark:text-red-400"}>
               <AlertTriangle className="h-4 w-4" /> {t("customers.overdueCount", "{{count}} overdue follow-up", { count: overdue.length })}
             </div>
           )}

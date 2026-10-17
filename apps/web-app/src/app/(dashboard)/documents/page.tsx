@@ -103,7 +103,9 @@ export default function IssueDocumentsPage() {
             id="doc-type"
             value={typeId}
             onChange={(e) => setTypeId(e.target.value)}
-            className="h-10 appearance-none rounded-md border border-slate-200 bg-white pl-3 pr-9 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className={"h-10 appearance-none rounded-md border border-slate-200 bg-white pl-3 " +
+              "pr-9 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 " +
+              "dark:text-slate-100"}
           >
             <option value="">{t("documents.issue.choose")}</option>
             {types.filter((ty) => ty.direction !== "SUPPLIED").map((ty) => (
@@ -155,7 +157,9 @@ export default function IssueDocumentsPage() {
         <>
           {/* What still needs a person */}
           {unresolved.length > 0 && (
-            <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-900 dark:bg-red-950/40">
+            <div
+              className={"mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 " +
+                "p-3 dark:border-red-900 dark:bg-red-950/40"}>
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
               <p className="text-sm text-slate-700 dark:text-slate-300">
                 <span className="font-semibold text-red-700 dark:text-red-400">

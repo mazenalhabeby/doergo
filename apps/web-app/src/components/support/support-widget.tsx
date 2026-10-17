@@ -102,13 +102,19 @@ export function SupportButton() {
         <Button variant="ghost" size="icon" className="relative rounded-lg" aria-label={t('support.title', 'Support')}>
           <Headset className="h-5 w-5 text-muted-foreground" />
           {unreadTotal > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+            <span
+              className={"absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center " +
+                "rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 " +
+                "ring-white"}>
               {unreadTotal > 9 ? '9+' : unreadTotal}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="flex h-[560px] max-h-[80vh] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border-border p-0 shadow-xl">
+      <PopoverContent
+        align="end"
+        className={"flex h-[560px] max-h-[80vh] w-[380px] max-w-[calc(100vw-2rem)] flex-col " +
+          "overflow-hidden rounded-xl border-border p-0 shadow-xl"}>
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-3">
           {(activeId || composing) && (

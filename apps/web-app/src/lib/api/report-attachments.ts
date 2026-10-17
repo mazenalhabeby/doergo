@@ -32,7 +32,10 @@ export const reportAttachmentsApi = {
       caption?: string;
     }
   ) => {
-    const response = await call(reportsEndpoints.attachmentConfirm, { id: reportId }, { body: data }) as ApiResponse<{ success: boolean; data: ReportAttachment }>;
+    const response = await call(
+      reportsEndpoints.attachmentConfirm,
+      { id: reportId },
+      { body: data }) as ApiResponse<{ success: boolean; data: ReportAttachment }>;
 
     if (response.error) {
       throw apiError(response);
@@ -43,7 +46,9 @@ export const reportAttachmentsApi = {
 
   // Delete an attachment
   delete: async (reportId: string, attachmentId: string) => {
-    const response = await call(reportsEndpoints.removeAttachment, { id: reportId, attachmentId }) as ApiResponse<{ success: boolean; message: string }>;
+    const response = await call(
+      reportsEndpoints.removeAttachment,
+      { id: reportId, attachmentId }) as ApiResponse<{ success: boolean; message: string }>;
 
     if (response.error) {
       throw apiError(response);

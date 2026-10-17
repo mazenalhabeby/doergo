@@ -13,7 +13,26 @@ import type { BreaksTabState } from "./use-breaks-tab"
 import type { BreaksTab } from "./breaks-tab"
 
 /** Part of BreaksTab's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function BreaksTabBreaks({ vm, breakTypeFilter, setBreakTypeFilter, breakDate, setBreakDate, refetchBreakHistory, loadingBreakHistory, breakHistoryData }: { vm: BreaksTabState; breakTypeFilter: Parameters<typeof BreaksTab>[0]['breakTypeFilter']; setBreakTypeFilter: Parameters<typeof BreaksTab>[0]['setBreakTypeFilter']; breakDate: Parameters<typeof BreaksTab>[0]['breakDate']; setBreakDate: Parameters<typeof BreaksTab>[0]['setBreakDate']; refetchBreakHistory: Parameters<typeof BreaksTab>[0]['refetchBreakHistory']; loadingBreakHistory: Parameters<typeof BreaksTab>[0]['loadingBreakHistory']; breakHistoryData: Parameters<typeof BreaksTab>[0]['breakHistoryData'] }) {
+export function BreaksTabBreaks(
+  {
+    vm,
+    breakTypeFilter,
+    setBreakTypeFilter,
+    breakDate,
+    setBreakDate,
+    refetchBreakHistory,
+    loadingBreakHistory,
+    breakHistoryData
+  }: {
+    vm: BreaksTabState;
+    breakTypeFilter: Parameters<typeof BreaksTab>[0]['breakTypeFilter'];
+    setBreakTypeFilter: Parameters<typeof BreaksTab>[0]['setBreakTypeFilter'];
+    breakDate: Parameters<typeof BreaksTab>[0]['breakDate'];
+    setBreakDate: Parameters<typeof BreaksTab>[0]['setBreakDate'];
+    refetchBreakHistory: Parameters<typeof BreaksTab>[0]['refetchBreakHistory'];
+    loadingBreakHistory: Parameters<typeof BreaksTab>[0]['loadingBreakHistory'];
+    breakHistoryData: Parameters<typeof BreaksTab>[0]['breakHistoryData']
+  }) {
   const { t, breakTypeKey, hour12, locale, breakTz } = vm
   return (
     <div className="bg-card rounded-2xl border border-border/60 shadow-sm">

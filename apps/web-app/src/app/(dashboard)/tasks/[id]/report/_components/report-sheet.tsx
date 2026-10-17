@@ -53,7 +53,9 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
   } = vm
 
   return (
-    <article className="mx-auto w-full rounded-sm bg-white px-6 py-8 text-slate-800 shadow-sm ring-1 ring-slate-200 sm:px-10 sm:py-10 [color-scheme:light]">
+    <article
+      className={"mx-auto w-full rounded-sm bg-white px-6 py-8 text-slate-800 shadow-sm " +
+        "ring-1 ring-slate-200 sm:px-10 sm:py-10 [color-scheme:light]"}>
       {/* Letterhead */}
       <header className="flex flex-wrap items-start justify-between gap-6 border-b-[3px] border-blue-600 pb-5">
         <div className="flex min-w-0 items-start gap-3">
@@ -80,7 +82,10 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {pills.map((p) =>
             p.key === "status" ? (
-              <span key={p.key} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold" style={{ backgroundColor: `${p.hex}1a`, color: p.hex ?? undefined }}>
+              <span
+                key={p.key}
+                className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs " + "font-semibold"}
+                style={{ backgroundColor: `${p.hex}1a`, color: p.hex ?? undefined }}>
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: p.hex ?? undefined }} />
                 {p.text}
               </span>
@@ -139,7 +144,9 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
                   <div key={sub.id} className="rounded-lg border border-slate-200 p-3">
                     <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
                       <h3 className="text-sm font-semibold text-slate-900">{statusLabel(sub.statusKey, h.statuses)}</h3>
-                      <span className="text-xs text-slate-500">{[personName(sub.submittedBy), when(sub.submittedAt)].filter(Boolean).join(" · ")}</span>
+                      <span
+                        className="text-xs text-slate-500">{[personName(sub.submittedBy), when(sub.submittedAt)].filter(Boolean).join(
+                          " · ")}</span>
                     </div>
                     <dl className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-[minmax(0,14rem)_1fr]">
                       {sub.fields.map((f) => (
@@ -173,7 +180,10 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
                   <tbody>
                     {parts.map((p) => (
                       <tr key={p.id} className="border-b border-slate-100 align-top">
-                        <td className="py-2 pr-3">{p.name}{p.notes ? <span className="block text-xs text-slate-400">{p.notes}</span> : null}</td>
+                        <td
+                          className="py-2 pr-3">{p.name}{p.notes
+                            ? <span className="block text-xs text-slate-400">{p.notes}</span>
+                            : null}</td>
                         <td className="py-2 pr-3 text-slate-500">{p.partNumber ?? "—"}</td>
                         <td className="py-2 text-right tabular-nums">{p.quantity.toLocaleString(locale)}</td>
                         {showPrices ? <td className="py-2 text-right tabular-nums">{money(p.unitPrice)}</td> : null}
@@ -201,7 +211,10 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
                 <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <Fact label={t("tasks.report.route.distance")} value={formatReportDistance(rt.distanceMeters, locale)} />
                   <Fact label={t("tasks.report.route.from")} value={`${when(rt.startedAt)} → ${when(rt.endedAt)}`} />
-                  <Fact label={t("tasks.report.route.arrival")} value={rt.arrivalDistanceMeters != null ? formatReportDistance(rt.arrivalDistanceMeters, locale) : "—"} />
+                  <Fact
+                    label={t("tasks.report.route.arrival")}
+                    value={rt.arrivalDistanceMeters != null ? formatReportDistance(rt.arrivalDistanceMeters, locale) : "—"}
+                  />
                   <Fact label={t("tasks.report.route.points")} value={String(rt.pointCount)} />
                 </dl>
               </div>
@@ -226,7 +239,11 @@ export function ReportSheet({ report: r, visible, showPrices, generatedBy, headO
                   <Note
                     key={c.id}
                     who={personName(c.author)}
-                    meta={[when(c.createdAt), c.workedMinutes != null ? t("tasks.report.handovers.worked", { time: formatReportMinutes(c.workedMinutes, tt) }) : ""].filter(Boolean).join(" · ")}
+                    meta={[
+                      when(c.createdAt),
+                      c.workedMinutes != null ? t("tasks.report.handovers.worked", { time: formatReportMinutes(c.workedMinutes, tt) }) : ""].filter(
+                      Boolean).join(
+                      " · ")}
                     text={c.note}
                   />
                 ))}

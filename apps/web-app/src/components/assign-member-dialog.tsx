@@ -61,7 +61,19 @@ export function AssignMemberDialog({
     otherMembers,
     handleToggle,
     handleSave,
-  } = useAssignMemberDialog({ open, onOpenChange, taskId, spaceId, currentAssigneeId, currentAssigneeIds, onSave, onAssign, onRemove, isAssigning, notice })
+  } = useAssignMemberDialog({
+    open,
+    onOpenChange,
+    taskId,
+    spaceId,
+    currentAssigneeId,
+    currentAssigneeIds,
+    onSave,
+    onAssign,
+    onRemove,
+    isAssigning,
+    notice
+  })
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

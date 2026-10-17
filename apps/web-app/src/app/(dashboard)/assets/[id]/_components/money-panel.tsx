@@ -108,7 +108,10 @@ export function MoneyPanel({
         figure nobody can see is a figure nobody acts on.
       */}
       {!!totals?.waitingCount && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-300/70 bg-amber-50/60 px-3 py-2 text-sm dark:border-amber-900/60 dark:bg-amber-950/20">
+        <div
+          className={"flex items-center gap-2 rounded-xl border border-amber-300/70 " +
+            "bg-amber-50/60 px-3 py-2 text-sm dark:border-amber-900/60 " +
+            "dark:bg-amber-950/20"}>
           <Receipt className="h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400" />
           <span className="text-amber-900 dark:text-amber-200">
             {t("expenses.waitingHere", "{{count}} waiting on a decision", { count: totals.waitingCount })}
@@ -146,7 +149,9 @@ export function MoneyPanel({
           className="min-w-[8rem] flex-1"
         />
         <Button disabled={!canAdd} onClick={() => add.mutate()}>
-          {add.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("common.add", "Add")}</>}
+          {add.isPending
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <><Plus className="mr-1 h-3.5 w-3.5" /> {t("common.add", "Add")}</>}
         </Button>
       </div>
 
@@ -183,7 +188,9 @@ export function MoneyPanel({
               </div>
 
               {waiting && (
-                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                <span
+                  className={"shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold " +
+                    "text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"}>
                   {t("expenses.pending", "Waiting")}
                 </span>
               )}

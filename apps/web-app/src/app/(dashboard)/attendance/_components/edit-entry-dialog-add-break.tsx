@@ -166,7 +166,9 @@ export function EditEntryDialogAddBreak({ vm }: { vm: EditEntryDialogState }) {
           })}
           {pendingBreaks.map((b, i) => (
             <li key={`pending-${i}`} className="flex items-center gap-3 px-3 py-2.5">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400">
+              <span
+                className={"flex size-7 shrink-0 items-center justify-center rounded-full border " +
+                  "border-dashed border-amber-500/50 text-amber-600 dark:text-amber-400"}>
                 <Plus className="size-3.5" />
               </span>
               <span className="min-w-0 flex-1">

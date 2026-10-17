@@ -32,7 +32,12 @@ export const rgbTuple = (c: Rgb): [number, number, number] => [c.r, c.g, c.b]
 export const PDF_TABLE_THEME = {
   theme: "grid" as const,
   styles: { font: "helvetica", fontSize: 9, cellPadding: 2.5, textColor: rgbTuple(INK), lineColor: rgbTuple(LINE), lineWidth: 0.2 },
-  headStyles: { fillColor: rgbTuple(ACCENT), textColor: [255, 255, 255] as [number, number, number], fontStyle: "bold" as const, fontSize: 8.5 },
+  headStyles: {
+    fillColor: rgbTuple(ACCENT),
+    textColor: [255, 255, 255] as [number, number, number],
+    fontStyle: "bold" as const,
+    fontSize: 8.5
+  },
 }
 
 export interface LoadedImage {

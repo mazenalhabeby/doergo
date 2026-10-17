@@ -41,10 +41,14 @@ export function IndustriesHub({ lang }: { lang: string }) {
             const f = fields[i];
             if (!f) return null;
             return (
-              <Link key={slug} href={industryPath(lang, slug)} className="group bg-[#0e1116] p-8 transition-colors hover:bg-white/[0.03] sm:p-10">
+              <Link
+                key={slug}
+                href={industryPath(lang, slug)}
+                className="group bg-[#0e1116] p-8 transition-colors hover:bg-white/[0.03] sm:p-10">
                 <h2 className={`${DISPLAY} text-[22px] leading-snug tracking-[-0.01em] text-[#f2f2f0]`}>{f.name}</h2>
                 <p className="mt-3 text-[14.5px] leading-relaxed text-white/55">{f.benefit}</p>
-                <span className={`${MONO} mt-5 inline-block text-[10px] uppercase tracking-[0.18em] text-white/40 transition-colors group-hover:text-[#f2f2f0]`}>
+                <span
+                  className={`${MONO} mt-5 inline-block text-[10px] uppercase tracking-[0.18em] text-white/40 transition-colors group-hover:text-[#f2f2f0]`}>
                   {home.nav?.industries ?? "Industries"} →
                 </span>
               </Link>

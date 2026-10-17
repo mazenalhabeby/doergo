@@ -18,7 +18,8 @@ export function ProposalRow({ proposal, onReview }: { proposal: AssetProposal; o
   return (
     <button
       onClick={onReview}
-      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/40"
+      className={"flex w-full items-center gap-3 rounded-xl border border-border bg-card " +
+        "p-3 text-left transition-colors hover:border-primary/40"}
     >
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
         {personInitials(who)}

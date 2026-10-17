@@ -102,7 +102,15 @@ export function MemberPanel({
 
   return (
     <Sheet open={!!member} onOpenChange={(o) => { if (!o) onClose() }}>
-      <MemberPanelMembers vm={vm} member={member} spaceId={spaceId} isClient={isClient} autoClockRow={autoClockRow} autoClockWorkspace={autoClockWorkspace} roster={roster} />
+      <MemberPanelMembers
+        vm={vm}
+        member={member}
+        spaceId={spaceId}
+        isClient={isClient}
+        autoClockRow={autoClockRow}
+        autoClockWorkspace={autoClockWorkspace}
+        roster={roster}
+      />
     </Sheet>
   )
 }

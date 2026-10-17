@@ -195,7 +195,9 @@ export function TaskDetailHeader({
                 key={s.id}
                 onClick={() => onStatusChange(s.key)}
                 disabled={isStatusChanging}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-150 hover:shadow-sm disabled:opacity-50"
+                className={"inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs " +
+                  "font-medium border transition-all duration-150 hover:shadow-sm " +
+                  "disabled:opacity-50"}
                 style={{
                   borderColor: `${s.color}30`,
                   color: s.color,
@@ -216,7 +218,11 @@ export function TaskDetailHeader({
 
         {/* Space */}
         {task.space && (
-          <Link href={`/tasks?space=${task.space.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors">
+          <Link
+            href={`/tasks?space=${task.space.id}`}
+            className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] " +
+              "font-medium bg-muted text-muted-foreground hover:bg-muted/80 " +
+              "hover:text-foreground transition-colors"}>
             <MapPin className="size-2.5" />
             {task.space.name}
           </Link>
@@ -235,14 +241,18 @@ export function TaskDetailHeader({
 
         {/* Sprint */}
         {hasModule("sprints") && task.sprint && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-500/10 text-green-700 dark:text-green-400">
+          <span
+            className={"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] " +
+              "font-medium bg-green-500/10 text-green-700 dark:text-green-400"}>
             {task.sprint.name}
           </span>
         )}
 
         {/* Story Points */}
         {hasModule("story_points") && task.storyPoints != null && (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold tabular-nums bg-muted text-muted-foreground">
+          <span
+            className={"inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold " +
+              "tabular-nums bg-muted text-muted-foreground"}>
             {t("tasks.units.points", { count: task.storyPoints })}
           </span>
         )}

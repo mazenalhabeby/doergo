@@ -37,7 +37,11 @@ export const CAPABILITY_GROUPS: CapabilityGroup[] = [
   { key: 'prove', icon: <ClipboardCheck className={ICON} />, modules: ['service_reports', 'checklists', 'attachments'] },
   { key: 'clients', icon: <Users className={ICON} />, modules: ['crm', 'b2c_portal'], hasNote: true },
   { key: 'things', icon: <Boxes className={ICON} />, modules: ['assets'], hasNote: true },
-  { key: 'plan', icon: <KanbanSquare className={ICON} />, modules: ['phases', 'epics', 'sprints', 'story_points', 'subtasks', 'dependencies', 'custom_fields'] },
+  {
+    key: 'plan',
+    icon: <KanbanSquare className={ICON} />,
+    modules: ['phases', 'epics', 'sprints', 'story_points', 'subtasks', 'dependencies', 'custom_fields']
+  },
   {
     key: 'office',
     icon: <Receipt className={ICON} />,

@@ -120,7 +120,10 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
 
             {/* live understanding */}
             {plan && text.trim().length >= 3 && (
-              <div className="mt-4 animate-in fade-in slide-in-from-top-1 rounded-xl border border-green-200 border-l-4 border-l-green-600 bg-card p-5 text-left shadow-md">
+              <div
+                className={"mt-4 animate-in fade-in slide-in-from-top-1 rounded-xl border " +
+                  "border-green-200 border-l-4 border-l-green-600 bg-card p-5 text-left " +
+                  "shadow-md"}>
                 <div className="mb-3 inline-flex items-center gap-1.5 text-[11.5px] font-extrabold uppercase tracking-wide text-green-700">
                   <WizardIcon name="sparkles" className="size-3.5" /> {t("setup.work.understoodEyebrow")}
                 </div>
@@ -189,9 +192,27 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
             {t("setup.team.sub")}
           </p>
           <div className="mx-auto grid max-w-[600px] grid-cols-3 gap-3">
-            <ChoiceCard icon="user" label={t("setup.team.justMe")} hint={t("setup.team.justMeHint")} selected={teamSize === 0} onClick={() => pickTeam(0)} />
-            <ChoiceCard icon="users" label={t("setup.team.small")} hint={t("setup.team.smallHint")} selected={teamSize === 1} onClick={() => pickTeam(1)} />
-            <ChoiceCard icon="building" label={t("setup.team.big")} hint={t("setup.team.bigHint")} selected={teamSize === 2} onClick={() => pickTeam(2)} />
+            <ChoiceCard
+              icon="user"
+              label={t("setup.team.justMe")}
+              hint={t("setup.team.justMeHint")}
+              selected={teamSize === 0}
+              onClick={() => pickTeam(0)}
+            />
+            <ChoiceCard
+              icon="users"
+              label={t("setup.team.small")}
+              hint={t("setup.team.smallHint")}
+              selected={teamSize === 1}
+              onClick={() => pickTeam(1)}
+            />
+            <ChoiceCard
+              icon="building"
+              label={t("setup.team.big")}
+              hint={t("setup.team.bigHint")}
+              selected={teamSize === 2}
+              onClick={() => pickTeam(2)}
+            />
           </div>
         </div>
       )}
@@ -223,7 +244,10 @@ export function SetupWizard({ onFinish }: { onFinish: () => void }) {
         <div className="text-center">
           <Hero icon="checkCircle" green />
           <h1 className="mb-3 text-[28px] font-extrabold tracking-tight">{t("setup.done.title")}</h1>
-          <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-4 py-1.5 text-[13px] font-semibold text-green-700">
+          <div
+            className={"mx-auto mb-5 inline-flex items-center gap-2 rounded-full border " +
+              "border-green-100 bg-green-50 px-4 py-1.5 text-[13px] font-semibold " +
+              "text-green-700"}>
             <WizardIcon name="check" className="size-[15px]" />
             {t("setup.done.flag", { org: user?.organizationName || t("setup.yourCompany") })}
           </div>

@@ -45,18 +45,26 @@ export function RunningNow({ rounds, now, onOpen }: { rounds: OvertimeRunningRou
                     {r.cycle > 1 ? ` · ${t("overtimePage.round", { n: r.cycle })}` : ""}
                   </span>
                 </span>
-                <span className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[over ? "OVER" : "RUNNING"])}>
+                <span
+                  className={cn("shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", STATE_PILL[over ? "OVER" : "RUNNING"])}>
                   {over ? t("overtimePage.overBy", { minutes: mins(spent - agreed) }) : t("overtimePage.state.RUNNING")}
                 </span>
               </span>
               <span className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
-                <span className={cn("block h-full rounded-full", over ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${over ? 100 : pct}%` }} />
+                <span
+                  className={cn("block h-full rounded-full", over ? "bg-amber-500" : "bg-emerald-500")}
+                  style={{ width: `${over ? 100 : pct}%` }}
+                />
               </span>
               <span className="flex justify-between text-xs text-muted-foreground tabular-nums">
                 <span>
-                  <b className="font-semibold text-foreground">{mins(Math.min(spent, agreed))}</b> {t("overtimePage.ofAgreed", { minutes: mins(agreed) })}
+                  <b
+                    className="font-semibold text-foreground">{mins(
+                      Math.min(spent, agreed))}</b> {t("overtimePage.ofAgreed", { minutes: mins(agreed) })}
                 </span>
-                <span>{t(over ? "overtimePage.wasUntil" : "overtimePage.until", { time: clock(r.overtimeEndAt, r.timezone, i18n.language) })}</span>
+                <span>{t(
+                  over ? "overtimePage.wasUntil" : "overtimePage.until",
+                  { time: clock(r.overtimeEndAt, r.timezone, i18n.language) })}</span>
               </span>
             </button>
           )

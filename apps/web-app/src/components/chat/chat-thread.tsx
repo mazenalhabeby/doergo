@@ -112,7 +112,8 @@ export function ChatThread({ conversation, meId }: { conversation: ChatConversat
           <button
             type="button"
             onClick={() => void loadOlder()}
-            className="mx-auto block rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+            className={"mx-auto block rounded-full border border-dashed border-border px-3 py-1 " +
+              "text-xs text-muted-foreground hover:text-foreground"}
           >
             {t("chat.older", "Show older messages")}
           </button>
@@ -136,7 +137,9 @@ export function ChatThread({ conversation, meId }: { conversation: ChatConversat
 
       {peerTyping && (
         <div className="flex items-center gap-2 bg-background px-3 pt-1.5" aria-live="polite">
-          <div className="motion-msg-in motion-wave flex items-center gap-1 rounded-2xl rounded-bl-md bg-muted px-3 py-2.5 text-muted-foreground">
+          <div
+            className={"motion-msg-in motion-wave flex items-center gap-1 rounded-2xl " +
+              "rounded-bl-md bg-muted px-3 py-2.5 text-muted-foreground"}>
             <i />
             <i />
             <i />

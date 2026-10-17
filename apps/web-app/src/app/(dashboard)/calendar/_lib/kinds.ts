@@ -28,5 +28,6 @@ export const LAYER_COLOR: Record<CalendarLayer, string> = {
 }
 
 /** Tinted surface + ring for a kind, readable in light and dark. */
-export const tint = "bg-[color-mix(in_oklab,var(--k)_14%,hsl(var(--card)))] ring-1 ring-inset ring-[color-mix(in_oklab,var(--k)_32%,transparent)]"
+export const tint = ("bg-[color-mix(in_oklab,var(--k)_14%,hsl(var(--card)))] ring-1 ring-inset " +
+  "ring-[color-mix(in_oklab,var(--k)_32%,transparent)]")
 export const tintText = "text-[color-mix(in_oklab,var(--k)_72%,hsl(var(--foreground)))]"

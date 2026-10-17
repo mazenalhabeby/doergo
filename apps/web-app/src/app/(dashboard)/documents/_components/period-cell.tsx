@@ -66,7 +66,8 @@ export function PeriodCell({
           onChange={(e) =>
             onChange({ periodYear: e.target.value ? Number(e.target.value) : null, periodSource: undefined })
           }
-          className="rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] tabular-nums dark:border-slate-700 dark:bg-slate-900"
+          className={"rounded-md border border-slate-300 bg-white px-1.5 py-1 text-[12px] " +
+            "tabular-nums dark:border-slate-700 dark:bg-slate-900"}
         >
           <option value="">{t("documents.issue.year", "Year")}</option>
           {yearOptions.map((y) => (

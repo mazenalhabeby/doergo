@@ -154,7 +154,11 @@ export default function AssetRecordPage() {
                 ? [["logbook", t("assetLog.tab", "Logbook"), null] as const]
                 : []),
               ...(shape.money.enabled
-                ? [["money", t("assetMoney.title", "Money"), moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null] as const]
+                ? [
+                  [
+                    "money",
+                    t("assetMoney.title", "Money"),
+                    moneyQ.data?.totals?.waitingCount || moneyQ.data?.entries.length || null] as const]
                 : []),
               ...(shape.holder.enabled
                 ? [["custody", t("custody.tab", "Custody"), (custodyQ.data?.periods ?? []).length || null] as const]
@@ -183,7 +187,10 @@ export default function AssetRecordPage() {
               // The tab can outlive its list if the kind is edited while the
               // record is open; fall back rather than render nothing at all.
               if (!list) {
-                return <p className="py-8 text-center text-sm text-muted-foreground">{t("assetLists.gone", "That table is no longer on this kind.")}</p>
+                return <p
+                  className="py-8 text-center text-sm text-muted-foreground">{t(
+                    "assetLists.gone",
+                    "That table is no longer on this kind.")}</p>
               }
               // Cards or a grid — a display choice the kind makes, not a type
               // we recognise. Both read the same rows.

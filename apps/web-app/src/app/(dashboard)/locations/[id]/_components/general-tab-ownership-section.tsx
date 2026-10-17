@@ -34,12 +34,16 @@ export function GeneralTabOwnershipSection({ vm, space }: { vm: GeneralTabState;
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+          <span
+            className={"flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 " +
+              "text-amber-600 dark:bg-amber-950 dark:text-amber-300"}>
             <Handshake className="h-[18px] w-[18px]" />
           </span>
           <div>
             <CardTitle className="text-base">{t("locations.ownershipSection", "Ownership")}</CardTitle>
-            <CardDescription>{t("locations.ownershipHint", "Is this a project, your own company, or a customer company you do work for?")}</CardDescription>
+            <CardDescription>{t(
+              "locations.ownershipHint",
+              ("Is this a project, your own company, or a customer company you do work " + "for?"))}</CardDescription>
           </div>
         </div>
       </CardHeader>

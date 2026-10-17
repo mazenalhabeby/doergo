@@ -106,11 +106,23 @@ export function RepeatSection({ form }: { form: CreateTaskForm }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.sidebar.startDate")}</Label>
-              <Input type="date" value={recurStart} onChange={(e) => setRecurStart(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
+              <Input
+                type="date"
+                value={recurStart}
+                onChange={(e) => setRecurStart(e.target.value)}
+                className="h-9 rounded-lg text-sm"
+                disabled={isSubmitting}
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">{t("tasks.recurring.endDateOptional")}</Label>
-              <Input type="date" value={recurEnd} onChange={(e) => setRecurEnd(e.target.value)} className="h-9 rounded-lg text-sm" disabled={isSubmitting} />
+              <Input
+                type="date"
+                value={recurEnd}
+                onChange={(e) => setRecurEnd(e.target.value)}
+                className="h-9 rounded-lg text-sm"
+                disabled={isSubmitting}
+              />
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">

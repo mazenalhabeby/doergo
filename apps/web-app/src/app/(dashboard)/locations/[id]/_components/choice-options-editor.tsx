@@ -72,13 +72,27 @@ export function ChoiceOptionsEditor({
                 aria-label={t("assetLog.editor.optionLabel", "Option {{n}}", { n: i + 1 })}
                 className={cn("h-7 flex-1 text-xs", dupes.has(i) && "border-destructive focus-visible:ring-destructive")}
               />
-              <button type="button" disabled={i === 0} onClick={() => onChange(moveOption(value, i, -1))} className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30" aria-label={t("assetLog.editor.up", "Move up")}>
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => onChange(moveOption(value, i, -1))}
+                className={"shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
+                aria-label={t("assetLog.editor.up", "Move up")}>
                 <ChevronUp className="h-3.5 w-3.5" />
               </button>
-              <button type="button" disabled={i === value.length - 1} onClick={() => onChange(moveOption(value, i, 1))} className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30" aria-label={t("assetLog.editor.down", "Move down")}>
+              <button
+                type="button"
+                disabled={i === value.length - 1}
+                onClick={() => onChange(moveOption(value, i, 1))}
+                className={"shrink-0 rounded p-0.5 text-muted-foreground hover:text-foreground " + "disabled:opacity-30"}
+                aria-label={t("assetLog.editor.down", "Move down")}>
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
-              <button type="button" onClick={() => onChange(removeOption(value, i))} className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive" aria-label={t("common.remove", "Remove")}>
+              <button
+                type="button"
+                onClick={() => onChange(removeOption(value, i))}
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
+                aria-label={t("common.remove", "Remove")}>
                 <X className="h-3.5 w-3.5" />
               </button>
             </li>
@@ -110,7 +124,9 @@ export function ChoiceOptionsEditor({
           type="button"
           onClick={add}
           disabled={full || !draft.trim()}
-          className="inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-[11px] font-medium text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+          className={"inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-1 text-[11px] " +
+            "font-medium text-primary hover:underline disabled:opacity-40 " +
+            "disabled:no-underline"}
         >
           <Plus className="h-3 w-3" /> {t("common.add", "Add")}
         </button>

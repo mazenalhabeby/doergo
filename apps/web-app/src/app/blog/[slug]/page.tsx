@@ -114,7 +114,8 @@ export default async function BlogPostPage({ params }: Params) {
           </p>
           <Link
             href="/register"
-            className="mt-8 inline-block rounded-full bg-[#f2f2f0] px-6 py-3 text-[14px] font-semibold text-[#0e1116] transition-opacity hover:opacity-90"
+            className={"mt-8 inline-block rounded-full bg-[#f2f2f0] px-6 py-3 text-[14px] " +
+              "font-semibold text-[#0e1116] transition-opacity hover:opacity-90"}
           >
             Start free trial
           </Link>

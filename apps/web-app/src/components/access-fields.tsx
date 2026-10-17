@@ -163,7 +163,9 @@ export function AccessFields({
             <p className="text-sm font-medium text-foreground">{t("members.memberEditor.allowRemote", "Allow remote clock-in")}</p>
             <p className="text-xs text-muted-foreground">
               {value.modules.includes("clock")
-                ? t("members.memberEditor.allowRemoteHint", "Can clock in from anywhere (WFH/on the road) without a site geofence. Location is still captured.")
+                ? t(
+                  "members.memberEditor.allowRemoteHint",
+                  ("Can clock in from anywhere (WFH/on the road) without a site geofence. " + "Location is still captured."))
                 : t("accessBuilder.allowRemoteNeedsClock", "Enable the Clock module above to use remote clock-in.")}
             </p>
           </div>
@@ -188,7 +190,9 @@ export function AccessFields({
             <p className="rounded-lg border border-amber-600/40 bg-amber-600/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-500">
               {t(
                 "accessBuilder.spaceVisibilityOverridden",
-                "This member can view all tasks, so they see every workspace regardless of the choice below. Remove that permission from their role to make this take effect.",
+                ("This member can view all tasks, so they see every workspace regardless " +
+                  "of the choice below. Remove that permission from their role to make this " +
+                  "take effect."),
               )}
             </p>
           )}

@@ -43,13 +43,34 @@ export function TaskDetailSidebar({
   phases = [],
   epics = [],
 }: TaskDetailSidebarProps) {
-  const vm = useTaskDetailSidebar({ task, canEdit, canAssign, hasModule, onFieldSave, onAssignClick, onRemoveAssignee, onSetLead, sprints, phases, epics })
+  const vm = useTaskDetailSidebar({
+    task,
+    canEdit,
+    canAssign,
+    hasModule,
+    onFieldSave,
+    onAssignClick,
+    onRemoveAssignee,
+    onSetLead,
+    sprints,
+    phases,
+    epics
+  })
   const { t, hasAgile, assignees, hasMultiple, leadCount } = vm
 
   return (
     <div className="space-y-4">
       {/* ─── Details Card ─────────────────────────────────────────────── */}
-      <TaskDetailSidebarSidebar vm={vm} canAssign={canAssign} onAssignClick={onAssignClick} onSetLead={onSetLead} onRemoveAssignee={onRemoveAssignee} task={task} canEdit={canEdit} onFieldSave={onFieldSave} />
+      <TaskDetailSidebarSidebar
+        vm={vm}
+        canAssign={canAssign}
+        onAssignClick={onAssignClick}
+        onSetLead={onSetLead}
+        onRemoveAssignee={onRemoveAssignee}
+        task={task}
+        canEdit={canEdit}
+        onFieldSave={onFieldSave}
+      />
 
       {/* ─── Agile Card ───────────────────────────────────────────────── */}
       {hasAgile && (

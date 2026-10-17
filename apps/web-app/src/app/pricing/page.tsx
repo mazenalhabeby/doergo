@@ -7,7 +7,9 @@ import PricingClient from "../_pricing/PricingClient";
 export const metadata: Metadata = {
   title: "Pricing — every price, on one page",
   description:
-    "No plans and no tiers. €9.99 per person, plus what each site switches on, plus anything bought once for the company. Work out your own bill with the calculator.",
+    ("No plans and no tiers. €9.99 per person, plus what each site switches " +
+      "on, plus anything bought once for the company. Work out your own bill " +
+      "with the calculator."),
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "HBCField pricing — every price, on one page",

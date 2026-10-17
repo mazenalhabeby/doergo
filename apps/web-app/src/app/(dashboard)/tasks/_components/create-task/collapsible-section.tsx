@@ -55,7 +55,11 @@ export function CollapsibleSection({
           />
         </button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-up-1 data-[state=open]:slide-down-1">
+      <CollapsibleContent
+        className={"overflow-hidden data-[state=open]:animate-in " +
+          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 " +
+          "data-[state=open]:fade-in-0 data-[state=closed]:slide-up-1 " +
+          "data-[state=open]:slide-down-1"}>
         <div className="pt-2 pb-1 space-y-3">{children}</div>
       </CollapsibleContent>
     </Collapsible>

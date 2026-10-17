@@ -14,7 +14,16 @@ import type { FieldDialogState } from "./use-field-dialog"
 import type { FieldDialog } from "./custom-fields-manager"
 
 /** Part of FieldDialog's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function FieldDialogEditField({ vm, workflowId, onOpenChange }: { vm: FieldDialogState; workflowId: Parameters<typeof FieldDialog>[0]['workflowId']; onOpenChange: Parameters<typeof FieldDialog>[0]['onOpenChange'] }) {
+export function FieldDialogEditField(
+  {
+    vm,
+    workflowId,
+    onOpenChange
+  }: {
+    vm: FieldDialogState;
+    workflowId: Parameters<typeof FieldDialog>[0]['workflowId'];
+    onOpenChange: Parameters<typeof FieldDialog>[0]['onOpenChange']
+  }) {
   const {
     isEditing,
     t,

@@ -13,7 +13,14 @@ export const INDUSTRIES = [
   "Education", "Public Sector", "Professional Services", "Technology",
 ]
 
-export function IconField({ icon: Icon, label, value, onChange, placeholder }: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+export function IconField(
+  {
+    icon: Icon,
+    label,
+    value,
+    onChange,
+    placeholder
+  }: { icon: LucideIcon; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="space-y-1">
       <Label className="flex items-center gap-1.5"><Icon className="h-3.5 w-3.5 text-muted-foreground" /> {label}</Label>
@@ -22,7 +29,8 @@ export function IconField({ icon: Icon, label, value, onChange, placeholder }: {
   )
 }
 
-export function Field({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+export function Field(
+  { label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
   return (
     <div className="space-y-1">
       <Label>{label}{required && <span className="text-destructive"> *</span>}</Label>

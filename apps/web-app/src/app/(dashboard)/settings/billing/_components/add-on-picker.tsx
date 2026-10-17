@@ -155,7 +155,10 @@ export function AddOnPicker({
         does nothing, and on this screen "nothing" is a Stripe call.
       */}
       {dirty && !disabled && (
-        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-b-xl border-t border-border bg-card/95 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div
+          className={"sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 " +
+            "rounded-b-xl border-t border-border bg-card/95 px-5 py-3 backdrop-blur " +
+            "supports-[backdrop-filter]:bg-card/80"}>
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground">
               {t('billing.addOns.unsaved', 'Unsaved changes')}

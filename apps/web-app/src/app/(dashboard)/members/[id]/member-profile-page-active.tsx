@@ -14,7 +14,16 @@ import type { MemberProfilePageState } from "./use-member-profile-page"
 import type { MemberProfilePageView } from "./member-profile-page-view"
 
 /** Part of MemberProfilePage's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function MemberProfilePageActive({ vm, roleConfig, scheduleLabel }: { vm: MemberProfilePageState; roleConfig: ReturnType<typeof MemberProfilePageView>['roleConfig']; scheduleLabel: ReturnType<typeof MemberProfilePageView>['scheduleLabel'] }) {
+export function MemberProfilePageActive(
+  {
+    vm,
+    roleConfig,
+    scheduleLabel
+  }: {
+    vm: MemberProfilePageState;
+    roleConfig: ReturnType<typeof MemberProfilePageView>['roleConfig'];
+    scheduleLabel: ReturnType<typeof MemberProfilePageView>['scheduleLabel']
+  }) {
   const {
     member,
     t,
@@ -54,7 +63,9 @@ export function MemberProfilePageActive({ vm, roleConfig, scheduleLabel }: { vm:
                 {personName(member)}
               </h1>
               {member.isActive && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span
+                  className={"inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 " +
+                    "py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400"}>
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   {t("common.active")}
                 </span>
@@ -107,7 +118,9 @@ export function MemberProfilePageActive({ vm, roleConfig, scheduleLabel }: { vm:
               <div className="flex items-center gap-1.5 flex-wrap pt-1">
                 {spaceNames.map((name: string) => (
                   <Link key={name} href="/locations">
-                    <Badge variant="secondary" className="text-xs font-normal py-0.5 px-2 gap-1 hover:bg-secondary/80 transition-colors cursor-pointer">
+                    <Badge
+                      variant="secondary"
+                      className={"text-xs font-normal py-0.5 px-2 gap-1 hover:bg-secondary/80 " + "transition-colors cursor-pointer"}>
                       <MapPin className="h-3 w-3" />
                       {name}
                     </Badge>

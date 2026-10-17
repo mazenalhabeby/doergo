@@ -69,7 +69,9 @@ export function CreateTaskDialog(props: CreateTaskDialogProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={isSubmitting}
-            className="h-9 rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20"
+            className={"h-9 rounded-lg border-border bg-card text-sm " +
+              "placeholder:text-muted-foreground focus:border-blue-500 " +
+              "focus:ring-blue-500/20"}
             autoFocus
           />
 
@@ -80,7 +82,9 @@ export function CreateTaskDialog(props: CreateTaskDialogProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isSubmitting}
-            className="rounded-lg border-border bg-card text-sm placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20 resize-none min-h-[60px]"
+            className={"rounded-lg border-border bg-card text-sm " +
+              "placeholder:text-muted-foreground focus:border-blue-500 " +
+              "focus:ring-blue-500/20 resize-none min-h-[60px]"}
           />
 
           {/* Priority only */}
@@ -110,7 +114,8 @@ export function CreateTaskDialog(props: CreateTaskDialogProps) {
             data-tour="tasks-dialog-save"
             type="submit"
             disabled={!isFormValid || isSubmitting || requiredCustomFieldsMissing}
-            className="w-full h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium text-white transition-colors duration-150 mt-2"
+            className={"w-full h-9 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium " +
+              "text-white transition-colors duration-150 mt-2"}
           >
             {isSubmitting ? (
               <>

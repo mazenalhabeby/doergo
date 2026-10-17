@@ -120,7 +120,12 @@ export default function PhoneSyncPage() {
           <>
             {/* Summary — each chip is also the filter. */}
             <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label={t("members.phoneSync.filterLabel")}>
-              <FilterChip active={filter === "all"} onClick={() => setFilter("all")} count={rows.length} label={t("members.phoneSync.allPhones")} />
+              <FilterChip
+                active={filter === "all"}
+                onClick={() => setFilter("all")}
+                count={rows.length}
+                label={t("members.phoneSync.allPhones")}
+              />
               {PHONE_SYNC_STATES.filter((s) => counts[s] > 0).map((s) => (
                 <FilterChip
                   key={s}
@@ -151,7 +156,9 @@ export default function PhoneSyncPage() {
                 <div className="overflow-x-auto rounded-xl border border-border/80 bg-card">
                   <table className="w-full min-w-[760px] text-sm">
                     <thead>
-                      <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <tr
+                        className={"border-b border-border/60 bg-muted/40 text-left text-xs font-medium " +
+                          "uppercase tracking-wide text-muted-foreground"}>
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.member")}</th>
                         <th className="px-4 py-2.5">{t("members.phoneSync.columns.state")}</th>
                         <th className="px-4 py-2.5 text-right">{t("members.phoneSync.columns.waiting")}</th>
@@ -195,7 +202,9 @@ export default function PhoneSyncPage() {
                             <td className="px-4 py-3"><StatePill state={r.state} /></td>
                             <td className="px-4 py-3 text-right">{r.state === "silent" ? "—" : r.waiting}</td>
                             <td className="px-4 py-3 text-muted-foreground">
-                              {r.oldestWaitingAt && r.waiting > 0 ? `${when(r.oldestWaitingAt)} · ${formatAge(r.oldestWaitingAt, now, locale)}` : "—"}
+                              {r.oldestWaitingAt && r.waiting > 0
+                                ? `${when(r.oldestWaitingAt)} · ${formatAge(r.oldestWaitingAt, now, locale)}`
+                                : "—"}
                             </td>
                             <td className="px-4 py-3 text-right text-muted-foreground">
                               {r.filesWaiting > 0 ? `${r.filesWaiting} · ${formatFileSize(r.bytesWaiting, locale)}` : "—"}

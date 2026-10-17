@@ -250,7 +250,10 @@ export interface ContractFields {
 }
 
 export type ContractStep =
-  | { kind: 'create'; asset: { name: string; serialNumber?: string; model?: string; manufacturer?: string; details: Array<{ label: string; value: string }> } }
+  | {
+    kind: 'create';
+    asset: { name: string; serialNumber?: string; model?: string; manufacturer?: string; details: Array<{ label: string; value: string }> }
+  }
   | { kind: 'hand-over'; startsOn?: string }
   | { kind: 'close'; assetId: string; assetName: string }
   | { kind: 'retire'; assetId: string; assetName: string };

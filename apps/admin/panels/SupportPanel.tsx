@@ -7,14 +7,25 @@ import type { InboxView, Msg, Ticket } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
 import { useAction } from '@/lib/hooks';
 
-const TSTATUS: Record<string, string> = { OPEN: 'bg-red-500/15 text-red-400', PENDING: 'bg-amber-500/15 text-amber-400', RESOLVED: 'bg-green-500/15 text-green-400', CLOSED: 'bg-slate-500/15 text-slate-400' };
+const TSTATUS: Record<string, string> = {
+  OPEN: 'bg-red-500/15 text-red-400',
+  PENDING: 'bg-amber-500/15 text-amber-400',
+  RESOLVED: 'bg-green-500/15 text-green-400',
+  CLOSED: 'bg-slate-500/15 text-slate-400'
+};
 /** A burst of socket events (a reply = message + ticket update) becomes one refetch. */
 const SOCKET_DEBOUNCE_MS = 1000;
 /** The safety net while the socket is down — and only then. */
 const POLL_MS = 30_000;
 const VIEW_LABEL: Record<InboxView, string> = { team: 'My teams', mine: 'Assigned to me', unassigned: 'Triage', all: 'All' };
 
-export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: { onError: (s: string) => void; isSupervisor: boolean; hasTeams: boolean; canListTeams: boolean }) {
+export function SupportPanel(
+  {
+    onError,
+    isSupervisor,
+    hasTeams,
+    canListTeams
+  }: { onError: (s: string) => void; isSupervisor: boolean; hasTeams: boolean; canListTeams: boolean }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [teamNames, setTeamNames] = useState<Record<string, { name: string; color?: string | null }>>({});
   const [sel, setSel] = useState<string | null>(null);
@@ -52,7 +63,8 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
   // Team names for the chips — only for those who may list teams.
   useEffect(() => {
     if (!canListTeams) return;
-    teamsApi.list().then((r) => setTeamNames(Object.fromEntries(r.map((t) => [t.id, { name: t.name, color: t.color }])))).catch(() => undefined);
+    teamsApi.list().then((r) => setTeamNames(
+      Object.fromEntries(r.map((t) => [t.id, { name: t.name, color: t.color }])))).catch(() => undefined);
   }, [canListTeams]);
 
   // Real-time via Socket.IO (an agent socket, authenticated with the CURRENT
@@ -111,29 +123,63 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
   const teamChip = (id?: string | null) => {
     if (!id) return <span className="rounded-full bg-slate-700/50 px-1.5 py-0.5 text-[10px] text-slate-400">triage</span>;
     const t = teamNames[id];
-    return <span className="rounded-full px-1.5 py-0.5 text-[10px]" style={{ background: (t?.color ?? '#334155') + '33', color: t?.color ?? '#94a3b8' }}>{t?.name ?? 'team'}</span>;
+    return <span
+      className="rounded-full px-1.5 py-0.5 text-[10px]"
+      style={{ background: (t?.color ?? '#334155') + '33', color: t?.color ?? '#94a3b8' }}>{t?.name ?? 'team'}</span>;
   };
   /** The first-response promise was missed — the one signal the old web inbox showed that this one did not. */
-  const slaChip = (t: Ticket) => (t.slaBreached ? <span className="rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SLA breached</span> : null);
-  const views: InboxView[] = isSupervisor ? ['all', 'unassigned', 'mine'] : [...(hasTeams ? (['team'] as InboxView[]) : []), 'unassigned', 'mine'];
+  const slaChip = (t: Ticket) => (t.slaBreached
+    ? <span className="rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] text-red-400">SLA breached</span>
+    : null);
+  const views: InboxView[] = isSupervisor
+    ? ['all', 'unassigned', 'mine']
+    : [...(hasTeams ? (['team'] as InboxView[]) : []), 'unassigned', 'mine'];
 
   return (
     <div className="flex h-[70vh] gap-4">
       <aside className="flex w-80 shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800">
-        <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div
+          className={"flex items-center gap-2 border-b border-slate-800 px-4 py-2 text-xs " +
+            "font-semibold uppercase tracking-wide text-slate-500"}>
           Inbox ({tickets.length})
-          <button onClick={refresh} className="ml-auto normal-case text-blue-400 hover:text-blue-300" title="Reload the inbox now">Refresh</button>
-          <span className={`flex items-center gap-1 normal-case ${live ? 'text-green-400' : 'text-slate-600'}`}><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`} />{live ? 'live' : 'polling'}</span>
+          <button
+            onClick={refresh}
+            className="ml-auto normal-case text-blue-400 hover:text-blue-300"
+            title="Reload the inbox now">Refresh</button>
+          <span
+            className={`flex items-center gap-1 normal-case ${live
+              ? 'text-green-400'
+              : 'text-slate-600'}`}><span
+                className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-green-400' : 'bg-slate-600'}`}
+              />{live ? 'live' : 'polling'}</span>
         </div>
         <div className="flex gap-1 border-b border-slate-800 px-2 py-1.5 text-[11px]">
-          {views.map((v) => <button key={v} onClick={() => setView(v)} className={`rounded px-2 py-0.5 ${view === v ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}>{VIEW_LABEL[v]}</button>)}
+          {views.map((v) => <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`rounded px-2 py-0.5 ${view === v
+              ? 'bg-slate-700 text-slate-100'
+              : 'text-slate-400 hover:text-slate-200'}`}>{VIEW_LABEL[v]}</button>)}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {tickets.length === 0 ? <p className="p-4 text-sm text-slate-500">No tickets in this view.</p> : tickets.map((t) => (
-            <button key={t.id} onClick={() => setSel(t.id)} className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id ? 'bg-slate-800/60' : ''}`}>
-              <div className="flex items-center gap-2"><span className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ?? 'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{teamChip(t.assignedTeamId)}{slaChip(t)}{t.assignedAgentId && <span className="truncate text-[10px] text-blue-400">@{t.assignedAgentName ?? t.assignedAgentId}</span>}</div>
+            <button
+              key={t.id}
+              onClick={() => setSel(t.id)}
+              className={`flex w-full flex-col gap-0.5 border-b border-slate-800/60 px-4 py-2.5 text-left hover:bg-slate-800/40 ${sel === t.id
+                ? 'bg-slate-800/60'
+                : ''}`}>
+              <div
+                className="flex items-center gap-2"><span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${TSTATUS[t.status] ??
+                    'bg-slate-700'}`}>{t.status?.toLowerCase()}</span>{teamChip(
+                      t.assignedTeamId)}{slaChip(
+                        t)}{t.assignedAgentId &&
+                          <span className="truncate text-[10px] text-blue-400">@{t.assignedAgentName ?? t.assignedAgentId}</span>}</div>
               <span className="truncate text-sm font-medium">{t.subject}</span>
-              <span className="truncate text-xs text-slate-500">{t.createdBy?.firstName} {t.createdBy?.lastName} · {dateTime(t.lastCustomerMessageAt)}</span>
+              <span
+                className="truncate text-xs text-slate-500">{t.createdBy?.firstName} {t.createdBy?.lastName} · {dateTime(
+                  t.lastCustomerMessageAt)}</span>
             </button>
           ))}
         </div>
@@ -143,34 +189,79 @@ export function SupportPanel({ onError, isSupervisor, hasTeams, canListTeams }: 
           <>
             <div className="flex items-center justify-between gap-2 border-b border-slate-800 px-4 py-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2"><span className="truncate font-semibold">{thread.ticket.subject}</span>{teamChip(thread.ticket.assignedTeamId)}{slaChip(thread.ticket)}</div>
-                <div className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}{thread.ticket.assignedAgentId && <span className="text-blue-400"> · @{thread.ticket.assignedAgentName ?? thread.ticket.assignedAgentId}</span>}</div>
+                <div
+                  className="flex items-center gap-2"><span
+                    className="truncate font-semibold">{thread.ticket.subject}</span>{teamChip(
+                      thread.ticket.assignedTeamId)}{slaChip(thread.ticket)}</div>
+                <div
+                  className="text-xs text-slate-500">{thread.ticket.createdBy?.email} · {thread.ticket.status?.toLowerCase()}{thread.ticket.assignedAgentId &&
+                    <span className="text-blue-400"> · @{thread.ticket.assignedAgentName ?? thread.ticket.assignedAgentId}</span>}</div>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <select aria-label="Route to team" disabled={!!busy} value={thread.ticket.assignedTeamId ?? ''} onChange={(e) => assignTeam(e.target.value || null)} className="rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px]">
-                  <option value="">Triage</option>{Object.entries(teamNames).map(([id, t]) => <option key={id} value={id}>{t.name}</option>)}
+                <select
+                  aria-label="Route to team"
+                  disabled={!!busy}
+                  value={thread.ticket.assignedTeamId ?? ''}
+                  onChange={(e) => assignTeam(e.target.value || null)}
+                  className="rounded border border-slate-700 bg-slate-900 px-1.5 py-1 text-[11px]">
+                  <option
+                    value="">Triage</option>{Object.entries(teamNames).map(([id, t]) => <option key={id} value={id}>{t.name}</option>)}
                 </select>
-                <button disabled={!!busy} onClick={claim} className="rounded bg-blue-600/80 px-2 py-1 text-[11px] hover:bg-blue-600" title="Assign to me">Claim</button>
-                <button disabled={!!busy} onClick={() => setStatus('RESOLVED')} className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Resolve</button>
-                <button disabled={!!busy} onClick={() => setStatus('CLOSED')} className="rounded bg-slate-600/80 px-2 py-1 text-[11px] hover:bg-slate-600">Close</button>
+                <button
+                  disabled={!!busy}
+                  onClick={claim}
+                  className="rounded bg-blue-600/80 px-2 py-1 text-[11px] hover:bg-blue-600"
+                  title="Assign to me">Claim</button>
+                <button
+                  disabled={!!busy}
+                  onClick={() => setStatus('RESOLVED')}
+                  className="rounded bg-green-600/80 px-2 py-1 text-[11px] hover:bg-green-600">Resolve</button>
+                <button
+                  disabled={!!busy}
+                  onClick={() => setStatus('CLOSED')}
+                  className="rounded bg-slate-600/80 px-2 py-1 text-[11px] hover:bg-slate-600">Close</button>
               </div>
             </div>
             <div ref={scrollRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto bg-slate-950/40 p-4">
               {thread.messages.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.authorType === 'AGENT' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.isInternalNote ? 'border border-amber-700 bg-amber-950/40 text-amber-200' : m.authorType === 'AGENT' ? 'bg-blue-600 text-white' : 'bg-slate-800'}`}>
+                  <div
+                    className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${m.isInternalNote
+                      ? 'border border-amber-700 bg-amber-950/40 text-amber-200'
+                      : m.authorType === 'AGENT' ? 'bg-blue-600 text-white' : 'bg-slate-800'}`}>
                     {m.isInternalNote && <div className="mb-0.5 text-[10px] font-semibold">internal note</div>}
                     <p className="whitespace-pre-wrap break-words">{m.body}</p>
                   </div>
-                  <span className="mt-0.5 text-[10px] text-slate-500">{m.authorType === 'AGENT' ? (m.authorName || m.authorId || 'agent') : 'customer'} · {dateTime(m.createdAt)}</span>
+                  <span
+                    className="mt-0.5 text-[10px] text-slate-500">{m.authorType === 'AGENT'
+                      ? (m.authorName || m.authorId || 'agent')
+                      : 'customer'} · {dateTime(m.createdAt)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-slate-800 p-3">
-              <div className="mb-1.5 flex items-center gap-2 text-xs text-slate-400"><label className="flex items-center gap-1"><input type="checkbox" checked={note} onChange={(e) => setNote(e.target.checked)} /> internal note (not shown to customer)</label></div>
+              <div
+                className="mb-1.5 flex items-center gap-2 text-xs text-slate-400"><label
+                  className="flex items-center gap-1"><input
+                    type="checkbox"
+                    checked={note}
+                    onChange={(e) => setNote(e.target.checked)}
+                  /> internal note (not shown to customer)</label></div>
               <div className="flex gap-2">
-                <textarea aria-label="Reply" value={reply} onChange={(e) => setReply(e.target.value)} rows={1} placeholder="Reply…" onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm" />
-                <button disabled={busy === 'send' || !reply.trim()} onClick={send} className="rounded-lg bg-blue-600 px-4 text-sm hover:bg-blue-500 disabled:opacity-40">Send</button>
+                <textarea
+                  aria-label="Reply"
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  rows={1}
+                  placeholder="Reply…"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                  className={"max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border " +
+                    "border-slate-700 bg-slate-950 px-3 py-2 text-sm"}
+                />
+                <button
+                  disabled={busy === 'send' || !reply.trim()}
+                  onClick={send}
+                  className={"rounded-lg bg-blue-600 px-4 text-sm hover:bg-blue-500 " + "disabled:opacity-40"}>Send</button>
               </div>
             </div>
           </>

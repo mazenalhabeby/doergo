@@ -83,7 +83,8 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                     <div className="flex min-w-0 items-center gap-2.5">
                       <span
                         aria-hidden
-                        className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-violet-500/10 text-[11px] font-bold text-violet-500"
+                        className={"grid h-6 w-6 shrink-0 place-items-center rounded-md bg-violet-500/10 " +
+                          "text-[11px] font-bold text-violet-500"}
                       >
                         {s.spaceName.trim().charAt(0).toUpperCase() || '·'}
                       </span>
@@ -103,7 +104,8 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                       {s.cost.lines.map((l) => (
                         <span
                           key={l.moduleKey}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2 py-1 text-xs text-muted-foreground"
+                          className={"inline-flex items-center gap-1.5 rounded-lg border border-border/60 " +
+                            "bg-muted/50 px-2 py-1 text-xs text-muted-foreground"}
                         >
                           {moduleLabel(l.moduleKey)}
                           <b className="font-semibold tabular-nums text-foreground">{formatCents(l.monthlyCents)}</b>
@@ -112,7 +114,8 @@ export function BillBreakdown({ bill, estimate }: { bill: OrgCostBreakdown; esti
                       {usage.map((u) => (
                         <span
                           key={`u-${u.moduleKey}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400"
+                          className={"inline-flex items-center gap-1.5 rounded-lg border border-amber-500/25 " +
+                            "bg-amber-500/10 px-2 py-1 text-xs text-amber-600 dark:text-amber-400"}
                         >
                           {t('billing.bill.usageLine', '{{module}} usage {{price}}', {
                             module: moduleLabel(u.moduleKey),

@@ -89,7 +89,9 @@ export function ManageRolesDialog({ open, onOpenChange }: { open: boolean; onOpe
                   return (
                     <div key={role.id} className="flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border p-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: `${role.color || DEFAULT_ROLE_COLOR}20` }}>
+                        <span
+                          className="h-9 w-9 rounded-lg shrink-0 flex items-center justify-center"
+                          style={{ backgroundColor: `${role.color || DEFAULT_ROLE_COLOR}20` }}>
                           <Shield className="h-4 w-4" style={{ color: role.color || DEFAULT_ROLE_COLOR }} />
                         </span>
                         <div className="min-w-0">
@@ -183,7 +185,12 @@ function RoleEditor({ role, onBack, onSaved }: { role: AccessRole | null; onBack
 
   const mutation = useMutation({
     mutationFn: () => {
-      const payload = { name: draft.name.trim(), description: draft.description.trim() || undefined, color: draft.color, permissions: draft.permissions }
+      const payload = {
+        name: draft.name.trim(),
+        description: draft.description.trim() || undefined,
+        color: draft.color,
+        permissions: draft.permissions
+      }
       return isEdit ? organizationsApi.updateRole(role!.id, payload) : organizationsApi.createRole(payload)
     },
     onSuccess: () => {
@@ -230,7 +237,9 @@ function RoleEditor({ role, onBack, onSaved }: { role: AccessRole | null; onBack
                 {t(`roles.domains.${domain}`, domain)}
               </p>
               {perms.map((p) => (
-                <label key={p.key} className="flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer hover:bg-muted/40 transition-colors">
+                <label
+                  key={p.key}
+                  className={"flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer " + "hover:bg-muted/40 transition-colors"}>
                   <Checkbox checked={draft.permissions[p.key] === true} onCheckedChange={() => toggle(p.key)} className="mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-foreground">{p.label}</p>
@@ -245,7 +254,9 @@ function RoleEditor({ role, onBack, onSaved }: { role: AccessRole | null; onBack
 
       <DialogFooter>
         <Button variant="outline" onClick={onBack} disabled={mutation.isPending}>{t("common.cancel")}</Button>
-        <Button onClick={() => { if (!draft.name.trim()) return notify.error(t("roles.nameRequired", "Name is required")); mutation.mutate() }} disabled={mutation.isPending}>
+        <Button
+          onClick={() => { if (!draft.name.trim()) return notify.error(t("roles.nameRequired", "Name is required")); mutation.mutate() }}
+          disabled={mutation.isPending}>
           {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isEdit ? t("common.save") : t("common.create")}
         </Button>

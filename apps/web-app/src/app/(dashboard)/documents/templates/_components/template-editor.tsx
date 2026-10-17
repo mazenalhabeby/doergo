@@ -151,7 +151,9 @@ export function TemplateEditor({
               onChange={(e) => setBody(e.target.value)}
               rows={16}
               spellCheck
-              className="w-full rounded-lg border border-slate-200 bg-white p-3 font-mono text-sm leading-relaxed text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              className={"w-full rounded-lg border border-slate-200 bg-white p-3 font-mono text-sm " +
+                "leading-relaxed text-slate-900 dark:border-slate-700 dark:bg-slate-950 " +
+                "dark:text-slate-100"}
               placeholder={t("documents.templates.bodyPlaceholder")}
             />
 
@@ -165,7 +167,9 @@ export function TemplateEditor({
                   key={f.token}
                   onClick={() => insert(f.token)}
                   title={f.example}
-                  className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400"
+                  className={"rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 " +
+                    "hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 " +
+                    "dark:text-slate-400"}
                 >
                   {t(`documents.templates.fieldLabels.${f.token}`, { defaultValue: f.label })}
                 </button>
@@ -173,7 +177,9 @@ export function TemplateEditor({
             </div>
 
             {unknown.length > 0 && (
-              <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900 dark:bg-red-950/40">
+              <div
+                className={"mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 " +
+                  "p-3 text-sm dark:border-red-900 dark:bg-red-950/40"}>
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
                 <p className="text-slate-700 dark:text-slate-300">
                   {t("documents.templates.unknownFields")}{" "}

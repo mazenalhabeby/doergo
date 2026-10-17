@@ -70,7 +70,9 @@ export function MonthGrid({ anchor, days, items, dayKinds, onSelect, onOpenDay }
                       className={cn(
                         "flex w-full min-w-0 items-center gap-1.5 rounded px-1 py-0.5 text-left text-[11.5px] hover:bg-accent",
                         x.allDay && "bg-[color-mix(in_oklab,var(--k)_14%,transparent)] font-medium",
-                        x.kind === "leave" && x.status === "PENDING" && "bg-[repeating-linear-gradient(-45deg,color-mix(in_oklab,var(--k)_16%,transparent)_0_5px,transparent_5px_10px)]",
+                        x.kind === "leave" &&
+                          x.status === "PENDING" &&
+                          "bg-[repeating-linear-gradient(-45deg,color-mix(in_oklab,var(--k)_16%,transparent)_0_5px,transparent_5px_10px)]",
                       )}
                     >
                       {!x.allDay && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--k)]" />}
@@ -83,7 +85,10 @@ export function MonthGrid({ anchor, days, items, dayKinds, onSelect, onOpenDay }
                     </button>
                   ))}
                   {list.length > MAX && (
-                    <button type="button" onClick={() => onOpenDay(d)} className="px-1 text-[11px] font-medium text-muted-foreground hover:text-foreground">
+                    <button
+                      type="button"
+                      onClick={() => onOpenDay(d)}
+                      className="px-1 text-[11px] font-medium text-muted-foreground hover:text-foreground">
                       {t("calendar.more", { count: list.length - MAX })}
                     </button>
                   )}

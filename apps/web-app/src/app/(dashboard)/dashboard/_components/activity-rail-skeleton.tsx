@@ -87,7 +87,8 @@ export function ActivityRailSkeleton() {
           {ACTIVITY_LINES.map(([wide, narrow], i) => (
             <div
               key={i}
-              className="flex items-start gap-3 px-4 py-2.5 border-b border-border/50 animate-in fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"
+              className={"flex items-start gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
+                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"}
               style={{ animationDelay: `${120 + i * 60}ms` }}
             >
               <S className="h-2 w-2 rounded-full shrink-0 mt-1.5" delayMs={i * 60} />
@@ -110,7 +111,8 @@ export function ActivityRailSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 px-4 py-2.5 border-b border-border/50 animate-in fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"
+              className={"flex items-center gap-3 px-4 py-2.5 border-b border-border/50 animate-in " +
+                "fade-in fill-mode-backwards duration-500 motion-reduce:animate-none"}
               style={{ animationDelay: `${320 + i * 60}ms` }}
             >
               <S className="h-8 w-8 rounded-full shrink-0" delayMs={i * 60} />

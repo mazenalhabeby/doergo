@@ -43,7 +43,10 @@ export function PricingPanel({ canCheckStripe, onError }: { canCheckStripe: bool
             <div key={m.key} className="flex items-center gap-3 px-4 py-2 text-sm">
               <span className="w-40 shrink-0">{m.label}</span>
               <span className="w-24 shrink-0 tabular-nums">{exact(m.monthlyCents)}</span>
-              {m.counted && <span className="shrink-0 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-blue-300">+ per unit</span>}
+              {m.counted &&
+                <span
+                  className={"shrink-0 rounded bg-blue-500/15 px-1.5 py-0.5 text-[10px] uppercase " +
+                    "tracking-wide text-blue-300"}>+ per unit</span>}
               <span className="truncate text-xs text-slate-500">{m.description}</span>
               <span className="ml-auto shrink-0 font-mono text-[11px] text-slate-600">{m.key}</span>
             </div>
@@ -60,7 +63,12 @@ export function PricingPanel({ canCheckStripe, onError }: { canCheckStripe: bool
               <div className="mt-2 space-y-1 text-xs tabular-nums">
                 {l.bands.map((b, i) => {
                   const from = (i === 0 ? l.included : (l.bands[i - 1].upTo ?? 0)) + 1;
-                  return <div key={i} className="flex justify-between gap-3"><span className="text-slate-500">{b.upTo == null ? `${from}+` : `${from} – ${b.upTo}`}</span><span>{exact(b.unitCents)}</span></div>;
+                  return <div
+                    key={i}
+                    className="flex justify-between gap-3"><span
+                      className="text-slate-500">{b.upTo == null
+                        ? `${from}+`
+                        : `${from} – ${b.upTo}`}</span><span>{exact(b.unitCents)}</span></div>;
                 })}
               </div>
             </div>
@@ -84,31 +92,57 @@ export function PricingPanel({ canCheckStripe, onError }: { canCheckStripe: bool
         <div className="rounded-xl border border-slate-800 p-4">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-sm font-semibold">Does Stripe agree?</span>
-            <button onClick={() => run('stripe', async () => setStripe(await pricingApi.stripe()))} disabled={busy === 'stripe'} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700 disabled:opacity-40">{busy === 'stripe' ? 'Checking…' : 'Check Stripe'}</button>
-            <span className="text-xs text-slate-500">Reads the live account. Writes nothing — fixes are `tools/stripe/sync-modules.mjs`.</span>
+            <button
+              onClick={() => run('stripe', async () => setStripe(await pricingApi.stripe()))}
+              disabled={busy === 'stripe'}
+              className={"rounded-lg bg-slate-800 px-3 py-1.5 text-sm hover:bg-slate-700 " +
+                "disabled:opacity-40"}>{busy === 'stripe' ? 'Checking…' : 'Check Stripe'}</button>
+            <span
+              className="text-xs text-slate-500">Reads the live account. Writes nothing — fixes are `tools/stripe/sync-modules.mjs`.</span>
           </div>
           {stripe && (
             <div className="mt-3 space-y-2 text-sm">
               {!stripe.configured ? <div className="text-amber-400">Stripe is not configured on this service.</div> : (
                 <>
-                  <div className={problems === 0 ? 'text-green-400' : 'text-slate-300'}>{stripe.matched} of {stripe.expected} prices correct{problems === 0 ? ' — Stripe matches the code exactly.' : ''}</div>
+                  <div
+                    className={problems === 0
+                      ? 'text-green-400'
+                      : 'text-slate-300'}>{stripe.matched} of {stripe.expected} prices correct{problems === 0
+                        ? ' — Stripe matches the code exactly.'
+                        : ''}</div>
                   {stripe.mismatched.length > 0 && (
                     <div className="rounded border border-red-900/60 bg-red-950/30 p-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-red-400">{stripe.mismatched.length} charging an amount the code does not say</div>
-                      {stripe.mismatched.map((m) => <div key={m.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums"><span className="w-64 font-mono">{m.lookupKey}</span><span className="text-slate-400">code {exact(m.codeCents)}</span><span className="text-red-300">stripe {exact(m.stripeCents)}</span></div>)}
+                      <div
+                        className="text-xs font-semibold uppercase tracking-wide text-red-400">{stripe.mismatched.length} charging an amount the code does not say</div>
+                      {stripe.mismatched.map((m) => <div
+                        key={m.lookupKey}
+                        className="mt-1 flex gap-3 text-xs tabular-nums"><span
+                          className="w-64 font-mono">{m.lookupKey}</span><span
+                            className="text-slate-400">code {exact(
+                              m.codeCents)}</span><span className="text-red-300">stripe {exact(m.stripeCents)}</span></div>)}
                     </div>
                   )}
                   {stripe.missing.length > 0 && (
                     <div className="rounded border border-amber-900/60 bg-amber-950/20 p-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-amber-400">{stripe.missing.length} priced in code but absent from Stripe — checkout would fail on these lines</div>
-                      {stripe.missing.map((m) => <div key={m.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums"><span className="w-64 font-mono">{m.lookupKey}</span><span className="text-slate-400">{exact(m.cents)}</span></div>)}
+                      <div
+                        className="text-xs font-semibold uppercase tracking-wide text-amber-400">{stripe.missing.length} priced in code but absent from Stripe — checkout would fail on these lines</div>
+                      {stripe.missing.map((m) => <div
+                        key={m.lookupKey}
+                        className="mt-1 flex gap-3 text-xs tabular-nums"><span
+                          className="w-64 font-mono">{m.lookupKey}</span><span className="text-slate-400">{exact(m.cents)}</span></div>)}
                     </div>
                   )}
                   {stripe.orphaned.length > 0 && (
                     <div className="rounded border border-slate-700 p-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">{stripe.orphaned.length} active in Stripe but gone from the code — sellable, billing nothing</div>
-                      {stripe.orphaned.map((o) => <div key={o.lookupKey} className="mt-1 flex gap-3 text-xs tabular-nums"><span className="w-64 font-mono">{o.lookupKey}</span><span className="text-slate-400">{exact(o.cents)} / {o.interval}</span></div>)}
-                      <div className="mt-2 text-[11px] text-slate-500">Retire with `sync-modules.mjs --archive-orphans` (skips anything still subscribed).</div>
+                      <div
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-400">{stripe.orphaned.length} active in Stripe but gone from the code — sellable, billing nothing</div>
+                      {stripe.orphaned.map((o) => <div
+                        key={o.lookupKey}
+                        className="mt-1 flex gap-3 text-xs tabular-nums"><span
+                          className="w-64 font-mono">{o.lookupKey}</span><span
+                            className="text-slate-400">{exact(o.cents)} / {o.interval}</span></div>)}
+                      <div
+                        className="mt-2 text-[11px] text-slate-500">Retire with `sync-modules.mjs --archive-orphans` (skips anything still subscribed).</div>
                     </div>
                   )}
                 </>

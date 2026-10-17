@@ -62,7 +62,12 @@ export function ExpandedView({
             { key: null as SubPanel, label: t("workspace.groupPresent"), people, variant: "cells" as const },
             { key: "inField" as SubPanel, label: t("workspace.groupInField"), people: onRoadPeople, variant: "cells" as const },
             { key: "offSite" as SubPanel, label: t("workspace.groupOffSite"), people: remotePeople, variant: "cells" as const },
-            { key: "offShift" as SubPanel, label: t("workspace.groupOffShift", "Off-shift"), people: offShiftPeople, variant: "cells" as const },
+            {
+              key: "offShift" as SubPanel,
+              label: t("workspace.groupOffShift", "Off-shift"),
+              people: offShiftPeople,
+              variant: "cells" as const
+            },
             { key: "offDuty" as SubPanel, label: t("workspace.groupOffDuty"), people: offDutyPeople, variant: "offduty" as const },
           ].filter(g => g.people.length > 0 || g.key === null)
 
@@ -76,7 +81,8 @@ export function ExpandedView({
                 {subPanel && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setSubPanel(null) }}
-                    className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/50 hover:text-foreground/80 transition-colors self-start px-1"
+                    className={"flex items-center gap-1.5 text-[11px] font-medium text-foreground/50 " +
+                      "hover:text-foreground/80 transition-colors self-start px-1"}
                     style={{ animation: `fadeIn 0.4s ${APPLE_EASE} both` }}
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
@@ -90,13 +96,21 @@ export function ExpandedView({
                       <OffDutyRow key={`${person.name}-${i}`} person={person} delay={i * 0.05} canSeeAbsenceReason={canSeeAbsenceReason} />
                     ))}
                     {activeGroup.people.length === 0 && (
-                      <div className="flex-1 flex items-center justify-center text-xs text-foreground/30">{t("workspace.allAccountedFor")}</div>
+                      <div
+                        className="flex-1 flex items-center justify-center text-xs text-foreground/30">{t(
+                          "workspace.allAccountedFor")}</div>
                     )}
                   </div>
                 ) : activeGroup && activeGroup.people.length > 0 ? (
                   <div className="flex-1 grid grid-cols-[repeat(auto-fill,minmax(140px,160px))] gap-[5px] content-start">
                     {activeGroup.people.map((person, i) => (
-                      <ExpandedWorkerCell key={`${person.name}-${i}`} person={person} delay={i * 0.04} onPersonClick={onPersonClick} dataTour={i === 0 ? "dash-space-member" : undefined} />
+                      <ExpandedWorkerCell
+                        key={`${person.name}-${i}`}
+                        person={person}
+                        delay={i * 0.04}
+                        onPersonClick={onPersonClick}
+                        dataTour={i === 0 ? "dash-space-member" : undefined}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -157,7 +171,10 @@ export function ExpandedView({
         {onEdit && (
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(locationId || "") }}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
+            className={"group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] " +
+              "font-medium text-foreground/70 bg-foreground/[0.08] " +
+              "hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 " +
+              "hover:scale-[1.02]"}
           >
             <Settings className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-90" />
             {t("workspace.manageSpace")}
@@ -166,7 +183,10 @@ export function ExpandedView({
         {onAssign && (
           <button
             onClick={(e) => { e.stopPropagation(); onAssign(locationId || "") }}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-primary-foreground bg-primary/80 hover:bg-primary transition-all duration-200 hover:scale-[1.02] shadow-sm shadow-primary/20"
+            className={"group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] " +
+              "font-medium text-primary-foreground bg-primary/80 hover:bg-primary " +
+              "transition-all duration-200 hover:scale-[1.02] shadow-sm " +
+              "shadow-primary/20"}
           >
             <UserPlus className="h-3.5 w-3.5" />
             {t("workspace.addMember")}
@@ -175,7 +195,10 @@ export function ExpandedView({
         {onViewTasks && (
           <button
             onClick={(e) => { e.stopPropagation(); onViewTasks(locationId || "") }}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] font-medium text-foreground/70 bg-foreground/[0.08] hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 hover:scale-[1.02]"
+            className={"group flex items-center gap-2 px-4 py-2 rounded-full text-[11px] " +
+              "font-medium text-foreground/70 bg-foreground/[0.08] " +
+              "hover:bg-foreground/[0.14] backdrop-blur-sm transition-all duration-200 " +
+              "hover:scale-[1.02]"}
           >
             <ClipboardList className="h-3.5 w-3.5" />
             {t("workspace.viewTasks")}

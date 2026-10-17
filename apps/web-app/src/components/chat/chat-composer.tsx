@@ -108,7 +108,9 @@ export function ChatComposer({
           {files.map((f, i) => (
             <span
               key={i}
-              className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${f.failed ? "border-red-300 text-red-600" : "border-border text-foreground"}`}
+              className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs ${f.failed
+                ? "border-red-300 text-red-600"
+                : "border-border text-foreground"}`}
             >
               {!f.done && !f.failed && <Loader2 className="size-3 animate-spin" />}
               <span className="max-w-40 truncate">{f.name}</span>
@@ -144,7 +146,8 @@ export function ChatComposer({
               disabled={files.length >= CHAT_MAX_ATTACHMENTS}
               aria-label={t("chat.attach", "Add a photo or file")}
               title={t("chat.attach", "Add a photo or file")}
-              className="icon-motion flex size-9 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-blue-500/10 disabled:opacity-40"
+              className={"icon-motion flex size-9 shrink-0 items-center justify-center " +
+                "rounded-full transition-colors hover:bg-blue-500/10 disabled:opacity-40"}
             >
               <GradientIcon name="attach" size={22} />
             </button>
@@ -171,14 +174,24 @@ export function ChatComposer({
           aria-label={t("chat.messagePlaceholder", "Write a message…")}
           rows={1}
           maxLength={5000}
-          className="max-h-[120px] flex-1 resize-none rounded-2xl border border-border bg-muted px-3.5 py-2 text-[13.5px] outline-none transition-[border-color,background-color,box-shadow] duration-200 focus:border-blue-400 focus:bg-background focus:shadow-[0_0_0_4px_rgb(59_130_246/0.15)]"
+          className={"max-h-[120px] flex-1 resize-none rounded-2xl border border-border " +
+            "bg-muted px-3.5 py-2 text-[13.5px] outline-none " +
+            "transition-[border-color,background-color,box-shadow] duration-200 " +
+            "focus:border-blue-400 focus:bg-background " +
+            "focus:shadow-[0_0_0_4px_rgb(59_130_246/0.15)]"}
         />
         <button
           type="button"
           disabled={editing ? !text.trim() : !canSend}
           onClick={submit}
           aria-label={editing ? t("common.save", "Save") : t("chat.send", "Send")}
-          className="icon-motion flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 text-white shadow-sm shadow-blue-500/30 transition-[transform,opacity,box-shadow] duration-200 hover:shadow-md hover:shadow-blue-500/40 active:scale-90 disabled:from-muted disabled:via-muted disabled:to-muted disabled:text-muted-foreground disabled:shadow-none"
+          className={"icon-motion flex size-9 shrink-0 items-center justify-center " +
+            "rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 " +
+            "text-white shadow-sm shadow-blue-500/30 " +
+            "transition-[transform,opacity,box-shadow] duration-200 hover:shadow-md " +
+            "hover:shadow-blue-500/40 active:scale-90 disabled:from-muted " +
+            "disabled:via-muted disabled:to-muted disabled:text-muted-foreground " +
+            "disabled:shadow-none"}
         >
           <span key={flew} className={flew ? "motion-fly" : undefined}>
             <GradientIcon name={editing ? "check" : "send"} size={18} flat />

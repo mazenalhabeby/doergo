@@ -59,8 +59,19 @@ export function buildGroups(
   switch (groupBy) {
     case "sprint": {
       const groups: GroupDef[] = [...sprints]
-        .sort((a, b) => { const o: Record<string, number> = { ACTIVE: 0, PLANNING: 1, COMPLETED: 2 }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) })
-        .map(s => ({ key: s.id, label: s.name, sublabel: s.status === "ACTIVE" ? t("common.active") : s.status === "PLANNING" ? t("tasks.groups.planning") : t("tasks.statusTabs.COMPLETED"), dotColor: s.status === "ACTIVE" ? "#22C55E" : s.status === "PLANNING" ? "#3B82F6" : "#94A3B8" }))
+        .sort((a, b) => { const o: Record<string, number> = {
+          ACTIVE: 0,
+          PLANNING: 1,
+          COMPLETED: 2
+        }; return (o[a.status] ?? 9) - (o[b.status] ?? 9) })
+        .map(s => ({
+          key: s.id,
+          label: s.name,
+          sublabel: s.status === "ACTIVE"
+            ? t("common.active")
+            : s.status === "PLANNING" ? t("tasks.groups.planning") : t("tasks.statusTabs.COMPLETED"),
+          dotColor: s.status === "ACTIVE" ? "#22C55E" : s.status === "PLANNING" ? "#3B82F6" : "#94A3B8"
+        }))
       groups.push({ key: "__none__", label: t("tasks.groups.backlog"), icon: <Archive className="size-3.5" />, dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.sprintId || "__none__", t)
@@ -76,11 +87,19 @@ export function buildGroups(
     case "assignee": {
       const map = new Map<string, { id: string; first: string; last: string }>()
       for (const t of tasks) {
-        if (t.assignees?.length) { const l = t.assignees.find(a => a.role === "LEAD") || t.assignees[0]; if (l) map.set(l.user.id, { id: l.user.id, first: l.user.firstName, last: l.user.lastName }) }
+        if (t.assignees?.length) { const l = t.assignees.find(a => a.role === "LEAD") ||
+          t.assignees[0]; if (l) map.set(l.user.id, { id: l.user.id, first: l.user.firstName, last: l.user.lastName }) }
         else if (t.assignedTo) map.set(t.assignedTo.id, { id: t.assignedTo.id, first: t.assignedTo.firstName, last: t.assignedTo.lastName })
       }
-      const groups: GroupDef[] = Array.from(map.values()).sort((a, b) => `${a.first} ${a.last}`.localeCompare(`${b.first} ${b.last}`)).map(a => ({ key: a.id, label: `${a.first} ${a.last}` }))
-      groups.push({ key: "__none__", label: t("tasks.progress.unassigned"), icon: <User className="size-3.5 text-muted-foreground/50" />, dotColor: "#94A3B8" })
+      const groups: GroupDef[] = Array.from(
+        map.values()).sort((a, b) => `${a.first} ${a.last}`.localeCompare(
+          `${b.first} ${b.last}`)).map(a => ({ key: a.id, label: `${a.first} ${a.last}` }))
+      groups.push({
+        key: "__none__",
+        label: t("tasks.progress.unassigned"),
+        icon: <User className="size-3.5 text-muted-foreground/50" />,
+        dotColor: "#94A3B8"
+      })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) {
         let id: string | null = null
@@ -91,13 +110,21 @@ export function buildGroups(
       return { groups, tasksByGroup }
     }
     case "priority": {
-      const groups: GroupDef[] = ["URGENT", "HIGH", "MEDIUM", "LOW"].map(p => { const c = getPriorityConfig(p); return { key: p, label: c.label, dotColor: c.hex } })
+      const groups: GroupDef[] = [
+        "URGENT",
+        "HIGH",
+        "MEDIUM",
+        "LOW"].map(p => { const c = getPriorityConfig(p); return { key: p, label: c.label, dotColor: c.hex } })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.priority || "MEDIUM", t)
       return { groups, tasksByGroup }
     }
     case "space": {
-      const groups: GroupDef[] = spaces.map(s => ({ key: s.id, label: s.name, icon: <Layers className="size-3.5 text-muted-foreground" /> }))
+      const groups: GroupDef[] = spaces.map(s => ({
+        key: s.id,
+        label: s.name,
+        icon: <Layers className="size-3.5 text-muted-foreground" />
+      }))
       groups.push({ key: "__none__", label: t("tasks.groups.noSpace"), dotColor: "#94A3B8" })
       for (const g of groups) tasksByGroup.set(g.key, [])
       for (const t of tasks) addTask(t.spaceId || "__none__", t)

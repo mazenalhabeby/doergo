@@ -166,7 +166,9 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="mt-2 flex w-full items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2 text-left hover:border-blue-500 focus-visible:outline-2 focus-visible:outline-blue-500"
+            className={"mt-2 flex w-full items-center gap-2.5 rounded-lg border border-border " +
+              "bg-card px-3 py-2 text-left hover:border-blue-500 " +
+              "focus-visible:outline-2 focus-visible:outline-blue-500"}
           >
             <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="min-w-0">
@@ -196,7 +198,9 @@ export function PeriodPicker({ value, onChange, workDays, onOpenChange, classNam
             }}
             modifiers={{ work }}
             modifiersClassNames={{
-              work: "relative after:pointer-events-none after:absolute after:bottom-1 after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full after:bg-blue-500",
+              work: ("relative after:pointer-events-none after:absolute after:bottom-1 " +
+                "after:left-1/2 after:size-1 after:-translate-x-1/2 after:rounded-full " +
+                "after:bg-blue-500"),
             }}
           />
           <div className="flex items-center justify-between gap-4 border-t border-border px-3 py-2 text-[11px] text-muted-foreground">

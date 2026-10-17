@@ -36,7 +36,11 @@ import type { MemberProfilePageState } from "./use-member-profile-page"
 import type { MemberProfilePageView } from "./member-profile-page-view"
 
 /** Part of MemberProfilePage's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function MemberProfilePageDetail3({ vm, isExternalMember }: { vm: MemberProfilePageState; isExternalMember: ReturnType<typeof MemberProfilePageView>['isExternalMember'] }) {
+export function MemberProfilePageDetail3(
+  {
+    vm,
+    isExternalMember
+  }: { vm: MemberProfilePageState; isExternalMember: ReturnType<typeof MemberProfilePageView>['isExternalMember'] }) {
   const {
     canManageMembers,
     member,
@@ -135,7 +139,9 @@ export function MemberProfilePageDetail3({ vm, isExternalMember }: { vm: MemberP
       if (!showAccessTab && !canViewOps) return overview
 
       const triggerCls =
-        "data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium transition-all gap-1.5"
+        ("data-[state=active]:bg-foreground data-[state=active]:text-background " +
+          "data-[state=active]:shadow-sm rounded-lg px-4 py-2 text-sm font-medium " +
+          "transition-all gap-1.5")
 
       return (
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

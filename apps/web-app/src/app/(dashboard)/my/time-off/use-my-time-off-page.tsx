@@ -23,7 +23,21 @@ import {
 import { type RequestFieldsValue } from "@/components/requests/request-fields"
 import { balanceView, leaveYearLabel } from "@/lib/leave-ledger"
 import { useMyTimeOffPageData, EMPTY_FIELDS, type ReasonKey, dayDiff, addDays, toISO } from "./use-my-time-off-page-data"
-export { EMPTY_FIELDS, type ReasonKey, dayDiff, addDays, toISO, startOfDay, monthGrid, bookedDays, REASON_TYPES, SunGlyph, PulseGlyph, FamilyGlyph, DotsGlyph } from "./use-my-time-off-page-data"
+export {
+  EMPTY_FIELDS,
+  type ReasonKey,
+  dayDiff,
+  addDays,
+  toISO,
+  startOfDay,
+  monthGrid,
+  bookedDays,
+  REASON_TYPES,
+  SunGlyph,
+  PulseGlyph,
+  FamilyGlyph,
+  DotsGlyph
+} from "./use-my-time-off-page-data"
 
 /** UI key → stored enum (the inverse of the shared web map). Only VACATION is deducted from the allowance. */
 export const REASON_TO_TYPE = Object.fromEntries(

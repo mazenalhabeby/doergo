@@ -29,7 +29,10 @@ export const documentsFilesApi = {
     read their contract would fill up with robots.
   */
   downloadUrl: async (id: string) => {
-    const response = await call(documentsEndpoints.downloadUrl, { id }, { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; fileName: string } }>;
+    const response = await call(
+      documentsEndpoints.downloadUrl,
+      { id },
+      { body: {} }) as ApiResponse<{ success: boolean; data: { url: string; fileName: string } }>;
     return unwrapDocuments<any>(response);
   },
 
@@ -56,31 +59,44 @@ export const documentsFilesApi = {
     /** Replace this document: it is superseded and hidden from its member. */
     replacesId?: string;
   }) => {
-    const response = await call(documentsEndpoints.create, undefined, { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
+    const response = await call(
+      documentsEndpoints.create,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
     return unwrapDocuments<any>(response);
   },
 
   /** "Who can see this": hide from the member, and/or limit to roles (null = follow the type). */
   setVisibility: async (data: { documentIds: string[]; hiddenFromMember?: boolean; roleIds?: string[] | null }) => {
-    const response = await call(documentsEndpoints.setVisibility, undefined, { body: data }) as ApiResponse<{ success: boolean; data: { updated: number } }>;
+    const response = await call(
+      documentsEndpoints.setVisibility,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: { updated: number } }>;
     return unwrapDocuments<{ updated: number }>(response)
   },
 
   /** Erase documents for good. `confirmSignaturesLost` is required when any is signed. */
   deleteMany: async (data: { documentIds: string[]; confirmSignaturesLost?: boolean }) => {
-    const response = await call(documentsEndpoints.removeMany, undefined, { body: data }) as ApiResponse<{ success: boolean; data: { deleted: number } }>;
+    const response = await call(
+      documentsEndpoints.removeMany,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: { deleted: number } }>;
     return unwrapDocuments<{ deleted: number }>(response)
   },
 
   /** Org roles a document can be limited to — names only. */
   visibilityRoles: async () => {
-    const response = await call(documentsEndpoints.visibilityRoles) as ApiResponse<{ success: boolean; data: { id: string; name: string; color: string | null }[] }>;
+    const response = await call(
+      documentsEndpoints.visibilityRoles) as ApiResponse<{ success: boolean; data: { id: string; name: string; color: string | null }[] }>;
     return unwrapDocuments<{ id: string; name: string; color: string | null }[]>(response) ?? []
   },
 
   /** What the organization still expects from you (or, with an id, from them). */
   requirements: async (userId?: string) => {
-    const response = await call(documentsEndpoints.requirements, undefined, { query: { userId } }) as ApiResponse<{ success: boolean; data: RequirementRow[] }>;
+    const response = await call(
+      documentsEndpoints.requirements,
+      undefined,
+      { query: { userId } }) as ApiResponse<{ success: boolean; data: RequirementRow[] }>;
     return unwrapDocuments<RequirementRow[]>(response) ?? [];
   },
 
@@ -110,7 +126,10 @@ export const documentsFilesApi = {
   /** Accept it. From here it counts — the dispatch gate reads the status. */
   /** Accept it. `expiresOn` ("YYYY-MM-DD") settles the date the reviewer confirmed. */
   verify: async (id: string, expiresOn?: string | null) => {
-    const response = await call(documentsEndpoints.verify, { id }, { body: expiresOn ? { expiresOn } : {} }) as ApiResponse<{ success: boolean }>;
+    const response = await call(
+      documentsEndpoints.verify,
+      { id },
+      { body: expiresOn ? { expiresOn } : {} }) as ApiResponse<{ success: boolean }>;
     return unwrapDocuments<any>(response);
   },
 
@@ -165,7 +184,10 @@ export const documentsFilesApi = {
     title?: string;
     expiresOn?: string;
   }) => {
-    const response = await call(documentsEndpoints.submitOwn, undefined, { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
+    const response = await call(
+      documentsEndpoints.submitOwn,
+      undefined,
+      { body: data }) as ApiResponse<{ success: boolean; data: MemberDocumentRow }>;
     return unwrapDocuments<MemberDocumentRow>(response);
   },
 

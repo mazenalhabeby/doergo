@@ -10,7 +10,8 @@ export function MailBanner({ mail }: { mail: MailStatus | null }) {
   if (!mail.ok) {
     return (
       <div className="mb-4 rounded-lg border border-red-900 bg-red-950/50 px-4 py-3 text-sm">
-        <div className="font-semibold text-red-300">Outbound email is not working — no password reset, invitation or notification is being delivered.</div>
+        <div
+          className="font-semibold text-red-300">Outbound email is not working — no password reset, invitation or notification is being delivered.</div>
         <div className="mt-1 space-y-0.5 text-xs text-red-200/70">
           {mail.configured
             ? (mail.routes?.length

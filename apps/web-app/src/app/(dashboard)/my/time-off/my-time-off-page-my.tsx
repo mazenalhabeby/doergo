@@ -23,7 +23,8 @@ export function MyTimeOffPageMy({ vm }: { vm: MyTimeOffPageState }) {
         <ul className="space-y-2">
           {list.map((r) => (
             <li key={r.id}
-              className="flex items-start justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/30">
+              className={"flex items-start justify-between gap-3 rounded-xl border border-border " +
+                "bg-card px-4 py-3 transition-colors hover:border-primary/30"}>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium text-foreground">

@@ -8,7 +8,11 @@ import { UserAvatar } from "@/components/user-avatar"
 
 const KINDS = ["travel", "working", "blocked"] as const
 const TONE = { travel: "bg-sky-500", working: "bg-green-500", blocked: "bg-amber-500" } as const
-const TEXT = { travel: "text-sky-600 dark:text-sky-400", working: "text-green-600 dark:text-green-400", blocked: "text-amber-600 dark:text-amber-400" } as const
+const TEXT = {
+  travel: "text-sky-600 dark:text-sky-400",
+  working: "text-green-600 dark:text-green-400",
+  blocked: "text-amber-600 dark:text-amber-400"
+} as const
 
 /**
  * Job time on the task page (packages/shared/src/tasks/job-time.ts): WORKING
@@ -84,7 +88,11 @@ export function JobTimeCard({ taskId, paused }: { taskId: string; paused: boolea
 
       {started?.office ? (
         <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
-          {[t("tasks.jobTime.startedFor", { name: personName(started.user), for: personName(started.forUser) }), started.reason ? `“${started.reason}”` : null].filter(Boolean).join(" · ")}
+          {[
+            t("tasks.jobTime.startedFor", { name: personName(started.user), for: personName(started.forUser) }),
+            started.reason ? `“${started.reason}”` : null].filter(
+            Boolean).join(
+            " · ")}
         </p>
       ) : null}
       <p className="mt-3 text-xs text-muted-foreground">{t("tasks.jobTime.onlyInShift")}</p>

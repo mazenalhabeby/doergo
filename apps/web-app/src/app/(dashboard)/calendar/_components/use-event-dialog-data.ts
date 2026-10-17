@@ -53,7 +53,18 @@ export function roundUp(d: Date): Date {
 }
 
 /** useEventDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useEventDialogData({ open, onOpenChange, start, event, spaceId, offices = [], crm = false, onNewJob, onTimeOff }: Pick<Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>) {
+export function useEventDialogData(
+  {
+    open,
+    onOpenChange,
+    start,
+    event,
+    spaceId,
+    offices = [],
+    crm = false,
+    onNewJob,
+    onTimeOff
+  }: Pick<Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const editing = !!event
@@ -96,14 +107,24 @@ export function useEventDialogData({ open, onOpenChange, start, event, spaceId, 
       const s = new Date(event.startAt), e = new Date(event.endAt)
       setKind(event.kind); setTitle(event.title); setAllDay(event.allDay)
       setDate(dayKey(s)); setTime(hm(s))
-      setEndDate(dayKey(event.allDay ? new Date(e.getTime() - 1) : e)); setEndTime(hm(e)); setMeetingUrl(event.meetingUrl ?? ""); setLocation(event.location ?? "")
+      setEndDate(
+        dayKey(
+          event.allDay
+            ? new Date(e.getTime() - 1)
+            : e)); setEndTime(hm(e)); setMeetingUrl(event.meetingUrl ?? ""); setLocation(event.location ?? "")
       setDescription(event.description ?? ""); setReminders(event.reminders); setFreq(event.repeat?.freq ?? "NONE")
       setVisibility(event.visibility)
       setMode(event.meetingMode ?? (event.meetingUrl ? "ONLINE" : "IN_PERSON"))
       setPlace(event.placeKind ?? (event.meetingMode ? "OFFICE" : "ADDRESS"))
       setPlaceSpaceId(event.placeSpace?.id ?? ""); setRoom(event.room ?? ""); setPhone(event.phone ?? "")
       setCallDirection(event.callDirection ?? "OUTGOING"); setCustomer(event.customer ?? null); setAddressId("")
-      setPeople(event.attendees.filter((a) => !a.isOrganizer).map((a) => ({ id: a.userId, firstName: a.firstName, lastName: a.lastName, avatarUrl: a.avatarUrl })))
+      setPeople(
+        event.attendees.filter((a) => !a.isOrganizer).map((a) => ({
+          id: a.userId,
+          firstName: a.firstName,
+          lastName: a.lastName,
+          avatarUrl: a.avatarUrl
+        })))
     } else {
       const s = start ?? roundUp(new Date())
       const e = new Date(s.getTime() + 30 * 60000)
@@ -123,7 +144,9 @@ export function useEventDialogData({ open, onOpenChange, start, event, spaceId, 
     enabled: open && crm && clientOpen,
     staleTime: 60_000,
   })
-  const { options: clientAddresses } = useClientAddresses(customer?.id ?? null, { enabled: open && crm && place === "CLIENT_SITE", known: customer })
+  const {
+    options: clientAddresses
+  } = useClientAddresses(customer?.id ?? null, { enabled: open && crm && place === "CLIENT_SITE", known: customer })
   // The client's address is chosen for you when there is only one it could be.
   useEffect(() => {
     if (place !== "CLIENT_SITE" || addressId || !clientAddresses.length) return

@@ -18,7 +18,20 @@ import type { StepFormEditorState } from "./use-step-form-editor"
 import type { StepFormEditor } from "./step-form-editor"
 
 /** Part of StepFormEditor's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function StepFormEditorStartFrom({ vm, editable, onChange, standardAvailable, crmAvailable }: { vm: StepFormEditorState; editable: Parameters<typeof StepFormEditor>[0]['editable']; onChange: Parameters<typeof StepFormEditor>[0]['onChange']; standardAvailable: Parameters<typeof StepFormEditor>[0]['standardAvailable']; crmAvailable: Parameters<typeof StepFormEditor>[0]['crmAvailable'] }) {
+export function StepFormEditorStartFrom(
+  {
+    vm,
+    editable,
+    onChange,
+    standardAvailable,
+    crmAvailable
+  }: {
+    vm: StepFormEditorState;
+    editable: Parameters<typeof StepFormEditor>[0]['editable'];
+    onChange: Parameters<typeof StepFormEditor>[0]['onChange'];
+    standardAvailable: Parameters<typeof StepFormEditor>[0]['standardAvailable'];
+    crmAvailable: Parameters<typeof StepFormEditor>[0]['crmAvailable']
+  }) {
   const {
     t,
     tr,
@@ -208,7 +221,9 @@ export function StepFormEditorStartFrom({ vm, editable, onChange, standardAvaila
                 )}
 
                 {errs.length > 0 && (
-                  <p className="flex items-start gap-1.5 pl-6 text-[11px] text-red-600 dark:text-red-400" data-testid={`def-error-${field.id}`}>
+                  <p
+                    className="flex items-start gap-1.5 pl-6 text-[11px] text-red-600 dark:text-red-400"
+                    data-testid={`def-error-${field.id}`}>
                     <AlertCircle className="mt-px size-3 shrink-0" />
                     {defError(errs[0]!)}
                   </p>
@@ -238,7 +253,8 @@ export function StepFormEditorStartFrom({ vm, editable, onChange, standardAvaila
                   type="button"
                   data-testid={`add-${type}`}
                   onClick={() => setFields([...fields, newField(type, fields, tr)])}
-                  className="inline-flex items-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-[11px] text-primary hover:bg-muted"
+                  className={"inline-flex items-center gap-1 rounded-md border border-dashed " +
+                    "border-border px-2 py-1 text-[11px] text-primary hover:bg-muted"}
                 >
                   <Plus className="size-3" />
                   <Icon className="size-3" />
@@ -251,7 +267,10 @@ export function StepFormEditorStartFrom({ vm, editable, onChange, standardAvaila
       )}
 
       {!editable && (
-        <p className="text-[11px] text-muted-foreground">{t("stepForm.readOnly", "Only people who may edit workflows can change these questions.")}</p>
+        <p
+          className="text-[11px] text-muted-foreground">{t(
+            "stepForm.readOnly",
+            "Only people who may edit workflows can change these questions.")}</p>
       )}
     </div>
   )

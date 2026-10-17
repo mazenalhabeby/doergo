@@ -63,7 +63,8 @@ export function RestsSection({ spaceId }: { spaceId: string }) {
         title={t("attendance.rests.title", "Rests")}
         description={t(
           "attendance.rests.subtitle",
-          "Planned for everyone working here. Members are asked when one falls due, and a rest that doesn't count as work comes off their counted hours.",
+          ("Planned for everyone working here. Members are asked when one falls due, " +
+            "and a rest that doesn't count as work comes off their counted hours."),
         )}
         action={
           <Button size="sm" onClick={() => setEditing("new")}>

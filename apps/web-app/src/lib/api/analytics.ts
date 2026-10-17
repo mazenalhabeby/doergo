@@ -1,11 +1,20 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { DatasetMeta, ReportDefinition, ReportResult, ReportSchedule, ReportTemplate, SavedReport, ScheduleInput } from './types/analytics';
+import type {
+  DatasetMeta,
+  ReportDefinition,
+  ReportResult,
+  ReportSchedule,
+  ReportTemplate,
+  SavedReport,
+  ScheduleInput
+} from './types/analytics';
 import { analyticsWebEndpoints } from '@hbcfield/shared/client';
 
 export const analyticsApi = {
   catalog: async () => {
-    const res = await call(analyticsWebEndpoints.catalog) as ApiResponse<{ data: { datasets: DatasetMeta[]; templates: ReportTemplate[] } }>;
+    const res = await call(
+      analyticsWebEndpoints.catalog) as ApiResponse<{ data: { datasets: DatasetMeta[]; templates: ReportTemplate[] } }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -15,7 +24,10 @@ export const analyticsApi = {
     return res.data!.data;
   },
   timesheet: async (userId: string, params?: { from?: string; to?: string }) => {
-    const res = await call(analyticsWebEndpoints.timesheet, undefined, { query: { userId, ...(params || {}) } }) as ApiResponse<{ data: ReportResult & { userName: string } }>;
+    const res = await call(
+      analyticsWebEndpoints.timesheet,
+      undefined,
+      { query: { userId, ...(params || {}) } }) as ApiResponse<{ data: ReportResult & { userName: string } }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },
@@ -41,7 +53,10 @@ export const analyticsApi = {
   },
   // ── Scheduled delivery ──
   listSchedules: async (reportId?: string) => {
-    const res = await call(analyticsWebEndpoints.listSchedules, undefined, { query: { reportId: reportId || undefined } }) as ApiResponse<{ data: ReportSchedule[] }>;
+    const res = await call(
+      analyticsWebEndpoints.listSchedules,
+      undefined,
+      { query: { reportId: reportId || undefined } }) as ApiResponse<{ data: ReportSchedule[] }>;
     if (res.error) throw apiError(res);
     return res.data!.data;
   },

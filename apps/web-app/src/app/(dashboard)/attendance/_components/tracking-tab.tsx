@@ -9,10 +9,36 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertCircle, CheckCircle2, Clock, MapPin, RefreshCw, Search, Calendar, Users, ArrowRight, CalendarOff, ArrowUp, ArrowDown, ChevronsUpDown, ChevronRight, ListChecks } from "lucide-react"
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  RefreshCw,
+  Search,
+  Calendar,
+  Users,
+  ArrowRight,
+  CalendarOff,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
+  ChevronRight,
+  ListChecks
+} from "lucide-react"
 import { WorkLogTimeline } from "@/components/worklog-timeline"
 import { useTranslation } from "react-i18next"
-import { StatCard, toDate, formatTime, formatDateInZone, StatusBadge, WorkerCell, ClockCell, ApprovalCell, NoteCell } from "./attendance-helpers"
+import {
+  StatCard,
+  toDate,
+  formatTime,
+  formatDateInZone,
+  StatusBadge,
+  WorkerCell,
+  ClockCell,
+  ApprovalCell,
+  NoteCell
+} from "./attendance-helpers"
 import { formatDuration, personName, countryFromTz } from "@hbcfield/shared/client"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { AddOvertimeDialog } from "./add-overtime-dialog"
@@ -35,7 +61,38 @@ export function TrackingTab({
   page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canDelete,
   sort, onSort,
 }: TrackingTabProps) {
-  const vm = useTrackingTab({ stats, entries, geofenceViolations, filteredEntries, loadingEntries, loadingLocations, isError, error, refetch, meta, selectedLocationId, setSelectedLocationId, selectedStatus, setSelectedStatus, selectedDate, setSelectedDate, endDate, setEndDate, searchQuery, setSearchQuery, page, setPage, limit, daysOff, locations, isAdmin, canReconcile, canDelete, sort, onSort })
+  const vm = useTrackingTab({
+    stats,
+    entries,
+    geofenceViolations,
+    filteredEntries,
+    loadingEntries,
+    loadingLocations,
+    isError,
+    error,
+    refetch,
+    meta,
+    selectedLocationId,
+    setSelectedLocationId,
+    selectedStatus,
+    setSelectedStatus,
+    selectedDate,
+    setSelectedDate,
+    endDate,
+    setEndDate,
+    searchQuery,
+    setSearchQuery,
+    page,
+    setPage,
+    limit,
+    daysOff,
+    locations,
+    isAdmin,
+    canReconcile,
+    canDelete,
+    sort,
+    onSort
+  })
   const {
     t,
     hour12,
@@ -150,13 +207,17 @@ export function TrackingTab({
                           </p>
                           <div className="mt-1.5 flex items-center gap-1.5 justify-end">
                             {!entry.clockInWithinGeofence && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                              <span
+                                className={"inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 " +
+                                  "text-[11px] font-medium text-amber-600 dark:text-amber-400"}>
                                 <MapPin className="size-3" />
                                 {t("attendance.tracking.clockInOutside")}
                               </span>
                             )}
                             {entry.clockOutAt && entry.clockOutWithinGeofence === false && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                              <span
+                                className={"inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 " +
+                                  "text-[11px] font-medium text-amber-600 dark:text-amber-400"}>
                                 <MapPin className="size-3" />
                                 {t("attendance.tracking.clockOutOutside")}
                               </span>
@@ -179,7 +240,22 @@ export function TrackingTab({
         )}
 
         {/* Filters */}
-        <TrackingTabTracking2 vm={vm} searchQuery={searchQuery} setSearchQuery={setSearchQuery} selectedLocationId={selectedLocationId} setSelectedLocationId={setSelectedLocationId} setPage={setPage} locations={locations} selectedStatus={selectedStatus} setSelectedStatus={setSelectedStatus} selectedDate={selectedDate} endDate={endDate} setSelectedDate={setSelectedDate} setEndDate={setEndDate} refetch={refetch} />
+        <TrackingTabTracking2
+          vm={vm}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedLocationId={selectedLocationId}
+          setSelectedLocationId={setSelectedLocationId}
+          setPage={setPage}
+          locations={locations}
+          selectedStatus={selectedStatus}
+          setSelectedStatus={setSelectedStatus}
+          selectedDate={selectedDate}
+          endDate={endDate}
+          setSelectedDate={setSelectedDate}
+          setEndDate={setEndDate}
+          refetch={refetch}
+        />
 
         {/* Attendance vs Days-off sub-tabs (days off are org-wide → "all" view only) */}
         {showDaysOffTab && (
@@ -206,7 +282,10 @@ export function TrackingTab({
               <CalendarOff className="size-4" />
               {t("attendance.tabs.daysOff", "Days off")}
               {daysOff.length > 0 && (
-                <span className={cn("ml-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums", effectiveView === "daysoff" ? "bg-background/20" : "bg-foreground/10")}>
+                <span
+                  className={cn(
+                    "ml-0.5 rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
+                    effectiveView === "daysoff" ? "bg-background/20" : "bg-foreground/10")}>
                   {daysOff.length}
                 </span>
               )}

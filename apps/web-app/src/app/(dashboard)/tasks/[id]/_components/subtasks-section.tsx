@@ -58,7 +58,10 @@ const SubtaskRow = memo(function SubtaskRow({
       </div>
 
       {/* Title */}
-      <span className="text-sm font-medium text-foreground flex-1 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      <span
+        className={"text-sm font-medium text-foreground flex-1 truncate " +
+          "group-hover:text-blue-600 dark:group-hover:text-blue-400 " +
+          "transition-colors"}>
         {subtask.title}
       </span>
 

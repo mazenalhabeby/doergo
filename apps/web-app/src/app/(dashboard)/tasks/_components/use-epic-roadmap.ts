@@ -33,7 +33,8 @@ export interface EpicRow {
 }
 
 /** EpicRoadmap's state and handlers — everything before its markup, moved here unchanged. */
-export function useEpicRoadmap({ epics, tasks, activeEpicId, onEpicClick }: Pick<EpicRoadmapProps, 'epics' | 'tasks' | 'activeEpicId' | 'onEpicClick'>) {
+export function useEpicRoadmap(
+  { epics, tasks, activeEpicId, onEpicClick }: Pick<EpicRoadmapProps, 'epics' | 'tasks' | 'activeEpicId' | 'onEpicClick'>) {
   const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [hoveredEpicId, setHoveredEpicId] = useState<string | null>(null)

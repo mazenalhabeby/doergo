@@ -34,7 +34,18 @@ import { useEventDialogData, hm, at, type Props } from "./use-event-dialog-data"
 export { hm, at, type Props, roundUp, pad } from "./use-event-dialog-data"
 
 /** EventDialog's state and handlers — everything before its markup, moved here unchanged. */
-export function useEventDialog({ open, onOpenChange, start, event, spaceId, offices = [], crm = false, onNewJob, onTimeOff }: Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>) {
+export function useEventDialog(
+  {
+    open,
+    onOpenChange,
+    start,
+    event,
+    spaceId,
+    offices = [],
+    crm = false,
+    onNewJob,
+    onTimeOff
+  }: Pick<Props, 'open' | 'onOpenChange' | 'start' | 'event' | 'spaceId' | 'offices' | 'crm' | 'onNewJob' | 'onTimeOff'>) {
   const {
     t,
     qc,
@@ -139,7 +150,13 @@ export function useEventDialog({ open, onOpenChange, start, event, spaceId, offi
   }, [avail, date, startAt, endAt, allDay, ids])
 
   const findTime = useMutation({
-    mutationFn: () => calendarApi.freeSlots({ userIds: ids, durationMin: Math.min(Math.max(duration, 15), 480), from: new Date().toISOString(), days: 14, timezone: tz }),
+    mutationFn: () => calendarApi.freeSlots({
+      userIds: ids,
+      durationMin: Math.min(Math.max(duration, 15), 480),
+      from: new Date().toISOString(),
+      days: 14,
+      timezone: tz
+    }),
     onError: (e) => toast.error(serverErrorMessage(e, t)),
   })
 
@@ -149,7 +166,9 @@ export function useEventDialog({ open, onOpenChange, start, event, spaceId, offi
       const input: CalendarEventInput = {
         // An edit keeps the event's own zone; only a new event takes the browser's.
         kind, title: title.trim(), allDay, ...(editing ? {} : { timezone: tz }),
-        ...(allDay ? { startDate: date, endDate: endDate < date ? date : endDate } : { startAt: startAt.toISOString(), endAt: endAt.toISOString() }),
+        ...(allDay
+          ? { startDate: date, endDate: endDate < date ? date : endDate }
+          : { startAt: startAt.toISOString(), endAt: endAt.toISOString() }),
         meetingUrl: meetingUrl.trim() || null, location: location.trim() || null, description: description.trim() || null,
         reminders, repeat, visibility, attendeeIds: ids, spaceId: event ? undefined : spaceId ?? null,
         ...(kind === "APPOINTMENT" ? {
@@ -163,7 +182,8 @@ export function useEventDialog({ open, onOpenChange, start, event, spaceId, offi
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: keys.calendar.all() })
       qc.invalidateQueries({ queryKey: keys.calendar.event() })
-      toast.success(editing ? t("calendar.savedToast") : ids.length ? t("calendar.invitedToast", { count: ids.length }) : t("calendar.createdToast"))
+      toast.success(
+        editing ? t("calendar.savedToast") : ids.length ? t("calendar.invitedToast", { count: ids.length }) : t("calendar.createdToast"))
       onOpenChange(false)
     },
     onError: (e) => toast.error(serverErrorMessage(e, t)),
@@ -172,7 +192,9 @@ export function useEventDialog({ open, onOpenChange, start, event, spaceId, offi
   const toggleReminder = (m: number) =>
     setReminders((cur) => (cur.includes(m) ? cur.filter((x) => x !== m) : cur.length >= 5 ? cur : [...cur, m].sort((a, b) => b - a)))
 
-  const fmtTime = (iso: string) => new Date(iso).toLocaleString(dateLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+  const fmtTime = (iso: string) => new Date(iso).toLocaleString(
+    dateLocale(),
+    { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
 
   return {
     t,

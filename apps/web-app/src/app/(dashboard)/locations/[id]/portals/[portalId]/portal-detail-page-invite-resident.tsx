@@ -35,16 +35,35 @@ export function PortalDetailPageInviteResident({ vm }: { vm: PortalDetailPageSta
         <DialogHeader><DialogTitle>{t("portal.inviteResident", "Invite client")}</DialogTitle></DialogHeader>
         {code ? (
           <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground mb-3">{t("portal.shareCode", "Share this code with the client to activate their login:")}</p>
+            <p
+              className="text-sm text-muted-foreground mb-3">{t(
+                "portal.shareCode",
+                "Share this code with the client to activate their login:")}</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-2xl font-mono font-bold tracking-widest text-foreground rounded-xl bg-muted px-4 py-2">{code}</span>
-              <Button variant="outline" size="sm" className="h-11 w-11 p-0" onClick={async () => { if (await copyText(code)) { setCopied(true); setTimeout(() => setCopied(false), 1500) } }}>{copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 w-11 p-0"
+                onClick={async () => { if (await copyText(
+                  code)) { setCopied(
+                    true); setTimeout(
+                      () => setCopied(false),
+                      1500) } }}>{copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}</Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-3">{t("portal.codeHint", "In the app: register → Use Invitation → enter this code.")}</p>
+            <p
+              className="text-xs text-muted-foreground mt-3">{t(
+                "portal.codeHint",
+                "In the app: register → Use Invitation → enter this code.")}</p>
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">{t("portal.inviteHint2", "Pick the client and their {{entity}} — or create either — then share the code. The client sets their own name on sign-up.", { entity: (portal?.entityLabel || "unit").toLowerCase() })}</p>
+            <p
+              className="text-xs text-muted-foreground">{t(
+                "portal.inviteHint2",
+                ("Pick the client and their {{entity}} — or create either — then share the " +
+                  "code. The client sets their own name on sign-up."),
+                { entity: (portal?.entityLabel || "unit").toLowerCase() })}</p>
 
             {/* Client — pick an existing CRM customer, or create one with the
                 same customer model (＋ New). */}
@@ -65,7 +84,10 @@ export function PortalDetailPageInviteResident({ vm }: { vm: PortalDetailPageSta
                   spaceId={portal?.spaceId ?? undefined}
                   personOnly
                   onSaved={(c) => { availCustomersQ.refetch(); if (c) setCustomerChoice(c.id) }}
-                  trigger={<Button type="button" variant="outline" className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
+                  trigger={<Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
                 />
               </div>
             </div>
@@ -81,7 +103,11 @@ export function PortalDetailPageInviteResident({ vm }: { vm: PortalDetailPageSta
                   onChange={(e) => setUnitChoice(e.target.value)}
                   className="h-10 flex-1 rounded-md border border-border bg-background px-3 text-sm"
                 >
-                  <option value="">{t("portal.pickEntityPh", "Choose an available {{entity}}…", { entity: (portal?.entityLabel || "unit").toLowerCase() })}</option>
+                  <option
+                    value="">{t(
+                      "portal.pickEntityPh",
+                      "Choose an available {{entity}}…",
+                      { entity: (portal?.entityLabel || "unit").toLowerCase() })}</option>
                   {availUnits.map((u) => (
                     <option key={u.id} value={u.id}>{u.name}{u.address ? ` · ${u.address}` : ""}</option>
                   ))}
@@ -92,7 +118,10 @@ export function PortalDetailPageInviteResident({ vm }: { vm: PortalDetailPageSta
                     hideResident
                     entityLabel={portal?.entityLabel || undefined}
                     onSaved={(u) => { availUnitsQ.refetch(); if (u) setUnitChoice(u.id) }}
-                    trigger={<Button type="button" variant="outline" className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
+                    trigger={<Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 gap-1.5"><Plus className="h-4 w-4" />{t("portal.newShort", "New")}</Button>}
                   />
                 )}
               </div>

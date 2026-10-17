@@ -190,7 +190,9 @@ export function HeroLines2D({ active = true }: { active?: boolean }) {
 
     if (reduced) {
       drawFrame(false);
-      return () => { window.removeEventListener('resize', resize); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerout', onLeave); };
+      return () => { window.removeEventListener(
+        'resize',
+        resize); window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerout', onLeave); };
     }
 
     let raf = 0;

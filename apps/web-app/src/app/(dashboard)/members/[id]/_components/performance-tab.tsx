@@ -262,10 +262,25 @@ export function PerformanceTab({ performance }: PerformanceTabProps) {
         >
           <div className="p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <ComparisonCell label={t('technicians.performanceTab.completionRate')} change={comparison.completionRateChange} digits={1} suffix="%" />
-              <ComparisonCell label={t('technicians.performanceTab.onTimeRate')} change={comparison.onTimeRateChange} digits={1} suffix="%" />
+              <ComparisonCell
+                label={t('technicians.performanceTab.completionRate')}
+                change={comparison.completionRateChange}
+                digits={1}
+                suffix="%"
+              />
+              <ComparisonCell
+                label={t('technicians.performanceTab.onTimeRate')}
+                change={comparison.onTimeRateChange}
+                digits={1}
+                suffix="%"
+              />
               <ComparisonCell label={t('technicians.performanceTab.rating')} change={comparison.ratingChange} digits={2} />
-              <ComparisonCell label={t('technicians.performanceTab.tasksCompleted')} change={comparison.tasksCompletedChange} digits={0} suffix="%" />
+              <ComparisonCell
+                label={t('technicians.performanceTab.tasksCompleted')}
+                change={comparison.tasksCompletedChange}
+                digits={0}
+                suffix="%"
+              />
             </div>
           </div>
         </SectionCard>

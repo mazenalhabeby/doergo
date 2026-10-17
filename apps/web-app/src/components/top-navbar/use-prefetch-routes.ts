@@ -23,7 +23,11 @@ export function usePrefetchRoutes(mayListOrg: boolean) {
     // list itself is keyed by the page's filters, and the planning lists are
     // asked only where their module is on — warming either here would fetch
     // something the page then asks again under another key, or never draws.
-    qc.prefetchQuery({ queryKey: keys.tasks.counts({ groupBy: "space" }), queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }), staleTime: PREFETCH_STALE })
+    qc.prefetchQuery({
+      queryKey: keys.tasks.counts({ groupBy: "space" }),
+      queryFn: () => tasksApi.getStatusCounts({ groupBy: "space" }),
+      staleTime: PREFETCH_STALE
+    })
     qc.prefetchQuery({ queryKey: spaceDirectoryKey(), queryFn: fetchSpaceDirectory, staleTime: PREFETCH_STALE })
   }, [qc])
 
@@ -31,7 +35,11 @@ export function usePrefetchRoutes(mayListOrg: boolean) {
     // The directory is canManageUsers (flat flag) — warming it for anybody else is a 403.
     if (!mayListOrg) return
     const firstPage = membersPageParams("", "all", 1)
-    qc.prefetchQuery({ queryKey: keys.members.list(firstPage), queryFn: () => organizationsApi.getMembers(firstPage), staleTime: PREFETCH_STALE })
+    qc.prefetchQuery({
+      queryKey: keys.members.list(firstPage),
+      queryFn: () => organizationsApi.getMembers(firstPage),
+      staleTime: PREFETCH_STALE
+    })
   }, [qc, mayListOrg])
 
   const prefetchSpaces = useCallback(() => {

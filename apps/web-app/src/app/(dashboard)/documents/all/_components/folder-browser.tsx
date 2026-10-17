@@ -190,7 +190,8 @@ export function FolderBrowser() {
                 key={f.key}
                 onClick={() => enter(f)}
                 style={{ animation: `fadeSlideIn 0.25s ease-out ${i * 40}ms both` }}
-                className="group flex w-full items-center gap-4 border-b border-border/50 px-5 py-3.5 text-left transition-colors last:border-0 hover:bg-accent/30"
+                className={"group flex w-full items-center gap-4 border-b border-border/50 px-5 " +
+                  "py-3.5 text-left transition-colors last:border-0 hover:bg-accent/30"}
               >
                 {f.kind === "member" ? (
                   <UserAvatar

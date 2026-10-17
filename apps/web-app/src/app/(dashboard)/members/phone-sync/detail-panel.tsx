@@ -17,14 +17,18 @@ export const TONE: Record<SyncHealthState, { pill: string; dot: string }> = {
 export function StatePill({ state }: { state: SyncHealthState }) {
   const { t } = useTranslation()
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium", TONE[state].pill)}>
+    <span
+      className={cn(
+        ("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 " + "py-0.5 text-xs font-medium"),
+        TONE[state].pill)}>
       <span className={cn("h-1.5 w-1.5 rounded-full", TONE[state].dot)} aria-hidden />
       {t(`members.phoneSync.states.${state}`)}
     </span>
   )
 }
 
-export function FilterChip({ active, onClick, count, label, dot }: { active: boolean; onClick: () => void; count: number; label: string; dot?: string }) {
+export function FilterChip(
+  { active, onClick, count, label, dot }: { active: boolean; onClick: () => void; count: number; label: string; dot?: string }) {
   return (
     <button
       type="button"
@@ -85,8 +89,13 @@ export function DetailPanel({
 
       {total > 0 && (
         <>
-          <h3 className="mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("members.phoneSync.detail.whatWaits")}</h3>
-          <div className="flex h-2 overflow-hidden rounded bg-muted" role="img" aria-label={parts.map((p) => `${p.count} ${t(`members.phoneSync.parts.${p.key}`)}`).join(", ")}>
+          <h3
+            className={"mt-5 mb-2 text-[11px] font-semibold uppercase tracking-wider " +
+              "text-muted-foreground"}>{t("members.phoneSync.detail.whatWaits")}</h3>
+          <div
+            className="flex h-2 overflow-hidden rounded bg-muted"
+            role="img"
+            aria-label={parts.map((p) => `${p.count} ${t(`members.phoneSync.parts.${p.key}`)}`).join(", ")}>
             {parts.map((p) => (
               <span key={p.key} className={p.tone} style={{ width: `${(p.count / total) * 100}%` }} />
             ))}
@@ -113,7 +122,9 @@ export function DetailPanel({
 
       {reasons.length > 0 && (
         <>
-          <h3 className="mt-5 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t("members.phoneSync.detail.why")}</h3>
+          <h3
+            className={"mt-5 mb-1 text-[11px] font-semibold uppercase tracking-wider " +
+              "text-muted-foreground"}>{t("members.phoneSync.detail.why")}</h3>
           <ul className="divide-y divide-border/60">
             {reasons.map((r) => (
               <li key={r.code} className="flex items-start justify-between gap-3 py-2 text-sm">

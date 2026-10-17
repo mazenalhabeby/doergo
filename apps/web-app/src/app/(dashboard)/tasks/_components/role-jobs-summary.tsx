@@ -48,7 +48,8 @@ export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
         <UsersRound className="size-4 shrink-0 text-violet-600 dark:text-violet-400" />
         <span className="font-medium">{t("tasks.role.summaryTitle")}</span>
         <span className="text-muted-foreground">· {t("tasks.role.openNow", { count: openNow })}</span>
-        {overdue > 0 && <span className="font-medium text-amber-700 dark:text-amber-400">· {t("tasks.role.overdue", { count: overdue })}</span>}
+        {overdue > 0 &&
+          <span className="font-medium text-amber-700 dark:text-amber-400">· {t("tasks.role.overdue", { count: overdue })}</span>}
         <ChevronDown className={cn("ml-auto size-4 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
       {open && (
@@ -69,10 +70,18 @@ export function RoleJobsSummary({ spaceId }: { spaceId: string | null }) {
                 <tr key={r.roleId} className="border-t border-border/60">
                   <td className="py-1.5 pr-2 font-medium text-foreground">{r.roleName}</td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{r.openNow}</td>
-                  <td className={cn("px-2 py-1.5 text-right tabular-nums", r.overdue > 0 && "font-semibold text-amber-700 dark:text-amber-400")}>{r.overdue}</td>
+                  <td
+                    className={cn(
+                      "px-2 py-1.5 text-right tabular-nums",
+                      r.overdue > 0 && "font-semibold text-amber-700 dark:text-amber-400")}>{r.overdue}</td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{r.taken}</td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">{r.avgMinutesToTake == null ? "—" : t("tasks.role.minutes", { count: r.avgMinutesToTake })}</td>
-                  <td className="truncate py-1.5 pl-2 text-muted-foreground">{r.topTakers.map((p) => `${p.name} (${p.count})`).join(", ") || "—"}</td>
+                  <td
+                    className="px-2 py-1.5 text-right tabular-nums">{r.avgMinutesToTake == null
+                      ? "—"
+                      : t("tasks.role.minutes", { count: r.avgMinutesToTake })}</td>
+                  <td
+                    className="truncate py-1.5 pl-2 text-muted-foreground">{r.topTakers.map((p) => `${p.name} (${p.count})`).join(", ") ||
+                      "—"}</td>
                 </tr>
               ))}
             </tbody>

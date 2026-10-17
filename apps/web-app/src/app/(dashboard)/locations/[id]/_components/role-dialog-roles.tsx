@@ -74,7 +74,9 @@ export function RoleDialogRoles({
             placeholder={t("scheduling.roles.namePlaceholder")}
           />
           {clash && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            <div
+              className={"flex flex-wrap items-center gap-2 rounded-lg border border-amber-500/30 " +
+                "bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"}>
               <span>{t("scheduling.workRoles.nameExists", { name: clash.name })}</span>
               {clash.kind === "WORK" && clash.activeHere === false && (
                 <Button

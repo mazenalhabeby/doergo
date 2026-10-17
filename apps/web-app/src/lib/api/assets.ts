@@ -1,6 +1,34 @@
 import { call, type ApiResponse } from '../http-client';
 import { apiError } from '../server-error';
-import type { Asset, AssetActivity, AssetCategory, AssetExpenseStatus, AssetListRow, AssetLogEntry, AssetLogPage, AssetLogSummary, AssetMoneyEntry, AssetMoneySummary, AssetProposal, AssetUsage, AssetsQueryParams, ContractFields, ContractPreview, ContractProposalInput, ContractReading, CreateAssetCategoryInput, CreateAssetInput, CreateAssetLogInput, CustodyPeriodDto, CustodyTimeline, MaintenanceHistoryItem, OrphanAsset, PendingExpense, UpdateAssetCategoryInput, UpdateAssetInput } from './types/assets';
+import type {
+  Asset,
+  AssetActivity,
+  AssetCategory,
+  AssetExpenseStatus,
+  AssetListRow,
+  AssetLogEntry,
+  AssetLogPage,
+  AssetLogSummary,
+  AssetMoneyEntry,
+  AssetMoneySummary,
+  AssetProposal,
+  AssetUsage,
+  AssetsQueryParams,
+  ContractFields,
+  ContractPreview,
+  ContractProposalInput,
+  ContractReading,
+  CreateAssetCategoryInput,
+  CreateAssetInput,
+  CreateAssetLogInput,
+  CustodyPeriodDto,
+  CustodyTimeline,
+  MaintenanceHistoryItem,
+  OrphanAsset,
+  PendingExpense,
+  UpdateAssetCategoryInput,
+  UpdateAssetInput
+} from './types/assets';
 import { assetCategoriesEndpoints, assetsEndpoints } from '@hbcfield/shared/client';
 import { assetRecordsApi } from './assets-records';
 import { assetReviewApi } from './assets-review';
@@ -55,7 +83,10 @@ export const assetsApi = {
   // Get all categories for organization
   // Pass a spaceId for THAT space's kinds; omit it for everything the org has.
   getCategories: async (spaceId?: string) => {
-    const response = await call(assetCategoriesEndpoints.list, undefined, { query: { spaceId: spaceId || undefined } }) as ApiResponse<{ success: boolean; data: AssetCategory[] }>;
+    const response = await call(
+      assetCategoriesEndpoints.list,
+      undefined,
+      { query: { spaceId: spaceId || undefined } }) as ApiResponse<{ success: boolean; data: AssetCategory[] }>;
 
     if (response.error) {
       throw apiError(response);
@@ -66,7 +97,10 @@ export const assetsApi = {
 
   // Create a new category
   createCategory: async (input: CreateAssetCategoryInput) => {
-    const response = await call(assetCategoriesEndpoints.create, undefined, { body: input }) as ApiResponse<{ success: boolean; data: AssetCategory }>;
+    const response = await call(
+      assetCategoriesEndpoints.create,
+      undefined,
+      { body: input }) as ApiResponse<{ success: boolean; data: AssetCategory }>;
 
     if (response.error) {
       throw apiError(response);
@@ -77,7 +111,10 @@ export const assetsApi = {
 
   // Update a category
   updateCategory: async (id: string, input: UpdateAssetCategoryInput) => {
-    const response = await call(assetCategoriesEndpoints.update, { id }, { body: input }) as ApiResponse<{ success: boolean; data: AssetCategory }>;
+    const response = await call(
+      assetCategoriesEndpoints.update,
+      { id },
+      { body: input }) as ApiResponse<{ success: boolean; data: AssetCategory }>;
 
     if (response.error) {
       throw apiError(response);

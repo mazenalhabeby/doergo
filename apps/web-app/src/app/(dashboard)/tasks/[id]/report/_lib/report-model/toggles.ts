@@ -190,7 +190,9 @@ export function reportQueryKey(taskId: string, copy: TaskReportCopy, include: re
 }
 
 /** The "Issued by" choice remembered for this workspace — only while it is still one of the choices. */
-export function loadIssuerChoice(spaceId: string | null | undefined, issuers: readonly TaskReportIssuerOption[] | undefined): string | null {
+export function loadIssuerChoice(
+  spaceId: string | null | undefined,
+  issuers: readonly TaskReportIssuerOption[] | undefined): string | null {
   const id = read(`${STORE_PREFIX}.issuer.${spaceId ?? "none"}`, (v) => (typeof v === "string" ? v : null))
   return id && (issuers ?? []).some((i) => i.id === id) ? id : null
 }
