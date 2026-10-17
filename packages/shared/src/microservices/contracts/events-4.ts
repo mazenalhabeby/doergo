@@ -37,8 +37,6 @@ export const joinRequestSubmittedEvent = event<{
 
 export const joinRequestApprovedEvent = event<{
   userId: string;
-  /** ⚠️ Read by the handler, never sent by the gateway (join-requests.controller) — kept as it is. */
-  userName?: string;
   organizationId: string;
   organizationName: string;
   role: string;
@@ -47,8 +45,6 @@ export const joinRequestApprovedEvent = event<{
 
 export const joinRequestRejectedEvent = event<{
   userId: string;
-  /** ⚠️ Read by the handler, never sent by the gateway (join-requests.controller) — kept as it is. */
-  userName?: string;
   organizationId: string;
   organizationName: string;
   reason?: string;

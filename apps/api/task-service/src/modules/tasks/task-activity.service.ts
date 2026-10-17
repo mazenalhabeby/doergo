@@ -4,6 +4,7 @@ import { createOnce } from '../../common/create-once.util';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskEventType, success } from '@hbcfield/shared';
 import { TaskSupportService } from './task-support.service';
+import { commentAddedEvent, emitEvent } from '@hbcfield/shared/microservices';
 
 /**
  * What happened on a task: its timeline of events and its comments.
@@ -19,7 +20,13 @@ export class TaskActivityService {
   /**
    * Get task timeline/activity
    */
-  async getTimeline(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
+  async getTimeline(data: {
+    id: string;
+    userId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    organizationId: string;
+  }) {
     // First verify access
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -75,7 +82,12 @@ export class TaskActivityService {
       isSame: (c) => c.taskId === data.taskId && c.userId === data.userId,
       create: () =>
         this.prisma.comment.create({
-          data: { ...(data.id ? { id: data.id } : {}), content: data.content, taskId: data.taskId, userId: data.userId },
+          data: {
+            ...(data.id ? { id: data.id } : {}),
+            content: data.content,
+            taskId: data.taskId,
+            userId: data.userId,
+          },
           include,
         }),
     });
@@ -88,9 +100,21 @@ export class TaskActivityService {
       content: data.content.length > 100 ? data.content.slice(0, 100) + '...' : data.content,
     });
 
-    // Notify
-    this.notificationClient.emit('task_comment_added', {
+    /*
+      Notify. The handler listens for `comment_added` and reads the task's creator
+      and assignee to push them; this used to be emitted as `task_comment_added`,
+      which nothing handled — so a comment never pushed and never reached open
+      screens live.
+    */
+    emitEvent(this.notificationClient, commentAddedEvent, {
       taskId: data.taskId,
+      task: {
+        id: task.id,
+        title: task.title,
+        organizationId: task.organizationId,
+        createdById: task.createdById,
+        assignedToId: task.assignedToId,
+      },
       comment,
     });
 

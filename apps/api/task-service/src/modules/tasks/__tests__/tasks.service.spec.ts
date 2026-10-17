@@ -158,12 +158,28 @@ describe('TasksService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        TasksService, ...TASK_SERVICE_PARTS, TaskAccessService, { provide: JobTimeService, useValue: {} }, ClockGateService, { provide: CrewService, useValue: crewStub() }, { provide: RolePoolService, useValue: { holdsOpenRole: jest.fn().mockResolvedValue(false), syncSpots: jest.fn().mockResolvedValue(undefined) } }, { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
+        TasksService,
+        ...TASK_SERVICE_PARTS,
+        TaskAccessService,
+        { provide: JobTimeService, useValue: {} },
+        ClockGateService,
+        { provide: CrewService, useValue: crewStub() },
+        {
+          provide: RolePoolService,
+          useValue: {
+            holdsOpenRole: jest.fn().mockResolvedValue(false),
+            syncSpots: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        { provide: PresenceService, useValue: { onJobMoved: jest.fn().mockResolvedValue(undefined) } },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: 'NOTIFICATION_SERVICE', useValue: mockNotificationClient },
         { provide: ConfigService, useValue: { get: (_k: string, d: unknown) => d } },
         { provide: WorkflowConfigCache, useValue: { getWorkflow: jest.fn().mockResolvedValue(null) } },
-        { provide: NotificationRoutingService, useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) } },
+        {
+          provide: NotificationRoutingService,
+          useValue: { resolveWatchers: jest.fn().mockResolvedValue({ ids: [] }) },
+        },
         // Storage unconfigured: attachments come back with url null, as on a dev machine.
         MediaSigner,
         { provide: OBJECT_STORE, useValue: null },
@@ -190,7 +206,7 @@ describe('TasksService', () => {
       mockPrismaService.task.create.mockResolvedValue(createdTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.create(createData) as any;
+      const result = (await service.create(createData)) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.title).toBe('New Task');
@@ -252,13 +268,14 @@ describe('TasksService', () => {
       mockPrismaService.task.findMany.mockResolvedValue(tasks);
       mockPrismaService.task.count.mockResolvedValue(1);
 
-      const result = await service.findAll({
+      const result = (await service.findAll({
         page: 1,
         limit: 10,
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
         userId: 'user-456',
-      }) as any;
+      })) as any;
 
       /*
         The row, plus the one field findAll computes.
@@ -335,7 +352,8 @@ describe('TasksService', () => {
       await service.findAll({
         page: 1,
         limit: 10,
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
         userId: 'user-123',
         status: TaskStatus.NEW,
@@ -353,13 +371,13 @@ describe('TasksService', () => {
     });
 
     it('should return empty array for unknown role', async () => {
-      const result = await service.findAll({
+      const result = (await service.findAll({
         page: 1,
         limit: 10,
         userRole: 'UNKNOWN' as any,
         organizationId: 'org-123',
         userId: 'user-123',
-      }) as any;
+      })) as any;
 
       expect(result.data).toEqual([]);
       expect(result.meta.total).toBe(0);
@@ -370,12 +388,13 @@ describe('TasksService', () => {
     it('should return task for DISPATCHER with org access', async () => {
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
 
-      const result = await service.findOne({
+      const result = (await service.findOne({
         id: 'task-123',
         userId: 'user-456',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       // findOne enriches the task with computed fields (acceptedAt, etc.).
@@ -389,7 +408,8 @@ describe('TasksService', () => {
         service.findOne({
           id: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -432,13 +452,15 @@ describe('TasksService', () => {
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.update({
+      const result = (await service.update({
         id: 'task-123',
         title: 'Updated Title',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
+        canCreateTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.title).toBe('Updated Title');
@@ -452,7 +474,9 @@ describe('TasksService', () => {
           id: 'non-existent',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -467,7 +491,9 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -482,7 +508,9 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -497,7 +525,9 @@ describe('TasksService', () => {
           id: 'task-123',
           title: 'Updated',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canCreateTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canCreateTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -512,13 +542,15 @@ describe('TasksService', () => {
       mockPrismaService.task.update.mockResolvedValue(assignedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.assign({
+      const result = (await service.assign({
         id: 'task-123',
         workerId: 'tech-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
+        canAssignTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe(TaskStatus.ASSIGNED);
@@ -540,7 +572,9 @@ describe('TasksService', () => {
           id: 'non-existent',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -555,7 +589,9 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -571,7 +607,9 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'tech-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(BadRequestException);
@@ -586,7 +624,9 @@ describe('TasksService', () => {
           id: 'task-123',
           workerId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -608,12 +648,12 @@ describe('TasksService', () => {
       mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(declinedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.decline({
+      const result = (await service.decline({
         id: 'task-123',
         userId: 'tech-123',
         userRole: Role.EMPLOYEE,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe(TaskStatus.NEW);
@@ -647,14 +687,27 @@ describe('TasksService', () => {
         }),
       ).rejects.toMatchObject({
         status: 409,
-        response: expect.objectContaining({ code: 'TASK_STATE_CONFLICT', params: { current: expect.objectContaining({ status: TaskStatus.IN_PROGRESS }) } }),
+        response: expect.objectContaining({
+          code: 'TASK_STATE_CONFLICT',
+          params: { current: expect.objectContaining({ status: TaskStatus.IN_PROGRESS }) },
+        }),
       });
     });
 
     it('does not undo a reassignment that lands between the read and the write', async () => {
       mockPrismaService.task.findUnique
-        .mockResolvedValueOnce({ ...mockTask, status: TaskStatus.ASSIGNED, assignedToId: 'tech-123', assignedTo: { id: 'tech-123' } })
-        .mockResolvedValueOnce({ id: 'task-123', status: TaskStatus.ASSIGNED, assignedToId: 'other-tech', updatedAt: new Date() });
+        .mockResolvedValueOnce({
+          ...mockTask,
+          status: TaskStatus.ASSIGNED,
+          assignedToId: 'tech-123',
+          assignedTo: { id: 'tech-123' },
+        })
+        .mockResolvedValueOnce({
+          id: 'task-123',
+          status: TaskStatus.ASSIGNED,
+          assignedToId: 'other-tech',
+          updatedAt: new Date(),
+        });
       mockPrismaService.task.updateMany.mockResolvedValue({ count: 0 });
 
       await expect(
@@ -677,13 +730,13 @@ describe('TasksService', () => {
       mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(acceptedTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.updateStatus({
+      const result = (await service.updateStatus({
         id: 'task-123',
         status: TaskStatus.ACCEPTED,
         userId: 'tech-123',
         userRole: Role.EMPLOYEE,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe(TaskStatus.ACCEPTED);
@@ -781,13 +834,14 @@ describe('TasksService', () => {
       mockPrismaService.task.findUniqueOrThrow.mockResolvedValue(canceledTask);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.updateStatus({
+      const result = (await service.updateStatus({
         id: 'task-123',
         status: TaskStatus.CANCELED,
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.status).toBe(TaskStatus.CANCELED);
@@ -799,12 +853,12 @@ describe('TasksService', () => {
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.delete.mockResolvedValue(mockTask);
 
-      const result = await service.remove({
+      const result = (await service.remove({
         id: 'task-123',
         userId: 'user-123',
         userRole: Role.ADMIN,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
     });
@@ -860,12 +914,13 @@ describe('TasksService', () => {
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.taskEvent.findMany.mockResolvedValue(events);
 
-      const result = await service.getTimeline({
+      const result = (await service.getTimeline({
         id: 'task-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(2);
@@ -878,7 +933,8 @@ describe('TasksService', () => {
         service.getTimeline({
           id: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -899,17 +955,26 @@ describe('TasksService', () => {
       mockPrismaService.comment.create.mockResolvedValue(comment);
       mockPrismaService.taskEvent.create.mockResolvedValue({ id: 'event-1' });
 
-      const result = await service.addComment({
+      const result = (await service.addComment({
         taskId: 'task-123',
         content: 'Test comment',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.content).toBe('Test comment');
-      expect(mockNotificationClient.emit).toHaveBeenCalledWith('task_comment_added', expect.any(Object));
+      // The event the notification handler listens for, with the task facts it needs to push.
+      expect(mockNotificationClient.emit).toHaveBeenCalledWith(
+        'comment_added',
+        expect.objectContaining({
+          taskId: expect.any(String),
+          task: expect.objectContaining({ id: expect.any(String) }),
+          comment: expect.any(Object),
+        }),
+      );
     });
 
     it('should throw NotFoundException for non-existent task', async () => {
@@ -920,7 +985,8 @@ describe('TasksService', () => {
           taskId: 'non-existent',
           content: 'Test comment',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -937,12 +1003,13 @@ describe('TasksService', () => {
       mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.comment.findMany.mockResolvedValue(comments);
 
-      const result = await service.getComments({
+      const result = (await service.getComments({
         taskId: 'task-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(2);
@@ -958,11 +1025,12 @@ describe('TasksService', () => {
       ]);
       mockPrismaService.task.count.mockResolvedValue(18);
 
-      const result = await service.getStatusCounts({
+      const result = (await service.getStatusCounts({
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data[TaskStatus.NEW]).toBe(5);
@@ -973,11 +1041,11 @@ describe('TasksService', () => {
     it('should scope counts to own tasks for a non-privileged role', async () => {
       // No role is "unknown" anymore — anyone without ADMIN/canViewAllTasks is
       // treated as a plain employee and sees only their own task counts.
-      const result = await service.getStatusCounts({
+      const result = (await service.getStatusCounts({
         userId: 'user-123',
         userRole: Role.EMPLOYEE,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
@@ -997,12 +1065,14 @@ describe('TasksService', () => {
       ]);
       mockPrismaService.task.count.mockResolvedValue(2);
 
-      const result = await service.getSuggestedTechnicians({
+      const result = (await service.getSuggestedTechnicians({
         taskId: 'task-123',
         userId: 'user-123',
-        userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+        userRole: Role.EMPLOYEE,
+        canViewAllTasks: true,
+        canAssignTasks: true,
         organizationId: 'org-123',
-      }) as any;
+      })) as any;
 
       expect(result.success).toBe(true);
       expect(result.data.technicians).toHaveLength(1);
@@ -1025,7 +1095,8 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'task-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(ForbiddenException);
@@ -1049,7 +1120,9 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'non-existent',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true, canAssignTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
+          canAssignTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);
@@ -1063,7 +1136,8 @@ describe('TasksService', () => {
         service.getSuggestedTechnicians({
           taskId: 'task-123',
           userId: 'user-123',
-          userRole: Role.EMPLOYEE, canViewAllTasks: true,
+          userRole: Role.EMPLOYEE,
+          canViewAllTasks: true,
           organizationId: 'org-123',
         }),
       ).rejects.toThrow(NotFoundException);

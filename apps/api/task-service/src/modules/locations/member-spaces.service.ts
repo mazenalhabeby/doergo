@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { notEndedWhere, success } from '@hbcfield/shared';
+import { assertMemberInScope, notEndedWhere, success } from '@hbcfield/shared';
 import { SpaceServiceBase } from './space-service.base';
 
 /** One member's side: the workspaces they are in, the colleagues they share them with. */
@@ -81,7 +81,7 @@ export class MemberSpacesService extends SpaceServiceBase {
   /**
    * Get all location assignments for an employee
    */
-  async getTechnicianAssignments(data: { userId: string; organizationId: string }) {
+  async getTechnicianAssignments(data: { userId: string; organizationId: string; scopeSpaceIds?: string[] }) {
     // Verify user exists and belongs to organization
     const user = await this.prisma.user.findFirst({
       where: {
@@ -94,9 +94,18 @@ export class MemberSpacesService extends SpaceServiceBase {
       throw new NotFoundException('User not found in organization');
     }
 
+    /*
+      A caller who holds the permission only in some workspaces (scopeSpaceIds,
+      resolved by the gateway) reads a member only if that member is in one of
+      them — 404 otherwise, like every other scoped member read — and sees only
+      the assignments in those workspaces. undefined = org-wide.
+    */
+    await assertMemberInScope(this.prisma, data);
+
     const assignments = await this.prisma.spaceAssignment.findMany({
       where: {
         userId: data.userId,
+        ...(data.scopeSpaceIds !== undefined ? { spaceId: { in: data.scopeSpaceIds } } : {}),
         // Only show active assignments (not expired)
         ...notEndedWhere(),
       },

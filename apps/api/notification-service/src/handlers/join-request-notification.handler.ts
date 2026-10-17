@@ -68,7 +68,7 @@ export class JoinRequestNotificationHandler {
 
   @EventPattern(eventPattern(joinRequestApprovedEvent))
   async handleApproved(@Payload() data: EventPayload<typeof joinRequestApprovedEvent>) {
-    this.logger.log(`Join request approved: user=${data.userName}`);
+    this.logger.log(`Join request approved: user=${data.userId}`);
 
     try {
       await this.pushService.sendToUser(
@@ -91,7 +91,7 @@ export class JoinRequestNotificationHandler {
 
   @EventPattern(eventPattern(joinRequestRejectedEvent))
   async handleRejected(@Payload() data: EventPayload<typeof joinRequestRejectedEvent>) {
-    this.logger.log(`Join request rejected: user=${data.userName}`);
+    this.logger.log(`Join request rejected: user=${data.userId}`);
 
     try {
       const body = data.reason

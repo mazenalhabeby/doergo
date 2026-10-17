@@ -46,11 +46,12 @@ export const getLocationAssignmentsBatch = rpc<{
   canViewAll?: boolean;
   viewAllIds?: string[];
 }>('get_location_assignments_batch');
-export const getTechnicianAssignments = rpc<
-  { userId: string; organizationId: string } & {
-    /** ⚠️ sent by the gateway, never read by the service: the narrowing is not applied */ scopeSpaceIds?: string[];
-  }
->('get_technician_assignments');
+export const getTechnicianAssignments = rpc<{
+  userId: string;
+  organizationId: string;
+  /** Workspaces the caller holds the permission in; undefined = org-wide, [] = nowhere. */
+  scopeSpaceIds?: string[];
+}>('get_technician_assignments');
 export const getColleagues = rpc<{ userId: string; organizationId: string; spaceScope?: 'own' | 'tasks' | 'all' }>(
   'get_colleagues',
 );
