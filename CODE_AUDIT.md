@@ -269,3 +269,33 @@ cut when a local inside a callback shadows a later name (false positive).
 taken on the ORIGINAL (every jsPDF call in order + a hash of the PDF bytes; every box) match. ⚠️ The PDF
 pin snapshot is ~585 KB — trim to the byte hashes if it is too heavy to keep.
 Step 5 is finished except `job-page.tsx`, `auth-session.ts`, phone `client.ts` (reasons in §11).
+
+## 12. Unattended run (2026-10-17 evening) — plan `docs/plans/refactor-autonomous-2026-10-17.md`
+
+Branch `refactor/code-audit-2026-10` (not pushed, not deployed).
+
+**Phase 1 — long lines: ~4,470 → 581.** Web 2,226 → 268, console 200 → 25, phone ~1,365 → 182, shared+API
+1,011 → 34. Tools: `wrap-long-strings` (same-string pieces, proved per edit by evaluation),
+`break-long-lines-ast` / `break-long-lines-tokens` (break only the long line; syntax tree / token
+sequence compared before and after), `split-long-templates`. Left long: icon paths, regexes, email HTML,
+guard-pinned text, one-component files with nothing movable. ⚠️ Full Prettier on long-line files pushed
+~125 files past 300 lines — the tools re-print only the long line.
+
+**Phase 2 — typed contracts: string patterns 1,153 → 3.** `rpc<Req, Res>('cmd')` in
+`packages/shared/src/microservices/contracts`; `pattern()`, `sendRpc()`, `this.call()`; `callerOrgId()`;
+`tools/rpc-ratchet.mjs` (+ gateway spec). Proved by every API suite and 8 live e2e scripts.
+
+### Mismatches the types exposed — kept as they are, marked in place, decisions for the user
+1. ⚠️ **Scope gap:** `get_technician_assignments` (`/employees/:id/assignments`) ignores the
+   `scopeSpaceIds` the gateway sends — a viewer scoped to one workspace sees the member's assignments
+   in every workspace.
+2. Sent but never read: `approval_route` decideKey/orgWide; `dispatcherId` on three tracking reads;
+   `portalId` on `create_invitation` from customer/portal routes; `trackingSpaceIds` on
+   `get_technician_detail`.
+3. Query strings arrive where numbers are declared: `chat.history` limit, `support.list` page/limit.
+4. Unchecked values: analytics run/save `definition` (the engine still refuses unknown datasets/fields);
+   platform support `inbox.view`, `setStatus.status` raw strings; `addMessage` authorId/body may be
+   null/missing; support and shift-issue attachments may lack file size/key.
+5. Service DTOs that were missing fields the service read through casts (now declared):
+   `ListEmployeesDto.scopeSpaceIds`, `GetEmployeeDetailDto.viewerSpaceIds/canViewTracking`,
+   `UpdateMemberProfileDto` (11 fields), task history `startDate/endDate`.
