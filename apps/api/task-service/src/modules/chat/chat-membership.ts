@@ -34,3 +34,6 @@ export async function findMembership(prisma: PrismaService, conversationId: stri
 }
 
 export type ChatMembership = Awaited<ReturnType<typeof findMembership>>;
+
+/** A member's contact fields as findMembership reads them — what the send-time reach check needs. */
+export type ChatMemberContact = NonNullable<ChatMembership['conversation']['members'][number]['user']>;

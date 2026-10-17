@@ -53,7 +53,14 @@ export class ChatNotificationHandler {
         to,
         {
           title: senderName ? verbatim(senderName) : msg('chat.newMessage'),
-          body: verbatim(messagePreview(data.message?.body, data.message?.attachments), 120),
+          // The attachments column is written as an array of files; the preview reads only [0].fileName.
+          body: verbatim(
+            messagePreview(
+              data.message?.body,
+              data.message?.attachments as ReadonlyArray<{ fileName?: string }> | null,
+            ),
+            120,
+          ),
         },
         { type: 'chat', conversationId: data.conversationId },
       );

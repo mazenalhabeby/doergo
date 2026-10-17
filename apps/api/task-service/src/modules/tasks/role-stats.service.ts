@@ -57,7 +57,7 @@ export class RoleStatsService extends RolePoolBase {
     ]);
     const openedBy = new Map<string, number>();
     for (const o of opened) {
-      const id = (o.metadata as any)?.roleId as string | undefined;
+      const id = (o.metadata as { roleId?: string } | null)?.roleId;
       if (id) openedBy.set(id, (openedBy.get(id) ?? 0) + 1);
     }
     const roleIds = [...new Set([...openedBy.keys(), ...openNow.map((o) => o.openRoleId!)])];
@@ -66,9 +66,9 @@ export class RoleStatsService extends RolePoolBase {
       select: { id: true, name: true },
     });
     const out = roles.map((r) => {
-      const mine = takes.filter((t) => (t.metadata as any)?.roleId === r.id);
+      const mine = takes.filter((t) => (t.metadata as { roleId?: string } | null)?.roleId === r.id);
       const waits = mine
-        .map((t) => (t.metadata as any)?.waitedMinutes)
+        .map((t) => (t.metadata as { waitedMinutes?: number } | null)?.waitedMinutes)
         .filter((n): n is number => typeof n === 'number');
       const byPerson = new Map<string, { name: string; count: number }>();
       for (const t of mine) {

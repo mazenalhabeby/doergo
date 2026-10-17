@@ -8,6 +8,8 @@ import { documentActor, requestContext } from './documents.actor';
 import { SendBackDto, SignDocumentDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /**
  * /documents/:id — the signing chain: send back, consent, sign, acknowledge, the
  * chain and its evidence.
@@ -42,10 +44,10 @@ export class DocumentSigningController {
   @Post(':id/send-back')
   @ApiOperation({ summary: 'Send a document back to an earlier signer' })
   async sendBack(
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
     @Param('id') id: string,
     @Body() body: SendBackDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.documents.sendBack({
       actor: documentActor(user),
@@ -57,7 +59,7 @@ export class DocumentSigningController {
 
   @Post(':id/consent')
   @ApiOperation({ summary: 'Record agreement to sign electronically' })
-  async consent(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Req() req: any) {
+  async consent(@CurrentUser() user: SessionUser, @Param('id') id: string, @Req() req: AuthedRequest) {
     return this.documents.consent({
       actor: documentActor(user),
       documentId: id,
@@ -71,10 +73,10 @@ export class DocumentSigningController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Sign, seal and freeze a document' })
   async sign(
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
     @Param('id') id: string,
     @Body() body: SignDocumentDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.documents.sign({
       actor: documentActor(user),
@@ -90,7 +92,7 @@ export class DocumentSigningController {
 
   @Post(':id/acknowledge')
   @ApiOperation({ summary: 'Record "I have read this" — receipt, not agreement' })
-  async acknowledge(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Req() req: any) {
+  async acknowledge(@CurrentUser() user: SessionUser, @Param('id') id: string, @Req() req: AuthedRequest) {
     return this.documents.acknowledge({
       actor: documentActor(user),
       documentId: id,
@@ -107,13 +109,13 @@ export class DocumentSigningController {
    */
   @Get(':id/chain')
   @ApiOperation({ summary: 'The signing chain on one document' })
-  async documentChain(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async documentChain(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     return this.documents.documentChain({ actor: documentActor(user), documentId: id });
   }
 
   @Get(':id/events')
   @ApiOperation({ summary: 'The evidence trail for one document' })
-  async events(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async events(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     return this.documents.events({ actor: documentActor(user), documentId: id });
   }
 }

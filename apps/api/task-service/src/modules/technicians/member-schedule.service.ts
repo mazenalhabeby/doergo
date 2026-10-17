@@ -177,16 +177,16 @@ export class MemberScheduleService extends MemberServiceBase {
     const dayResults = days.map((dateStr) => {
       const dayOfWeek = dowOf(dateStr);
 
-      const availability = technicians.map((tech: any) => {
-        const schedule = tech.schedules?.find((s: any) => s.dayOfWeek === dayOfWeek) || null;
+      const availability = technicians.map((tech) => {
+        const schedule = tech.schedules?.find((s) => s.dayOfWeek === dayOfWeek) || null;
         const timeOffRecord = tech.timeOffRequests?.find(
-          (t: any) => dateKeyOf(t.startDate) <= dateStr && dateKeyOf(t.endDate) >= dateStr,
+          (t) => dateKeyOf(t.startDate) <= dateStr && dateKeyOf(t.endDate) >= dateStr,
         );
         const onTimeOff = !!timeOffRecord;
         const hasSchedule = schedule !== null;
 
         // Resolve primary space
-        const primaryAssignment = tech.spaceAssignments?.find((a: any) => a.isPrimary);
+        const primaryAssignment = tech.spaceAssignments?.find((a) => a.isPrimary);
         const firstAssignment = tech.spaceAssignments?.[0];
         const space = primaryAssignment?.space || firstAssignment?.space || null;
 

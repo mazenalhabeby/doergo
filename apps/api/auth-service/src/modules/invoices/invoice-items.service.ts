@@ -1,27 +1,12 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { invoiceTotalsFromSubtotalCents, lineAmount, roundCents, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
+import type { InvoiceItemInput } from '@hbcfield/shared/microservices';
 import { InvoiceServiceBase } from './invoice-service.base';
 
 /** An invoice's lines: adding, removing, and the totals after. */
 @Injectable()
 export class InvoiceItemsService extends InvoiceServiceBase {
-  async addItem(
-    invoiceId: string,
-    organizationId: string,
-    item: {
-      description: string;
-      quantity?: number;
-      unitPrice?: number;
-      taskId?: string | null;
-      reportId?: string | null;
-      lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
-      billedDays?: number | null;
-      workerId?: string | null;
-      dayFrom?: string | null;
-      dayTo?: string | null;
-      taskIds?: string[];
-    },
-  ) {
+  async addItem(invoiceId: string, organizationId: string, item: InvoiceItemInput) {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id: invoiceId, organizationId },
     });

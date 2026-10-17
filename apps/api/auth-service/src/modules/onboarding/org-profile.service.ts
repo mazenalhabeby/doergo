@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { writeRateChange, RateChangeError, parseCurrency, CURRENCY_INVALID_MESSAGE } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -70,7 +71,7 @@ export class OrgProfileService {
     return { success: true, data: { ...org, ...leavePolicyOf(org), memberCount: org._count.users } };
   }
 
-  async updateOrgProfile(organizationId: string, updates: any) {
+  async updateOrgProfile(organizationId: string, updates: Record<string, unknown>) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
     const allowedFields = [
@@ -96,7 +97,7 @@ export class OrgProfileService {
       'enabledModules',
       'currency',
     ];
-    const data: any = {};
+    const data: Record<string, unknown> = {};
 
     for (const key of allowedFields) {
       if (updates[key] !== undefined) {
@@ -149,13 +150,13 @@ export class OrgProfileService {
       const org = await this.prisma.$transaction(async (tx) => {
         const rateCols: Record<string, number | null> = {};
         const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: unknown) =>
-          writeRateChange(tx as any, {
+          writeRateChange(tx, {
             organizationId,
             target: 'ORGANIZATION',
             targetId: organizationId,
             kind,
             cents,
-            effectiveFrom: updates?.rateEffectiveFrom,
+            effectiveFrom: updates?.rateEffectiveFrom as string | undefined,
           });
         if (rates.billableRateCents !== undefined)
           rateCols.billableRateCents = (await write('BILL_HOUR', rates.billableRateCents)).nowCents;
@@ -163,7 +164,8 @@ export class OrgProfileService {
           rateCols.costRateCents = (await write('COST_HOUR', rates.costRateCents)).nowCents;
         return tx.organization.update({
           where: { id: organizationId },
-          data: { ...data, ...rateCols },
+          // Only the allow-listed columns above, normalised — stated as the update they are.
+          data: { ...data, ...rateCols } as Prisma.OrganizationUpdateInput,
           select: {
             id: true,
             name: true,

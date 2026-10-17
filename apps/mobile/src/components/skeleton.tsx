@@ -3,7 +3,7 @@
  * Usage: <Skeleton.Line />, <Skeleton.Circle />, <Skeleton.Card />
  */
 import { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle, StyleProp } from 'react-native';
+import { View, StyleSheet, Animated, ViewStyle, StyleProp, type DimensionValue } from 'react-native';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, RADIUS } from '../lib/constants';
 
@@ -15,7 +15,7 @@ function useShimmer() {
       Animated.sequence([
         Animated.timing(anim, { toValue: 1, duration: 1000, useNativeDriver: true }),
         Animated.timing(anim, { toValue: 0, duration: 1000, useNativeDriver: true }),
-      ])
+      ]),
     );
     loop.start();
     return () => loop.stop();
@@ -49,8 +49,8 @@ function ShimmerBox({ style }: SkeletonBaseProps) {
 }
 
 // Line skeleton (text placeholder)
-function Line({ width = '100%', height = 14, style }: { width?: number | string; height?: number; style?: ViewStyle }) {
-  return <ShimmerBox style={[{ width: width as any, height, borderRadius: height / 2 }, style]} />;
+function Line({ width = '100%', height = 14, style }: { width?: DimensionValue; height?: number; style?: ViewStyle }) {
+  return <ShimmerBox style={[{ width, height, borderRadius: height / 2 }, style]} />;
 }
 
 // Circle skeleton (avatar placeholder)
@@ -102,7 +102,7 @@ function StatsRow() {
   const { colors } = useTheme();
   return (
     <View style={[sStyles.statsCard, { backgroundColor: colors.card }]}>
-      {[1, 2, 3, 4].map(i => (
+      {[1, 2, 3, 4].map((i) => (
         <View key={i} style={sStyles.statCell}>
           <Line width={30} height={22} />
           <Line width={40} height={10} style={{ marginTop: 6 }} />
@@ -121,7 +121,7 @@ function WeekCalendar() {
         <Line width={60} height={24} />
       </View>
       <View style={sStyles.calWeek}>
-        {[1, 2, 3, 4, 5, 6, 7].map(i => (
+        {[1, 2, 3, 4, 5, 6, 7].map((i) => (
           <View key={i} style={sStyles.calDay}>
             <Line width={20} height={10} />
             <Line width={20} height={18} style={{ marginTop: 6 }} />
@@ -160,10 +160,14 @@ function ListScreen({ rows = 4 }: { rows?: number }) {
   return (
     <View style={sStyles.listContainer}>
       <View style={sStyles.filterRow}>
-        {[1, 2, 3].map(i => <Line key={i} width={60} height={28} style={{ borderRadius: 14 }} />)}
+        {[1, 2, 3].map((i) => (
+          <Line key={i} width={60} height={28} style={{ borderRadius: 14 }} />
+        ))}
       </View>
       <View style={sStyles.listCards}>
-        {Array.from({ length: rows }).map((_, i) => <Card key={i} />)}
+        {Array.from({ length: rows }).map((_, i) => (
+          <Card key={i} />
+        ))}
       </View>
     </View>
   );
@@ -174,10 +178,14 @@ function TasksList({ rows = 4 }: { rows?: number }) {
   return (
     <View style={sStyles.listContainer}>
       <View style={sStyles.filterRow}>
-        {[1, 2, 3, 4].map(i => <Line key={i} width={55} height={28} style={{ borderRadius: 14 }} />)}
+        {[1, 2, 3, 4].map((i) => (
+          <Line key={i} width={55} height={28} style={{ borderRadius: 14 }} />
+        ))}
       </View>
       <View style={sStyles.listCards}>
-        {Array.from({ length: rows }).map((_, i) => <TaskCard key={i} />)}
+        {Array.from({ length: rows }).map((_, i) => (
+          <TaskCard key={i} />
+        ))}
       </View>
     </View>
   );

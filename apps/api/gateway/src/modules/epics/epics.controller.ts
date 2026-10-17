@@ -7,6 +7,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { CreateEpicDto, UpdateEpicDto } from './dto';
 import { EpicsService } from './epics.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('epics')
 @ApiBearerAuth()
 @RequireModule('epics') // Business+ — gates ALL mutations (create/update/delete); reads pass
@@ -17,10 +19,10 @@ export class EpicsController {
   @Get()
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization epics with task counts' })
-  async findAll(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
+  async findAll(@Query('spaceId') spaceId: string | undefined, @Request() req: AuthedRequest) {
     // A space sees its own epics plus the organization-wide ones.
     return this.epicsService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       ...(spaceId && { spaceId }),
     });
   }
@@ -29,35 +31,31 @@ export class EpicsController {
   @RequirePermission('canViewAllTasks')
   @RequireModule('epics')
   @ApiOperation({ summary: 'Create a new epic' })
-  async create(@Body() createEpicDto: CreateEpicDto, @Request() req: any) {
+  async create(@Body() createEpicDto: CreateEpicDto, @Request() req: AuthedRequest) {
     return this.epicsService.create({
       ...createEpicDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Patch(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Update an epic' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateEpicDto: UpdateEpicDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() updateEpicDto: UpdateEpicDto, @Request() req: AuthedRequest) {
     return this.epicsService.update({
       id,
       ...updateEpicDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Delete(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Delete an epic (unlinks tasks)' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.epicsService.remove({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

@@ -139,7 +139,7 @@ export class ProposalReviewService extends AssetProposalBase {
       // The reviewer's corrections win over what was sent in; they are looking
       // at the page too, on a bigger screen.
       const fields = { ...(proposal.fields as ContractFields), ...this.cleanFields(data.fields) };
-      const applied: any = await this.contracts.apply({
+      const applied = await this.contracts.apply({
         categoryId,
         typeId: data.typeId,
         holderUserId,

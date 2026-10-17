@@ -165,23 +165,23 @@ export class DocumentRegistersService {
     }
 
     const field = next === 'type' ? 'typeId' : next === 'member' ? 'userId' : 'periodYear';
-    const groups = await this.prisma.document.groupBy({
-      by: [field as any],
-      where,
-      _count: true,
-    });
+    // Grouped by ONE of three columns chosen at run time; Prisma's groupBy cannot type a
+    // run-time `by`, so the row is stated: the chosen column's value and the count.
+    type FolderGroup = { typeId?: string | null; userId?: string | null; periodYear?: number | null; _count: number };
+    const grouped = await this.prisma.document.groupBy({ by: [field], where, _count: true });
+    const groups = grouped as unknown as FolderGroup[];
 
     // One lookup turns ids into names — not one per folder.
     let labels = new Map<string, string>();
     if (next === 'type') {
-      const ids = groups.map((g: any) => g.typeId).filter(Boolean);
+      const ids = groups.map((g) => g.typeId).filter((id): id is string => !!id);
       const types = await this.prisma.documentType.findMany({
         where: { id: { in: ids }, organizationId: data.actor.organizationId },
         select: { id: true, label: true },
       });
       labels = new Map(types.map((x) => [x.id, x.label]));
     } else if (next === 'member') {
-      const ids = groups.map((g: any) => g.userId).filter(Boolean);
+      const ids = groups.map((g) => g.userId).filter((id): id is string => !!id);
       const users = await this.prisma.user.findMany({
         where: { id: { in: ids }, organizationId: data.actor.organizationId },
         select: { id: true, firstName: true, lastName: true },
@@ -190,7 +190,7 @@ export class DocumentRegistersService {
     }
 
     const folders = groups
-      .map((g: any) => {
+      .map((g) => {
         const raw = g[field];
         if (next === 'year') {
           return {

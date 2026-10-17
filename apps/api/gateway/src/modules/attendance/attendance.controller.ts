@@ -15,6 +15,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('attendance')
 @ApiBearerAuth()
 @Controller('attendance')
@@ -34,7 +36,7 @@ export class AttendanceController extends AttendanceControllerBase {
   @RequireModule('time_tracking')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock in at a company location' })
-  async clockIn(@Body() dto: ClockInDto, @Request() req: any) {
+  async clockIn(@Body() dto: ClockInDto, @Request() req: AuthedRequest) {
     return this.attendanceQueueService.clockIn({
       ...dto,
       userId: req.user.id,
@@ -47,7 +49,7 @@ export class AttendanceController extends AttendanceControllerBase {
   @AllowWhenLocked()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Clock out from current shift' })
-  async clockOut(@Body() dto: ClockOutDto, @Request() req: any) {
+  async clockOut(@Body() dto: ClockOutDto, @Request() req: AuthedRequest) {
     return this.attendanceQueueService.clockOut({
       ...dto,
       userId: req.user.id,
@@ -58,7 +60,7 @@ export class AttendanceController extends AttendanceControllerBase {
   @Post('heartbeat')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Send location heartbeat while clocked in' })
-  async heartbeat(@Body() dto: HeartbeatDto, @Request() req: any) {
+  async heartbeat(@Body() dto: HeartbeatDto, @Request() req: AuthedRequest) {
     return this.attendanceQueueService.heartbeat({
       ...dto,
       userId: req.user.id,
@@ -74,7 +76,7 @@ export class AttendanceController extends AttendanceControllerBase {
   @Post('heartbeat/batch')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Send location check-ins kept while offline' })
-  async heartbeatBatch(@Body() dto: HeartbeatBatchDto, @Request() req: any) {
+  async heartbeatBatch(@Body() dto: HeartbeatBatchDto, @Request() req: AuthedRequest) {
     return this.attendanceQueueService.heartbeatBatch({
       points: dto.points,
       userId: req.user.id,
@@ -85,10 +87,10 @@ export class AttendanceController extends AttendanceControllerBase {
   @Get('status')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get current clock-in status' })
-  async getStatus(@Request() req: any) {
+  async getStatus(@Request() req: AuthedRequest) {
     return this.attendanceService.getStatus({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -106,10 +108,10 @@ export class AttendanceController extends AttendanceControllerBase {
   @Get('clock-in-locations')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Workspaces the caller may clock in at right now' })
-  async clockInLocations(@Request() req: any) {
+  async clockInLocations(@Request() req: AuthedRequest) {
     return this.attendanceService.listClockInLocations({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -125,8 +127,8 @@ export class AttendanceController extends AttendanceControllerBase {
   @DenyExternal()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Workspaces the automatic clock arms for the caller' })
-  async autoClockPlan(@Request() req: any) {
-    return this.attendanceService.autoClockPlan({ userId: req.user.id, organizationId: req.user.organizationId });
+  async autoClockPlan(@Request() req: AuthedRequest) {
+    return this.attendanceService.autoClockPlan({ userId: req.user.id, organizationId: callerOrgId(req.user) });
   }
 
   /** The member's own consent to location-based clocking; false withdraws it. */
@@ -134,10 +136,10 @@ export class AttendanceController extends AttendanceControllerBase {
   @DenyExternal()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Give or withdraw consent to the automatic clock' })
-  async autoClockConsent(@Body() dto: AutoClockConsentDto, @Request() req: any) {
+  async autoClockConsent(@Body() dto: AutoClockConsentDto, @Request() req: AuthedRequest) {
     return this.attendanceService.autoClockConsent({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       consent: dto.consent,
     });
   }
@@ -147,10 +149,10 @@ export class AttendanceController extends AttendanceControllerBase {
   @DenyExternal()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Undo an automatic clock-in (own, within minutes, nothing recorded on it)' })
-  async autoClockUndo(@Param('id') entryId: string, @Body() dto: AutoClockActionDto, @Request() req: any) {
+  async autoClockUndo(@Param('id') entryId: string, @Body() dto: AutoClockActionDto, @Request() req: AuthedRequest) {
     return this.attendanceService.autoClockUndo({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       entryId,
       evidence: dto?.evidence,
     });
@@ -161,10 +163,14 @@ export class AttendanceController extends AttendanceControllerBase {
   @DenyExternal()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Skip the automatic rest on the running shift' })
-  async autoClockSkipRest(@Param('id') entryId: string, @Body() dto: AutoClockActionDto, @Request() req: any) {
+  async autoClockSkipRest(
+    @Param('id') entryId: string,
+    @Body() dto: AutoClockActionDto,
+    @Request() req: AuthedRequest,
+  ) {
     return this.attendanceService.autoClockSkipRest({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       entryId,
       evidence: dto?.evidence,
     });

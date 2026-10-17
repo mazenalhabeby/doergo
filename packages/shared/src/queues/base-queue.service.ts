@@ -14,7 +14,7 @@
  *     super(queue, configService, QUEUE_NAMES.TASKS, 'TasksQueueService');
  *   }
  *
- *   async createTask(data: Record<string, any>) {
+ *   async createTask(data: Record<string, unknown>) {
  *     return this.addJobAndWait(TASK_JOB_TYPES.CREATE, data);
  *   }
  * }
@@ -141,10 +141,7 @@ export abstract class BaseQueueService {
         }
       }
 
-      throw new HttpException(
-        'Request timed out or failed',
-        HttpStatus.REQUEST_TIMEOUT,
-      );
+      throw new HttpException('Request timed out or failed', HttpStatus.REQUEST_TIMEOUT);
     }
   }
 }

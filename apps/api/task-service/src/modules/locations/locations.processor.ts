@@ -20,7 +20,7 @@ export class LocationsProcessor extends JobProcessor {
     super();
   }
 
-  protected async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<unknown> {
     const { data } = job;
 
     switch (job.name) {

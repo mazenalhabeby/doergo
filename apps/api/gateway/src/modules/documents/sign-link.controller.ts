@@ -5,6 +5,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { DocumentsGatewayService } from './documents.service';
 import { requestContext } from './documents.actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * The client's way in — a token from an email, and nothing else.
  *
@@ -75,7 +76,7 @@ export class SignLinkController {
       role?: string | null;
       idempotencyKey: string;
     },
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.documents.linkSign({
       token: body?.token ?? '',

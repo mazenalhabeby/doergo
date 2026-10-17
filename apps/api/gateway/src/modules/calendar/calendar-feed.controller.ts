@@ -47,8 +47,9 @@ export class CalendarFeedController {
     if (!allowLink(m[1]!)) throw new HttpException('Too many requests', HttpStatus.TOO_MANY_REQUESTS);
     let ics: string;
     try {
-      const r: any = await this.svc.read(calendarFeedRender, { token: m[1] });
-      ics = r?.data?.ics;
+      const r = (await this.svc.read(calendarFeedRender, { token: m[1] })) as { data?: { ics?: unknown } } | null;
+      // Checked below: anything but a string is a 404.
+      ics = r?.data?.ics as string;
     } catch (e) {
       /*
         A refused link and a failure on our side must not look alike. Outlook treats a 404 as "this

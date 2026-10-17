@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { assertMayCreateUnder } from './task-scope';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import type { DependencyType } from '@prisma/client';
 
 /** One task waiting on another: adding a dependency (never a circle), removing one. */
 @Injectable()
@@ -77,7 +78,7 @@ export class TaskDependenciesService {
       data: {
         predecessorId: data.predecessorId,
         successorId: data.successorId,
-        type: (data.type as any) || 'FINISH_TO_START',
+        type: (data.type as DependencyType) || 'FINISH_TO_START',
         lagDays: data.lagDays ?? 0,
       },
       include: {

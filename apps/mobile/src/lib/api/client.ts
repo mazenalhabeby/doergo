@@ -11,6 +11,7 @@ import {
   type RefreshResult,
 } from '@hbcfield/shared/client';
 import { networkErrorText } from './network-error';
+import type { User } from './types';
 import { jwtExpiry, jwtSubject } from './session-owner';
 import { getApiUrl, APP_VERSION, APP_PLATFORM } from './client-build';
 import { notifyObservers } from './response-observers';
@@ -33,7 +34,6 @@ export { getApiUrl, APP_VERSION, resolveMediaUrl } from './client-build';
      SESSION_UNREACHABLE (unchanged), ABORTED (the caller's own cancel).
   Use `isUnreachable` (src/offline/actions/unreachable.ts), never a status list.
 */
-
 export { ApiError };
 
 // Token storage keys
@@ -175,9 +175,9 @@ export function setAuthFailureCallback(callback: (() => void) | null) {
 }
 
 // Callback to update user data when refresh returns fresh user info
-let onUserRefreshed: ((user: any) => void) | null = null;
+let onUserRefreshed: ((user: User) => void) | null = null;
 
-export function setUserRefreshedCallback(callback: (user: any) => void) {
+export function setUserRefreshedCallback(callback: (user: User) => void) {
   onUserRefreshed = callback;
 }
 
@@ -196,7 +196,7 @@ export function refreshSession(): Promise<RefreshOutcome> {
       const storedRefreshToken = await getRefreshToken();
       if (!storedRefreshToken) return { kind: 'invalid' };
 
-      let data: { accessToken?: string; refreshToken?: string; user?: unknown } | null;
+      let data: { accessToken?: string; refreshToken?: string; user?: User } | null;
       try {
         // Public: a refresh must never itself trigger a refresh. Not retried — the
         // caller's own request is what gets asked again.

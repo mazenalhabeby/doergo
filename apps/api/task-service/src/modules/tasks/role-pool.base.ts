@@ -281,7 +281,7 @@ export abstract class RolePoolBase {
       where: { taskId, eventType: TaskEventType.OFFERED, ...(since ? { createdAt: { gte: since } } : {}) },
       select: { metadata: true },
     });
-    return new Set(rows.flatMap((r) => ((r.metadata as any)?.userIds ?? []) as string[]));
+    return new Set(rows.flatMap((r) => (r.metadata as { userIds?: string[] } | null)?.userIds ?? []));
   }
 
   /** Who holds the places — for "Ahmad took it" on a refusal. */

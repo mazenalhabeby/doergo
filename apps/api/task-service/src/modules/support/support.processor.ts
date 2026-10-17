@@ -17,7 +17,7 @@ export class SupportProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job<any, any, string>): Promise<unknown> {
     switch (job.name) {
       case SUPPORT_JOB_TYPES.SLA_BREACH_CHECK:
         return this.support.checkSlaBreach(job.data);

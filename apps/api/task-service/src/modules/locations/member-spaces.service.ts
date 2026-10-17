@@ -68,7 +68,7 @@ export class MemberSpacesService extends SpaceServiceBase {
     });
 
     // Dedupe by user, keep first space name, drop the requester.
-    const byUser = new Map<string, any>();
+    const byUser = new Map<string, unknown>();
     for (const r of rosters) {
       if (!r.user || r.user.id === data.userId) continue;
       if (!byUser.has(r.user.id)) {

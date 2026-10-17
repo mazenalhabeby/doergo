@@ -1,5 +1,6 @@
 import { isAdmin, type AccessPermissionKey } from '@hbcfield/shared';
 import { scopeFor } from './permission-scope';
+import type { SessionUser } from './request.types';
 
 /**
  * How far a caller's authority over OTHER people's shifts reaches.
@@ -33,7 +34,7 @@ export interface AttendanceAuthority {
   spaceIds: string[] | undefined;
 }
 
-export function attendanceAuthority(req: { user?: any }, need: AttendanceNeed): AttendanceAuthority {
+export function attendanceAuthority(req: { user?: SessionUser }, need: AttendanceNeed): AttendanceAuthority {
   const user = req.user;
   if (!user) return { canManage: false, spaceIds: [] };
   if (isAdmin(user)) return { canManage: true, spaceIds: undefined };

@@ -11,6 +11,8 @@ import { RejectDocumentDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import { callerOrgId } from '../../common/caller-org';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /** /documents — the credential board, what is required and pending, and the verification queue. */
 @ApiTags('documents')
 @ApiBearerAuth()
@@ -35,7 +37,7 @@ export class DocumentComplianceController {
   // need it: the assignment itself refuses somebody blocked by a document.
   @DenyExternal()
   @ApiOperation({ summary: 'Credential validity for the people the caller assigns work to' })
-  async compliance(@CurrentUser() user: CurrentUserData) {
+  async compliance(@CurrentUser() user: SessionUser) {
     return this.documents.compliance({
       // Who is asking, so a type restricted to certain roles shows on the board
       // for exactly the people who may see it (and for administrators) — the
@@ -55,7 +57,7 @@ export class DocumentComplianceController {
    */
   @Get('requirements')
   @ApiOperation({ summary: 'Documents the organization expects from a member' })
-  async requirements(@CurrentUser() user: CurrentUserData, @Query('userId') userId?: string) {
+  async requirements(@CurrentUser() user: SessionUser, @Query('userId') userId?: string) {
     return this.documents.requirements({ actor: documentActor(user), targetUserId: userId });
   }
 
@@ -69,7 +71,7 @@ export class DocumentComplianceController {
    */
   @Get('pending')
   @ApiOperation({ summary: 'What the signed-in member still has to upload or sign' })
-  async pending(@CurrentUser() user: CurrentUserData) {
+  async pending(@CurrentUser() user: SessionUser) {
     return this.documents.pending({ actor: documentActor(user) });
   }
 
@@ -83,7 +85,7 @@ export class DocumentComplianceController {
   @Get('awaiting-verification')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Documents members have supplied, waiting to be checked' })
-  async awaitingVerification(@CurrentUser() user: CurrentUserData) {
+  async awaitingVerification(@CurrentUser() user: SessionUser) {
     return this.documents.awaitingVerification({ actor: documentActor(user) });
   }
 
@@ -91,7 +93,7 @@ export class DocumentComplianceController {
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Accept it — from here it counts' })
   async verifyDocument(
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
     @Param('id') id: string,
     /*
       The expiry is settled at approval when the member's upload could not be
@@ -99,7 +101,7 @@ export class DocumentComplianceController {
       somewhere with a phone, did not.
     */
     @Body() body: { expiresOn?: string | null },
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.documents.verifyDocument({
       actor: documentActor(user),
@@ -113,10 +115,10 @@ export class DocumentComplianceController {
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
   async rejectDocument(
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
     @Param('id') id: string,
     @Body() body: RejectDocumentDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.documents.rejectDocument({
       actor: documentActor(user),

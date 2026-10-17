@@ -1,6 +1,7 @@
 import { personSearchOr, clampListLimit } from '@hbcfield/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import type { Prisma } from '@prisma/client';
 import { ListOrgMembersDto } from './dto';
 import { DIRECTORY_MEMBER_SELECT, MANAGER_CANDIDATE_SELECT, ORG_MEMBER_SELECT } from './users-common';
 
@@ -10,17 +11,14 @@ import { DIRECTORY_MEMBER_SELECT, MANAGER_CANDIDATE_SELECT, ORG_MEMBER_SELECT } 
  */
 @Injectable()
 export class OrgMembersService {
-
-
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
-
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * List all members of an organization with filtering and pagination
    */
-  async listOrgMembers(dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string; lite?: boolean }) {
+  async listOrgMembers(
+    dto: ListOrgMembersDto & { managersOnly?: boolean; includeIds?: string[]; excludeId?: string; lite?: boolean },
+  ) {
     const { organizationId, search, role } = dto;
     // Clamp pagination server-side so a client can't request an unbounded page (M6).
     const page = Math.max(1, Number(dto.page) || 1);
@@ -29,7 +27,7 @@ export class OrgMembersService {
     // Members = staff only. Portal customers (they carry a customerId) live in
     // Clients Portals, not here — excluding them keeps admins from accidentally
     // re-roling a customer into a staff account (which breaks their portal login).
-    const where: any = { organizationId, customerId: null };
+    const where: Prisma.UserWhereInput = { organizationId, customerId: null };
 
     /*
       One filter, two kinds of thing.
@@ -92,7 +90,7 @@ export class OrgMembersService {
         confusion this picker should not add to. Clean that drift up on the
         member's Access tab, where it is shown as a direct grant.
       */
-      const or: any[] = [
+      const or: Prisma.UserWhereInput[] = [
         { role: 'ADMIN' },
         { memberRole: { is: { permissions: { path: ['canManageUsers'], equals: true } } } },
       ];
@@ -116,11 +114,7 @@ export class OrgMembersService {
       where,
       // The picker renders a name, an avatar and a label — it has no use for
       // Access Profiles or allow-lists, and those are the expensive columns.
-      select: dto.managersOnly
-        ? MANAGER_CANDIDATE_SELECT
-        : dto.lite
-        ? DIRECTORY_MEMBER_SELECT
-        : ORG_MEMBER_SELECT,
+      select: dto.managersOnly ? MANAGER_CANDIDATE_SELECT : dto.lite ? DIRECTORY_MEMBER_SELECT : ORG_MEMBER_SELECT,
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       skip: (page - 1) * limit,
       take: limit,
@@ -141,7 +135,7 @@ export class OrgMembersService {
 
     return {
       success: true,
-      data: members.map((m: any) => ({ ...m, isOwner: !!org?.ownerId && m.id === org.ownerId })),
+      data: members.map((m) => ({ ...m, isOwner: !!org?.ownerId && m.id === org.ownerId })),
       meta: {
         page,
         limit,

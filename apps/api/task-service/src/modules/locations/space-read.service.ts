@@ -12,6 +12,7 @@ import {
 } from '@hbcfield/shared';
 import { readAutoClock } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
+import type { Prisma, SpaceKind } from '@prisma/client';
 
 /** Reading workspaces: the list, one workspace. */
 @Injectable()
@@ -60,7 +61,7 @@ export class SpaceReadService extends SpaceServiceBase {
       return paginated([], { page, limit, total: 0 });
     }
 
-    const where: any = {
+    const where: Prisma.CompanyLocationWhereInput = {
       organizationId: data.organizationId,
       // Never surface the org's internal "Remote" bucket (the geofence-exempt
       // WFH clock-in target). It's an attendance implementation detail, not a
@@ -79,7 +80,7 @@ export class SpaceReadService extends SpaceServiceBase {
     // (e.g. a customer directory); 'all' is accepted and means the same as
     // omitting it. Served by @@index([organizationId, kind, name]).
     if (data.kind && data.kind !== 'all') {
-      where.kind = data.kind;
+      where.kind = data.kind as SpaceKind;
     }
 
     // By default, only show active locations

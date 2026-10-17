@@ -6,7 +6,7 @@ import {
   SHARED_ROLE_WHERE,
 } from '@hbcfield/shared';
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { UpdateMemberProfileDto } from './dto';
 import { MemberAccessChecksService } from './member-access-checks.service';
@@ -22,8 +22,8 @@ import {
   touchesPrivilege,
 } from './member-profile-fields';
 
-type Dto = UpdateMemberProfileDto & Record<string, any>;
-type Data = Record<string, any>;
+type Dto = UpdateMemberProfileDto;
+type Data = Prisma.UserUncheckedUpdateInput;
 
 /** The office changing a member's profile: role, access, employment, rates, the account. */
 @Injectable()
@@ -72,7 +72,7 @@ export class MemberProfileService {
     nameFields(body, data);
     // The employer on their paperwork: one of THIS organization's active companies, or null.
     if (body.employerEntityId !== undefined) {
-      const employer = await usableLegalEntityId(this.prisma as any, organizationId, body.employerEntityId);
+      const employer = await usableLegalEntityId(this.prisma, organizationId, body.employerEntityId);
       if (!employer.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
       data.employerEntityId = employer.id;
     }
@@ -92,7 +92,11 @@ export class MemberProfileService {
         somebody external and editing their access in one request cannot slip
         past by ordering.
       */
-      data.enabledModules = modulesFor(body.enabledModules, await this.willBeExternal(memberId, body));
+      // The Access Profile is a JSON column; what was sent is stored (less what an external member cannot hold).
+      data.enabledModules = modulesFor(
+        body.enabledModules,
+        await this.willBeExternal(memberId, body),
+      ) as Prisma.InputJsonValue;
     }
     contactFields(body, data);
     await this.writeExternalFlag(ctx);

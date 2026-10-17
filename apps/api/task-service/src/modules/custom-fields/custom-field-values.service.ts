@@ -70,7 +70,7 @@ export class CustomFieldValuesService {
   /**
    * Validate a field value against its type
    */
-  private validateFieldValue(type: string, value: string, options: any, fieldName: string) {
+  private validateFieldValue(type: string, value: string, options: unknown, fieldName: string) {
     switch (type) {
       case 'NUMBER':
         if (isNaN(Number(value))) {

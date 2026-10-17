@@ -13,6 +13,7 @@ import { SpaceUnitsController, UnitDetailController } from '../space-units.contr
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
 import { portalScope } from '../../../common/portal-scope';
 
+import { fakeUser } from '../../../common/testing/fake-request';
 /*
   The customer portal, honoured PER WORKSPACE.
 
@@ -73,7 +74,11 @@ describe('every portal office route asks a portal key', () => {
       const keys = [...r.inSpace, ...r.orgOnly];
       expect({ route: r.name, keys }).toEqual({ route: r.name, keys: expect.arrayContaining([expect.any(String)]) });
       for (const k of keys) {
-        expect({ route: r.name, key: k, portal: PORTAL_KEYS.includes(k) }).toEqual({ route: r.name, key: k, portal: true });
+        expect({ route: r.name, key: k, portal: PORTAL_KEYS.includes(k) }).toEqual({
+          route: r.name,
+          key: k,
+          portal: true,
+        });
       }
     }
   });
@@ -125,47 +130,89 @@ describe('the guard decides a workspace route for THAT workspace', () => {
 
   it('reads and configures A', () => {
     expect(run(SpaceUnitsController.prototype.list, SpaceUnitsController, externalInA, { spaceId: 'A' })).toBe(true);
-    expect(run(SpacePortalController.prototype.update, SpacePortalController, externalInA, { spaceId: 'A' })).toBe(true);
+    expect(run(SpacePortalController.prototype.update, SpacePortalController, externalInA, { spaceId: 'A' })).toBe(
+      true,
+    );
   });
 
   it('cannot reach B — not to read, not to configure', () => {
-    expect(() => run(SpaceUnitsController.prototype.list, SpaceUnitsController, externalInA, { spaceId: 'B' })).toThrow(ForbiddenException);
-    expect(() => run(SpacePortalController.prototype.get, SpacePortalController, externalInA, { spaceId: 'B' })).toThrow(ForbiddenException);
-    expect(() => run(SpacePortalController.prototype.update, SpacePortalController, externalInA, { spaceId: 'B' })).toThrow(ForbiddenException);
-    expect(() => run(SpaceUnitsController.prototype.update, SpaceUnitsController, externalInA, { spaceId: 'B', unitId: 'u' })).toThrow(ForbiddenException);
+    expect(() => run(SpaceUnitsController.prototype.list, SpaceUnitsController, externalInA, { spaceId: 'B' })).toThrow(
+      ForbiddenException,
+    );
+    expect(() =>
+      run(SpacePortalController.prototype.get, SpacePortalController, externalInA, { spaceId: 'B' }),
+    ).toThrow(ForbiddenException);
+    expect(() =>
+      run(SpacePortalController.prototype.update, SpacePortalController, externalInA, { spaceId: 'B' }),
+    ).toThrow(ForbiddenException);
+    expect(() =>
+      run(SpaceUnitsController.prototype.update, SpaceUnitsController, externalInA, { spaceId: 'B', unitId: 'u' }),
+    ).toThrow(ForbiddenException);
   });
 
   it('cannot triage a request INTO B (the destination is read by the guard)', () => {
     expect(() =>
-      run(PortalAdminController.prototype.triageRequest, PortalAdminController, externalInA, { id: 't' }, { spaceId: 'B' }),
+      run(
+        PortalAdminController.prototype.triageRequest,
+        PortalAdminController,
+        externalInA,
+        { id: 't' },
+        { spaceId: 'B' },
+      ),
     ).toThrow(ForbiddenException);
-    expect(run(PortalAdminController.prototype.triageRequest, PortalAdminController, externalInA, { id: 't' }, { spaceId: 'A' })).toBe(true);
+    expect(
+      run(
+        PortalAdminController.prototype.triageRequest,
+        PortalAdminController,
+        externalInA,
+        { id: 't' },
+        { spaceId: 'A' },
+      ),
+    ).toBe(true);
   });
 
   it('cannot create an organization-level portal (org-wide key only)', () => {
-    expect(() => run(PortalAdminController.prototype.createPortal, PortalAdminController, externalInA)).toThrow(ForbiddenException);
+    expect(() => run(PortalAdminController.prototype.createPortal, PortalAdminController, externalInA)).toThrow(
+      ForbiddenException,
+    );
   });
 
   it('a viewer cannot answer or configure', () => {
     const viewer = { id: 'v', role: Role.EMPLOYEE, access: { org: {}, perSpace: { A: { canViewPortal: true } } } };
     expect(run(SpaceUnitsController.prototype.list, SpaceUnitsController, viewer, { spaceId: 'A' })).toBe(true);
-    expect(() => run(SpaceUnitsController.prototype.create, SpaceUnitsController, viewer, { spaceId: 'A' })).toThrow(ForbiddenException);
+    expect(() => run(SpaceUnitsController.prototype.create, SpaceUnitsController, viewer, { spaceId: 'A' })).toThrow(
+      ForbiddenException,
+    );
     expect(() =>
       run(PortalAdminController.prototype.triageRequest, PortalAdminController, viewer, { id: 't' }, { spaceId: 'A' }),
     ).toThrow(ForbiddenException);
   });
 
   it('canViewAllTasks alone no longer opens the units directory', () => {
-    const supervisor = { id: 's', role: Role.EMPLOYEE, isExternal: true, access: { org: {}, perSpace: { A: { canViewAllTasks: true } } } };
-    expect(() => run(SpaceUnitsController.prototype.list, SpaceUnitsController, supervisor, { spaceId: 'A' })).toThrow(ForbiddenException);
-    expect(() => run(UnitDetailController.prototype.get, UnitDetailController, supervisor, { id: 'u' })).toThrow(ForbiddenException);
+    const supervisor = {
+      id: 's',
+      role: Role.EMPLOYEE,
+      isExternal: true,
+      access: { org: {}, perSpace: { A: { canViewAllTasks: true } } },
+    };
+    expect(() => run(SpaceUnitsController.prototype.list, SpaceUnitsController, supervisor, { spaceId: 'A' })).toThrow(
+      ForbiddenException,
+    );
+    expect(() => run(UnitDetailController.prototype.get, UnitDetailController, supervisor, { id: 'u' })).toThrow(
+      ForbiddenException,
+    );
   });
 });
 
 describe('portalScope', () => {
   it('admin and the org flag (bridges included) are org-wide', () => {
-    expect(portalScope({ role: Role.ADMIN }, 'canManagePortals')).toBeUndefined();
-    expect(portalScope({ role: Role.EMPLOYEE, canViewPortal: true, access: { org: {}, perSpace: {} } }, 'canViewPortal')).toBeUndefined();
+    expect(portalScope(fakeUser({ role: Role.ADMIN }), 'canManagePortals')).toBeUndefined();
+    expect(
+      portalScope(
+        fakeUser({ role: Role.EMPLOYEE, canViewPortal: true, access: { org: {}, perSpace: {} } }),
+        'canViewPortal',
+      ),
+    ).toBeUndefined();
   });
 
   it('a space grant narrows to exactly the spaces granting THAT key', () => {
@@ -173,9 +220,9 @@ describe('portalScope', () => {
       role: Role.EMPLOYEE,
       access: { org: {}, perSpace: { A: { canViewPortal: true, canAnswerPortal: true }, B: { canViewPortal: true } } },
     };
-    expect(portalScope(user, 'canViewPortal')).toEqual(['A', 'B']);
-    expect(portalScope(user, 'canAnswerPortal')).toEqual(['A']);
-    expect(portalScope(user, 'canManagePortals')).toEqual([]);
+    expect(portalScope(fakeUser(user), 'canViewPortal')).toEqual(['A', 'B']);
+    expect(portalScope(fakeUser(user), 'canAnswerPortal')).toEqual(['A']);
+    expect(portalScope(fakeUser(user), 'canManagePortals')).toEqual([]);
   });
 
   it('no session reaches nothing', () => {

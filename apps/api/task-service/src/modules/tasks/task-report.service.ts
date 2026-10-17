@@ -77,7 +77,7 @@ export class TaskReportService extends TaskReportSections {
     // ⚠️ A report is of a FINISHED job (the flow's final, non-canceled step).
     // Asked first, from the cached flow, so an unfinished job costs one lookup.
     const workflow = await this.workflows.getWorkflow(task.organizationId, task.workflowId ?? task.space?.workflowId ?? null);
-    if (!isJobFinished(task.status, ((workflow?.statuses ?? []) as any[]))) {
+    if (!isJobFinished(task.status, (workflow?.statuses ?? []))) {
       throw new ConflictException({ message: 'The report is ready once the job is finished.', code: REPORT_NOT_FINISHED });
     }
 
@@ -87,7 +87,7 @@ export class TaskReportService extends TaskReportSections {
       ACTIVE companies). Anything else is a 400, never a silent fall-back that prints
       a different company than the one chosen. Absent / empty = the automatic rule.
     */
-    const chosen = await usableLegalEntityId(this.prisma as any, facts.organizationId, data.issuer);
+    const chosen = await usableLegalEntityId(this.prisma, facts.organizationId, data.issuer);
     if (!chosen.ok) {
       throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: REPORT_ISSUER_INVALID });
     }
@@ -118,13 +118,14 @@ export class TaskReportService extends TaskReportSections {
       this.clientReach(task.customer, facts),
     ]);
 
-    const statuses: TaskReportStatus[] = ((workflow?.statuses ?? []) as any[]).map((s) => ({
+    const statuses: TaskReportStatus[] = (workflow?.statuses ?? []).map((s) => ({
       key: s.key, name: s.name, color: s.color ?? null, isFinal: !!s.isFinal, isCanceled: !!s.isCanceled,
     }));
 
-    const steps = this.stepAnswers(submissions as any[]);
+    // getSubmissions always answers data for a task the gate let through (it threw otherwise).
+    const steps = this.stepAnswers(submissions!);
     const stepFileIds = new Set(steps.flatMap((s) => s.fields.flatMap((f) => f.files.map((x) => x.id))));
-    const taskFiles = ((attachments ?? []) as any[]).filter((a) => !stepFileIds.has(a.id));
+    const taskFiles = (attachments ?? []).filter((a) => !stepFileIds.has(a.id));
 
     const photos: TaskReportPhoto[] = [];
     const signatures: TaskReportSignature[] = [];
@@ -132,7 +133,7 @@ export class TaskReportService extends TaskReportSections {
     let parts: TaskReportPart[] | undefined;
 
     if (report !== undefined) {
-      const r = report as any;
+      const r = report;
       const by = personOf(r?.completedBy);
       work = r
         ? {
@@ -143,7 +144,7 @@ export class TaskReportService extends TaskReportSections {
             completedBy: by,
           }
         : null;
-      parts = ((r?.partsUsed ?? []) as any[]).map((p) => ({
+      parts = (r?.partsUsed ?? []).map((p) => ({
         id: p.id,
         name: p.name,
         partNumber: p.partNumber ?? null,
@@ -152,7 +153,7 @@ export class TaskReportService extends TaskReportSections {
         unitPrice: p.unitCost ?? null,
         lineTotal: p.unitCost != null ? Math.round(p.quantity * p.unitCost * 100) / 100 : null,
       }));
-      for (const a of (r?.attachments ?? []) as any[]) {
+      for (const a of (r?.attachments ?? [])) {
         photos.push({
           ...this.file(a, by),
           source: a.type === 'AFTER' ? 'AFTER' : 'BEFORE',
@@ -173,7 +174,7 @@ export class TaskReportService extends TaskReportSections {
           url: null,
           name: nameOf(by),
           person: by,
-          signedAt: iso(r.completedAt),
+          signedAt: iso(r?.completedAt),
           statusKey: null,
           fieldLabel: null,
         });
@@ -183,9 +184,9 @@ export class TaskReportService extends TaskReportSections {
           kind: 'CUSTOMER',
           dataUrl: cust,
           url: null,
-          name: r.customerName ?? null,
+          name: r?.customerName ?? null,
           person: null,
-          signedAt: iso(r.completedAt),
+          signedAt: iso(r?.completedAt),
           statusKey: null,
           fieldLabel: null,
         });
@@ -227,7 +228,7 @@ export class TaskReportService extends TaskReportSections {
       throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: REPORT_ISSUER_INVALID });
     }
     const issuerIds = this.issuerIds(task, entities, chosen.id ?? null);
-    const header = this.header(task, statuses, time, events, work, entities, issuerIds.used, clientShown, (workflow as any)?.name ?? null);
+    const header = this.header(task, statuses, time, events, work, entities, issuerIds.used, clientShown, workflow?.name ?? null);
 
     const bundle: TaskReport = {
       meta: {
@@ -239,7 +240,7 @@ export class TaskReportService extends TaskReportSections {
       ...(work !== undefined ? { work } : {}),
       time: this.time(time, events),
       photos,
-      ...(checklist ? { checklist: (checklist as any[]).map((i) => this.checklistItem(i)) } : {}),
+      ...(checklist ? { checklist: checklist.map((i) => this.checklistItem(i)) } : {}),
       stepAnswers: steps,
       ...(parts ? { parts } : {}),
       /*
@@ -249,7 +250,7 @@ export class TaskReportService extends TaskReportSections {
       */
       ...(on('tracking') ? { route: null } : {}),
       history: events,
-      comments: ((comments ?? []) as any[])
+      comments: (comments ?? [])
         .map((c): TaskReportComment => ({ id: c.id, content: c.content, createdAt: iso(c.createdAt)!, author: personOf(c.user) }))
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       handovers: handovers.map((h) => ({
@@ -262,7 +263,7 @@ export class TaskReportService extends TaskReportSections {
       ...(attachments
         ? { documents: taskFiles.filter((a) => !isImage(a)).map((a) => this.file(a, a.uploadedBy)) }
         : {}),
-      ...(details ? { details: this.details(details as any[]) } : {}),
+      ...(details ? { details: this.details(details) } : {}),
       signatures,
     };
     bundle.meta.sections = presentSections(bundle);

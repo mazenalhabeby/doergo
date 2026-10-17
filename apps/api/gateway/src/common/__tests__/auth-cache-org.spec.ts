@@ -1,5 +1,6 @@
 import { AuthTokenCache } from '../cache/auth-token-cache.service';
 
+import { fakeUser } from '../testing/fake-request';
 /*
   Switching an Option off has to be visible at the next request, not somewhere
   inside the next minute.
@@ -21,11 +22,23 @@ function fakeRedis() {
     on: () => undefined,
     get: async (k: string) => values.get(k) ?? null,
     mget: async (...ks: string[]) => ks.map((k) => values.get(k) ?? null),
-    set: async (k: string, v: string) => { values.set(k, v); return 'OK'; },
-    sadd: async (k: string, m: string) => { (sets.get(k) ?? sets.set(k, new Set()).get(k)!).add(m); return 1; },
+    set: async (k: string, v: string) => {
+      values.set(k, v);
+      return 'OK';
+    },
+    sadd: async (k: string, m: string) => {
+      (sets.get(k) ?? sets.set(k, new Set()).get(k)!).add(m);
+      return 1;
+    },
     expire: async () => 1,
     smembers: async (k: string) => [...(sets.get(k) ?? [])],
-    del: async (...keys: string[]) => { keys.forEach((k) => { values.delete(k); sets.delete(k); }); return keys.length; },
+    del: async (...keys: string[]) => {
+      keys.forEach((k) => {
+        values.delete(k);
+        sets.delete(k);
+      });
+      return keys.length;
+    },
   };
 }
 
@@ -41,9 +54,9 @@ describe('clearing a whole organization', () => {
     const redis = fakeRedis();
     const cache = cacheWith(redis);
 
-    await cache.set('tok-admin', { id: 'u1', organizationId: 'org-1' }, 60);
-    await cache.set('tok-member', { id: 'u2', organizationId: 'org-1' }, 60);
-    await cache.set('tok-outsider', { id: 'u3', organizationId: 'org-2' }, 60);
+    await cache.set('tok-admin', fakeUser({ id: 'u1', organizationId: 'org-1' }), 60);
+    await cache.set('tok-member', fakeUser({ id: 'u2', organizationId: 'org-1' }), 60);
+    await cache.set('tok-outsider', fakeUser({ id: 'u3', organizationId: 'org-2' }), 60);
 
     await cache.invalidateOrganization('org-1');
 
@@ -58,7 +71,7 @@ describe('clearing a whole organization', () => {
     // rather than a query for every member and a round trip each.
     const redis = fakeRedis();
     const cache = cacheWith(redis);
-    await cache.set('tok', { id: 'u1', organizationId: 'org-1' }, 60);
+    await cache.set('tok', fakeUser({ id: 'u1', organizationId: 'org-1' }), 60);
 
     expect([...(redis.sets.get('auth:usr:u1') ?? [])]).toHaveLength(1);
     expect([...(redis.sets.get('auth:org:org-1') ?? [])]).toHaveLength(1);
@@ -68,7 +81,7 @@ describe('clearing a whole organization', () => {
     // An orphan — registered, not yet in an organization — must still be cached.
     const redis = fakeRedis();
     const cache = cacheWith(redis);
-    await expect(cache.set('tok', { id: 'u9' }, 60)).resolves.toBeUndefined();
+    await expect(cache.set('tok', fakeUser({ id: 'u9' }), 60)).resolves.toBeUndefined();
     expect(await cache.get('tok')).toEqual({ id: 'u9' });
   });
 
@@ -78,7 +91,12 @@ describe('clearing a whole organization', () => {
       the entries expire on their own within the TTL regardless, so the worst
       case is the delay we started with, not a refused request.
     */
-    const broken = { ...fakeRedis(), smembers: async () => { throw new Error('down'); } };
+    const broken = {
+      ...fakeRedis(),
+      smembers: async () => {
+        throw new Error('down');
+      },
+    };
     const cache = cacheWith(broken as unknown as ReturnType<typeof fakeRedis>);
     await expect(cache.invalidateOrganization('org-1')).resolves.toBeUndefined();
   });
@@ -92,7 +110,7 @@ describe('clearing a whole organization', () => {
 describe('a signed-out access token', () => {
   it('is refused from the moment of sign-out', async () => {
     const cache = cacheWith(fakeRedis());
-    await cache.set('tok-a', { id: 'u1', organizationId: 'org-1' }, 60);
+    await cache.set('tok-a', fakeUser({ id: 'u1', organizationId: 'org-1' }), 60);
     await cache.revoke('tok-a', 900);
     expect(await cache.lookup('tok-a')).toEqual({ user: null, revoked: true });
     expect(await cache.get('tok-a')).toBeNull();
@@ -101,14 +119,14 @@ describe('a signed-out access token', () => {
   it('beats a cache entry written AFTER the sign-out (a request that was mid-validation)', async () => {
     const cache = cacheWith(fakeRedis());
     await cache.revoke('tok-a', 900);
-    await cache.set('tok-a', { id: 'u1' }, 60);
+    await cache.set('tok-a', fakeUser({ id: 'u1' }), 60);
     expect((await cache.lookup('tok-a')).revoked).toBe(true);
     expect((await cache.lookup('tok-a')).user).toBeNull();
   });
 
   it('touches only that token — the member’s other devices stay signed in', async () => {
     const cache = cacheWith(fakeRedis());
-    await cache.set('tok-phone', { id: 'u1' }, 60);
+    await cache.set('tok-phone', fakeUser({ id: 'u1' }), 60);
     await cache.revoke('tok-web', 900);
     expect(await cache.lookup('tok-phone')).toEqual({ user: { id: 'u1' }, revoked: false });
   });
@@ -120,7 +138,12 @@ describe('a signed-out access token', () => {
   });
 
   it('Redis down: auth falls back to the RPC instead of failing', async () => {
-    const cache = cacheWith({ ...fakeRedis(), mget: async () => { throw new Error('down'); } } as never);
+    const cache = cacheWith({
+      ...fakeRedis(),
+      mget: async () => {
+        throw new Error('down');
+      },
+    } as never);
     expect(await cache.lookup('tok-a')).toEqual({ user: null, revoked: false });
   });
 });

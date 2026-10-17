@@ -132,7 +132,14 @@ export interface RegisterAsset {
   manufacturer?: string | null;
   notes?: string | null;
   locationAddress?: string | null;
-  category?: { id: string; name: string; color?: string | null; icon?: string | null; spaceId?: string | null; config?: unknown } | null;
+  category?: {
+    id: string;
+    name: string;
+    color?: string | null;
+    icon?: string | null;
+    spaceId?: string | null;
+    config?: unknown;
+  } | null;
   type?: { id: string; name: string } | null;
   holders?: RegisterHolder[];
 }
@@ -146,10 +153,19 @@ export const REGISTER_PAGE_SIZE = 40;
 
 export const assetRegisterApi = {
   /** One page of a workspace's equipment, by name. Retired records stay out unless asked for. */
-  list: async (q: { spaceId?: string; search?: string; categoryId?: string; page?: number }): Promise<RegisterAsset[]> => {
+  list: async (q: {
+    spaceId?: string;
+    search?: string;
+    categoryId?: string;
+    page?: number;
+  }): Promise<RegisterAsset[]> => {
     const res: RegisterAsset[] | null = await call(E.assets.list, {
-      spaceId: q.spaceId, search: q.search?.trim() || undefined, categoryId: q.categoryId,
-      hideRetired: 'true', page: q.page ?? 1, limit: REGISTER_PAGE_SIZE,
+      spaceId: q.spaceId,
+      search: q.search?.trim() || undefined,
+      categoryId: q.categoryId,
+      hideRetired: 'true',
+      page: q.page ?? 1,
+      limit: REGISTER_PAGE_SIZE,
     });
     return Array.isArray(res) ? res : [];
   },
@@ -159,12 +175,20 @@ export const assetRegisterApi = {
   /** The kinds of one workspace, with how many records each holds — the filter chips. */
   kinds: async (spaceId?: string): Promise<{ id: string; name: string; count: number }[]> => {
     const res = await call(E.assetCategories.list, spaceId ? { spaceId } : undefined);
-    return (Array.isArray(res) ? res : []).map((k: any) => ({ id: k.id, name: k.name, count: k._count?.assets ?? 0 }));
+    return (Array.isArray(res) ? (res as AssetKindRow[]) : []).map((k) => ({
+      id: k.id,
+      name: k.name,
+      count: k._count?.assets ?? 0,
+    }));
   },
 
   /** The logbook, newest first, keyset-paged. */
   log: async (id: string, cursor?: string): Promise<{ entries: RegisterLogEntry[]; nextCursor: string | null }> => {
-    const res: { entries?: RegisterLogEntry[]; nextCursor?: string | null } | null = await call(E.assets.log, { id, cursor, limit: 30 });
+    const res: { entries?: RegisterLogEntry[]; nextCursor?: string | null } | null = await call(E.assets.log, {
+      id,
+      cursor,
+      limit: 30,
+    });
     return { entries: res?.entries ?? [], nextCursor: res?.nextCursor ?? null };
   },
 
@@ -174,7 +198,11 @@ export const assetRegisterApi = {
 
   /** Manage: hand it to a member of the workspace, or take it back (nobody). */
   handOver: (id: string, input: { userId: string | null; reason?: string }): Promise<unknown> =>
-    call(E.assets.handOver, { id }, { body: { to: input.userId ? [{ userId: input.userId }] : [], reason: input.reason || undefined } }),
+    call(
+      E.assets.handOver,
+      { id },
+      { body: { to: input.userId ? [{ userId: input.userId }] : [], reason: input.reason || undefined } },
+    ),
 };
 
 /** One page I sent in, and what happened to it. */
@@ -223,6 +251,12 @@ export const assetProposalsApi = {
     return res ?? [];
   },
 
-  withdraw: (id: string): Promise<{ id: string }> =>
-    call(E.assets.withdrawProposal, { id }),
+  withdraw: (id: string): Promise<{ id: string }> => call(E.assets.withdrawProposal, { id }),
 };
+
+/** An asset kind as the category list returns it — the fields the filter chips read. */
+interface AssetKindRow {
+  id: string;
+  name: string;
+  _count?: { assets?: number };
+}

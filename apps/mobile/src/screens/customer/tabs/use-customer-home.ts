@@ -9,12 +9,7 @@ import { useTheme } from '../../../contexts/theme-context';
 import { SPACING } from '../../../lib/constants';
 import { portalApi } from '../../../lib/api/portal';
 import { resolveMediaUrl } from '../../../lib/api';
-import {
-  ReportGlyph,
-  RequestsGlyph,
-  ContactGlyph,
-  AccountGlyph,
-} from '../../../components/customer/portal-glyphs';
+import { ReportGlyph, RequestsGlyph, ContactGlyph, AccountGlyph } from '../../../components/customer/portal-glyphs';
 
 export const CLOSED = /COMPLET|CLOSED|CANCEL|RESOLV|DONE/i;
 
@@ -51,10 +46,14 @@ export function useCustomerHome() {
         : t('portal.evening', 'Good evening');
 
   const refreshing = configQ.isFetching || unitsQ.isFetching || requestsQ.isFetching;
-  const onRefresh = () => { configQ.refetch(); unitsQ.refetch(); requestsQ.refetch(); };
+  const onRefresh = () => {
+    configQ.refetch();
+    unitsQ.refetch();
+    requestsQ.refetch();
+  };
 
   // Optional per-portal cover photo; falls back to a premium gradient.
-  const heroImage = resolveMediaUrl((cfg as any)?.coverImageUrl || (cfg as any)?.heroImageUrl);
+  const heroImage = resolveMediaUrl(cfg?.coverImageUrl);
   const officeLabel = cfg?.contactLabel || t('portal.office', 'the office');
 
   // Premium action grid — wired to what this portal actually does. Messages is

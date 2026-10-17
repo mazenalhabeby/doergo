@@ -37,6 +37,7 @@ import {
 } from '@hbcfield/shared/microservices';
 import type { Role } from '@hbcfield/shared';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /organizations/members/:id — changing a member: profile, watchers, password
@@ -60,11 +61,7 @@ export class MemberManagementController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Update member profile, role, and permissions' })
   @ApiResponse({ status: 200, description: 'Member updated' })
-  async updateMember(
-    @Param('id') memberId: string,
-    @Body() dto: UpdateMemberDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async updateMember(@Param('id') memberId: string, @Body() dto: UpdateMemberDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateMemberProfile, {
         memberId,
@@ -130,7 +127,7 @@ export class MemberManagementController {
   @Get('members/:id/watchers')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List who is notified about this member (per-employee routing)' })
-  async getMemberWatchers(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+  async getMemberWatchers(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, getMemberWatchers, {
         memberId,
@@ -145,7 +142,7 @@ export class MemberManagementController {
   async setMemberWatchers(
     @Param('id') memberId: string,
     @Body() dto: { watcherIds: string[] },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.authClient, setMemberWatchers, {
@@ -160,7 +157,7 @@ export class MemberManagementController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Reset member password' })
   @ApiResponse({ status: 200, description: 'Temporary password generated' })
-  async resetMemberPassword(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+  async resetMemberPassword(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, adminResetMemberPassword, {
         memberId,
@@ -187,11 +184,7 @@ export class MemberManagementController {
   @RequirePermission('canManageUsers')
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: "Set up a member's phone home screen (applied once, then theirs)" })
-  async setMemberHome(
-    @Param('id') memberId: string,
-    @Body() body: SetMemberHomeDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async setMemberHome(@Param('id') memberId: string, @Body() body: SetMemberHomeDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, setMemberHome, {
         memberId,
@@ -207,7 +200,7 @@ export class MemberManagementController {
   @Delete('members/:id/home')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Clear an office-set home screen' })
-  async clearMemberHome(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+  async clearMemberHome(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, setMemberHome, { memberId, organizationId: callerOrgId(user), layout: null }),
     );
@@ -219,7 +212,7 @@ export class MemberManagementController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Remove member from organization' })
   @ApiResponse({ status: 200, description: 'Member removed' })
-  async removeMember(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+  async removeMember(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, removeMember, {
         memberId,

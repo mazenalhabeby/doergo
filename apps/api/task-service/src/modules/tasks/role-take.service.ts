@@ -71,7 +71,7 @@ export class RoleTakeService extends RolePoolBase {
         const after = await tx.task.findUniqueOrThrow({ where: { id: task.id }, select: { openSpotsLeft: true } });
         return after.openSpotsLeft ?? 0;
       });
-    } catch (e: any) {
+    } catch (e) {
       if (e instanceof ConflictException) {
         throw new ConflictException({ ...(e.getResponse() as object), params: { takers: await this.takers(task.id) } });
       }

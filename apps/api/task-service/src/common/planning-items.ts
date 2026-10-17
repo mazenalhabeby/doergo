@@ -27,7 +27,7 @@ export abstract class PlanningItemService {
   protected abstract readonly defaultColor: string;
 
   private get rows(): any {
-    return (this.prisma as any)[this.model];
+    return (this.prisma)[this.model];
   }
 
   /**

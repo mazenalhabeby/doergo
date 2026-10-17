@@ -18,6 +18,8 @@ import {
   deleteCustomer,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * Customers. Two overlapping uses on ONE model:
  *  - org-level customer CRUD (portal residents management — reads with
@@ -58,7 +60,7 @@ export class CustomersController extends CustomersControllerBase {
   @Get()
   @ApiOperation({ summary: 'List customers (org-wide, or a space via ?spaceId=)' })
   async list(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Query('search') search?: string,
     @Query('status') status?: 'active' | 'inactive' | 'all',
     @Query('page') page?: string,
@@ -72,7 +74,7 @@ export class CustomersController extends CustomersControllerBase {
     return this.auth(listCustomers, {
       contacts,
       type,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       search,
       status,
       spaceId,
@@ -93,13 +95,13 @@ export class CustomersController extends CustomersControllerBase {
   @Get('due')
   @ApiOperation({ summary: 'Reminders owed today, clients going cold, and the book size (home card)' })
   due(
-    @Request() req: any,
+    @Request() req: AuthedRequest,
     @Query('dayStart') dayStart?: string,
     @Query('dayEnd') dayEnd?: string,
     @Query('limit') limit?: string,
   ) {
     return this.auth(customersDue, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
       // ⚠️ CRM must RUN in a workspace the caller is assigned to — read off the
       // session (no lookup), the same question the phone asks before showing
@@ -126,8 +128,8 @@ export class CustomersController extends CustomersControllerBase {
   @ApiOperation({
     summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact",
   })
-  matchKeys(@Request() req: any) {
-    return this.auth(customerMatchKeys, { organizationId: req.user.organizationId, caller: this.caller(req) });
+  matchKeys(@Request() req: AuthedRequest) {
+    return this.auth(customerMatchKeys, { organizationId: callerOrgId(req.user), caller: this.caller(req) });
   }
 
   @Post('import')
@@ -137,7 +139,7 @@ export class CustomersController extends CustomersControllerBase {
   @ApiOperation({
     summary: 'Import picked phone contacts as clients — one transaction, duplicates matched on the server',
   })
-  async importContacts(@Body() body: unknown, @Request() req: any) {
+  async importContacts(@Body() body: unknown, @Request() req: AuthedRequest) {
     // Refused here without a round trip; the service parses again — it is the boundary.
     const parsed = parseContactImport(body);
     if (!parsed.ok) {
@@ -146,7 +148,7 @@ export class CustomersController extends CustomersControllerBase {
         code: `CONTACT_IMPORT_${parsed.problem}`,
       });
     }
-    const orgId = req.user.organizationId;
+    const orgId = callerOrgId(req.user);
     await this.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
     return this.authMutation(
       importCustomerContacts,
@@ -172,38 +174,38 @@ export class CustomersController extends CustomersControllerBase {
   async updateContact(
     @Param('linkId') linkId: string,
     @Body() body: { role?: string | null; isPrimary?: boolean },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.auth(updateCustomerContact, {
       linkId,
       role: body?.role,
       isPrimary: body?.isPrimary,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
 
   @Delete('contacts/:linkId')
   @ApiOperation({ summary: 'Detach a contact person (the person record is kept)' })
-  async removeContact(@Param('linkId') linkId: string, @Request() req: any) {
+  async removeContact(@Param('linkId') linkId: string, @Request() req: AuthedRequest) {
     return this.auth(removeCustomerContact, {
       linkId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a customer' })
-  async get(@Param('id') id: string, @Request() req: any) {
-    return this.auth(getCustomer, { id, organizationId: req.user.organizationId, caller: this.caller(req) });
+  async get(@Param('id') id: string, @Request() req: AuthedRequest) {
+    return this.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: this.caller(req) });
   }
 
   @Post()
   @ApiOperation({ summary: 'Create a customer (CRM record; ?spaceId scopes it to a space)' })
-  async create(@Body() dto: CustomerDto, @Request() req: any) {
+  async create(@Body() dto: CustomerDto, @Request() req: AuthedRequest) {
     assertClientLocale(dto);
-    const orgId = req.user.organizationId;
+    const orgId = callerOrgId(req.user);
     if (dto.spaceId) {
       await this.requireSpaceModule(dto.spaceId, orgId, 'crm');
       dto = { ...dto, ownerId: dto.ownerId ?? req.user.id };
@@ -213,25 +215,25 @@ export class CustomersController extends CustomersControllerBase {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a customer' })
-  async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: any) {
+  async update(@Param('id') id: string, @Body() dto: CustomerDto, @Request() req: AuthedRequest) {
     assertClientLocale(dto);
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
-    if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
+    if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, callerOrgId(req.user), 'crm');
     return this.authMutation(
       updateCustomer,
-      { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) },
-      req.user.organizationId,
+      { id, organizationId: callerOrgId(req.user), dto, actorId: req.user.id, caller: this.caller(req) },
+      callerOrgId(req.user),
       id,
     );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     const result: any = await this.auth(deleteCustomer, {
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
     // Instantly revoke the deactivated portal logins (don't wait for the 60s

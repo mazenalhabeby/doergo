@@ -10,6 +10,7 @@ import {
 } from '@hbcfield/shared';
 import { ROUND_SELECT, signatureUrl } from './overtime-record-helpers';
 import { OvertimeRecordBase } from './overtime-record.base';
+import type { Prisma, OvertimeRequestStatus } from '@prisma/client';
 
 /**
  * The Overtime page's reads (shared attendance/overtime-round.ts):
@@ -39,11 +40,11 @@ export class OvertimeRecordService extends OvertimeRecordBase {
   }) {
     const page = clampListPage(data.page);
     const limit = clampListLimit(data.limit, 20);
-    const where: any = {
+    const where: Prisma.OvertimeRequestWhereInput = {
       organizationId: data.organizationId,
       AND: [scopeWhere(data.scopeSpaceIds), data.spaceId ? { locationId: data.spaceId } : {}],
       ...(data.technicianId ? { technicianId: data.technicianId } : {}),
-      ...(data.status ? { status: data.status } : {}),
+      ...(data.status ? { status: data.status as OvertimeRequestStatus } : {}),
       ...this.window(data.from, data.to, false),
     };
     const [rows, total] = await Promise.all([

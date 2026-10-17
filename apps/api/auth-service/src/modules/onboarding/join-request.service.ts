@@ -12,6 +12,7 @@ import {
   hashCode,
 } from '@hbcfield/shared';
 import { emitEvent, joinRequestSubmittedEvent } from '@hbcfield/shared/microservices';
+import { orphanUser } from './orphan-user';
 
 /**
  * Asking to join an organization by its code — sending the request, telling the
@@ -66,19 +67,8 @@ export class JoinRequestService {
    * Path B: Submit a join request to an organization.
    */
   async submitJoinRequest(userId: string, data: { orgCode: string; message?: string }) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user) {
-      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'User not found' };
-    }
-
-    if (user.onboardingCompleted) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Onboarding already completed' };
-    }
-
-    if (user.organizationId) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'User already belongs to an organization' };
-    }
+    const orphan = await orphanUser(this.prisma, userId);
+    if ('refusal' in orphan) return orphan.refusal;
 
     // Validate org code
     const codeHashValue = hashCode(data.orgCode.toUpperCase().trim());

@@ -1,9 +1,23 @@
 import { call, E } from './client';
 import type { User, LoginResponse, InvitationValidation, AcceptInvitationInput } from './types';
 
+/** The caller's own join request, as the waiting screen reads it. */
+export interface PendingJoinRequest {
+  id: string;
+  status: string;
+  organizationName: string;
+  message: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
 // Onboarding API - post-registration onboarding flow
 export const onboardingApi = {
-  getStatus: async (): Promise<{ needsOnboarding: boolean; hasPendingJoinRequest: boolean; pendingRequest: any }> => {
+  getStatus: async (): Promise<{
+    needsOnboarding: boolean;
+    hasPendingJoinRequest: boolean;
+    pendingRequest: PendingJoinRequest | null;
+  }> => {
     return call(E.onboarding.status);
   },
 
@@ -16,11 +30,16 @@ export const onboardingApi = {
     return call(E.onboarding.createOrg, undefined, { body: data });
   },
 
-  validateOrgCode: async (code: string): Promise<{ valid: boolean; organizationName?: string; joinPolicy?: string; message?: string }> => {
+  validateOrgCode: async (
+    code: string,
+  ): Promise<{ valid: boolean; organizationName?: string; joinPolicy?: string; message?: string }> => {
     return call(E.onboarding.validateOrgCode, { code });
   },
 
-  submitJoinRequest: async (data: { orgCode: string; message?: string }): Promise<any> => {
+  submitJoinRequest: async (data: {
+    orgCode: string;
+    message?: string;
+  }): Promise<{ autoApproved?: boolean } | null> => {
     return call(E.onboarding.joinByCode, undefined, { body: data });
   },
 
@@ -28,7 +47,7 @@ export const onboardingApi = {
     return call(E.onboarding.acceptInvitation, undefined, { body: { code } });
   },
 
-  cancelJoinRequest: async (id: string): Promise<any> => {
+  cancelJoinRequest: async (id: string): Promise<unknown> => {
     return call(E.onboarding.cancelJoinRequest, { id });
   },
 };

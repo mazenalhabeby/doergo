@@ -19,12 +19,15 @@ const EXCURSION_EVENTS = [
  * pull-to-refresh. When `userId` is passed, only events for that user fire the
  * callback (an employee ignores other workers' org-room events).
  */
-export function useExcursionSync(onChange: (event: string, payload: any) => void, userId?: string) {
+/** An excursion event: whose it is, and whatever else the server sent with it. */
+type ExcursionPayload = { userId?: string; [field: string]: unknown } | null;
+
+export function useExcursionSync(onChange: (event: string, payload: ExcursionPayload) => void, userId?: string) {
   const { isAuthenticated, subscribe } = useSocketContext();
   useEffect(() => {
     if (!isAuthenticated) return;
     const unsubs = EXCURSION_EVENTS.map((e) =>
-      subscribe(e, (payload: any) => {
+      subscribe(e, (payload: ExcursionPayload) => {
         if (userId && payload?.userId && payload.userId !== userId) return;
         onChange(e, payload);
       }),

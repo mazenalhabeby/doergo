@@ -14,6 +14,8 @@ import {
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /assets — pages members send in (proposals) and contracts read into a new asset. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -47,18 +49,18 @@ export class AssetIntakeController {
   @Post('proposals/upload-url')
   @DenyExternal()
   @ApiOperation({ summary: 'A place to put the page' })
-  async proposalUploadUrl(@Body() dto: ProposalPresignDto, @Request() req: any) {
+  async proposalUploadUrl(@Body() dto: ProposalPresignDto, @Request() req: AuthedRequest) {
     return this.assetsService.proposalPresign({
       ...dto,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Post('proposals')
   @DenyExternal()
   @ApiOperation({ summary: 'Send in a document that looks like a contract' })
-  async raiseProposal(@Body() dto: RaiseProposalDto, @Request() req: any) {
+  async raiseProposal(@Body() dto: RaiseProposalDto, @Request() req: AuthedRequest) {
     return this.assetsService.proposalRaise({
       ...dto,
       ...assetActor(req),
@@ -69,10 +71,10 @@ export class AssetIntakeController {
   @Get('proposals/mine')
   @DenyExternal()
   @ApiOperation({ summary: 'Documents I sent in' })
-  async myProposals(@Request() req: any) {
+  async myProposals(@Request() req: AuthedRequest) {
     return this.assetsService.proposalMine({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -91,7 +93,7 @@ export class AssetIntakeController {
   @RequirePermissionInSpace('canManageAssets')
   @DenyExternal()
   @ApiOperation({ summary: 'Documents waiting on a decision' })
-  async pendingProposals(@Query() query: PendingProposalsQueryDto, @Request() req: any) {
+  async pendingProposals(@Query() query: PendingProposalsQueryDto, @Request() req: AuthedRequest) {
     return this.assetsService.proposalPending({
       spaceId: query?.spaceId,
       ...assetActor(req),
@@ -113,7 +115,7 @@ export class AssetIntakeController {
   @DenyExternal()
   @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
-  async acceptProposal(@Param('id') id: string, @Body() dto: AcceptProposalDto, @Request() req: any) {
+  async acceptProposal(@Param('id') id: string, @Body() dto: AcceptProposalDto, @Request() req: AuthedRequest) {
     return this.assetsService.proposalAccept({
       id,
       ...dto,
@@ -126,7 +128,7 @@ export class AssetIntakeController {
   @DenyExternal()
   @ApiOperation({ summary: 'Refuse it, with a reason the member reads' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
-  async rejectProposal(@Param('id') id: string, @Body() body: { note?: string }, @Request() req: any) {
+  async rejectProposal(@Param('id') id: string, @Body() body: { note?: string }, @Request() req: AuthedRequest) {
     return this.assetsService.proposalReject({
       id,
       note: body?.note,
@@ -139,11 +141,11 @@ export class AssetIntakeController {
   @DenyExternal()
   @ApiOperation({ summary: 'Take back something I sent in' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
-  async withdrawProposal(@Param('id') id: string, @Request() req: any) {
+  async withdrawProposal(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsService.proposalWithdraw({
       id,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -156,7 +158,7 @@ export class AssetIntakeController {
   @DenyExternal()
   @ApiOperation({ summary: 'A short-lived link to the page' })
   @ApiParam({ name: 'id', description: 'Proposal ID' })
-  async proposalDocumentUrl(@Param('id') id: string, @Request() req: any) {
+  async proposalDocumentUrl(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsService.proposalDocumentUrl({
       id,
       ...assetActor(req),
@@ -192,7 +194,7 @@ export class AssetIntakeController {
   @Post('contracts/read')
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Read a contract’s text into fields' })
-  async readContract(@Body() dto: ReadContractDto, @Request() req: any) {
+  async readContract(@Body() dto: ReadContractDto, @Request() req: AuthedRequest) {
     return this.assetsService.contractRead({
       text: dto.text,
       ...assetActor(req),
@@ -202,7 +204,7 @@ export class AssetIntakeController {
   @Post('contracts/preview')
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'What accepting this contract would do' })
-  async previewContract(@Body() dto: ContractProposalDto, @Request() req: any) {
+  async previewContract(@Body() dto: ContractProposalDto, @Request() req: AuthedRequest) {
     return this.assetsService.contractPreview({
       ...dto,
       ...assetActor(req),
@@ -215,7 +217,7 @@ export class AssetIntakeController {
   // held org-wide, or in the workspace the kind belongs to.
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create it, hand it over, retire what it replaces' })
-  async applyContract(@Body() dto: ContractProposalDto, @Request() req: any) {
+  async applyContract(@Body() dto: ContractProposalDto, @Request() req: AuthedRequest) {
     return this.assetsService.contractApply({
       ...dto,
       ...assetActor(req),

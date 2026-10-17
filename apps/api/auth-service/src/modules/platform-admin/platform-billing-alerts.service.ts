@@ -70,7 +70,7 @@ export class PlatformBillingAlertsService {
   /** Mark one as looked at. Idempotent — acknowledging twice is not an error. */
   async acknowledgeBillingAlert(data: { id: string; byUserId?: string }) {
     const alert = await this.prisma.billingAlert.findUnique({ where: { id: data.id }, select: { id: true, acknowledgedAt: true } });
-    if (!alert) return { success: false, statusCode: 404, message: 'Alert not found' } as any;
+    if (!alert) return { success: false, statusCode: 404, message: 'Alert not found' };
     if (alert.acknowledgedAt) return success({ id: alert.id, acknowledgedAt: alert.acknowledgedAt });
     const updated = await this.prisma.billingAlert.update({
       where: { id: data.id },

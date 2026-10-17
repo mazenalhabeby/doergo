@@ -1,5 +1,5 @@
 /** The client itself: envelope by shape, one refresh-and-retry, the retry policy, GET merge, cache hooks. */
-import type { Endpoint, EndpointArgs, EndpointBody, EndpointResult } from '../define';
+import type { AnyEndpoint, Endpoint, EndpointArgs, EndpointBody, EndpointResult } from '../define';
 import { createClientContext } from './context';
 import { createExchange } from './exchange';
 import { createRequest } from './request';
@@ -22,19 +22,21 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
     upload: (p, form, opts) =>
       request('POST', p, { ...opts, body: form, retry: opts?.retry ?? { networkRetries: 0 } }, ctx.uploadTimeoutMs),
     page: (p, opts) => request('GET', p, { ...opts, unwrap: 'page', dedupe: false, cache: false }),
-    call: <D extends Endpoint<any, any, any>>(
+    call: <D extends AnyEndpoint>(
       def: D,
       ...rest: CallArgs<EndpointArgs<D>, EndpointBody<D>>
     ): Promise<EndpointResult<D>> => {
       type R = EndpointResult<D>;
       const [args, opts] = rest as unknown as [EndpointArgs<D>, CallOptions<EndpointBody<D>> | undefined];
+      // D is one concrete endpoint; AnyEndpoint only constrains it, so name its own args back.
+      const own = def as unknown as Endpoint<EndpointArgs<D>, R, EndpointBody<D>>;
       let built: string;
       try {
-        built = def.path(args);
+        built = own.path(args);
       } catch (e) {
         return Promise.reject(e);
       }
-      const keep = typeof def.keep === 'function' ? def.keep(args) : def.keep;
+      const keep = typeof own.keep === 'function' ? own.keep(args) : own.keep;
       const base: RequestOptions = { ...(opts ?? {}) };
       if (keep !== undefined) base.keep = keep;
       if (def.public) base.auth = false;

@@ -5,6 +5,7 @@ import { taskActor } from '../../common/task-actor';
 import { PresignAttachmentDto, ConfirmAttachmentDto } from './dto';
 import { TasksControllerBase } from './tasks-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /tasks/:id/attachments — upload, list, delete. */
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -22,7 +23,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
   @RequireModule('attachments')
   @Post(':id/attachments/presign')
   @ApiOperation({ summary: 'Get presigned URL for uploading an attachment' })
-  async getPresignedUrl(@Param('id') id: string, @Body() body: PresignAttachmentDto, @Request() req: any) {
+  async getPresignedUrl(@Param('id') id: string, @Body() body: PresignAttachmentDto, @Request() req: AuthedRequest) {
     await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.getPresignedUrl({
       taskId: id,
@@ -35,7 +36,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
   @RequireModule('attachments')
   @Post(':id/attachments')
   @ApiOperation({ summary: 'Confirm attachment upload after S3 upload' })
-  async addAttachment(@Param('id') id: string, @Body() body: ConfirmAttachmentDto, @Request() req: any) {
+  async addAttachment(@Param('id') id: string, @Body() body: ConfirmAttachmentDto, @Request() req: AuthedRequest) {
     await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.addAttachment({
       taskId: id,
@@ -52,7 +53,7 @@ export class TaskAttachmentsController extends TasksControllerBase {
 
   @Get(':id/attachments')
   @ApiOperation({ summary: 'Get task attachments' })
-  async getAttachments(@Param('id') id: string, @Request() req: any) {
+  async getAttachments(@Param('id') id: string, @Request() req: AuthedRequest) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getAttachments({
       taskId: id,
@@ -63,7 +64,11 @@ export class TaskAttachmentsController extends TasksControllerBase {
   @RequireModule('attachments')
   @Delete(':id/attachments/:attachmentId')
   @ApiOperation({ summary: 'Delete an attachment' })
-  async deleteAttachment(@Param('id') id: string, @Param('attachmentId') attachmentId: string, @Request() req: any) {
+  async deleteAttachment(
+    @Param('id') id: string,
+    @Param('attachmentId') attachmentId: string,
+    @Request() req: AuthedRequest,
+  ) {
     await this.assertExternalMayWrite(req, id, { attachmentId });
     return this.tasksQueueService.deleteAttachment({
       id: attachmentId,

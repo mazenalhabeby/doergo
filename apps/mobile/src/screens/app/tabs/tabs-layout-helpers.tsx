@@ -13,6 +13,7 @@ import { TourTarget } from '../../../components/tour';
 import { useProfileAvatar } from '../../../lib/use-profile-avatar';
 import { initialOf } from '../../../lib/people';
 import { useChatBadge } from '../../../lib/chat-badge';
+import type { TabBarProps } from './tab-bar-props';
 
 /** TabsLayout's module-level helpers, moved here unchanged so its sections can read them too. */
 /*
@@ -67,30 +68,29 @@ export function ProfileButton() {
   };
 
   return (
-    <Pressable
-      onPress={openProfile}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.profileBtn}
-    >
+    <Pressable onPress={openProfile} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.profileBtn}>
       <TourTarget name="tab-profile">
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <View style={[
-          styles.profileAvatar,
-          { backgroundColor: avatarUrl ? colors.surface : (isDark ? COLORS.primary + '25' : COLORS.primary) },
-        ]}>
-          {avatarUrl ? (
-            <CachedImage uri={avatarUrl} style={styles.profileImage} />
-          ) : (
-            <Text style={[styles.profileInitials, { color: isDark ? COLORS.primary : '#fff' }]}>{initial}</Text>
-          )}
-        </View>
-        {/* Availability status dot */}
-        <View style={[
-          styles.statusDot,
-          { backgroundColor: presenceColor(user?.presence), borderColor: colors.background },
-        ]} />
-      </Animated.View>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <View
+            style={[
+              styles.profileAvatar,
+              { backgroundColor: avatarUrl ? colors.surface : isDark ? COLORS.primary + '25' : COLORS.primary },
+            ]}
+          >
+            {avatarUrl ? (
+              <CachedImage uri={avatarUrl} style={styles.profileImage} />
+            ) : (
+              <Text style={[styles.profileInitials, { color: isDark ? COLORS.primary : '#fff' }]}>{initial}</Text>
+            )}
+          </View>
+          {/* Availability status dot */}
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: presenceColor(user?.presence), borderColor: colors.background },
+            ]}
+          />
+        </Animated.View>
       </TourTarget>
     </Pressable>
   );
@@ -107,7 +107,7 @@ export function ProfileButton() {
 */
 
 // Custom Tab Bar - Full width premium design
-export function CustomTabBar({ state, descriptors, navigation }: any) {
+export function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const chatUnread = useChatBadge();
@@ -117,7 +117,7 @@ export function CustomTabBar({ state, descriptors, navigation }: any) {
     inline copies is how the bar hides a tab More still offers.
   */
   const access = useMemo(() => tabAccessFor(user as never), [user]);
-  const visibleRoutes = state.routes.filter((route: any) => tabVisible(route.name, access));
+  const visibleRoutes = state.routes.filter((route) => tabVisible(route.name, access));
 
   /*
     Split into what fits and what does not.
@@ -126,7 +126,7 @@ export function CustomTabBar({ state, descriptors, navigation }: any) {
     on every navigation, so it is memoised on the route names rather than the
     route objects, which React Navigation recreates each time.
   */
-  const routeNames = visibleRoutes.map((r: any) => r.name).join(',');
+  const routeNames = visibleRoutes.map((r) => r.name).join(',');
   /*
     What Manage used to hold. Same array the old screen read, so a member never
     sees a row that would refuse them.
@@ -141,9 +141,9 @@ export function CustomTabBar({ state, descriptors, navigation }: any) {
   const currentRoute = state.routes[state.index];
   // Being on More — or INSIDE the overflow — has to look different from being
   // anywhere else, or the bar shows nothing selected and the person cannot tell where they are.
-  const inOverflow = currentRoute?.name === 'more' || overflowRoutes.some((r: any) => r.key === currentRoute?.key);
+  const inOverflow = currentRoute?.name === 'more' || overflowRoutes.some((r) => r.key === currentRoute?.key);
 
-  const getAdjustedIndex = () => barRoutes.findIndex((r: any) => r.key === currentRoute.key);
+  const getAdjustedIndex = () => barRoutes.findIndex((r) => r.key === currentRoute.key);
 
   /*
     ⚠️ NO BAR ON THE PROFILE PAGE. It is a page you go INTO — from the avatar —
@@ -167,7 +167,7 @@ export function CustomTabBar({ state, descriptors, navigation }: any) {
         Everything it draws is measured, not chosen: see `TabPill`.
       */}
       <TabPill
-        items={barRoutes.map((route: any, index: number) => ({
+        items={barRoutes.map((route, index) => ({
           key: route.key,
           name: route.name,
           label: descriptors[route.key].options.title || route.name,
@@ -206,7 +206,6 @@ export function CustomTabBar({ state, descriptors, navigation }: any) {
             : undefined
         }
       />
-
     </>
   );
 }
@@ -249,8 +248,7 @@ export const styles = StyleSheet.create({
     borderWidth: 2,
   },
   // Premium tab bar — clean pill indicator, no overlapping underline.
-  tabBarOuter: {
-  },
+  tabBarOuter: {},
   tabBarInner: {
     flexDirection: 'row',
     paddingTop: 8,

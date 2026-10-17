@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { locationsControllers, type LocationsControllers } from './locations-controllers.fixture';
 
+import { fakeReq } from '../../../common/testing/fake-request';
 /*
   Two routes on `:id` that the space guard could not scope, because the guard
   reads params.spaceId / params.locationId / body.spaceId — never `:id`:
@@ -31,7 +32,7 @@ describe('POST /locations/:id/members — decided on the space in the path', () 
   it('refuses a manager of ANOTHER space', async () => {
     const { c, queue, billing } = ctrl();
     const req = { user: user({ access: { org: {}, perSpace: { b: { canManageWorkspaces: true } } } }) };
-    await expect(c.assignMember('a', { userId: 'x' } as any, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(c.assignMember('a', { userId: 'x' } as any, fakeReq(req))).rejects.toBeInstanceOf(ForbiddenException);
     expect(queue.assignMember).not.toHaveBeenCalled();
     expect(billing.rebill).not.toHaveBeenCalled();
   });
@@ -44,7 +45,7 @@ describe('POST /locations/:id/members — decided on the space in the path', () 
       user({ role: 'ADMIN' }),
     ]) {
       const { c, queue, billing } = ctrl();
-      await c.assignMember('a', { userId: 'x' } as any, { user: u });
+      await c.assignMember('a', { userId: 'x' } as any, fakeReq({ user: u }));
       expect(queue.assignMember).toHaveBeenCalledWith(expect.objectContaining({ locationId: 'a' }));
       expect(billing.rebill).toHaveBeenCalledWith('org-1');
     }
@@ -54,25 +55,39 @@ describe('POST /locations/:id/members — decided on the space in the path', () 
 describe('GET /locations/:id — forwards who is asking', () => {
   it('an internal member opens the workspace, but its contacts and rates only if they manage it', async () => {
     const { c, service } = ctrl();
-    await c.findOne('a', { user: user({ access: { org: {}, perSpace: { a: { canViewAllTasks: true }, b: { canManageUsers: true } } } }) });
-    expect(service.findOne).toHaveBeenCalledWith(expect.objectContaining({ id: 'a', viewScopeSpaceIds: undefined, mayManage: false }));
+    await c.findOne(
+      'a',
+      fakeReq({
+        user: user({ access: { org: {}, perSpace: { a: { canViewAllTasks: true }, b: { canManageUsers: true } } } }),
+      }),
+    );
+    expect(service.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'a', viewScopeSpaceIds: undefined, mayManage: false }),
+    );
   });
 
   it('an external member is narrowed to the spaces they were given', async () => {
     const { c, service } = ctrl();
-    await c.findOne('a', { user: user({ isExternal: true, access: { org: {}, perSpace: { a: { canViewAllTasks: true } } } }) });
-    expect(service.findOne).toHaveBeenCalledWith(expect.objectContaining({ viewScopeSpaceIds: ['a'], mayManage: false }));
+    await c.findOne(
+      'a',
+      fakeReq({ user: user({ isExternal: true, access: { org: {}, perSpace: { a: { canViewAllTasks: true } } } }) }),
+    );
+    expect(service.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ viewScopeSpaceIds: ['a'], mayManage: false }),
+    );
   });
 
   it('an administrator is not narrowed and manages it', async () => {
     const { c, service } = ctrl();
-    await c.findOne('a', { user: user({ role: 'ADMIN' }) });
-    expect(service.findOne).toHaveBeenCalledWith(expect.objectContaining({ viewScopeSpaceIds: undefined, mayManage: true }));
+    await c.findOne('a', fakeReq({ user: user({ role: 'ADMIN' }) }));
+    expect(service.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ viewScopeSpaceIds: undefined, mayManage: true }),
+    );
   });
 
   it('an external member granted nowhere sends an EMPTY scope, never an absent one', async () => {
     const { c, service } = ctrl();
-    await c.findOne('a', { user: user({ isExternal: true }) });
+    await c.findOne('a', fakeReq({ user: user({ isExternal: true }) }));
     expect(service.findOne.mock.calls[0][0].viewScopeSpaceIds).toEqual([]);
   });
 });

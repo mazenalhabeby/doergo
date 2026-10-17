@@ -6,6 +6,8 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { BulkApproveEntriesDto } from './dto';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /attendance — approving hours and away-from-site excursions. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -21,14 +23,14 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getPendingApprovals(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Request() req?: any,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Request() req: AuthedRequest,
     /** `true` → `{ total, bySpace }` only, no rows (the home's Crew card). */
     @Query('summary') summary?: string,
   ) {
     return this.entryDecisions.getPendingApprovals({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       page: page ? Number(page) : undefined,
       limit: limit ? Number(limit) : undefined,
@@ -54,11 +56,15 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('approvals/:id/approve')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Approve a time entry' })
-  async approveEntry(@Param('id') entryId: string, @Body() body?: { notes?: string }, @Request() req?: any) {
+  async approveEntry(
+    @Param('id') entryId: string,
+    @Body() body: { notes?: string } | undefined,
+    @Request() req: AuthedRequest,
+  ) {
     return this.entryDecisions.approveEntry({
       entryId,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       notes: body?.notes,
     });
@@ -67,11 +73,11 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('approvals/:id/reject')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Reject a time entry' })
-  async rejectEntry(@Param('id') entryId: string, @Body() body: { reason: string }, @Request() req?: any) {
+  async rejectEntry(@Param('id') entryId: string, @Body() body: { reason: string }, @Request() req: AuthedRequest) {
     return this.entryDecisions.rejectEntry({
       entryId,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       reason: body.reason,
     });
@@ -82,10 +88,10 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('excursions/report')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Report a reason + duration for being outside the ring' })
-  async reportExcursion(@Body() body: { reason: string; requestedMinutes: number }, @Request() req?: any) {
+  async reportExcursion(@Body() body: { reason: string; requestedMinutes: number }, @Request() req: AuthedRequest) {
     return this.entryDecisions.reportExcursion({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       reason: body?.reason,
       requestedMinutes: Number(body?.requestedMinutes),
     });
@@ -95,9 +101,12 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'List active out-of-ring requests (approver surface)' })
   @ApiQuery({ name: 'status', required: false, enum: ['active', 'pending', 'approved'] })
-  async listExcursions(@Query('status') status?: 'active' | 'pending' | 'approved', @Request() req?: any) {
+  async listExcursions(
+    @Query('status') status: ('active' | 'pending' | 'approved') | undefined,
+    @Request() req: AuthedRequest,
+  ) {
     return this.entryDecisions.listExcursions({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       status,
     });
@@ -108,13 +117,13 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @ApiOperation({ summary: 'Approve an out-of-ring request (optionally adjust the granted time)' })
   async approveExcursion(
     @Param('id') excursionId: string,
-    @Body() body?: { grantedMinutes?: number },
-    @Request() req?: any,
+    @Body() body: { grantedMinutes?: number } | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.entryDecisions.approveExcursion({
       excursionId,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       grantedMinutes: body?.grantedMinutes != null ? Number(body.grantedMinutes) : undefined,
     });
@@ -123,11 +132,11 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Patch('excursions/:id/reject')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Reject an out-of-ring request (clocks the worker out)' })
-  async rejectExcursion(@Param('id') excursionId: string, @Request() req?: any) {
+  async rejectExcursion(@Param('id') excursionId: string, @Request() req: AuthedRequest) {
     return this.entryDecisions.rejectExcursion({
       excursionId,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
     });
   }
@@ -135,11 +144,11 @@ export class AttendanceApprovalsController extends AttendanceControllerBase {
   @Post('approvals/bulk-approve')
   @RequirePermissionInSpace('canApproveAttendance')
   @ApiOperation({ summary: 'Bulk approve multiple time entries' })
-  async bulkApprove(@Body() body: BulkApproveEntriesDto, @Request() req?: any) {
+  async bulkApprove(@Body() body: BulkApproveEntriesDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.bulkApprove({
       entryIds: body.entryIds,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveAttendance'),
       notes: body.notes,
     });

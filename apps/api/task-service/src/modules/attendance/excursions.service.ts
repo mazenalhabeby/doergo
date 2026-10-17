@@ -4,6 +4,7 @@ import { scopeWhereOn, type AttendanceScope } from '@hbcfield/shared';
 import { assertNotSelfDecision } from './self-decision';
 import { ATTENDANCE_LOCATION_SELECT, MEMBER_SELECT } from './attendance-selects';
 import { HeartbeatBase } from './heartbeat.base';
+import type { GeofenceExcursionStatus } from '@prisma/client';
 
 /**
  * Away from the site during a shift: reporting it, approving or refusing it, the
@@ -156,17 +157,13 @@ export class ExcursionsService extends HeartbeatBase {
     status?: 'active' | 'pending' | 'approved';
     scopeSpaceIds?: AttendanceScope;
   }) {
-    const statusFilter =
-      data.status === 'pending'
-        ? (['PENDING'] as const)
-        : data.status === 'approved'
-          ? (['APPROVED'] as const)
-          : (['PENDING', 'APPROVED'] as const);
+    const statusFilter: GeofenceExcursionStatus[] =
+      data.status === 'pending' ? ['PENDING'] : data.status === 'approved' ? ['APPROVED'] : ['PENDING', 'APPROVED'];
 
     const rows = await this.prisma.geofenceExcursion.findMany({
       where: {
         organizationId: data.organizationId,
-        status: { in: statusFilter as any },
+        status: { in: statusFilter },
         // GeofenceExcursion names its own space, so it narrows on `spaceId`
         // rather than the `locationId` a time entry uses.
         ...scopeWhereOn('spaceId', data.scopeSpaceIds),

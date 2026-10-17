@@ -4,6 +4,7 @@ import { assertSpaceInOrg } from '../../common/tenant-scope.util';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { workspaceZone } from '../../common/zone.util';
 import { SprintReportsService } from './sprint-reports.service';
+import type { Prisma, SprintStatus } from '@prisma/client';
 
 @Injectable()
 export class SprintsService {
@@ -18,7 +19,7 @@ export class SprintsService {
    * List all sprints for an organization
    */
   async findAll(data: { organizationId: string; status?: string; spaceId?: string; limit?: number; offset?: number }) {
-    const where: any = { organizationId: data.organizationId };
+    const where: Prisma.SprintWhereInput = { organizationId: data.organizationId };
     /*
       A space sees its own planning objects plus the organization-wide ones.
 
@@ -29,7 +30,7 @@ export class SprintsService {
     */
     if (data.spaceId) where.OR = [{ spaceId: data.spaceId }, { spaceId: null }];
     if (data.status) {
-      where.status = data.status;
+      where.status = data.status as SprintStatus;
     }
 
     const sprints = await this.prisma.sprint.findMany({

@@ -1,4 +1,4 @@
-import type { Endpoint } from './define';
+import type { AnyEndpoint } from './define';
 
 /**
  * A query key derived from an endpoint's NAME and its arguments — never typed
@@ -31,7 +31,7 @@ export function stableArgs(value: unknown): unknown {
   return value;
 }
 
-export function queryKey(def: Endpoint<any, any, any> | string, args?: unknown): QueryKey {
+export function queryKey(def: AnyEndpoint | string, args?: unknown): QueryKey {
   const name = typeof def === 'string' ? def : def.name;
   if (!name) throw new Error('queryKey: this endpoint has no name — define it with defineEndpoints()');
   const parts: unknown[] = name.split('.');

@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { clampListLimit } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -38,7 +39,10 @@ export class PlatformAuditService {
           route: str(input.route, 300) ?? '',
           action: str(input.action, 100) ?? 'UNKNOWN',
           targetOrganizationId: str(input.targetOrganizationId, 64),
-          summary: input.summary === undefined ? undefined : (JSON.parse(JSON.stringify(input.summary ?? null)) as any),
+          summary:
+            input.summary === undefined
+              ? undefined
+              : (JSON.parse(JSON.stringify(input.summary ?? null)) as Prisma.InputJsonValue),
           ok: input.ok === true,
           statusCode: typeof input.statusCode === 'number' ? input.statusCode : null,
           error: str(input.error, 500),

@@ -9,6 +9,8 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters';
 import { spacesGranting, safeEqual, redactUrlForLog } from '@hbcfield/shared';
+import type { NextFunction, Request, Response } from 'express';
+import type { MaybeAuthedRequest } from './common/request.types';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -51,22 +53,26 @@ async function bootstrap() {
   const needsLargeBody = (path: string) => LARGE_BODY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   // Capture the exact raw request bytes so the Stripe webhook route can verify
   // its HMAC signature over the unparsed body (Stripe requires the raw payload).
-  const keepRaw = (req: any, _res: any, buf: Buffer) => {
+  const keepRaw = (req: MaybeAuthedRequest, _res: Response, buf: Buffer) => {
     req.rawBody = buf;
   };
   const jsonSmall = express.json({ limit: '1mb', verify: keepRaw });
   const jsonLarge = express.json({ limit: '10mb', verify: keepRaw });
   const formSmall = express.urlencoded({ extended: true, limit: '1mb' });
   const formLarge = express.urlencoded({ extended: true, limit: '10mb' });
-  app.use((req: any, res: any, next: any) => (needsLargeBody(req.path) ? jsonLarge : jsonSmall)(req, res, next));
-  app.use((req: any, res: any, next: any) => (needsLargeBody(req.path) ? formLarge : formSmall)(req, res, next));
+  app.use((req: Request, res: Response, next: NextFunction) =>
+    (needsLargeBody(req.path) ? jsonLarge : jsonSmall)(req, res, next),
+  );
+  app.use((req: Request, res: Response, next: NextFunction) =>
+    (needsLargeBody(req.path) ? formLarge : formSmall)(req, res, next),
+  );
 
   // Parse cookies (for httpOnly refresh token)
   app.use(cookieParser());
 
   // Simple request logging for testing (skip noisy endpoints)
   const QUIET_ROUTES = ['/tracking/location'];
-  app.use((req: any, res: any, next: any) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     const { method, body } = req;
     // ⚠️ Some paths ARE the credential (calendar feed token, invitation code,
@@ -130,7 +136,7 @@ async function bootstrap() {
     const bullBoardUser = configService.get<string>('BULL_BOARD_USER', 'admin');
     const bullBoardPass = configService.get<string>('BULL_BOARD_PASSWORD');
     if (bullBoardPass) {
-      app.use('/admin/queues', (req: any, res: any, next: any) => {
+      app.use('/admin/queues', (req: Request, res: Response, next: NextFunction) => {
         const auth = req.headers.authorization;
         if (!auth || !auth.startsWith('Basic ')) {
           res.setHeader('WWW-Authenticate', 'Basic realm="Bull Board"');
@@ -151,7 +157,7 @@ async function bootstrap() {
       });
     } else {
       // No password configured — block access entirely in production
-      app.use('/admin/queues', (_req: any, res: any) => {
+      app.use('/admin/queues', (_req: Request, res: Response) => {
         res.status(403).send('Bull Board disabled in production. Set BULL_BOARD_PASSWORD to enable.');
       });
     }

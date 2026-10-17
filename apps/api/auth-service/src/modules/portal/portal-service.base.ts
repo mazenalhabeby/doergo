@@ -1,3 +1,4 @@
+import type { Portal, Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { personName, DEFAULT_PORTAL_FEATURES, scopeWhereOn, type SpaceScopeIds } from '@hbcfield/shared';
 import { PortalGuards } from './portal-guards.base';
@@ -8,7 +9,22 @@ import { PortalGuards } from './portal-guards.base';
  */
 @Injectable()
 export abstract class PortalServiceBase extends PortalGuards {
-  protected shapeConfig(portal: any, categories: any[]) {
+  protected shapeConfig<C>(
+    portal: Pick<
+      Portal,
+      | 'id'
+      | 'name'
+      | 'isActive'
+      | 'templateKey'
+      | 'entityLabel'
+      | 'contactLabel'
+      | 'accent'
+      | 'coverImageUrl'
+      | 'spaceId'
+      | 'features'
+    >,
+    categories: C[],
+  ) {
     return {
       id: portal.id,
       name: portal.name,
@@ -91,7 +107,7 @@ export abstract class PortalServiceBase extends PortalGuards {
     type: string;
     body?: string;
     authorId?: string | null;
-    metadata?: any;
+    metadata?: Prisma.InputJsonValue;
   }) {
     return this.prisma.unitActivity
       .create({

@@ -3,6 +3,8 @@ import { TASK_LIST_INCLUDE, annotateTracksLocation } from './task-list-shape';
 import { buildTaskVisibilityWhere, type TaskVisibilityFacts } from './task-visibility';
 import { TaskStatus, paginated, buildDateRangeFilter, clampListLimit, clampListPage } from '@hbcfield/shared';
 import { TaskQueryBase } from './task-query.base';
+import type { Prisma } from '@prisma/client';
+import type { RpcRequest, findAllTasks } from '@hbcfield/shared/microservices';
 
 /**
  * Reading tasks: the list, one task, its space, its job time and the step
@@ -14,7 +16,7 @@ export class TaskQueryService extends TaskQueryBase {
   private static readonly MAX_SEARCH_LENGTH = 200;
 
   /** See task-visibility.ts — kept as a method so existing call sites read unchanged. */
-  private buildVisibilityWhere(opts: TaskVisibilityFacts): any {
+  private buildVisibilityWhere(opts: TaskVisibilityFacts) {
     return buildTaskVisibilityWhere(opts);
   }
 
@@ -24,7 +26,7 @@ export class TaskQueryService extends TaskQueryBase {
    * - DISPATCHER: sees all tasks in their organization (and accessible orgs)
    * - TECHNICIAN: sees only tasks assigned to them
    */
-  async findAll(query: any) {
+  async findAll(query: RpcRequest<typeof findAllTasks>) {
     const {
       page = 1,
       limit = 100,
@@ -51,7 +53,7 @@ export class TaskQueryService extends TaskQueryBase {
     const take = safeLimit;
 
     // Build where clause based on role
-    const where: any = {};
+    const where: Prisma.TaskWhereInput = {};
 
     /*
       "What should I work on" — asked of the SERVER, not of a page of results.
@@ -115,7 +117,7 @@ export class TaskQueryService extends TaskQueryBase {
       // Visibility — one rule, shared with getStatusCounts (see above).
       const visibility = this.buildVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
       where.organizationId = visibility.organizationId;
-      if (visibility.AND) where.AND = [...(where.AND || []), ...visibility.AND];
+      if (visibility.AND) where.AND = [...((where.AND as Prisma.TaskWhereInput[] | undefined) || []), ...visibility.AND];
 
       // Space filter — verify it belongs to the user's org before applying
       if (spaceId) {
@@ -136,7 +138,7 @@ export class TaskQueryService extends TaskQueryBase {
     if (unitFilter) where.unitId = unitFilter;
 
     // Build AND conditions for date range and search
-    const andConditions: any[] = [];
+    const andConditions: Prisma.TaskWhereInput[] = [];
 
     // Date range filter on dueDate
     const dateFilter = buildDateRangeFilter(startDate, endDate);
@@ -145,7 +147,7 @@ export class TaskQueryService extends TaskQueryBase {
       if (shouldIncludeNoDueDate) {
         // "Current" tab: tasks due in range, OR with no due date, OR overdue but
         // still active (an in-progress task due last month is still current work).
-        const orClauses: any[] = [{ dueDate: dateFilter }, { dueDate: null }];
+        const orClauses: Prisma.TaskWhereInput[] = [{ dueDate: dateFilter }, { dueDate: null }];
         if (startDate) {
           orClauses.push({
             dueDate: { lt: new Date(startDate) },
@@ -175,7 +177,7 @@ export class TaskQueryService extends TaskQueryBase {
     // IMPORTANT: append, never overwrite — role scoping (e.g. an employee's
     // own-tasks filter) is already stored on where.AND above.
     if (andConditions.length > 0) {
-      where.AND = [...(where.AND || []), ...andConditions];
+      where.AND = [...((where.AND as Prisma.TaskWhereInput[] | undefined) || []), ...andConditions];
     }
 
     const [tasks, total] = await Promise.all([

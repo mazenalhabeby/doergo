@@ -6,6 +6,8 @@ import { StorageService } from '../../common/storage/storage.service';
 import { portalScope } from '../../common/portal-scope';
 import { sendRpc, portalAssertReach, type RpcContract } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** What every /portal/admin controller shares: asking auth-service, and the manage reach on a portal. */
 @Injectable()
 export abstract class PortalAdminControllerBase {
@@ -22,10 +24,10 @@ export abstract class PortalAdminControllerBase {
   }
 
   /** 404 unless the portal / client / unit is in the caller's reach for `manage`. */
-  protected assertManageReach(req: any, refs: { portalId?: string; customerId?: string; unitId?: string }) {
+  protected assertManageReach(req: AuthedRequest, refs: { portalId?: string; customerId?: string; unitId?: string }) {
     return this.auth(portalAssertReach, {
       ...refs,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }

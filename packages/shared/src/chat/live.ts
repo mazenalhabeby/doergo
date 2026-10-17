@@ -27,6 +27,18 @@ export interface ChatBadgeEvent {
   total: number;
 }
 
+/** `chat.conversationUpdated`: members or name changed; `removed` = this person was taken out. */
+export interface ChatConversationUpdatedEvent {
+  conversationId: string;
+  removed?: boolean;
+}
+
+/** `chat.typing`: somebody in the thread is typing (`from` = their user id). */
+export interface ChatTypingEvent {
+  conversationId: string;
+  from: string;
+}
+
 type Stamped = { id: string; createdAt?: string | null };
 
 /** Usable as a message: it has an id. Anything less is a reason to reload. */

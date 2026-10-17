@@ -52,7 +52,7 @@ export class WorkflowLibraryService {
       if (result.count > 0) {
         this.logger.log(`Seeded ${result.count} built-in task-type template(s) into the library`);
       }
-    } catch (err: any) {
+    } catch (err) {
       // A library with nothing in it is a smaller problem than a service that
       // will not start: every other path still works, and "New task type" simply
       // offers nothing to start from.
@@ -169,7 +169,7 @@ export class WorkflowLibraryService {
     */
     const ownerSpaceId = data.spaceId && !data.shareWithOrganization ? data.spaceId : null;
 
-    const created: any = await this.workflows.create({
+    const created = await this.workflows.create({
       name: (data.name ?? '').trim() || template.name,
       isDefault: data.isDefault === true,
       organizationId: data.organizationId,

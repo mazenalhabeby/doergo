@@ -77,7 +77,9 @@ export function useSignDocumentScreen() {
       })
       // Best effort: the panel is context, not a precondition for signing.
       .catch(() => {});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   /*
@@ -106,10 +108,14 @@ export function useSignDocumentScreen() {
       .then(([docs, types]) => {
         const doc = docs.find((d) => d.id === String(params.id));
         const type = doc ? types.find((ty) => ty.id === doc.typeId) : undefined;
-        if (!cancelled) setMode((type as any)?.signatureMode ?? 'IN_APP');
+        if (!cancelled) setMode(type?.signatureMode ?? 'IN_APP');
       })
-      .catch(() => { if (!cancelled) setMode('IN_APP'); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        if (!cancelled) setMode('IN_APP');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
   const isAcknowledge = mode === 'ACKNOWLEDGE';
 
@@ -147,24 +153,27 @@ export function useSignDocumentScreen() {
     }
   }, [params.id, mode, isAcknowledge, t, toast]);
 
-  const submit = useCallback(async (signatureImage: string) => {
-    setBusy(true);
-    try {
-      const res = await documentsApi.sign(String(params.id), { signatureImage, idempotencyKey });
-      // Kept so the confirmation can show the mark they actually made.
-      setSignature(signatureImage);
-      setStep('done');
-      if (res?.alreadySigned) {
-        // Not an error. A retry found the seal that already existed, which is
-        // exactly what the key is for — say so plainly rather than alarm anyone.
-        toast.success(t('documents.sign.alreadySigned'));
+  const submit = useCallback(
+    async (signatureImage: string) => {
+      setBusy(true);
+      try {
+        const res = await documentsApi.sign(String(params.id), { signatureImage, idempotencyKey });
+        // Kept so the confirmation can show the mark they actually made.
+        setSignature(signatureImage);
+        setStep('done');
+        if (res?.alreadySigned) {
+          // Not an error. A retry found the seal that already existed, which is
+          // exactly what the key is for — say so plainly rather than alarm anyone.
+          toast.success(t('documents.sign.alreadySigned'));
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : t('documents.sign.failed'));
+      } finally {
+        setBusy(false);
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('documents.sign.failed'));
-    } finally {
-      setBusy(false);
-    }
-  }, [params.id, idempotencyKey, t, toast]);
+    },
+    [params.id, idempotencyKey, t, toast],
+  );
 
   const stepNumber = step === 'read' ? 1 : step === 'agree' ? 2 : 3;
   const totalSteps = isAcknowledge ? 2 : 3;

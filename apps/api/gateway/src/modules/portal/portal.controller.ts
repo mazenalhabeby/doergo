@@ -10,6 +10,7 @@ import { SubmitRequestDto } from './dto';
 import { sendRpc, portalConfigForCustomer, portalListUnits, portalListAssets } from '@hbcfield/shared/microservices';
 import { portalListRequests, portalGetRequest } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * Customer Portal API (external CUSTOMER persona only).
  *
@@ -33,7 +34,7 @@ export class PortalController {
   @Get('config')
   @SkipOnboardingCheck()
   @ApiOperation({ summary: 'Get the portal intake config' })
-  async config(@Request() req: any) {
+  async config(@Request() req: AuthedRequest) {
     return firstValueFrom(sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }));
   }
 
@@ -41,7 +42,7 @@ export class PortalController {
   @Get('units')
   @SkipOnboardingCheck()
   @ApiOperation({ summary: "List the customer's units" })
-  async units(@Request() req: any) {
+  async units(@Request() req: AuthedRequest) {
     // Units live in the auth DB; auth-service serves them.
     return firstValueFrom(
       sendRpc(this.authClient, portalListUnits, {
@@ -55,11 +56,12 @@ export class PortalController {
   @Get('assets')
   @SkipOnboardingCheck()
   @ApiOperation({ summary: "List the client's assets" })
-  async assets(@Request() req: any) {
+  async assets(@Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.authClient, portalListAssets, {
-        organizationId: req.user.organizationId,
-        customerId: req.user.customerId,
+        // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
+        organizationId: req.user.organizationId as string,
+        customerId: req.user.customerId as string,
         // The one their login is confined to, when they hold nothing else.
         assetId: req.user.assetId ?? null,
       }),
@@ -70,11 +72,12 @@ export class PortalController {
   @Get('requests')
   @SkipOnboardingCheck()
   @ApiOperation({ summary: "List the customer's requests" })
-  async listRequests(@Request() req: any) {
+  async listRequests(@Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.taskClient, portalListRequests, {
-        organizationId: req.user.organizationId,
-        customerId: req.user.customerId,
+        // ⚠️ A portal (CUSTOMER) session always carries both — the invitation binds them; typed as sent today.
+        organizationId: req.user.organizationId as string,
+        customerId: req.user.customerId as string,
       }),
     );
   }
@@ -83,7 +86,7 @@ export class PortalController {
   @Get('requests/:id')
   @SkipOnboardingCheck()
   @ApiOperation({ summary: 'Get one of the customer’s requests' })
-  async getRequest(@Param('id') id: string, @Request() req: any) {
+  async getRequest(@Param('id') id: string, @Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.taskClient, portalGetRequest, {
         id,
@@ -98,7 +101,7 @@ export class PortalController {
   @SkipOnboardingCheck()
   @Throttle({ default: { limit: 20, ttl: 60000 } }) // anti-flood: 20 requests/min
   @ApiOperation({ summary: 'Submit a new request' })
-  async submitRequest(@Body() dto: SubmitRequestDto, @Request() req: any) {
+  async submitRequest(@Body() dto: SubmitRequestDto, @Request() req: AuthedRequest) {
     // Resolve the category from the caller's own portal config (fail closed).
     const config: any = await firstValueFrom(
       sendRpc(this.authClient, portalConfigForCustomer, { customerId: req.user.customerId }),

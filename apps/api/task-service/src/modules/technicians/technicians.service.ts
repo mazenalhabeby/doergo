@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { TaskStatus, success } from '@hbcfield/shared';
 import { GetEmployeeStatsDto, GetEmployeeTaskHistoryDto } from './dto';
 import { MemberServiceBase } from './member-service.base';
+import type { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TechniciansService extends MemberServiceBase {
@@ -79,7 +80,7 @@ export class TechniciansService extends MemberServiceBase {
     const { id, organizationId, status, page = 1, limit = 20 } = dto;
     const { startDate, endDate } = dto as { startDate?: string; endDate?: string };
 
-    const where: any = {
+    const where: Prisma.TaskWhereInput = {
       assignedToId: id,
       organizationId,
     };

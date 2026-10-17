@@ -22,6 +22,8 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { canManageSpace, assertCanManageSpace } from './space-roles-controller-helpers';
 import { SpaceRolesControllerBase } from './space-roles-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 // The ceiling (`actorPermsForSpace` / `assertMayGrant`) and the three trusts over
 // a workspace's people live in ./space-member-access, shared with the builder
 // and the location member routes.
@@ -38,12 +40,11 @@ import { SpaceRolesControllerBase } from './space-roles-controller.base';
 @UseInterceptors(LabourCostInterceptor)
 @Controller()
 export class SpaceRolesController extends SpaceRolesControllerBase {
-
   @Get('space-roles')
   @RequirePermission('canManageWorkspaces')
-  @ApiOperation({ summary: 'List the org\'s dynamic space sub-roles' })
-  listRoles(@Request() req: any) {
-    return this.service.listRoles({ organizationId: req.user.organizationId });
+  @ApiOperation({ summary: "List the org's dynamic space sub-roles" })
+  listRoles(@Request() req: AuthedRequest) {
+    return this.service.listRoles({ organizationId: callerOrgId(req.user) });
   }
 
   @Post('space-roles')
@@ -60,7 +61,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
       /** Made from a workspace: a work role is switched on there at once. */
       spaceId?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     assertMayGrant(req.user, body.permissions);
     if (body.spaceId) assertCanManageSpace(req.user, body.spaceId);
@@ -71,7 +72,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
       color: body.color,
       permissions: body.permissions,
       kind: body.kind,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -89,30 +90,33 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
       isActive?: boolean;
       kind?: RoleKindValue;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     if (body.permissions !== undefined) assertMayGrant(req.user, body.permissions);
-    return this.thenRebill(req, this.service.updateRole({
-      name: body.name,
-      description: body.description,
-      color: body.color,
-      permissions: body.permissions,
-      isActive: body.isActive,
-      kind: body.kind,
-      roleId,
-      organizationId: req.user.organizationId,
-      // The ceiling also applies to what the role ALREADY grants: editing a role
-      // you could not have authored would otherwise let you rename it, hand it
-      // out, and keep every permission you were never allowed to give.
-      requesterPerms: isAdmin(req.user) ? null : (ownAccess(req.user?.access)?.org ?? {}),
-    }));
+    return this.thenRebill(
+      req,
+      this.service.updateRole({
+        name: body.name,
+        description: body.description,
+        color: body.color,
+        permissions: body.permissions,
+        isActive: body.isActive,
+        kind: body.kind,
+        roleId,
+        organizationId: callerOrgId(req.user),
+        // The ceiling also applies to what the role ALREADY grants: editing a role
+        // you could not have authored would otherwise let you rename it, hand it
+        // out, and keep every permission you were never allowed to give.
+        requesterPerms: isAdmin(req.user) ? null : (ownAccess(req.user?.access)?.org ?? {}),
+      }),
+    );
   }
 
   @Delete('space-roles/:id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Delete a custom space sub-role' })
-  deleteRole(@Param('id') roleId: string, @Request() req: any) {
-    return this.thenRebill(req, this.service.deleteRole({ roleId, organizationId: req.user.organizationId }));
+  deleteRole(@Param('id') roleId: string, @Request() req: AuthedRequest) {
+    return this.thenRebill(req, this.service.deleteRole({ roleId, organizationId: callerOrgId(req.user) }));
   }
 
   /**
@@ -120,10 +124,10 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
    * work role's day rate here — now, scheduled and past.
    */
   @Get('spaces/:spaceId/roles')
-  @ApiOperation({ summary: 'Roles in a workspace: holders here, and work roles\' day rates here' })
-  listSpaceRoles(@Param('spaceId') spaceId: string, @Request() req: any) {
+  @ApiOperation({ summary: "Roles in a workspace: holders here, and work roles' day rates here" })
+  listSpaceRoles(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.listSpaceRoles({ spaceId, organizationId: req.user.organizationId });
+    return this.service.listSpaceRoles({ spaceId, organizationId: callerOrgId(req.user) });
   }
 
   /**
@@ -134,12 +138,12 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
    * of the agreement with THIS client.
    */
   @Put('spaces/:spaceId/roles/:roleId/day-rate')
-  @ApiOperation({ summary: 'Set (or schedule) a work role\'s day rate in this workspace' })
+  @ApiOperation({ summary: "Set (or schedule) a work role's day rate in this workspace" })
   setRoleDayRate(
     @Param('spaceId') spaceId: string,
     @Param('roleId') roleId: string,
     @Body() body: SetDayRateDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     assertCanManageSpace(req.user, spaceId);
     return this.service.setRoleDayRate({
@@ -147,7 +151,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
       roleId,
       cents: body.cents,
       effectiveFrom: body.effectiveFrom,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       createdById: req.user.id,
     });
   }
@@ -159,13 +163,13 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   @Put('space-roles/:roleId/day-rate')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "Set (or schedule) a work role's default day rate for every workspace" })
-  setRoleDefaultDayRate(@Param('roleId') roleId: string, @Body() body: SetDayRateDto, @Request() req: any) {
+  setRoleDefaultDayRate(@Param('roleId') roleId: string, @Body() body: SetDayRateDto, @Request() req: AuthedRequest) {
     return this.service.setRoleDayRate({
       spaceId: null,
       roleId,
       cents: body.cents,
       effectiveFrom: body.effectiveFrom,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       createdById: req.user.id,
     });
   }
@@ -177,24 +181,27 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
   /** Switch a company work role on in this workspace (it then shows here and in its pickers). */
   @Put('spaces/:spaceId/work-roles/:roleId')
   @ApiOperation({ summary: 'Use a company work role in this workspace' })
-  useWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: any) {
+  useWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: AuthedRequest) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.setWorkRoleHere({ spaceId, roleId, active: true, organizationId: req.user.organizationId });
+    return this.service.setWorkRoleHere({ spaceId, roleId, active: true, organizationId: callerOrgId(req.user) });
   }
 
   /** Switch it off here only — refused while somebody here holds it. */
   @Delete('spaces/:spaceId/work-roles/:roleId')
   @ApiOperation({ summary: 'Stop using a work role in this workspace' })
-  dropWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: any) {
+  dropWorkRole(@Param('spaceId') spaceId: string, @Param('roleId') roleId: string, @Request() req: AuthedRequest) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.setWorkRoleHere({ spaceId, roleId, active: false, organizationId: req.user.organizationId });
+    return this.service.setWorkRoleHere({ spaceId, roleId, active: false, organizationId: callerOrgId(req.user) });
   }
 
   @Post('space-roles/:roleId/merge')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Merge a work role into another (holders and day rates move; the role is deleted)' })
-  mergeRole(@Param('roleId') roleId: string, @Body() body: MergeRoleDto, @Request() req: any) {
-    return this.thenRebill(req, this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: req.user.organizationId }));
+  mergeRole(@Param('roleId') roleId: string, @Body() body: MergeRoleDto, @Request() req: AuthedRequest) {
+    return this.thenRebill(
+      req,
+      this.service.mergeRole({ roleId, intoRoleId: body.intoRoleId, organizationId: callerOrgId(req.user) }),
+    );
   }
 
   /**
@@ -207,7 +214,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
    */
   @Get('rate-history')
   @ApiOperation({ summary: 'The dated history of one hourly rate' })
-  listRateHistory(@Query() q: RateHistoryQueryDto, @Request() req: any) {
+  listRateHistory(@Query() q: RateHistoryQueryDto, @Request() req: AuthedRequest) {
     const u = req.user;
     const allowed =
       q.target === 'ORGANIZATION'
@@ -219,7 +226,7 @@ export class SpaceRolesController extends SpaceRolesControllerBase {
             : !!q.spaceId && canManageSpace(u, q.spaceId);
     if (!allowed) throw new ForbiddenException('You cannot read this rate');
     return this.service.listRateHistory({
-      organizationId: u.organizationId,
+      organizationId: callerOrgId(u),
       target: q.target,
       targetId: q.targetId,
       spaceId: q.spaceId,

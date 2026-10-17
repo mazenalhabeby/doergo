@@ -102,6 +102,9 @@
     "db:create-fresh": "pnpm --filter @hbcfield/auth-service db:create-fresh",
     "size:check": "node tools/size-ratchet.mjs",
     "size:update": "node tools/size-ratchet.mjs --update",
+    "dry:check": "node tools/dry-check.mjs",
+    "dry:update": "node tools/dry-check.mjs --update",
+    "rpc:check": "node tools/rpc-ratchet.mjs",
     "format:changed": "node tools/format-changed.mjs"
   },
   "engines": {

@@ -24,6 +24,7 @@ import {
   getTechnicianSchedule,
   setTechnicianSchedule,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /** /employees/:id — one member's record: performance, jobs, attendance, workspaces, working week. */
 @ApiTags('employees')
@@ -45,9 +46,9 @@ export class EmployeeRecordsController {
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeePerformance(
     @Param('id') id: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @CurrentUser() user?: CurrentUserData,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     // Route to task-service for performance metrics (task data lives there)
     return firstValueFrom(
@@ -74,14 +75,14 @@ export class EmployeeRecordsController {
   @RequirePermissionInSpace('canViewAllTasks')
   async getEmployeeTasks(
     @Param('id') id: string,
-    @Query('status') status?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('status') status: string | undefined,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
     // Optional due-date window — used by the leave drawer to show what is
     // already booked while somebody wants to be away.
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @CurrentUser() user?: CurrentUserData,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     // Route to task-service for task history (task data lives there)
     return firstValueFrom(
@@ -112,9 +113,9 @@ export class EmployeeRecordsController {
   @RequirePermissionInSpace('canViewSpaceAttendance')
   async getEmployeeAttendance(
     @Param('id') id: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @CurrentUser() user?: CurrentUserData,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, getAttendanceHistory, {
@@ -136,7 +137,7 @@ export class EmployeeRecordsController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Assignments retrieved' })
   @RequirePermissionInSpace('canViewAllTasks')
-  async getEmployeeAssignments(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getEmployeeAssignments(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, getTechnicianAssignments, {
         // undefined = org-wide; [] = granted nowhere and matches nothing.
@@ -156,7 +157,7 @@ export class EmployeeRecordsController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Schedule retrieved' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async getEmployeeSchedule(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getEmployeeSchedule(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Managers (EMPLOYEE + canViewAllTasks) can view any member; plain employees
     // only their own (D9 — was ADMIN-only, which locked managers out).
     const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
@@ -183,7 +184,7 @@ export class EmployeeRecordsController {
     body: {
       schedule: Array<{ dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean; notes?: string }>;
     },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, setTechnicianSchedule, {

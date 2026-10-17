@@ -4,6 +4,7 @@ import { Role, presentSections, type TaskReport } from '@hbcfield/shared';
 import { TaskReportController } from '../task-report.controller';
 import { TaskReportQueryDto } from '../dto';
 
+import { fakeReq, fakeUser } from '../../../common/testing/fake-request';
 /**
  * GET /tasks/:id/full-report — the gateway's half of the job report.
  *
@@ -17,7 +18,10 @@ describe('TaskReportController', () => {
   const report = (over: Partial<TaskReport> = {}): TaskReport => {
     const r = {
       meta: { copy: 'office', generatedAt: 'now', sections: [], historyTruncated: false },
-      header: { workspace: { id: 'space-1', name: 'North', address: null, timezone: 'Europe/Vienna' }, site: { address: null, lat: 48, lng: 14 } } as any,
+      header: {
+        workspace: { id: 'space-1', name: 'North', address: null, timezone: 'Europe/Vienna' },
+        site: { address: null, lat: 48, lng: 14 },
+      } as any,
       request: {} as any,
       history: [],
       route: null,
@@ -28,21 +32,50 @@ describe('TaskReportController', () => {
     r.meta.sections = presentSections(r);
     return r;
   };
-  const tracked = { success: true, data: { distance: 1500, duration: 300, startTime: '2026-10-09T08:00:00Z', endTime: '2026-10-09T08:05:00Z', points: [{ lat: 48, lng: 14, timestamp: '2026-10-09T08:05:00Z' }] } };
+  const tracked = {
+    success: true,
+    data: {
+      distance: 1500,
+      duration: 300,
+      startTime: '2026-10-09T08:00:00Z',
+      endTime: '2026-10-09T08:05:00Z',
+      points: [{ lat: 48, lng: 14, timestamp: '2026-10-09T08:05:00Z' }],
+    },
+  };
 
   let tasks: { fullReport: jest.Mock };
   let tracking: { send: jest.Mock };
   let controller: TaskReportController;
 
-  const admin = { id: 'boss', role: Role.ADMIN, organizationId: 'org-1', access: { org: {}, perSpace: {}, sharedSpaces: [{ spaceId: 'shared-1' }] } };
+  const admin = {
+    id: 'boss',
+    role: Role.ADMIN,
+    organizationId: 'org-1',
+    access: { org: {}, perSpace: {}, sharedSpaces: [{ spaceId: 'shared-1' }] },
+  };
   const member = (perSpace: Record<string, Record<string, boolean>> = {}) => ({
-    id: 'anna', role: Role.EMPLOYEE, organizationId: 'org-1', canViewAllTasks: true, access: { org: {}, perSpace, sharedSpaces: [] },
+    id: 'anna',
+    role: Role.EMPLOYEE,
+    organizationId: 'org-1',
+    canViewAllTasks: true,
+    access: { org: {}, perSpace, sharedSpaces: [] },
   });
   const call = (user: any, copy?: 'office' | 'client') =>
-    controller.fullReport('t-1', copy ? { copy } : {}, { user, method: 'GET' }).then((r: any) => r.data as TaskReport);
+    controller
+      .fullReport('t-1', copy ? { copy } : {}, fakeReq({ user, method: 'GET' }))
+      .then((r: any) => r.data as TaskReport);
 
   beforeEach(() => {
-    tasks = { fullReport: jest.fn().mockImplementation(({ copy }) => Promise.resolve({ success: true, data: report(copy === 'client' ? { meta: { copy: 'client' } as any, route: undefined } : {}) })) };
+    tasks = {
+      fullReport: jest
+        .fn()
+        .mockImplementation(({ copy }) =>
+          Promise.resolve({
+            success: true,
+            data: report(copy === 'client' ? { meta: { copy: 'client' } as any, route: undefined } : {}),
+          }),
+        ),
+    };
     tracking = { send: jest.fn().mockReturnValue(of(tracked)) };
     controller = new TaskReportController(tasks as never, tracking as never);
   });
@@ -50,7 +83,9 @@ describe('TaskReportController', () => {
   describe('the copy parameter', () => {
     const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
     it.each(['office', 'client', undefined])('accepts %s', async (copy) => {
-      await expect(pipe.transform(copy ? { copy } : {}, { type: 'query', metatype: TaskReportQueryDto })).resolves.toBeDefined();
+      await expect(
+        pipe.transform(copy ? { copy } : {}, { type: 'query', metatype: TaskReportQueryDto }),
+      ).resolves.toBeDefined();
     });
     it.each(['CLIENT', 'everything', ''])('refuses %p', async (copy) => {
       await expect(pipe.transform({ copy }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
@@ -58,11 +93,17 @@ describe('TaskReportController', () => {
     it('accepts an issuer id, and refuses one that is not a short string', async () => {
       const ok = await pipe.transform({ issuer: 'le-123' }, { type: 'query', metatype: TaskReportQueryDto });
       expect(ok.issuer).toBe('le-123');
-      await expect(pipe.transform({ issuer: 'x'.repeat(41) }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
-      await expect(pipe.transform({ issuer: ['a', 'b'] }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
+      await expect(
+        pipe.transform({ issuer: 'x'.repeat(41) }, { type: 'query', metatype: TaskReportQueryDto }),
+      ).rejects.toBeDefined();
+      await expect(
+        pipe.transform({ issuer: ['a', 'b'] }, { type: 'query', metatype: TaskReportQueryDto }),
+      ).rejects.toBeDefined();
     });
     it('refuses a stray parameter', async () => {
-      await expect(pipe.transform({ copy: 'office', sharedSpaceIds: 'x' }, { type: 'query', metatype: TaskReportQueryDto })).rejects.toBeDefined();
+      await expect(
+        pipe.transform({ copy: 'office', sharedSpaceIds: 'x' }, { type: 'query', metatype: TaskReportQueryDto }),
+      ).rejects.toBeDefined();
     });
   });
 
@@ -99,12 +140,19 @@ describe('TaskReportController', () => {
 
   it('a client copy carries the route when the office added it, for a reader who may track', async () => {
     tasks.fullReport.mockImplementation(({ copy, include }) =>
-      Promise.resolve({ success: true, data: report({ meta: { copy, include: include === 'route' ? ['route'] : [] } as any }) }),
+      Promise.resolve({
+        success: true,
+        data: report({ meta: { copy, include: include === 'route' ? ['route'] : [] } as any }),
+      }),
     );
-    const r = await controller.fullReport('t-1', { copy: 'client', include: 'route' }, { user: admin, method: 'GET' }).then((x: any) => x.data);
+    const r = await controller
+      .fullReport('t-1', { copy: 'client', include: 'route' }, fakeReq({ user: fakeUser(admin), method: 'GET' }))
+      .then((x: any) => x.data);
     expect(r.route).toMatchObject({ distanceMeters: 1500 });
     expect(tasks.fullReport.mock.calls[0][0]).toMatchObject({ include: 'route' });
-    const noTrack = await controller.fullReport('t-1', { copy: 'client', include: 'route' }, { user: member(), method: 'GET' }).then((x: any) => x.data);
+    const noTrack = await controller
+      .fullReport('t-1', { copy: 'client', include: 'route' }, fakeReq({ user: fakeUser(member()), method: 'GET' }))
+      .then((x: any) => x.data);
     expect(noTrack).not.toHaveProperty('route');
   });
 
@@ -128,10 +176,17 @@ describe('TaskReportController', () => {
   });
 
   it('forwards the chosen issuer, and surfaces its refusal as a coded 400', async () => {
-    await controller.fullReport('t-1', { issuer: 'le-2' }, { user: admin, method: 'GET' });
+    await controller.fullReport('t-1', { issuer: 'le-2' }, fakeReq({ user: fakeUser(admin), method: 'GET' }));
     expect(tasks.fullReport.mock.calls[0][0]).toMatchObject({ issuer: 'le-2' });
-    tasks.fullReport.mockResolvedValue({ success: false, statusCode: 400, message: 'no', code: 'REPORT_ISSUER_INVALID' });
-    await expect(controller.fullReport('t-1', { issuer: 'foreign' }, { user: admin, method: 'GET' })).rejects.toMatchObject({ status: 400 });
+    tasks.fullReport.mockResolvedValue({
+      success: false,
+      statusCode: 400,
+      message: 'no',
+      code: 'REPORT_ISSUER_INVALID',
+    });
+    await expect(
+      controller.fullReport('t-1', { issuer: 'foreign' }, fakeReq({ user: fakeUser(admin), method: 'GET' })),
+    ).rejects.toMatchObject({ status: 400 });
   });
 
   it('a service refusal surfaces as its HTTP error', async () => {

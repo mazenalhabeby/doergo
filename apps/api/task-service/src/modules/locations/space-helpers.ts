@@ -34,4 +34,15 @@ function readAutoClock(raw: unknown): AutoClockSettings | null {
   return raw == null ? null : readAutoClockSettings(raw);
 }
 
-export { tzlookup, tzFromCoords, VALID_DAYS, spaceCurrency, readAutoClock };
+/** A rota's days must be MON…SUN; anything else is refused, naming the bad days. */
+function assertValidScheduleDays(schedule: string[] | null | undefined): void {
+  if (!schedule || schedule.length === 0) return;
+  const invalidDays = schedule.filter((day) => !VALID_DAYS.includes(day));
+  if (invalidDays.length > 0) {
+    throw new BadRequestException(
+      `Invalid schedule days: ${invalidDays.join(', ')}. Valid days: ${VALID_DAYS.join(', ')}`,
+    );
+  }
+}
+
+export { tzlookup, tzFromCoords, VALID_DAYS, assertValidScheduleDays, spaceCurrency, readAutoClock };

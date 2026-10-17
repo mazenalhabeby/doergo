@@ -1,3 +1,4 @@
+import type { Prisma, ShareRequestStatus } from '@prisma/client';
 import { Injectable, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { MemberOffboarding } from '../../common/member-offboarding/member-offboarding.service';
@@ -116,7 +117,7 @@ export class SpaceSharingService {
       select: { id: true, guestOrgId: true },
     });
     if (!share) return this.err('Share not found', HttpStatus.NOT_FOUND);
-    const patch: any = {};
+    const patch: Prisma.SpaceShareUpdateInput = {};
     if (data.level && LEVELS.includes(data.level)) patch.level = data.level;
     for (const k of ['showWorkers', 'showAttendance', 'showTracking', 'showReports', 'allowRequests'] as const) {
       if (data[k] !== undefined) patch[k] = !!data[k];
@@ -240,9 +241,10 @@ export class SpaceSharingService {
       const space = await this.ownerAssertSpace(data.spaceId, data.ownerOrgId);
       if (!space) return this.err('Space not found', HttpStatus.NOT_FOUND);
     }
-    const where: any = { spaceId: data.spaceId };
+    const where: Prisma.SpaceShareRequestWhereInput = { spaceId: data.spaceId };
     if (data.guestOrgId) where.guestOrgId = data.guestOrgId;
-    if (data.status) where.status = data.status;
+    // A filter from the query string; Prisma refuses a value that is not a status (as it always did).
+    if (data.status) where.status = data.status as ShareRequestStatus;
     const requests = await this.prisma.spaceShareRequest.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 });
     return { success: true as const, data: requests };
   }

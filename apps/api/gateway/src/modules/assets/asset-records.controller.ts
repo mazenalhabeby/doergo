@@ -7,6 +7,7 @@ import { AssetListRowDto, UpdateAssetListRowDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /assets/:id — an asset's activity, money and rows. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -24,7 +25,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'What happened to this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async listActivities(@Param('id') id: string, @Request() req: any) {
+  async listActivities(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsService.listActivities({
       id,
       ...assetActor(req),
@@ -40,7 +41,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Write a note against this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: any) {
+  async addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: AuthedRequest) {
     return this.assetsService.addActivity({
       id,
       body: body?.body ?? '',
@@ -52,7 +53,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Money logged against this asset, with totals' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async listMoney(@Param('id') id: string, @Query('limit') limit: number, @Request() req: any) {
+  async listMoney(@Param('id') id: string, @Query('limit') limit: number, @Request() req: AuthedRequest) {
     return this.assetsService.listMoney({
       id,
       limit,
@@ -70,7 +71,7 @@ export class AssetRecordsController {
   async addMoney(
     @Param('id') id: string,
     @Body() body: { category?: string; amountCents?: number; note?: string; occurredAt?: string },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsService.addMoney({
       id,
@@ -87,7 +88,7 @@ export class AssetRecordsController {
   @ApiOperation({ summary: 'Remove one money entry' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'entryId', description: 'Entry ID' })
-  async removeMoney(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: any) {
+  async removeMoney(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: AuthedRequest) {
     return this.assetsService.removeMoney({
       id,
       entryId,
@@ -106,13 +107,17 @@ export class AssetRecordsController {
   async listRows(
     @Param('id') id: string,
     @Query('list') list: string,
-    @Query('search') search?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Request() req?: any,
+    @Query('search') search: string | undefined,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsService.listRows({
-      id, list, search, page, limit,
+      id,
+      list,
+      search,
+      page,
+      limit,
       ...assetActor(req),
     });
   }
@@ -121,7 +126,7 @@ export class AssetRecordsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: "Add a row to one of this asset's tables" })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async addRow(@Param('id') id: string, @Body() dto: AssetListRowDto, @Request() req: any) {
+  async addRow(@Param('id') id: string, @Body() dto: AssetListRowDto, @Request() req: AuthedRequest) {
     return this.assetsService.addRow({
       id,
       list: dto.list,
@@ -139,10 +144,11 @@ export class AssetRecordsController {
     @Param('id') id: string,
     @Param('rowId') rowId: string,
     @Body() dto: UpdateAssetListRowDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsService.updateRow({
-      id, rowId,
+      id,
+      rowId,
       values: dto.values,
       ...assetActor(req),
     });
@@ -153,9 +159,10 @@ export class AssetRecordsController {
   @ApiOperation({ summary: 'Remove one row' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'rowId', description: 'Row ID' })
-  async removeRow(@Param('id') id: string, @Param('rowId') rowId: string, @Request() req: any) {
+  async removeRow(@Param('id') id: string, @Param('rowId') rowId: string, @Request() req: AuthedRequest) {
     return this.assetsService.removeRow({
-      id, rowId,
+      id,
+      rowId,
       ...assetActor(req),
     });
   }

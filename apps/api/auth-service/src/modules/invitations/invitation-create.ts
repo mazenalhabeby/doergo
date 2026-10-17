@@ -13,6 +13,7 @@ import {
   type PermissionSet,
 } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
+import { jsonColumn } from '../../common/records/json-column';
 import type { CreateInvitationMessage } from '@hbcfield/shared/microservices';
 
 /** The input is the message contract's request type (shared with the gateway). */
@@ -168,7 +169,7 @@ export function invitationTargetFields(
     scheduleType: isTechnician && !inviteIsExternal ? data.scheduleType || null : null,
     schedule:
       isTechnician && !inviteIsExternal && data.scheduleType === 'FIXED' && data.schedule?.length
-        ? (data.schedule as any)
+        ? jsonColumn(data.schedule)
         : undefined,
     monthlyHourBudget:
       isTechnician && !inviteIsExternal && data.scheduleType === 'FLEXIBLE' ? (data.monthlyHourBudget ?? null) : null,

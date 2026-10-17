@@ -39,9 +39,10 @@ export const getWorkerHistory = rpc<{
   /** Sent by the gateway; tracking-service does not read it. */
   dispatcherId?: string;
 }>('get_worker_history');
-export const getTaskRoute = rpc<{ taskId: string; organizationId?: string; scopeSpaceIds?: string[] }>(
-  'get_task_route',
-);
+export const getTaskRoute = rpc<
+  { taskId: string; organizationId?: string; scopeSpaceIds?: string[] },
+  { success?: boolean; data?: unknown } | null
+>('get_task_route');
 export const getWorkerCurrentRoute = rpc<{ workerId: string; organizationId?: string; scopeSpaceIds?: string[] }>(
   'get_worker_current_route',
 );

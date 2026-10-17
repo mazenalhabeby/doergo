@@ -26,7 +26,7 @@ import { showUpdatePageNow } from '../../src/components/update-page';
 import { useAuth } from '../../src/contexts/auth-context';
 import { refreshChatBadge, setChatBadge } from '../../src/lib/chat-badge';
 import { activeChat } from '../../src/lib/active-chat';
-import { SocketEvents, personName } from '@hbcfield/shared/client';
+import { SocketEvents, personName, type ChatBadgeEvent, type ChatMessageEvent } from '@hbcfield/shared/client';
 import { SubscriptionGate } from '../../src/components/SubscriptionGate';
 import { TourProvider } from '../../src/components/tour';
 import { useTheme } from '../../src/contexts/theme-context';
@@ -163,7 +163,7 @@ function GlobalChatNotifier() {
     // Connected (or reconnected): anything said meanwhile was not on this socket.
     void refreshChatBadge(user?.id);
     const offs = [
-      subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+      subscribe(SocketEvents.CHAT_MESSAGE, (d: ChatMessageEvent) => {
         if (typeof d?.badge === 'number') setChatBadge(d.badge);
         const m = d?.message;
         if (!m || !m.senderId || m.senderId === user?.id) return;
@@ -172,7 +172,7 @@ function GlobalChatNotifier() {
         toast.info(name, (m.body || '').slice(0, 80));
       }),
       // Read on another screen (or this one): the server sends the new total.
-      subscribe(SocketEvents.CHAT_BADGE, (d: any) => setChatBadge(d?.total)),
+      subscribe(SocketEvents.CHAT_BADGE, (d: ChatBadgeEvent) => setChatBadge(d?.total)),
     ];
     return () => offs.forEach((off) => off());
   }, [isAuthenticated, subscribe, user?.id, toast, t]);

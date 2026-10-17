@@ -4,6 +4,7 @@ import type { ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import Redis from 'ioredis';
 import { getRedisConfig } from '@hbcfield/shared';
+import type { Server } from 'socket.io';
 
 /**
  * Socket.IO adapter backed by Redis pub/sub.
@@ -32,7 +33,7 @@ export class RedisIoAdapter extends IoAdapter {
     this.redisLogger.log(`Socket.IO Redis adapter wired (${redis.host}:${redis.port})`);
   }
 
-  createIOServer(port: number, options?: ServerOptions): any {
+  createIOServer(port: number, options?: ServerOptions): Server {
     const server = super.createIOServer(port, options);
     if (this.adapterConstructor) {
       server.adapter(this.adapterConstructor);

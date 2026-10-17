@@ -1,5 +1,6 @@
 import { getSpaceScope, isAdmin, stripWorkspaceTerms, type SpaceScope } from '@hbcfield/shared';
 
+import type { SessionUser } from '../../common/request.types';
 /**
  * Which workspaces `GET /locations` lists for this caller.
  *
@@ -10,7 +11,7 @@ import { getSpaceScope, isAdmin, stripWorkspaceTerms, type SpaceScope } from '@h
  * So they get 'own' (the spaces they are assigned to — which is where their
  * space role lives), or nothing if their profile says 'tasks'.
  */
-export function locationListScope(user: any): SpaceScope {
+export function locationListScope(user: SessionUser): SpaceScope {
   if (user?.isExternal === true && !isAdmin(user)) {
     return getSpaceScope(user) === 'tasks' ? 'tasks' : 'own';
   }
@@ -22,10 +23,10 @@ export function locationListScope(user: any): SpaceScope {
  * (`stripWorkspaceTerms`) — what the organization charges a site, and what it
  * costs, is not a client's business. Staff rows pass unchanged.
  */
-export function shapeLocationList<T>(result: T, user: any): T {
-  const r = result as any;
+export function shapeLocationList<T>(result: T, user: SessionUser): T {
+  const r = result as { data?: unknown };
   if (user?.isExternal !== true || isAdmin(user) || !Array.isArray(r?.data)) return result;
-  return { ...r, data: r.data.map((row: unknown) => stripWorkspaceTerms(row, false)) };
+  return { ...r, data: r.data.map((row: unknown) => stripWorkspaceTerms(row, false)) } as T;
 }
 
 /** What somebody who manages a workspace's people (not the workspace) may change on a member: the automatic clock only. */

@@ -13,6 +13,7 @@ import {
   isRemindable,
 } from '@hbcfield/shared';
 import { emitEvent, breakStartedEvent } from '@hbcfield/shared/microservices';
+import type { BreakType } from '@prisma/client';
 
 /** Starting a rest — moved here unchanged from break.service.ts. */
 @Injectable()
@@ -124,7 +125,7 @@ export abstract class BreakStartBase {
       data: {
         ...(data.id ? { id: data.id } : {}),
         timeEntryId: entry.id,
-        type: (data.type as any) || 'SHORT',
+        type: (data.type as BreakType) || 'SHORT',
         startedAt,
         notes: data.notes,
         ruleId: planned?.ruleId ?? null,

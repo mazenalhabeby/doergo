@@ -19,9 +19,7 @@ import { TASK_CREATION_SCOPE_RANK } from './users-common';
  */
 @Injectable()
 export class MemberAccessChecksService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Update a member's role and permissions
@@ -48,9 +46,7 @@ export class MemberAccessChecksService {
     const targetIsAdmin = member.role === Role.ADMIN;
     const grantsUserMgmt = dto.canManageUsers === true || dto.role === Role.ADMIN;
     if (grantsAdmin || targetIsAdmin || grantsUserMgmt) {
-      throw new ForbiddenException(
-        'Only an admin can grant or modify admin-level access',
-      );
+      throw new ForbiddenException('Only an admin can grant or modify admin-level access');
     }
   }
 
@@ -88,20 +84,25 @@ export class MemberAccessChecksService {
   async assertFlatPermsWithinCeiling(
     requesterId: string,
     organizationId: string,
-    data: {
-      canCreateTasks?: boolean;
-      canViewAllTasks?: boolean;
-      canAssignTasks?: boolean;
-      canViewReports?: boolean;
-      taskCreationScope?: string;
+    /** The update being written (plain values or Prisma's `{ set }` form); only these five fields are read. */
+    update: {
+      [K in 'canCreateTasks' | 'canViewAllTasks' | 'canAssignTasks' | 'canViewReports' | 'taskCreationScope']?: unknown;
     },
   ) {
+    // The value being written, whether plain or in Prisma's `{ set }` form — a grant cannot hide in the wrapper.
+    const written = (v: unknown) => (v && typeof v === 'object' && 'set' in v ? (v as { set: unknown }).set : v);
+    const data = {
+      canCreateTasks: written(update.canCreateTasks),
+      canViewAllTasks: written(update.canViewAllTasks),
+      canAssignTasks: written(update.canAssignTasks),
+      canViewReports: written(update.canViewReports),
+      taskCreationScope: written(update.taskCreationScope) as string | undefined,
+    };
     const flags = ['canCreateTasks', 'canViewAllTasks', 'canAssignTasks', 'canViewReports'] as const;
     const granted = flags.filter((k) => data[k] === true);
     const scopeRank = (s?: string | null) => TASK_CREATION_SCOPE_RANK[s ?? 'NONE'] ?? 0;
     // SELF is the default every non-admin role change writes; only SPACE/ORG reach others.
-    const widensScope =
-      data.taskCreationScope !== undefined && scopeRank(data.taskCreationScope) > scopeRank('SELF');
+    const widensScope = data.taskCreationScope !== undefined && scopeRank(data.taskCreationScope) > scopeRank('SELF');
     if (granted.length === 0 && !widensScope) return;
 
     const { isAdmin, perms } = await this.resolveRequesterOrgPerms(requesterId, organizationId);
@@ -130,15 +131,8 @@ export class MemberAccessChecksService {
     return u?.isExternal === true;
   }
 
-  async assertCanAssignMemberRole(
-    requesterId: string,
-    organizationId: string,
-    roleId: string,
-  ) {
-    const { isAdmin, perms } = await this.resolveRequesterOrgPerms(
-      requesterId,
-      organizationId,
-    );
+  async assertCanAssignMemberRole(requesterId: string, organizationId: string, roleId: string) {
+    const { isAdmin, perms } = await this.resolveRequesterOrgPerms(requesterId, organizationId);
     if (isAdmin) return;
     const targetRole = await this.prisma.accessRole.findFirst({
       where: { id: roleId, organizationId, ...SHARED_ROLE_WHERE },
@@ -146,9 +140,7 @@ export class MemberAccessChecksService {
     });
     if (!targetRole) return; // invalid id → caller's own tenancy check throws
     if (permissionsExceed(perms, permissionsFromOrgRole(targetRole.permissions))) {
-      throw new ForbiddenException(
-        'You cannot assign a role with permissions beyond your own',
-      );
+      throw new ForbiddenException('You cannot assign a role with permissions beyond your own');
     }
   }
 
@@ -208,7 +200,12 @@ export class MemberAccessChecksService {
       org?.ownerId,
     );
     if (verdict.ok) return;
-    const what = action === 'reset' ? 'reset the password of' : action === 'email' ? 'change the sign-in email of' : 'make external';
+    const what =
+      action === 'reset'
+        ? 'reset the password of'
+        : action === 'email'
+          ? 'change the sign-in email of'
+          : 'make external';
     throw new ForbiddenException(
       verdict.reason === 'OWNER'
         ? `Only the organization owner can ${what} the owner.`

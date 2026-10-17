@@ -8,6 +8,7 @@ import { ExtraTimeGatewayService } from './extra-time.gateway-service';
 import { AttendanceQueueService } from './attendance.queue.service';
 import { scopeFor } from '../../common/permission-scope';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * What every /attendance controller shares: the services, and which spaces
  * this caller may see attendance for.
@@ -39,7 +40,7 @@ export abstract class AttendanceControllerBase {
    * because collapsing them into one falsy check is precisely how this becomes
    * a data leak.
    */
-  protected scope(req: any, key: AccessPermissionKey): string[] | null {
+  protected scope(req: AuthedRequest, key: AccessPermissionKey): string[] | null {
     return scopeFor(req.user, key);
   }
 }

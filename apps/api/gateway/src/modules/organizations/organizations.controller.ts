@@ -30,6 +30,7 @@ import {
   updateSecuritySettings,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 @ApiTags('organizations')
 @UseInterceptors(LabourCostInterceptor)
@@ -49,7 +50,7 @@ export class OrganizationsController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Get organization join code info' })
   @ApiResponse({ status: 200, description: 'Join code info' })
-  async getJoinCode(@CurrentUser() user: CurrentUserData) {
+  async getJoinCode(@CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, onboardingGetJoinCode, {
         organizationId: user.organizationId,
@@ -61,7 +62,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Regenerate organization join code (ADMIN only)' })
   @ApiResponse({ status: 200, description: 'New join code generated' })
-  async regenerateJoinCode(@CurrentUser() user: CurrentUserData) {
+  async regenerateJoinCode(@CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingRegenerateJoinCode, {
         organizationId: user.organizationId,
@@ -80,7 +81,7 @@ export class OrganizationsController {
       "The organization's leave policy: annual days, leave year, carry-over, " +
       'when HBCField started counting (ADMIN only)',
   })
-  async updateLeavePolicy(@Body() dto: LeavePolicyInput, @CurrentUser() user: CurrentUserData) {
+  async updateLeavePolicy(@Body() dto: LeavePolicyInput, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingUpdateLeavePolicy, {
         organizationId: callerOrgId(user),
@@ -103,7 +104,7 @@ export class OrganizationsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update organization settings (ADMIN only)' })
   @ApiResponse({ status: 200, description: 'Settings updated' })
-  async updateSettings(@Body() dto: UpdateOrgSettingsDto, @CurrentUser() user: CurrentUserData) {
+  async updateSettings(@Body() dto: UpdateOrgSettingsDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingUpdateJoinPolicy, {
         organizationId: user.organizationId,
@@ -121,7 +122,7 @@ export class OrganizationsController {
   @Get('profile-badges')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get org profile badge visibility config' })
-  async getProfileBadges(@CurrentUser() user: CurrentUserData) {
+  async getProfileBadges(@CurrentUser() user: SessionUser) {
     return firstValueFrom(sendRpc(this.authClient, getProfileBadges, { organizationId: user.organizationId }));
   }
 
@@ -130,7 +131,7 @@ export class OrganizationsController {
   @ApiOperation({ summary: 'Update org profile badge visibility config' })
   async updateProfileBadges(
     @Body() body: { showRole: boolean; showSpecialty: boolean },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateProfileBadges, {
@@ -149,18 +150,19 @@ export class OrganizationsController {
   @Get('profile')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get organization profile and all settings' })
-  async getOrgProfile(@CurrentUser() user: CurrentUserData) {
+  async getOrgProfile(@CurrentUser() user: SessionUser) {
     return firstValueFrom(sendRpc(this.authClient, getOrgProfile, { organizationId: user.organizationId }));
   }
 
   @Patch('profile')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update organization profile (name, industry, address, etc.)' })
-  async updateOrgProfile(@Body() dto: UpdateOrgProfileDto, @CurrentUser() user: CurrentUserData) {
+  async updateOrgProfile(@Body() dto: UpdateOrgProfileDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateOrgProfile, {
         organizationId: callerOrgId(user),
-        updates: dto,
+        // A plain copy of the body (same JSON on the wire); the service allow-lists the fields.
+        updates: { ...dto },
       }),
     );
 
@@ -168,13 +170,13 @@ export class OrganizationsController {
 
     // The currency rides on every session (orgCurrency); drop the cached ones so
     // screens read the new one on their next request, not a minute later.
-    if ((dto as any).currency !== undefined) {
+    if (dto.currency !== undefined) {
       await this.authCache.invalidateOrganization(user.organizationId!).catch(() => undefined);
     }
 
     // Toggling the in-house/external capability (or changing industry, which can
     // re-default it) changes how field seats are classified → re-sync to Stripe.
-    if ((dto as any).usesExternalWorkers !== undefined || (dto as any).industry !== undefined) {
+    if (dto.usesExternalWorkers !== undefined || dto.industry !== undefined) {
       this.billing.rebill(user.organizationId);
     }
 
@@ -184,7 +186,7 @@ export class OrganizationsController {
   @Patch('notification-prefs')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org notification preferences' })
-  async updateNotificationPrefs(@Body() dto: UpdateNotificationPrefsDto, @CurrentUser() user: CurrentUserData) {
+  async updateNotificationPrefs(@Body() dto: UpdateNotificationPrefsDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateOrgNotificationPrefs, {
         organizationId: callerOrgId(user),
@@ -200,7 +202,7 @@ export class OrganizationsController {
   @Patch('security-settings')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update org security settings' })
-  async updateSecuritySettings(@Body() dto: UpdateSecuritySettingsDto, @CurrentUser() user: CurrentUserData) {
+  async updateSecuritySettings(@Body() dto: UpdateSecuritySettingsDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateSecuritySettings, {
         organizationId: callerOrgId(user),

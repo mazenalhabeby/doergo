@@ -6,6 +6,7 @@ import { PendingProposalsQueryDto } from '../dto';
 import { AssetIntakeController } from '../asset-intake.controller';
 import { assetRoute } from './assets-controllers.fixture';
 
+import { fakeReq } from '../../../common/testing/fake-request';
 /**
  * GET /assets/proposals/pending?spaceId= — a workspace's Assets tab asking for
  * its OWN proposals.
@@ -54,17 +55,22 @@ describe('the route', () => {
     const proposalPending = jest.fn(async (d: any) => d);
     const controller = new AssetIntakeController({ proposalPending } as any, {} as any);
     const user = {
-      id: 'u-lena', role: 'EMPLOYEE', organizationId: 'org1', canViewAllTasks: false,
+      id: 'u-lena',
+      role: 'EMPLOYEE',
+      organizationId: 'org1',
+      canViewAllTasks: false,
       access: { org: {}, perSpace: { linz: { canManageAssets: true }, graz: { canManageAssets: true } } },
     };
-    await controller.pendingProposals({ spaceId: 'linz' }, { user });
-    expect(proposalPending).toHaveBeenCalledWith(expect.objectContaining({
-      spaceId: 'linz',
-      manageSpaceIds: ['linz', 'graz'],
-      organizationId: 'org1',
-    }));
+    await controller.pendingProposals({ spaceId: 'linz' }, fakeReq({ user }));
+    expect(proposalPending).toHaveBeenCalledWith(
+      expect.objectContaining({
+        spaceId: 'linz',
+        manageSpaceIds: ['linz', 'graz'],
+        organizationId: 'org1',
+      }),
+    );
 
-    await controller.pendingProposals({}, { user });
+    await controller.pendingProposals({}, fakeReq({ user }));
     expect(proposalPending).toHaveBeenLastCalledWith(expect.objectContaining({ spaceId: undefined }));
   });
 });

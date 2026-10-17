@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { paginated, documentVisibleTo, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 
@@ -25,12 +26,12 @@ export class AuditLogService {
     try {
       await this.prisma.activityLog.create({
         data: {
-          eventType: data.eventType as any,
+          eventType: data.eventType,
           userId: data.userId,
           targetUserId: data.targetUserId,
           resourceType: data.resourceType,
           resourceId: data.resourceId,
-          metadata: data.metadata ? (data.metadata as any) : undefined,
+          metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
           organizationId: data.organizationId,
@@ -59,7 +60,10 @@ export class AuditLogService {
     const doc = await this.prisma.document.findFirst({
       where: { id: resourceId, organizationId },
       select: {
-        userId: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true,
+        userId: true,
+        hiddenFromMember: true,
+        rolesOverridden: true,
+        visibleToRoleIds: true,
         type: { select: { visibleToRoleIds: true } },
       },
     });
@@ -106,7 +110,7 @@ export class AuditLogService {
       return paginated([], { page, limit, total: 0 });
     }
 
-    const where: any = {
+    const where: Prisma.ActivityLogWhereInput = {
       organizationId: query.organizationId,
     };
 
@@ -116,9 +120,10 @@ export class AuditLogService {
     if (query.resourceId) where.resourceId = query.resourceId;
 
     if (query.startDate || query.endDate) {
-      where.createdAt = {};
-      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
-      if (query.endDate) where.createdAt.lte = new Date(query.endDate);
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (query.startDate) createdAt.gte = new Date(query.startDate);
+      if (query.endDate) createdAt.lte = new Date(query.endDate);
+      where.createdAt = createdAt;
     }
 
     const [logs, total] = await Promise.all([

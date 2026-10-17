@@ -3,15 +3,11 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestj
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AssetsService } from './assets.service';
 import { AssetsQueueService } from './assets.queue.service';
-import {
-  CreateAssetCategoryDto,
-  UpdateAssetCategoryDto,
-  CreateAssetTypeDto,
-  UpdateAssetTypeDto,
-} from './dto';
+import { CreateAssetCategoryDto, UpdateAssetCategoryDto, CreateAssetTypeDto, UpdateAssetTypeDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 @ApiTags('asset-categories')
 @ApiBearerAuth()
 /*
@@ -60,7 +56,7 @@ export class AssetCategoriesController {
   @Post()
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset category' })
-  async createCategory(@Body() dto: CreateAssetCategoryDto, @Request() req: any) {
+  async createCategory(@Body() dto: CreateAssetCategoryDto, @Request() req: AuthedRequest) {
     return this.assetsQueueService.createCategory({
       ...dto,
       ...assetActor(req),
@@ -75,9 +71,9 @@ export class AssetCategoriesController {
   */
   @Get()
   @RequirePermissionInSpace('canViewAssets')
-  @ApiOperation({ summary: 'List asset kinds — a space\'s own, or the whole org' })
+  @ApiOperation({ summary: "List asset kinds — a space's own, or the whole org" })
   @ApiQuery({ name: 'spaceId', required: false, description: "Only this space's kinds" })
-  async findAllCategories(@Request() req: any, @Query('spaceId') spaceId?: string) {
+  async findAllCategories(@Request() req: AuthedRequest, @Query('spaceId') spaceId?: string) {
     return this.assetsService.findAllCategories({
       spaceId,
       ...assetActor(req),
@@ -88,11 +84,7 @@ export class AssetCategoriesController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Update a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
-  async updateCategory(
-    @Param('id') id: string,
-    @Body() dto: UpdateAssetCategoryDto,
-    @Request() req: any,
-  ) {
+  async updateCategory(@Param('id') id: string, @Body() dto: UpdateAssetCategoryDto, @Request() req: AuthedRequest) {
     return this.assetsQueueService.updateCategory({
       id,
       ...dto,
@@ -104,7 +96,7 @@ export class AssetCategoriesController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Delete a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
-  async deleteCategory(@Param('id') id: string, @Request() req: any) {
+  async deleteCategory(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsQueueService.deleteCategory({
       id,
       ...assetActor(req),
@@ -122,7 +114,7 @@ export class AssetCategoriesController {
   async createType(
     @Param('categoryId') categoryId: string,
     @Body() dto: CreateAssetTypeDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsQueueService.createType({
       categoryId,
@@ -135,10 +127,7 @@ export class AssetCategoriesController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'List all types in a category' })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
-  async findTypesByCategory(
-    @Param('categoryId') categoryId: string,
-    @Request() req: any,
-  ) {
+  async findTypesByCategory(@Param('categoryId') categoryId: string, @Request() req: AuthedRequest) {
     return this.assetsService.findTypesByCategory({
       categoryId,
       ...assetActor(req),
@@ -163,19 +152,13 @@ export class AssetCategoriesController {
 @RequireModule('assets')
 @Controller('asset-types')
 export class AssetTypesController {
-  constructor(
-    private readonly assetsQueueService: AssetsQueueService,
-  ) {}
+  constructor(private readonly assetsQueueService: AssetsQueueService) {}
 
   @Patch(':id')
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Update an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
-  async updateType(
-    @Param('id') id: string,
-    @Body() dto: UpdateAssetTypeDto,
-    @Request() req: any,
-  ) {
+  async updateType(@Param('id') id: string, @Body() dto: UpdateAssetTypeDto, @Request() req: AuthedRequest) {
     return this.assetsQueueService.updateType({
       id,
       ...dto,
@@ -187,7 +170,7 @@ export class AssetTypesController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Delete an asset type' })
   @ApiParam({ name: 'id', description: 'Type ID' })
-  async deleteType(@Param('id') id: string, @Request() req: any) {
+  async deleteType(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsQueueService.deleteType({
       id,
       ...assetActor(req),

@@ -1,5 +1,5 @@
 import { event } from '../event';
-import type { SentNotRead } from './events-types';
+import type { ChatMessageFacts, SentNotRead } from './events-types';
 
 /**
  * Events handled by notification-service (chat-notification.handler, crew-notification.handler, crm-
@@ -8,7 +8,7 @@ import type { SentNotRead } from './events-types';
 
 export const chatMessageEvent = event<{
   conversationId: string;
-  message: any;
+  message: ChatMessageFacts;
   recipients: string[];
   /** ⚠️ Not sent by a SYSTEM line (chat-system.ts) — kept as it is. */
   organizationId?: string;

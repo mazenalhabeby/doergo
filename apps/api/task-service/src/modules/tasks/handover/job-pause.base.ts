@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { crewPresence, pausesAtClockOut, stepCapabilities, stepStartsWork } from '@hbcfield/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
-import { WorkflowConfigCache } from '../../../common/cache/workflow-config-cache.service';
+import { WorkflowConfigCache, type CachedWorkflow } from '../../../common/cache/workflow-config-cache.service';
 import { resolveSpaceDefaultWorkflowIds } from '../../../common/space-workflow.util';
 import { JobTimeService } from './job-time.service';
 import { NEVER_WORKING, Candidate } from './job-pause-helpers';
@@ -60,7 +60,7 @@ export abstract class JobPauseBase {
       rows.filter((r) => !r.workflowId).map((r) => r.spaceId),
     );
     const flowOf = async (r: Candidate) => r.workflowId ?? (r.spaceId ? (spaceFlow.get(r.spaceId) ?? null) : null);
-    const flows = new Map<string | null, Promise<any>>();
+    const flows = new Map<string | null, Promise<CachedWorkflow | null>>();
     const working = await Promise.all(
       rows.map(async (r) => {
         const flowId = await flowOf(r);

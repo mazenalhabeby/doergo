@@ -169,7 +169,7 @@ export class SpaceRolesService extends SpaceRolesBase {
         isSystem: false,
         kind,
         // ⚠️ A work role grants nothing — forced here, whatever the request said.
-        permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)) as any,
+        permissions: permissionsForKind(kind, this.normalizePermissions(data.permissions)),
         position: (max._max.position ?? -1) + 1,
       },
     });
@@ -244,7 +244,7 @@ export class SpaceRolesService extends SpaceRolesBase {
         patch.permissions = this.normalizePermissions({
           ...(role.permissions as PermissionSet),
           ...data.permissions,
-        }) as any;
+        });
         /*
           ⚠️ An admin's edit to a BUILT-IN makes it the organization's own.
           The built-in catch-up (shared builtin-role-sync) re-grants what a

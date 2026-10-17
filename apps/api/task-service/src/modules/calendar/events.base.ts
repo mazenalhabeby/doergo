@@ -97,7 +97,7 @@ export abstract class EventsBase {
           select: { id: true, address: true, name: true },
         });
         if (!s) throw new BadRequestException({ code: 'EVENT_OFFICE_UNKNOWN', message: 'That office is not one of yours.' });
-        const wide = isAdmin({ role: caller.role } as any) || caller.canManageUsers || caller.orgWideView;
+        const wide = isAdmin({ role: caller.role as string }) || caller.canManageUsers || caller.orgWideView;
         if (!wide && !(await this.rules.workspacesOf(caller.organizationId, caller.userId)).includes(s.id)) {
           throw new ForbiddenException({ code: 'EVENT_OFFICE_NOT_YOURS', message: 'You can meet at a workspace you work in.' });
         }
@@ -135,7 +135,7 @@ export abstract class EventsBase {
         code: 'EVENT_PERSON_UNKNOWN',
         message: 'Somebody on the list is not a colleague here.',
       });
-    if (!(isAdmin({ role: caller.role } as any) || caller.canManageUsers || caller.orgWideView)) {
+    if (!(isAdmin({ role: caller.role as string }) || caller.canManageUsers || caller.orgWideView)) {
       const circle = await this.circleOf(caller);
       const outside = people.filter((p) => !circle.has(p.id));
       if (outside.length)

@@ -142,7 +142,7 @@ export class LibraryCurationService {
         },
       });
       return success(createdRow);
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'P2002') throw new ConflictException(`A template with the slug "${slug}" already exists.`);
       throw err;
     }

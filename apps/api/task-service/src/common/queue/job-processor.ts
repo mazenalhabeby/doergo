@@ -15,16 +15,16 @@ import { buildJobError } from '@hbcfield/shared';
 export abstract class JobProcessor extends WorkerHost {
   protected readonly logger = new Logger(this.constructor.name);
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job<any, any, string>): Promise<unknown> {
     this.logger.debug(`Processing job ${job.id} of type ${job.name}`);
     try {
       return await this.handleJob(job);
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(`Job ${job.id} failed: ${error?.message}`, error?.stack);
       throw buildJobError(error);
     }
   }
 
   /** Route the job by `job.name` to the service method that does the work. */
-  protected abstract handleJob(job: Job<any, any, string>): Promise<any>;
+  protected abstract handleJob(job: Job<any, any, string>): Promise<unknown>;
 }

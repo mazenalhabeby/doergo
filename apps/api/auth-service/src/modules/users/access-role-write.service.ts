@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import {
   Role,
   PERMISSION_KEYS,
@@ -8,6 +9,7 @@ import {
 } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, HttpStatus } from '@nestjs/common';
 import { AccessRolesBase } from './access-roles.base';
+import { jsonColumn } from '../../common/records/json-column';
 
 /** Changing the organization's roles: adding one, editing it (within the grant ceiling), deleting it. */
 @Injectable()
@@ -42,7 +44,7 @@ export class AccessRoleWriteService extends AccessRolesBase {
         color: data.color || '#6b7280',
         scope: 'ORG',
         isSystem: false,
-        permissions: permissions as any,
+        permissions: permissions as Prisma.InputJsonValue,
         position: (max._max.position ?? -1) + 1,
       },
       select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
@@ -156,10 +158,9 @@ export class AccessRoleWriteService extends AccessRolesBase {
         data.organizationId,
         role.scope === 'SPACE' ? 'space' : 'org',
       );
-      patch.permissions = permissionsForKind(
-        role.kind === 'WORK' ? 'WORK' : 'MANAGEMENT',
-        sanitized as Record<string, boolean>,
-      ) as any;
+      patch.permissions = jsonColumn(
+        permissionsForKind(role.kind === 'WORK' ? 'WORK' : 'MANAGEMENT', sanitized as Record<string, boolean>),
+      );
       /*
         A built-in whose permissions an admin CHANGES becomes theirs: code never
         adds to it again (see syncBuiltInRoles). Saving the same set is not a

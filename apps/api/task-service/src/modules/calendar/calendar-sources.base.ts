@@ -189,7 +189,7 @@ export abstract class CalendarSourcesBase {
     const rows = await this.prisma.customerActivity.findMany({
       where: {
         organizationId: q.organizationId,
-        type: 'REMINDER' as any,
+        type: 'REMINDER',
         doneAt: null,
         dueAt: { gte: fromAt, lt: toAt },
         OR: [{ reminderAssigneeId: q.userId }, { reminderAssigneeId: null, authorId: q.userId }],
@@ -217,7 +217,7 @@ export abstract class CalendarSourcesBase {
         organizationId: q.organizationId,
         userId: q.userId,
         hiddenFromMember: false,
-        status: { in: ['ISSUED', 'SIGNED', 'AWAITING_SIGNATURE'] as any },
+        status: { in: ['ISSUED', 'SIGNED', 'AWAITING_SIGNATURE'] },
         expiresOn: { gte: new Date(`${q.from}T00:00:00Z`), lte: new Date(`${q.to}T00:00:00Z`) },
       },
       select: { id: true, title: true, expiresOn: true },

@@ -4,6 +4,7 @@ import type { PrismaService } from '../../common/prisma/prisma.service';
 import { CHAT_USER_SELECT } from './chat-shape';
 import type { ChatCountersService } from './chat-counters.service';
 import { emitEvent, chatMembersChangedEvent, chatMessageEvent } from '@hbcfield/shared/microservices';
+import type { Prisma } from '@prisma/client';
 
 /** "First Last", for a system line's snapshot of who did what. */
 export { personName } from '@hbcfield/shared';
@@ -22,7 +23,7 @@ export async function writeSystemLine(
   alsoTell: string[] = [],
 ) {
   const message = await deps.prisma.message.create({
-    data: { conversationId, senderId: meta.actor.id, kind: 'SYSTEM', meta: meta as any, body: '' },
+    data: { conversationId, senderId: meta.actor.id, kind: 'SYSTEM', meta: meta as unknown as Prisma.InputJsonValue, body: '' },
     include: { sender: CHAT_USER_SELECT },
   });
   const members = await deps.prisma.conversationMember.findMany({

@@ -7,6 +7,7 @@ import {
   isOrganizationSuspended,
   tokenIssuedBeforeCutoff,
   memberAccessOf,
+  type SharedSpaceGrant,
 } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -189,7 +190,7 @@ export class TokenValidationService {
             },
           })
         : [];
-      let sharedSpaces: any[] | undefined;
+      let sharedSpaces: SharedSpaceGrant[] | undefined;
       if (sharedGrants.length) {
         const spaceIds = sharedGrants.map((g) => g.spaceId);
         const ownerOrgIds = [...new Set(sharedGrants.map((g) => g.ownerOrgId))];

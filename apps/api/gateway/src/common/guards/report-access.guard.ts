@@ -2,6 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { scopeFor } from '../permission-scope';
 import { isAdmin, accessAllowsAnywhere } from '@hbcfield/shared';
 
+import type { SessionUser } from '../request.types';
 /**
  * WHERE a report reader may read: the spaces granting canViewReports or
  * canViewAllTasks, merged. `null` = org-wide (an admin, or either permission
@@ -13,7 +14,7 @@ import { isAdmin, accessAllowsAnywhere } from '@hbcfield/shared';
  * and jobs across the organization. This list is what the query engine and the
  * timesheet narrow to.
  */
-export function reportSpaceScope(user: any): string[] | null {
+export function reportSpaceScope(user: SessionUser): string[] | null {
   const reports = scopeFor(user, 'canViewReports');
   const tasks = scopeFor(user, 'canViewAllTasks');
   if (reports === null || tasks === null) return null;

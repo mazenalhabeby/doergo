@@ -11,6 +11,7 @@ import { scopeWhere, scopeAllows, type AttendanceScope } from '@hbcfield/shared'
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { EDITOR_SELECT, MEMBER_SELECT } from './attendance-selects';
 import { AttendanceReadBase } from './attendance-read.base';
+import type { Prisma, TimeEntryStatus } from '@prisma/client';
 
 /**
  * Reading many people's entries: one workspace's, every workspace's at once, who
@@ -74,7 +75,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
     // A startDate/endDate range takes precedence; otherwise a single day
     // (defaulting to today when nothing is provided).
     const range = buildDateRangeFilter(data.startDate, data.endDate);
-    const where: any = {
+    const where: Prisma.TimeEntryWhereInput = {
       locationId: data.locationId,
       clockInAt: range ?? buildSingleDayFilter(data.date || new Date().toISOString()),
     };
@@ -222,7 +223,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
     const limit = clampListLimit(data.limit, 50, 500);
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.TimeEntryWhereInput = {
       organizationId: data.organizationId,
       // Only the spaces this caller was granted — see attendance-scope.ts. The
       // gateway guard widens on any space grant; this is what narrows again.
@@ -239,7 +240,7 @@ export class AttendanceEntriesReadService extends AttendanceReadBase {
 
     // Status filter
     if (data.status) {
-      where.status = data.status;
+      where.status = data.status as TimeEntryStatus;
     }
 
     // Name / email search

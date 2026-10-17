@@ -118,5 +118,5 @@ export class CountedTimeService {
  * four services to save this declaration.
  */
 type PrismaWriter = {
-  timeEntry: { update: (args: any) => Promise<any> };
+  timeEntry: { update: (args: unknown) => Promise<unknown> };
 };

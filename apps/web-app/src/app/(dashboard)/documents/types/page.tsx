@@ -7,10 +7,7 @@ import { useTranslation } from "react-i18next"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { Plus, ArrowLeft, ShieldCheck, RotateCcw } from "lucide-react"
-import {
-  documentsApi, workflowsApi, organizationsApi,
-  type DocumentTypeRow,
-} from "@/lib/api"
+import { documentsApi, workflowsApi, organizationsApi, type DocumentTypeRow } from "@/lib/api"
 import { STARTER_DOCUMENT_TYPES, type StarterDocumentType } from "@hbcfield/shared/client"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/toast"
@@ -78,10 +75,9 @@ export default function DocumentTypesPage() {
   const taken = useMemo(() => new Set(types.map((ty) => ty.key)), [types])
 
   const setActive = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      isActive
-        ? documentsApi.updateType(id, { isActive: true })
-        : documentsApi.deactivateType(id),
+    // The answer is not read (either call's), only success or failure.
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }): Promise<unknown> =>
+      isActive ? documentsApi.updateType(id, { isActive: true }) : documentsApi.deactivateType(id),
     onSuccess: (_r, v) => {
       notify.success(t(v.isActive ? "documents.types.restored" : "documents.types.retired"))
       queryClient.invalidateQueries({ queryKey: keys.documents.types() })
@@ -97,7 +93,10 @@ export default function DocumentTypesPage() {
         existingKeys={taken}
         workflows={workflows}
         roles={roles}
-        onClose={() => { setEditing(null); setStarter(null) }}
+        onClose={() => {
+          setEditing(null)
+          setStarter(null)
+        }}
       />
     )
   }
@@ -116,9 +115,7 @@ export default function DocumentTypesPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
           {t("documents.types.title")}
         </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-          {t("documents.types.explainer")}
-        </p>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{t("documents.types.explainer")}</p>
       </header>
 
       {isLoading ? (
@@ -149,27 +146,25 @@ export default function DocumentTypesPage() {
             <h2 className="mb-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
               {active.length > 0 ? t("documents.types.addAnother") : t("documents.types.startWith")}
             </h2>
-            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">
-              {t("documents.types.startWithHint")}
-            </p>
+            <p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{t("documents.types.startWithHint")}</p>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {STARTER_DOCUMENT_TYPES.filter((st) => !taken.has(st.key)).map((st) => (
                 <button
                   key={st.key}
                   onClick={() => setStarter(st)}
-                  className={"rounded-xl border border-slate-200 bg-white p-4 text-left " +
+                  className={
+                    "rounded-xl border border-slate-200 bg-white p-4 text-left " +
                     "transition-colors hover:border-blue-400 dark:border-slate-800 " +
-                    "dark:bg-slate-900"}
+                    "dark:bg-slate-900"
+                  }
                 >
                   <div className="mb-1.5 flex items-center gap-2">
                     <DirectionIcon direction={st.direction} />
                     <span className="font-medium text-slate-900 dark:text-slate-100">
                       {t(`documents.types.starters.${st.key}.label`, { defaultValue: st.label })}
                     </span>
-                    {st.isCredential && (
-                      <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-amber-600" />
-                    )}
+                    {st.isCredential && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-amber-600" />}
                   </div>
                   <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                     {t(`documents.types.starters.${st.key}.description`, { defaultValue: st.description })}
@@ -179,14 +174,14 @@ export default function DocumentTypesPage() {
 
               <button
                 onClick={() => setStarter(BLANK)}
-                className={"rounded-xl border border-dashed border-slate-300 p-4 text-left " +
-                  "transition-colors hover:border-slate-400 dark:border-slate-700"}
+                className={
+                  "rounded-xl border border-dashed border-slate-300 p-4 text-left " +
+                  "transition-colors hover:border-slate-400 dark:border-slate-700"
+                }
               >
                 <div className="mb-1.5 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-slate-400" />
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {t("documents.types.blank")}
-                  </span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{t("documents.types.blank")}</span>
                 </div>
                 <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">
                   {t("documents.types.blankHint")}
@@ -208,12 +203,13 @@ export default function DocumentTypesPage() {
                   {retired.map((ty) => (
                     <li
                       key={ty.id}
-                      className={"flex flex-wrap items-center gap-3 rounded-xl border border-dashed " +
-                        "border-slate-200 p-4 dark:border-slate-800"}
+                      className={
+                        "flex flex-wrap items-center gap-3 rounded-xl border border-dashed " +
+                        "border-slate-200 p-4 dark:border-slate-800"
+                      }
                     >
                       <span className="flex-1 text-slate-500 line-through dark:text-slate-400">{ty.label}</span>
-                      <Button size="sm" variant="ghost"
-                        onClick={() => setActive.mutate({ id: ty.id, isActive: true })}>
+                      <Button size="sm" variant="ghost" onClick={() => setActive.mutate({ id: ty.id, isActive: true })}>
                         <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                         {t("documents.types.restore")}
                       </Button>
@@ -221,9 +217,7 @@ export default function DocumentTypesPage() {
                   ))}
                 </ul>
               )}
-              <p className="mt-2 max-w-2xl text-xs text-slate-400">
-                {t("documents.types.retiredHint")}
-              </p>
+              <p className="mt-2 max-w-2xl text-xs text-slate-400">{t("documents.types.retiredHint")}</p>
             </section>
           )}
         </>

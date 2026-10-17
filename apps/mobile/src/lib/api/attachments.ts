@@ -1,20 +1,25 @@
 import { putToPresignedUrl, type PresignedUpload } from '@hbcfield/shared/client';
 import { call, E } from './client';
+import type { DetailAttachment } from './types';
 
 // Task Attachments API
 export const taskAttachmentsApi = {
-  getPresignedUrl: async (taskId: string, fileName: string, fileType: string): Promise<PresignedUpload & { fileUrl: string }> => {
+  getPresignedUrl: async (
+    taskId: string,
+    fileName: string,
+    fileType: string,
+  ): Promise<PresignedUpload & { fileUrl: string }> => {
     return call(E.tasks.attachmentPresign, { id: taskId }, { body: { fileName, fileType } });
   },
 
   confirmUpload: async (
     taskId: string,
     data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number },
-  ): Promise<any> => {
+  ): Promise<DetailAttachment> => {
     return call(E.tasks.attachmentConfirm, { id: taskId }, { body: data });
   },
 
-  getAttachments: async (taskId: string): Promise<any[]> => {
+  getAttachments: async (taskId: string): Promise<DetailAttachment[]> => {
     return call(E.tasks.attachments, { id: taskId });
   },
 

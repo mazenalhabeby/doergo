@@ -8,6 +8,7 @@ import {
   normalizeEmail,
 } from '@hbcfield/shared';
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Optional } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateEmployeeDto, UpdateEmployeeDto } from './dto';
 import * as bcrypt from 'bcryptjs';
@@ -16,15 +17,12 @@ import { BCRYPT_COST_FACTOR, generateRandomPassword } from './users-common';
 /** Changing a member: adding one, and editing their profile and rates. */
 @Injectable()
 export class EmployeeWriteService {
-
-
   constructor(
     private readonly prisma: PrismaService,
     // Optional: socket revocation is best effort, and unit tests that do not
     // exercise it need not wire it.
     @Optional() private readonly sessionEvents?: SessionEvents,
   ) {}
-
 
   /**
    * Create a new employee
@@ -115,11 +113,7 @@ export class EmployeeWriteService {
   /**
    * Update an employee
    */
-  async updateEmployee(
-    id: string,
-    organizationId: string,
-    dto: UpdateEmployeeDto,
-  ) {
+  async updateEmployee(id: string, organizationId: string, dto: UpdateEmployeeDto) {
     // Verify employee exists and belongs to organization
     const existing = await this.prisma.user.findFirst({
       where: {
@@ -147,16 +141,11 @@ export class EmployeeWriteService {
         // default" — and is NOT the same as 0, which is no paid leave at all,
         // so an explicit null has to reach the database rather than be treated
         // as "field omitted".
-        ...((dto as any).leaveAllowance !== undefined && {
-          leaveAllowance:
-            (dto as any).leaveAllowance === null || (dto as any).leaveAllowance === ''
-              ? null
-              : Number((dto as any).leaveAllowance),
+        ...(dto.leaveAllowance !== undefined && {
+          leaveAllowance: dto.leaveAllowance === null || dto.leaveAllowance === '' ? null : Number(dto.leaveAllowance),
         }),
-        ...((dto as any).employmentStartDate !== undefined && {
-          employmentStartDate: (dto as any).employmentStartDate
-            ? new Date((dto as any).employmentStartDate)
-            : null,
+        ...(dto.employmentStartDate !== undefined && {
+          employmentStartDate: dto.employmentStartDate ? new Date(dto.employmentStartDate) : null,
         }),
         /*
           What this person bills and costs per hour.
@@ -174,7 +163,8 @@ export class EmployeeWriteService {
         ...(dto.rating !== undefined && { rating: dto.rating }),
         ...(dto.ratingCount !== undefined && { ratingCount: dto.ratingCount }),
         ...(dto.canCreateTasks !== undefined && { canCreateTasks: dto.canCreateTasks }),
-        ...(dto.profileBadges !== undefined && { profileBadges: dto.profileBadges }),
+        // ⚠️ Stored as sent (JSON column), as before — the badges are not validated on this path.
+        ...(dto.profileBadges !== undefined && { profileBadges: dto.profileBadges as Prisma.InputJsonValue }),
       },
       select: {
         id: true,
@@ -196,7 +186,7 @@ export class EmployeeWriteService {
         updatedAt: true,
       },
     });
-    await this.writeMemberRates(id, organizationId, dto as any);
+    await this.writeMemberRates(id, organizationId, dto);
 
     /*
       ⚠️ Deactivating through the edit form used to leave the person signed in:
@@ -229,7 +219,7 @@ export class EmployeeWriteService {
       await this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};
         const write = (kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY', cents: unknown) =>
-          writeRateChange(tx as any, {
+          writeRateChange(tx, {
             organizationId,
             target: 'MEMBER',
             targetId: userId,
@@ -237,8 +227,10 @@ export class EmployeeWriteService {
             cents,
             effectiveFrom: dto.rateEffectiveFrom,
           });
-        if (dto.billRateCents !== undefined) patch.billRateCents = (await write('BILL_HOUR', dto.billRateCents)).nowCents;
-        if (dto.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', dto.costRateCents)).nowCents;
+        if (dto.billRateCents !== undefined)
+          patch.billRateCents = (await write('BILL_HOUR', dto.billRateCents)).nowCents;
+        if (dto.costRateCents !== undefined)
+          patch.costRateCents = (await write('COST_HOUR', dto.costRateCents)).nowCents;
         // What a DAY of this person costs — history only, read through the rate book.
         if (dto.costDayCents !== undefined) await write('COST_DAY', dto.costDayCents);
         if (Object.keys(patch).length) await tx.user.update({ where: { id: userId }, data: patch });

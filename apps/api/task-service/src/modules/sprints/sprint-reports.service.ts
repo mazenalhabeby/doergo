@@ -8,11 +8,15 @@ import {
   zonedWallTimeToUtc,
   assertFoundInOrg,
 } from '@hbcfield/shared';
+import type { Prisma } from '@prisma/client';
 
 /**
  * What a sprint achieved: the report written when it completes, its daily
  * burndown, reading it back, and the team's velocity.
  */
+/** What a sprint report reads of each task in the sprint. */
+type SprintReportTask = { id: string; status: string; storyPoints: number | null; createdAt: Date | string };
+
 @Injectable()
 export class SprintReportsService {
   private readonly logger = new Logger(SprintReportsService.name);
@@ -26,8 +30,8 @@ export class SprintReportsService {
    * Generate a sprint report with burndown data, committed/completed stats
    */
   async generateSprintReport(
-    tx: any,
-    sprint: any,
+    tx: Prisma.TransactionClient,
+    sprint: { tasks?: SprintReportTask[] | null },
     sprintMeta: { id: string; organizationId: string; startDate: Date; endDate: Date; timezone: string },
   ) {
     const tasks = sprint.tasks || [];
@@ -39,35 +43,35 @@ export class SprintReportsService {
     // Count committed tasks (those that were in the sprint)
     const committedTasks = tasks.length;
     const committedPoints = tasks.reduce(
-      (sum: number, t: any) => sum + (t.storyPoints || 0),
+      (sum: number, t) => sum + (t.storyPoints || 0),
       0,
     );
 
     // Count completed tasks
-    const completedTasksList = tasks.filter((t: any) =>
+    const completedTasksList = tasks.filter((t) =>
       COMPLETED_STATUSES.includes(t.status),
     );
     const completedTasks = completedTasksList.length;
     const completedPoints = completedTasksList.reduce(
-      (sum: number, t: any) => sum + (t.storyPoints || 0),
+      (sum: number, t) => sum + (t.storyPoints || 0),
       0,
     );
 
     // Count carried over (not completed and not canceled)
     const carriedOverList = tasks.filter(
-      (t: any) =>
+      (t) =>
         !COMPLETED_STATUSES.includes(t.status) &&
         !CANCELED_STATUSES.includes(t.status),
     );
     const carriedOverTasks = carriedOverList.length;
     const carriedOverPoints = carriedOverList.reduce(
-      (sum: number, t: any) => sum + (t.storyPoints || 0),
+      (sum: number, t) => sum + (t.storyPoints || 0),
       0,
     );
 
     // Count tasks added mid-sprint (created after sprint start)
     const addedMidSprint = tasks.filter(
-      (t: any) => new Date(t.createdAt) > sprintMeta.startDate,
+      (t) => new Date(t.createdAt) > sprintMeta.startDate,
     ).length;
 
     // Build daily burndown from task status change events
@@ -105,14 +109,14 @@ export class SprintReportsService {
    * For each day, calculates remaining story points based on status change events.
    */
   private async buildDailyBurndown(
-    tx: any,
-    tasks: any[],
+    tx: Prisma.TransactionClient,
+    tasks: SprintReportTask[],
     startDate: Date,
     endDate: Date,
     totalPoints: number,
     timezone = 'UTC',
   ): Promise<{ date: string; remaining: number; ideal: number }[]> {
-    const taskIds = tasks.map((t: any) => t.id);
+    const taskIds = tasks.map((t) => t.id);
 
     // Get all STATUS_CHANGED events for sprint tasks during the sprint period
     const statusEvents = taskIds.length > 0
@@ -172,7 +176,8 @@ export class SprintReportsService {
         new Date(statusEvents[eventIndex]!.createdAt) < dayEnd
       ) {
         const event = statusEvents[eventIndex]!;
-        const metadata = event.metadata as any;
+        // A STATUS_CHANGED event's metadata carries the step it moved to.
+        const metadata = event.metadata as { newStatus?: string } | null;
         if (metadata?.newStatus && COMPLETED_STATUSES.includes(metadata.newStatus)) {
           completedTaskIds.add(event.taskId);
         } else if (metadata?.newStatus && !COMPLETED_STATUSES.includes(metadata.newStatus)) {

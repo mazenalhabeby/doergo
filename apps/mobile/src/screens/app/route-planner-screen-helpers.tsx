@@ -10,17 +10,27 @@ import { type RouteStop, formatDuration } from '@hbcfield/shared/client';
 export const fmtDur = (s: number) => formatDuration(Math.round(s / 60));
 
 /** One stop of an ordered route: its number (or a tick once behind you), where, and the drive to it. */
-export const LegRow = memo(function LegRow({ stop: s, index: i, last, done, drive, onNav }: {
-  stop: RouteStop; index: number; last: boolean; done: boolean; drive: string | null; onNav: (s: RouteStop) => void;
+export const LegRow = memo(function LegRow({
+  stop: s,
+  index: i,
+  last,
+  done,
+  drive,
+  onNav,
+}: {
+  stop: RouteStop;
+  index: number;
+  last: boolean;
+  done: boolean;
+  drive: string | null;
+  onNav: (s: RouteStop) => void;
 }) {
   const { colors } = useTheme();
   return (
     <View style={styles.legRow}>
       <View style={styles.legRail}>
         <View style={[styles.legDot, { backgroundColor: done ? COLORS.success : COLORS.primary }]}>
-          {done
-            ? <Ionicons name="checkmark" size={15} color="#fff" />
-            : <Text style={styles.legDotText}>{i + 1}</Text>}
+          {done ? <Ionicons name="checkmark" size={15} color="#fff" /> : <Text style={styles.legDotText}>{i + 1}</Text>}
         </View>
         {!last && <View style={[styles.legLine, { backgroundColor: colors.border }]} />}
       </View>
@@ -28,7 +38,11 @@ export const LegRow = memo(function LegRow({ stop: s, index: i, last, done, driv
         <Text style={[styles.legTitle, { color: done ? colors.textMuted : colors.textPrimary }]} numberOfLines={1}>
           {s.label}
         </Text>
-        {!!s.address && <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>{s.address}</Text>}
+        {!!s.address && (
+          <Text style={[styles.legAddr, { color: colors.textMuted }]} numberOfLines={1}>
+            {s.address}
+          </Text>
+        )}
         {/* The drive that gets you here — the number a rep plans the
             morning around, and the reason the order matters. */}
         {!!drive && <Text style={[styles.legDrive, { color: colors.textMuted }]}>{drive}</Text>}
@@ -41,8 +55,18 @@ export const LegRow = memo(function LegRow({ stop: s, index: i, last, done, driv
 });
 
 /** One task to pick for the route — ticked or not. */
-export const PickRow = memo(function PickRow({ id, title, address, on, onToggle }: {
-  id: string; title: string; address: string | null; on: boolean; onToggle: (id: string) => void;
+export const PickRow = memo(function PickRow({
+  id,
+  title,
+  address,
+  on,
+  onToggle,
+}: {
+  id: string;
+  title: string;
+  address: string | null;
+  on: boolean;
+  onToggle: (id: string) => void;
 }) {
   const { colors } = useTheme();
   return (
@@ -57,10 +81,20 @@ export const PickRow = memo(function PickRow({ id, title, address, on, onToggle 
         },
       ]}
     >
-      <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={on ? COLORS.primary : colors.textMuted} />
+      <Ionicons
+        name={on ? 'checkmark-circle' : 'ellipse-outline'}
+        size={22}
+        color={on ? COLORS.primary : colors.textMuted}
+      />
       <View style={{ flex: 1 }}>
-        <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>{title}</Text>
-        {!!address && <Text style={[styles.pickAddr, { color: colors.textMuted }]} numberOfLines={1}>{address}</Text>}
+        <Text style={[styles.pickTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+          {title}
+        </Text>
+        {!!address && (
+          <Text style={[styles.pickAddr, { color: colors.textMuted }]} numberOfLines={1}>
+            {address}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -95,58 +129,81 @@ export const styles = StyleSheet.create({
   // Where the driver is standing: a dot, not a pin. A pin says "a place you
   // are going to", and this is the place they already are.
   originOuter: {
-    width: 22, height: 22, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(37,99,235,0.22)',
   },
   originInner: {
-    width: 11, height: 11, borderRadius: 6,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
     backgroundColor: COLORS.primary,
-    borderWidth: 2, borderColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
 
   pin: { alignItems: 'center' },
   pinBubble: {
-    minWidth: 26, height: 26, borderRadius: 13,
+    minWidth: 26,
+    height: 26,
+    borderRadius: 13,
     paddingHorizontal: 6,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.5,
-    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 }, elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
-  pinText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold as any },
+  pinText: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
   // The stem that plants the bubble on its coordinate.
   pinTail: {
-    width: 0, height: 0, marginTop: -2,
-    borderLeftWidth: 4, borderRightWidth: 4, borderTopWidth: 6,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    width: 0,
+    height: 0,
+    marginTop: -2,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
   },
 
   // ── Sheet ───────────────────────────────────────────────────────────────
   sheetHead: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.md, gap: 6 },
   sheetTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  sheetTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold as any, letterSpacing: -0.2 },
-  sheetReset: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  sheetTitle: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold, letterSpacing: -0.2 },
+  sheetReset: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   sheetMeta: { fontSize: FONT_SIZE.base },
   sheetError: { color: '#dc2626', fontSize: FONT_SIZE.sm },
   sheetNote: { fontSize: FONT_SIZE.xs, lineHeight: 15 },
   cta: {
     marginTop: SPACING.sm,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: SPACING.sm,
     paddingVertical: 14,
     borderRadius: RADIUS.lg,
   },
-  ctaText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold as any },
+  ctaText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
 
   // ── Picking stops ───────────────────────────────────────────────────────
   pickRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    paddingVertical: SPACING.md, paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md, borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
     marginBottom: SPACING.sm,
   },
-  pickTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  pickTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   pickAddr: { fontSize: FONT_SIZE.xs, marginTop: 1 },
 
   // ── The ordered route ───────────────────────────────────────────────────
@@ -155,34 +212,46 @@ export const styles = StyleSheet.create({
   legRow: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md },
   legRail: { alignItems: 'center', width: 26 },
   legDot: {
-    width: 26, height: 26, borderRadius: 13,
-    alignItems: 'center', justifyContent: 'center',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  legDotText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold as any },
+  legDotText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.bold },
   legLine: { width: 2, flex: 1, minHeight: 26, marginVertical: 2 },
   legBody: { flex: 1, paddingBottom: SPACING.lg },
-  legTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  legTitle: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   legAddr: { fontSize: FONT_SIZE.xs, marginTop: 1 },
-  legDrive: { fontSize: FONT_SIZE.xs, marginTop: 3, fontWeight: FONT_WEIGHT.medium as any },
+  legDrive: { fontSize: FONT_SIZE.xs, marginTop: 3, fontWeight: FONT_WEIGHT.medium },
   legNav: {
-    width: 32, height: 32, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
   },
 
   chooser: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   chooserRow: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACING.md,
-    paddingVertical: 14, paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.md, borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: 14,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
   },
-  chooserLabel: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold as any },
+  chooserLabel: { flex: 1, fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
   chooserCancel: { alignItems: 'center', paddingVertical: SPACING.md },
-  chooserCancelText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium as any },
+  chooserCancelText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.medium },
   navNote: { fontSize: FONT_SIZE.xs, marginTop: SPACING.sm, lineHeight: 16 },
   navChip: {
-    paddingVertical: 7, paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.full, borderWidth: 1,
+    paddingVertical: 7,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
   },
 
   empty: { alignItems: 'center', gap: SPACING.md, paddingVertical: SPACING.xxxl },

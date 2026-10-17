@@ -1,4 +1,5 @@
 import { assetSpaces } from '@hbcfield/shared';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * The caller of an asset route, as task-service's `AssetAccessService` reads
@@ -29,13 +30,15 @@ export interface AssetActorPayload {
   canManageAssets: boolean;
 }
 
-export function assetActor(req: { user?: any }): AssetActorPayload {
-  const user = req.user ?? {};
+export function assetActor(req: { user?: SessionUser }): AssetActorPayload {
+  // No session (never on a guarded route) yields empty fields, as before.
+  const user = (req.user ?? {}) as SessionUser;
   const manage = assetSpaces(user, 'manage');
   return {
     userId: user.id,
     userRole: user.role,
-    organizationId: user.organizationId,
+    // Asset routes sit behind the onboarding guard, so a member here has an organization.
+    organizationId: user.organizationId as string,
     isExternal: user.isExternal === true,
     viewSpaceIds: assetSpaces(user, 'view'),
     logSpaceIds: assetSpaces(user, 'log'),

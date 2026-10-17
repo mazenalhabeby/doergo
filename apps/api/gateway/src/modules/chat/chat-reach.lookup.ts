@@ -20,8 +20,8 @@ export class ChatReachLookup {
     if (!organizationId) return new Set();
     const hit = this.cache.get(userId);
     if (hit && Date.now() - hit.at < TTL_MS) return hit.ids;
-    const res: any = await this.chat.reachableIds({ userId, organizationId }).catch(() => null);
-    const list: unknown = res?.data ?? res;
+    const res: unknown = await this.chat.reachableIds({ userId, organizationId }).catch(() => null);
+    const list: unknown = (res as { data?: unknown } | null)?.data ?? res;
     const ids = new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : []);
     if (this.cache.size >= MAX_PEOPLE) this.cache.delete(this.cache.keys().next().value!);
     this.cache.set(userId, { ids, at: Date.now() });

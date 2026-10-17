@@ -9,7 +9,7 @@ import {
   assertFoundInOrg,
 } from '@hbcfield/shared';
 import type { PrismaService } from '../../common/prisma/prisma.service';
-import type { WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
+import type { CachedWorkflow, WorkflowConfigCache } from '../../common/cache/workflow-config-cache.service';
 import { resolveSpaceDefaultWorkflowId } from '../../common/space-workflow.util';
 import type { StatusTask, UpdateStatusInput } from './task-status.types';
 
@@ -82,7 +82,7 @@ export function assertMayMoveStatus(
   // moved with a CONTRIBUTE/CONTROL (canCreateTasks) grant for its real space
   // — mirroring update() and assign(). Own-org tasks skip this.
   if (task.organizationId !== data.organizationId) {
-    if (!task.spaceId || !accessAllowsInSpace((data as any).access, 'canCreateTasks', task.spaceId)) {
+    if (!task.spaceId || !accessAllowsInSpace(data.access, 'canCreateTasks', task.spaceId)) {
       throw new ForbiddenException('You can only update the status of tasks in your organization');
     }
   }
@@ -116,10 +116,10 @@ export async function assertTransitionAllowed(
   task: StatusTask,
   data: UpdateStatusInput,
   isManager: boolean,
-): Promise<any> {
-  let effWorkflowId: string | null = (task as any).workflowId ?? null;
-  if (!effWorkflowId && (task as any).spaceId) {
-    effWorkflowId = await resolveSpaceDefaultWorkflowId(prisma, (task as any).spaceId);
+): Promise<CachedWorkflow | null> {
+  let effWorkflowId: string | null = task.workflowId ?? null;
+  if (!effWorkflowId && task.spaceId) {
+    effWorkflowId = await resolveSpaceDefaultWorkflowId(prisma, task.spaceId);
   }
   let allowedTransitions: string[] | null = null;
   let workflowStatusKeys: string[] | null = null;
@@ -127,7 +127,7 @@ export async function assertTransitionAllowed(
   // there is one; otherwise from the canonical statuses.
   let currentIsFinished =
     task.status === TaskStatus.COMPLETED || task.status === TaskStatus.CLOSED || task.status === TaskStatus.CANCELED;
-  let wf: any = null;
+  let wf = null;
   if (effWorkflowId) {
     // Read from the per-org workflow cache (Redis) instead of the DB.
     wf = await workflowCache.getWorkflow(data.organizationId, effWorkflowId);

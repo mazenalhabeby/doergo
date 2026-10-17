@@ -20,7 +20,7 @@ export class AssetsProcessor extends JobProcessor {
     super();
   }
 
-  protected async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<unknown> {
     switch (job.name) {
       // Categories
       case ASSET_JOB_TYPES.CREATE_CATEGORY:

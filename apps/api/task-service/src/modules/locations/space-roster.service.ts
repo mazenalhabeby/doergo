@@ -58,7 +58,7 @@ export class SpaceRosterService extends SpaceServiceBase {
     // strict org scoping.
     const isShared = Array.isArray(data.sharedSpaceIds) && data.sharedSpaceIds.includes(data.locationId);
     /*
-      ⚠️ This read had no scope at all: any member of the organization — an
+      ⚠️ This read had no scope at all: unknown member of the organization — an
       external one included — read any workspace's roster by id, with emails
       and what each person is working on right now. Same rule as the batch now;
       a space the caller may not read is not found. (A shared space is

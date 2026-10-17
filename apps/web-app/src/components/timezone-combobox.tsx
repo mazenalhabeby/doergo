@@ -4,7 +4,7 @@ import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
 import { cityFromTz } from "@/lib/utils"
-import { geoFetch } from "@/lib/geocode"
+import { geoFetch, type GeoTimezoneAnswer } from "@/lib/geocode"
 import { allTimezones, tzOffset } from "@/lib/timezones"
 
 /**
@@ -57,7 +57,7 @@ export async function fetchTimezone(lat: number, lng: number): Promise<string | 
       signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return null
-    const data = await res.json()
+    const data = (await res.json()) as GeoTimezoneAnswer | null
     return typeof data?.timezone === "string" ? data.timezone : null
   } catch {
     return null

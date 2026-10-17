@@ -87,9 +87,7 @@ export function MediaAccessScreen({
         </View>
       ) : access.blocked ? (
         <>
-          <Text style={s.blocked}>
-            {t('perm.blocked', 'Camera access is turned off for this app.')}
-          </Text>
+          <Text style={s.blocked}>{t('perm.blocked', 'Camera access is turned off for this app.')}</Text>
           <TouchableOpacity
             style={s.primary}
             onPress={() => Linking.openSettings()}
@@ -108,7 +106,9 @@ export function MediaAccessScreen({
           accessibilityRole="button"
           activeOpacity={0.85}
         >
-          {access.asking ? <ActivityIndicator size="small" color={COLORS.white} /> : (
+          {access.asking ? (
+            <ActivityIndicator size="small" color={COLORS.white} />
+          ) : (
             <>
               <Ionicons name="camera" size={17} color={COLORS.white} />
               <Text style={s.primaryText}>{t('perm.allow', 'Allow camera')}</Text>
@@ -133,8 +133,12 @@ const styles = (c: ThemeColors) =>
     stage: { width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: SPACING.lg },
     glow: { position: 'absolute', width: CARD_W * 1.6, height: CARD_W, borderRadius: CARD_W, opacity: 0.9 },
     card: {
-      width: CARD_W, height: CARD_W * 0.647, borderRadius: RADIUS.lg,
-      backgroundColor: c.card, justifyContent: 'center', paddingHorizontal: SPACING.lg,
+      width: CARD_W,
+      height: CARD_W * 0.647,
+      borderRadius: RADIUS.lg,
+      backgroundColor: c.card,
+      justifyContent: 'center',
+      paddingHorizontal: SPACING.lg,
     },
     corner: { position: 'absolute', width: 26, height: 26, borderColor: COLORS.primary },
     tl: { top: -1, left: -1, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: RADIUS.lg },
@@ -146,7 +150,7 @@ const styles = (c: ThemeColors) =>
 
     title: {
       fontSize: FONT_SIZE.xxl,
-      fontWeight: FONT_WEIGHT.bold as any,
+      fontWeight: FONT_WEIGHT.bold,
       color: c.textPrimary,
       textAlign: 'center',
       marginTop: SPACING.md,
@@ -174,10 +178,16 @@ const styles = (c: ThemeColors) =>
 
     blocked: { fontSize: FONT_SIZE.sm, color: '#f59e0b', textAlign: 'center', marginBottom: SPACING.md },
     primary: {
-      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-      backgroundColor: COLORS.primary, borderRadius: 99, height: 52, width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: COLORS.primary,
+      borderRadius: 99,
+      height: 52,
+      width: '100%',
     },
     primaryText: { color: COLORS.white, fontSize: FONT_SIZE.base, fontWeight: '700' },
     secondary: { paddingVertical: SPACING.lg },
-    secondaryText: { fontSize: FONT_SIZE.sm, color: c.textMuted, fontWeight: FONT_WEIGHT.semibold as any },
+    secondaryText: { fontSize: FONT_SIZE.sm, color: c.textMuted, fontWeight: FONT_WEIGHT.semibold },
   });

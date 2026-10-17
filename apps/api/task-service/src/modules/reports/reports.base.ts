@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { MediaSigner } from '../../common/storage/media-signer.service';
+import { MediaSigner, type StoredFile } from '../../common/storage/media-signer.service';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 
 /** What the service-report services share: their dependencies, and signing a report's attachment links. */
@@ -19,7 +19,7 @@ export abstract class ReportsBase {
   ) {}
 
   /** A report as a client receives it — photos behind signed links. */
-  protected async withSignedAttachments<T extends { attachments?: any[] } | null>(report: T): Promise<T> {
+  protected async withSignedAttachments<T extends { attachments?: StoredFile[] } | null>(report: T): Promise<T> {
     if (!report || !report.attachments) return report;
     return { ...report, attachments: await this.media.signAll(report.attachments) };
   }

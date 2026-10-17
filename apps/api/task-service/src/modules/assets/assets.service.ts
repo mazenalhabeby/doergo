@@ -3,6 +3,7 @@ import { success, paginated, TaskStatus, SELECTABLE_ASSET_WHERE, assertFoundInOr
 import { type AssetActor } from './asset-access.service';
 import { AssetHoldersService } from './asset-holders.service';
 import { AssetsBase } from './assets.base';
+import type { Prisma, AssetStatus } from '@prisma/client';
 
 /**
  * The records themselves: the things an organization owns and who has them.
@@ -34,7 +35,7 @@ export class AssetsService extends AssetsBase {
     const limit = this.access.pageSize(query.limit);
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.AssetWhereInput = {
       organizationId: query.organizationId,
     };
 
@@ -50,7 +51,7 @@ export class AssetsService extends AssetsBase {
 
     if (query.categoryId) where.categoryId = query.categoryId;
     if (query.typeId) where.typeId = query.typeId;
-    if (query.status) where.status = query.status;
+    if (query.status) where.status = query.status as AssetStatus;
     /*
       Retired records stay on the books and out of the way.
 

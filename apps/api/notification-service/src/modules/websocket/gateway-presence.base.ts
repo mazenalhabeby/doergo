@@ -77,7 +77,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
   // ATTENDANCE EVENTS
   // =========================================================================
 
-  emitClockIn(userId: string, organizationId: string, timeEntry: any) {
+  emitClockIn(userId: string, organizationId: string, timeEntry: unknown) {
     this.logger.log(`[EMIT] attendance.clockIn for user ${userId}`);
     this.messagesSent += 1;
     // Single de-duplicated emit: a socket in BOTH rooms (e.g. the user viewing
@@ -85,7 +85,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
     this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.CLOCK_IN, { userId, timeEntry });
   }
 
-  emitClockOut(userId: string, organizationId: string, timeEntry: any) {
+  emitClockOut(userId: string, organizationId: string, timeEntry: unknown) {
     this.logger.log(`[EMIT] attendance.clockOut for user ${userId}`);
     this.messagesSent += 1;
     this.server.to(`user:${userId}`).to(`org:${organizationId}`).emit(SocketEvents.CLOCK_OUT, { userId, timeEntry });
@@ -95,7 +95,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
   // BREAK EVENTS
   // =========================================================================
 
-  emitBreakStarted(userId: string, organizationId: string, breakData: any) {
+  emitBreakStarted(userId: string, organizationId: string, breakData: unknown) {
     this.logger.log(`[EMIT] break.started for user ${userId}`);
     this.messagesSent += 1;
     this.server
@@ -104,7 +104,7 @@ export abstract class GatewayPresenceBase extends GatewayTaskEmitsBase {
       .emit(SocketEvents.BREAK_STARTED, { userId, break: breakData });
   }
 
-  emitBreakEnded(userId: string, organizationId: string, breakData: any) {
+  emitBreakEnded(userId: string, organizationId: string, breakData: unknown) {
     this.logger.log(`[EMIT] break.ended for user ${userId}`);
     this.messagesSent += 1;
     this.server

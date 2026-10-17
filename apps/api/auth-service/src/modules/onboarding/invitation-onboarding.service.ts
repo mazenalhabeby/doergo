@@ -9,6 +9,7 @@ import {
   InvitationAlreadyClaimedError,
   applyInvitationPlacement,
 } from '../invitations/invitation-apply';
+import { orphanUser } from './orphan-user';
 
 /** An existing account accepting an invitation code during onboarding. */
 @Injectable()
@@ -25,19 +26,8 @@ export class InvitationOnboardingService {
    * Path C: Accept an invitation code as an existing (orphan) user.
    */
   async acceptInvitationForExistingUser(userId: string, code: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user) {
-      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'User not found' };
-    }
-
-    if (user.onboardingCompleted) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Onboarding already completed' };
-    }
-
-    if (user.organizationId) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'User already belongs to an organization' };
-    }
+    const orphan = await orphanUser(this.prisma, userId);
+    if ('refusal' in orphan) return orphan.refusal;
 
     // Validate invitation
     const codeHashValue = hashCode(code.toUpperCase().trim());

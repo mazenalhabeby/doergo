@@ -1,4 +1,4 @@
-import { shiftIssuesApi } from '../../lib/api/shift-issues';
+import { shiftIssuesApi, type IssuePhoto } from '../../lib/api/shift-issues';
 import { uploadToPresignedUrl } from '../../lib/api/attachments';
 import type { PickedImage } from '../../hooks/useImagePicker';
 
@@ -15,17 +15,24 @@ export const MAX_PHOTOS = 5;
  * "compressor valve seized" because one JPEG timed out is the worse failure by
  * a long way.
  */
-export async function uploadPhotos(issueId: string, photos: PickedImage[]): Promise<unknown[]> {
-  const out: unknown[] = [];
+export async function uploadPhotos(issueId: string, photos: PickedImage[]): Promise<IssuePhoto[]> {
+  const out: IssuePhoto[] = [];
   for (const p of photos) {
     try {
       const pre = await shiftIssuesApi.presignAttachment(issueId, p.fileName, p.mimeType);
       await uploadToPresignedUrl(pre.uploadUrl, p.uri, p.mimeType);
       out.push({
-        fileKey: pre.fileKey, fileUrl: pre.fileUrl, fileName: p.fileName,
-        fileSize: p.fileSize, mimeType: p.mimeType, width: p.width, height: p.height,
+        fileKey: pre.fileKey,
+        fileUrl: pre.fileUrl,
+        fileName: p.fileName,
+        fileSize: p.fileSize,
+        mimeType: p.mimeType,
+        width: p.width,
+        height: p.height,
       });
-    } catch { /* skip a failed photo, never lose the message */ }
+    } catch {
+      /* skip a failed photo, never lose the message */
+    }
   }
   return out;
 }

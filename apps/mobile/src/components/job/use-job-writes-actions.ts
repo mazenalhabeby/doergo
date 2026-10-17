@@ -8,6 +8,9 @@ import { type WriteStatus } from './job-writes-helpers';
 import { useJobWritesData } from './use-job-writes-data';
 
 /** useJobWrites's state and handlers — everything before its markup, moved here unchanged. */
+/** One handover note as the task carries it. */
+type Handover = NonNullable<JobTask['handovers']>[number];
+
 export function useJobWritesActions(
   job: JobState,
   deps: { writeStatus: WriteStatus; onClosed: () => void; labelOf: (key: string) => string },
@@ -122,7 +125,7 @@ export function useJobWritesActions(
           if (sent.waitFor) waitFor.push(sent.waitFor);
         }
         let queued = false;
-        let saved: any = null;
+        let saved: Handover;
         if (offline.engine) {
           const { id, outcome } = await writeHandover(offline.engine, {
             taskId: task.id,
@@ -137,7 +140,7 @@ export function useJobWritesActions(
           queued = outcome.kind === 'queued';
           saved =
             outcome.kind === 'done'
-              ? outcome.response
+              ? (outcome.response as Handover) // the server's copy of the note
               : {
                   id,
                   note,

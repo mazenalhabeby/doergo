@@ -9,6 +9,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { sendRpc, getWorkers, findUser, getWorkerTasks } from '@hbcfield/shared/microservices';
 import { getTechnicianAssignments } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /users — other people: the workers list, one person, their tasks, their
@@ -28,7 +29,7 @@ export class UserDirectoryController {
   @ApiOperation({ summary: 'Get all employees (ADMIN or MANAGER)' })
   @ApiQuery({ name: 'organizationId', required: false })
   @RequirePermission('canViewAllTasks')
-  async getWorkers(@CurrentUser() user: CurrentUserData, @Query() query: Record<string, any>) {
+  async getWorkers(@CurrentUser() user: SessionUser, @Query() query: Record<string, any>) {
     // Office can only see workers in their organization
     return firstValueFrom(
       sendRpc(this.authClient, getWorkers, {
@@ -47,7 +48,7 @@ export class UserDirectoryController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get user by ID' })
-  async findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Users can access their own data; admins and members granted "view all
     // tasks" can access other users (scoped to their org below).
     const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
@@ -74,7 +75,7 @@ export class UserDirectoryController {
   @Get(':id/tasks')
   @ApiOperation({ summary: 'Get tasks assigned to an employee' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async getWorkerTasks(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getWorkerTasks(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Plain workers see only their own tasks; admins and "view all tasks" members
     // can see any worker's tasks (scoped to their org).
     const privileged = user.role === Role.ADMIN || !!user.canViewAllTasks;
@@ -104,7 +105,7 @@ export class UserDirectoryController {
   @Get(':id/assignments')
   @ApiOperation({ summary: 'Get company location assignments for a user' })
   @RequirePermission('canViewAllTasks')
-  async getUserAssignments(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getUserAssignments(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Verify user is in the same organization
     const targetUser = await firstValueFrom(
       sendRpc(this.authClient, findUser, { id, organizationId: callerOrgId(user) }),

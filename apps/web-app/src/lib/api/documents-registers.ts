@@ -1,4 +1,4 @@
-import { call, type ApiResponse } from '../http-client';
+import { call, type ApiResponse } from "../http-client"
 import type {
   BrowseLevel,
   ComplianceRow,
@@ -7,9 +7,9 @@ import type {
   IssuedRegister,
   MatchCandidateRow,
   TemplatePreview,
-} from './types/documents';
-import { documentsEndpoints } from '@hbcfield/shared/client';
-import { unwrapDocuments } from './documents-response';
+} from "./types/documents"
+import { documentsEndpoints } from "@hbcfield/shared/client"
+import { unwrapDocuments } from "./documents-response"
 
 /** The registers, the credential board, signing, templates and drafts. Part of `documentsApi`, moved here unchanged. */
 export const documentsRegistersApi = {
@@ -30,13 +30,13 @@ export const documentsRegistersApi = {
     year?: number
     undated?: boolean
   }) => {
-    const response = await call(documentsEndpoints.browse, {
-        groupBy: params.groupBy,
-        typeId: params.typeId,
-        userId: params.userId,
-        year: params.year,
-        undated: params.undated ? true : undefined,
-      }) as ApiResponse<{ success: boolean; data: BrowseLevel }>
+    const response = (await call(documentsEndpoints.browse, {
+      groupBy: params.groupBy,
+      typeId: params.typeId,
+      userId: params.userId,
+      year: params.year,
+      undated: params.undated ? true : undefined,
+    })) as ApiResponse<{ success: boolean; data: BrowseLevel }>
     return (
       unwrapDocuments<BrowseLevel>(response) ?? {
         groupBy: params.groupBy ?? "type",
@@ -64,7 +64,8 @@ export const documentsRegistersApi = {
     page?: number
     limit?: number
   }) => {
-    const response = await call(documentsEndpoints.sent, undefined, { query: {
+    const response = (await call(documentsEndpoints.sent, undefined, {
+      query: {
         tab: params?.tab,
         typeId: params?.typeId,
         userId: params?.userId,
@@ -72,7 +73,8 @@ export const documentsRegistersApi = {
         search: params?.search,
         page: params?.page,
         limit: params?.limit,
-      } }) as ApiResponse<{ success: boolean; data: IssuedRegister }>
+      },
+    })) as ApiResponse<{ success: boolean; data: IssuedRegister }>
     // An empty register rather than undefined: the screen renders the same way
     // for "nothing issued" and for a response the unwrapper did not recognise,
     // and neither is an error worth showing an admin.
@@ -89,19 +91,22 @@ export const documentsRegistersApi = {
 
   /** Validity and dates only — never the certificate itself. */
   compliance: async () => {
-    const response = await call(documentsEndpoints.compliance) as ApiResponse<{ success: boolean; data: ComplianceRow[] }>;
-    return unwrapDocuments<any[]>(response) ?? [];
+    const response = (await call(documentsEndpoints.compliance)) as ApiResponse<{
+      success: boolean
+      data: ComplianceRow[]
+    }>
+    return unwrapDocuments(response) ?? []
   },
 
   // ── Signing ──────────────────────────────────────────────────────────────
 
   /** Record agreement to sign electronically. Its own act, before the drawing. */
   consent: async (id: string) => {
-    const response = await call(
-      documentsEndpoints.consent,
-      { id },
-      { body: {} }) as ApiResponse<{ success: boolean; data: { consentText: string; consentAt: string } }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.consent, { id }, { body: {} })) as ApiResponse<{
+      success: boolean
+      data: { consentText: string; consentAt: string }
+    }>
+    return unwrapDocuments(response)
   },
 
   /**
@@ -111,39 +116,44 @@ export const documentsRegistersApi = {
    * a dropped connection returns the existing seal instead of signing twice.
    */
   sign: async (id: string, body: { signatureImage: string; idempotencyKey: string }) => {
-    const response = await call(
-      documentsEndpoints.sign,
-      { id },
-      { body: body }) as ApiResponse<{ success: boolean; data: { documentId: string; alreadySigned: boolean } }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.sign, { id }, { body: body })) as ApiResponse<{
+      success: boolean
+      data: { documentId: string; alreadySigned: boolean }
+    }>
+    return unwrapDocuments(response)
   },
 
   /** "I have read this" — receipt, not agreement. */
   acknowledge: async (id: string) => {
-    const response = await call(documentsEndpoints.acknowledge, { id }, { body: {} }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.acknowledge, { id }, { body: {} })) as ApiResponse<{
+      success: boolean
+    }>
+    return unwrapDocuments(response)
   },
 
   // ── Templates ────────────────────────────────────────────────────────────
 
   listTemplates: async (includeInactive = false) => {
-    const response = await call(
-      documentsEndpoints.templates,
-      undefined,
-      { query: { includeInactive: includeInactive || undefined } }) as ApiResponse<{ success: boolean; data: ContractTemplateRow[] }>;
-    return unwrapDocuments<any[]>(response) ?? [];
+    const response = (await call(documentsEndpoints.templates, undefined, {
+      query: { includeInactive: includeInactive || undefined },
+    })) as ApiResponse<{ success: boolean; data: ContractTemplateRow[] }>
+    return unwrapDocuments(response) ?? []
   },
 
   createTemplate: async (data: {
-    typeId: string; name: string; body: string;
-    appliesToRoleId?: string; appliesToPosition?: string;
-    signatureMode?: string; offerValidDays?: number;
+    typeId: string
+    name: string
+    body: string
+    appliesToRoleId?: string
+    appliesToPosition?: string
+    signatureMode?: string
+    offerValidDays?: number
   }) => {
-    const response = await call(
-      documentsEndpoints.createTemplate,
-      undefined,
-      { body: data }) as ApiResponse<{ success: boolean; data: ContractTemplateRow }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.createTemplate, undefined, { body: data })) as ApiResponse<{
+      success: boolean
+      data: ContractTemplateRow
+    }>
+    return unwrapDocuments(response)
   },
 
   /**
@@ -154,37 +164,43 @@ export const documentsRegistersApi = {
    * would leave a trail of dead files behind every edit.
    */
   previewTemplate: async (data: { body?: string; title?: string; memberId?: string }) => {
-    const response = await call(
-      documentsEndpoints.previewTemplate,
-      undefined,
-      { body: data }) as ApiResponse<{ success: boolean; data: TemplatePreview }>;
-    return unwrapDocuments<TemplatePreview>(response);
+    const response = (await call(documentsEndpoints.previewTemplate, undefined, { body: data })) as ApiResponse<{
+      success: boolean
+      data: TemplatePreview
+    }>
+    return unwrapDocuments<TemplatePreview>(response)
   },
 
   updateTemplate: async (id: string, data: Record<string, unknown>) => {
-    const response = await call(
-      documentsEndpoints.updateTemplate,
-      { id },
-      { body: data }) as ApiResponse<{ success: boolean; data: ContractTemplateRow }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.updateTemplate, { id }, { body: data })) as ApiResponse<{
+      success: boolean
+      data: ContractTemplateRow
+    }>
+    return unwrapDocuments(response)
   },
 
   deactivateTemplate: async (id: string) => {
-    const response = await call(documentsEndpoints.deactivateTemplate, { id }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.deactivateTemplate, { id })) as ApiResponse<{ success: boolean }>
+    return unwrapDocuments(response)
   },
 
   // ── Payroll day ──────────────────────────────────────────────────────────
 
   /** The members a batch can be matched against. Matching runs in the browser. */
   matchCandidates: async () => {
-    const response = await call(documentsEndpoints.matchCandidates) as ApiResponse<{ success: boolean; data: MatchCandidateRow[] }>;
-    return unwrapDocuments<any[]>(response) ?? [];
+    const response = (await call(documentsEndpoints.matchCandidates)) as ApiResponse<{
+      success: boolean
+      data: MatchCandidateRow[]
+    }>
+    return unwrapDocuments(response) ?? []
   },
 
   listDrafts: async () => {
-    const response = await call(documentsEndpoints.drafts) as ApiResponse<{ success: boolean; data: DraftDocumentRow[] }>;
-    return unwrapDocuments<any[]>(response) ?? [];
+    const response = (await call(documentsEndpoints.drafts)) as ApiResponse<{
+      success: boolean
+      data: DraftDocumentRow[]
+    }>
+    return unwrapDocuments(response) ?? []
   },
 
   /** All or nothing — one unresolved row blocks the whole batch. */
@@ -202,23 +218,20 @@ export const documentsRegistersApi = {
       }>
     }>,
   ) => {
-    const response = await call(
-      documentsEndpoints.publish,
-      undefined,
-      {
-        body: { documentIds, ...(signerChoices?.length ? { signerChoices } : {}) }
-      }) as ApiResponse<{ success: boolean; data: { published: number } }>
+    const response = (await call(documentsEndpoints.publish, undefined, {
+      body: { documentIds, ...(signerChoices?.length ? { signerChoices } : {}) },
+    })) as ApiResponse<{ success: boolean; data: { published: number } }>
     return unwrapDocuments<{ published: number }>(response)
   },
 
   discardDraft: async (id: string) => {
-    const response = await call(documentsEndpoints.discardDraft, { id }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.discardDraft, { id })) as ApiResponse<{ success: boolean }>
+    return unwrapDocuments(response)
   },
 
   /** Only ever your own, and only what you supplied. */
   remove: async (id: string) => {
-    const response = await call(documentsEndpoints.remove, { id }) as ApiResponse<{ success: boolean }>;
-    return unwrapDocuments<any>(response);
+    const response = (await call(documentsEndpoints.remove, { id })) as ApiResponse<{ success: boolean }>
+    return unwrapDocuments(response)
   },
-};
+}

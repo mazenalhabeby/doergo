@@ -13,8 +13,11 @@ import {
   portalUpdateUnit,
   portalDeleteUnit,
   portalAdminListUnits,
+  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /portal/admin — a portal's request categories and its units. */
 @ApiTags('portal-admin')
 @ApiBearerAuth()
@@ -26,42 +29,49 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Post('categories')
   @RequirePermissionInSpace('canManagePortals')
-  createCategory(@Body() body: any, @Request() req: any) {
+  createCategory(
+    @Body() body: Omit<RpcRequest<typeof portalCreateCategory>, 'organizationId' | 'scopeSpaceIds'>,
+    @Request() req: AuthedRequest,
+  ) {
     return this.auth(portalCreateCategory, {
       ...body,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Patch('categories/:id')
   @RequirePermissionInSpace('canManagePortals')
-  updateCategory(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+  updateCategory(
+    @Param('id') id: string,
+    @Body() body: Omit<RpcRequest<typeof portalUpdateCategory>, 'id' | 'organizationId' | 'scopeSpaceIds'>,
+    @Request() req: AuthedRequest,
+  ) {
     return this.auth(portalUpdateCategory, {
       ...body,
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Delete('categories/:id')
   @RequirePermissionInSpace('canManagePortals')
-  deleteCategory(@Param('id') id: string, @Request() req: any) {
+  deleteCategory(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(portalDeleteCategory, {
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Post('categories/reorder')
   @RequirePermissionInSpace('canManagePortals')
-  reorderCategories(@Body() body: { portalId: string; orderedIds: string[] }, @Request() req: any) {
+  reorderCategories(@Body() body: { portalId: string; orderedIds: string[] }, @Request() req: AuthedRequest) {
     return this.auth(portalReorderCategories, {
       portalId: body?.portalId,
       orderedIds: Array.isArray(body?.orderedIds) ? body.orderedIds : [],
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
@@ -70,12 +80,13 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Post('units')
   @RequirePermissionInSpace('canManagePortals')
-  createUnit(@Body() body: any, @Request() req: any) {
+  createUnit(@Body() body: Record<string, unknown>, @Request() req: AuthedRequest) {
     // Whitelisted like every unit route (pickUnitFields); identity last.
     return this.auth(portalCreateUnit, {
       ...unitFieldsFor(portalCreateUnit, body),
-      name: (typeof body?.name === 'string' && body.name.trim()) || body?.address || 'Unit',
-      organizationId: req.user.organizationId,
+      // The body is unchecked here; `address` is used as sent, whatever it is (as before).
+      name: (typeof body?.name === 'string' && body.name.trim()) || (body?.address as string) || 'Unit',
+      organizationId: callerOrgId(req.user),
       actorId: req.user.id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
@@ -83,12 +94,12 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Patch('units/:id')
   @RequirePermissionInSpace('canManagePortals')
-  updateUnit(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+  updateUnit(@Param('id') id: string, @Body() body: Record<string, unknown>, @Request() req: AuthedRequest) {
     // Whitelisted: a spread body could carry scopeCustomerId, actorId or a CRM caller.
     return this.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body),
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       actorId: req.user.id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
@@ -96,19 +107,19 @@ export class PortalSetupController extends PortalAdminControllerBase {
 
   @Delete('units/:id')
   @RequirePermissionInSpace('canManagePortals')
-  deleteUnit(@Param('id') id: string, @Request() req: any) {
+  deleteUnit(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(portalDeleteUnit, {
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
   }
 
   @Get('units')
   @RequirePermissionInSpace('canViewPortal')
-  listUnits(@Query('customerId') customerId: string | undefined, @Request() req: any) {
+  listUnits(@Query('customerId') customerId: string | undefined, @Request() req: AuthedRequest) {
     return this.auth(portalAdminListUnits, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });

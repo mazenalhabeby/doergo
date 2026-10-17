@@ -1,3 +1,4 @@
+import type { Prisma, SubscriptionStatus } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { StripeService } from '../billing/stripe.service';
@@ -52,7 +53,7 @@ export class PlatformAdminService {
     const rows = ids.length
       ? await this.prisma.user.groupBy({
           by: ['organizationId'],
-          where: { organizationId: { in: ids }, isActive: true, role: { not: 'CUSTOMER' as any } },
+          where: { organizationId: { in: ids }, isActive: true, role: { not: 'CUSTOMER' as const } },
           _count: { _all: true },
         })
       : [];
@@ -81,7 +82,7 @@ export class PlatformAdminService {
       this.prisma.organization.count({ where: { createdAt: { gte: since30 } } }),
       // One seat per active member, exactly as the invoice counts them.
       this.prisma.user.count({
-        where: { isActive: true, organizationId: { not: null }, role: { not: 'CUSTOMER' as any } },
+        where: { isActive: true, organizationId: { not: null }, role: { not: 'CUSTOMER' as const } },
       }),
       // MRR from ACTIVE, non-suspended orgs only. `lastBilledCents` IS the agreed
       // price once one is set — so MRR stays the truth with no arithmetic of its own.
@@ -134,11 +135,11 @@ export class PlatformAdminService {
    * no VAT number, nothing a screenshot of the list should carry.
    */
   async listOrgs(params: { search?: string; status?: string; cursor?: string; limit?: number } = {}) {
-    const where: any = {};
+    const where: Prisma.OrganizationWhereInput = {};
     const search = typeof params.search === 'string' ? params.search.trim().slice(0, 100) : '';
     if (search) where.name = { contains: search, mode: 'insensitive' };
     const status = String(params.status ?? '').toUpperCase();
-    if (SUB_STATUSES.has(status)) where.subStatus = status;
+    if (SUB_STATUSES.has(status)) where.subStatus = status as SubscriptionStatus; // checked against SUB_STATUSES
     const limit = clampListLimit(params.limit, 100, 200);
     const rows = (await this.prisma.organization.findMany({
       where,
@@ -180,7 +181,7 @@ export class PlatformAdminService {
    * the drawer asks of it; the VAT id and Stripe customer id are not sent.
    */
   async orgDetail(organizationId: string, opts: { viewerRole?: string; memberLimit?: number } = {}) {
-    const org = (await this.prisma.organization.findUnique({
+    const org = await this.prisma.organization.findUnique({
       where: { id: organizationId },
       select: {
         ...ORG_SELECT,
@@ -190,12 +191,12 @@ export class PlatformAdminService {
         billingEmail: true,
         email: true,
       },
-    })) as any;
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    });
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     const seats = (await this.seatsByOrg([org as LeanOrg])).get(org.id) ?? 0;
     const memberLimit = clampListLimit(opts.memberLimit, 100, 500);
     const showEmails = platformCan(opts.viewerRole, 'manageOrgs') || platformCan(opts.viewerRole, 'billingOps');
-    const memberWhere = { organizationId, role: { not: 'CUSTOMER' as any } };
+    const memberWhere = { organizationId, role: { not: 'CUSTOMER' as const } };
     const [members, memberTotal] = await Promise.all([
       this.prisma.user.findMany({
         where: memberWhere,
@@ -224,7 +225,7 @@ export class PlatformAdminService {
       hasBillingEmail: !!(org.billingEmail || org.email),
       seats,
       listMonthlyCents,
-      members: members.map((m) => ({ ...m, email: showEmails ? (m as any).email : null })),
+      members: members.map((m) => ({ ...m, email: showEmails ? m.email : null })),
       memberTotal,
     });
   }
@@ -235,7 +236,7 @@ export class PlatformAdminService {
       where: { id: data.organizationId },
       select: { id: true, name: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: new Date() } });
     this.sessionEvents?.organizationSuspended(org.id);
     this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) SUSPENDED by ${data.byUserId ?? 'operator'}`);
@@ -254,7 +255,7 @@ export class PlatformAdminService {
       where: { id: data.organizationId },
       select: { id: true, name: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     await this.prisma.organization.update({ where: { id: org.id }, data: { offlineMode: !!data.enabled } });
     this.logger.warn(
       `[PLATFORM] Org "${org.name}" (${org.id}) offline mode ${data.enabled ? 'ON' : 'OFF'} by ${data.byUserId ?? 'operator'}`,
@@ -267,7 +268,7 @@ export class PlatformAdminService {
       where: { id: data.organizationId },
       select: { id: true, name: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: null } });
     this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) REACTIVATED by ${data.byUserId ?? 'operator'}`);
     return success({ id: org.id, suspendedAt: null });

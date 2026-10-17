@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import {
   success,
   accessAllowsInSpace,
@@ -7,8 +7,9 @@ import {
   permissionsFromOrgRole,
   type PermissionSet,
 } from '@hbcfield/shared';
-import { VALID_DAYS } from './space-helpers';
+import { assertValidScheduleDays } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
+import type { ResolvedAccess } from '@hbcfield/shared';
 
 /** Putting a person into a workspace, and taking them out. */
 @Injectable()
@@ -27,7 +28,7 @@ export class SpaceMembershipService extends SpaceServiceBase {
     effectiveTo?: Date | string;
     requestingUserId: string;
     organizationId: string;
-    access?: any; // caller's resolved access (for cross-org shared spaces)
+    access?: ResolvedAccess | null; // caller's resolved access (for cross-org shared spaces)
   }) {
     this.logger.log(`Assigning member ${data.userId} to location ${data.locationId}`);
 
@@ -73,14 +74,7 @@ export class SpaceMembershipService extends SpaceServiceBase {
     }
 
     // Validate schedule days if provided
-    if (data.schedule && data.schedule.length > 0) {
-      const invalidDays = data.schedule.filter((day) => !VALID_DAYS.includes(day));
-      if (invalidDays.length > 0) {
-        throw new BadRequestException(
-          `Invalid schedule days: ${invalidDays.join(', ')}. Valid days: ${VALID_DAYS.join(', ')}`,
-        );
-      }
-    }
+    assertValidScheduleDays(data.schedule);
 
     // If setting as primary, unset other primary assignments for this user
     if (data.isPrimary) {
@@ -122,7 +116,10 @@ export class SpaceMembershipService extends SpaceServiceBase {
         space: true,
         user: {
           select: {
-            id: true, firstName: true, lastName: true, email: true,
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
             avatarUrl: true,
           },
         },
@@ -155,8 +152,15 @@ export class SpaceMembershipService extends SpaceServiceBase {
 
     assertFoundInOrg(assignment, data.organizationId, 'Assignment');
     if (data.spaceId && assignment.spaceId !== data.spaceId) throw new NotFoundException('Assignment not found');
-    if (data.outrankPerms && assignment.role && permissionsExceed(data.outrankPerms, permissionsFromOrgRole(assignment.role.permissions))) {
-      throw new ForbiddenException({ message: 'This person holds more in this workspace than you do', code: 'MEMBER_ABOVE_YOU' });
+    if (
+      data.outrankPerms &&
+      assignment.role &&
+      permissionsExceed(data.outrankPerms, permissionsFromOrgRole(assignment.role.permissions))
+    ) {
+      throw new ForbiddenException({
+        message: 'This person holds more in this workspace than you do',
+        code: 'MEMBER_ABOVE_YOU',
+      });
     }
 
     await this.prisma.spaceAssignment.delete({

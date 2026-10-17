@@ -6,6 +6,7 @@ import { PrismaService } from '@hbcfield/shared';
 import { resolveSocketAccess, type SocketAccess } from './socket-access';
 import { ChatMembersCache } from './chat-members';
 import { ACCESS_TTL_MS, EXPIRY_GRACE_MS, MAX_TIMER_MS, type ClientInfo, type SocketStats } from './gateway.types';
+import type { AccessTokenClaims } from './socket-payloads';
 
 /**
  * The gateway's state and the helpers every part of it reads — moved here unchanged
@@ -87,7 +88,7 @@ export abstract class GatewayCoreBase {
   protected async ticketCreator(ticketId: string): Promise<string | null> {
     const hit = this.ticketCreatorCache.get(ticketId);
     if (hit && hit.exp > Date.now()) return hit.id;
-    const t = await (this.prisma as any).supportTicket
+    const t = await this.prisma.supportTicket
       .findUnique({ where: { id: ticketId }, select: { createdById: true } })
       .catch(() => null);
     const id: string | null = t?.createdById ?? null;
@@ -118,7 +119,7 @@ export abstract class GatewayCoreBase {
     }
     const token = authHeader.slice(7);
     try {
-      const decoded: any = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] });
+      const decoded = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] }) as AccessTokenClaims;
       // Only ADMIN can view socket stats (the token carries no fine-grained flags).
       return decoded.role === 'ADMIN';
     } catch {

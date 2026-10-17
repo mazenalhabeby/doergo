@@ -14,16 +14,16 @@ export class PermissionsGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const requiredPermissions = this.reflector.getAllAndOverride<PermissionField[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredPermissions = this.reflector.getAllAndOverride<PermissionField[]>(PERMISSIONS_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
     // Space-aware variant: also satisfied by a per-space / cross-org-shared grant.
     // The guard only WIDENS; the service re-checks the resource's real spaceId.
-    const inSpacePermissions = this.reflector.getAllAndOverride<PermissionField[]>(
-      PERMISSIONS_IN_SPACE_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const inSpacePermissions = this.reflector.getAllAndOverride<PermissionField[]>(PERMISSIONS_IN_SPACE_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     if (
       (!requiredPermissions || requiredPermissions.length === 0) &&
@@ -56,14 +56,11 @@ export class PermissionsGuard implements CanActivate {
       case the decorator was written for.
     */
     const req = context.switchToHttp().getRequest();
-    const spaceId: string | undefined =
-      req.params?.spaceId ?? req.params?.locationId ?? req.body?.spaceId;
+    const spaceId: string | undefined = req.params?.spaceId ?? req.params?.locationId ?? req.body?.spaceId;
 
     const missingInSpace = (inSpacePermissions ?? []).filter((p) => {
       if (user[p]) return false;
-      return spaceId
-        ? !accessAllowsInSpace(user.access, p as any, spaceId)
-        : !accessAllowsAnywhere(user.access, p as any);
+      return spaceId ? !accessAllowsInSpace(user.access, p, spaceId) : !accessAllowsAnywhere(user.access, p);
     });
     if (missingInSpace.length > 0) {
       throw new ForbiddenException(`Missing permissions: ${missingInSpace.join(', ')}`);

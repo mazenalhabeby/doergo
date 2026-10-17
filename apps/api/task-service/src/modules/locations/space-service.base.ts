@@ -39,7 +39,7 @@ export abstract class SpaceServiceBase {
 
   /** A workspace's company: one of this organization's active companies, or null. Anything else is refused. */
   protected async spaceCompany(organizationId: string, value: unknown): Promise<string | null | undefined> {
-    const r = await usableLegalEntityId(this.prisma as any, organizationId, value);
+    const r = await usableLegalEntityId(this.prisma, organizationId, value);
     if (!r.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
     return r.id;
   }
@@ -148,7 +148,7 @@ export abstract class SpaceServiceBase {
       await this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};
         const write = (kind: 'BILL_HOUR' | 'COST_HOUR', cents: number | null | undefined) =>
-          writeRateChange(tx as any, {
+          writeRateChange(tx, {
             organizationId,
             target: 'SPACE',
             targetId: spaceId,

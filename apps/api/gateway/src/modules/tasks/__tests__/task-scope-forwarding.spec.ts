@@ -2,6 +2,7 @@ import { Role } from '@hbcfield/shared';
 import { normalizeQueryParams } from '../tasks.controller';
 import { tasksControllers } from './tasks-controllers.fixture';
 
+import { fakeReq, fakeUser } from '../../../common/testing/fake-request';
 /**
  * The gateway's half of the task scope rules: it must SEND the facts the
  * task-service decides on, and it must not forward a query object that Prisma
@@ -42,24 +43,24 @@ describe('TasksController — scope facts forwarded', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('create forwards the member’s taskCreationScope, and a body cannot set it', async () => {
-    await controller.create({ title: 'x', taskCreationScope: 'ORG' } as never, { user: siteMember });
+    await controller.create({ title: 'x', taskCreationScope: 'ORG' } as never, fakeReq({ user: fakeUser(siteMember) }));
     expect(queue.createTask.mock.calls[0][0].taskCreationScope).toBe('SPACE');
   });
 
   it('an administrator is never narrowed by the column', async () => {
-    await controller.create({ title: 'x' } as never, { user: { ...siteMember, role: Role.ADMIN } });
+    await controller.create({ title: 'x' } as never, fakeReq({ user: fakeUser({ ...siteMember, role: Role.ADMIN }) }));
     expect(queue.createTask.mock.calls[0][0].taskCreationScope).toBe('ORG');
   });
 
   it('update forwards the create grants the service decides on', async () => {
-    await controller.update('t-1', { title: 'y' } as never, { user: siteMember });
+    await controller.update('t-1', { title: 'y' } as never, fakeReq({ user: fakeUser(siteMember) }));
     const sent = queue.updateTask.mock.calls[0][0];
     expect(sent.canCreateTasks).toBe(false);
     expect(sent.createSpaceIds).toEqual(['space-A']);
   });
 
   it('assign forwards the spaces where the caller may assign', async () => {
-    await controller.assign('t-1', { workerId: 'w' } as never, { user: siteMember });
+    await controller.assign('t-1', { workerId: 'w' } as never, fakeReq({ user: fakeUser(siteMember) }));
     expect(queue.assignTask.mock.calls[0][0].assignSpaceIds).toEqual(['space-A']);
   });
 

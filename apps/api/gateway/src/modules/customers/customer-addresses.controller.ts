@@ -15,6 +15,8 @@ import {
   deleteCustomerActivity,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /customers/:id — a client's addresses and its activity timeline. */
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -24,10 +26,10 @@ export class CustomerAddressesController extends CustomersControllerBase {
   // Read gated by CRM reach (get_customer enforces it); writes stay manager-only
   // in Phase 1 (address editing for scoped members is a follow-up).
   @Get(':id/addresses')
-  async listAddresses(@Param('id') id: string, @Request() req: any) {
+  async listAddresses(@Param('id') id: string, @Request() req: AuthedRequest) {
     // Enforce the caller may reach this client before exposing its units.
-    await this.auth(getCustomer, { id, organizationId: req.user.organizationId, caller: this.caller(req) });
-    return this.auth(portalListUnits, { organizationId: req.user.organizationId, customerId: id });
+    await this.auth(getCustomer, { id, organizationId: callerOrgId(req.user), caller: this.caller(req) });
+    return this.auth(portalListUnits, { organizationId: callerOrgId(req.user), customerId: id });
   }
 
   /*
@@ -54,25 +56,30 @@ export class CustomerAddressesController extends CustomersControllerBase {
       contactName?: string;
       contactPhone?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     const fields = unitFieldsFor(portalCreateUnit, body, { relations: false });
     return this.auth(portalCreateUnit, {
       ...fields,
       name: body?.name?.trim() || body?.address || 'Address',
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId: id,
       crmCaller: this.caller(req),
     });
   }
 
   @Patch(':id/addresses/:unitId')
-  updateAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Body() body: any, @Request() req: any) {
+  updateAddress(
+    @Param('id') id: string,
+    @Param('unitId') unitId: string,
+    @Body() body: Record<string, unknown>,
+    @Request() req: AuthedRequest,
+  ) {
     // scopeCustomerId binds the unit to THIS customer (no cross-customer edits).
     return this.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body, { relations: false }),
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeCustomerId: id,
       actorId: req.user.id,
       crmCaller: this.caller(req),
@@ -80,20 +87,20 @@ export class CustomerAddressesController extends CustomersControllerBase {
   }
 
   @Post(':id/addresses/:unitId/primary')
-  setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
+  setPrimaryAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
     return this.auth(portalSetPrimaryUnit, {
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId: id,
       crmCaller: this.caller(req),
     });
   }
 
   @Delete(':id/addresses/:unitId')
-  deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: any) {
+  deleteAddress(@Param('id') id: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
     return this.auth(portalDeleteUnit, {
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId: id,
       crmCaller: this.caller(req),
     });
@@ -102,10 +109,10 @@ export class CustomerAddressesController extends CustomersControllerBase {
   // ── CRM activity timeline (service enforces reach + work cap) ──
   @Get(':id/activities')
   @ApiOperation({ summary: "A customer's CRM timeline (notes, calls, reminders, status)" })
-  listActivities(@Param('id') id: string, @Request() req: any) {
+  listActivities(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(listCustomerActivities, {
       customerId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
@@ -125,14 +132,14 @@ export class CustomerAddressesController extends CustomersControllerBase {
       reminderAssigneeId?: string | null;
       repeat?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.authMutation(
       addCustomerActivity,
       {
         clientId: body.id,
         customerId: id,
-        organizationId: req.user.organizationId,
+        organizationId: callerOrgId(req.user),
         authorId: req.user.id,
         type: body.type,
         body: body.body,
@@ -143,7 +150,7 @@ export class CustomerAddressesController extends CustomersControllerBase {
         repeat: body.repeat,
         caller: this.caller(req),
       },
-      req.user.organizationId,
+      callerOrgId(req.user),
       id,
     );
   }
@@ -162,14 +169,14 @@ export class CustomerAddressesController extends CustomersControllerBase {
       reminderAssigneeId?: string | null;
       repeat?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.authMutation(
       updateCustomerActivity,
       {
         id: activityId,
         customerId: id,
-        organizationId: req.user.organizationId,
+        organizationId: callerOrgId(req.user),
         body: body.body,
         dueAt: body.dueAt,
         done: body.done,
@@ -179,17 +186,17 @@ export class CustomerAddressesController extends CustomersControllerBase {
         repeat: body.repeat,
         caller: this.caller(req),
       },
-      req.user.organizationId,
+      callerOrgId(req.user),
       id,
     );
   }
 
   @Delete(':id/activities/:activityId')
-  deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: any) {
+  deleteActivity(@Param('id') id: string, @Param('activityId') activityId: string, @Request() req: AuthedRequest) {
     return this.authMutation(
       deleteCustomerActivity,
-      { id: activityId, customerId: id, organizationId: req.user.organizationId, caller: this.caller(req) },
-      req.user.organizationId,
+      { id: activityId, customerId: id, organizationId: callerOrgId(req.user), caller: this.caller(req) },
+      callerOrgId(req.user),
       id,
     );
   }

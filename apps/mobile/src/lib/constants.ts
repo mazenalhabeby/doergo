@@ -156,6 +156,12 @@ type LegacyThemeKey =
 
 export type ThemeColors = Record<LegacyThemeKey, string>;
 
+/** The colours a form field reads — what both the theme and the equipment form palette provide. */
+export type FieldColors = Pick<
+  ThemeColors,
+  'background' | 'surface' | 'surfaceRaised' | 'card' | 'border' | 'textPrimary' | 'textSecondary' | 'textMuted' | 'input' | 'inputBorder'
+>;
+
 export function getThemeColors(scheme: 'light' | 'dark' | null | undefined): ThemeColors {
   return scheme === 'dark' ? DARK_THEME : LIGHT_THEME;
 }

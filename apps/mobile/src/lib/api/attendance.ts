@@ -39,7 +39,11 @@ export const attendanceApi = {
     return call(E.attendance.autoClockConsent, undefined, { body: { consent } });
   },
 
-  heartbeat: async (input: { lat: number; lng: number; accuracy?: number }): Promise<{
+  heartbeat: async (input: {
+    lat: number;
+    lng: number;
+    accuracy?: number;
+  }): Promise<{
     withinGeofence: boolean;
     inRing: boolean;
     distance: number;
@@ -50,7 +54,9 @@ export const attendanceApi = {
   },
 
   /** Check-ins kept while the phone had no signal, each with the moment it was taken. */
-  heartbeatBatch: async (points: { lat: number; lng: number; accuracy?: number; recordedAt: string }[]): Promise<{
+  heartbeatBatch: async (
+    points: { lat: number; lng: number; accuracy?: number; recordedAt: string }[],
+  ): Promise<{
     recorded: number;
     opened: boolean;
     returned: boolean;
@@ -148,7 +154,7 @@ export const attendanceApi = {
     const rows: TimeEntry[] = [];
     for (let n = 1; n <= 10; n++) {
       const r = await call(E.attendance.allEntries, { status: 'CLOCKED_IN', page: n, limit: PAGE });
-      const got: TimeEntry[] = Array.isArray(r) ? r : r?.data ?? [];
+      const got: TimeEntry[] = Array.isArray(r) ? r : (r?.data ?? []);
       rows.push(...got);
       if (got.length < PAGE) break;
     }
@@ -164,7 +170,7 @@ export const attendanceApi = {
   },
 
   /** Admin view: breaks currently in progress across the org. */
-  getActiveBreaks: async (): Promise<Array<{ userId: string; [k: string]: any }>> => {
+  getActiveBreaks: async (): Promise<ActiveBreakRow[]> => {
     const result = await call(E.attendance.activeBreaks);
     if (Array.isArray(result)) return result;
     return result?.data ?? [];
@@ -257,12 +263,21 @@ export const attendanceApi = {
   },
 
   /** Leader: approve N more minutes of overtime for an open shift. */
-  approveExtraTime: async (entryId: string, minutes: number): Promise<any> => {
+  approveExtraTime: async (entryId: string, minutes: number): Promise<unknown> => {
     return call(E.attendance.approveExtraTime, { id: entryId }, { body: { minutes } });
   },
 
   /** Leader: reject an extra-time request. */
-  rejectExtraTime: async (entryId: string): Promise<any> => {
+  rejectExtraTime: async (entryId: string): Promise<unknown> => {
     return call(E.attendance.rejectExtraTime, { id: entryId });
   },
 };
+
+/** One row of `/attendance/breaks/active`: a break in progress. */
+export interface ActiveBreakRow {
+  userId: string;
+  startedAt: string;
+  ruleId?: string | null;
+  timeEntryId?: string;
+  user?: { id: string } | null;
+}

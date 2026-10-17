@@ -1,5 +1,6 @@
 /** task-service tasks handlers — contracts (request types are what the handler reads). */
 import { rpc } from '../contract';
+import type { AuthServiceReply } from './auth-service-replies';
 import type { RoleTaskFacts, TaskAccessFacts } from './task-service-1-types';
 import type { SpaceScopeIds } from '../../access/space-scope';
 
@@ -47,7 +48,9 @@ export const roleTaskStats = rpc<{ organizationId: string; spaceIds?: string[]; 
 );
 export const taskHealth = rpc<void>('task_health');
 export const findAllTasks = rpc<FindAllTasksMessage>('find_all_tasks');
-export const findTaskSpace = rpc<{ id: string; organizationId: string }>('find_task_space');
+export const findTaskSpace = rpc<{ id: string; organizationId: string }, AuthServiceReply<{ spaceId?: string | null }>>(
+  'find_task_space',
+);
 export const findTask = rpc<{
   id: string;
   userId: string;

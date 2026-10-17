@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import Redis from 'ioredis';
 import { getRedisConfig } from '@hbcfield/shared';
 
+import type { SessionUser } from '../request.types';
 /**
  * Seconds until a JWT's `exp` (decoded, NOT verified — callers have already
  * verified it or only need the number to size a TTL). `null` when unreadable.
@@ -43,9 +44,7 @@ export class AuthTokenCache {
       maxRetriesPerRequest: 1,
       lazyConnect: false,
     });
-    this.redis.on('error', (err) =>
-      this.logger.warn(`Auth cache Redis error: ${err.message}`),
-    );
+    this.redis.on('error', (err) => this.logger.warn(`Auth cache Redis error: ${err.message}`));
   }
 
   key(token: string): string {
@@ -105,7 +104,7 @@ export class AuthTokenCache {
    * it always has. A revocation therefore relies on Redis being up, which is the
    * same dependency the 60-second cache already has.
    */
-  async lookup(token: string): Promise<{ user: any | null; revoked: boolean }> {
+  async lookup(token: string): Promise<{ user: SessionUser | null; revoked: boolean }> {
     try {
       const [cached, revoked] = await this.redis.mget(this.key(token), this.revokedKey(token));
       return { user: !revoked && cached ? JSON.parse(cached) : null, revoked: !!revoked };
@@ -129,7 +128,7 @@ export class AuthTokenCache {
   }
 
   /** Cache a validated user for `ttl` seconds and index the key under the user. */
-  async set(token: string, user: any, ttl: number): Promise<void> {
+  async set(token: string, user: SessionUser, ttl: number): Promise<void> {
     if (ttl <= 0) return;
     try {
       const key = this.key(token);

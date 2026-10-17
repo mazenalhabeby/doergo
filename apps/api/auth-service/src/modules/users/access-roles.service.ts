@@ -1,7 +1,8 @@
 import { BUILTIN_ROLES, builtInRoleGrants, builtInRoleCreateData, SHARED_ROLE_WHERE } from '@hbcfield/shared';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, type RoleScope } from '@prisma/client';
 import { AccessRolesBase } from './access-roles.base';
+import { jsonColumn } from '../../common/records/json-column';
 
 /**
  * Access roles: the built-ins that follow their definition, and the roles an
@@ -11,7 +12,6 @@ import { AccessRolesBase } from './access-roles.base';
  */
 @Injectable()
 export class AccessRolesService extends AccessRolesBase {
-
   /**
    * ⭐ BUILT-IN ROLES FOLLOW THEIR DEFINITION — ADDITIVELY, UNTIL AN ADMIN EDITS THEM.
    *
@@ -67,15 +67,16 @@ export class AccessRolesService extends AccessRolesBase {
       await this.prisma.accessRole.upsert({
         where: { organizationId_slug: { organizationId: data.organizationId, slug: p.slug } },
         update: {},
-        create: builtInRoleCreateData(data.organizationId, p) as any,
+        // `permissions` is a typed permission set; the column is JSON.
+        create: { ...builtInRoleCreateData(data.organizationId, p), permissions: jsonColumn(p.permissions) },
       });
     }
     await this.syncBuiltInRoles(data.organizationId);
-    const scopes = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
+    const scopes: RoleScope[] = data.scope === 'space' ? ['SPACE', 'BOTH'] : ['ORG', 'BOTH'];
     const [roles, holders] = await Promise.all([
       this.prisma.accessRole.findMany({
         // ⚠️ Never a personal role (one person's permissions in one workspace): it is nobody's to pick.
-        where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes as any }, ...SHARED_ROLE_WHERE },
+        where: { organizationId: data.organizationId, isActive: true, scope: { in: scopes }, ...SHARED_ROLE_WHERE },
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
         select: { id: true, name: true, slug: true, color: true, scope: true, isSystem: true, permissions: true },
       }),

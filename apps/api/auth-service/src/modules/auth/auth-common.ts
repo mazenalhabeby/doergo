@@ -35,10 +35,7 @@ export function dummyPasswordHash(): Promise<string> {
 export const hashToken = hashCode;
 
 // Resolve profile badges: user override > org config > defaults
-export function resolveProfileBadges(
-  userBadges: any,
-  orgBadges: any,
-): ProfileBadgesConfig {
+export function resolveProfileBadges(userBadges: unknown, orgBadges: unknown): ProfileBadgesConfig {
   const base = { ...DEFAULT_PROFILE_BADGES };
   // Apply org-level config
   if (orgBadges && typeof orgBadges === 'object') {
@@ -100,7 +97,6 @@ export function orgPermissionFields(
     ...orgFlagFields(access),
   };
 }
-
 
 /**
  * What the two sign-in doors return.

@@ -12,6 +12,8 @@ import {
   ShiftIssueStatusDto,
 } from './dto';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @Controller('shift-issues')
 @Roles(Role.ADMIN, Role.EMPLOYEE)
 export class ShiftIssuesController {
@@ -28,18 +30,18 @@ export class ShiftIssuesController {
     `canManage` when held org-wide, otherwise the spaces it is held in travel as
     `ledSpaceIds` and the service widens by exactly those.
   */
-  private ctx(req: any, need: AttendanceNeed) {
+  private ctx(req: AuthedRequest, need: AttendanceNeed) {
     const { canManage, spaceIds } = attendanceAuthority(req, need);
     return {
-      organizationId: req.user?.organizationId,
-      callerUserId: req.user?.id,
+      organizationId: callerOrgId(req.user),
+      callerUserId: req.user.id,
       canManage,
       ledSpaceIds: spaceIds,
     };
   }
 
   @Post()
-  create(@Body() body: CreateShiftIssueDto, @Request() req: any) {
+  create(@Body() body: CreateShiftIssueDto, @Request() req: AuthedRequest) {
     return this.service.create({
       id: body.id,
       title: body.title,
@@ -53,17 +55,17 @@ export class ShiftIssuesController {
   }
 
   @Get()
-  list(@Query('status') status: string, @Query('scope') scope: string, @Request() req: any) {
+  list(@Query('status') status: string, @Query('scope') scope: string, @Request() req: AuthedRequest) {
     return this.service.list({ ...this.ctx(req, 'read'), status, scope });
   }
 
   @Get(':id')
-  get(@Param('id') id: string, @Request() req: any) {
+  get(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.service.get({ ...this.ctx(req, 'read'), issueId: id });
   }
 
   @Post(':id/messages')
-  message(@Param('id') id: string, @Body() body: ShiftIssueMessageDto, @Request() req: any) {
+  message(@Param('id') id: string, @Body() body: ShiftIssueMessageDto, @Request() req: AuthedRequest) {
     // ⚠️ Typed as sent today: the DTO lets fileKey OR fileUrl and fileSize be absent, while task-service's
     // ShiftIssueAttachment declares all three — a mismatch the contract surfaced, left unchanged on purpose.
     const attachments = body.attachments as ShiftIssueAttachment[] | undefined;
@@ -71,22 +73,22 @@ export class ShiftIssuesController {
   }
 
   @Post(':id/acknowledge')
-  acknowledge(@Param('id') id: string, @Request() req: any) {
+  acknowledge(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.service.acknowledge({ ...this.ctx(req, 'write'), issueId: id });
   }
 
   @Post(':id/assign')
-  assign(@Param('id') id: string, @Body() body: AssignShiftIssueDto, @Request() req: any) {
+  assign(@Param('id') id: string, @Body() body: AssignShiftIssueDto, @Request() req: AuthedRequest) {
     return this.service.assign({ ...this.ctx(req, 'write'), issueId: id, assignToId: body.assignToId });
   }
 
   @Post(':id/status')
-  setStatus(@Param('id') id: string, @Body() body: ShiftIssueStatusDto, @Request() req: any) {
+  setStatus(@Param('id') id: string, @Body() body: ShiftIssueStatusDto, @Request() req: AuthedRequest) {
     return this.service.setStatus({ ...this.ctx(req, 'write'), issueId: id, status: body.status, note: body.note });
   }
 
   @Post(':id/attachments/presign')
-  presign(@Param('id') id: string, @Body() body: PresignShiftIssueAttachmentDto, @Request() req: any) {
+  presign(@Param('id') id: string, @Body() body: PresignShiftIssueAttachmentDto, @Request() req: AuthedRequest) {
     return this.service.presign({
       ...this.ctx(req, 'write'),
       issueId: id,

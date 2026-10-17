@@ -14,7 +14,7 @@ import { PATH_METADATA } from '@nestjs/common/constants';
   them should be. Each imported client carries its own provenance on its
   timeline (who imported it, from where, when) — that is the record.
 */
-export const BODY_SUMMARY: Record<string, (body: any) => unknown> = {
+export const BODY_SUMMARY: Record<string, (body: Record<string, unknown> | undefined) => unknown> = {
   'POST /customers/import': (b) => ({
     spaceId: typeof b?.spaceId === 'string' ? b.spaceId : null,
     contacts: Array.isArray(b?.items) ? b.items.length : 0,
@@ -264,7 +264,6 @@ export function redact(value: unknown, depth = 0): unknown {
   return value;
 }
 
-
 /** The action a request records: the curated name, else RESOURCE_VERB. */
 export function auditAction(method: string, normalized: string, resourceType?: string): string {
   return (
@@ -276,7 +275,7 @@ export function auditAction(method: string, normalized: string, resourceType?: s
 /** The body as it may be kept: summarised where it is bulk personal data, redacted otherwise. */
 export function auditBody(method: string, normalized: string, body: unknown): unknown {
   if (!body || typeof body !== 'object' || !Object.keys(body as object).length) return undefined;
-  return BODY_SUMMARY[`${method} ${normalized}`]?.(body) ?? redact(body);
+  return BODY_SUMMARY[`${method} ${normalized}`]?.(body as Record<string, unknown>) ?? redact(body);
 }
 
 /** Declared route → `{ path, normalized, resourceId, resourceType }`, URL heuristic as the fallback. */

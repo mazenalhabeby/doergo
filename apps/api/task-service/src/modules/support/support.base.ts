@@ -10,6 +10,7 @@ import {
   normalizeSupportScope,
   ticketInSupportScope,
   PERSON_BRIEF_SELECT,
+  type RoutingConditions,
 } from '@hbcfield/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 
@@ -98,7 +99,7 @@ export abstract class SupportBase {
         industry: org.industry,
         supportTeamId: org.supportTeamId,
       },
-      rules.map((r) => ({ teamId: r.teamId, isActive: r.isActive, order: r.order, conditions: r.conditions as any })),
+      rules.map((r) => ({ teamId: r.teamId, isActive: r.isActive, order: r.order, conditions: r.conditions as RoutingConditions | null })),
     );
   }
 
@@ -113,7 +114,7 @@ export abstract class SupportBase {
     const readField = reader === 'CUSTOMER' ? 'readByCustomerAt' : 'readByAgentAt';
     const grouped = await this.prisma.supportMessage.groupBy({
       by: ['ticketId'],
-      where: { ticketId: { in: rows.map((r) => r.id) }, authorType: fromType, isInternalNote: false, [readField]: null } as any,
+      where: { ticketId: { in: rows.map((r) => r.id) }, authorType: fromType, isInternalNote: false, [readField]: null },
       _count: { _all: true },
     });
     const map = new Map(grouped.map((g) => [g.ticketId, g._count._all]));

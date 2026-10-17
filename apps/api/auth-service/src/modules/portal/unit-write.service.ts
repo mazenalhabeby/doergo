@@ -1,32 +1,18 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { type CrmCaller } from '../customers/customers.service';
 import { type SpaceScopeIds, activeAssignmentWhere } from '@hbcfield/shared';
 import { sanitizeUnitDetails } from './portal-helpers';
 import { PortalServiceBase } from './portal-service.base';
+import { type portalCreateUnit, type portalUpdateUnit, type RpcRequest } from '@hbcfield/shared/microservices';
+import { jsonColumn, optionalJsonColumn } from '../../common/records/json-column';
 
 /** Changing addresses (units): create, edit, delete, and a member's home address. */
 @Injectable()
 export class UnitWriteService extends PortalServiceBase {
-  async createUnit(data: {
-    organizationId: string;
-    customerId?: string;
-    portalId?: string;
-    name: string;
-    label?: string;
-    address?: string;
-    lat?: number | null;
-    lng?: number | null;
-    isPrimary?: boolean;
-    spaceId?: string;
-    contactName?: string | null;
-    contactPhone?: string | null;
-    residentUserId?: string | null;
-    details?: any[];
-    actorId?: string;
-    crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
-    scopeSpaceIds?: SpaceScopeIds; // set by the portal routes — the workspaces the caller runs portals in
-  }) {
+  // The request is the message contract's (shared with the gateway) — one definition, not two.
+  async createUnit(data: RpcRequest<typeof portalCreateUnit>) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
       await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
@@ -68,7 +54,7 @@ export class UnitWriteService extends PortalServiceBase {
         contactName: data.contactName || null,
         contactPhone: data.contactPhone || null,
         residentUserId,
-        details: (sanitizeUnitDetails(data.details) ?? undefined) as any,
+        details: optionalJsonColumn(sanitizeUnitDetails(data.details)),
       },
     });
     // A member lives in exactly one apartment per space — vacate any prior one.
@@ -94,35 +80,8 @@ export class UnitWriteService extends PortalServiceBase {
     return created;
   }
 
-  async updateUnit(data: {
-    id: string;
-    organizationId: string;
-    name?: string;
-    label?: string | null;
-    address?: string | null;
-    lat?: number | null;
-    lng?: number | null;
-    isPrimary?: boolean;
-    spaceId?: string | null;
-    portalId?: string | null;
-    customerId?: string | null;
-    contactName?: string | null;
-    contactPhone?: string | null;
-    residentUserId?: string | null;
-    details?: any[];
-    actorId?: string;
-    scopeCustomerId?: string; // when set, the unit must belong to this customer
-    /**
-     * Set by the workspace routes (`spaces/:spaceId/units/:unitId`): the unit
-     * must belong to THAT workspace. Checked against the org only, a manager of
-     * one workspace could edit any apartment in the organization by putting its
-     * id under the path of the workspace they do manage.
-     */
-    scopeSpaceId?: string;
-    crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
-    /** The workspaces the caller runs portals in — the unit AND whatever it is moved to must be in them. */
-    scopeSpaceIds?: SpaceScopeIds;
-  }) {
+  // The request is the message contract's (shared with the gateway) — one definition, not two.
+  async updateUnit(data: RpcRequest<typeof portalUpdateUnit>) {
     if (data.crmCaller) {
       // The CRM route always scopes to the client in its path; no scope, no edit.
       if (!data.scopeCustomerId) throw new BadRequestException('A client is required');
@@ -147,9 +106,12 @@ export class UnitWriteService extends PortalServiceBase {
     if (!existing) throw new NotFoundException('Unit not found');
     await this.assertCustomerInOrg(data.organizationId, data.customerId);
     // Resident is a MEMBER or a CLIENT, never both — setting one clears the other.
-    const residentUserId = data.residentUserId !== undefined
-      ? (data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null)
-      : undefined;
+    const residentUserId =
+      data.residentUserId !== undefined
+        ? data.residentUserId
+          ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
+          : null
+        : undefined;
     if (data.isPrimary && existing.customerId) {
       await this.prisma.customerUnit.updateMany({
         where: { customerId: existing.customerId, id: { not: existing.id } },
@@ -171,19 +133,31 @@ export class UnitWriteService extends PortalServiceBase {
         ...(data.contactPhone !== undefined ? { contactPhone: data.contactPhone } : {}),
         // Member resident → clear client; client resident → clear member.
         ...(residentUserId !== undefined ? { residentUserId, ...(residentUserId ? { customerId: null } : {}) } : {}),
-        ...(data.customerId !== undefined ? { customerId: data.customerId, ...(data.customerId ? { residentUserId: null } : {}) } : {}),
-        ...(data.details !== undefined ? { details: (sanitizeUnitDetails(data.details) ?? []) as any } : {}),
+        ...(data.customerId !== undefined
+          ? { customerId: data.customerId, ...(data.customerId ? { residentUserId: null } : {}) }
+          : {}),
+        ...(data.details !== undefined ? { details: jsonColumn(sanitizeUnitDetails(data.details) ?? []) } : {}),
       },
     });
     // A member lives in exactly one apartment per space — vacate any prior one
     // (spaceId may move in the same call, so prefer the new one).
-    if (residentUserId) await this.clearMemberElsewhere(residentUserId, data.spaceId ?? existing.spaceId, data.organizationId, updated.id);
+    if (residentUserId)
+      await this.clearMemberElsewhere(
+        residentUserId,
+        data.spaceId ?? existing.spaceId,
+        data.organizationId,
+        updated.id,
+      );
     // Activity: log a resident change (best-effort).
     if (updated.residentUserId !== existing.residentUserId || updated.customerId !== existing.customerId) {
       const rn = await this.residentDisplayName(updated.residentUserId, updated.customerId, data.organizationId);
       await this.logUnitActivity({
-        unitId: updated.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId,
-        body: rn ? `Resident set to ${rn}` : 'Resident removed', metadata: rn ? { resident: rn } : undefined,
+        unitId: updated.id,
+        organizationId: data.organizationId,
+        type: 'SYSTEM',
+        authorId: data.actorId,
+        body: rn ? `Resident set to ${rn}` : 'Resident removed',
+        metadata: rn ? { resident: rn } : undefined,
       });
     }
     return updated;
@@ -193,7 +167,13 @@ export class UnitWriteService extends PortalServiceBase {
    *  of picking a resident on the apartment. `unitId=null` vacates the member.
    *  Atomic + one-home-per-member-per-space; mirrors the apartment-side write so
    *  both surfaces agree on `residentUserId`. */
-  async setMemberApartment(data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
+  async setMemberApartment(data: {
+    organizationId: string;
+    spaceId: string;
+    userId: string;
+    unitId?: string | null;
+    actorId?: string;
+  }) {
     const [uid] = await this.keepOrgUserIds([data.userId], data.organizationId);
     if (!uid) throw new NotFoundException('Member not found in this organization');
     /*
@@ -227,7 +207,7 @@ export class UnitWriteService extends PortalServiceBase {
     const currentIds = current.map((u) => u.id);
     const toClear = currentIds.filter((id) => id !== targetId);
 
-    const ops: any[] = [];
+    const ops: Prisma.PrismaPromise<unknown>[] = [];
     if (toClear.length)
       ops.push(this.prisma.customerUnit.updateMany({ where: { id: { in: toClear } }, data: { residentUserId: null } }));
     if (targetId && !currentIds.includes(targetId))

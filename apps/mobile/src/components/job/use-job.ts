@@ -21,12 +21,16 @@ import { useLocationTrackingContext } from '../../contexts/location-tracking-con
 import { hasArrivalPrompt } from '../../services/route-arrival';
 import { useOffline } from '../../offline/offline-context';
 import { knownOffline } from '../../offline/connectivity';
-import { loadTaskDetail } from '../../offline/tasks/task-source';
+import { loadTaskDetail, type DetailAttachment, type DetailTask } from '../../offline/tasks/task-source';
 import { overlayTask } from '../../offline/tasks/overlay';
 import { taskDestination } from '../../offline/tasks/status-fix';
+import { caught } from '../../lib/caught';
 
 /** The task as the page holds it: the server's copy, or the phone's with unsent changes on top. */
-export type JobTask = Task & { pendingSync?: boolean; workflow?: any; capabilities?: string[] };
+/** A task event on the socket: the task itself, or `{ task }` (id-only on task_updated). */
+type TaskLiveEvent = { id?: string; task?: { id?: string } | null } | null;
+
+export type JobTask = DetailTask;
 export type JobComment = Comment & { pendingSync?: boolean };
 
 /** A step taken on THIS phone this session — shown in the feed before the server's timeline has it. */
@@ -58,7 +62,7 @@ export function useJob(taskId: string) {
 
   const [task, setTask] = useState<JobTask | null>(null);
   const [comments, setComments] = useState<JobComment[]>([]);
-  const [attachments, setAttachments] = useState<any[]>([]);
+  const [attachments, setAttachments] = useState<DetailAttachment[]>([]);
   const [source, setSource] = useState<'server' | 'phone'>('server');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,9 +89,9 @@ export function useJob(taskId: string) {
       setAttachments(detail.attachments);
       setSource(detail.source);
       lastFetched.current = taskId;
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (signal.cancelled) return;
-      if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
+      if (caught(err).statusCode === 401 || caught(err).message?.includes('Session expired')) return;
       setError(err instanceof Error ? err.message : t('taskDetail.failedToLoad'));
     } finally {
       if (!signal.cancelled) setLoading(false);
@@ -133,12 +137,12 @@ export function useJob(taskId: string) {
       `d.task.id` matched nothing on an update, so this page never redrew for
       anybody else's change — a checklist item somebody took, a renamed item.
     */
-    const isThisJob = (d: any) => (d?.task?.id ?? d?.id) === taskId;
+    const isThisJob = (d: TaskLiveEvent) => (d?.task?.id ?? d?.id) === taskId;
     const unsubs = [
-      subscribe(SocketEvents.TASK_STATUS_CHANGED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
-      subscribe(SocketEvents.TASK_UPDATED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
-      subscribe(SocketEvents.TASK_ASSIGNED, (d: any) => { if (isThisJob(d)) refreshTask(); }),
-      subscribe(SocketEvents.TASK_COMMENT_ADDED, (d: any) => { if (d?.taskId === taskId) refreshComments(); }),
+      subscribe(SocketEvents.TASK_STATUS_CHANGED, (d: TaskLiveEvent) => { if (isThisJob(d)) refreshTask(); }),
+      subscribe(SocketEvents.TASK_UPDATED, (d: TaskLiveEvent) => { if (isThisJob(d)) refreshTask(); }),
+      subscribe(SocketEvents.TASK_ASSIGNED, (d: TaskLiveEvent) => { if (isThisJob(d)) refreshTask(); }),
+      subscribe(SocketEvents.TASK_COMMENT_ADDED, (d: { taskId?: string } | null) => { if (d?.taskId === taskId) refreshComments(); }),
     ];
     return () => unsubs.forEach((fn) => fn());
   // eslint-disable-next-line react-hooks/exhaustive-deps

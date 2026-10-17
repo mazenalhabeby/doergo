@@ -9,6 +9,7 @@ import {
   roleUsableOnAssignment,
 } from '@hbcfield/shared';
 import { SPACE_PERMISSION_KEYS } from './space-roles-helpers';
+import type { Prisma } from '@prisma/client';
 
 /**
  * What the role services share: built-in roles, a role this organization owns,
@@ -70,7 +71,7 @@ export abstract class SpaceRolesBase {
       await this.prisma.accessRole.upsert({
         where: { organizationId_slug: { organizationId, slug: p.slug } },
         update: {},
-        create: builtInRoleCreateData(organizationId, p) as any,
+        create: builtInRoleCreateData(organizationId, p),
       });
     }
     const stored = await this.prisma.accessRole.findMany({
@@ -79,7 +80,7 @@ export abstract class SpaceRolesBase {
     });
     for (const role of stored) {
       const next = builtInRoleCatchUp(role);
-      if (next) await this.prisma.accessRole.update({ where: { id: role.id }, data: { permissions: next as any } });
+      if (next) await this.prisma.accessRole.update({ where: { id: role.id }, data: { permissions: next as Prisma.InputJsonValue } });
     }
   }
 

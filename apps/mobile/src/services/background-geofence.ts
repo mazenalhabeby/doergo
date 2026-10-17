@@ -43,74 +43,89 @@ const RING_PREFIX = 'ring:';
 
 const isAuto = (r: { identifier?: string }) => !!r.identifier?.startsWith(AUTO_REGION_PREFIX);
 
-TaskManager.defineTask(GEOFENCE_TASK, async ({ data, error }: any) => {
-  if (error) {
-    console.error('[Geofence] task error:', error);
-    return;
-  }
-  const eventType: number | undefined = data?.eventType;
-  if (eventType == null) return;
+TaskManager.defineTask(
+  GEOFENCE_TASK,
+  async ({
+    data,
+    error,
+  }: TaskManager.TaskManagerTaskBody<{ eventType?: number; region?: { identifier?: string } }>) => {
+    if (error) {
+      console.error('[Geofence] task error:', error);
+      return;
+    }
+    const eventType: number | undefined = data?.eventType;
+    if (eventType == null) return;
 
-  // The automatic clock's own regions decide on the phone (it checks the session itself).
-  const autoSpace = spaceOfRegion(data?.region?.identifier);
-  if (autoSpace) {
-    await handleAutoRegionEvent(eventType === Location.GeofencingEventType.Enter ? 'enter' : 'exit', autoSpace, new Date());
-    return;
-  }
+    // The automatic clock's own regions decide on the phone (it checks the session itself).
+    const autoSpace = spaceOfRegion(data?.region?.identifier);
+    if (autoSpace) {
+      await handleAutoRegionEvent(
+        eventType === Location.GeofencingEventType.Enter ? 'enter' : 'exit',
+        autoSpace,
+        new Date(),
+      );
+      return;
+    }
 
-  // Keep alive across transient keychain read failures; stop only on real logout.
-  let token: string | null;
-  try {
-    token = await getAccessToken();
-  } catch {
-    return;
-  }
-  if (!token) {
-    await stopAllGeofences();
-    return;
-  }
+    // Keep alive across transient keychain read failures; stop only on real logout.
+    let token: string | null;
+    try {
+      token = await getAccessToken();
+    } catch {
+      return;
+    }
+    if (!token) {
+      await stopAllGeofences();
+      return;
+    }
 
-  // The geofence event carries the region, not the device position — grab a fast
-  // last-known fix (fall back to a fresh one) so the server can decide in/out.
-  let pos = await Location.getLastKnownPositionAsync().catch(() => null);
-  if (!pos) {
-    pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
-  }
-  if (!pos) return;
+    // The geofence event carries the region, not the device position — grab a fast
+    // last-known fix (fall back to a fresh one) so the server can decide in/out.
+    let pos = await Location.getLastKnownPositionAsync().catch(() => null);
+    if (!pos) {
+      pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null);
+    }
+    if (!pos) return;
 
-  const point = {
-    lat: pos.coords.latitude,
-    lng: pos.coords.longitude,
-    accuracy: pos.coords.accuracy || undefined,
-    recordedAt: new Date(pos.timestamp ?? Date.now()).toISOString(),
-  };
-  // A ring crossing at a site with no signal is exactly the check-in worth keeping.
-  if (!(await keptCheckIns.flush().catch(() => false))) {
-    await keptCheckIns.keep(point);
-    return;
-  }
-  try {
-    await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
-  } catch (err) {
-    if (isUnreachable(err)) {
+    const point = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy || undefined,
+      recordedAt: new Date(pos.timestamp ?? Date.now()).toISOString(),
+    };
+    // A ring crossing at a site with no signal is exactly the check-in worth keeping.
+    if (!(await keptCheckIns.flush().catch(() => false))) {
       await keptCheckIns.keep(point);
       return;
     }
-    console.error('[Geofence] heartbeat failed:', err);
-  }
-});
+    try {
+      await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
+    } catch (err) {
+      if (isUnreachable(err)) {
+        await keptCheckIns.keep(point);
+        return;
+      }
+      console.error('[Geofence] heartbeat failed:', err);
+    }
+  },
+);
 
 /**
  * The set to arm when one purpose replaces its own regions. Pure.
  * The ring goes first so the limit never cuts it.
  */
-export function composeRegions(current: readonly OsRegion[], purpose: 'ring' | 'auto', replacement: readonly OsRegion[]): OsRegion[] {
+export function composeRegions(
+  current: readonly OsRegion[],
+  purpose: 'ring' | 'auto',
+  replacement: readonly OsRegion[],
+): OsRegion[] {
   const ring = purpose === 'ring' ? replacement : current.filter((r) => !isAuto(r));
   const auto = purpose === 'auto' ? replacement : current.filter(isAuto);
   return [...ring, ...auto].slice(0, MAX_OS_REGIONS);
 }
 
-const key = (r: OsRegion) => `${r.identifier}|${r.latitude.toFixed(6)}|${r.longitude.toFixed(6)}|${Math.round(r.radius)}`;
+const key = (r: OsRegion) =>
+  `${r.identifier}|${r.latitude.toFixed(6)}|${r.longitude.toFixed(6)}|${Math.round(r.radius)}`;
 function sameRegions(a: readonly OsRegion[], b: readonly OsRegion[]): boolean {
   if (a.length !== b.length) return false;
   const ka = a.map(key).sort();

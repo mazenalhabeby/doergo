@@ -5,18 +5,15 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateWorkflowStatusDto, UpdateWorkflowStatusDto, ReorderStatusesDto } from './dto';
 import { WorkflowsService } from './workflows.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /workflows/:id/statuses — a workflow's steps: adding, ordering, editing, removing. */
 @ApiTags('workflows')
 @ApiBearerAuth()
 @RequirePlan('workflows')
 @Controller('workflows')
 export class WorkflowStepsController {
-
-
-  constructor(
-    private readonly workflowsService: WorkflowsService,
-  ) {}
-
+  constructor(private readonly workflowsService: WorkflowsService) {}
 
   @Post(':id/statuses')
   @RequirePermission('canManageTaskTypes')
@@ -24,12 +21,12 @@ export class WorkflowStepsController {
   async addStatus(
     @Param('id') workflowId: string,
     @Body() dto: CreateWorkflowStatusDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.addStatus({
       workflowId,
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -39,12 +36,12 @@ export class WorkflowStepsController {
   async reorderStatuses(
     @Param('id') workflowId: string,
     @Body() dto: ReorderStatusesDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.reorderStatuses({
       workflowId,
       statusIds: dto.statusIds,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -55,13 +52,13 @@ export class WorkflowStepsController {
     @Param('id') workflowId: string,
     @Param('statusId') statusId: string,
     @Body() dto: UpdateWorkflowStatusDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.updateStatus({
       workflowId,
       statusId,
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -71,12 +68,12 @@ export class WorkflowStepsController {
   async removeStatus(
     @Param('id') workflowId: string,
     @Param('statusId') statusId: string,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.removeStatus({
       workflowId,
       statusId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

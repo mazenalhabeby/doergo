@@ -8,6 +8,7 @@ import { documentActor } from './documents.actor';
 import { CreateDocumentTypeDto, RouteCandidatesQueryDto, UpdateDocumentTypeDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /** /documents/types — the catalogue: types, who may see them, who may be routed to sign. */
 @ApiTags('documents')
@@ -34,7 +35,7 @@ export class DocumentTypesController {
   @Get('visibility-roles')
   @RequirePermission('canManageDocumentVisibility')
   @ApiOperation({ summary: 'Org roles a document can be limited to (id, name, colour)' })
-  async visibilityRoles(@CurrentUser() user: CurrentUserData) {
+  async visibilityRoles(@CurrentUser() user: SessionUser) {
     const res: any = await this.documents.listOrgRoles(user.organizationId ?? '');
     const list: any[] = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
     return list
@@ -44,7 +45,7 @@ export class DocumentTypesController {
 
   @Get('types')
   @ApiOperation({ summary: 'Document types defined by this organization' })
-  async listTypes(@CurrentUser() user: CurrentUserData, @Query('includeInactive') includeInactive?: string) {
+  async listTypes(@CurrentUser() user: SessionUser, @Query('includeInactive') includeInactive?: string) {
     const actor = documentActor(user);
     return this.documents.listTypes({
       organizationId: callerOrgId(user),
@@ -61,7 +62,7 @@ export class DocumentTypesController {
   @Post('types')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Define a document type' })
-  async createType(@CurrentUser() user: CurrentUserData, @Body() body: CreateDocumentTypeDto) {
+  async createType(@CurrentUser() user: SessionUser, @Body() body: CreateDocumentTypeDto) {
     const created = await this.documents.createType({ actor: documentActor(user), ...body });
     /*
       Everybody's register, without a refresh.
@@ -77,7 +78,7 @@ export class DocumentTypesController {
   @Patch('types/:id')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Update a document type' })
-  async updateType(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Body() body: UpdateDocumentTypeDto) {
+  async updateType(@CurrentUser() user: SessionUser, @Param('id') id: string, @Body() body: UpdateDocumentTypeDto) {
     const updated = await this.documents.updateType({ actor: documentActor(user), id, patch: body });
     this.orgEvents.documentTypesChanged(user.organizationId, id);
     return updated;
@@ -86,7 +87,7 @@ export class DocumentTypesController {
   @Delete('types/:id')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Retire a document type (never deletes filed documents)' })
-  async deactivateType(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async deactivateType(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     const result = await this.documents.deactivateType({ actor: documentActor(user), id });
     this.orgEvents.documentTypesChanged(user.organizationId, id);
     return result;
@@ -123,7 +124,7 @@ export class DocumentTypesController {
   @Get('route-candidates')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Possible signers for each step of a type’s route' })
-  async routeCandidates(@CurrentUser() user: CurrentUserData, @Query() query: RouteCandidatesQueryDto) {
+  async routeCandidates(@CurrentUser() user: SessionUser, @Query() query: RouteCandidatesQueryDto) {
     return this.documents.routeCandidates({
       actor: documentActor(user),
       memberId: query.memberId,

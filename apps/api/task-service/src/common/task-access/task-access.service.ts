@@ -44,6 +44,12 @@ export interface TaskAccessOptions {
  *   3. the role-holder exemption is asked last, only after the normal rule said
  *      no, only for reads, and only for a task of the caller's own organization.
  */
+/** What the access rule reads of a task: its id plus whatever the boundary and assignee checks read. */
+type TaskAccessSubject = { id: string; openRoleId?: string | null } &
+  Parameters<typeof isWithinTaskBoundary>[0] &
+  Parameters<typeof isTaskAssignee>[0] &
+  Parameters<typeof canAccessTask>[0];
+
 @Injectable()
 export class TaskAccessService {
   private readonly logger = new Logger(TaskAccessService.name);
@@ -60,7 +66,7 @@ export class TaskAccessService {
    * close with a 404. Inside the boundary the caller may know the task exists
    * (it is on their board), so "you may not" stays 403.
    */
-  async assert(task: any, data: TaskAccessFacts, opts: TaskAccessOptions = {}): Promise<void> {
+  async assert(task: TaskAccessSubject | null | undefined, data: TaskAccessFacts, opts: TaskAccessOptions = {}): Promise<void> {
     if (await this.allows(task, data, opts)) return;
 
     const { userId, organizationId, sharedSpaceIds, canViewAllTasks, viewAllSpaceIds } = data;
@@ -83,7 +89,7 @@ export class TaskAccessService {
   }
 
   /** The same decision as `assert`, as a boolean. */
-  async allows(task: any, data: TaskAccessFacts, opts: TaskAccessOptions = {}): Promise<boolean> {
+  async allows(task: TaskAccessSubject | null | undefined, data: TaskAccessFacts, opts: TaskAccessOptions = {}): Promise<boolean> {
     if (!task) return false;
     const { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds } = data;
     const caller = { userId, userRole, organizationId, canViewAllTasks, sharedSpaceIds, viewAllSpaceIds };

@@ -10,13 +10,22 @@ import { dayKeyOf } from '../../lib/log-dates';
 import { AText, GhostButton, GlassInput, PrimaryButton, SectionLabel, SheetOption } from '../amazen';
 import { DateField } from '../date-field';
 import { JobSheet } from '../job/job-ui';
+import { caught } from '../../lib/caught';
 
 /**
  * Stand-ins on the phone: hand your approvals to a colleague for some days,
  * see who covers whom, end one. Online. What a stand-in may then decide is
  * the server's (shared `access/delegation.ts`).
  */
-export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean; onClose: () => void; onChanged: () => void }) {
+export function StandInSheet({
+  visible,
+  onClose,
+  onChanged,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t, i18n } = useTranslation();
@@ -32,11 +41,19 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
-    approvalsApi.standIns().then(setData).catch(() => setData(null));
+    approvalsApi
+      .standIns()
+      .then(setData)
+      .catch(() => setData(null));
   }, []);
   useEffect(() => {
     if (!visible) return;
-    setData(null); setTo(null); setPicking(false); setStart(today); setEnd(today); setNote('');
+    setData(null);
+    setTo(null);
+    setPicking(false);
+    setStart(today);
+    setEnd(today);
+    setNote('');
     load();
   }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -49,10 +66,12 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
     try {
       const v = await approvalsApi.createStandIn({ toUserId, startsOn, endsOn, note: note.trim() || null });
       toast.success(t('approvals.standIn.created', { name: v.to.name, from: day(v.startsOn), to: day(v.endsOn) }));
-      setTo(null); setNote('');
-      load(); onChanged();
-    } catch (e: any) {
-      toast.error(e?.message || t('approvals.loadFailed'));
+      setTo(null);
+      setNote('');
+      load();
+      onChanged();
+    } catch (e: unknown) {
+      toast.error(caught(e).message || t('approvals.loadFailed'));
     } finally {
       setBusy(false);
     }
@@ -63,37 +82,46 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
     try {
       await approvalsApi.endStandIn(id);
       toast.success(t('approvals.standIn.ended'));
-      load(); onChanged();
-    } catch (e: any) {
-      toast.error(e?.message || t('approvals.loadFailed'));
+      load();
+      onChanged();
+    } catch (e: unknown) {
+      toast.error(caught(e).message || t('approvals.loadFailed'));
     } finally {
       setBusy(false);
     }
   };
 
-  const list = (title: string, rows: StandInView[], show: 'to' | 'from' | 'both') => rows.length ? (
-    <View style={{ gap: amazen.space(1.5) }}>
-      <SectionLabel>{title}</SectionLabel>
-      {rows.map((r) => (
-        <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>
-              {show === 'to' ? r.to.name : show === 'from' ? r.from.name : `${r.from.name} → ${r.to.name}`}
-            </AText>
-            <AText variant="caption" tone="muted" numberOfLines={2}>
-              {(`${r.active ? `${t('approvals.standIn.now')} · ` : ''}` + `${t('approvals.standIn.from', { from: day(r.startsOn), to: day(r.endsOn) })}`)}
-            </AText>
+  const list = (title: string, rows: StandInView[], show: 'to' | 'from' | 'both') =>
+    rows.length ? (
+      <View style={{ gap: amazen.space(1.5) }}>
+        <SectionLabel>{title}</SectionLabel>
+        {rows.map((r) => (
+          <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14 }}>
+                {show === 'to' ? r.to.name : show === 'from' ? r.from.name : `${r.from.name} → ${r.to.name}`}
+              </AText>
+              <AText variant="caption" tone="muted" numberOfLines={2}>
+                {`${r.active ? `${t('approvals.standIn.now')} · ` : ''}` +
+                  `${t('approvals.standIn.from', { from: day(r.startsOn), to: day(r.endsOn) })}`}
+              </AText>
+            </View>
+            {r.canEnd ? (
+              <GhostButton label={t('approvals.standIn.end')} disabled={busy} onPress={() => void end(r.id)} />
+            ) : null}
           </View>
-          {r.canEnd ? <GhostButton label={t('approvals.standIn.end')} disabled={busy} onPress={() => void end(r.id)} /> : null}
-        </View>
-      ))}
-    </View>
-  ) : null;
+        ))}
+      </View>
+    ) : null;
 
   return (
     <JobSheet visible={visible} onClose={onClose} busy={busy} title={t('approvals.standIn.title')}>
-      <AText variant="caption" tone="muted">{t('approvals.standIn.intro')}</AText>
-      {!data ? <ActivityIndicator color={c.accent} /> : (
+      <AText variant="caption" tone="muted">
+        {t('approvals.standIn.intro')}
+      </AText>
+      {!data ? (
+        <ActivityIndicator color={c.accent} />
+      ) : (
         <>
           {data.mayHandOver ? (
             picking ? (
@@ -136,7 +164,9 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
                   minDate={new Date(`${startsOn}T12:00:00`)}
                   title={t('approvals.standIn.lastDay')}
                 />
-                <AText variant="caption" tone="muted">{t('approvals.standIn.maxDays', { count: DELEGATION_MAX_DAYS })}</AText>
+                <AText variant="caption" tone="muted">
+                  {t('approvals.standIn.maxDays', { count: DELEGATION_MAX_DAYS })}
+                </AText>
                 <SectionLabel>{t('approvals.standIn.note')}</SectionLabel>
                 <GlassInput value={note} onChangeText={setNote} maxLength={300} />
                 <PrimaryButton
@@ -148,7 +178,9 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
               </>
             )
           ) : (
-            <AText variant="caption" tone="onGlass">{t('approvals.standIn.nothing')}</AText>
+            <AText variant="caption" tone="onGlass">
+              {t('approvals.standIn.nothing')}
+            </AText>
           )}
           {list(t('approvals.standIn.yours'), data.given, 'to')}
           {list(t('approvals.standIn.forYou'), data.received, 'from')}

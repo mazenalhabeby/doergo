@@ -1,4 +1,14 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, Request, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Put,
+  Request,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SPACE_PERMISSION_KEYS, whitelistPermissions } from '@hbcfield/shared';
 import { LabourCostInterceptor } from '../../common/interceptors/labour-cost.interceptor';
@@ -8,6 +18,9 @@ import { SpaceRolesService } from './space-roles.service';
 import { SetMemberPermissionsDto } from './space-roles.dto';
 import { grantCeiling, managesMembersOrgWide, spaceMemberAuthority } from './space-member-access';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 const SPACE_KEYS = new Set<string>(SPACE_PERMISSION_KEYS);
 
 /**
@@ -40,7 +53,7 @@ export class SpaceMemberPermissionsController {
     private readonly authCache: AuthTokenCache,
   ) {}
 
-  private assertMayGrantHere(user: any, spaceId: string) {
+  private assertMayGrantHere(user: SessionUser, spaceId: string) {
     if (!spaceMemberAuthority(user, spaceId).grantRoles) {
       throw new ForbiddenException('You cannot give roles in this workspace');
     }
@@ -48,10 +61,10 @@ export class SpaceMemberPermissionsController {
 
   @Get()
   @ApiOperation({ summary: "One person's permissions in this workspace, as the builder shows them" })
-  get(@Param('spaceId') spaceId: string, @Param('assignmentId') assignmentId: string, @Request() req: any) {
+  get(@Param('spaceId') spaceId: string, @Param('assignmentId') assignmentId: string, @Request() req: AuthedRequest) {
     this.assertMayGrantHere(req.user, spaceId);
     return this.service.getMemberPermissions({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       assignmentId,
       requesterPerms: grantCeiling(req.user, spaceId),
@@ -64,13 +77,16 @@ export class SpaceMemberPermissionsController {
     @Param('spaceId') spaceId: string,
     @Param('assignmentId') assignmentId: string,
     @Body() body: SetMemberPermissionsDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     this.assertMayGrantHere(req.user, spaceId);
     const hasRole = typeof body.roleId === 'string' && body.roleId.length > 0;
     const hasKeys = body.permissions !== undefined && body.permissions !== null;
     if (hasRole === hasKeys) {
-      throw new BadRequestException({ message: 'Send either a role or a set of permissions', code: 'PERMISSIONS_CHOICE_INVALID' });
+      throw new BadRequestException({
+        message: 'Send either a role or a set of permissions',
+        code: 'PERMISSIONS_CHOICE_INVALID',
+      });
     }
     if (hasKeys) {
       /*
@@ -91,10 +107,12 @@ export class SpaceMemberPermissionsController {
       }
     }
     const result = await this.service.setMemberPermissions({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       assignmentId,
-      choice: hasRole ? { roleId: body.roleId as string } : { permissions: whitelistPermissions(body.permissions, 'space') },
+      choice: hasRole
+        ? { roleId: body.roleId as string }
+        : { permissions: whitelistPermissions(body.permissions, 'space') },
       requesterPerms: grantCeiling(req.user, spaceId),
       requesterId: req.user.id,
       outrankCheck: !managesMembersOrgWide(req.user),
@@ -102,7 +120,7 @@ export class SpaceMemberPermissionsController {
     // An external member's seat is priced from what they hold: €2 watching, €9.99 anything more.
     this.billing.rebill(req.user.organizationId);
     // Their next request carries the new permissions — not the cached session's, for up to a minute.
-    const userId = (result as any)?.data?.userId;
+    const userId = (result as { data?: { userId?: unknown } } | null)?.data?.userId;
     if (typeof userId === 'string') await this.authCache.invalidateUser(userId);
     return result;
   }

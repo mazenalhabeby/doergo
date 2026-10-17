@@ -68,7 +68,7 @@ export class MemberTermsService extends SpaceRolesBase {
       this.prisma.$transaction(async (tx) => {
         const patch: Record<string, number | null> = {};
         const write = (kind: 'BILL_HOUR' | 'COST_HOUR' | 'COST_DAY', cents: number | null | undefined) =>
-          writeRateChange(tx as any, {
+          writeRateChange(tx, {
             organizationId: data.organizationId,
             target: 'ASSIGNMENT',
             targetId: member.id,

@@ -1,22 +1,6 @@
 import { PresignUploadDto, ConfirmReportAttachmentDto } from '../../common/dto/upload.dto';
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Request,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
 import { taskActor } from '../../common/task-actor';
@@ -26,6 +10,7 @@ import { ReportsService } from './reports.service';
 import { ReportsQueueService } from './reports.queue.service';
 import { CompleteTaskDto, UpdateReportDto } from './dto';
 
+import type { AuthedRequest } from '../../common/request.types';
 @ApiTags('reports')
 @ApiBearerAuth()
 @Controller()
@@ -42,11 +27,7 @@ export class ReportsController {
   @RequireModule('service_reports')
   @ApiOperation({ summary: 'Complete a task with service report (assigned user)' })
   @ApiParam({ name: 'taskId', description: 'Task ID to complete' })
-  async completeTask(
-    @Param('taskId') taskId: string,
-    @Body() dto: CompleteTaskDto,
-    @Request() req: any,
-  ) {
+  async completeTask(@Param('taskId') taskId: string, @Body() dto: CompleteTaskDto, @Request() req: AuthedRequest) {
     return this.reportsQueueService.completeTask({
       taskId,
       ...dto,
@@ -60,7 +41,7 @@ export class ReportsController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get service report for a task' })
   @ApiParam({ name: 'taskId', description: 'Task ID' })
-  async getTaskReport(@Param('taskId') taskId: string, @Request() req: any) {
+  async getTaskReport(@Param('taskId') taskId: string, @Request() req: AuthedRequest) {
     return this.reportsService.getTaskReport({
       taskId,
       ...taskActor(req),
@@ -75,9 +56,9 @@ export class ReportsController {
   @ApiQuery({ name: 'limit', required: false })
   async getAssetReports(
     @Param('assetId') assetId: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Request() req?: any,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.reportsService.getAssetReports({
       assetId,
@@ -93,11 +74,7 @@ export class ReportsController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Update a service report (assigned user, within 24 hours)' })
   @ApiParam({ name: 'id', description: 'Report ID' })
-  async updateReport(
-    @Param('id') id: string,
-    @Body() dto: UpdateReportDto,
-    @Request() req: any,
-  ) {
+  async updateReport(@Param('id') id: string, @Body() dto: UpdateReportDto, @Request() req: AuthedRequest) {
     return this.reportsQueueService.updateReport({
       reportId: id,
       ...dto,
@@ -111,11 +88,7 @@ export class ReportsController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get presigned URL for uploading attachment' })
   @ApiParam({ name: 'id', description: 'Report ID' })
-  async getPresignedUrl(
-    @Param('id') id: string,
-    @Body() body: PresignUploadDto,
-    @Request() req: any,
-  ) {
+  async getPresignedUrl(@Param('id') id: string, @Body() body: PresignUploadDto, @Request() req: AuthedRequest) {
     return this.reportsQueueService.getPresignedUrl({
       reportId: id,
       fileName: body.fileName,
@@ -131,7 +104,7 @@ export class ReportsController {
   async addAttachment(
     @Param('id') id: string,
     @Body() body: ConfirmReportAttachmentDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.addAttachment({
       // Named fields only — the id being authorised is the path's, never the body's.
@@ -155,7 +128,7 @@ export class ReportsController {
   async deleteAttachment(
     @Param('id') id: string,
     @Param('attachmentId') attachmentId: string,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.deleteAttachment({
       reportId: id,
@@ -172,14 +145,15 @@ export class ReportsController {
   @ApiParam({ name: 'id', description: 'Report ID' })
   async addPart(
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       name: string;
       partNumber?: string;
       quantity: number;
       unitCost?: number;
       notes?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.addPart({
       reportId: id,
@@ -196,14 +170,15 @@ export class ReportsController {
   async updatePart(
     @Param('id') id: string,
     @Param('partId') partId: string,
-    @Body() body: {
+    @Body()
+    body: {
       name?: string;
       partNumber?: string;
       quantity?: number;
       unitCost?: number;
       notes?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.reportsQueueService.updatePart({
       reportId: id,
@@ -218,11 +193,7 @@ export class ReportsController {
   @ApiOperation({ summary: 'Delete a part from a report' })
   @ApiParam({ name: 'id', description: 'Report ID' })
   @ApiParam({ name: 'partId', description: 'Part ID' })
-  async deletePart(
-    @Param('id') id: string,
-    @Param('partId') partId: string,
-    @Request() req: any,
-  ) {
+  async deletePart(@Param('id') id: string, @Param('partId') partId: string, @Request() req: AuthedRequest) {
     return this.reportsQueueService.deletePart({
       reportId: id,
       partId,

@@ -14,9 +14,25 @@ import { errorMessage } from "@/lib/errors"
  * Everything the members page DOES: remove (optimistically), revoke an
  * invitation, hand the organization over, and the bulk actions on a selection.
  */
+/** A cached member or invitation list page: rows with ids, and the header's total. */
+type MemberListCache = { data?: Array<{ id: string }>; meta?: { total?: number } & Record<string, unknown> } & Record<
+  string,
+  unknown
+>
+
 export function useMemberActions({
-  t, queryClient, refreshUser, debouncedSearch, roleFilter, page, members, userId,
-  setTransferTarget, setRemoveTarget, setSelectedIds, setBulkAccessIds,
+  t,
+  queryClient,
+  refreshUser,
+  debouncedSearch,
+  roleFilter,
+  page,
+  members,
+  userId,
+  setTransferTarget,
+  setRemoveTarget,
+  setSelectedIds,
+  setBulkAccessIds,
 }: {
   t: TFunction
   queryClient: QueryClient
@@ -41,9 +57,9 @@ export function useMemberActions({
     async (listKey: QueryKey, id: string) => {
       await queryClient.cancelQueries({ queryKey: listKey })
       const snapshot = queryClient.getQueriesData({ queryKey: listKey })
-      queryClient.setQueriesData({ queryKey: listKey }, (old: any) => {
+      queryClient.setQueriesData<MemberListCache>({ queryKey: listKey }, (old) => {
         if (!old?.data) return old
-        const data = old.data.filter((row: { id: string }) => row.id !== id)
+        const data = old.data.filter((row) => row.id !== id)
         // Keep the header count honest while the request is in flight.
         const meta = old.meta ? { ...old.meta, total: Math.max(0, (old.meta.total ?? 0) - 1) } : old.meta
         return { ...old, data, meta }
@@ -90,7 +106,7 @@ export function useMemberActions({
       notify.success(t("members.toast.memberRemoved"))
     },
     onError: (error: Error, _memberId, snapshot) => {
-      restoreSnapshot(snapshot as any)
+      restoreSnapshot(snapshot)
       notify.error(error.message || t("members.toast.removeFailed"))
     },
     onSettled: () => {
@@ -106,7 +122,7 @@ export function useMemberActions({
       notify.success(t("invitations.revokeDialog.revokedSuccessfully"))
     },
     onError: (error: Error, _id, snapshot) => {
-      restoreSnapshot(snapshot as any)
+      restoreSnapshot(snapshot)
       notify.error(error.message || t("members.toast.revokeFailed"))
     },
     onSettled: () => {
@@ -125,69 +141,86 @@ export function useMemberActions({
     })
   }, [])
 
-  const handleSelectAll = useCallback((checked: boolean) => {
-    if (checked) {
-      const selectableIds = members.filter((m) => m.id !== userId).map((m) => m.id)
-      setSelectedIds(new Set(selectableIds))
-    } else {
-      setSelectedIds(new Set())
-    }
-  }, [members, userId])
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        const selectableIds = members.filter((m) => m.id !== userId).map((m) => m.id)
+        setSelectedIds(new Set(selectableIds))
+      } else {
+        setSelectedIds(new Set())
+      }
+    },
+    [members, userId],
+  )
 
-  const handleBulkRoleChange = useCallback(async (memberIds: string[], role: string) => {
-    try {
-      // allSettled so one failure doesn't abort the rest, silently leaving the org
-      // half-changed with the selection intact (D4). Always invalidate + clear.
-      const results = await Promise.allSettled(
-        memberIds.map((id) => organizationsApi.updateMember(id, { role }))
-      )
-      const ok = results.filter((r) => r.status === "fulfilled").length
-      const failed = results.length - ok
-      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
-      setSelectedIds(new Set())
-      if (failed === 0) notify.bulk(ok, t("members.toast.roleUpdated"))
-      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error) {
-      notify.error(errorMessage(error, t("members.toast.updateRolesFailed")))
-    }
-  }, [queryClient])
+  const handleBulkRoleChange = useCallback(
+    async (memberIds: string[], role: string) => {
+      try {
+        // allSettled so one failure doesn't abort the rest, silently leaving the org
+        // half-changed with the selection intact (D4). Always invalidate + clear.
+        const results = await Promise.allSettled(memberIds.map((id) => organizationsApi.updateMember(id, { role })))
+        const ok = results.filter((r) => r.status === "fulfilled").length
+        const failed = results.length - ok
+        queryClient.invalidateQueries({ queryKey: keys.members.lists() })
+        setSelectedIds(new Set())
+        if (failed === 0) notify.bulk(ok, t("members.toast.roleUpdated"))
+        else notify.error(t("members.toast.bulkPartial", { ok, failed }))
+      } catch (error) {
+        notify.error(errorMessage(error, t("members.toast.updateRolesFailed")))
+      }
+    },
+    [queryClient],
+  )
 
-  const handleBulkSpaceAssign = useCallback(async (memberIds: string[], locationId: string) => {
-    try {
-      const results = await Promise.allSettled(
-        memberIds.map((id) => locationsApi.assignMember(locationId, { userId: id }))
-      )
-      const ok = results.filter((r) => r.status === "fulfilled").length
-      const failed = results.length - ok
-      queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
-      setSelectedIds(new Set())
-      if (failed === 0) notify.success(t("members.toast.assignedToSpace", { count: ok }))
-      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error) {
-      notify.error(errorMessage(error, t("members.toast.assignFailed")))
-    }
-  }, [queryClient])
+  const handleBulkSpaceAssign = useCallback(
+    async (memberIds: string[], locationId: string) => {
+      try {
+        const results = await Promise.allSettled(
+          memberIds.map((id) => locationsApi.assignMember(locationId, { userId: id })),
+        )
+        const ok = results.filter((r) => r.status === "fulfilled").length
+        const failed = results.length - ok
+        queryClient.invalidateQueries({ queryKey: keys.locations.rosterBatches() })
+        setSelectedIds(new Set())
+        if (failed === 0) notify.success(t("members.toast.assignedToSpace", { count: ok }))
+        else notify.error(t("members.toast.bulkPartial", { ok, failed }))
+      } catch (error) {
+        notify.error(errorMessage(error, t("members.toast.assignFailed")))
+      }
+    },
+    [queryClient],
+  )
 
-  const handleBulkRemove = useCallback(async (memberIds: string[]) => {
-    try {
-      // Bounded (lib/concurrency) so a large removal is not refused by the rate limiter.
-      const { failed, total } = await runBulk(memberIds, (id) => organizationsApi.removeMember(id))
-      const ok = total - failed
-      queryClient.invalidateQueries({ queryKey: keys.members.lists() })
-      setSelectedIds(new Set())
-      if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))
-      else notify.error(t("members.toast.bulkPartial", { ok, failed }))
-    } catch (error) {
-      notify.error(errorMessage(error, t("members.toast.removeMembersFailed")))
-    }
-  }, [queryClient])
+  const handleBulkRemove = useCallback(
+    async (memberIds: string[]) => {
+      try {
+        // Bounded (lib/concurrency) so a large removal is not refused by the rate limiter.
+        const { failed, total } = await runBulk(memberIds, (id) => organizationsApi.removeMember(id))
+        const ok = total - failed
+        queryClient.invalidateQueries({ queryKey: keys.members.lists() })
+        setSelectedIds(new Set())
+        if (failed === 0) notify.success(t("members.toast.removedCount", { count: ok }))
+        else notify.error(t("members.toast.bulkPartial", { ok, failed }))
+      } catch (error) {
+        notify.error(errorMessage(error, t("members.toast.removeMembersFailed")))
+      }
+    },
+    [queryClient],
+  )
 
   const handleBulkAccess = useCallback((memberIds: string[]) => {
     setBulkAccessIds(memberIds)
   }, [])
 
   return {
-    transferMutation, removeMutation, revokeInviteMutation,
-    handleSelectMember, handleSelectAll, handleBulkRoleChange, handleBulkSpaceAssign, handleBulkRemove, handleBulkAccess,
+    transferMutation,
+    removeMutation,
+    revokeInviteMutation,
+    handleSelectMember,
+    handleSelectAll,
+    handleBulkRoleChange,
+    handleBulkSpaceAssign,
+    handleBulkRemove,
+    handleBulkAccess,
   }
 }

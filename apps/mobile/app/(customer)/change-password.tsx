@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/contexts/theme-context';
-import { COLORS, FONT_SIZE } from '../../src/lib/constants';
+import { COLORS, FONT_SIZE, type ThemeColors } from '../../src/lib/constants';
 import { passwordApi } from '../../src/lib/api/auth';
 import { PortalField, PortalFormScreen, portalFormStyles } from '../../src/components/customer/portal-form';
 
@@ -41,12 +41,35 @@ export default function ChangePassword() {
   };
 
   return (
-    <PortalFormScreen title={t('portal.changePassword', 'Change password')} onSave={save} canSave={valid} saving={saving}>
-      <PwField label={t('portal.currentPassword', 'Current password')} value={current} onChange={setCurrent} show={show} colors={colors} />
-      <PwField label={t('portal.newPassword', 'New password')} value={next} onChange={setNext} show={show} colors={colors}
-        error={tooShort ? t('portal.pwTooShort', 'At least 8 characters') : undefined} />
-      <PwField label={t('portal.confirmPassword', 'Confirm new password')} value={confirm} onChange={setConfirm} show={show} colors={colors}
-        error={mismatch ? t('portal.pwMismatch', 'Passwords don’t match') : undefined} />
+    <PortalFormScreen
+      title={t('portal.changePassword', 'Change password')}
+      onSave={save}
+      canSave={valid}
+      saving={saving}
+    >
+      <PwField
+        label={t('portal.currentPassword', 'Current password')}
+        value={current}
+        onChange={setCurrent}
+        show={show}
+        colors={colors}
+      />
+      <PwField
+        label={t('portal.newPassword', 'New password')}
+        value={next}
+        onChange={setNext}
+        show={show}
+        colors={colors}
+        error={tooShort ? t('portal.pwTooShort', 'At least 8 characters') : undefined}
+      />
+      <PwField
+        label={t('portal.confirmPassword', 'Confirm new password')}
+        value={confirm}
+        onChange={setConfirm}
+        show={show}
+        colors={colors}
+        error={mismatch ? t('portal.pwMismatch', 'Passwords don’t match') : undefined}
+      />
 
       <Pressable style={styles.toggle} onPress={() => setShow((s) => !s)}>
         <Ionicons name={show ? 'eye-off-outline' : 'eye-outline'} size={16} color={colors.textSecondary} />
@@ -70,15 +93,27 @@ function PwField({
   value: string;
   onChange: (v: string) => void;
   show: boolean;
-  colors: any;
+  colors: ThemeColors;
   error?: string;
 }) {
   return (
     <PortalField label={label}>
       <TextInput
-        style={[portalFormStyles.input, { color: colors.textPrimary, backgroundColor: colors.card, borderColor: error ? COLORS.error : colors.border }]}
-        value={value} onChangeText={onChange} secureTextEntry={!show} autoCapitalize="none" autoCorrect={false}
-        placeholder="••••••••" placeholderTextColor={colors.textMuted}
+        style={[
+          portalFormStyles.input,
+          {
+            color: colors.textPrimary,
+            backgroundColor: colors.card,
+            borderColor: error ? COLORS.error : colors.border,
+          },
+        ]}
+        value={value}
+        onChangeText={onChange}
+        secureTextEntry={!show}
+        autoCapitalize="none"
+        autoCorrect={false}
+        placeholder="••••••••"
+        placeholderTextColor={colors.textMuted}
       />
       {error ? <Text style={[styles.err, { color: COLORS.error }]}>{error}</Text> : null}
     </PortalField>

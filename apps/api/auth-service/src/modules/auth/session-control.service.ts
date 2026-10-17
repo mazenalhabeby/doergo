@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { REFRESH_TOKEN_GRACE_PERIOD_SECONDS, runWithCronLock, barePushToken } from '@hbcfield/shared';
 import { Injectable, HttpStatus, Logger, Optional } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
@@ -176,7 +177,7 @@ export class SessionControlService {
       });
       exceptSessionId = own?.id;
     }
-    const where: any = { userId };
+    const where: Prisma.RefreshTokenWhereInput = { userId };
     if (exceptSessionId) {
       where.id = { not: exceptSessionId };
     }

@@ -15,6 +15,7 @@ import {
   onboardingGetStatus,
   onboardingCancelJoinRequest,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 @ApiTags('onboarding')
 @Controller('onboarding')
@@ -31,7 +32,7 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Create organization (Path A - onboarding)' })
   @ApiResponse({ status: 201, description: 'Organization created' })
   @ApiResponse({ status: 400, description: 'Already onboarded or has org' })
-  async createOrganization(@Body() dto: CreateOrganizationDto, @CurrentUser() user: CurrentUserData) {
+  async createOrganization(@Body() dto: CreateOrganizationDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingCreateOrg, {
         ...dto,
@@ -64,7 +65,7 @@ export class OnboardingController {
   @ApiResponse({ status: 201, description: 'Join request submitted' })
   @ApiResponse({ status: 400, description: 'Invalid code or already onboarded' })
   @ApiResponse({ status: 409, description: 'Already have pending request to this org' })
-  async submitJoinRequest(@Body() dto: SubmitJoinRequestDto, @CurrentUser() user: CurrentUserData) {
+  async submitJoinRequest(@Body() dto: SubmitJoinRequestDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingSubmitJoinRequest, {
         ...dto,
@@ -90,7 +91,7 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Accept invitation as existing user (Path C)' })
   @ApiResponse({ status: 200, description: 'Invitation accepted, user joined org' })
   @ApiResponse({ status: 400, description: 'Invalid/expired invitation or already onboarded' })
-  async acceptInvitation(@Body() dto: AcceptInvitationExistingUserDto, @CurrentUser() user: CurrentUserData) {
+  async acceptInvitation(@Body() dto: AcceptInvitationExistingUserDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingAcceptInvitationExisting, {
         userId: user.id,
@@ -110,7 +111,7 @@ export class OnboardingController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get onboarding status' })
   @ApiResponse({ status: 200, description: 'Onboarding status' })
-  async getStatus(@CurrentUser() user: CurrentUserData) {
+  async getStatus(@CurrentUser() user: SessionUser) {
     return firstValueFrom(sendRpc(this.authClient, onboardingGetStatus, { userId: user.id }));
   }
 
@@ -120,7 +121,7 @@ export class OnboardingController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request canceled' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async cancelJoinRequest(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async cancelJoinRequest(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingCancelJoinRequest, {
         requestId: id,

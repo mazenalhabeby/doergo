@@ -10,6 +10,7 @@ import { LeaveCountQueryDto } from '../calendar/calendar.dto';
 import { leaveReadScope } from './employees-controller-helpers';
 import { callerOrgId } from '../../common/caller-org';
 import { sendRpc, getTimeOff, getLeaveBalance, countLeaveRpc, requestTimeOff } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /** /employees/:id/time-off — one member's leave: the list, balance, what a range costs, asking. */
 @ApiTags('employees')
@@ -30,8 +31,8 @@ export class EmployeeTimeOffController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getEmployeeTimeOff(
     @Param('id') id: string,
-    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
-    @CurrentUser() user?: CurrentUserData,
+    @Query('status') status: ('PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED') | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     // Managers (EMPLOYEE + canViewAllTasks) can view any member's time-off;
     // plain employees only their own (D9).
@@ -56,9 +57,9 @@ export class EmployeeTimeOffController {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   async getLeaveBalance(
     @Param('id') id: string,
-    @Query('on') on?: string,
-    @Query('year') year?: string,
-    @CurrentUser() user?: CurrentUserData,
+    @Query('on') on: string | undefined,
+    @Query('year') year: string | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     // Same rule as the list above: a manager may read anyone's, a member only
     // their own. An allowance says what someone is entitled to and how much
@@ -82,7 +83,7 @@ export class EmployeeTimeOffController {
   @ApiOperation({ summary: 'What a leave range would cost — weekends, rota rest days and holidays left out' })
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async countLeave(@Param('id') id: string, @Query() q: LeaveCountQueryDto, @CurrentUser() user: CurrentUserData) {
+  async countLeave(@Param('id') id: string, @Query() q: LeaveCountQueryDto, @CurrentUser() user: SessionUser) {
     // Your own, or somebody you manage: an admin or org-wide view reaches everyone, the rota
     // permission held in a workspace reaches that workspace's people (narrowed in the service).
     const scope = leaveReadScope(user);
@@ -107,7 +108,7 @@ export class EmployeeTimeOffController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 201, description: 'Time-off request created' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async requestTimeOff(@Param('id') id: string, @Body() body: RequestTimeOffDto, @CurrentUser() user: CurrentUserData) {
+  async requestTimeOff(@Param('id') id: string, @Body() body: RequestTimeOffDto, @CurrentUser() user: SessionUser) {
     // Employees can only request time off for themselves
     if (user.role === Role.EMPLOYEE && user.id !== id) {
       throw new ForbiddenException('You can only request time off for yourself');

@@ -168,7 +168,8 @@ export class ChatTasksService {
       where: { id: conversation.id },
       include: { members: { include: { user: CHAT_USER_SELECT } }, task: CHAT_TASK_SELECT },
     });
-    return { success: true, data: shapeConversation(row, data.userId, await this.isOver(task)) };
+    // The conversation was found or created above, so the row exists.
+    return { success: true, data: shapeConversation(row!, data.userId, await this.isOver(task)) };
   }
 
   /**
@@ -248,6 +249,6 @@ export class ChatTasksService {
       task.organizationId,
       task.workflowId ?? task.space?.workflowId ?? null,
     );
-    return taskChatClosed(task.status, (workflow?.statuses ?? []) as any[]);
+    return taskChatClosed(task.status, (workflow?.statuses ?? []));
   }
 }

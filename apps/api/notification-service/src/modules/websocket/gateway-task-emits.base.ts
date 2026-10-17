@@ -1,5 +1,9 @@
 import { SocketEvents } from '@hbcfield/shared';
 import { GatewayCoreBase } from './gateway-core.base';
+import type { TaskPayload } from './socket-payloads';
+
+/** Who declined, as far as the log line reads it; passed to clients as it came. */
+type DeclinedBy = { firstName?: string | null; lastName?: string | null } | null | undefined;
 
 /** Task, space and document-type events — moved here unchanged from websocket.gateway.ts. */
 export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
@@ -20,19 +24,19 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
   // Cross-org shared-space guests live in `space:{spaceId}` (not taskviewers of the
   // owner org), so task events must also fan out there. Owner members get it via
   // taskviewers; guests via the space room — Socket.IO dedups any client in both.
-  protected taskTargets(task: any) {
+  protected taskTargets(task: TaskPayload) {
     let t = this.server.to(`taskviewers:${task.organizationId}`);
     if (task.spaceId) t = t.to(`space:${task.spaceId}`);
     return t;
   }
 
-  emitTaskCreated(task: any) {
+  emitTaskCreated(task: TaskPayload) {
     this.logger.log(`[EMIT] task.created to org:${task.organizationId}`);
     this.messagesSent++;
     this.taskTargets(task).emit(SocketEvents.TASK_CREATED, task);
   }
 
-  emitTaskAssigned(task: any, workerId: string) {
+  emitTaskAssigned(task: TaskPayload, workerId: string) {
     this.logger.log(`[EMIT] task.assigned to org:${task.organizationId} and user:${workerId}`);
     this.messagesSent += 2;
     this.taskTargets(task).emit(SocketEvents.TASK_ASSIGNED, task);
@@ -86,7 +90,7 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
     this.logger.debug(`[EMIT] task.updated ${task.id} → viewers, space, ${people.size} on the crew`);
   }
 
-  emitTaskUpdated(task: any) {
+  emitTaskUpdated(task: TaskPayload) {
     this.logger.log(`[EMIT] task.updated to org:${task.organizationId}`);
     this.messagesSent++;
     this.taskTargets(task).emit(SocketEvents.TASK_UPDATED, task);
@@ -96,10 +100,9 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
     }
   }
 
-  emitTaskDeclined(task: any, declinedBy: any) {
-    this.logger.log(
-      `[EMIT] task.declined to org:${task.organizationId} (declined by: ${declinedBy?.firstName} ${declinedBy?.lastName})`,
-    );
+  emitTaskDeclined(task: TaskPayload, declinedBy: unknown) {
+    const by = declinedBy as DeclinedBy;
+    this.logger.log(`[EMIT] task.declined to org:${task.organizationId} (declined by: ${by?.firstName} ${by?.lastName})`);
     this.messagesSent += 2;
     // Notify the organization (dispatcher and client will see this)
     this.server.to(`taskviewers:${task.organizationId}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });
@@ -107,7 +110,7 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
     this.server.to(`task:${task.id}`).emit(SocketEvents.TASK_DECLINED, { task, declinedBy });
   }
 
-  emitTaskStatusChanged(task: any, oldStatus: string, newStatus: string) {
+  emitTaskStatusChanged(task: TaskPayload, oldStatus: string, newStatus: string) {
     this.logger.log(`[EMIT] task.statusChanged (${oldStatus} -> ${newStatus}) to task:${task.id}`);
     this.messagesSent++;
     const payload = { task, oldStatus, newStatus };
@@ -121,19 +124,19 @@ export abstract class GatewayTaskEmitsBase extends GatewayCoreBase {
     target.emit(SocketEvents.TASK_STATUS_CHANGED, payload);
   }
 
-  emitCommentAdded(taskId: string, comment: any) {
+  emitCommentAdded(taskId: string, comment: unknown) {
     this.logger.log(`[EMIT] task.commentAdded to task:${taskId}`);
     this.messagesSent++;
     this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_COMMENT_ADDED, { taskId, comment });
   }
 
-  emitAttachmentAdded(taskId: string, attachment: any) {
+  emitAttachmentAdded(taskId: string, attachment: unknown) {
     this.logger.log(`[EMIT] task.attachmentAdded to task:${taskId}`);
     this.messagesSent++;
     this.server.to(`task:${taskId}`).emit(SocketEvents.TASK_ATTACHMENT_ADDED, { taskId, attachment });
   }
 
-  emitWorkerLocationUpdated(organizationId: string, workerId: string, location: any) {
+  emitWorkerLocationUpdated(organizationId: string, workerId: string, location: unknown) {
     // Without an org, we cannot scope the broadcast — drop it rather than leak
     // it platform-wide (the old global `role:ADMIN` room was the C5 leak).
     if (!organizationId) return;

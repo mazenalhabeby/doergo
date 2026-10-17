@@ -157,7 +157,7 @@ export function useJobWritesData(
       if (!task) return;
       try {
         await taskAttachmentsApi.delete(task.id, attachmentId);
-        setAttachments((prev) => prev.filter((a: any) => a.id !== attachmentId));
+        setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
       } catch (err) {
         fail(t('common.error'), err instanceof Error ? err.message : t('taskDetail.failedToDelete'));
       }

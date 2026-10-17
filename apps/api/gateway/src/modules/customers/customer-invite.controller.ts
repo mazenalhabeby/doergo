@@ -12,6 +12,8 @@ import {
   resendInvitation,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /customers/:id — inviting a client into the portal, and sending the invitation again. */
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -21,8 +23,12 @@ export class CustomerInviteController extends CustomersControllerBase {
   // Bringing a client into the app is the organization's act, not a workspace's.
   @DenyExternal()
   @ApiOperation({ summary: 'Invite this customer to the app (B2C Portal) — returns a code' })
-  async invite(@Param('id') id: string, @Body() body: { email?: string; portalId?: string }, @Request() req: any) {
-    const orgId = req.user.organizationId;
+  async invite(
+    @Param('id') id: string,
+    @Body() body: { email?: string; portalId?: string },
+    @Request() req: AuthedRequest,
+  ) {
+    const orgId = callerOrgId(req.user);
     /*
       Both reads and the write below carry the CALLER, like every other CRM
       route: customers.service decides with the caller's CRM caps and their
@@ -95,10 +101,10 @@ export class CustomerInviteController extends CustomersControllerBase {
   @Post(':id/resend-invite')
   @DenyExternal()
   @ApiOperation({ summary: "Re-send a customer's app invite" })
-  async resendInvite(@Param('id') id: string, @Request() req: any) {
+  async resendInvite(@Param('id') id: string, @Request() req: AuthedRequest) {
     // The same door as the invite: manage where the client is filed. It used to
     // re-send for any client id on the org-wide flag alone.
-    await this.managedCustomer(id, req.user.organizationId, this.caller(req));
-    return this.auth(resendInvitation, { organizationId: req.user.organizationId, customerId: id });
+    await this.managedCustomer(id, callerOrgId(req.user), this.caller(req));
+    return this.auth(resendInvitation, { organizationId: callerOrgId(req.user), customerId: id });
   }
 }

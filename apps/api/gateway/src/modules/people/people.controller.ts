@@ -8,7 +8,12 @@ import { getSpaceScope } from '@hbcfield/shared';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import { sendRpc, listOrgContacts } from '@hbcfield/shared/microservices';
 
-const rowsOf = (r: any): any[] => (Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : []);
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
+/** A person row as the two lists return it — read loosely, passed on as it came. */
+type PersonRow = { id?: string } & Record<string, unknown>;
+const rowsOf = (r: unknown): PersonRow[] =>
+  Array.isArray(r) ? r : Array.isArray((r as { data?: unknown } | null)?.data) ? (r as { data: PersonRow[] }).data : [];
 
 /**
  * One person, as the caller's Team shows them — the phone's profile screen.
@@ -31,12 +36,12 @@ export class PeopleController {
   @Get(':id')
   @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'A colleague as Team shows them, with whether you may message them' })
-  async person(@Param('id') id: string, @Request() req: any) {
+  async person(@Param('id') id: string, @Request() req: AuthedRequest) {
     const user = req.user;
     const [team, managers] = await Promise.all([
       this.locations.getColleagues({
         userId: user.id,
-        organizationId: user.organizationId,
+        organizationId: callerOrgId(user),
         spaceScope: getSpaceScope(user),
       }),
       firstValueFrom(

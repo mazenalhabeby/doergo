@@ -13,6 +13,7 @@ import { BlurSheet } from './blur-sheet';
 import { SheetPanel } from './sheet-panel';
 import { DatePickerModal } from './date-picker-modal';
 import { splitWall, joinWall, dateFromISO, TIME_RE, TimeField, s } from './time-field';
+import { caught } from '../lib/caught';
 
 /**
  * Correcting somebody's hours, from a phone.
@@ -106,8 +107,8 @@ export function AttendanceEditSheet({
       toast.success(t('attendanceReview.edit.saved'));
       onSaved(updated);
       onClose();
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('attendanceReview.edit.failed'));
+    } catch (err: unknown) {
+      toast.error(t('common.error'), caught(err).message || t('attendanceReview.edit.failed'));
     } finally {
       setSaving(false);
     }
@@ -152,7 +153,10 @@ export function AttendanceEditSheet({
             <View style={s.field}>
               <Text style={[s.label, { color: colors.textSecondary }]}>{t('attendanceReview.edit.notes')}</Text>
               <TextInput
-                style={[s.area, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[
+                  s.area,
+                  { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border },
+                ]}
                 value={notes}
                 onChangeText={setNotes}
                 placeholder={t('attendanceReview.edit.notesPlaceholder')}
@@ -166,7 +170,10 @@ export function AttendanceEditSheet({
                 {t('attendanceReview.edit.reason')} <Text style={{ color: COLORS.error }}>*</Text>
               </Text>
               <TextInput
-                style={[s.area, { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[
+                  s.area,
+                  { backgroundColor: colors.surface, color: colors.textPrimary, borderColor: colors.border },
+                ]}
                 value={reason}
                 onChangeText={setReason}
                 placeholder={t('attendanceReview.edit.reasonPlaceholder')}

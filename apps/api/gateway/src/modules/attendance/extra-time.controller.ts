@@ -7,6 +7,8 @@ import { RequestExtraTimeDto, ApproveExtraTimeDto, RejectExtraTimeDto, AddOverti
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /attendance — forgot to clock out, extra time and overtime on a shift. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -22,13 +24,13 @@ export class ExtraTimeController extends AttendanceControllerBase {
   async resolveForgotClockOut(
     @Param('id') entryId: string,
     @Body() body: { clockOutAt: string },
-    @Request() req?: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.extraTimeGateway.resolveForgotClockOut({
       entryId,
       clockOutAt: body.clockOutAt,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -36,23 +38,27 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Request to keep working past the shift end (routes to a leader)' })
-  async requestExtraTime(@Param('id') entryId: string, @Body() body: RequestExtraTimeDto, @Request() req?: any) {
+  async requestExtraTime(
+    @Param('id') entryId: string,
+    @Body() body: RequestExtraTimeDto,
+    @Request() req: AuthedRequest,
+  ) {
     return this.extraTimeGateway.requestExtraTime({
       entryId,
       // The moment it was asked — a phone without signal sends it later.
       occurredAt: body?.occurredAt ?? null,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Get('extra-time/pending')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'List open extra-time requests the caller can approve' })
-  async getPendingExtraTime(@Request() req?: any) {
+  async getPendingExtraTime(@Request() req: AuthedRequest) {
     return this.extraTimeGateway.listPendingExtraTime({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       // Org admins/managers see all; the space-role check runs server-side.
       isAdmin: req.user.role === Role.ADMIN || !!req.user.canManageUsers,
     });
@@ -64,7 +70,11 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Approve N more minutes of overtime for an open shift' })
-  async approveExtraTime(@Param('id') entryId: string, @Body() body: ApproveExtraTimeDto, @Request() req?: any) {
+  async approveExtraTime(
+    @Param('id') entryId: string,
+    @Body() body: ApproveExtraTimeDto,
+    @Request() req: AuthedRequest,
+  ) {
     return this.extraTimeGateway.approveExtraTime({
       entryId,
       minutes: body.minutes,
@@ -74,7 +84,7 @@ export class ExtraTimeController extends AttendanceControllerBase {
       signature: body.signature ?? null,
       notes: body.notes ?? null,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -88,13 +98,13 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Add approved overtime to a closed shift' })
-  async addOvertime(@Param('id') entryId: string, @Body() body: AddOvertimeDto, @Request() req?: any) {
+  async addOvertime(@Param('id') entryId: string, @Body() body: AddOvertimeDto, @Request() req: AuthedRequest) {
     return this.extraTimeGateway.addOvertimeToEntry({
       entryId,
       minutes: body.minutes,
       reason: body.reason ?? null,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
@@ -108,11 +118,11 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Remove an approved overtime (restores the shift end and recounts the day)' })
-  async removeApprovedOvertime(@Param('id') overtimeId: string, @Request() req?: any) {
+  async removeApprovedOvertime(@Param('id') overtimeId: string, @Request() req: AuthedRequest) {
     return this.extraTimeGateway.removeApprovedOvertime({
       overtimeId,
       actorId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canApproveOvertime'),
     });
   }
@@ -121,12 +131,12 @@ export class ExtraTimeController extends AttendanceControllerBase {
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @RequirePlan('shift_scheduling')
   @ApiOperation({ summary: 'Reject an extra-time request' })
-  async rejectExtraTime(@Param('id') entryId: string, @Body() body: RejectExtraTimeDto, @Request() req?: any) {
+  async rejectExtraTime(@Param('id') entryId: string, @Body() body: RejectExtraTimeDto, @Request() req: AuthedRequest) {
     return this.extraTimeGateway.rejectExtraTime({
       entryId,
       reason: body?.reason ?? null,
       approverId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

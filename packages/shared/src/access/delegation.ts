@@ -111,7 +111,7 @@ export function activeDelegationWhere(day: Date) {
 
 /** Structural, so both services pass their own client. */
 interface DelegationPrisma {
-  approvalDelegation: { findMany(args: any): Promise<any[]> };
+  approvalDelegation: { findMany(args: unknown): Promise<Array<{ toUserId: string; fromUser: unknown }>> };
 }
 
 const LEADER_SELECT = (now: Date) => ({

@@ -19,6 +19,7 @@ import {
   fromCents,
 } from '@hbcfield/shared/client';
 import { useOffline } from '../../offline/offline-context';
+import { caught } from '../../lib/caught';
 
 export type Stage = 'camera' | 'review';
 
@@ -83,8 +84,8 @@ export function useAssetExpenseScreenData() {
         // Read from what I HOLD, never fetched by id: this screen must not be
         // a way to look up an asset somebody was not given.
         setHeld(periods.find((h) => h.assetId === assetId) ?? null);
-      } catch (e: any) {
-        if (alive) toast.error(e?.message || t('expenses.loadFailed', 'Could not open that'));
+      } catch (e: unknown) {
+        if (alive) toast.error(caught(e).message || t('expenses.loadFailed', 'Could not open that'));
       } finally {
         if (alive) setLoading(false);
       }

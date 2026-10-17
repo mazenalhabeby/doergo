@@ -1,5 +1,11 @@
 import { useEffect } from 'react';
-import { SocketEvents } from '@hbcfield/shared/client';
+import {
+  SocketEvents,
+  type ChatAttachment,
+  type ChatMessage,
+  type ChatMessageChangedEvent,
+  type ChatMessageEvent,
+} from '@hbcfield/shared/client';
 import { useSocketContext } from '../../contexts/socket-context';
 import { useOffline } from '../offline-context';
 import { createPoke } from '../socket-poke';
@@ -28,15 +34,15 @@ export function OfflineSocketPoke() {
   */
   useEffect(() => {
     if (!records || !isConnected) return;
-    const keep = (d: any) => {
-      const m = d?.message;
+    const keep = (d: ChatMessageEvent | ChatMessageChangedEvent | null) => {
+      // As sent: an edited message also carries `updatedAt`, an attachment its `fileUrl`.
+      const m = d?.message as (ChatMessage & { updatedAt?: string | null }) | undefined;
       if (!m?.id || !m.conversationId) return;
       const attachments = Array.isArray(m.attachments)
-        ? m.attachments.map(({ url: _u, fileUrl: _f, ...a }: any) => a)
+        ? (m.attachments as (ChatAttachment & { fileUrl?: string })[]).map(({ url: _u, fileUrl: _f, ...a }) => a)
         : [];
-      void records
-        .upsert('chat_messages', { ...m, attachments, updatedAt: m.updatedAt ?? m.createdAt }, m.conversationId)
-        .catch(() => undefined);
+      const row = { ...m, attachments, updatedAt: m.updatedAt ?? m.createdAt };
+      void records.upsert('chat_messages', row, m.conversationId).catch(() => undefined);
     };
     const offs = [subscribe(SocketEvents.CHAT_MESSAGE, keep), subscribe(SocketEvents.CHAT_MESSAGE_CHANGED, keep)];
     return () => offs.forEach((o) => o());

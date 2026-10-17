@@ -114,7 +114,7 @@ export class FeedService {
       !org ||
       !org.isActive ||
       !org.calendarFeedsEnabled ||
-      isOrganizationSuspended(org as any) ||
+      isOrganizationSuspended(org) ||
       u.organizationId !== row.organizationId
     ) {
       throw new NotFoundException();

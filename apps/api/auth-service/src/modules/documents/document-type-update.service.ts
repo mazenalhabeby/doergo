@@ -1,38 +1,15 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { type SignatureMode, routeProblem } from '@hbcfield/shared';
+import { routeProblem } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
-import { type DocumentActor, assertCanManageTypes, assertCanManageVisibility, sameIdSet } from './document-common';
+import { assertCanManageTypes, assertCanManageVisibility, sameIdSet } from './document-common';
 import { DocumentTypesBase } from './document-types.base';
+import { type documentsUpdateType, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /** Editing a document type: its fields, its route, who sees it. */
 @Injectable()
 export class DocumentTypeUpdateService extends DocumentTypesBase {
-
-  async updateType(data: {
-    actor: DocumentActor;
-    id: string;
-    patch: Partial<{
-      label: string;
-      description: string | null;
-      retentionMonths: number | null;
-      signatureMode: SignatureMode;
-      isCredential: boolean;
-      hasExpiry: boolean;
-      requiredForWorkflowIds: string[];
-      requiredFromAll: boolean;
-      requiredFromRoleIds: string[];
-      /** Roles that may SEE documents of this type. Empty = no restriction. */
-      visibleToRoleIds: string[];
-      twoSided: boolean;
-      /** Sheets of paper rather than a card — refused together with twoSided. */
-      multiPage: boolean;
-      scanShape: string;
-      isActive: boolean;
-      position: number;
-      /** Ordered signer roles, or null to go back to a single signature. */
-      signerRoute: unknown;
-    }>;
-  }) {
+  // The request is the message contract's (shared with the gateway) — one definition, not two.
+  async updateType(data: RpcRequest<typeof documentsUpdateType>) {
     assertCanManageTypes(data.actor);
     const existing = await this.lookup.findTypeOr404(data.id, data.actor.organizationId);
 
@@ -55,7 +32,6 @@ export class DocumentTypeUpdateService extends DocumentTypesBase {
     if (data.patch.signerRoute !== undefined) {
       const problem = routeProblem(data.patch.signerRoute);
       if (problem) throw new BadRequestException(problem);
-
     }
 
     // A form sends every field, so only a list that actually DIFFERS from the

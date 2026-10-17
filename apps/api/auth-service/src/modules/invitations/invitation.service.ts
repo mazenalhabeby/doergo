@@ -109,7 +109,7 @@ export class InvitationService extends InvitationServiceBase {
         // time) alongside the hash used for fast lookup on validate/accept.
         code,
         codeHash,
-        targetRole: data.targetRole as any,
+        targetRole: data.targetRole as Role, // checked by targetRoleRefusal above
         organizationId: data.organizationId,
         createdById: data.createdById,
         expiresAt: invitationExpiresAt(data.expiresInHours),

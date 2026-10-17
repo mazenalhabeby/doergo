@@ -8,6 +8,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { AllowWhenLocked } from '../../common/guards/subscription.guard';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /attendance — rests: taking one, the rules, a member's breaks. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -20,10 +22,10 @@ export class BreaksController extends AttendanceControllerBase {
   @Post('breaks/start')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Start a break during current shift' })
-  async startBreak(@Body() dto: StartBreakDto, @Request() req: any) {
+  async startBreak(@Body() dto: StartBreakDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.startBreak({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       type: dto.type,
       notes: dto.notes,
       // Which planned rest this answers. Never trusted for anything but
@@ -46,10 +48,10 @@ export class BreaksController extends AttendanceControllerBase {
   @Post('breaks/snooze')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Postpone the rest that has fallen due' })
-  async snoozeBreak(@Body() dto: SnoozeBreakDto, @Request() req: any) {
+  async snoozeBreak(@Body() dto: SnoozeBreakDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.snoozeBreak({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       ruleId: dto.ruleId,
     });
   }
@@ -63,9 +65,13 @@ export class BreaksController extends AttendanceControllerBase {
   @Get('break-rules')
   @RequireModule('time_tracking')
   @ApiOperation({ summary: 'The planned rests for a workspace or shift' })
-  async listBreakRules(@Request() req: any, @Query('spaceId') spaceId?: string, @Query('shiftId') shiftId?: string) {
+  async listBreakRules(
+    @Request() req: AuthedRequest,
+    @Query('spaceId') spaceId?: string,
+    @Query('shiftId') shiftId?: string,
+  ) {
     return this.breaksGateway.listBreakRules({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       shiftId,
     });
@@ -75,11 +81,11 @@ export class BreaksController extends AttendanceControllerBase {
   @RequireModule('time_tracking')
   @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Add a planned rest' })
-  async createBreakRule(@Body() dto: BreakRuleDto, @Request() req: any) {
+  async createBreakRule(@Body() dto: BreakRuleDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.createBreakRule({
       ...dto,
       // Never from the body: the organization is whose token this is.
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       // The guard passes a grant in ANY workspace; the service narrows it to
       // the rule's own workspace (`BreakRulesService.assertMayManage`).
       scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
@@ -90,11 +96,11 @@ export class BreaksController extends AttendanceControllerBase {
   @RequireModule('time_tracking')
   @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Change a planned rest' })
-  async updateBreakRule(@Param('id') id: string, @Body() dto: BreakRuleDto, @Request() req: any) {
+  async updateBreakRule(@Param('id') id: string, @Body() dto: BreakRuleDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.updateBreakRule({
       ...dto,
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
     });
   }
@@ -103,10 +109,10 @@ export class BreaksController extends AttendanceControllerBase {
   @RequireModule('time_tracking')
   @RequirePermissionInSpace('canManageWorkspaces')
   @ApiOperation({ summary: 'Remove a planned rest' })
-  async deleteBreakRule(@Param('id') id: string, @Request() req: any) {
+  async deleteBreakRule(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.breaksGateway.deleteBreakRule({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canManageWorkspaces'),
     });
   }
@@ -116,10 +122,10 @@ export class BreaksController extends AttendanceControllerBase {
   @AllowWhenLocked()
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'End current break' })
-  async endBreak(@Body() dto: EndBreakDto, @Request() req: any) {
+  async endBreak(@Body() dto: EndBreakDto, @Request() req: AuthedRequest) {
     return this.breaksGateway.endBreak({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       notes: dto.notes,
       breakId: dto.breakId,
       evidence: dto.evidence,
@@ -129,22 +135,22 @@ export class BreaksController extends AttendanceControllerBase {
   @Get('breaks/status')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get current break status' })
-  async getBreakStatus(@Request() req: any) {
+  async getBreakStatus(@Request() req: AuthedRequest) {
     return this.breaksGateway.getBreakStatus({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Get('entries/:id/breaks')
   @ApiOperation({ summary: 'Get breaks for a specific time entry' })
-  async getBreaksForEntry(@Param('id') timeEntryId: string, @Request() req: any) {
+  async getBreaksForEntry(@Param('id') timeEntryId: string, @Request() req: AuthedRequest) {
     // No permission gate on the route: a member reads the rests of their own
     // shift. Anybody else's entry is narrowed in the service to the spaces
     // where the caller holds canViewSpaceAttendance — the entry-read rule.
     return this.breaksGateway.getBreaksForEntry({
       timeEntryId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       requesterId: req.user.id,
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
@@ -153,9 +159,9 @@ export class BreaksController extends AttendanceControllerBase {
   @Get('breaks/active')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all active breaks in the organization' })
-  async getActiveBreaks(@Request() req: any) {
+  async getActiveBreaks(@Request() req: AuthedRequest) {
     return this.breaksGateway.getActiveBreaks({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
@@ -169,15 +175,15 @@ export class BreaksController extends AttendanceControllerBase {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getBreakHistory(
-    @Query('date') date?: string,
-    @Query('userId') userId?: string,
-    @Query('type') type?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Request() req?: any,
+    @Query('date') date: string | undefined,
+    @Query('userId') userId: string | undefined,
+    @Query('type') type: string | undefined,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.breaksGateway.getBreakHistory({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       date,
       userId,
@@ -202,10 +208,14 @@ export class BreaksController extends AttendanceControllerBase {
   @Post('entries/:id/breaks')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Add a break to a member’s shift (reconciliation)' })
-  async addBreakForMember(@Param('id') timeEntryId: string, @Body() dto: AddBreakForMemberDto, @Request() req: any) {
-    const result: any = await this.breaksGateway.addBreakForMember({
+  async addBreakForMember(
+    @Param('id') timeEntryId: string,
+    @Body() dto: AddBreakForMemberDto,
+    @Request() req: AuthedRequest,
+  ) {
+    const result = await this.breaksGateway.addBreakForMember({
       timeEntryId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       editorId: req.user.id,
       type: dto.type,
@@ -226,10 +236,10 @@ export class BreaksController extends AttendanceControllerBase {
   @Delete('breaks/:id')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'Remove a break from a shift (reconciliation)' })
-  async deleteBreak(@Param('id') breakId: string, @Request() req: any) {
-    const result: any = await this.breaksGateway.deleteBreak({
+  async deleteBreak(@Param('id') breakId: string, @Request() req: AuthedRequest) {
+    const result = await this.breaksGateway.deleteBreak({
       breakId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       editorId: req.user.id,
     });
@@ -239,11 +249,15 @@ export class BreaksController extends AttendanceControllerBase {
   @Post('breaks/:id/end')
   @RequirePermissionInSpace('canReconcileAttendance')
   @ApiOperation({ summary: 'End a break manually (manager action)' })
-  async endBreakManually(@Param('id') breakId: string, @Body() body?: { notes?: string }, @Request() req?: any) {
+  async endBreakManually(
+    @Param('id') breakId: string,
+    @Body() body: { notes?: string } | undefined,
+    @Request() req: AuthedRequest,
+  ) {
     return this.breaksGateway.endBreakManually({
       breakId,
       adminId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       notes: body?.notes,
     });
@@ -258,11 +272,11 @@ export class BreaksController extends AttendanceControllerBase {
   async getBreakSummary(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
-    @Query('userId') userId?: string,
-    @Request() req?: any,
+    @Query('userId') userId: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.breaksGateway.getBreakSummary({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       startDate,
       endDate,

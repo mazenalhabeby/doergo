@@ -20,7 +20,7 @@ import { PlatformAdminService } from './platform-admin.service';
 @UseInterceptors(PlatformAuditInterceptor)
 export class PlatformPricingController {
   constructor(private readonly svc: PlatformAdminService) {}
-  private unwrap<T>(r: any): T {
+  private unwrap<T>(r: unknown): T {
     return assertServiceOk(r) as T;
   }
 

@@ -1,9 +1,10 @@
+import type { Prisma, TaskCreationScope } from '@prisma/client';
 import { Role, filterExternalModules } from '@hbcfield/shared';
 import type { UpdateMemberProfileDto } from './dto';
 
 /** The pure parts of `MemberProfileService.updateMemberProfile`: which fields a PATCH writes. */
 
-type Dto = UpdateMemberProfileDto & Record<string, any>;
+type Dto = UpdateMemberProfileDto;
 
 /**
  * Self-mutation guard: a member can never change their OWN role, permissions,
@@ -32,14 +33,14 @@ export function touchesPrivilege(dto: Dto): boolean {
 }
 
 /** Name and job title — written as sent. */
-export function nameFields(dto: Dto, data: Record<string, any>): void {
+export function nameFields(dto: Dto, data: Prisma.UserUncheckedUpdateInput): void {
   if (dto.firstName !== undefined) data.firstName = dto.firstName;
   if (dto.lastName !== undefined) data.lastName = dto.lastName;
   if (dto.position !== undefined) data.position = dto.position;
 }
 
 /** Birthday and planned hours. */
-export function scheduleFields(dto: Dto, data: Record<string, any>): void {
+export function scheduleFields(dto: Dto, data: Prisma.UserUncheckedUpdateInput): void {
   /*
     A birthday is a DAY, and only a day.
 
@@ -60,7 +61,7 @@ export function scheduleFields(dto: Dto, data: Record<string, any>): void {
  * An external member cannot hold `clock` or `time_off` — stripped from the
  * Access Profile being written (see the caller for why).
  */
-export function modulesFor(modules: any, willBeExternal: boolean): unknown {
+export function modulesFor(modules: unknown, willBeExternal: boolean): unknown {
   return willBeExternal && modules && typeof modules === 'object' && !Array.isArray(modules)
     ? { ...modules, modules: filterExternalModules((modules as { modules?: unknown }).modules) }
     : willBeExternal
@@ -69,7 +70,7 @@ export function modulesFor(modules: any, willBeExternal: boolean): unknown {
 }
 
 /** Contact directory + access control. */
-export function contactFields(dto: Dto, data: Record<string, any>): void {
+export function contactFields(dto: Dto, data: Prisma.UserUncheckedUpdateInput): void {
   if (dto.contactable !== undefined) data.contactable = dto.contactable;
   if (dto.contactScope !== undefined) data.contactScope = dto.contactScope;
   if (dto.contactAllowedIds !== undefined) data.contactAllowedIds = dto.contactAllowedIds;
@@ -83,23 +84,24 @@ export function clearsMemberRole(dto: Dto): boolean {
 }
 
 /** A role change writes the role and every flat permission, defaulted by the role. */
-export function roleChangeFields(dto: Dto & { role: string }, data: Record<string, any>): void {
+export function roleChangeFields(dto: Dto & { role: string }, data: Prisma.UserUncheckedUpdateInput): void {
   data.role = dto.role;
 
   // Set default platform based on role if not provided
   data.canCreateTasks = dto.canCreateTasks ?? dto.role === Role.ADMIN;
   // Default taskCreationScope by role
   const defaultScope = dto.role === Role.ADMIN ? 'ORG' : 'SELF';
-  data.taskCreationScope = dto.taskCreationScope ?? defaultScope;
+  // The gateway's DTO validates it as NONE | SELF | SPACE | ORG (@IsEnum); the contract carries it as a string.
+  data.taskCreationScope = (dto.taskCreationScope ?? defaultScope) as TaskCreationScope;
   data.canViewAllTasks = dto.canViewAllTasks ?? dto.role === Role.ADMIN;
   data.canAssignTasks = dto.canAssignTasks ?? dto.role === Role.ADMIN;
   data.canManageUsers = dto.canManageUsers ?? dto.role === Role.ADMIN;
 }
 
 /** No role change — still allow updating individual permission/platform fields. */
-export function flatPermissionFields(dto: Dto, data: Record<string, any>): void {
+export function flatPermissionFields(dto: Dto, data: Prisma.UserUncheckedUpdateInput): void {
   if (dto.canCreateTasks !== undefined) data.canCreateTasks = dto.canCreateTasks;
-  if (dto.taskCreationScope !== undefined) data.taskCreationScope = dto.taskCreationScope;
+  if (dto.taskCreationScope !== undefined) data.taskCreationScope = dto.taskCreationScope as TaskCreationScope;
   if (dto.canViewAllTasks !== undefined) data.canViewAllTasks = dto.canViewAllTasks;
   if (dto.canAssignTasks !== undefined) data.canAssignTasks = dto.canAssignTasks;
   if (dto.canManageUsers !== undefined) data.canManageUsers = dto.canManageUsers;

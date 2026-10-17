@@ -1,3 +1,4 @@
+import { type Prisma } from '@prisma/client';
 import { type TaskReportPerson } from '@hbcfield/shared';
 
 const PERSON = { select: { id: true, firstName: true, lastName: true } } as const;
@@ -131,4 +132,45 @@ const nameOf = (p: TaskReportPerson | null) => (p ? [p.firstName, p.lastName].fi
 const isImage = (f: { fileType?: string | null; mimeType?: string | null }) =>
   f.fileType === 'IMAGE' || (typeof f.mimeType === 'string' && f.mimeType.startsWith('image/'));
 
+/** The task row as REPORT_TASK_SELECT reads it, and one issuing company as ISSUER_SELECT reads it. */
+type ReportTask = Prisma.TaskGetPayload<{ select: typeof REPORT_TASK_SELECT }>;
+type ReportIssuerRow = Prisma.LegalEntityGetPayload<{ select: typeof ISSUER_SELECT }>;
+
+/*
+  What each report section reads from the reads it composes — stated by shape, so a
+  section asks only for the fields it prints.
+*/
+type When = Date | string | null | undefined;
+type ReportFileRow = {
+  id: string;
+  fileName: string;
+  mimeType?: string | null;
+  fileSize?: number | null;
+  url?: string | null;
+  createdAt?: When;
+};
+type ReportChecklistRow = {
+  id: string;
+  text: string;
+  isCompleted?: boolean | null;
+  assignee?: Person | null;
+  completedBy?: Person | null;
+  completedAt?: When;
+};
+type ReportSubmissionRow = {
+  id: string;
+  statusKey: string;
+  form: unknown;
+  answers?: unknown;
+  files?: unknown;
+  submittedAt: When;
+  submittedBy?: Person | null;
+};
+type ReportDetailRow = {
+  definitionId: string;
+  value: unknown;
+  definition?: { name?: string | null; key?: string | null; type?: string | null } | null;
+};
+
 export { PERSON, REPORT_TASK_SELECT, ISSUER_SELECT, HISTORY_PAGE, Person, personOf, iso, nameOf, isImage };
+export type { ReportTask, ReportIssuerRow, ReportFileRow, ReportChecklistRow, ReportSubmissionRow, ReportDetailRow };

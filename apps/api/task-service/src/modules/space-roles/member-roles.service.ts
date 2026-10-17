@@ -187,7 +187,7 @@ export class MemberRolesService extends SpaceRolesBase {
     requesterPerms?: PermissionSet | null;
   }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
-    const view = await readAssignmentPermissions(this.prisma as any, {
+    const view = await readAssignmentPermissions(this.prisma, {
       organizationId: data.organizationId,
       assignmentId: data.assignmentId,
       spaceId: data.spaceId,
@@ -214,7 +214,7 @@ export class MemberRolesService extends SpaceRolesBase {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     const ceiling = data.requesterPerms ?? null;
     await this.prisma.$transaction((tx) =>
-      setAssignmentPermissions(tx as any, {
+      setAssignmentPermissions(tx, {
         organizationId: data.organizationId,
         spaceId: data.spaceId,
         assignmentId: data.assignmentId,

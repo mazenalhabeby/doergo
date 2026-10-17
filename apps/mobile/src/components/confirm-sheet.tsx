@@ -1,9 +1,12 @@
 import { useCallback } from 'react';
+import type { Ionicons } from '@expo/vector-icons';
 import { Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/theme-context';
 import { SPACING, FONT_SIZE } from '../lib/constants';
 import { SlideSheet, SlideSheetActions, SlideSheetHeader, useSlideSheet } from './slide-sheet';
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export type ConfirmSheetVariant = 'danger' | 'warning' | 'info' | 'success';
 
@@ -16,14 +19,17 @@ interface ConfirmSheetProps {
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: ConfirmSheetVariant;
-  icon?: string;
+  icon?: IconName;
   isLoading?: boolean;
 }
 
-const VARIANT_CONFIG: Record<ConfirmSheetVariant, {
-  icon: string;
-  buttonBg: string;
-}> = {
+const VARIANT_CONFIG: Record<
+  ConfirmSheetVariant,
+  {
+    icon: IconName;
+    buttonBg: string;
+  }
+> = {
   danger: { icon: 'warning', buttonBg: '#dc2626' },
   warning: { icon: 'alert-circle', buttonBg: '#d97706' },
   info: { icon: 'information-circle', buttonBg: '#2563eb' },
@@ -64,9 +70,7 @@ export function ConfirmSheet({
       <SlideSheetHeader title={title} onClose={handleClose} />
 
       {/* Message */}
-      {message ? (
-        <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
-      ) : null}
+      {message ? <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text> : null}
 
       <SlideSheetActions
         style={styles.buttons}

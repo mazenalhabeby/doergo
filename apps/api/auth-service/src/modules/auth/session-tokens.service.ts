@@ -11,6 +11,53 @@ import {
 import { Injectable, HttpStatus } from '@nestjs/common';
 import { resolveProfileBadges, orgPermissionFields, type AuthResult } from './auth-common';
 import { SessionTokensBase } from './session-tokens.base';
+import type { Organization, User } from '@prisma/client';
+import type { ResolvedAccess } from '@hbcfield/shared';
+
+/** Exactly what a session is built from: the member's columns and their organization's. */
+type SessionUser = Pick<
+  User,
+  | 'id'
+  | 'email'
+  | 'firstName'
+  | 'lastName'
+  | 'role'
+  | 'organizationId'
+  | 'onboardingCompleted'
+  | 'isExternal'
+  | 'avatarUrl'
+  | 'allowRemote'
+  | 'canCreateTasks'
+  | 'taskCreationScope'
+  | 'clockInPick'
+  | 'enabledModules'
+  | 'guidesSeen'
+  | 'position'
+  | 'presence'
+  | 'profileBadges'
+  | 'scheduleType'
+  | 'specialty'
+  | 'timeFormat'
+  | 'canViewAllTasks'
+  | 'memberRoleId'
+  | 'assignedHome'
+> & {
+  organization?: Pick<
+    Organization,
+    | 'name'
+    | 'timezone'
+    | 'profileBadges'
+    | 'enabledModules'
+    | 'subStatus'
+    | 'planTier'
+    | 'addOns'
+    | 'currency'
+    | 'offlineMode'
+    | 'usesExternalWorkers'
+    | 'suspendedAt'
+    | 'ownerId'
+  > | null;
+};
 
 /**
  * Minting a session: the token pair, its expiry, and the request context a
@@ -31,8 +78,8 @@ export class SessionTokensService extends SessionTokensBase {
     copy, and both doors call it.
   */
   async buildSession(
-    user: any,
-    access: any,
+    user: SessionUser,
+    access: ResolvedAccess,
     opts: {
       userAgent?: string;
       ipAddress?: string;
@@ -57,7 +104,7 @@ export class SessionTokensService extends SessionTokensBase {
     // Audit: successful login (fire-and-forget, never blocks response)
     if (user.organizationId) {
       this.auditLog.log({
-        eventType: 'USER_LOGIN' as any,
+        eventType: 'USER_LOGIN',
         userId: user.id,
         organizationId: user.organizationId as string,
         ipAddress: opts.ipAddress,

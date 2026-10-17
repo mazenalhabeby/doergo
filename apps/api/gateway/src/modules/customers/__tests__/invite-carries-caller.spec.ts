@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 import { CustomerInviteController } from '../customer-invite.controller';
 
+import { fakeReq, fakeUser } from '../../../common/testing/fake-request';
 /*
   POST /customers/:id/invite read and rewrote the client record as nobody in
   particular, so customers.service could not apply the caller's CRM caps or
@@ -16,8 +17,13 @@ describe('POST /customers/:id/invite', () => {
     };
     const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(replies[cmd] ?? {})) };
     const spaceModules = { assertEnabled: jest.fn(async () => undefined) };
-    const c = new CustomerInviteController(authClient as any, spaceModules as any, {} as any, { customerChanged: jest.fn() } as any);
-    await c.invite('c1', {}, { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } });
+    const c = new CustomerInviteController(
+      authClient as any,
+      spaceModules as any,
+      {} as any,
+      { customerChanged: jest.fn() } as any,
+    );
+    await c.invite('c1', {}, fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) }));
 
     const payloadOf = (cmd: string) => (authClient.send.mock.calls as any[]).find(([p]) => p.cmd === cmd)?.[1];
     expect(payloadOf('get_customer').caller).toEqual({ userId: 'u1', role: 'EMPLOYEE' });
@@ -31,20 +37,50 @@ describe('POST /customers/:id/invite', () => {
     refuse a member whose manage right is a workspace's.
   */
   it('refuses a caller without manage on this client, before anything is written', async () => {
-    const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(cmd === 'get_customer'
-      ? { data: { id: 'c1', spaceId: 's1', email: 'a@b.at', name: 'BILLA AG', crmCaps: { manage: false, view: 'all' } } }
-      : {})) };
-    const c = new CustomerInviteController(authClient as any, { assertEnabled: jest.fn() } as any, {} as any, { customerChanged: jest.fn() } as any);
-    await expect(c.invite('c1', {}, { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } })).rejects.toThrow('Not allowed');
+    const authClient = {
+      send: jest.fn(({ cmd }: { cmd: string }) =>
+        of(
+          cmd === 'get_customer'
+            ? {
+                data: {
+                  id: 'c1',
+                  spaceId: 's1',
+                  email: 'a@b.at',
+                  name: 'BILLA AG',
+                  crmCaps: { manage: false, view: 'all' },
+                },
+              }
+            : {},
+        ),
+      ),
+    };
+    const c = new CustomerInviteController(
+      authClient as any,
+      { assertEnabled: jest.fn() } as any,
+      {} as any,
+      { customerChanged: jest.fn() } as any,
+    );
+    await expect(
+      c.invite('c1', {}, fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) })),
+    ).rejects.toThrow('Not allowed');
     expect((authClient.send.mock.calls as any[]).map(([p]) => p.cmd)).toEqual(['get_customer']);
   });
 
   it('resend-invite reads the client as the caller first', async () => {
-    const authClient = { send: jest.fn(({ cmd }: { cmd: string }) => of(cmd === 'get_customer'
-      ? { data: { id: 'c1', crmCaps: { manage: false } } }
-      : { success: true })) };
-    const c = new CustomerInviteController(authClient as any, {} as any, {} as any, { customerChanged: jest.fn() } as any);
-    await expect(c.resendInvite('c1', { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' } })).rejects.toThrow('Not allowed');
+    const authClient = {
+      send: jest.fn(({ cmd }: { cmd: string }) =>
+        of(cmd === 'get_customer' ? { data: { id: 'c1', crmCaps: { manage: false } } } : { success: true }),
+      ),
+    };
+    const c = new CustomerInviteController(
+      authClient as any,
+      {} as any,
+      {} as any,
+      { customerChanged: jest.fn() } as any,
+    );
+    await expect(
+      c.resendInvite('c1', fakeReq({ user: fakeUser({ id: 'u1', role: 'EMPLOYEE', organizationId: 'org-1' }) })),
+    ).rejects.toThrow('Not allowed');
     expect((authClient.send.mock.calls as any[]).some(([p]) => p.cmd === 'resend_invitation')).toBe(false);
   });
 });

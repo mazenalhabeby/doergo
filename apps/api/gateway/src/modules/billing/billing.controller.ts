@@ -18,6 +18,8 @@ import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { firstValueFrom } from 'rxjs';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { Role, CurrentUser, CurrentUserData, ADD_ON_KEYS, assertServiceOk } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators';
@@ -36,6 +38,8 @@ import {
   billingAdminSetAddons,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 @ApiTags('billing')
 @Controller('billing')
 export class BillingController {
@@ -63,7 +67,7 @@ export class BillingController {
   @Get('subscription')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the org subscription/billing status' })
-  async getSubscription(@CurrentUser() user: CurrentUserData) {
+  async getSubscription(@CurrentUser() user: SessionUser) {
     return this.unwrap(
       await firstValueFrom(sendRpc(this.authClient, billingGetSubscription, { organizationId: user.organizationId })),
     );
@@ -75,7 +79,7 @@ export class BillingController {
   // not a client's or partner's supervisor's.
   @DenyExternal()
   @ApiOperation({ summary: 'The itemised bill: seats, every space, and org add-ons' })
-  async getBill(@CurrentUser() user: CurrentUserData) {
+  async getBill(@CurrentUser() user: SessionUser) {
     return this.unwrap(
       await firstValueFrom(sendRpc(this.authClient, billingGetBill, { organizationId: user.organizationId })),
     );
@@ -85,7 +89,7 @@ export class BillingController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set which capabilities the organization has bought (ADMIN)' })
-  async setAddOns(@CurrentUser() user: CurrentUserData, @Body() dto: SetAddOnsDto) {
+  async setAddOns(@CurrentUser() user: SessionUser, @Body() dto: SetAddOnsDto) {
     // organizationId comes from the TOKEN, never the body — an admin can only
     // ever change what their own organization has bought.
     const result = this.unwrap(
@@ -112,7 +116,7 @@ export class BillingController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Start Stripe Checkout for what the org already has (ADMIN)' })
-  async checkout(@CurrentUser() user: CurrentUserData) {
+  async checkout(@CurrentUser() user: SessionUser) {
     const base = this.webBase();
     return this.unwrap(
       await firstValueFrom(
@@ -129,7 +133,7 @@ export class BillingController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Open the Stripe Customer Portal (ADMIN)' })
-  async portal(@CurrentUser() user: CurrentUserData) {
+  async portal(@CurrentUser() user: SessionUser) {
     return this.unwrap(
       await firstValueFrom(
         sendRpc(this.authClient, billingCreatePortal, {
@@ -144,7 +148,7 @@ export class BillingController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel the subscription at period end (ADMIN)' })
-  async cancel(@CurrentUser() user: CurrentUserData) {
+  async cancel(@CurrentUser() user: SessionUser) {
     return this.unwrap(
       await firstValueFrom(sendRpc(this.authClient, billingCancel, { organizationId: user.organizationId })),
     );
@@ -159,7 +163,7 @@ export class BillingController {
   @Post('webhooks/stripe')
   @Throttle({ default: { limit: 200, ttl: 60000 } })
   @ApiOperation({ summary: 'Stripe webhook receiver (public, signature-verified)' })
-  async webhook(@Req() req: any) {
+  async webhook(@Req() req: RawBodyRequest<Request>) {
     const signature = (req.headers['stripe-signature'] as string) || '';
     const rawBody: string = req.rawBody ? req.rawBody.toString('utf8') : JSON.stringify(req.body ?? {});
     const result = await firstValueFrom(sendRpc(this.authClient, billingWebhook, { rawBody, signature }));
@@ -187,7 +191,7 @@ export class BillingController {
    *
    * Both still fail closed when `PLATFORM_ADMIN_KEY` is unset.
    */
-  private assertPlatformKey(req: any): void {
+  private assertPlatformKey(req: AuthedRequest): void {
     this.platformAdminGuard.assertKey(req);
   }
 
@@ -196,7 +200,7 @@ export class BillingController {
   @Get('admin/orgs')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: list orgs + billing state (secret-gated)' })
-  async adminListOrgs(@Req() req: any) {
+  async adminListOrgs(@Req() req: AuthedRequest) {
     this.assertPlatformKey(req);
     return firstValueFrom(sendRpc(this.authClient, billingAdminListOrgs, {}));
   }
@@ -216,7 +220,7 @@ export class BillingController {
   @Post('admin/org-add-ons')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: grant an org its capabilities (secret-gated, not a customer route)' })
-  async adminSetOrgAddOns(@Body() dto: { organizationId?: string; addOns?: string[] }, @Req() req: any) {
+  async adminSetOrgAddOns(@Body() dto: { organizationId?: string; addOns?: string[] }, @Req() req: AuthedRequest) {
     this.assertPlatformKey(req);
     if (!dto?.organizationId) {
       throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);

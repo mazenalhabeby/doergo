@@ -24,6 +24,8 @@ export interface PortalConfig {
   accent: string;
   features: PortalFeatureFlags;
   categories: IntakeCategory[];
+  /** Optional cover photo for the client's home; null = the gradient. */
+  coverImageUrl?: string | null;
 }
 
 export type PortalRequestDetail = CustomerRequestView & {

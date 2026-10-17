@@ -8,6 +8,7 @@ import { approvalsApi } from '../../lib/api';
 import { useResponsive } from '../../lib/responsive';
 import { centeredContent } from '../screen-container';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
+import { caught } from '../../lib/caught';
 
 /** ApprovalDetail's state and handlers — everything before its markup, moved here unchanged. */
 export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKey'>) {
@@ -33,7 +34,11 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
   useEffect(() => {
     if (item) return;
     loadApprovals()
-      .then(() => { const hit = knownApproval(itemKey); if (hit) setItem(hit); else setMissing(true); })
+      .then(() => {
+        const hit = knownApproval(itemKey);
+        if (hit) setItem(hit);
+        else setMissing(true);
+      })
       .catch(() => setMissing(true));
   }, [item, itemKey]);
 
@@ -46,36 +51,42 @@ export function useApprovalDetail({ itemKey }: Pick<{ itemKey: string }, 'itemKe
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/approvals' as Href));
 
-  const decide = useCallback(async (a: ApprovalActionSpec) => {
-    if (!item) return;
-    setBusy(true);
-    try {
-      const res = await approvalsApi.decide({
-        kind: item.kind,
-        id: item.id,
-        action: a.id,
-        reason: a.reason !== 'none' && reason.trim() ? reason.trim() : undefined,
-        minutes: a.input === 'minutes' ? Number(minutes) : undefined,
-        expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
-        reasonCode: a.input === 'excuseReason' ? reasonCode : undefined,
-        wholeRun: runCount > 1 && wholeRun ? true : undefined,
-        spaceId: item.kind === 'clientRequest' ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined)) : undefined,
-      });
-      if (res.stage === 'FIRST_STEP') {
-        // Step 1 of 2: theirs is in; the item stays in the list, now waiting for the second person.
-        toast.success(t('approvals.step.firstDone', { role: res.waitingFor ?? '' }));
-      } else {
-        forgetApproval(itemKey);
-        toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));
+  const decide = useCallback(
+    async (a: ApprovalActionSpec) => {
+      if (!item) return;
+      setBusy(true);
+      try {
+        const res = await approvalsApi.decide({
+          kind: item.kind,
+          id: item.id,
+          action: a.id,
+          reason: a.reason !== 'none' && reason.trim() ? reason.trim() : undefined,
+          minutes: a.input === 'minutes' ? Number(minutes) : undefined,
+          expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
+          reasonCode: a.input === 'excuseReason' ? reasonCode : undefined,
+          wholeRun: runCount > 1 && wholeRun ? true : undefined,
+          spaceId:
+            item.kind === 'clientRequest'
+              ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined))
+              : undefined,
+        });
+        if (res.stage === 'FIRST_STEP') {
+          // Step 1 of 2: theirs is in; the item stays in the list, now waiting for the second person.
+          toast.success(t('approvals.step.firstDone', { role: res.waitingFor ?? '' }));
+        } else {
+          forgetApproval(itemKey);
+          toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));
+        }
+        setArmed(null);
+        back();
+      } catch (e: unknown) {
+        toast.error(caught(e).message || t('approvals.loadFailed'));
+      } finally {
+        setBusy(false);
       }
-      setArmed(null);
-      back();
-    } catch (e: any) {
-      toast.error(e?.message || t('approvals.loadFailed'));
-    } finally {
-      setBusy(false);
-    }
-  }, [item, itemKey, reason, minutes, expiresOn, reasonCode, wholeRun, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
+    },
+    [item, itemKey, reason, minutes, expiresOn, reasonCode, wholeRun, toast, t],
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const runCount = typeof item?.data.runCount === 'number' ? item.data.runCount : 0;
   const press = (a: ApprovalActionSpec) => {

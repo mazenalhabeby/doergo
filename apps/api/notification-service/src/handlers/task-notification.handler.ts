@@ -37,8 +37,8 @@ export class TaskNotificationHandler {
   private async notifyTaskWatchers(
     watcherIds: string[] | undefined,
     event: string,
-    payload: any,
-    push: { text: LocalizedText; data?: any },
+    payload: unknown,
+    push: { text: LocalizedText; data?: Record<string, unknown> },
     exclude?: string | null,
   ) {
     const ids = [...new Set((watcherIds || []).filter((id) => id && id !== exclude))];

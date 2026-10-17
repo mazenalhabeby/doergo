@@ -13,12 +13,27 @@ import { UnrecoverableError } from 'bullmq';
  * parses (`{ message, statusCode }`), so error surfacing is unchanged — only the
  * retry decision differs.
  */
-export function buildJobError(error: any): Error {
+/** What a thrown value may carry: an HttpException, a plain Error, or anything at all. */
+interface JobFailure {
+  status?: number;
+  statusCode?: number;
+  message?: string;
+  code?: unknown;
+  getResponse?: () => unknown;
+}
+
+export function buildJobError(thrown: unknown): Error {
+  // A view of whatever was thrown — every field is optional and checked before use.
+  const error = thrown as JobFailure | null | undefined;
   const statusCode = error?.status || error?.statusCode || 500;
   // An HttpException built from an object carries `code` / `params` in its
   // response body; keep them, or the gateway can only pass on English.
-  const response = typeof error?.getResponse === 'function' ? error.getResponse() : null;
-  const code = typeof response?.code === 'string' ? response.code : typeof error?.code === 'string' ? error.code : undefined;
+  const response = (typeof error?.getResponse === 'function' ? error.getResponse() : null) as {
+    code?: unknown;
+    params?: unknown;
+  } | null;
+  const code =
+    typeof response?.code === 'string' ? response.code : typeof error?.code === 'string' ? error.code : undefined;
   const params = response?.params && typeof response.params === 'object' ? response.params : undefined;
   const payload = JSON.stringify({
     message: error?.message ?? 'Job failed',

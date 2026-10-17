@@ -29,6 +29,7 @@ import {
   deleteAccessRole,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /** /organizations/roles — the organization's access roles. */
 @ApiTags('organizations')
@@ -48,7 +49,7 @@ export class OrgRolesController {
   @Get('roles')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List assignable roles (org: Admin/Manager/custom · space: Space Manager/…)' })
-  async listRoles(@CurrentUser() user: CurrentUserData, @Query('scope') scope?: string) {
+  async listRoles(@CurrentUser() user: SessionUser, @Query('scope') scope?: string) {
     return firstValueFrom(
       sendRpc(this.authClient, listAccessRoles, {
         organizationId: callerOrgId(user),
@@ -62,7 +63,7 @@ export class OrgRolesController {
   @ApiOperation({ summary: 'Create a custom org-wide role' })
   async createRole(
     @Body() body: { name: string; description?: string; color?: string; permissions?: Record<string, boolean> },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, createAccessRole, { ...body, organizationId: callerOrgId(user), requesterId: user.id }),
@@ -77,7 +78,7 @@ export class OrgRolesController {
   async updateRole(
     @Param('id') roleId: string,
     @Body() body: { name?: string; description?: string; color?: string; permissions?: Record<string, boolean> },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateAccessRole, {
@@ -94,7 +95,7 @@ export class OrgRolesController {
   @Delete('roles/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Delete a custom role' })
-  async deleteRole(@Param('id') roleId: string, @CurrentUser() user: CurrentUserData) {
+  async deleteRole(@Param('id') roleId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, deleteAccessRole, { roleId, organizationId: callerOrgId(user), requesterId: user.id }),
     );

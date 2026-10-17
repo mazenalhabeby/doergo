@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { scopeFor, scopeIdsFor } from '../permission-scope';
 
+import { fakeUser } from '../testing/fake-request';
 /**
  * scopeFor is THE narrowing rule (common/permission-scope.ts). The case that
  * broke: a member whose permission is a BRIDGE (org-wide canManageUsers →
@@ -14,12 +15,12 @@ describe('scopeFor', () => {
   });
 
   it('an administrator is never narrowed', () => {
-    expect(scopeFor({ role: 'ADMIN', access: access({}) }, 'canApproveAttendance')).toBeNull();
+    expect(scopeFor(fakeUser({ role: 'ADMIN', access: access({}) }), 'canApproveAttendance')).toBeNull();
   });
 
   it('a bridged org flag is org-wide, not an empty list', () => {
     const user = { role: 'EMPLOYEE', canApproveAttendance: true, access: access({ canManageUsers: true }) };
-    expect(scopeFor(user, 'canApproveAttendance')).toBeNull();
+    expect(scopeFor(fakeUser(user), 'canApproveAttendance')).toBeNull();
   });
 
   it('a space grant narrows to exactly those spaces', () => {
@@ -27,17 +28,20 @@ describe('scopeFor', () => {
       role: 'EMPLOYEE',
       access: access({}, { A: { canApproveAttendance: true }, B: { canViewAllTasks: true } }),
     };
-    expect(scopeFor(user, 'canApproveAttendance')).toEqual(['A']);
+    expect(scopeFor(fakeUser(user), 'canApproveAttendance')).toEqual(['A']);
   });
 
   it('granted nowhere is an empty list (matches nothing), never null', () => {
-    expect(scopeFor({ role: 'EMPLOYEE', access: access({}) }, 'canDeleteAttendance')).toEqual([]);
+    expect(scopeFor(fakeUser({ role: 'EMPLOYEE', access: access({}) }), 'canDeleteAttendance')).toEqual([]);
     expect(scopeFor(undefined, 'canDeleteAttendance')).toEqual([]);
   });
 
   it('a flat flag set to anything but true does not widen', () => {
     expect(
-      scopeFor({ role: 'EMPLOYEE', canApproveAttendance: 'true', access: access({}) }, 'canApproveAttendance'),
+      scopeFor(
+        fakeUser({ role: 'EMPLOYEE', canApproveAttendance: 'true', access: access({}) }),
+        'canApproveAttendance',
+      ),
     ).toEqual([]);
   });
 });
@@ -56,13 +60,13 @@ describe('scopeIdsFor (the shape the services take)', () => {
       canViewSpaceAttendance: true,
       access: access({ canViewAllTasks: true }),
     };
-    expect(scopeIdsFor(manager, 'canViewSpaceAttendance')).toBeUndefined();
+    expect(scopeIdsFor(fakeUser(manager), 'canViewSpaceAttendance')).toBeUndefined();
   });
 
   it('a space grant stays narrowed; nowhere stays empty', () => {
     const lead = { role: 'EMPLOYEE', access: access({}, { A: { canViewSpaceAttendance: true } }) };
-    expect(scopeIdsFor(lead, 'canViewSpaceAttendance')).toEqual(['A']);
-    expect(scopeIdsFor({ role: 'EMPLOYEE', access: access({}) }, 'canViewSpaceAttendance')).toEqual([]);
+    expect(scopeIdsFor(fakeUser(lead), 'canViewSpaceAttendance')).toEqual(['A']);
+    expect(scopeIdsFor(fakeUser({ role: 'EMPLOYEE', access: access({}) }), 'canViewSpaceAttendance')).toEqual([]);
   });
 });
 

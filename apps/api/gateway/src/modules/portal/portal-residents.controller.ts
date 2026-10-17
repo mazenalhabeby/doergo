@@ -17,6 +17,8 @@ import {
   portalRemoveClient,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /portal/admin — residents: who can be invited, inviting, sending again, removing. */
 @ApiTags('portal-admin')
 @ApiBearerAuth()
@@ -33,7 +35,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   async residents(
     @Query('portalId') portalId: string | undefined,
     @Query('search') search: string | undefined,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     const scopeSpaceIds = portalScope(req.user, 'canManagePortals');
     if (scopeSpaceIds !== undefined) {
@@ -44,7 +46,7 @@ export class PortalResidentsController extends PortalAdminControllerBase {
       await this.assertManageReach(req, { portalId });
     }
     return this.auth(listCustomers, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       portalResident: true,
       portalId,
       search,
@@ -55,9 +57,9 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @Get('portals/:id/available-units')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Vacant apartments in the portal's space, for the invite picker" })
-  availableUnits(@Param('id') id: string, @Request() req: any) {
+  availableUnits(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(portalListAvailableUnits, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       portalId: id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
@@ -66,9 +68,9 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @Get('portals/:id/available-customers')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Existing CRM customers (non-residents) in the portal's space, for the invite picker" })
-  availableCustomers(@Param('id') id: string, @Request() req: any) {
+  availableCustomers(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(portalListAssignableCustomers, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       portalId: id,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });
@@ -94,9 +96,9 @@ export class PortalResidentsController extends PortalAdminControllerBase {
       unitName?: string;
       unitAddress?: string;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    const orgId = req.user.organizationId;
+    const orgId = callerOrgId(req.user);
     const scopeSpaceIds = portalScope(req.user, 'canManagePortals');
     // Every id the body names, in reach, BEFORE anything is created: the CRM and
     // invitation calls below are org-scoped only.
@@ -157,10 +159,10 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @DenyExternal()
   @ApiOperation({ summary: "Re-send a pending client's invite by email" })
-  async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: any) {
+  async resendResidentInvite(@Param('customerId') customerId: string, @Request() req: AuthedRequest) {
     await this.assertManageReach(req, { customerId });
     return this.auth(resendInvitation, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId,
     });
   }
@@ -170,9 +172,9 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   @RequirePermissionInSpace('canManagePortals')
   @DenyExternal()
   @ApiOperation({ summary: 'Remove a client from the portal (revokes app access, detaches, vacates units)' })
-  async removeResident(@Param('customerId') customerId: string, @Request() req: any) {
+  async removeResident(@Param('customerId') customerId: string, @Request() req: AuthedRequest) {
     const result: any = await this.auth(portalRemoveClient, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       customerId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
     });

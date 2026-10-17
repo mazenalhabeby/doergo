@@ -7,6 +7,7 @@ import { AssetCategoriesController, AssetTypesController } from '../asset-catego
 import { assetActor } from '../asset-actor';
 import { assetControllers } from './assets-controllers.fixture';
 
+import { fakeReq, fakeUser } from '../../../common/testing/fake-request';
 /**
  * Every asset route, walked from the metadata Nest actually registers.
  *
@@ -96,11 +97,23 @@ const ORG_WIDE: Record<string, string> = {
   keys they hold. Everything else follows their keys, in their workspace.
 */
 const DENY_EXTERNAL = [
-  'mine', 'myExpenses', 'myDue', 'receiptUrl',
-  'proposalUploadUrl', 'raiseProposal', 'myProposals', 'pendingProposals',
-  'acceptProposal', 'rejectProposal', 'withdrawProposal', 'proposalDocumentUrl',
-  'presignReceipt', 'readReceipt', 'submitExpense',
-  'listOrphans', 'billingUsage',
+  'mine',
+  'myExpenses',
+  'myDue',
+  'receiptUrl',
+  'proposalUploadUrl',
+  'raiseProposal',
+  'myProposals',
+  'pendingProposals',
+  'acceptProposal',
+  'rejectProposal',
+  'withdrawProposal',
+  'proposalDocumentUrl',
+  'presignReceipt',
+  'readReceipt',
+  'submitExpense',
+  'listOrphans',
+  'billingUsage',
 ].sort();
 
 describe('asset routes are gated per workspace on the register’s own keys', () => {
@@ -115,22 +128,25 @@ describe('asset routes are gated per workspace on the register’s own keys', ()
     expect(route.inSpace ?? []).not.toContain('canViewAllTasks');
   });
 
-  it.each(ROUTES.map((r) => [`${r.controller}.${r.name}`, r]))('%s is gated in space, or named with its reason', (_n, r) => {
-    const route = r as Route;
-    if (route.name in OWN_OR_CUSTODY) {
+  it.each(ROUTES.map((r) => [`${r.controller}.${r.name}`, r]))(
+    '%s is gated in space, or named with its reason',
+    (_n, r) => {
+      const route = r as Route;
+      if (route.name in OWN_OR_CUSTODY) {
+        expect(route.permissions).toBeUndefined();
+        expect(route.inSpace).toBeUndefined();
+        return;
+      }
+      if (route.name in ORG_WIDE) {
+        expect(route.permissions).toEqual(['canViewAssets']);
+        expect(route.inSpace).toBeUndefined();
+        return;
+      }
       expect(route.permissions).toBeUndefined();
-      expect(route.inSpace).toBeUndefined();
-      return;
-    }
-    if (route.name in ORG_WIDE) {
-      expect(route.permissions).toEqual(['canViewAssets']);
-      expect(route.inSpace).toBeUndefined();
-      return;
-    }
-    expect(route.permissions).toBeUndefined();
-    expect(route.inSpace).toHaveLength(1);
-    expect(LEVEL_KEYS).toContain(route.inSpace![0]);
-  });
+      expect(route.inSpace).toHaveLength(1);
+      expect(LEVEL_KEYS).toContain(route.inSpace![0]);
+    },
+  );
 
   /*
     The narrowing half: a gated route that forwarded nothing would leave the
@@ -145,14 +161,16 @@ describe('asset routes are gated per workspace on the register’s own keys', ()
   );
 
   it('a write is never gated on the read key', () => {
-    const readGatedWrites = ROUTES
-      .filter((r) => r.method !== RequestMethod.GET && (r.inSpace ?? r.permissions ?? []).includes('canViewAssets'))
-      .map((r) => r.name);
+    const readGatedWrites = ROUTES.filter(
+      (r) => r.method !== RequestMethod.GET && (r.inSpace ?? r.permissions ?? []).includes('canViewAssets'),
+    ).map((r) => r.name);
     expect(readGatedWrites).toEqual([]);
   });
 
   it('closes exactly the staff-custody routes (and the bill) to external members', () => {
-    const closed = ROUTES.filter((r) => r.denyExternal).map((r) => r.name).sort();
+    const closed = ROUTES.filter((r) => r.denyExternal)
+      .map((r) => r.name)
+      .sort();
     expect(closed).toEqual(DENY_EXTERNAL);
   });
 
@@ -169,35 +187,41 @@ describe('asset routes are gated per workspace on the register’s own keys', ()
 });
 
 describe('assetActor — who is asking, from the verified session', () => {
-  const req = (user: Record<string, unknown>) => ({ user: { id: 'u', organizationId: 'o', role: Role.EMPLOYEE, ...user } });
+  const req = (user: Record<string, unknown>) => ({
+    user: { id: 'u', organizationId: 'o', role: Role.EMPLOYEE, ...user },
+  });
 
   it('carries each level as the shared rule resolves it, null kept as null', () => {
-    const a = assetActor(req({ access: { org: {}, perSpace: { s1: { canViewAssets: true }, s2: { canManageAssets: true } } } }));
+    const a = assetActor(
+      fakeReq(req({ access: { org: {}, perSpace: { s1: { canViewAssets: true }, s2: { canManageAssets: true } } } })),
+    );
     expect(a).toMatchObject({
-      userId: 'u', organizationId: 'o', isExternal: false,
+      userId: 'u',
+      organizationId: 'o',
+      isExternal: false,
       viewSpaceIds: expect.arrayContaining(['s1', 's2']),
       logSpaceIds: ['s2'],
       manageSpaceIds: ['s2'],
       canManageAssets: false,
     });
-    const admin = assetActor(req({ role: Role.ADMIN }));
+    const admin = assetActor(fakeReq(req({ role: Role.ADMIN })));
     expect(admin.viewSpaceIds).toBeNull();
     expect(admin.manageSpaceIds).toBeNull();
     expect(admin.canManageAssets).toBe(true);
   });
 
   it('never reads canViewAllTasks as sight of the register', () => {
-    const a = assetActor(req({ access: { org: {}, perSpace: { s1: { canViewAllTasks: true } } } }));
+    const a = assetActor(fakeReq(req({ access: { org: {}, perSpace: { s1: { canViewAllTasks: true } } } })));
     expect(a.viewSpaceIds).toEqual([]);
   });
 
   it('marks an external member, from the session only', () => {
-    expect(assetActor(req({ isExternal: true })).isExternal).toBe(true);
-    expect(assetActor(req({ isExternal: 'true' })).isExternal).toBe(false);
+    expect(assetActor(fakeReq(req({ isExternal: true }))).isExternal).toBe(true);
+    expect(assetActor(fakeReq(req({ isExternal: 'true' }))).isExternal).toBe(false);
   });
 
   it('agrees with the shared rule a screen renders with', () => {
     const user = { role: Role.EMPLOYEE, canViewAssets: true, access: { org: {}, perSpace: {} } };
-    expect(assetActor({ user }).viewSpaceIds).toEqual(assetSpaces(user, 'view'));
+    expect(assetActor({ user: fakeUser(user) }).viewSpaceIds).toEqual(assetSpaces(user, 'view'));
   });
 });

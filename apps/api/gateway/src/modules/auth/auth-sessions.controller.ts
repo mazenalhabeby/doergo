@@ -15,6 +15,7 @@ import {
   revokeAllSessions,
   deleteAccount,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /auth — the caller's own account: changing the password, their sessions, signing
@@ -35,7 +36,7 @@ export class AuthSessionsController {
   @ApiOperation({ summary: 'Change password for authenticated user' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 400, description: 'Invalid current password or weak new password' })
-  async changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: CurrentUserData) {
+  async changePassword(@Body() dto: ChangePasswordDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, changePassword, {
         userId: user.id,
@@ -59,14 +60,14 @@ export class AuthSessionsController {
   @Get('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List active sessions for current user' })
-  async listSessions(@CurrentUser() user: CurrentUserData) {
+  async listSessions(@CurrentUser() user: SessionUser) {
     return firstValueFrom(sendRpc(this.authClient, listSessions, { userId: user.id }));
   }
 
   @Delete('sessions/:id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a specific session' })
-  async revokeSession(@Param('id') sessionId: string, @CurrentUser() user: CurrentUserData) {
+  async revokeSession(@Param('id') sessionId: string, @CurrentUser() user: SessionUser) {
     const result: any = await firstValueFrom(sendRpc(this.authClient, revokeSession, { userId: user.id, sessionId }));
 
     assertServiceOk(result, HttpStatus.NOT_FOUND);
@@ -77,7 +78,7 @@ export class AuthSessionsController {
   @Delete('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke all other sessions (keep current)' })
-  async revokeAllSessions(@CurrentUser() user: CurrentUserData, @Req() req: Request, @Body() body: RefreshTokenDto) {
+  async revokeAllSessions(@CurrentUser() user: SessionUser, @Req() req: Request, @Body() body: RefreshTokenDto) {
     /*
       "Keep current" needs to know which session is current, and the gateway
       cannot name it: the access token carries no session claim, and a refresh
@@ -112,7 +113,7 @@ export class AuthSessionsController {
   @ApiOperation({ summary: 'Permanently delete the current user account' })
   @ApiResponse({ status: 200, description: 'Account deleted successfully' })
   @ApiResponse({ status: 400, description: 'Invalid password or last admin' })
-  async deleteAccount(@Body() dto: DeleteAccountDto, @CurrentUser() user: CurrentUserData) {
+  async deleteAccount(@Body() dto: DeleteAccountDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, deleteAccount, {
         userId: user.id,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { geoFetch } from "@/lib/geocode"
+import { geoFetch, type GeoPlaceAnswer, type GeoSearchAnswer } from "@/lib/geocode"
 
 /** One row of the address search. */
 export interface AddressSearchResult {
@@ -39,53 +39,61 @@ export function useAddressSearch({ max = 6 }: { max?: number } = {}) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sessionRef = useRef<string>("")
 
-  useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    },
+    [],
+  )
 
   const sessionParam = () => (sessionRef.current ? `&session=${encodeURIComponent(sessionRef.current)}` : "")
 
   /** Search as the user types — debounced, nothing under three characters. */
-  const search = useCallback((query: string) => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (query.trim().length < 3) {
-      setResults([])
-      setShowResults(false)
-      return
-    }
-    debounceRef.current = setTimeout(async () => {
-      setIsSearching(true)
-      try {
-        if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
-          sessionRef.current = crypto.randomUUID()
-        }
-        const res = await geoFetch(`/geo/search?q=${encodeURIComponent(query)}&limit=6${sessionParam()}`, {
-          signal: AbortSignal.timeout(5000),
-        })
-        if (res.ok) {
-          const body = await res.json()
-          const rows: AddressSearchResult[] = (body?.results || []).map(
-            (r: { id?: string; label: string; lat?: number; lon?: number }) => ({
-              label: r.label,
-              lat: r.lat != null ? String(r.lat) : "",
-              lon: r.lon != null ? String(r.lon) : "",
-              placeId: r.id || undefined,
-            }),
-          )
-          if (rows.length > 0) {
-            setResults(rows.slice(0, max))
-            setShowResults(true)
-            return
-          }
-        }
+  const search = useCallback(
+    (query: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (query.trim().length < 3) {
         setResults([])
         setShowResults(false)
-      } catch {
-        setResults([])
-        setShowResults(false)
-      } finally {
-        setIsSearching(false)
+        return
       }
-    }, 400)
-  }, [max])
+      debounceRef.current = setTimeout(async () => {
+        setIsSearching(true)
+        try {
+          if (!sessionRef.current && typeof crypto !== "undefined" && crypto.randomUUID) {
+            sessionRef.current = crypto.randomUUID()
+          }
+          const res = await geoFetch(`/geo/search?q=${encodeURIComponent(query)}&limit=6${sessionParam()}`, {
+            signal: AbortSignal.timeout(5000),
+          })
+          if (res.ok) {
+            const body = (await res.json()) as GeoSearchAnswer | null
+            const rows: AddressSearchResult[] = (body?.results || []).map(
+              (r: { id?: string; label: string; lat?: number; lon?: number }) => ({
+                label: r.label,
+                lat: r.lat != null ? String(r.lat) : "",
+                lon: r.lon != null ? String(r.lon) : "",
+                placeId: r.id || undefined,
+              }),
+            )
+            if (rows.length > 0) {
+              setResults(rows.slice(0, max))
+              setShowResults(true)
+              return
+            }
+          }
+          setResults([])
+          setShowResults(false)
+        } catch {
+          setResults([])
+          setShowResults(false)
+        } finally {
+          setIsSearching(false)
+        }
+      }, 400)
+    },
+    [max],
+  )
 
   /** The coordinates of a picked row (a Google row is resolved now, closing its session). */
   const resolve = useCallback(async (row: AddressSearchResult): Promise<ResolvedAddress | null> => {
@@ -96,7 +104,7 @@ export function useAddressSearch({ max = 6 }: { max?: number } = {}) {
           signal: AbortSignal.timeout(5000),
         })
         if (res.ok) {
-          const r = (await res.json())?.result
+          const r = ((await res.json()) as GeoPlaceAnswer | null)?.result
           if (r && typeof r.lat === "number" && typeof r.lon === "number") {
             return { label: r.label || row.label, lat: r.lat, lng: r.lon }
           }
@@ -125,7 +133,7 @@ export function useAddressSearch({ max = 6 }: { max?: number } = {}) {
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const res = await geoFetch(`/geo/reverse?lat=${lat}&lon=${lng}`, { signal: AbortSignal.timeout(5000) })
-    if (res.ok) return (await res.json())?.result?.label || ""
+    if (res.ok) return ((await res.json()) as GeoPlaceAnswer | null)?.result?.label || ""
   } catch {
     /* the click still records its coordinates; only the label is missing */
   }

@@ -4,6 +4,8 @@ import { RequirePermission, RequirePermissionInSpace } from '../../common/decora
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { WorkflowsService } from './workflows.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * /workflows/spaces/:spaceId — the workflows a workspace runs: attaching,
  * detaching, its own copy, its default.
@@ -13,12 +15,7 @@ import { WorkflowsService } from './workflows.service';
 @RequirePlan('workflows')
 @Controller('workflows')
 export class SpaceWorkflowsController {
-
-
-  constructor(
-    private readonly workflowsService: WorkflowsService,
-  ) {}
-
+  constructor(private readonly workflowsService: WorkflowsService) {}
 
   // ── Which task types a space offers ─────────────────────────────────────────
   //
@@ -30,8 +27,8 @@ export class SpaceWorkflowsController {
   @Get('spaces/:spaceId')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Task types this space offers, default first' })
-  listSpaceWorkflows(@Param('spaceId') spaceId: string, @Request() req: any) {
-    return this.workflowsService.listSpaceWorkflows({ spaceId, organizationId: req.user.organizationId });
+  listSpaceWorkflows(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
+    return this.workflowsService.listSpaceWorkflows({ spaceId, organizationId: callerOrgId(req.user) });
   }
 
   @Post('spaces/:spaceId/:workflowId')
@@ -41,13 +38,13 @@ export class SpaceWorkflowsController {
     @Param('spaceId') spaceId: string,
     @Param('workflowId') workflowId: string,
     @Body() body: { makeDefault?: boolean },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.workflowsService.attachSpaceWorkflow({
       spaceId,
       workflowId,
       makeDefault: body?.makeDefault,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -57,16 +54,20 @@ export class SpaceWorkflowsController {
   detachSpaceWorkflow(
     @Param('spaceId') spaceId: string,
     @Param('workflowId') workflowId: string,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    return this.workflowsService.detachSpaceWorkflow({ spaceId, workflowId, organizationId: req.user.organizationId });
+    return this.workflowsService.detachSpaceWorkflow({ spaceId, workflowId, organizationId: callerOrgId(req.user) });
   }
 
   @Post('spaces/:spaceId/:workflowId/fork')
   @RequirePermissionInSpace('canManageTaskTypes')
   @ApiOperation({ summary: "Take this space's own copy of a shared task type, so it can diverge" })
-  forkForSpace(@Param('spaceId') spaceId: string, @Param('workflowId') workflowId: string, @Request() req: any) {
-    return this.workflowsService.forkForSpace({ spaceId, workflowId, organizationId: req.user.organizationId });
+  forkForSpace(
+    @Param('spaceId') spaceId: string,
+    @Param('workflowId') workflowId: string,
+    @Request() req: AuthedRequest,
+  ) {
+    return this.workflowsService.forkForSpace({ spaceId, workflowId, organizationId: callerOrgId(req.user) });
   }
 
   @Patch('spaces/:spaceId/:workflowId/default')
@@ -75,8 +76,12 @@ export class SpaceWorkflowsController {
   setSpaceDefaultWorkflow(
     @Param('spaceId') spaceId: string,
     @Param('workflowId') workflowId: string,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    return this.workflowsService.setSpaceDefaultWorkflow({ spaceId, workflowId, organizationId: req.user.organizationId });
+    return this.workflowsService.setSpaceDefaultWorkflow({
+      spaceId,
+      workflowId,
+      organizationId: callerOrgId(req.user),
+    });
   }
 }

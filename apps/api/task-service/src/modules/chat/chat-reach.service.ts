@@ -9,6 +9,7 @@ import {
   type OrgAccessRow,
 } from '@hbcfield/shared';
 import { ChatReachBase } from './chat-reach.base';
+import type { ChatMemberContact } from './chat-membership';
 
 /**
  * WHO MAY TALK TO WHOM — the one place chat answers it.
@@ -63,7 +64,7 @@ export class ChatReachService extends ChatReachBase {
       select: { id: true, firstName: true, lastName: true, role: true, contactable: true, canManageUsers: true },
     });
     const targets = this.contactTargetsResolver(actorId, organizationId);
-    const verdicts = await Promise.all(people.map((u) => this.canReach(me as any, u as any, targets)));
+    const verdicts = await Promise.all(people.map((u) => this.canReach(me, u, targets)));
     if (people.length !== new Set(userIds).size || verdicts.some((ok) => !ok)) {
       throw new ForbiddenException({
         message: 'You can only add people you are allowed to message',
@@ -98,8 +99,8 @@ export class ChatReachService extends ChatReachBase {
     // One resolver shared by every candidate below: resolved server-side (so it
     // can't be spoofed) and at most once, however many people we test.
     const spaceTargets = this.contactTargetsResolver(data.userId, data.organizationId);
-    const verdicts = await Promise.all(all.map((u) => this.canReach(me as any, u as any, spaceTargets)));
-    const reachable: any[] = all.filter((_, i) => verdicts[i]);
+    const verdicts = await Promise.all(all.map((u) => this.canReach(me, u, spaceTargets)));
+    const reachable: unknown[] = all.filter((_, i) => verdicts[i]);
 
     // Colleagues at other companies, reachable through an actively shared space
     // both of us work. Marked external so the directory never blurs the line
@@ -154,8 +155,8 @@ export class ChatReachService extends ChatReachBase {
     if (!me || !other || other.id !== otherUserId) throw new NotFoundException('Member not found');
     if (other.id === senderId) throw new ForbiddenException('Cannot message yourself');
     const reachable = await this.canReach(
-      me as any,
-      other as any,
+      me,
+      other,
       this.contactTargetsResolver(senderId, organizationId),
     );
     if (!reachable) throw new ForbiddenException(deniedMessage);
@@ -180,7 +181,8 @@ export class ChatReachService extends ChatReachBase {
         type: string;
         organizationId: string;
         originSpaceId?: string | null;
-        members: { userId: string }[];
+        // findMembership (chat-membership.ts) reads each member's contact fields with it.
+        members: { userId: string; user?: ChatMemberContact | null }[];
       };
     },
     senderId: string,
@@ -189,7 +191,7 @@ export class ChatReachService extends ChatReachBase {
     if (conversation.type !== 'DIRECT') {
       // A group or a job's chat: belonging is the grant, but "off means off" —
       // somebody taken out of chat, or no longer active, writes nowhere.
-      const me = (conversation.members as any[]).find((m) => m.userId === senderId)?.user;
+      const me = conversation.members.find((m) => m.userId === senderId)?.user;
       if (!me || !me.isActive) throw new ForbiddenException('This conversation is no longer available');
       const sender = await this.prisma.user.findUnique({ where: { id: senderId }, select: { enabledModules: true } });
       if (!sender || !canContactColleagues({ enabledModules: sender.enabledModules })) {
@@ -225,7 +227,7 @@ export class ChatReachService extends ChatReachBase {
     // ── Same org: the ordinary contact rules ─────────────────────────────────
     // The counterpart came back with the membership read, so this costs one
     // query (the sender's own permissions) instead of two.
-    const other = (conversation.members as any[]).find((m) => m.userId === otherId)?.user;
+    const other = conversation.members.find((m) => m.userId === otherId)?.user;
     if (!other || !other.isActive || other.organizationId !== conversation.organizationId) {
       throw new ForbiddenException('You can no longer message this member');
     }
@@ -293,6 +295,6 @@ export class ChatReachService extends ChatReachBase {
     if (!canContactColleagues({ enabledModules: sender.enabledModules })) return false;
     if (!other.contactable) return false;
     // And the counterpart's, asked their way round: may THEY still reach the sender?
-    return this.canReach(other as any, sender as any, this.contactTargetsResolver(otherId, organizationId));
+    return this.canReach(other, sender, this.contactTargetsResolver(otherId, organizationId));
   }
 }

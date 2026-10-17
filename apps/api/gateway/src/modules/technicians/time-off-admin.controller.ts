@@ -18,6 +18,7 @@ import {
   adminDeleteTimeOff,
   cancelTimeOff,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /employees/time-off — the organization's leave: the list, approving, entering,
@@ -49,8 +50,8 @@ export class TimeOffAdminController {
   */
   @RequirePermissionInSpace('canViewAllTasks')
   async getOrgTimeOff(
-    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED',
-    @CurrentUser() user?: CurrentUserData,
+    @Query('status') status: ('PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED') | undefined,
+    @CurrentUser() user: SessionUser,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
@@ -95,7 +96,7 @@ export class TimeOffAdminController {
   async approveTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { approved: boolean; rejectionReason?: string },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, approveTimeOff, {
@@ -114,7 +115,7 @@ export class TimeOffAdminController {
   @RequirePermission('canManageRota')
   async addTimeOff(
     @Body() body: { technicianId: string; startDate: string; endDate: string; reason?: string },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, addTimeOff, {
@@ -135,7 +136,7 @@ export class TimeOffAdminController {
   async updateTimeOff(
     @Param('timeOffId') timeOffId: string,
     @Body() body: { startDate?: string; endDate?: string; reason?: string | null },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, updateTimeOff, {
@@ -152,7 +153,7 @@ export class TimeOffAdminController {
   @ApiOperation({ summary: 'Admin: delete a day off' })
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @RequirePermission('canManageRota')
-  async adminDeleteTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: CurrentUserData) {
+  async adminDeleteTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, adminDeleteTimeOff, { organizationId: callerOrgId(user), timeOffId }),
     );
@@ -163,7 +164,7 @@ export class TimeOffAdminController {
   @ApiParam({ name: 'timeOffId', description: 'Time-off request ID' })
   @ApiResponse({ status: 200, description: 'Time-off request canceled' })
   @Roles(Role.EMPLOYEE)
-  async cancelTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: CurrentUserData) {
+  async cancelTimeOff(@Param('timeOffId') timeOffId: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, cancelTimeOff, {
         timeOffId,

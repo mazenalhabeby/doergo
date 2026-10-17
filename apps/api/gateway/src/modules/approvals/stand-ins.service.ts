@@ -20,6 +20,8 @@ import {
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApprovalsService } from './approvals.service';
 
+import type { SessionUser } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * Hand-overs of approval decisions — recorded in task-service; what they then
  * allow is decided where every permission is (session + the kinds' checks).
@@ -36,13 +38,13 @@ export class StandInsService extends BaseGatewayService {
     super(taskClient, StandInsService.name);
   }
 
-  list(user: any) {
+  list(user: SessionUser) {
     return this.send<RpcReply<typeof standInsList>>(pattern(standInsList), {
       caller: callerOf(user),
     } satisfies RpcRequest<typeof standInsList>);
   }
 
-  async create(user: any, input: StandInInput) {
+  async create(user: SessionUser, input: StandInInput) {
     const view = await this.sendOnce<RpcReply<typeof standInsCreate>>(pattern(standInsCreate), {
       caller: callerOf(user),
       input,
@@ -51,7 +53,7 @@ export class StandInsService extends BaseGatewayService {
     return view;
   }
 
-  async end(user: any, id: string) {
+  async end(user: SessionUser, id: string) {
     const r = await this.sendOnce<RpcReply<typeof standInsEnd>>(pattern(standInsEnd), {
       caller: callerOf(user),
       id,
@@ -67,9 +69,9 @@ export class StandInsService extends BaseGatewayService {
 }
 
 /** Who is asking — "manages people" read on their OWN access: a stand-in never arranges stand-ins. */
-function callerOf(user: any): StandInCaller {
+function callerOf(user: SessionUser): StandInCaller {
   return {
-    organizationId: user.organizationId,
+    organizationId: callerOrgId(user),
     userId: user.id,
     managesPeople: isAdmin(user) || accessAllows(ownAccess(user.access), 'canManageUsers'),
   };

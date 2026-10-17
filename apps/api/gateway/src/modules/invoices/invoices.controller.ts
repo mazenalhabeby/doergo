@@ -18,8 +18,10 @@ import {
   invoiceDelete,
   invoiceAddItem,
   invoiceRemoveItem,
+  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 @ApiTags('invoices')
 @RequirePlan('invoicing') // Professional+ (write routes; reads pass through)
@@ -52,25 +54,29 @@ export class InvoicesController {
    * One funnel rather than a check per route: eight routes return invoices, and
    * the ninth somebody adds is the one that forgets.
    */
-  private forCaller(result: any, user: CurrentUserData) {
-    const may = (user as any)?.canViewLabourCost === true;
+  private forCaller(result: unknown, user: SessionUser) {
+    const may = user.canViewLabourCost === true;
     if (!result || typeof result !== 'object') return result;
     /*
       Three shapes leave here: a list of invoices, one invoice, and the gather
       result — whose `workEntries` carry the same rates under a different name.
       All three go through the same strip, which is why it knows both names.
     */
-    if (Array.isArray(result?.data)) {
-      return { ...result, data: result.data.map((inv: any) => stripLabourCost(inv, may)) };
+    const reply = result as { data?: unknown };
+    if (Array.isArray(reply.data)) {
+      return { ...reply, data: reply.data.map((inv: unknown) => stripLabourCost(inv, may)) };
     }
-    if (result?.data) return { ...result, data: stripLabourCost(result.data, may) };
+    if (reply.data) return { ...reply, data: stripLabourCost(reply.data, may) };
     return stripLabourCost(result, may);
   }
 
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create invoice' })
-  async create(@Body() body: any, @CurrentUser() user: CurrentUserData) {
+  async create(
+    @Body() body: Omit<RpcRequest<typeof invoiceCreate>, 'organizationId' | 'createdById'>,
+    @CurrentUser() user: SessionUser,
+  ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceCreate, {
         ...body,
@@ -89,7 +95,7 @@ export class InvoicesController {
   @ApiOperation({ summary: 'List invoices' })
   async findAll(
     @Query() query: { status?: string; spaceId?: string; legalEntityId?: string; page?: string; limit?: string },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     /*
       ⚠️ Through the funnel like every other route. This returned the raw list,
@@ -120,7 +126,7 @@ export class InvoicesController {
   async exchangeRate(
     @Query('currency') currency: string | undefined,
     @Query('date') date: string | undefined,
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceExchangeRate, {
@@ -144,7 +150,7 @@ export class InvoicesController {
     /** Service period, inclusive, `YYYY-MM-DD`. Either end may be omitted. */
     @Query('from') from: string | undefined,
     @Query('to') to: string | undefined,
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     /*
       ⚠️ Exactly one source, and the service says so rather than this route.
@@ -171,7 +177,7 @@ export class InvoicesController {
   @Get(':id')
   @RequirePermission('canManageInvoices')
   @ApiOperation({ summary: 'Get invoice detail' })
-  async findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async findOne(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceGet, {
         id,
@@ -187,7 +193,11 @@ export class InvoicesController {
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update draft invoice' })
-  async update(@Param('id') id: string, @Body() body: any, @CurrentUser() user: CurrentUserData) {
+  async update(
+    @Param('id') id: string,
+    @Body() body: Omit<RpcRequest<typeof invoiceUpdate>, 'id' | 'organizationId'>,
+    @CurrentUser() user: SessionUser,
+  ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceUpdate, {
         ...body,
@@ -206,7 +216,7 @@ export class InvoicesController {
   @Patch(':id/status')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Change invoice status' })
-  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @CurrentUser() user: CurrentUserData) {
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceUpdateStatus, {
         id,
@@ -223,7 +233,7 @@ export class InvoicesController {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete draft invoice' })
-  async delete(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async delete(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceDelete, {
         id,
@@ -239,7 +249,11 @@ export class InvoicesController {
   @Post(':id/items')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Add line item to invoice' })
-  async addItem(@Param('id') invoiceId: string, @Body() body: any, @CurrentUser() user: CurrentUserData) {
+  async addItem(
+    @Param('id') invoiceId: string,
+    @Body() body: RpcRequest<typeof invoiceAddItem>['item'],
+    @CurrentUser() user: SessionUser,
+  ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceAddItem, {
         invoiceId,
@@ -256,11 +270,7 @@ export class InvoicesController {
   @Delete(':id/items/:itemId')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Remove line item from invoice' })
-  async removeItem(
-    @Param('id') invoiceId: string,
-    @Param('itemId') itemId: string,
-    @CurrentUser() user: CurrentUserData,
-  ) {
+  async removeItem(@Param('id') invoiceId: string, @Param('itemId') itemId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, invoiceRemoveItem, {
         invoiceId,

@@ -33,6 +33,7 @@ import {
 } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { scopeIdsFor } from '../../common/permission-scope';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /employees — who is available and on the floor, cover over a range, and the
@@ -55,10 +56,10 @@ export class EmployeeCoverController {
   @ApiResponse({ status: 200, description: 'Availability retrieved' })
   @RequirePermissionInSpace('canViewAllTasks')
   async getAvailability(
-    @Query('date') date?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-    @CurrentUser() user?: CurrentUserData,
+    @Query('date') date: string | undefined,
+    @Query('startDate') startDate: string | undefined,
+    @Query('endDate') endDate: string | undefined,
+    @CurrentUser() user: SessionUser,
   ) {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
     const now = new Date();
@@ -96,7 +97,7 @@ export class EmployeeCoverController {
   @RequireAccessModule('time_off')
   @ApiOperation({ summary: 'What the caller may request (kinds), and at which workspaces a remote day' })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async getRequestOptions(@CurrentUser() user: CurrentUserData) {
+  async getRequestOptions(@CurrentUser() user: SessionUser) {
     // Only the caller's own options: the ids come from the token, never the request.
     return firstValueFrom(
       sendRpc(this.taskClient, getRequestOptions, { userId: user.id, organizationId: callerOrgId(user) }),
@@ -109,7 +110,7 @@ export class EmployeeCoverController {
   @RequireAccessModule('time_off')
   @ApiOperation({ summary: "What a leader would check, for the caller's own request before it is sent (advice only)" })
   @Roles(Role.ADMIN, Role.EMPLOYEE)
-  async precheckRequest(@CurrentUser() user: CurrentUserData, @Body() body: Record<string, unknown>) {
+  async precheckRequest(@CurrentUser() user: SessionUser, @Body() body: Record<string, unknown>) {
     // Only the caller's own request: the person comes from the token, the body is read by the same parser as sending.
     return firstValueFrom(
       sendRpc(this.taskClient, requestPrecheck, { userId: user.id, organizationId: callerOrgId(user), body }),
@@ -128,7 +129,7 @@ export class EmployeeCoverController {
     of everybody in the workspace, and those are not the same authority.
   */
   @RequirePermissionInSpace('canViewSpaceAttendance')
-  async getFloorNow(@CurrentUser() user?: CurrentUserData) {
+  async getFloorNow(@CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, getFloorNow, {
         organizationId: callerOrgId(user!),
@@ -153,7 +154,7 @@ export class EmployeeCoverController {
     one permission doing duty for two different things.
   */
   @RequirePermissionInSpace('canViewSpaceAttendance')
-  async getCoverRange(@Query('start') start: string, @Query('end') end: string, @CurrentUser() user?: CurrentUserData) {
+  async getCoverRange(@Query('start') start: string, @Query('end') end: string, @CurrentUser() user: SessionUser) {
     // Rejected here rather than trusted downstream: the range drives a day loop.
     const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
     if (!ISO_DAY.test(start ?? '') || !ISO_DAY.test(end ?? '') || end < start) {

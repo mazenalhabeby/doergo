@@ -40,27 +40,42 @@ export interface Endpoint<A = void, R = unknown, B = undefined> extends Endpoint
   readonly __types?: { args: A; res: R; body: B };
 }
 
+/**
+ * Any endpoint, whatever it takes and answers — the constraint for helpers that only need its name
+ * and settings. `Endpoint<A, …>` is invariant in A (A is both read and passed in), so no single
+ * `Endpoint<X, …>` fits them all; this shape does: `path` taking `never` accepts every args type.
+ */
+export interface AnyEndpoint extends EndpointConfig<never> {
+  readonly name: string;
+  readonly __types?: { args: unknown; res: unknown; body: unknown };
+}
+
 export function endpoint<A = void, R = unknown, B = undefined>(config: EndpointConfig<A>): Endpoint<A, R, B> {
   return { ...config, name: '' };
 }
 
 /** Name every endpoint of a domain `domain.key`, so each has a stable identity. */
-export function defineEndpoints<T extends Record<string, Endpoint<any, any, any>>>(domain: string, defs: T): T {
+export function defineEndpoints<T extends Record<string, AnyEndpoint>>(domain: string, defs: T): T {
   for (const [key, def] of Object.entries(defs)) {
     if (def.name && def.name !== `${domain}.${key}`) {
       throw new Error(`endpoint ${def.name} is defined twice (again as ${domain}.${key})`);
     }
-    Object.defineProperty(def, 'name', { value: `${domain}.${key}`, enumerable: true, writable: false, configurable: false });
+    Object.defineProperty(def, 'name', {
+      value: `${domain}.${key}`,
+      enumerable: true,
+      writable: false,
+      configurable: false,
+    });
   }
   return defs;
 }
 
 /** The path an endpoint builds for these arguments — for code that must hand a path to something else (a prefetch, a link). */
-export function endpointPath<A>(def: Endpoint<A, any, any>, args: A): string {
+export function endpointPath<A>(def: Endpoint<A, unknown, unknown>, args: A): string {
   return def.path(args);
 }
 
 /** Argument / result / body types of a defined endpoint. */
-export type EndpointArgs<D> = D extends Endpoint<infer A, any, any> ? A : never;
-export type EndpointResult<D> = D extends Endpoint<any, infer R, any> ? R : never;
-export type EndpointBody<D> = D extends Endpoint<any, any, infer B> ? B : never;
+export type EndpointArgs<D> = D extends Endpoint<infer A, infer _R, infer _B> ? A : never;
+export type EndpointResult<D> = D extends Endpoint<infer _A, infer R, infer _B> ? R : never;
+export type EndpointBody<D> = D extends Endpoint<infer _A, infer _R, infer B> ? B : never;

@@ -1,5 +1,6 @@
 import { isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/shared';
 
+import type { SessionUser } from './request.types';
 /**
  * The workspaces a list is narrowed to for one permission — THE rule for every
  * controller that passes a scope to a service.
@@ -19,7 +20,7 @@ import { isAdmin, spacesGranting, type AccessPermissionKey } from '@hbcfield/sha
  * ⚠️ null and [] must never collapse into one falsy test; that is how a
  * workspace-scoped caller would read every workspace in the organization.
  */
-export function scopeFor(user: any, key: AccessPermissionKey): string[] | null {
+export function scopeFor(user: SessionUser | null | undefined, key: AccessPermissionKey): string[] | null {
   if (!user) return [];
   if (isAdmin(user) || user[key] === true) return null;
   return spacesGranting(user.access, key);
@@ -31,6 +32,6 @@ export function scopeFor(user: any, key: AccessPermissionKey): string[] | null {
  * `isAdmin(u) ? undefined : spacesGranting(...)` by hand — that skips the
  * org flag and its bridges (`permission-scope-guard.spec.ts`).
  */
-export function scopeIdsFor(user: any, key: AccessPermissionKey): string[] | undefined {
+export function scopeIdsFor(user: SessionUser | null | undefined, key: AccessPermissionKey): string[] | undefined {
   return scopeFor(user, key) ?? undefined;
 }

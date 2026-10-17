@@ -67,7 +67,16 @@ export interface UpdateEmployeeDto {
   rating?: number;
   ratingCount?: number;
   canCreateTasks?: boolean;
-  profileBadges?: any;
+  profileBadges?: unknown;
+  /** Vacation entitlement; null = the organization's default (not 0). '' from a cleared form field means null. */
+  leaveAllowance?: number | string | null;
+  /** "YYYY-MM-DD", or null to clear. */
+  employmentStartDate?: string | null;
+  /** The member's own rates (dated writer); undefined leaves a rate alone, null clears it. */
+  billRateCents?: unknown;
+  costRateCents?: unknown;
+  costDayCents?: unknown;
+  rateEffectiveFrom?: string;
 }
 
 /**

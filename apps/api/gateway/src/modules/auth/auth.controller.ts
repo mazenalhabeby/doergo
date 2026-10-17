@@ -27,6 +27,7 @@ import {
   emitEvent,
   presenceChangedEvent,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 export { isBrowserClient, withoutRefreshTokenForBrowser } from './auth-controller-helpers';
 
@@ -238,7 +239,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Current user profile' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async me(@CurrentUser() user: CurrentUserData) {
+  async me(@CurrentUser() user: SessionUser) {
     return {
       success: true,
       data: user,

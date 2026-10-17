@@ -7,6 +7,8 @@ import { MyLogQueryDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * /assets — the caller's own (what I hold, my expenses, my log), usage, orphans, a
  * member's custody. ⚠️ Registered BEFORE AssetsController: `usage`, `orphans`,
@@ -44,7 +46,7 @@ export class AssetMineController {
   @RequirePermission('canViewAssets')
   @DenyExternal()
   @ApiOperation({ summary: 'Billable assets per space' })
-  async billingUsage(@Request() req: any) {
+  async billingUsage(@Request() req: AuthedRequest) {
     return this.assetsService.billingUsage({ ...assetActor(req) });
   }
 
@@ -60,7 +62,7 @@ export class AssetMineController {
   @RequirePermission('canViewAssets')
   @DenyExternal()
   @ApiOperation({ summary: 'Assets that belong to no space' })
-  async listOrphans(@Request() req: any) {
+  async listOrphans(@Request() req: AuthedRequest) {
     return this.assetsService.listOrphans({ ...assetActor(req) });
   }
 
@@ -80,10 +82,10 @@ export class AssetMineController {
   @Get('mine')
   @DenyExternal()
   @ApiOperation({ summary: 'What I hold right now' })
-  async mine(@Request() req: any) {
+  async mine(@Request() req: AuthedRequest) {
     return this.assetsService.custodyMine({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -91,11 +93,11 @@ export class AssetMineController {
   @Get('expenses/mine')
   @DenyExternal()
   @ApiOperation({ summary: 'Expenses I submitted' })
-  async myExpenses(@Query('limit') limit: number, @Request() req: any) {
+  async myExpenses(@Query('limit') limit: number, @Request() req: AuthedRequest) {
     return this.assetsService.expenseMine({
       limit,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -111,21 +113,21 @@ export class AssetMineController {
   */
   @Get('log/mine')
   @ApiOperation({ summary: 'Logbook entries I filed' })
-  async myLog(@Query() query: MyLogQueryDto, @Request() req: any) {
+  async myLog(@Query() query: MyLogQueryDto, @Request() req: AuthedRequest) {
     return this.assetsService.logMine({
       ...query,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Get('log/due-mine')
   @DenyExternal()
   @ApiOperation({ summary: 'What is due soon on the things I hold' })
-  async myDue(@Request() req: any) {
+  async myDue(@Request() req: AuthedRequest) {
     return this.assetsService.logDueMine({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -138,7 +140,11 @@ export class AssetMineController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'What this member holds, and has held' })
   @ApiQuery({ name: 'open', required: false, description: 'Only what they hold now' })
-  async custodyForMember(@Param('memberId') memberId: string, @Query('open') open: string, @Request() req: any) {
+  async custodyForMember(
+    @Param('memberId') memberId: string,
+    @Query('open') open: string,
+    @Request() req: AuthedRequest,
+  ) {
     return this.assetsService.custodyForMember({
       memberId,
       open: open === 'true' || open === '1',

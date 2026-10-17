@@ -128,7 +128,7 @@ export class MemberOwnershipService {
    */
   async setAssignedHome(data: { memberId: string; organizationId: string; layout: unknown }) {
     const member = await this.prisma.user.findFirst({
-      where: { id: data.memberId, organizationId: data.organizationId, role: { not: 'CUSTOMER' as any } },
+      where: { id: data.memberId, organizationId: data.organizationId, role: { not: 'CUSTOMER' as const } },
       select: { id: true },
     });
     if (!member) throw new NotFoundException('Member not found');

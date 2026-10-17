@@ -14,6 +14,13 @@ import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES, formatCents, moduleMonthlyCents } from '@hbcfield/shared';
 import { sendRpc, findAssetSpace } from '@hbcfield/shared/microservices';
 import { getEffectiveModules, findTaskSpace } from '@hbcfield/shared/microservices';
+import type { ServiceErrorLike } from './request.types';
+
+/** What these lookups read of a task-service reply. */
+type SpaceLookupReply =
+  | { success?: boolean; statusCode?: number; data?: { enabledModules?: unknown; spaceId?: string | null } }
+  | null
+  | undefined;
 
 /**
  * The refusal for a module that is not on — ONE shape, 402, for ModuleGuard and
@@ -97,7 +104,7 @@ export class SpaceModulesService {
     const hit = this.cache.get(key);
     if (hit && hit.expires > Date.now()) return { modules: hit.modules };
 
-    let res: any;
+    let res: SpaceLookupReply;
     try {
       res = await firstValueFrom(
         sendRpc(this.taskClient, getEffectiveModules, { id: spaceId, organizationId })
@@ -105,7 +112,8 @@ export class SpaceModulesService {
           // back to the org's modules is wrong-ish; blocking is worse.
           .pipe(timeout(1_500)),
       );
-    } catch (err: any) {
+    } catch (caught: unknown) {
+      const err = caught as ServiceErrorLike | undefined;
       const status = err?.status ?? err?.statusCode ?? err?.response?.statusCode;
       if (status === 404) return 'missing';
       this.logger.warn(`Could not resolve modules for space ${spaceId}: ${err?.message ?? err}`);
@@ -135,7 +143,7 @@ export class SpaceModulesService {
     if (hit && hit.expires > Date.now()) return hit.spaceId;
 
     try {
-      const res: any = await firstValueFrom(
+      const res: SpaceLookupReply = await firstValueFrom(
         // ⚠️ Its own pattern: `find_task` asks who is reading, and the guard has nobody to name.
         sendRpc(this.taskClient, findTaskSpace, { id: taskId, organizationId }).pipe(timeout(1_500)),
       );
@@ -164,7 +172,7 @@ export class SpaceModulesService {
     if (hit && hit.expires > Date.now()) return hit.spaceId;
 
     try {
-      const res: any = await firstValueFrom(
+      const res: SpaceLookupReply = await firstValueFrom(
         // ⚠️ Its own pattern: `find_asset` asks who is reading, and the guard has nobody to name.
         sendRpc(this.taskClient, findAssetSpace, { id: assetId, organizationId }).pipe(timeout(1_500)),
       );
@@ -195,7 +203,9 @@ export class SpaceModulesService {
     if (hit && hit.expires > Date.now()) return hit.spaceId;
 
     try {
-      const res: any = await firstValueFrom(this.taskClient.send({ cmd }, { id, organizationId }).pipe(timeout(1_500)));
+      const res: SpaceLookupReply = await firstValueFrom(
+        this.taskClient.send({ cmd }, { id, organizationId }).pipe(timeout(1_500)),
+      );
       const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);
       return spaceId;

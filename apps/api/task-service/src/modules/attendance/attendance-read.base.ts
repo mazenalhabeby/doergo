@@ -5,6 +5,7 @@ import { scopeAllows, type AttendanceScope } from '@hbcfield/shared';
 import { PresenceService } from './presence/presence.service';
 import { HeartbeatService } from './heartbeat.service';
 import { ClockInLocationsService } from './clock-in-locations.service';
+import type { Prisma } from '@prisma/client';
 
 /**
  * What the attendance reads share: who may see a workspace's hours, and the order
@@ -48,7 +49,10 @@ export abstract class AttendanceReadBase {
    * Map a UI sort key → Prisma orderBy for the entries list. Defaults to newest
    * clock-in first. `totalMinutes`/`clockOutAt` are nullable → nulls sort last.
    */
-  protected buildEntriesOrderBy(sortBy?: string, sortOrder?: string): any {
+  protected buildEntriesOrderBy(
+    sortBy?: string,
+    sortOrder?: string,
+  ): Prisma.TimeEntryOrderByWithRelationInput | Prisma.TimeEntryOrderByWithRelationInput[] {
     const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
     // Smart "sort by day": every non-chronological sort gets clock-in (newest day
     // first) as a secondary tie-breaker, so a worker's / status's rows always fall

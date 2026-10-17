@@ -2,10 +2,12 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { workspaceZone } from '../../common/zone.util';
 import { success, localPartsIn, assertFoundInOrg } from '@hbcfield/shared';
 import { RecurringTasksBase } from './recurring-tasks.base';
+// Requests are the message contracts' (shared with the gateway) — one definition, not two.
+import { type createRecurringTask, type updateRecurringTask, type RpcRequest } from '@hbcfield/shared/microservices';
+import type { RecurrenceFrequency, TaskPriority } from '@prisma/client';
 
 @Injectable()
 export class RecurringTasksService extends RecurringTasksBase {
-
   /**
    * List all recurring task templates for an organization
    */
@@ -20,14 +22,17 @@ export class RecurringTasksService extends RecurringTasksBase {
           undefined adds nothing (org-wide). `[]` — granted nowhere — becomes
           `in: []`, which matches nothing, and that is the intended answer.
         */
-        ...(data.scopeSpaceIds === undefined ? {} : { spaceId: { in: data.scopeSpaceIds } }) },
+        ...(data.scopeSpaceIds === undefined ? {} : { spaceId: { in: data.scopeSpaceIds } }),
+      },
       orderBy: { createdAt: 'desc' },
       take: data.limit || 100,
       skip: data.offset || 0,
       include: {
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         space: { select: { id: true, name: true } },
-        workflow: { select: { id: true, name: true } } } });
+        workflow: { select: { id: true, name: true } },
+      },
+    });
 
     return success(templates);
   }
@@ -35,33 +40,18 @@ export class RecurringTasksService extends RecurringTasksBase {
   /**
    * Create a new recurring task template
    */
-  async create(data: {
-    title: string;
-    description?: string;
-    priority?: string;
-    spaceId?: string;
-    workflowId?: string;
-    customerId?: string;
-    locationLat?: number;
-    locationLng?: number;
-    locationAddress?: string;
-    assigneeIds?: string[];
-    estimatedHours?: number;
-    checklist?: { text: string }[];
-    frequency: string;
-    customDays?: number;
-    dayOfWeek?: number;
-    dayOfMonth?: number;
-    startDate: string;
-    endDate?: string;
-    organizationId: string;
-    createdById: string;
-  }) {
+  async create(data: RpcRequest<typeof createRecurringTask>) {
     // Validate frequency-specific fields
     this.validateFrequencyFields(data.frequency, data);
 
     // Validate space + task type + client belong to this org (if provided)
-    await this.assertSpaceAndWorkflow(data.organizationId, data.spaceId, data.workflowId, data.assigneeIds, data.customerId);
+    await this.assertSpaceAndWorkflow(
+      data.organizationId,
+      data.spaceId,
+      data.workflowId,
+      data.assigneeIds,
+      data.customerId,
+    );
 
     const startDate = new Date(data.startDate);
 
@@ -72,7 +62,9 @@ export class RecurringTasksService extends RecurringTasksBase {
       as typed; a full timestamp is read as its local day there.
     */
     const zone = await workspaceZone(this.prisma, data);
-    const startDay = /^\d{4}-\d{2}-\d{2}$/.test(data.startDate) ? data.startDate : localPartsIn(startDate, zone).dateStr;
+    const startDay = /^\d{4}-\d{2}-\d{2}$/.test(data.startDate)
+      ? data.startDate
+      : localPartsIn(startDate, zone).dateStr;
     if (startDay < localPartsIn(new Date(), zone).dateStr) {
       throw new BadRequestException('Start date cannot be in the past');
     }
@@ -97,7 +89,7 @@ export class RecurringTasksService extends RecurringTasksBase {
       data: {
         title: data.title,
         description: data.description,
-        priority: (data.priority as any) || 'MEDIUM',
+        priority: (data.priority as TaskPriority) || 'MEDIUM',
         spaceId: data.spaceId ?? null,
         workflowId: data.workflowId ?? null,
         customerId: data.customerId ?? null,
@@ -107,7 +99,7 @@ export class RecurringTasksService extends RecurringTasksBase {
         assigneeIds: data.assigneeIds ?? undefined,
         estimatedHours: data.estimatedHours,
         checklist: data.checklist ?? undefined,
-        frequency: data.frequency as any,
+        frequency: data.frequency as RecurrenceFrequency,
         customDays: data.customDays,
         dayOfWeek: data.dayOfWeek,
         dayOfMonth: data.dayOfMonth,
@@ -115,9 +107,12 @@ export class RecurringTasksService extends RecurringTasksBase {
         endDate,
         nextRunAt,
         organizationId: data.organizationId,
-        createdById: data.createdById },
+        createdById: data.createdById,
+      },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } } } });
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
 
     return success(template);
   }
@@ -125,38 +120,18 @@ export class RecurringTasksService extends RecurringTasksBase {
   /**
    * Update a recurring task template
    */
-  async update(data: {
-    id: string;
-    organizationId: string;
-    title?: string;
-    description?: string;
-    priority?: string;
-    spaceId?: string | null;
-    workflowId?: string | null;
-    customerId?: string | null;
-    locationLat?: number;
-    locationLng?: number;
-    locationAddress?: string;
-    assigneeIds?: string[];
-    estimatedHours?: number;
-    checklist?: { text: string }[];
-    frequency?: string;
-    customDays?: number;
-    dayOfWeek?: number;
-    dayOfMonth?: number;
-    endDate?: string;
-    isActive?: boolean;
-  }) {
+  async update(data: RpcRequest<typeof updateRecurringTask>) {
     const existing = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id } });
+      where: { id: data.id },
+    });
 
     assertFoundInOrg(existing, data.organizationId, 'Recurring task template');
 
     // Validate any newly-set space / task type belong to this org
     await this.assertSpaceAndWorkflow(
       data.organizationId,
-      data.spaceId === undefined ? undefined : data.spaceId ?? undefined,
-      data.workflowId === undefined ? undefined : data.workflowId ?? undefined,
+      data.spaceId === undefined ? undefined : (data.spaceId ?? undefined),
+      data.workflowId === undefined ? undefined : (data.workflowId ?? undefined),
       data.assigneeIds,
       data.customerId ?? undefined,
     );
@@ -167,12 +142,18 @@ export class RecurringTasksService extends RecurringTasksBase {
       this.validateFrequencyFields(data.frequency, {
         customDays: data.customDays ?? existing.customDays ?? undefined,
         dayOfWeek: data.dayOfWeek ?? existing.dayOfWeek ?? undefined,
-        dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth ?? undefined });
+        dayOfMonth: data.dayOfMonth ?? existing.dayOfMonth ?? undefined,
+      });
     }
 
     // Recalculate nextRunAt if frequency-related fields changed
     let nextRunAt = existing.nextRunAt;
-    if (data.frequency || data.dayOfWeek !== undefined || data.dayOfMonth !== undefined || data.customDays !== undefined) {
+    if (
+      data.frequency ||
+      data.dayOfWeek !== undefined ||
+      data.dayOfMonth !== undefined ||
+      data.customDays !== undefined
+    ) {
       nextRunAt = this.calculateNextRun(
         frequency,
         existing.startDate,
@@ -188,7 +169,7 @@ export class RecurringTasksService extends RecurringTasksBase {
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
-        ...(data.priority !== undefined && { priority: data.priority as any }),
+        ...(data.priority !== undefined && { priority: data.priority as TaskPriority }),
         ...(data.spaceId !== undefined && { spaceId: data.spaceId }),
         ...(data.workflowId !== undefined && { workflowId: data.workflowId }),
         ...(data.customerId !== undefined && { customerId: data.customerId }),
@@ -198,15 +179,18 @@ export class RecurringTasksService extends RecurringTasksBase {
         ...(data.assigneeIds !== undefined && { assigneeIds: data.assigneeIds }),
         ...(data.estimatedHours !== undefined && { estimatedHours: data.estimatedHours }),
         ...(data.checklist !== undefined && { checklist: data.checklist }),
-        ...(data.frequency !== undefined && { frequency: data.frequency as any }),
+        ...(data.frequency !== undefined && { frequency: data.frequency as RecurrenceFrequency }),
         ...(data.customDays !== undefined && { customDays: data.customDays }),
         ...(data.dayOfWeek !== undefined && { dayOfWeek: data.dayOfWeek }),
         ...(data.dayOfMonth !== undefined && { dayOfMonth: data.dayOfMonth }),
         ...(data.endDate !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
-        nextRunAt },
+        nextRunAt,
+      },
       include: {
-        createdBy: { select: { id: true, firstName: true, lastName: true } } } });
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
 
     return success(template);
   }
@@ -216,7 +200,8 @@ export class RecurringTasksService extends RecurringTasksBase {
    */
   async remove(data: { id: string; organizationId: string }) {
     const existing = await this.prisma.recurringTaskTemplate.findUnique({
-      where: { id: data.id } });
+      where: { id: data.id },
+    });
 
     assertFoundInOrg(existing, data.organizationId, 'Recurring task template');
 

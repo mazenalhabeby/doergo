@@ -1,16 +1,18 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type ThemeMode } from '../../../contexts/theme-context';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '../../../lib/constants';
+
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 /** CustomerProfile's module-level helpers, moved here unchanged so its sections can read them too. */
-export const THEME_OPTIONS: { mode: ThemeMode; icon: any; key: string; fallback: string }[] = [
+export const THEME_OPTIONS: { mode: ThemeMode; icon: IconName; key: string; fallback: string }[] = [
   { mode: 'system', icon: 'phone-portrait-outline', key: 'portal.themeSystem', fallback: 'System' },
   { mode: 'light', icon: 'sunny-outline', key: 'portal.themeLight', fallback: 'Light' },
   { mode: 'dark', icon: 'moon-outline', key: 'portal.themeDark', fallback: 'Dark' },
 ];
 
-export function Group({ title, colors, children }: { title: string; colors: any; children: React.ReactNode }) {
+export function Group({ title, colors, children }: { title: string; colors: ThemeColors; children: React.ReactNode }) {
   return (
     <View style={{ marginTop: SPACING.lg }}>
       <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{title.toUpperCase()}</Text>
@@ -20,9 +22,21 @@ export function Group({ title, colors, children }: { title: string; colors: any;
 }
 
 export function Row({
-  icon, label, value, colors, danger, onPress, last,
+  icon,
+  label,
+  value,
+  colors,
+  danger,
+  onPress,
+  last,
 }: {
-  icon: any; label: string; value?: string; colors: any; danger?: boolean; onPress?: () => void; last?: boolean;
+  icon: IconName;
+  label: string;
+  value?: string;
+  colors: ThemeColors;
+  danger?: boolean;
+  onPress?: () => void;
+  last?: boolean;
 }) {
   return (
     <Pressable
@@ -38,7 +52,11 @@ export function Row({
         <Ionicons name={icon} size={17} color={danger ? COLORS.error : colors.textSecondary} />
       </View>
       <Text style={[styles.rowLabel, { color: danger ? COLORS.error : colors.textPrimary }]}>{label}</Text>
-      {value ? <Text style={[styles.rowValue, { color: colors.textMuted }]} numberOfLines={1}>{value}</Text> : null}
+      {value ? (
+        <Text style={[styles.rowValue, { color: colors.textMuted }]} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
       {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.textMuted} /> : null}
     </Pressable>
   );
@@ -46,7 +64,14 @@ export function Row({
 
 export const styles = StyleSheet.create({
   head: { alignItems: 'center', paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
-  avatar: { width: 78, height: 78, borderRadius: RADIUS.full, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md },
+  avatar: {
+    width: 78,
+    height: 78,
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.md,
+  },
   avatarText: { fontFamily: 'Outfit_800ExtraBold', fontSize: 28, color: '#fff' },
   name: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.xxl },
   sub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginTop: 4 },
@@ -64,7 +89,14 @@ export const styles = StyleSheet.create({
   rowValue: { flex: 1, textAlign: 'right', fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginRight: 4 },
   // theme
   themeRow: { flexDirection: 'row', gap: SPACING.sm, padding: SPACING.md },
-  themePill: { flex: 1, alignItems: 'center', gap: 6, paddingVertical: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1.5 },
+  themePill: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+  },
   themeLabel: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm },
   // sign out
   signOut: {
@@ -81,7 +113,12 @@ export const styles = StyleSheet.create({
   signOutText: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base, color: COLORS.error },
   // sheet
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm },
+  sheet: {
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+  },
   grabber: { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: SPACING.md },
   sheetTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg, marginBottom: SPACING.md },
   sheetEmpty: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, paddingVertical: SPACING.md },

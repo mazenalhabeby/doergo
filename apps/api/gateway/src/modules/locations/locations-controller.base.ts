@@ -8,13 +8,13 @@ import { LocationsService } from './locations.service';
 import { LocationsQueueService } from './locations.queue.service';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * What every /locations controller shares: re-billing after a change, and who may
  * manage a workspace's people.
  */
 @Injectable()
 export abstract class LocationsControllerBase {
-
   constructor(
     protected readonly locationsService: LocationsService,
     protected readonly locationsQueueService: LocationsQueueService,
@@ -23,7 +23,6 @@ export abstract class LocationsControllerBase {
     protected readonly spaceModules: SpaceModulesService,
     protected readonly chatReach: ChatReachLookup,
   ) {}
-
 
   /**
    * Tell billing the bill moved. A space IS a billable thing: creating one,
@@ -48,7 +47,7 @@ export abstract class LocationsControllerBase {
    * guest holds in a space shared with them — the service then confines them
    * to their own people).
    */
-  protected assertMayManageMembersIn(req: any, spaceId: string): void {
+  protected assertMayManageMembersIn(req: AuthedRequest, spaceId: string): void {
     if (isAdmin(req.user)) return;
     if (accessAllows(req.user?.access, 'canManageWorkspaces', spaceId)) return;
     // Adding people here (`canAddSpaceMembers`), or managing its people — one rule with the space-roles routes.

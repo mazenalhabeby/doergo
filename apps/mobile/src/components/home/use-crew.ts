@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { attendanceApi, type NoShow } from '../../lib/api/attendance';
-import { crewAsOf, crewPeopleFrom, type CrewAsOf, type CrewPerson, type CrewEntryInput, type CrewBreakInput } from './crew-state';
+import { crewAsOf, crewPeopleFrom, type CrewAsOf, type CrewPerson, type CrewEntryInput } from './crew-state';
 import { keep, keptNow, keptOnDisk } from '../../home/remember/store';
 import { useLiveRefresh } from '../../hooks/use-live-refresh';
 import { connectivity } from '../../offline/connectivity';
@@ -71,18 +71,22 @@ const EMPTY: CrewData = {
 export function useCrew(enabled: boolean, userId: string | null = null): CrewData & { refresh: () => void } {
   const [data, setData] = useState<CrewData>(EMPTY);
   /** The failed state, with the last known counts when there are any. */
-  const failWith = useCallback(async (current: () => boolean) => {
-    /*
+  const failWith = useCallback(
+    async (current: () => boolean) => {
+      /*
       ⚠️ AT ONCE, THEN THE DISK. The rings go the instant the signal does —
       waiting on storage first would leave live-looking presence on screen for
       a frame. What the last run kept arrives after, if it is still wanted.
     */
-    const now = keptNow<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
-    if (current()) setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now(), asOf: now }));
-    if (now) return;
-    const disk = await keptOnDisk<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
-    if (disk && current()) setData((d) => (d.failed ? { ...d, asOf: disk } : d));
-  }, [userId]);
+      const now = keptNow<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
+      if (current())
+        setData((d) => ({ ...d, people: [], notArrived: [], failed: true, loading: false, at: Date.now(), asOf: now }));
+      if (now) return;
+      const disk = await keptOnDisk<CrewAsOf>(AS_OF, userId, AS_OF_RULES);
+      if (disk && current()) setData((d) => (d.failed ? { ...d, asOf: disk } : d));
+    },
+    [userId],
+  );
   const live = useRef(true);
   /*
     ⚠️ LATEST ASK WINS. Focus, the minute tick and the app coming back can all
@@ -90,7 +94,12 @@ export function useCrew(enabled: boolean, userId: string | null = null): CrewDat
     replaced the newer one — presence going backwards on screen.
   */
   const seq = useRef(0);
-  useEffect(() => () => { live.current = false; }, []);
+  useEffect(
+    () => () => {
+      live.current = false;
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     if (!enabled) return;
@@ -115,7 +124,7 @@ export function useCrew(enabled: boolean, userId: string | null = null): CrewDat
       */
       const [entries, breaks, noShows, pendingSummary] = await Promise.all([
         attendanceApi.getClockedInAll() as unknown as Promise<CrewEntryInput[]>,
-        attendanceApi.getActiveBreaks() as Promise<CrewBreakInput[]>,
+        attendanceApi.getActiveBreaks(),
         attendanceApi.listNoShows(1) as Promise<NoShow[]>,
         /* ⚠️ Counts only — the total and one per workspace for the rings, in bytes. */
         attendanceApi.pendingApprovalsSummary().catch(() => ({ total: 0, bySpace: {} as Record<string, number> })),
@@ -124,8 +133,15 @@ export function useCrew(enabled: boolean, userId: string | null = null): CrewDat
       const { people, notArrived } = crewPeopleFrom({ entries, breaks, noShows, now });
       if (current()) {
         setData({
-          people, expected: people.length, pending: pendingSummary.total, pendingBySpace: pendingSummary.bySpace,
-          notArrived: notArrived as NoShow[], failed: false, loading: false, at: now, asOf: null,
+          people,
+          expected: people.length,
+          pending: pendingSummary.total,
+          pendingBySpace: pendingSummary.bySpace,
+          notArrived: notArrived as NoShow[],
+          failed: false,
+          loading: false,
+          at: now,
+          asOf: null,
         });
         keep(AS_OF, userId, crewAsOf(people, now), AS_OF_RULES);
       }

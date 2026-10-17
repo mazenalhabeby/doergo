@@ -1,3 +1,4 @@
+import type { Prisma, JoinRequestStatus } from '@prisma/client';
 import { clampListLimit } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -12,6 +13,7 @@ import {
   permissionsExceed,
   permissionsFromUserFlags,
 } from '@hbcfield/shared';
+import { permissionColumns } from '../../common/records/permission-columns';
 
 /** The office deciding join requests: the list, approving (with a role), refusing. */
 @Injectable()
@@ -32,9 +34,10 @@ export class JoinRequestReviewService {
     const limit = clampListLimit(data.limit, 10, 50);
     const skip = (page - 1) * limit;
 
-    const where: any = { organizationId: data.organizationId };
+    const where: Prisma.JoinRequestWhereInput = { organizationId: data.organizationId };
     if (data.status && data.status !== 'all') {
-      where.status = data.status;
+      // A filter from the query string; Prisma refuses a value that is not a status (as it always did).
+      where.status = data.status as JoinRequestStatus;
     }
 
     const [requests, total] = await Promise.all([
@@ -90,17 +93,8 @@ export class JoinRequestReviewService {
       include: { user: true },
     });
 
-    if (!request) {
-      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Join request not found' };
-    }
-
-    if (request.organizationId !== data.organizationId) {
-      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Not authorized to manage this request' };
-    }
-
-    if (request.status !== 'PENDING') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: `Cannot approve a request with status: ${request.status}` };
-    }
+    const refusal = undecidableRequest(request, data.organizationId, 'approve');
+    if (refusal || !request) return refusal;
 
     const role = data.role as Role;
     const defaultPerms = DEFAULT_PERMISSIONS[role];
@@ -123,10 +117,18 @@ export class JoinRequestReviewService {
       return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Not authorized to manage this request' };
     }
     if (!mayGrantBaseRole(approver.role, role)) {
-      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Only an admin can approve somebody as an admin' };
+      return {
+        success: false,
+        statusCode: HttpStatus.FORBIDDEN,
+        message: 'Only an admin can approve somebody as an admin',
+      };
     }
     if (!approver.isAdmin && permissionsExceed(approver.perms, permissionsFromUserFlags(defaultPerms))) {
-      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'You cannot grant permissions beyond your own' };
+      return {
+        success: false,
+        statusCode: HttpStatus.FORBIDDEN,
+        message: 'You cannot grant permissions beyond your own',
+      };
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -141,7 +143,7 @@ export class JoinRequestReviewService {
           status: 'APPROVED',
           reviewedById: data.approverId,
           reviewedAt: new Date(),
-          assignedRole: data.role as any,
+          assignedRole: role,
         },
       });
       if (claim.count !== 1) return null;
@@ -151,13 +153,9 @@ export class JoinRequestReviewService {
         where: { id: request.userId },
         data: {
           organizationId: data.organizationId,
-          role: role as any,
+          role,
           onboardingCompleted: true,
-          canCreateTasks: defaultPerms.canCreateTasks,
-          taskCreationScope: defaultPerms.taskCreationScope,
-          canViewAllTasks: defaultPerms.canViewAllTasks,
-          canAssignTasks: defaultPerms.canAssignTasks,
-          canManageUsers: defaultPerms.canManageUsers,
+          ...permissionColumns(defaultPerms),
           ...(isTechnician
             ? {
                 position: data.position || 'technician',
@@ -204,17 +202,8 @@ export class JoinRequestReviewService {
       where: { id: data.requestId },
     });
 
-    if (!request) {
-      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Join request not found' };
-    }
-
-    if (request.organizationId !== data.organizationId) {
-      return { success: false, statusCode: HttpStatus.FORBIDDEN, message: 'Not authorized to manage this request' };
-    }
-
-    if (request.status !== 'PENDING') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: `Cannot reject a request with status: ${request.status}` };
-    }
+    const refusal = undecidableRequest(request, data.organizationId, 'reject');
+    if (refusal || !request) return refusal;
 
     await this.prisma.joinRequest.update({
       where: { id: data.requestId },
@@ -230,4 +219,30 @@ export class JoinRequestReviewService {
 
     return { success: true, message: 'Join request rejected', data: { userId: request.userId } };
   }
+}
+
+/** A join request that may not be decided by this organization now: missing, another org's, or already decided. */
+function undecidableRequest(
+  request: { organizationId: string; status: string } | null,
+  organizationId: string,
+  verb: 'approve' | 'reject',
+): { success: false; statusCode: HttpStatus; message: string } | null {
+  if (!request) {
+    return { success: false as const, statusCode: HttpStatus.NOT_FOUND, message: 'Join request not found' };
+  }
+  if (request.organizationId !== organizationId) {
+    return {
+      success: false as const,
+      statusCode: HttpStatus.FORBIDDEN,
+      message: 'Not authorized to manage this request',
+    };
+  }
+  if (request.status !== 'PENDING') {
+    return {
+      success: false as const,
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: `Cannot ${verb} a request with status: ${request.status}`,
+    };
+  }
+  return null;
 }

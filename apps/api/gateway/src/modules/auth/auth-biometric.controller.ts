@@ -13,7 +13,9 @@ import {
   biometricVerify,
   biometricDevices,
   biometricRevoke,
+  type RpcRequest,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /auth — signing in with Face ID / fingerprint: enrolling a device, the
@@ -35,7 +37,10 @@ export class AuthBiometricController {
   @Post('biometric/enroll')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Bind this device to the signed-in member' })
-  async biometricEnroll(@CurrentUser() user: CurrentUserData, @Body() body: any) {
+  async biometricEnroll(
+    @CurrentUser() user: SessionUser,
+    @Body() body: Omit<RpcRequest<typeof biometricEnroll>, 'userId'>,
+  ) {
     const result = await firstValueFrom(sendRpc(this.authClient, biometricEnroll, { ...body, userId: user.id }));
     assertServiceOk(result, HttpStatus.BAD_REQUEST);
     return result;
@@ -78,14 +83,14 @@ export class AuthBiometricController {
 
   @Get('devices')
   @ApiOperation({ summary: 'Devices that can sign in without a password' })
-  async biometricDevices(@CurrentUser() user: CurrentUserData) {
+  async biometricDevices(@CurrentUser() user: SessionUser) {
     return firstValueFrom(sendRpc(this.authClient, biometricDevices, { userId: user.id }));
   }
 
   /** The lost-phone button. Scoped to the caller's own devices by `user.id`. */
   @Delete('devices/:deviceId')
   @ApiOperation({ summary: 'Revoke a device' })
-  async biometricRevoke(@CurrentUser() user: CurrentUserData, @Param('deviceId') deviceId: string) {
+  async biometricRevoke(@CurrentUser() user: SessionUser, @Param('deviceId') deviceId: string) {
     return firstValueFrom(sendRpc(this.authClient, biometricRevoke, { userId: user.id, deviceId }));
   }
 }

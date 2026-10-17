@@ -77,7 +77,7 @@ export abstract class ShiftIssuesBase {
     const prefix = this.issuePrefix(issue.organizationId, issue.id);
     const within = (k: unknown): k is string => typeof k === 'string' && k.startsWith(prefix) && !k.includes('..');
     const out: Attachment[] = [];
-    for (const a of attachments.slice(0, 10) as any[]) {
+    for (const a of attachments.slice(0, 10)) {
       if (!a) continue;
       const fromUrl = this.store?.keyFromUrl(a.fileUrl) ?? null;
       const key = within(a.fileKey) ? a.fileKey : within(fromUrl) ? fromUrl : null;
@@ -100,7 +100,7 @@ export abstract class ShiftIssuesBase {
    * prefix on READ as well, so a key stored before the write check existed can
    * never be signed for someone who should not see it.
    */
-  protected async signAttachments(issue: { id: string; organizationId: string }, attachments: unknown): Promise<any[]> {
+  protected async signAttachments(issue: { id: string; organizationId: string }, attachments: unknown) {
     return this.media.signAll(this.cleanAttachments(issue, attachments));
   }
 

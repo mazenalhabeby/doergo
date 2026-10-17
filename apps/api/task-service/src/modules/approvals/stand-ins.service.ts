@@ -20,7 +20,7 @@ import type { StandInCaller as SharedStandInCaller } from '@hbcfield/shared/micr
 export type StandInCaller = SharedStandInCaller;
 
 /** Holds, themselves, an approval DECISION a stand-in could carry (seeing the lists alone is nothing to decide). */
-function decides(u: any): boolean {
+function decides(u: (Parameters<typeof memberAccessOf>[0] & { role: string }) | null | undefined): boolean {
   if (!u) return false;
   const grant = delegatedGrant(memberAccessOf(u), u.role === 'ADMIN');
   if (grantIsEmpty(grant)) return false;

@@ -53,13 +53,32 @@ function ensureWithResolvers(): void {
  *
  * @param pdfjs the loaded `pdfjs-dist/legacy/build/pdf.mjs` module
  */
+/** The parts of pdf.js this reads (the module is loaded at run time, so it is described here). */
+interface PdfTextItem {
+  str: string;
+  /** The 6-number text matrix: [a, b, c, d, x, y]. */
+  transform: [number, number, number, number, number, number];
+}
+interface PdfPage {
+  getTextContent(): Promise<{ items: Array<PdfTextItem | { type: string }> }>;
+  cleanup?(): void;
+}
+interface PdfDocument {
+  numPages: number;
+  getPage(n: number): Promise<PdfPage>;
+}
+interface PdfLoadingTask {
+  promise: Promise<PdfDocument>;
+  destroy: () => Promise<void>;
+}
+
 export async function pdfLines(
-  pdfjs: { getDocument: (src: unknown) => { promise: Promise<any>; destroy: () => Promise<void> } },
+  pdfjs: { getDocument: (src: unknown) => PdfLoadingTask },
   bytes: Uint8Array,
   opts: { maxPages?: number } = {},
 ): Promise<PdfLine[]> {
   ensureWithResolvers();
-  let task: { promise: Promise<any>; destroy: () => Promise<void> } | undefined;
+  let task: PdfLoadingTask | undefined;
   try {
     task = pdfjs.getDocument({
       // A copy: pdf.js transfers (and detaches) the buffer it is given.
@@ -78,14 +97,17 @@ export async function pdfLines(
       const page = await doc.getPage(p);
       const content = await page.getTextContent();
       const rows = new Map<number, { size: number; runs: { x: number; text: string }[] }>();
-      for (const item of content.items as any[]) {
+      for (const item of content.items) {
         if (!('str' in item) || !item.str.trim()) continue;
-        const x = item.transform[4] as number;
-        const y = item.transform[5] as number;
-        const size = Math.abs(item.transform[3] as number) || 0;
+        const x = item.transform[4];
+        const y = item.transform[5];
+        const size = Math.abs(item.transform[3]) || 0;
         let key = y;
         for (const existing of rows.keys()) {
-          if (Math.abs(existing - y) <= SAME_LINE_TOLERANCE) { key = existing; break; }
+          if (Math.abs(existing - y) <= SAME_LINE_TOLERANCE) {
+            key = existing;
+            break;
+          }
         }
         const row = rows.get(key) ?? { size: 0, runs: [] };
         row.size = Math.max(row.size, size);
@@ -94,7 +116,12 @@ export async function pdfLines(
       }
       // PDF y grows upwards: the top of the page has the largest y.
       for (const [, row] of [...rows.entries()].sort((a, b) => b[0] - a[0])) {
-        const text = row.runs.sort((a, b) => a.x - b.x).map((r) => r.text).join(' ').replace(/\s+/g, ' ').trim();
+        const text = row.runs
+          .sort((a, b) => a.x - b.x)
+          .map((r) => r.text)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
         if (text) out.push({ text, size: Math.round(row.size * 10) / 10, page: p });
       }
       page.cleanup?.();
@@ -103,6 +130,10 @@ export async function pdfLines(
   } catch {
     return [];
   } finally {
-    try { await task?.destroy(); } catch { /* already gone */ }
+    try {
+      await task?.destroy();
+    } catch {
+      /* already gone */
+    }
   }
 }

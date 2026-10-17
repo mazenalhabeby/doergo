@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { parseRoute, isUsableEmail, isSelfSigning, normalizeEmail } from '@hbcfield/shared';
+import { parseRoute, isUsableEmail, isSelfSigning, normalizeEmail, personName } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { type DocumentActor, type SignerCandidate, type RouteCandidateStep } from './document-common';
 import { DocumentRoutingBase } from './document-routing.base';
@@ -150,9 +150,7 @@ export class DocumentRoutingService extends DocumentRoutingBase {
         if (eligibleUserIds.length === 0) {
           // Several CUSTOMER or CONTACT candidates cannot be resolved this way:
           // a client is one counterparty, not a pool, so the issuer chooses.
-          throw new BadRequestException(
-            `Step ${order} has more than one possible signer — choose one before issuing`,
-          );
+          throw new BadRequestException(`Step ${order} has more than one possible signer — choose one before issuing`);
         }
       } else {
         /*
@@ -185,11 +183,14 @@ export class DocumentRoutingService extends DocumentRoutingBase {
       if (!email && (customerId || userId)) {
         const resolved = customerId
           ? await tx.customer.findUnique({ where: { id: customerId }, select: { email: true, name: true } })
-          : await tx.user.findUnique({ where: { id: userId as string }, select: { email: true, firstName: true, lastName: true } });
+          : await tx.user.findUnique({
+              where: { id: userId as string },
+              select: { email: true, firstName: true, lastName: true },
+            });
         if (resolved) {
-          email = (resolved as any).email ?? null;
-          const person = `${(resolved as any).firstName ?? ''} ${(resolved as any).lastName ?? ''}`.trim();
-          contactName = (resolved as any).name ?? (person || null);
+          email = resolved.email ?? null;
+          const person = 'firstName' in resolved ? personName(resolved) : '';
+          contactName = ('name' in resolved ? resolved.name : null) ?? (person || null);
         }
       }
 

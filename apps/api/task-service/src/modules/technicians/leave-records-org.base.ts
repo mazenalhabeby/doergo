@@ -5,6 +5,7 @@ import { success } from '@hbcfield/shared';
 import { GetOrgTimeOffDto } from './dto';
 import { SPACE_BRIEF } from './technicians-helpers';
 import { MemberServiceBase } from './member-service.base';
+import type { Prisma } from '@prisma/client';
 
 export abstract class LeaveRecordsOrgBase extends MemberServiceBase {
   /**
@@ -30,7 +31,7 @@ export abstract class LeaveRecordsOrgBase extends MemberServiceBase {
     // Default false: a payload that leaks by omission is the wrong default.
     const withCover = dto.withCover === true;
 
-    const where: any = {
+    const where: Prisma.TimeOffWhereInput = {
       technician: { organizationId },
     };
     if (status) {

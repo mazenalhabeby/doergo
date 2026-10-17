@@ -128,7 +128,7 @@ export class ChatGroupsService {
   async removeMember(data: Actor & { conversationId: string; targetId: string }) {
     if (data.targetId === data.userId) return this.leave(data);
     const { membership, me } = await this.mayManage(data);
-    const target = (membership.conversation.members as any[]).find((m) => m.userId === data.targetId);
+    const target = (membership.conversation.members).find((m) => m.userId === data.targetId);
     if (!target) throw new NotFoundException('Member not found');
     const person = await this.prisma.user.findUnique({
       where: { id: data.targetId },
@@ -214,7 +214,8 @@ export class ChatGroupsService {
       include: { members: { include: { user: CHAT_USER_SELECT } } },
     });
     const managesPeople = await this.reach.managesPeople(viewerId);
-    return shapeConversation(row, viewerId, false, { managesPeople });
+    // The conversation was just written by this request, so the row exists.
+    return shapeConversation(row!, viewerId, false, { managesPeople });
   }
 }
 

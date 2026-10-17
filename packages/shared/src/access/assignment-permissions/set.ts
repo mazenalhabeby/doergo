@@ -8,7 +8,7 @@ import {
 } from '../../types/permissions';
 import { personalRoleSlug, roleUsableOnAssignment } from '../personal-role';
 import { whitelistPermissions } from '../permission-whitelist';
-import { ROLE_COMBO_MESSAGES, roleComboProblem } from '../../billing/work-roles';
+import { ROLE_COMBO_MESSAGES, roleComboProblem, type RoleKindValue } from '../../billing/work-roles';
 import {
   ASSIGNMENT_SELECT,
   AssignmentPermissionsError,
@@ -49,7 +49,11 @@ export async function setAssignmentPermissions(
     when an admin emptied the role they held and lost the whole navigation.
   */
   if (input.ceiling && input.actorId && input.actorId === assignment.userId) {
-    throw new AssignmentPermissionsError(403, 'CANNOT_CHANGE_OWN', 'You cannot change your own permissions in this workspace');
+    throw new AssignmentPermissionsError(
+      403,
+      'CANNOT_CHANGE_OWN',
+      'You cannot change your own permissions in this workspace',
+    );
   }
 
   /*
@@ -60,15 +64,24 @@ export async function setAssignmentPermissions(
   */
   const current = permissionsFromOrgRole(assignment.role?.permissions);
   if (input.ceiling && input.outrankCheck !== false && permissionsExceed(input.ceiling, current)) {
-    throw new AssignmentPermissionsError(403, 'MEMBER_ABOVE_YOU', 'This person holds more in this workspace than you do');
+    throw new AssignmentPermissionsError(
+      403,
+      'MEMBER_ABOVE_YOU',
+      'This person holds more in this workspace than you do',
+    );
   }
 
   // What is being asked for, as a set — and the shared role it names, if any.
   let target: PermissionSet;
-  let chosenRole: { id: string; personalAssignmentId: string | null; kind: string } | null = null;
+  let chosenRole: { id: string; personalAssignmentId?: string | null; kind?: RoleKindValue } | null = null;
   if ('roleId' in input.choice) {
     const role = await db.accessRole.findFirst({
-      where: { id: input.choice.roleId, organizationId: input.organizationId, isActive: true, scope: { in: ['SPACE', 'BOTH'] } },
+      where: {
+        id: input.choice.roleId,
+        organizationId: input.organizationId,
+        isActive: true,
+        scope: { in: ['SPACE', 'BOTH'] },
+      },
       select: { id: true, permissions: true, kind: true, personalAssignmentId: true },
     });
     // Another person's personal role reads exactly like a role that does not exist.
@@ -86,7 +99,7 @@ export async function setAssignmentPermissions(
   // The two-role rule (a trade and a management role at once) and "a work role is not a management role".
   const combo = roleComboProblem({
     workRoleKind: assignment.workRoleId ? 'WORK' : null,
-    managementRoleKind: chosenRole ? (chosenRole.kind as any) : hasGrant ? 'MANAGEMENT' : null,
+    managementRoleKind: chosenRole ? chosenRole.kind : hasGrant ? 'MANAGEMENT' : null,
     hasWorkRole: !!assignment.workRoleId,
     hasManagementRole: chosenRole ? true : hasGrant,
     allowSecondRole: assignment.allowSecondRole === true,
@@ -107,7 +120,9 @@ export async function setAssignmentPermissions(
   }
   if (input.ceiling && permissionsExceed(input.ceiling, target)) {
     const over = PERMISSION_KEYS.filter((k) => target[k] === true && input.ceiling![k] !== true);
-    throw new AssignmentPermissionsError(403, 'GRANT_EXCEEDS_OWN', 'You cannot grant permissions beyond your own', { keys: over });
+    throw new AssignmentPermissionsError(403, 'GRANT_EXCEEDS_OWN', 'You cannot grant permissions beyond your own', {
+      keys: over,
+    });
   }
 
   // Which role row ends up on the assignment.
@@ -166,5 +181,12 @@ export async function setAssignmentPermissions(
   // A personal role nobody holds any more is deleted, not left to be found later.
   if (!personal) await db.accessRole.deleteMany({ where: { personalAssignmentId: assignment.id } });
 
-  return { assignmentId: assignment.id, spaceId: assignment.spaceId, userId: assignment.userId, roleId, personal, permissions: target };
+  return {
+    assignmentId: assignment.id,
+    spaceId: assignment.spaceId,
+    userId: assignment.userId,
+    roleId,
+    personal,
+    permissions: target,
+  };
 }

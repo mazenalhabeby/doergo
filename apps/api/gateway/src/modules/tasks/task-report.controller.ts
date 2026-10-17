@@ -17,6 +17,7 @@ import { TaskReportQueryDto } from './dto';
 import { TasksService } from './tasks.service';
 import { sendRpc, getTaskRoute } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** A route is a nice-to-have on a report; it must never hold the report up. */
 const ROUTE_TIMEOUT_MS = 5_000;
 
@@ -45,7 +46,7 @@ export class TaskReportController {
 
   @Get(':id/full-report')
   @ApiOperation({ summary: 'The full report for one job — the office copy, or the client copy cut on the server' })
-  async fullReport(@Param('id') id: string, @Query() query: TaskReportQueryDto, @Request() req: any) {
+  async fullReport(@Param('id') id: string, @Query() query: TaskReportQueryDto, @Request() req: AuthedRequest) {
     const copy = query.copy ?? 'office';
     const actor = taskActor(req);
     const tracking = trackingVisibility(req.user);
@@ -82,12 +83,12 @@ export class TaskReportController {
   /** The tracked route, or null — a slow or failing tracking-service costs the report nothing. */
   private async routeOf(taskId: string, organizationId: string): Promise<TrackedTaskRoute | null> {
     try {
-      const res: any = await firstValueFrom(
+      const res: { success?: boolean; data?: unknown } | null = await firstValueFrom(
         sendRpc(this.trackingClient, getTaskRoute, { taskId, organizationId }).pipe(timeout(ROUTE_TIMEOUT_MS)),
       );
       return res?.success === true && res.data ? (res.data as TrackedTaskRoute) : null;
-    } catch (err: any) {
-      this.logger.warn(`Route for report of task ${taskId} unavailable: ${err?.message ?? err}`);
+    } catch (err: unknown) {
+      this.logger.warn(`Route for report of task ${taskId} unavailable: ${(err as Error | undefined)?.message ?? err}`);
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import { rpc } from '../contract';
+import type { AuthServiceReply } from './auth-service-replies';
 import type { CustodyParty } from '../../assets/custody/periods';
 import type { AssetActorMessage, ContractFieldsMessage } from './task-service-2-types';
 
@@ -18,7 +19,10 @@ export const findAllAssets = rpc<
     spaceId?: string;
   } & AssetActorMessage
 >('find_all_assets');
-export const findAssetSpace = rpc<{ id: string; organizationId: string }>('find_asset_space');
+export const findAssetSpace = rpc<
+  { id: string; organizationId: string },
+  AuthServiceReply<{ spaceId?: string | null }>
+>('find_asset_space');
 export const findAsset = rpc<{ id: string } & AssetActorMessage>('find_asset');
 export const listOrphanAssets = rpc<{
   userId: string;

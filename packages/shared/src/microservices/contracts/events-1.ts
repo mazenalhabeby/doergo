@@ -108,11 +108,12 @@ export const spaceRosterChangedEvent = event<{ organizationId: string; spaceId?:
   'space_roster_changed',
 );
 
-export const attendanceClockInEvent = event<{ userId: string; organizationId: string; timeEntry: any }>(
+// The entry is passed through to screens as sent.
+export const attendanceClockInEvent = event<{ userId: string; organizationId: string; timeEntry: unknown }>(
   'attendance_clock_in',
 );
 
-export const attendanceClockOutEvent = event<{ userId: string; organizationId: string; timeEntry: any }>(
+export const attendanceClockOutEvent = event<{ userId: string; organizationId: string; timeEntry: unknown }>(
   'attendance_clock_out',
 );
 

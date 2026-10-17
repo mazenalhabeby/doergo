@@ -1,5 +1,6 @@
 import { isAdmin, type ResolvedAccess } from '@hbcfield/shared';
 import { scopeIdsFor } from './permission-scope';
+import type { SessionUser } from './request.types';
 
 /**
  * The caller of a task route, as task-service's ONE task gate
@@ -49,8 +50,9 @@ export interface TaskActorOptions {
   crossOrgRead?: boolean;
 }
 
-export function taskActor(req: { user?: any; method?: string }, opts: TaskActorOptions = {}): TaskActor {
-  const user = req.user ?? {};
+export function taskActor(req: { user?: SessionUser; method?: string }, opts: TaskActorOptions = {}): TaskActor {
+  // No session (never on a JwtAuthGuard route) yields empty fields, as before.
+  const user = (req.user ?? {}) as SessionUser;
   /*
     ⚠️ A SHARED SPACE IS READ ACROSS ORGANIZATIONS, NOT WRITTEN.
 
@@ -66,7 +68,8 @@ export function taskActor(req: { user?: any; method?: string }, opts: TaskActorO
   return {
     userId: user.id,
     userRole: user.role,
-    organizationId: user.organizationId,
+    // Task routes sit behind the onboarding guard, so a member here has an organization (callerOrgId).
+    organizationId: user.organizationId as string,
     canViewAllTasks: user.canViewAllTasks,
     viewAllSpaceIds: scopeIdsFor(user, 'canViewAllTasks'),
     canAssignTasks: user.canAssignTasks,
@@ -80,7 +83,10 @@ export function taskActor(req: { user?: any; method?: string }, opts: TaskActorO
  * removing an assignee): the caller travels as `requestUserId`, so spreading
  * the actor can never overwrite the person being added or removed.
  */
-export function taskRequester(req: { user?: any; method?: string }): Omit<TaskActor, 'userId'> & { requestUserId: string } {
+export function taskRequester(req: {
+  user?: SessionUser;
+  method?: string;
+}): Omit<TaskActor, 'userId'> & { requestUserId: string } {
   const { userId, ...rest } = taskActor(req);
   return { ...rest, requestUserId: userId };
 }
@@ -95,12 +101,13 @@ export function taskRequester(req: { user?: any; method?: string }): Omit<TaskAc
  * written out by hand on every assign route — one rule, one place.
  */
 export function grantedSpaceIds(
-  req: { user?: any },
+  req: { user?: SessionUser },
   permission: 'canAssignTasks' | 'canCreateTasks',
 ): string[] | undefined {
-  const user = req.user ?? {};
+  // No session (never on a JwtAuthGuard route) yields empty fields, as before.
+  const user = (req.user ?? {}) as SessionUser;
   return scopeIdsFor(user, permission);
 }
 
 /** Spaces where the caller may ASSIGN work — see `grantedSpaceIds`. */
-export const assignSpaceIds = (req: { user?: any }) => grantedSpaceIds(req, 'canAssignTasks');
+export const assignSpaceIds = (req: { user?: SessionUser }) => grantedSpaceIds(req, 'canAssignTasks');

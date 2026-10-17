@@ -2,7 +2,7 @@ import { Global, Inject, Injectable, Module } from '@nestjs/common';
 import { OBJECT_STORE, ObjectStore } from '@hbcfield/shared/storage';
 
 /** The minimum a stored file row needs to be served. */
-interface StoredFile {
+export interface StoredFile {
   fileKey?: string | null;
   fileUrl?: string | null;
   fileName?: string | null;

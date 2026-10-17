@@ -28,7 +28,7 @@ export interface SelfDecisionPrisma {
     }): Promise<{ id: string } | null>;
   };
   /** Present on the real client; a test double without it skips the stand-in rule. */
-  approvalDelegation?: { findFirst(args: any): Promise<{ id: string } | null> };
+  approvalDelegation?: { findFirst(args: unknown): Promise<{ id: string } | null> };
 }
 
 export async function assertNotSelfDecision(

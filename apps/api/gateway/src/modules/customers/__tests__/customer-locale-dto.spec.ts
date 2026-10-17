@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { of } from 'rxjs';
 import { CustomersController } from '../customers.controller';
 
+import { fakeReq } from '../../../common/testing/fake-request';
 /*
   POST / PATCH /customers — "Language for emails".
 
@@ -22,18 +23,22 @@ describe('customer body — locale', () => {
 
   it.each(['pt', 'de-AT', 'German', 7])('refuses %p on create and on update, forwarding nothing', async (locale) => {
     const { controller, authClient, spaceModules, req } = setup();
-    await expect(controller.create({ name: 'BILLA AG', locale: locale as any }, req)).rejects.toBeInstanceOf(BadRequestException);
-    await expect(controller.update('c1', { locale: locale as any }, req)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(controller.create({ name: 'BILLA AG', locale: locale as any }, fakeReq(req))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(controller.update('c1', { locale: locale as any }, fakeReq(req))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(authClient.send).not.toHaveBeenCalled();
     expect(spaceModules.assertEnabled).not.toHaveBeenCalled();
   });
 
   it('forwards a supported language, a cleared one, and a body without one', async () => {
     const { controller, authClient, req } = setup();
-    await controller.create({ name: 'BILLA AG', locale: 'de' }, req);
-    await controller.update('c1', { locale: '' }, req);
-    await controller.update('c1', { locale: null }, req);
-    await controller.update('c1', { phone: '+43 1' }, req);
+    await controller.create({ name: 'BILLA AG', locale: 'de' }, fakeReq(req));
+    await controller.update('c1', { locale: '' }, fakeReq(req));
+    await controller.update('c1', { locale: null }, fakeReq(req));
+    await controller.update('c1', { phone: '+43 1' }, fakeReq(req));
 
     const dtos = (authClient.send.mock.calls as unknown as Array<[unknown, { dto: Record<string, unknown> }]>).map(
       ([, payload]) => payload.dto,

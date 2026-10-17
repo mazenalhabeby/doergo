@@ -9,6 +9,7 @@ import { useConnectivity, useOffline, useSyncStatus } from '../../offline/offlin
 import { filterTasksLocally } from '../../offline/tasks/task-list-query';
 import { overlayTask } from '../../offline/tasks/overlay';
 import { periodParams, type Period } from './jobs-logic';
+import { caught } from '../../lib/caught';
 
 export type ListTask = Task & { pendingSync?: boolean };
 
@@ -56,15 +57,25 @@ export function useJobsList(input: { period: Period; search: string; oversee: bo
   const lastParamsRef = useRef<TasksListParams | null>(null);
 
   /** The list from the phone's copy, with the member's unsent changes on top. */
-  const readLocalTasks = useCallback(async (params: TasksListParams) => {
-    if (!offline.records) return;
-    lastParamsRef.current = params;
-    void offline.records.cursor('tasks').then((c) => setLocalUpdatedAt(c.lastPullAt)).catch(() => undefined);
-    const rows = await offline.records.list<Task>('tasks');
-    const ops = offline.engine?.operations() ?? [];
-    const visible = filterTasksLocally(rows.map((r) => overlayTask(r.data, ops)), params, user?.id);
-    setTasks(visible as ListTask[]);
-  }, [offline.records, offline.engine, user?.id]);
+  const readLocalTasks = useCallback(
+    async (params: TasksListParams) => {
+      if (!offline.records) return;
+      lastParamsRef.current = params;
+      void offline.records
+        .cursor('tasks')
+        .then((c) => setLocalUpdatedAt(c.lastPullAt))
+        .catch(() => undefined);
+      const rows = await offline.records.list<Task>('tasks');
+      const ops = offline.engine?.operations() ?? [];
+      const visible = filterTasksLocally(
+        rows.map((r) => overlayTask(r.data, ops)),
+        params,
+        user?.id,
+      );
+      setTasks(visible as ListTask[]);
+    },
+    [offline.records, offline.engine, user?.id],
+  );
 
   // The copy changed (a pull landed) or a queued change moved: re-read, no request.
   useEffect(() => {
@@ -77,44 +88,47 @@ export function useJobsList(input: { period: Period; search: string; oversee: bo
     if (lastParamsRef.current) void readLocalTasks(lastParamsRef.current);
   }, [outbox, readLocalTasks]);
 
-  const fetchTasks = useCallback(async (showRefresh = false) => {
-    if (fetchingRef.current && !showRefresh) return;
-    try {
-      fetchingRef.current = true;
-      lastFetchTimeRef.current = Date.now();
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      setError(null);
+  const fetchTasks = useCallback(
+    async (showRefresh = false) => {
+      if (fetchingRef.current && !showRefresh) return;
+      try {
+        fetchingRef.current = true;
+        lastFetchTimeRef.current = Date.now();
+        if (showRefresh) setIsRefreshing(true);
+        else setIsLoading(true);
+        setError(null);
 
-      const params: TasksListParams = {
-        ...periodParams(period),
-        ...(debouncedSearch ? { search: debouncedSearch } : {}),
-        ...(oversee && mineOnly ? { assignedToMe: true } : {}),
-        limit: 100,
-      };
+        const params: TasksListParams = {
+          ...periodParams(period),
+          ...(debouncedSearch ? { search: debouncedSearch } : {}),
+          ...(oversee && mineOnly ? { assignedToMe: true } : {}),
+          limit: 100,
+        };
 
-      if (offline.records && offline.engine) {
-        const { lastPullAt } = await offline.records.cursor('tasks');
-        const useLocal = lastPullAt !== null && (period !== 'history' || connectivity !== 'online');
-        if (useLocal) {
-          await readLocalTasks(params);
-          if (connectivity === 'online') void offline.engine.pull('tasks').catch(() => undefined);
-          return;
+        if (offline.records && offline.engine) {
+          const { lastPullAt } = await offline.records.cursor('tasks');
+          const useLocal = lastPullAt !== null && (period !== 'history' || connectivity !== 'online');
+          if (useLocal) {
+            await readLocalTasks(params);
+            if (connectivity === 'online') void offline.engine.pull('tasks').catch(() => undefined);
+            return;
+          }
         }
-      }
 
-      const fetched = await tasksApi.list(params);
-      setLocalUpdatedAt(null);
-      setTasks((fetched || []) as ListTask[]);
-    } catch (err: any) {
-      if (err?.statusCode === 401 || err?.message?.includes('Session expired')) return;
-      setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-      fetchingRef.current = false;
-    }
-  }, [period, debouncedSearch, oversee, mineOnly, offline.records, offline.engine, connectivity, readLocalTasks, t]);
+        const fetched = await tasksApi.list(params);
+        setLocalUpdatedAt(null);
+        setTasks((fetched || []) as ListTask[]);
+      } catch (err: unknown) {
+        if (caught(err).statusCode === 401 || caught(err).message?.includes('Session expired')) return;
+        setError(err instanceof Error ? err.message : t('tasks.failedToLoad'));
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+        fetchingRef.current = false;
+      }
+    },
+    [period, debouncedSearch, oversee, mineOnly, offline.records, offline.engine, connectivity, readLocalTasks, t],
+  );
 
   /*
     The badges, from the server — both counts in ONE cached reply, because the
@@ -145,7 +159,9 @@ export function useJobsList(input: { period: Period; search: string; oversee: bo
   }, [period, debouncedSearch, mineOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Counts follow the list: a decision made on one screen changes both numbers.
-  useEffect(() => { void refreshCounts(); }, [refreshCounts, tasks.length]);
+  useEffect(() => {
+    void refreshCounts();
+  }, [refreshCounts, tasks.length]);
 
   // Back on the tab — throttled to one fetch per 30 s.
   useFocusEffect(

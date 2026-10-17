@@ -3,6 +3,7 @@ import { success, personName } from '@hbcfield/shared';
 import { createOnce } from '../../common/create-once.util';
 import { BODY_MAX, Attachment } from './shift-issues-helpers';
 import { ShiftIssuesBase } from './shift-issues.base';
+import type { ShiftIssueStatus } from '@prisma/client';
 
 /** Working an issue: a message, acknowledging it, giving it to somebody, changing its status. */
 @Injectable()
@@ -37,7 +38,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
             type: 'MESSAGE',
             actorId: data.callerUserId,
             body: body.slice(0, BODY_MAX) || null,
-            attachments: attachments as any,
+            attachments: attachments,
           },
         }),
     });
@@ -114,7 +115,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
         issueId: issue.id,
         type: 'ASSIGNED',
         actorId: data.callerUserId,
-        metadata: { assignedToId: assignee.id, assignedToName } as any,
+        metadata: { assignedToId: assignee.id, assignedToName },
       },
     });
     await this.broadcast(updated, data.callerUserId, event, [assignee.id]);
@@ -145,7 +146,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
     const updated = await this.prisma.shiftIssue.update({
       where: { id: issue.id },
       data: {
-        status: data.status as any,
+        status: data.status as ShiftIssueStatus,
         resolutionNote: resolving ? (data.note?.slice(0, BODY_MAX) ?? issue.resolutionNote) : issue.resolutionNote,
         resolvedById: resolving ? data.callerUserId : issue.resolvedById,
         resolvedAt: resolving ? new Date() : issue.resolvedAt,
@@ -159,7 +160,7 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
         // The reason / excuse ("parts not delivered") — kept on the event for
         // resolve / cancel / close so it shows inline in the thread.
         body: data.note?.trim().slice(0, BODY_MAX) || null,
-        metadata: { fromStatus: issue.status, toStatus: data.status } as any,
+        metadata: { fromStatus: issue.status, toStatus: data.status },
       },
     });
     await this.broadcast(updated, data.callerUserId, event);

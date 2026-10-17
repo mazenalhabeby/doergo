@@ -1,3 +1,4 @@
+import type { PlatformUser } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -27,20 +28,25 @@ export abstract class PlatformAuthBase {
     protected readonly config: ConfigService,
   ) {}
 
-
   protected secret(): string {
     const s = this.config.get<string>('PLATFORM_JWT_SECRET');
     if (!s) throw new Error('PLATFORM_JWT_SECRET not configured');
     return s;
   }
-  protected publicUser(u: any) {
+  protected publicUser(u: PlatformUser) {
     return {
-      id: u.id, email: u.email, firstName: u.firstName, lastName: u.lastName, role: u.role, isActive: u.isActive,
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      role: u.role,
+      isActive: u.isActive,
       twoFactorEnabled: u.twoFactorEnabled,
       // Mandatory second factor: until one is enrolled this session reaches
       // /platform/auth/* only (enforced by the gateway's platform guard).
       enrolmentRequired: platformEnrolmentRequired(u),
-      lastLoginAt: u.lastLoginAt, createdAt: u.createdAt,
+      lastLoginAt: u.lastLoginAt,
+      createdAt: u.createdAt,
     };
   }
 
@@ -61,7 +67,7 @@ export abstract class PlatformAuthBase {
   }
 
   /** The response every session-changing call returns: a fresh token + who you are now. */
-  protected async session(user: any, authTime?: number) {
+  protected async session(user: PlatformUser, authTime?: number) {
     const scope = await this.supportScope(user.id, user.role);
     return {
       token: this.issueToken(user, authTime),
@@ -78,7 +84,10 @@ export abstract class PlatformAuthBase {
    * this account — the reason somebody re-keys their authenticator — is out.
    */
   protected async rotateSessions(userId: string, authTime?: number) {
-    const updated = await this.prisma.platformUser.update({ where: { id: userId }, data: { tokensValidAfter: new Date() } });
+    const updated = await this.prisma.platformUser.update({
+      where: { id: userId },
+      data: { tokensValidAfter: new Date() },
+    });
     return this.session(updated, authTime);
   }
 

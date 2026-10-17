@@ -27,16 +27,12 @@
   "lines": 131,
   "long": 5
  },
- "apps/mobile/app/(customer)/change-password.tsx": {
-  "lines": 75,
-  "long": 1
- },
  "apps/mobile/app/(onboarding)/choose-path.tsx": {
   "lines": 32,
   "long": 1
  },
  "apps/mobile/src/components/LocationConsentModal.tsx": {
-  "lines": 122,
+  "lines": 120,
   "long": 6
  },
  "apps/mobile/src/components/amazen/filter.tsx": {
@@ -45,10 +41,6 @@
  },
  "apps/mobile/src/components/amazen/ink-icon.tsx": {
   "lines": 44,
-  "long": 1
- },
- "apps/mobile/src/components/approvals/stand-in-sheet.tsx": {
-  "lines": 130,
   "long": 1
  },
  "apps/mobile/src/components/biometric-icon.tsx": {
@@ -73,10 +65,6 @@
  },
  "apps/mobile/src/components/calendar/event-sheet.tsx": {
   "lines": 167,
-  "long": 1
- },
- "apps/mobile/src/components/client-requests/request-detail.tsx": {
-  "lines": 159,
   "long": 1
  },
  "apps/mobile/src/components/client-requests/requests-screen.tsx": {
@@ -108,7 +96,7 @@
   "long": 22
  },
  "apps/mobile/src/components/equipment/equipment-screen.tsx": {
-  "lines": 231,
+  "lines": 228,
   "long": 1
  },
  "apps/mobile/src/components/equipment/use-equipment-screen.tsx": {
@@ -137,10 +125,6 @@
  },
  "apps/mobile/src/components/home/my-work.ts": {
   "lines": 80,
-  "long": 1
- },
- "apps/mobile/src/components/home/next-stop.tsx": {
-  "lines": 129,
   "long": 1
  },
  "apps/mobile/src/components/home/today-card.tsx": {
@@ -212,7 +196,7 @@
   "long": 1
  },
  "apps/mobile/src/components/settings/sync-page.tsx": {
-  "lines": 272,
+  "lines": 270,
   "long": 2
  },
  "apps/mobile/src/components/time/place-relation.ts": {
@@ -251,10 +235,6 @@
   "lines": 14,
   "long": 1
  },
- "apps/mobile/src/lib/api/shift-issues.ts": {
-  "lines": 22,
-  "long": 1
- },
  "apps/mobile/src/lib/notification-route.ts": {
   "lines": 201,
   "long": 1
@@ -269,10 +249,6 @@
  },
  "apps/mobile/src/offline/attendance/use-shift.ts": {
   "lines": 162,
-  "long": 1
- },
- "apps/mobile/src/offline/db/records-store.ts": {
-  "lines": 138,
   "long": 1
  },
  "apps/mobile/src/offline/db/sqlite-outbox-store.ts": {
@@ -292,8 +268,8 @@
   "long": 1
  },
  "apps/mobile/src/screens/app/tabs/use-requests-screen.ts": {
-  "lines": 284,
-  "long": 4
+  "lines": 200,
+  "long": 1
  },
  "apps/mobile/src/screens/app/use-support-screen.ts": {
   "lines": 266,
@@ -372,8 +348,8 @@
   "long": 1
  },
  "apps/web-app/src/app/(dashboard)/reports/page.tsx": {
-  "lines": 294,
-  "long": 27
+  "lines": 288,
+  "long": 26
  },
  "apps/web-app/src/app/(dashboard)/settings/_components/general-section-general.tsx": {
   "lines": 287,
@@ -416,8 +392,8 @@
   "long": 1
  },
  "apps/web-app/src/app/_home/home-client-footer.tsx": {
-  "lines": 81,
-  "long": 3
+  "lines": 51,
+  "long": 1
  },
  "apps/web-app/src/app/_home/home-client-hero.tsx": {
   "lines": 65,
@@ -480,8 +456,8 @@
   "long": 2
  },
  "apps/web-app/src/components/marketing/site-footer.tsx": {
-  "lines": 115,
-  "long": 3
+  "lines": 74,
+  "long": 1
  },
  "apps/web-app/src/components/marketing/site-nav.tsx": {
   "lines": 83,

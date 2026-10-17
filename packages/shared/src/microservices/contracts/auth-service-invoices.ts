@@ -71,10 +71,46 @@ export const invoiceExchangeRate = rpc<{ organizationId: string; currency: strin
   'invoice_exchange_rate',
 );
 export const invoiceGet = rpc<{ id: string; organizationId: string }>('invoice_get');
-export const invoiceUpdate = rpc<{ id: string; organizationId: string; [key: string]: any }>('invoice_update');
+/** The editable fields of a draft invoice (auth-service `InvoiceEditService.update`). */
+export interface InvoiceUpdateFields {
+  clientName?: string;
+  clientEmail?: string;
+  clientAddress?: string;
+  currency?: string;
+  exchangeRate?: number | string | null;
+  exchangeRateSource?: string | null;
+  exchangeRateDate?: string | null;
+  showLineTags?: boolean;
+  taxRate?: number;
+  discount?: number;
+  issueDate?: string;
+  dueDate?: string;
+  servicePeriodFrom?: string | null;
+  servicePeriodTo?: string | null;
+  notes?: string;
+  /** Another company issues this draft; null = back to the workspace's / client's / main one. */
+  legalEntityId?: string | null;
+}
+export const invoiceUpdate = rpc<{ id: string; organizationId: string } & InvoiceUpdateFields>('invoice_update');
 export const invoiceUpdateStatus = rpc<{ id: string; organizationId: string; status: string }>('invoice_update_status');
 export const invoiceDelete = rpc<{ id: string; organizationId: string }>('invoice_delete');
-export const invoiceAddItem = rpc<{ invoiceId: string; organizationId: string; item: any }>('invoice_add_item');
+/** One line added to an invoice (auth-service `InvoiceItemsService.addItem`). */
+export interface InvoiceItemInput {
+  description: string;
+  quantity?: number;
+  unitPrice?: number;
+  taskId?: string | null;
+  reportId?: string | null;
+  lineKind?: 'HOURS' | 'DAYS' | 'HEADING' | null;
+  billedDays?: number | null;
+  workerId?: string | null;
+  dayFrom?: string | null;
+  dayTo?: string | null;
+  taskIds?: string[];
+}
+export const invoiceAddItem = rpc<{ invoiceId: string; organizationId: string; item: InvoiceItemInput }>(
+  'invoice_add_item',
+);
 export const invoiceRemoveItem = rpc<{ invoiceId: string; itemId: string; organizationId: string }>(
   'invoice_remove_item',
 );

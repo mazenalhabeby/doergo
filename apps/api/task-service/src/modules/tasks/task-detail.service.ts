@@ -135,7 +135,7 @@ export class TaskDetailService {
     let acceptedAt: Date | null = null;
     let completedAt: Date | null = null;
     for (const ev of statusEvents) {
-      const ns = (ev.metadata as any)?.newStatus;
+      const ns = (ev.metadata as { newStatus?: string } | null)?.newStatus;
       if (!acceptedAt && ns === TaskStatus.ACCEPTED) acceptedAt = ev.createdAt;
       if (!completedAt && (ns === TaskStatus.COMPLETED || ns === TaskStatus.CLOSED)) completedAt = ev.createdAt;
     }
@@ -144,22 +144,25 @@ export class TaskDetailService {
     // route start → the task's creation time. Always stable/DB-backed so the
     // timer never resets on reopen.
     if (!acceptedAt) {
-      const firstActive = statusEvents.find((ev) => ACTIVE.includes((ev.metadata as any)?.newStatus));
+      const firstActive = statusEvents.find((ev) => {
+        const ns = (ev.metadata as { newStatus?: string } | null)?.newStatus;
+        return ACTIVE.some((s) => s === ns);
+      });
       const ACTIVE_OR_DONE = [...ACTIVE, TaskStatus.BLOCKED, TaskStatus.COMPLETED, TaskStatus.CLOSED];
       acceptedAt =
         firstActive?.createdAt ??
-        (task as any).routeStartedAt ??
-        (ACTIVE_OR_DONE.includes(task.status as any) ? task.createdAt : null);
+        task.routeStartedAt ??
+        (ACTIVE_OR_DONE.some((s) => s === task.status) ? task.createdAt : null);
     }
 
     // Effective flow = the task's own workflow, else its space's workflow —
     // resolved from the per-org cache (Redis) instead of a DB join.
-    const effWorkflowId = (task as any).workflowId ?? (task as any).space?.workflowId ?? null;
+    const effWorkflowId = task.workflowId ?? task.space?.workflowId ?? null;
     const effectiveWorkflow = await this.workflowCache.getWorkflow(data.organizationId, effWorkflowId);
     // Capabilities active AT the current status (per-step). The status's own
     // DB-stored capabilities are authoritative (admin-editable); fall back to the
     // shared map only when there's no matching workflow status (legacy tasks).
-    const currentStatus = effectiveWorkflow?.statuses?.find((s: any) => s.key === task.status);
+    const currentStatus = effectiveWorkflow?.statuses?.find((s) => s.key === task.status);
     const capabilities = currentStatus
       ? (currentStatus.capabilities ?? [])
       : getStatusCapabilities(effectiveWorkflow?.name, task.status);

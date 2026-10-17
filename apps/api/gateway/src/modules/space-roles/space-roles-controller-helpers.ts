@@ -1,6 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { mayManageSpaceMembers } from '@hbcfield/shared';
 
+import type { SessionUser } from '../../common/request.types';
 /**
  * May the caller manage THIS space's people — the one shared rule
  * (`mayManageSpaceMembers`: admin, org-wide `canManageUsers`, or `canManageUsers`
@@ -9,9 +10,9 @@ import { mayManageSpaceMembers } from '@hbcfield/shared';
  * same rule; one definition means the roster's bill-rate strip and these routes
  * cannot drift apart.
  */
-const canManageSpace = (user: any, spaceId: string): boolean => mayManageSpaceMembers(user, spaceId);
+const canManageSpace = (user: SessionUser, spaceId: string): boolean => mayManageSpaceMembers(user, spaceId);
 
-function assertCanManageSpace(user: any, spaceId: string) {
+function assertCanManageSpace(user: SessionUser, spaceId: string) {
   if (!canManageSpace(user, spaceId)) {
     throw new ForbiddenException('You do not manage this space');
   }

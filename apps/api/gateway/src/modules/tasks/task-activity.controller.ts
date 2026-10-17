@@ -5,6 +5,7 @@ import { taskActor, taskRequester, assignSpaceIds } from '../../common/task-acto
 import { AddAssigneeDto, AddCommentDto } from './dto';
 import { TasksControllerBase } from './tasks-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /tasks/:id — a job's history, comments, step answers and assignees. */
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -12,7 +13,7 @@ import { TasksControllerBase } from './tasks-controller.base';
 export class TaskActivityController extends TasksControllerBase {
   @Get(':id/submissions')
   @ApiOperation({ summary: "The job's step-form submissions (its reports), with signed file links" })
-  async getSubmissions(@Param('id') id: string, @Request() req: any) {
+  async getSubmissions(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.tasksService.getSubmissions({
       id,
       ...taskActor(req, { crossOrgRead: true }),
@@ -21,7 +22,7 @@ export class TaskActivityController extends TasksControllerBase {
 
   @Get(':id/timeline')
   @ApiOperation({ summary: 'Get task timeline/activity' })
-  async getTimeline(@Param('id') id: string, @Request() req: any) {
+  async getTimeline(@Param('id') id: string, @Request() req: AuthedRequest) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getTimeline({
       id,
@@ -31,7 +32,7 @@ export class TaskActivityController extends TasksControllerBase {
 
   @Post(':id/comments')
   @ApiOperation({ summary: 'Add a comment to a task' })
-  async addComment(@Param('id') id: string, @Body() body: AddCommentDto, @Request() req: any) {
+  async addComment(@Param('id') id: string, @Body() body: AddCommentDto, @Request() req: AuthedRequest) {
     await this.assertExternalMayWrite(req, id);
     return this.tasksQueueService.addComment({
       taskId: id,
@@ -42,7 +43,7 @@ export class TaskActivityController extends TasksControllerBase {
 
   @Get(':id/comments')
   @ApiOperation({ summary: 'Get task comments' })
-  async getComments(@Param('id') id: string, @Request() req: any) {
+  async getComments(@Param('id') id: string, @Request() req: AuthedRequest) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getComments({
       taskId: id,
@@ -61,7 +62,7 @@ export class TaskActivityController extends TasksControllerBase {
   */
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Add an assignee to a task' })
-  async addAssignee(@Param('id') id: string, @Body() addAssigneeDto: AddAssigneeDto, @Request() req: any) {
+  async addAssignee(@Param('id') id: string, @Body() addAssigneeDto: AddAssigneeDto, @Request() req: AuthedRequest) {
     return this.tasksQueueService.addAssignee({
       taskId: id,
       ...addAssigneeDto,
@@ -76,7 +77,7 @@ export class TaskActivityController extends TasksControllerBase {
   @Delete(':id/assignees/:userId')
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Remove an assignee from a task' })
-  async removeAssignee(@Param('id') id: string, @Param('userId') userId: string, @Request() req: any) {
+  async removeAssignee(@Param('id') id: string, @Param('userId') userId: string, @Request() req: AuthedRequest) {
     return this.tasksQueueService.removeAssignee({
       taskId: id,
       userId,

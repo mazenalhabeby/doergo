@@ -66,7 +66,7 @@ export class AnalyticsService {
       sites does not bring the other site's day along.
     */
     const scope = data.scopeSpaceIds ?? undefined;
-    await assertMemberInScope(this.prisma as any, {
+    await assertMemberInScope(this.prisma, {
       userId: data.userId,
       organizationId: data.organizationId,
       scopeSpaceIds: scope,

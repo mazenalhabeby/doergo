@@ -5,13 +5,15 @@ import '../src/services/background-heartbeat';
 // Defines the background sync task at startup — the OS may start the app for it alone.
 import '../src/offline/background-sync';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { LogBox } from 'react-native';
+import { LogBox, type ErrorUtils as RNErrorUtils } from 'react-native';
+import { caught } from '../src/lib/caught';
 
 // Suppress noisy "Session expired" unhandled rejections — auth context handles redirect
-const originalHandler = (global as any).ErrorUtils?.getGlobalHandler?.();
-if ((global as any).ErrorUtils) {
-  (global as any).ErrorUtils.setGlobalHandler((error: any, isFatal: boolean) => {
-    if (error?.message?.includes('Session expired')) return;
+const errorUtils = (global as { ErrorUtils?: RNErrorUtils }).ErrorUtils;
+const originalHandler = errorUtils?.getGlobalHandler?.();
+if (errorUtils) {
+  errorUtils.setGlobalHandler((error: unknown, isFatal?: boolean) => {
+    if (caught(error).message?.includes('Session expired')) return;
     originalHandler?.(error, isFatal);
   });
 }
@@ -27,15 +29,8 @@ import { useFonts, Outfit_400Regular, Outfit_800ExtraBold } from '@expo-google-f
 /* v2 — Amazen Trust. Readex Pro for everything, IBM Plex Mono for numerals
    that are read digit by digit: times, durations, ids, amounts in rows. Never
    prose. See `src/theme/amazen.ts`. */
-import {
-  ReadexPro_300Light,
-  ReadexPro_400Regular,
-  ReadexPro_500Medium,
-} from '@expo-google-fonts/readex-pro';
-import {
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
-} from '@expo-google-fonts/ibm-plex-mono';
+import { ReadexPro_300Light, ReadexPro_400Regular, ReadexPro_500Medium } from '@expo-google-fonts/readex-pro';
+import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { AuthProvider, useAuth } from '../src/contexts/auth-context';
 import { AppQueryProvider } from '../src/contexts/query-provider';
 import { ThemeProvider, useTheme } from '../src/contexts/theme-context';
@@ -93,12 +88,9 @@ function RootLayoutNav() {
   */
   useEffect(() => {
     if (Platform.OS === 'android') {
-      NavigationBar.setButtonStyleAsync(
-        !appIsReady || showAnimatedSplash ? 'light' : isDark ? 'light' : 'dark',
-      );
+      NavigationBar.setButtonStyleAsync(!appIsReady || showAnimatedSplash ? 'light' : isDark ? 'light' : 'dark');
     }
   }, [appIsReady, showAnimatedSplash, isDark]);
-
 
   // Handle navigation after auth state changes (3-way: auth → onboarding → app)
   useEffect(() => {

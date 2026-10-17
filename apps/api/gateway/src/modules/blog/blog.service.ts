@@ -10,6 +10,7 @@ import {
   blogUpdate,
   blogDelete,
   blogImageSave,
+  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 
 /** Gateway → auth-service proxy for the public marketing blog. */
@@ -34,16 +35,16 @@ export class BlogGatewayService extends BaseGatewayService {
   listAll() {
     return this.call(blogListAll, {});
   }
-  create(data: any) {
+  create(data: RpcRequest<typeof blogCreate>) {
     return this.call(blogCreate, data);
   }
-  update(data: any) {
+  update(data: RpcRequest<typeof blogUpdate>) {
     return this.call(blogUpdate, data);
   }
   remove(id: string) {
     return this.call(blogDelete, { id });
   }
-  saveImage(data: any) {
+  saveImage(data: RpcRequest<typeof blogImageSave>) {
     return this.call(blogImageSave, data);
   }
 }

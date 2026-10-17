@@ -4,16 +4,22 @@ import type { PrismaService } from '../../common/prisma/prisma.service';
 import { ROLE_WAVE_CLOSED } from './role-pool.service';
 import type { PreparedStepSubmission } from './step-submission';
 import type { StatusTask } from './task-status.types';
+import type { Prisma } from '@prisma/client';
 
 /** The write of `TaskStatusService.updateStatus`: what changes on the row, and the guarded write itself. */
 
 /** Build update data with route timestamps. */
-export function statusUpdateData(task: StatusTask, wf: any, status: string, occurredAt: Date): any {
-  const updateData: any = { status: status as any };
+export function statusUpdateData(
+  task: StatusTask,
+  /** Only the steps are read: is the target a finished (final or canceled) step? */
+  wf: { statuses?: { key: string; isFinal?: boolean | null; isCanceled?: boolean | null }[] } | null,
+  status: string,
+  occurredAt: Date,
+): Prisma.TaskUncheckedUpdateInput {
+  const updateData: Prisma.TaskUncheckedUpdateInput = { status: status };
   // A role task reaching a FINISHED step (canonical or the workflow's own) asks its role for nobody more.
-  if ((task as any).openRoleId) {
-    const target = wf?.statuses?.find((s: { key: string }) => s.key === status) as
-      { isFinal?: boolean; isCanceled?: boolean } | undefined;
+  if (task.openRoleId) {
+    const target = wf?.statuses?.find((s) => s.key === status);
     if ((target && (target.isFinal || target.isCanceled)) || isWorkOver(String(status))) {
       updateData.openSpotsLeft = 0;
       updateData.openWave = ROLE_WAVE_CLOSED;
@@ -56,7 +62,7 @@ export async function writeStatusMove(
   args: {
     task: StatusTask;
     taskId: string;
-    updateData: any;
+    updateData: Prisma.TaskUncheckedUpdateInput;
     submission: PreparedStepSubmission | null;
     userId: string;
     occurredAt: Date;
@@ -74,8 +80,8 @@ export async function writeStatusMove(
             taskId: task.id,
             statusKey: submission.statusKey,
             formVersion: submission.form.version,
-            form: submission.form as any,
-            answers: submission.answers as any,
+            form: submission.form as unknown as Prisma.InputJsonValue,
+            answers: submission.answers,
             submittedById: args.userId,
             // When the member answered: the tap, not when the phone found signal.
             submittedAt: args.occurredAt,

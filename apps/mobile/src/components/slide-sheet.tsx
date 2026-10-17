@@ -173,7 +173,7 @@ export function SlideSheetActions({
   cancelLabel: string;
   onConfirm: () => void;
   confirmLabel: string;
-  confirmIcon: string;
+  confirmIcon: React.ComponentProps<typeof Ionicons>['name'];
   confirmIconSize: number;
   confirmColor: string;
   /** The confirm is greyed and inert (the cancel only while loading). */
@@ -201,7 +201,7 @@ export function SlideSheetActions({
           <ActivityIndicator size="small" color={COLORS.white} />
         ) : (
           <>
-            <Ionicons name={confirmIcon as any} size={confirmIconSize} color={COLORS.white} />
+            <Ionicons name={confirmIcon} size={confirmIconSize} color={COLORS.white} />
             <Text style={styles.confirmText}>{confirmLabel}</Text>
           </>
         )}
@@ -212,9 +212,20 @@ export function SlideSheetActions({
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 20 },
+  sheet: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+  },
   handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: SPACING.sm },
-  content: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACING.xl, paddingBottom: SPACING.lg },
+  content: {
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    paddingBottom: SPACING.lg,
+  },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
   title: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold },

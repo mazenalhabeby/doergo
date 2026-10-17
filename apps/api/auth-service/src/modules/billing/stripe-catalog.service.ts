@@ -18,7 +18,7 @@ export class StripeCatalogService extends StripeBase {
     const p = await this.stripe.prices.retrieve(priceId);
     return {
       unitAmount: p.unit_amount ?? null,
-      product: typeof p.product === 'string' ? p.product : (p.product as any)?.id,
+      product: typeof p.product === 'string' ? p.product : p.product?.id,
       currency: p.currency,
       active: p.active,
     };

@@ -46,7 +46,7 @@ export class AttendanceGeocoderService {
         signal: AbortSignal.timeout(1500),
       });
       if (res.ok) {
-        const j: any = await res.json();
+        const j = await res.json();
         // City granularity, never a street — this is a privacy boundary, not a
         // formatting choice.
         const city = j?.result?.city;

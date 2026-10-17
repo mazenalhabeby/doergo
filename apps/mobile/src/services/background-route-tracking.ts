@@ -66,56 +66,59 @@ interface RawLocation {
 }
 
 // ── Background task — runs in a separate JS context, no React state access ──
-TaskManager.defineTask(ROUTE_TASK, async ({ data, error }: any) => {
-  if (error) {
-    console.error('[Route] Background task error:', error);
-    return;
-  }
+TaskManager.defineTask(
+  ROUTE_TASK,
+  async ({ data, error }: TaskManager.TaskManagerTaskBody<{ locations?: RawLocation[] }>) => {
+    if (error) {
+      console.error('[Route] Background task error:', error);
+      return;
+    }
 
-  const locations: RawLocation[] | undefined = data?.locations;
-  if (!locations?.length) return;
+    const locations: RawLocation[] | undefined = data?.locations;
+    if (!locations?.length) return;
 
-  // Stop ONLY on a genuine logout (token absent). A keychain read ERROR (e.g. a
-  // transient failure) must NOT deregister the tracker — that would permanently
-  // stop background GPS with no way to recover until the app is reopened. (H12.)
-  let token: string | null;
-  try {
-    token = await getAccessToken();
-  } catch {
-    return; // transient read failure — skip this burst, keep tracking
-  }
-  if (!token) {
-    await stopRouteTracking();
-    return;
-  }
+    // Stop ONLY on a genuine logout (token absent). A keychain read ERROR (e.g. a
+    // transient failure) must NOT deregister the tracker — that would permanently
+    // stop background GPS with no way to recover until the app is reopened. (H12.)
+    let token: string | null;
+    try {
+      token = await getAccessToken();
+    } catch {
+      return; // transient read failure — skip this burst, keep tracking
+    }
+    if (!token) {
+      await stopRouteTracking();
+      return;
+    }
 
-  // Which task do these points belong to? Persisted because the headless task
-  // can't see the React tree.
-  const taskId = (await SecureStore.getItemAsync(ROUTE_TASK_KEY)) || undefined;
+    // Which task do these points belong to? Persisted because the headless task
+    // can't see the React tree.
+    const taskId = (await SecureStore.getItemAsync(ROUTE_TASK_KEY)) || undefined;
 
-  const raw = locations.map((l) => ({
-    lat: l.coords.latitude,
-    lng: l.coords.longitude,
-    accuracy: l.coords.accuracy ?? undefined,
-    timestamp: new Date(l.timestamp).toISOString(),
-  }));
-  // The same rule the server applies (shared): no fix worse than ±50 m, no
-  // impossible jump from the last point kept — so the line follows the road
-  // instead of leaping across a field after a tunnel.
-  const owner = await sessionOwnerId().catch(() => null);
-  const previous = await loadLastPoint(owner);
-  const points = cleanRoutePoints(raw, { previous });
-  if (points.length) await saveLastPoint(owner, points[points.length - 1]);
+    const raw = locations.map((l) => ({
+      lat: l.coords.latitude,
+      lng: l.coords.longitude,
+      accuracy: l.coords.accuracy ?? undefined,
+      timestamp: new Date(l.timestamp).toISOString(),
+    }));
+    // The same rule the server applies (shared): no fix worse than ±50 m, no
+    // impossible jump from the last point kept — so the line follows the road
+    // instead of leaping across a field after a tunnel.
+    const owner = await sessionOwnerId().catch(() => null);
+    const previous = await loadLastPoint(owner);
+    const points = cleanRoutePoints(raw, { previous });
+    if (points.length) await saveLastPoint(owner, points[points.length - 1]);
 
-  // flushPoints handles batch→per-point fallback and buffers what it can't
-  // deliver, and never throws, so the background task can't crash here.
-  await flushPoints(taskId, points);
+    // flushPoints handles batch→per-point fallback and buffers what it can't
+    // deliver, and never throws, so the background task can't crash here.
+    await flushPoints(taskId, points);
 
-  // Same positions, no extra GPS: has the member reached the job site? Prompts
-  // them to mark Arrived, which is the step that's easy to forget and expensive
-  // to forget — see route-arrival.ts.
-  await checkArrival(points);
-});
+    // Same positions, no extra GPS: has the member reached the job site? Prompts
+    // them to mark Arrived, which is the step that's easy to forget and expensive
+    // to forget — see route-arrival.ts.
+    await checkArrival(points);
+  },
+);
 
 /**
  * Start recording the member's route for a task. Idempotent — if already

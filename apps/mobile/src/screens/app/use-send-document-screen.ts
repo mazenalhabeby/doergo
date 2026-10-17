@@ -13,6 +13,7 @@ import { classifyDocument, type DocumentClassification } from '@hbcfield/shared/
 import { useOffline } from '../../offline/offline-context';
 import { createFromPhone } from '../../offline/actions/queued-create';
 import { uuidv7 } from '../../offline/ids';
+import { caught } from '../../lib/caught';
 
 /**
  * Send a page in and let somebody responsible decide.
@@ -90,12 +91,19 @@ export function useSendDocumentScreen() {
 
   const discardShot = useCallback(() => {
     if (!shot) return;
-    try { new FsFile(shot.uri).delete(); } catch { /* already gone */ }
+    try {
+      new FsFile(shot.uri).delete();
+    } catch {
+      /* already gone */
+    }
     setShot(null);
   }, [shot]);
 
-  const named = !!(fields.registration?.trim() || fields.vin?.trim() ||
-    (fields.manufacturer?.trim() && fields.model?.trim()));
+  const named = !!(
+    fields.registration?.trim() ||
+    fields.vin?.trim() ||
+    (fields.manufacturer?.trim() && fields.model?.trim())
+  );
 
   const send = useCallback(async () => {
     if (!named) return;
@@ -112,7 +120,9 @@ export function useSendDocumentScreen() {
         const id = uuidv7();
         if (shot) await offline.files.keep({ id, kind: 'document', mime: shot.mime, uri: shot.uri });
         const { outcome } = await createFromPhone(offline.engine, {
-          op: 'proposal.raise', id, lane: 'proposal:new',
+          op: 'proposal.raise',
+          id,
+          lane: 'proposal:new',
           body: {
             fields: cleanFields,
             ...(verdict?.signals ? { signals: verdict.signals } : {}),
@@ -128,7 +138,11 @@ export function useSendDocumentScreen() {
           );
           return;
         }
-        toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('sendDoc.sent', 'Sent — somebody will confirm it.'));
+        toast.success(
+          outcome.kind === 'queued'
+            ? t('offline.savedForLater')
+            : t('sendDoc.sent', 'Sent — somebody will confirm it.'),
+        );
         discardShot();
         router.back();
         return;
@@ -171,8 +185,8 @@ export function useSendDocumentScreen() {
       toast.success(t('sendDoc.sent', 'Sent — somebody will confirm it.'));
       discardShot();
       router.back();
-    } catch (e: any) {
-      toast.error(e?.message || t('sendDoc.sendFailed', 'Could not send it'));
+    } catch (e: unknown) {
+      toast.error(caught(e).message || t('sendDoc.sendFailed', 'Could not send it'));
     } finally {
       setSending(false);
     }

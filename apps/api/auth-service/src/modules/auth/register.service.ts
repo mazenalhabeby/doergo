@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { seedDefaultWorkflow } from '../../common/seed-default-workflow';
 import * as bcrypt from 'bcryptjs';
 import { BillingTrialService } from './../billing/billing-trial.service';
+import { permissionColumns, NEW_ACCOUNT_USER_SELECT } from '../../common/records/permission-columns';
 
 /** Opening an account: a new organization owner, or a person with no organization yet. */
 @Injectable()
@@ -14,7 +15,6 @@ export class RegisterService {
     private readonly prisma: PrismaService,
     private readonly trials: BillingTrialService,
   ) {}
-
 
   async register(data: {
     email: string;
@@ -85,11 +85,7 @@ export class RegisterService {
               failedLoginAttempts: 0,
               lockedUntil: null,
 
-              canCreateTasks: defaultPerms.canCreateTasks,
-              taskCreationScope: defaultPerms.taskCreationScope,
-              canViewAllTasks: defaultPerms.canViewAllTasks,
-              canAssignTasks: defaultPerms.canAssignTasks,
-              canManageUsers: defaultPerms.canManageUsers,
+              ...permissionColumns(defaultPerms),
             },
             select: {
               id: true,
@@ -125,9 +121,7 @@ export class RegisterService {
           try {
             await this.trials.startTrial(result.organizationId);
           } catch (e) {
-            this.logger.warn(
-              `startTrial failed for org ${result.organizationId}: ${(e as Error).message}`,
-            );
+            this.logger.warn(`startTrial failed for org ${result.organizationId}: ${(e as Error).message}`);
           }
         }
 
@@ -144,27 +138,9 @@ export class RegisterService {
             onboardingCompleted: false,
             failedLoginAttempts: 0,
             lockedUntil: null,
-            canCreateTasks: defaultPerms.canCreateTasks,
-            taskCreationScope: defaultPerms.taskCreationScope,
-            canViewAllTasks: defaultPerms.canViewAllTasks,
-            canAssignTasks: defaultPerms.canAssignTasks,
-            canManageUsers: defaultPerms.canManageUsers,
+            ...permissionColumns(defaultPerms),
           },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            role: true,
-            organizationId: true,
-            onboardingCompleted: true,
-            canCreateTasks: true,
-            taskCreationScope: true,
-            canViewAllTasks: true,
-            canAssignTasks: true,
-            canManageUsers: true,
-            createdAt: true,
-          },
+          select: { ...NEW_ACCOUNT_USER_SELECT, createdAt: true },
         });
 
         return { success: true, data: user };

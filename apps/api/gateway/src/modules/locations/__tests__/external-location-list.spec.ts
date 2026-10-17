@@ -1,5 +1,6 @@
 import { locationListScope, shapeLocationList } from '../locations.controller';
 
+import { fakeUser } from '../../../common/testing/fake-request';
 /*
   GET /locations: an external member whose Access Profile said "all" (or who
   carried the org-wide canViewAllTasks column) fell back to the organization's
@@ -20,15 +21,20 @@ describe('GET /locations for an external member', () => {
   });
 
   it('staff keep the rule they had', () => {
-    expect(locationListScope({ id: 'u1', role: 'EMPLOYEE', canViewAllTasks: true })).toBe('all');
-    expect(locationListScope({ id: 'u1', role: 'EMPLOYEE', enabledModules: { spaceScope: 'own' } })).toBe('own');
+    expect(locationListScope(fakeUser({ id: 'u1', role: 'EMPLOYEE', canViewAllTasks: true }))).toBe('all');
+    expect(locationListScope(fakeUser({ id: 'u1', role: 'EMPLOYEE', enabledModules: { spaceScope: 'own' } }))).toBe(
+      'own',
+    );
   });
 
   it('never carries a rate or a cost to them; staff rows unchanged', () => {
-    const res = { data: [{ id: 's1', name: 'Site', billableRateCents: 5000, costRateCents: 3000 }], meta: { total: 1 } };
+    const res = {
+      data: [{ id: 's1', name: 'Site', billableRateCents: 5000, costRateCents: 3000 }],
+      meta: { total: 1 },
+    };
     const out: any = shapeLocationList(res, ext());
     expect(out.data[0]).toEqual({ id: 's1', name: 'Site' });
     expect(out.meta).toEqual({ total: 1 });
-    expect(shapeLocationList(res, { id: 'u1', role: 'EMPLOYEE' })).toBe(res);
+    expect(shapeLocationList(res, fakeUser({ id: 'u1', role: 'EMPLOYEE' }))).toBe(res);
   });
 });

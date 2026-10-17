@@ -78,7 +78,7 @@ export class ShiftReminderSweepService {
       ── The automatic clock: still inside after the end ──
       For a member it is on for, the phone asks the person itself (offline), so
       the server sends no "forgot to clock out?" nudges: it tells the LEADER once,
-      at the planned end + `leaderAfterMinutes`, through the same routing as any
+      at the planned end + `leaderAfterMinutes`, through the same routing
       escalation (workspace → the member's watchers → nobody). Due early (an
       approved extra-time round re-arms the ordinary reminder) → re-armed for
       that moment. One query for the whole batch.

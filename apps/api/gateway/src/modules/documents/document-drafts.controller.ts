@@ -9,6 +9,8 @@ import { documentActor, requestContext } from './documents.actor';
 import { PresignOwnUploadDto, ReadOwnUploadDto, SubmitOwnDocumentDto, PublishBatchDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /** /documents — a member supplying their own documents, and the office's batch drafts. */
 @ApiTags('documents')
 @ApiBearerAuth()
@@ -33,7 +35,7 @@ export class DocumentDraftsController {
   @Post('mine/upload-url')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'A link to upload one of your own documents to' })
-  async presignOwnUpload(@CurrentUser() user: CurrentUserData, @Body() body: PresignOwnUploadDto) {
+  async presignOwnUpload(@CurrentUser() user: SessionUser, @Body() body: PresignOwnUploadDto) {
     return this.documents.presignOwnUpload({ actor: documentActor(user), ...body });
   }
 
@@ -42,14 +44,18 @@ export class DocumentDraftsController {
   // attempt; this bound is for something that is not a person.
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'What is on the document you just uploaded — files nothing' })
-  async readOwnUpload(@CurrentUser() user: CurrentUserData, @Body() body: ReadOwnUploadDto) {
+  async readOwnUpload(@CurrentUser() user: SessionUser, @Body() body: ReadOwnUploadDto) {
     return this.documents.readOwnUpload({ actor: documentActor(user), ...body });
   }
 
   @Post('mine')
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'File your uploaded document for review' })
-  async submitOwnDocument(@CurrentUser() user: CurrentUserData, @Body() body: SubmitOwnDocumentDto, @Req() req: any) {
+  async submitOwnDocument(
+    @CurrentUser() user: SessionUser,
+    @Body() body: SubmitOwnDocumentDto,
+    @Req() req: AuthedRequest,
+  ) {
     return this.documents.submitOwnDocument({
       actor: documentActor(user),
       ...body,
@@ -62,21 +68,21 @@ export class DocumentDraftsController {
   @Get('match-candidates')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Members a batch can be matched against' })
-  async matchCandidates(@CurrentUser() user: CurrentUserData) {
+  async matchCandidates(@CurrentUser() user: SessionUser) {
     return this.documents.matchCandidates({ actor: documentActor(user) });
   }
 
   @Get('drafts')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Documents staged but not yet released' })
-  async listDrafts(@CurrentUser() user: CurrentUserData) {
+  async listDrafts(@CurrentUser() user: SessionUser) {
     return this.documents.listDrafts({ actor: documentActor(user) });
   }
 
   @Post('publish')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Release a staged batch — all or nothing' })
-  async publishBatch(@CurrentUser() user: CurrentUserData, @Body() body: PublishBatchDto, @Req() req: any) {
+  async publishBatch(@CurrentUser() user: SessionUser, @Body() body: PublishBatchDto, @Req() req: AuthedRequest) {
     return this.documents.publishBatch({
       actor: documentActor(user),
       documentIds: body.documentIds,
@@ -88,7 +94,7 @@ export class DocumentDraftsController {
   @Delete('drafts/:id')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Throw away a staged document' })
-  async discardDraft(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async discardDraft(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     return this.documents.discardDraft({ actor: documentActor(user), documentId: id });
   }
 }

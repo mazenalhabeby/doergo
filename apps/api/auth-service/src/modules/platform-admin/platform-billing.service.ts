@@ -45,14 +45,14 @@ export class PlatformBillingService {
         subscription: { select: { stripeSubscriptionId: true } },
       },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
 
     if (modeRequiresBillingEmail(data.mode) && !(org.billingEmail || org.email)) {
       return {
         success: false,
         statusCode: 400,
         message: 'Set a billing email on this organization before invoicing it — there is nowhere to send the invoice.',
-      } as any;
+      };
     }
 
     // 1–365: a term of zero is due immediately (which is not an invoice) and a
@@ -83,7 +83,7 @@ export class PlatformBillingService {
             'This organization has no card on file, so charging automatically would ' +
             'fail at the next invoice. Ask an admin to add one from Billing → Payment ' +
             '& invoices first.',
-        } as any;
+        };
       }
     }
 
@@ -96,7 +96,7 @@ export class PlatformBillingService {
           success: false,
           statusCode: 502,
           message: `Stripe refused the change: ${e instanceof Error ? e.message : 'unknown error'}`,
-        } as any;
+        };
       }
     }
 
@@ -140,10 +140,10 @@ export class PlatformBillingService {
       where: { id: data.organizationId },
       select: { id: true, name: true, agreedMonthlyCents: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
 
     const parsed = validateAgreedPrice(data);
-    if (!parsed.ok) return { success: false, statusCode: 400, message: parsed.message } as any;
+    if (!parsed.ok) return { success: false, statusCode: 400, message: parsed.message };
 
     /*
       The list price AT THIS MOMENT, stored with the deal.
@@ -213,7 +213,7 @@ export class PlatformBillingService {
       where: { id: data.organizationId },
       select: { id: true, name: true, agreedMonthlyCents: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     if (org.agreedMonthlyCents == null) return success({ id: org.id, agreedMonthlyCents: null });
 
     await this.prisma.organization.update({

@@ -11,6 +11,7 @@ import {
   Attachment,
 } from './shift-issues-helpers';
 import { ShiftIssuesBase } from './shift-issues.base';
+import type { Prisma, ShiftIssueStatus, ShiftIssueSeverity } from '@prisma/client';
 
 /**
  * Shift Issues (blockers). A member reports a problem during a shift; the
@@ -36,7 +37,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
   }) {
     const title = (data.title ?? '').trim();
     if (!title) throw new BadRequestException('A short title is required');
-    const severity = SEVERITIES.includes(data.severity ?? '') ? (data.severity as any) : 'MEDIUM';
+    const severity = SEVERITIES.includes(data.severity ?? '') ? (data.severity as ShiftIssueSeverity) : 'MEDIUM';
 
     if (data.id) {
       const prior = await this.prisma.shiftIssue.findUnique({ where: { id: data.id }, include: { events: true } });
@@ -87,7 +88,7 @@ export class ShiftIssuesService extends ShiftIssuesBase {
             body: data.description?.slice(0, BODY_MAX) ?? null,
             // Photos on the report are uploaded AFTER create (the S3 key needs the
             // issue id) and posted as the reporter's first message.
-            attachments: [] as any,
+            attachments: [],
           },
         },
       },
@@ -118,9 +119,9 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     status?: string;
     scope?: string;
   }) {
-    const openish = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'];
-    const where: any = { organizationId: data.organizationId };
-    if (data.status && data.status !== 'all') where.status = data.status;
+    const openish: ShiftIssueStatus[] = ['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS'];
+    const where: Prisma.ShiftIssueWhereInput = { organizationId: data.organizationId };
+    if (data.status && data.status !== 'all') where.status = data.status as ShiftIssueStatus;
     else if (data.scope === 'open') where.status = { in: openish };
 
     /*

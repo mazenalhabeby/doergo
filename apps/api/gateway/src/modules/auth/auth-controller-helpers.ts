@@ -24,8 +24,15 @@ function setRefreshCookie(res: Response, refreshToken: string): void {
  * token in SecureStore. So the default is "not a browser".
  */
 export function isBrowserClient(req: Request, body?: { client?: string } | null): boolean {
-  const header = String(req.headers['x-client-platform'] ?? '').toLowerCase().trim();
-  return header === 'web' || String(body?.client ?? '').toLowerCase().trim() === 'web';
+  const header = String(req.headers['x-client-platform'] ?? '')
+    .toLowerCase()
+    .trim();
+  return (
+    header === 'web' ||
+    String(body?.client ?? '')
+      .toLowerCase()
+      .trim() === 'web'
+  );
 }
 
 /**
@@ -36,7 +43,10 @@ export function isBrowserClient(req: Request, body?: { client?: string } | null)
  * well handed it to any script running on the page, which is exactly the XSS
  * the cookie exists to defeat: a durable credential, readable for 30 days.
  */
-export function withoutRefreshTokenForBrowser<T extends { data?: any } | null | undefined>(result: T, browser: boolean): T {
+export function withoutRefreshTokenForBrowser<T extends { data?: Record<string, unknown> } | null | undefined>(
+  result: T,
+  browser: boolean,
+): T {
   if (!browser || !result?.data || !('refreshToken' in result.data)) return result;
   const { refreshToken: _omit, ...data } = result.data;
   return { ...result, data } as T;

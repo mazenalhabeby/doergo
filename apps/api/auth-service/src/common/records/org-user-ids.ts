@@ -8,7 +8,7 @@
  * the cap is the caller's — the CRM has never capped, the portal caps at 20.
  */
 export async function keepOrgUserIds(
-  prisma: { user: { findMany(args: any): Promise<Array<{ id: string }>> } },
+  prisma: { user: { findMany(args: unknown): Promise<Array<{ id: string }>> } },
   ids: readonly unknown[] | null | undefined,
   organizationId: string,
   opts: { cap?: number } = {},

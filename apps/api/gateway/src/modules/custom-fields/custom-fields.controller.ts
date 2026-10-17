@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  Query,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Role } from '@hbcfield/shared';
 import { RequirePermission } from '../../common/decorators';
@@ -17,13 +7,11 @@ import { assertExternalMayWriteTask } from '../../common/external-task-write';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
-import {
-  CreateCustomFieldDto,
-  UpdateCustomFieldDto,
-  SetCustomFieldValuesDto,
-} from './dto';
+import { CreateCustomFieldDto, UpdateCustomFieldDto, SetCustomFieldValuesDto } from './dto';
 import { CustomFieldsService } from './custom-fields.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('custom-fields')
 @ApiBearerAuth()
 // Custom Fields is a per-space MODULE, not an org add-on (audit T-B1). Under
@@ -37,9 +25,9 @@ export class CustomFieldsController {
   @Get()
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List custom field definitions (optionally scoped to a Task Type)' })
-  async findAll(@Request() req: any, @Query('forWorkflow') forWorkflow?: string) {
+  async findAll(@Request() req: AuthedRequest, @Query('forWorkflow') forWorkflow?: string) {
     return this.customFieldsService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       forWorkflow,
     });
   }
@@ -47,35 +35,31 @@ export class CustomFieldsController {
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a custom field definition' })
-  async create(@Body() dto: CreateCustomFieldDto, @Request() req: any) {
+  async create(@Body() dto: CreateCustomFieldDto, @Request() req: AuthedRequest) {
     return this.customFieldsService.create({
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update a custom field definition' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateCustomFieldDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateCustomFieldDto, @Request() req: AuthedRequest) {
     return this.customFieldsService.update({
       id,
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a custom field definition' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.customFieldsService.remove({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }
@@ -93,14 +77,14 @@ export class TaskCustomFieldsController {
    * this, the values on any task in the organization were readable and
    * writable by any member who knew its id.
    */
-  private taskCaller(req: any) {
+  private taskCaller(req: AuthedRequest) {
     return taskActor(req);
   }
 
   @Get(':id/custom-fields')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: "Get a task's custom field values" })
-  async getTaskValues(@Param('id') taskId: string, @Request() req: any) {
+  async getTaskValues(@Param('id') taskId: string, @Request() req: AuthedRequest) {
     return this.customFieldsService.getTaskValues({
       ...this.taskCaller(req),
       taskId,
@@ -113,7 +97,7 @@ export class TaskCustomFieldsController {
   async setTaskValues(
     @Param('id') taskId: string,
     @Body() dto: SetCustomFieldValuesDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     // An external member fills fields only on a job they raised.
     await assertExternalMayWriteTask(req, taskId, (data) => this.customFieldsService.findTask(data));

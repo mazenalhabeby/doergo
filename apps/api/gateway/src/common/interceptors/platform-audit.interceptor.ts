@@ -5,11 +5,15 @@ import { tap } from 'rxjs/operators';
 import { SERVICE_NAMES } from '@hbcfield/shared';
 import { auditAction, auditBody, declaredPath, resolveAuditRoute } from './audit-helpers';
 import { sendRpc, platformAuditWrite } from '@hbcfield/shared/microservices';
+import type { PlatformRequest, ServiceErrorLike } from '../request.types';
+
+/** A platform request as the audit sees it: the static-key guard may have marked it. */
+type PlatformAuditRequest = PlatformRequest & { platformKeyVerified?: boolean };
 
 const MUTATING = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
 /** The agent name a static-key caller declares (scripts, the blog tool). Never trusted for access. */
-export function staticKeyAgent(req: any): string | null {
+export function staticKeyAgent(req: PlatformAuditRequest | undefined): string | null {
   const raw = req?.headers?.['x-support-agent'] ?? req?.headers?.['x-platform-agent'];
   return typeof raw === 'string' && raw.trim() ? raw.trim().slice(0, 80) : null;
 }
@@ -21,7 +25,7 @@ export function staticKeyAgent(req: any): string | null {
  *   STATIC_KEY  — the shared PLATFORM_ADMIN_KEY matched (PlatformAdminGuard set `platformKeyVerified`)
  *   ANONYMOUS   — neither: a sign-in attempt, or a refused key
  */
-export function platformActor(req: any): {
+export function platformActor(req: PlatformAuditRequest | undefined): {
   actorType: 'STAFF' | 'STATIC_KEY' | 'ANONYMOUS';
   actorId: string | null;
   actorLabel: string | null;
@@ -39,9 +43,9 @@ export function platformActor(req: any): {
  * `/platform/orgs/:id/...` route, else an `organizationId` in the body (support
  * pins, the static-key add-on grant).
  */
-export function platformTargetOrg(normalized: string, resourceId: string | undefined, body: any): string | null {
+export function platformTargetOrg(normalized: string, resourceId: string | undefined, body: unknown): string | null {
   if (normalized.startsWith('/platform/orgs/:id') && resourceId) return resourceId;
-  const fromBody = body?.organizationId;
+  const fromBody = (body as { organizationId?: unknown } | undefined)?.organizationId;
   return typeof fromBody === 'string' && fromBody ? fromBody.slice(0, 64) : null;
 }
 
@@ -83,7 +87,7 @@ export class PlatformAuditInterceptor implements NestInterceptor {
   }
 
   /** Build the row (exported shape for tests via `buildRow`). */
-  buildRow(req: any, ok: boolean, err: any, declared: string | null) {
+  buildRow(req: PlatformAuditRequest, ok: boolean, err: unknown, declared: string | null) {
     const method: string = String(req.method || '').toUpperCase();
     const actor = platformActor(req);
     if (!platformShouldRecord(method, actor.actorType)) return null;
@@ -92,7 +96,8 @@ export class PlatformAuditInterceptor implements NestInterceptor {
     const body = auditBody(method, normalized, req.body);
     return {
       ...actor,
-      ipAddress: req.ip || req.headers?.['x-forwarded-for'] || null,
+      // Node joins a repeated x-forwarded-for into one string.
+      ipAddress: req.ip || (req.headers?.['x-forwarded-for'] as string | undefined) || null,
       userAgent: req.headers?.['user-agent'] || null,
       method,
       route: normalized,
@@ -100,12 +105,14 @@ export class PlatformAuditInterceptor implements NestInterceptor {
       targetOrganizationId: platformTargetOrg(normalized, resourceId, req.body),
       summary: body === undefined ? undefined : { body },
       ok,
-      statusCode: ok ? (req.res?.statusCode ?? 200) : err?.status || err?.statusCode || 500,
-      error: ok ? null : String(err?.message ?? 'error').slice(0, 500),
+      statusCode: ok
+        ? (req.res?.statusCode ?? 200)
+        : (err as ServiceErrorLike)?.status || (err as ServiceErrorLike)?.statusCode || 500,
+      error: ok ? null : String((err as ServiceErrorLike)?.message ?? 'error').slice(0, 500),
     };
   }
 
-  private record(req: any, ok: boolean, err: any, declared: string | null): void {
+  private record(req: PlatformAuditRequest, ok: boolean, err: unknown, declared: string | null): void {
     try {
       const row = this.buildRow(req, ok, err, declared);
       if (!row) return;

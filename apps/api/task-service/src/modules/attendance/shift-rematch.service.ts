@@ -7,6 +7,7 @@ import { CountedTimeService } from './counted-time.service';
 import { BreakRulesService } from './break-rules.service';
 import { approvalFor } from './attendance-occurrence';
 import { emitEvent, attendanceChangedEvent } from '@hbcfield/shared/microservices';
+import type { Prisma } from '@prisma/client';
 
 /** Which entries a rota change can reach. Always built on the SERVER from the row just written. */
 export interface RematchScope {
@@ -51,6 +52,13 @@ const DAY_MS = 86_400_000;
  * changes; if it does, it goes back to Pending with a note, because a figure a
  * person signed off must never change underneath them.
  */
+/** What the re-match reads of an unscheduled entry. */
+const REMATCH_ENTRY_INCLUDE = {
+  location: { select: { id: true, timezone: true, workModel: true, lat: true, lng: true } },
+  shift: { select: { name: true } },
+} as const;
+type RematchEntry = Prisma.TimeEntryGetPayload<{ include: typeof REMATCH_ENTRY_INCLUDE }>;
+
 @Injectable()
 export class ShiftRematchService implements OnModuleDestroy {
   private readonly logger = new Logger(ShiftRematchService.name);
@@ -112,10 +120,7 @@ export class ShiftRematchService implements OnModuleDestroy {
       },
       orderBy: { clockInAt: 'asc' },
       take: MAX_ENTRIES,
-      include: {
-        location: { select: { id: true, timezone: true, workModel: true, lat: true, lng: true } },
-        shift: { select: { name: true } },
-      },
+      include: REMATCH_ENTRY_INCLUDE,
     });
     if (entries.length === 0) return 0;
 
@@ -144,7 +149,7 @@ export class ShiftRematchService implements OnModuleDestroy {
     return matched;
   }
 
-  private async rematchOne(entry: any, actorId: string | null): Promise<boolean> {
+  private async rematchOne(entry: RematchEntry, actorId: string | null): Promise<boolean> {
     if (!entry.location) return false;
     const resolved = await this.shiftResolver.resolveForClockIn({
       userId: entry.userId,
@@ -223,7 +228,12 @@ export class ShiftRematchService implements OnModuleDestroy {
         flagReasons: flags,
         ...(counted ?? {}),
         ...(open ? { nextRemindAt: resolved.nextRemindAt } : {}),
-        ...(restPlan ? { breakPlan: restPlan.breakPlan as any, nextBreakRemindAt: restPlan.nextBreakRemindAt } : {}),
+        ...(restPlan
+          ? {
+              breakPlan: restPlan.breakPlan as unknown as Prisma.InputJsonValue,
+              nextBreakRemindAt: restPlan.nextBreakRemindAt,
+            }
+          : {}),
         ...approval,
       },
     });

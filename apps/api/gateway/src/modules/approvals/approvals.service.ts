@@ -34,6 +34,8 @@ import {
   whyCallerDecides,
 } from './approvals-helpers';
 
+import type { SessionUser } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 export { type ApprovalCaller, firstStepOf, mayDecide, whyCallerDecides } from './approvals-helpers';
 
 /**
@@ -74,14 +76,21 @@ export class ApprovalsService {
     const holds = (kind: ApprovalKind) => holdsAnywhere(user, APPROVAL_KIND_SPECS[kind].decideKey);
     const unavailable: ApprovalKind[] = [];
     let directory: Promise<Row[]> | null = null;
-    const spaces = () => (directory ??= get('/locations?kind=all&limit=200').then(rows).catch(() => []));
+    const spaces = () =>
+      (directory ??= get('/locations?kind=all&limit=200')
+        .then(rows)
+        .catch(() => []));
 
     const sources: Array<[ApprovalKind, () => Promise<ApprovalItem[]>]> = [];
     const add = (kind: ApprovalKind, read: () => Promise<ApprovalItem[]>) => {
       if (holds(kind)) sources.push([kind, read]);
     };
-    add('hours', async () => rows(await get('/attendance/approvals/pending?limit=100')).map((r) => toApproval.hours(r, ctx)));
-    add('away', async () => rows(await get('/attendance/excursions?status=pending')).map((r) => toApproval.away(r, ctx)));
+    add('hours', async () =>
+      rows(await get('/attendance/approvals/pending?limit=100')).map((r) => toApproval.hours(r, ctx)),
+    );
+    add('away', async () =>
+      rows(await get('/attendance/excursions?status=pending')).map((r) => toApproval.away(r, ctx)),
+    );
     // Undecided ones of the last month; a RUN of misses (same person, same shift) is one item — its newest.
     add('noShow', async () =>
       rows(await get('/attendance/no-shows?days=30&open=true'))
@@ -89,10 +98,15 @@ export class ApprovalsService {
         .map((r) => toApproval.noShow(r, ctx)),
     );
     if (holds('extraTime') || isAdmin(user) || user.canManageUsers === true) {
-      sources.push(['extraTime', async () => rows(await get('/attendance/extra-time/pending')).map((r) => toApproval.extraTime(r, ctx))]);
+      sources.push([
+        'extraTime',
+        async () => rows(await get('/attendance/extra-time/pending')).map((r) => toApproval.extraTime(r, ctx)),
+      ]);
     }
     add('overtime', async () => rows(await get('/overtime/pending-approvals')).map((r) => toApproval.overtime(r, ctx)));
-    add('request', async () => rows(await get('/employees/time-off?status=PENDING')).map((r) => toApproval.request(r, ctx)));
+    add('request', async () =>
+      rows(await get('/employees/time-off?status=PENDING')).map((r) => toApproval.request(r, ctx)),
+    );
     add('issue', async () => {
       const issues = rows(await get('/shift-issues?status=OPEN')).filter((r) => r.reportedById !== user.id);
       if (!issues.length) return [];
@@ -147,9 +161,13 @@ export class ApprovalsService {
     });
     // Never your own: every kind refuses deciding about yourself (SELF_DECISION), so it is not yours to see here.
     // Nor about the leader they stand in for: every kind refuses that (STAND_IN_FOR_SUBJECT).
-    const covering = new Set<string>(((user.access?.standingInFor ?? []) as Array<{ userId: string }>).map((f) => f.userId));
+    const covering = new Set<string>(
+      ((user.access?.standingInFor ?? []) as Array<{ userId: string }>).map((f) => f.userId),
+    );
     const decidable = sortApprovals(
-      dedupeApprovals(items).filter((i) => i.canDecide && i.subject.id !== user.id && !(i.subject.id && covering.has(i.subject.id))),
+      dedupeApprovals(items).filter(
+        (i) => i.canDecide && i.subject.id !== user.id && !(i.subject.id && covering.has(i.subject.id)),
+      ),
     );
     for (const i of decidable) i.why = whyCallerDecides(user, i);
     await this.attachSteps(user, decidable);
@@ -160,19 +178,32 @@ export class ApprovalsService {
   }
 
   /** Items half-way through an office rule's two approvals: who went first, who must finish. */
-  private async attachSteps(user: any, items: ApprovalItem[]): Promise<void> {
+  private async attachSteps(user: SessionUser, items: ApprovalItem[]): Promise<void> {
     if (!this.rules) return;
     const keyOf = (i: ApprovalItem) => (i.kind === 'overtime' ? String(i.data.timeEntryId ?? '') : i.id);
     const asked = items
       .map((i) => ({ i, kind: ruleKindOf(i.kind), itemId: keyOf(i) }))
-      .filter((x) => x.kind && x.itemId) as Array<{ i: ApprovalItem; kind: NonNullable<ReturnType<typeof ruleKindOf>>; itemId: string }>;
+      .filter((x) => x.kind && x.itemId) as Array<{
+      i: ApprovalItem;
+      kind: NonNullable<ReturnType<typeof ruleKindOf>>;
+      itemId: string;
+    }>;
     if (!asked.length) return;
     try {
-      const steps = await this.rules.steps(user.organizationId, asked.map(({ kind, itemId }) => ({ kind, itemId })));
+      const steps = await this.rules.steps(
+        callerOrgId(user),
+        asked.map(({ kind, itemId }) => ({ kind, itemId })),
+      );
       const byKey = new Map(steps.map((s) => [`${s.kind}:${s.itemId}`, s]));
       for (const { i, kind, itemId } of asked) {
         const s = byKey.get(`${kind}:${itemId}`);
-        if (s) i.step = { firstById: s.firstById, firstByName: s.firstByName, roleName: s.roleName, mine: s.firstById === user.id };
+        if (s)
+          i.step = {
+            firstById: s.firstById,
+            firstByName: s.firstByName,
+            roleName: s.roleName,
+            mine: s.firstById === user.id,
+          };
       }
     } catch (e) {
       // The inbox still shows; a step that cannot be read is refused at the button with its reason.
@@ -219,7 +250,11 @@ export class ApprovalsService {
     if (res.ok) {
       // Step 1 of an office rule's two approvals: approved by them, still waiting for the second person.
       const step = firstStepOf(body);
-      return { ok: true as const, status: res.status, ...(step ? { stage: 'FIRST_STEP' as const, waitingFor: step } : {}) };
+      return {
+        ok: true as const,
+        status: res.status,
+        ...(step ? { stage: 'FIRST_STEP' as const, waitingFor: step } : {}),
+      };
     }
     return {
       ok: false as const,

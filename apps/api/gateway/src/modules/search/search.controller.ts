@@ -11,6 +11,7 @@ import {
   searchPeopleAndCustomers,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * Unified global search for the web command palette. Fans out to the existing
  * per-entity search cmds in parallel, org-scoped, and returns a compact,
@@ -35,7 +36,7 @@ export class SearchController {
   @Get()
   @ApiOperation({ summary: 'Global search across tasks, people, spaces and customers' })
   @ApiQuery({ name: 'q', required: true, description: 'Search text (min 2 chars)' })
-  async search(@Query('q') q: string, @Request() req: any) {
+  async search(@Query('q') q: string, @Request() req: AuthedRequest) {
     // Cap length (defense against oversized/abusive patterns) and require >= 2 chars.
     const query = (q ?? '').trim().slice(0, 100);
     const empty = { tasks: [], members: [], spaces: [], customers: [] };

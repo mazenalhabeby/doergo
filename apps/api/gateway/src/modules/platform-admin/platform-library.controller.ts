@@ -91,13 +91,13 @@ export class PlatformLibraryController {
 
   @Post('templates')
   @RequirePlatformPerm('manageLibrary')
-  async create(@Body() body: any) {
+  async create(@Body() body: Omit<Parameters<PlatformLibraryService['upsert']>[0], 'id'>) {
     return this.unwrap(await this.svc.upsert({ ...body, id: undefined }));
   }
 
   @Patch('templates/:id')
   @RequirePlatformPerm('manageLibrary')
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(@Param('id') id: string, @Body() body: Omit<Parameters<PlatformLibraryService['upsert']>[0], 'id'>) {
     return this.unwrap(await this.svc.upsert({ ...body, id }));
   }
 

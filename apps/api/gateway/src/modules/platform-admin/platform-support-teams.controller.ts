@@ -17,6 +17,7 @@ import {
   platformSupportRuleDelete,
   platformSupportPinOrg,
   platformSupportTeamPinnedOrgs,
+  type RpcRequest,
 } from '@hbcfield/shared/microservices';
 
 /** Gateway → auth-service proxy for support-team administration. */
@@ -31,31 +32,31 @@ export class PlatformSupportTeamsService extends BaseGatewayService {
   listTeams() {
     return this.call(platformSupportTeamsList, {});
   }
-  createTeam(d: any) {
+  createTeam(d: RpcRequest<typeof platformSupportTeamCreate>) {
     return this.call(platformSupportTeamCreate, d);
   }
-  updateTeam(d: any) {
+  updateTeam(d: RpcRequest<typeof platformSupportTeamUpdate>) {
     return this.call(platformSupportTeamUpdate, d);
   }
-  deleteTeam(d: any) {
+  deleteTeam(d: RpcRequest<typeof platformSupportTeamDelete>) {
     return this.call(platformSupportTeamDelete, d);
   }
-  addMember(d: any) {
+  addMember(d: RpcRequest<typeof platformSupportTeamAddMember>) {
     return this.call(platformSupportTeamAddMember, d);
   }
-  removeMember(d: any) {
+  removeMember(d: RpcRequest<typeof platformSupportTeamRemoveMember>) {
     return this.call(platformSupportTeamRemoveMember, d);
   }
-  upsertRule(d: any) {
+  upsertRule(d: RpcRequest<typeof platformSupportRuleUpsert>) {
     return this.call(platformSupportRuleUpsert, d);
   }
-  deleteRule(d: any) {
+  deleteRule(d: RpcRequest<typeof platformSupportRuleDelete>) {
     return this.call(platformSupportRuleDelete, d);
   }
-  pinOrg(d: any) {
+  pinOrg(d: RpcRequest<typeof platformSupportPinOrg>) {
     return this.call(platformSupportPinOrg, d);
   }
-  pinnedOrgs(d: any) {
+  pinnedOrgs(d: RpcRequest<typeof platformSupportTeamPinnedOrgs>) {
     return this.call(platformSupportTeamPinnedOrgs, d);
   }
 }
@@ -71,7 +72,7 @@ export class PlatformSupportTeamsService extends BaseGatewayService {
 @RequirePlatformPerm('manageSupportTeams')
 export class PlatformSupportTeamsController {
   constructor(private readonly svc: PlatformSupportTeamsService) {}
-  private unwrap<T>(r: any): T {
+  private unwrap<T>(r: unknown): T {
     return assertServiceOk(r) as T;
   }
 
@@ -86,12 +87,15 @@ export class PlatformSupportTeamsController {
   }
 
   @Post()
-  async create(@Body() body: any) {
+  async create(@Body() body: RpcRequest<typeof platformSupportTeamCreate>) {
     return this.unwrap(await this.svc.createTeam(body));
   }
 
   @Put(':teamId')
-  async update(@Param('teamId') teamId: string, @Body() body: any) {
+  async update(
+    @Param('teamId') teamId: string,
+    @Body() body: Omit<RpcRequest<typeof platformSupportTeamUpdate>, 'teamId'>,
+  ) {
     return this.unwrap(await this.svc.updateTeam({ ...body, teamId }));
   }
 
@@ -114,7 +118,10 @@ export class PlatformSupportTeamsController {
   }
 
   @Post(':teamId/rules')
-  async upsertRule(@Param('teamId') teamId: string, @Body() body: any) {
+  async upsertRule(
+    @Param('teamId') teamId: string,
+    @Body() body: Omit<RpcRequest<typeof platformSupportRuleUpsert>, 'teamId'>,
+  ) {
     return this.unwrap(await this.svc.upsertRule({ ...body, teamId }));
   }
 

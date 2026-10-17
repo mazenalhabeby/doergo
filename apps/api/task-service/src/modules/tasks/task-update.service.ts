@@ -41,7 +41,7 @@ export class TaskUpdateService {
     } = data;
     // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw. (The write
     // below lists its fields explicitly too; this is the belt to that braces.)
-    for (const k of ['openRoleId', 'openSpots', 'openSpotsLeft', 'openedAt', 'openWave']) delete (updateData as any)[k];
+    for (const k of ['openRoleId', 'openSpots', 'openSpotsLeft', 'openedAt', 'openWave']) delete updateData[k];
 
     // Find existing task
     const existingTask = await this.prisma.task.findUnique({

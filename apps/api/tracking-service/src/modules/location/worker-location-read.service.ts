@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { success, buildDateRangeFilter, memberScopeFilter } from '@hbcfield/shared';
 import { WORKER_ROLES, taskInScope } from './location-helpers';
@@ -14,18 +15,17 @@ export class WorkerLocationReadService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getActiveWorkers(organizationId?: string, userIds?: string[], scopeSpaceIds?: string[]) {
-    const where: any = {
-      user: {
-        // Field workers across legacy + current role names (the live map must
-        // show EMPLOYEE workers, not just the dropped legacy TECHNICIAN role).
-        role: { in: [...WORKER_ROLES] },
-        isActive: true,
-        ...memberScopeFilter(scopeSpaceIds),
-      },
+    const userWhere: Prisma.UserWhereInput = {
+      // Field workers across legacy + current role names (the live map must
+      // show EMPLOYEE workers, not just the dropped legacy TECHNICIAN role).
+      role: { in: [...WORKER_ROLES] },
+      isActive: true,
+      ...(memberScopeFilter(scopeSpaceIds) as Prisma.UserWhereInput),
     };
+    const where: Prisma.WorkerLastLocationWhereInput = { user: userWhere };
 
     if (organizationId) {
-      where.user.organizationId = organizationId;
+      userWhere.organizationId = organizationId;
     }
     // Restrict to a specific roster (cross-org shared space: the owner-org
     // workers assigned to that space, resolved server-side and passed in).
@@ -157,10 +157,10 @@ export class WorkerLocationReadService {
     if (!dateFilter) {
       dateFilter = { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
     }
-    const where: any = { userId: workerId, timestamp: dateFilter };
+    const where: Prisma.LocationHistoryWhereInput = { userId: workerId, timestamp: dateFilter };
     // Scoped: only points of jobs in scope — not the drive to another
     // workspace's job, and not untagged points between jobs.
-    if (scopeSpaceIds !== undefined) where.task = taskInScope(scopeSpaceIds);
+    if (scopeSpaceIds !== undefined) where.task = taskInScope(scopeSpaceIds) as Prisma.TaskWhereInput;
 
     const history = await this.prisma.locationHistory.findMany({
       where,

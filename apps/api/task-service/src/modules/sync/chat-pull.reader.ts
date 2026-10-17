@@ -81,5 +81,5 @@ export class ChatPullReader {
 
 /** A file as the phone stores it: everything but a link. */
 function keysOnly(attachments: unknown) {
-  return Array.isArray(attachments) ? attachments.map(({ url: _url, fileUrl: _f, ...a }: any) => a) : [];
+  return Array.isArray(attachments) ? attachments.map(({ url: _url, fileUrl: _f, ...a }: Record<string, unknown>) => a) : [];
 }

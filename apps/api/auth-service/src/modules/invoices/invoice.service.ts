@@ -1,3 +1,4 @@
+import type { Prisma, InvoiceStatus } from '@prisma/client';
 import { Injectable, HttpStatus } from '@nestjs/common';
 import {
   paginated,
@@ -15,11 +16,16 @@ export class InvoiceService extends InvoiceServiceBase {
   /** `1 {currency} = rate {the organization's}` on a day, for the invoice screen. */
   async exchangeRate(data: { organizationId: string; currency: string; date?: string }) {
     const parsed = parseCurrency(data.currency);
-    if (!parsed.ok || !parsed.currency) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
+    if (!parsed.ok || !parsed.currency)
+      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: CURRENCY_INVALID_MESSAGE };
     const base = await this.organizationCurrency(data.organizationId);
-    const day = data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : await this.todayFor(data.organizationId);
+    const day =
+      data.date && /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? data.date : await this.todayFor(data.organizationId);
     const answer = await this.rates.rate(parsed.currency, base, day);
-    return { success: true, data: { from: parsed.currency, to: base, ...(answer ?? { rate: null, date: null, source: null }) } };
+    return {
+      success: true,
+      data: { from: parsed.currency, to: base, ...(answer ?? { rate: null, date: null, source: null }) },
+    };
   }
 
   async findAll(query: {
@@ -34,9 +40,10 @@ export class InvoiceService extends InvoiceServiceBase {
     const limit = Math.min(Math.max(1, query.limit ?? 20), 200);
     const skip = (page - 1) * limit;
 
-    const where: any = { organizationId: query.organizationId };
+    const where: Prisma.InvoiceWhereInput = { organizationId: query.organizationId };
     if (query.status) {
-      where.status = query.status;
+      // A filter from the query string; Prisma refuses a value that is not a status (as it always did).
+      where.status = query.status as InvoiceStatus;
     }
     if (query.spaceId) {
       where.spaceId = query.spaceId;
@@ -106,7 +113,10 @@ export class InvoiceService extends InvoiceServiceBase {
    * ⚠️ A failed lookup costs the language, never the invoice — the page falls
    * back to English rather than failing to open.
    */
-  private async documentLocale(invoice: { organizationId: string; clientEmail: string | null }): Promise<SupportedLocale> {
+  private async documentLocale(invoice: {
+    organizationId: string;
+    clientEmail: string | null;
+  }): Promise<SupportedLocale> {
     try {
       return await clientDocumentLocale(this.prisma, invoice.organizationId, { email: invoice.clientEmail });
     } catch (err) {

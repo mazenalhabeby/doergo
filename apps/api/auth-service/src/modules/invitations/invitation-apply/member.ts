@@ -1,5 +1,5 @@
 /** What an accepted invitation writes onto the member, and claiming the invitation once. */
-import { Role as PrismaRole } from '@prisma/client';
+import { Role as PrismaRole, type TaskCreationScope } from '@prisma/client';
 import {
   DEFAULT_PERMISSIONS,
   Role,
@@ -8,6 +8,7 @@ import {
   getDefaultModules,
   type AccessPersisted,
 } from '@hbcfield/shared';
+import { permissionColumns } from '../../../common/records/permission-columns';
 
 /**
  * The member fields an invitation dictates — one mapping, two doors.
@@ -53,11 +54,7 @@ export function memberFieldsFromInvitation(
 
   const base: { role: PrismaRole } & Record<string, unknown> = {
     role: invitation.targetRole,
-    canCreateTasks: defaultPerms.canCreateTasks,
-    taskCreationScope: defaultPerms.taskCreationScope,
-    canViewAllTasks: defaultPerms.canViewAllTasks,
-    canAssignTasks: defaultPerms.canAssignTasks,
-    canManageUsers: defaultPerms.canManageUsers,
+    ...permissionColumns(defaultPerms),
   };
 
   if (isMember) {
@@ -73,11 +70,11 @@ export function memberFieldsFromInvitation(
       // employer's business, and a rota line for somebody who never appears
       // raises no-shows against a company that owes us no attendance.
       scheduleType: invitation.isExternal ? 'NONE' : invitation.scheduleType || 'NONE',
-      monthlyHourBudget: invitation.isExternal ? null : invitation.monthlyHourBudget ?? null,
+      monthlyHourBudget: invitation.isExternal ? null : (invitation.monthlyHourBudget ?? null),
       // Never an org-wide role for an external member — refused at invite time,
       // and forced null here so an invitation predating that rule, or edited
       // underneath it, cannot deliver one.
-      memberRoleId: invitation.isExternal ? null : invitation.memberRoleId ?? null,
+      memberRoleId: invitation.isExternal ? null : (invitation.memberRoleId ?? null),
       isExternal: invitation.isExternal,
     });
 
@@ -87,7 +84,8 @@ export function memberFieldsFromInvitation(
       Object.assign(base, {
         enabledModules: accessProfile.enabledModules,
         canCreateTasks: accessProfile.canCreateTasks,
-        taskCreationScope: accessProfile.taskCreationScope as any,
+        // normalizeAccessProfile keeps only NONE | SELF | SPACE | ORG here.
+        taskCreationScope: accessProfile.taskCreationScope as TaskCreationScope | null | undefined,
         canAssignTasks: accessProfile.canAssignTasks,
         canViewAllTasks: accessProfile.canViewAllTasks,
         canManageUsers: accessProfile.canManageUsers,
@@ -167,7 +165,7 @@ export class InvitationAlreadyClaimedError extends Error {
  * rolling back the account it had just made.
  */
 export async function claimInvitation(
-  tx: { invitation: { updateMany(args: any): Promise<{ count: number }> } },
+  tx: { invitation: { updateMany(args: unknown): Promise<{ count: number }> } },
   invitationId: string,
   acceptedById: string,
 ): Promise<void> {

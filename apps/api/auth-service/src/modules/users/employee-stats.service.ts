@@ -5,12 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 /** One member's numbers for their page: jobs, attendance, and recent activity. */
 @Injectable()
 export class EmployeeStatsService {
-
-
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
-
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * @param spaceIds Limit the count to these spaces. Undefined = org-wide, for
@@ -85,10 +80,7 @@ export class EmployeeStatsService {
         where: {
           assignedToId: employeeId,
           status: { in: [TaskStatus.COMPLETED, TaskStatus.CLOSED] },
-          OR: [
-            { dueDate: null },
-            { updatedAt: { lte: this.prisma.task.fields.dueDate } },
-          ],
+          OR: [{ dueDate: null }, { updatedAt: { lte: this.prisma.task.fields.dueDate } }],
         },
       });
     }
@@ -133,26 +125,19 @@ export class EmployeeStatsService {
     });
 
     // Filter week entries from month entries to avoid a second query
-    const weekEntries = monthEntries.filter(
-      (e) => new Date(e.clockInAt) >= weekStart,
-    );
+    const weekEntries = monthEntries.filter((e) => new Date(e.clockInAt) >= weekStart);
 
-    const weekHours =
-      weekEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
-    const monthHours =
-      monthEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
+    const weekHours = weekEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
+    const monthHours = monthEntries.reduce((sum, e) => sum + (e.totalMinutes || 0), 0) / 60;
 
-    const geofenceViolations = monthEntries.filter(
-      (e) => !e.clockInWithinGeofence,
-    ).length;
+    const geofenceViolations = monthEntries.filter((e) => !e.clockInWithinGeofence).length;
 
     return {
       totalHoursThisWeek: weekHours,
       totalHoursThisMonth: monthHours,
       shiftsThisWeek: weekEntries.length,
       shiftsThisMonth: monthEntries.length,
-      averageShiftHours:
-        monthEntries.length > 0 ? monthHours / monthEntries.length : 0,
+      averageShiftHours: monthEntries.length > 0 ? monthHours / monthEntries.length : 0,
       geofenceViolations,
       lateClockIns: 0,
     };
@@ -164,7 +149,7 @@ export class EmployeeStatsService {
    * the person's history at every other.
    */
   async getRecentActivityForEmployee(employeeId: string, spaceIds?: string[]) {
-    const activities: any[] = [];
+    const activities: { id: string; type: string; description: string; timestamp: string }[] = [];
 
     // Get recent task events
     const taskEvents = await this.prisma.taskEvent.findMany({
@@ -223,12 +208,7 @@ export class EmployeeStatsService {
     }
 
     // Sort by timestamp and take top 10
-    return activities
-      .sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      )
-      .slice(0, 10);
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
   }
 
   private mapEventTypeToActivityType(eventType: string): string {

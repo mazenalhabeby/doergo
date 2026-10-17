@@ -16,6 +16,7 @@ import {
   writeCreateAssignees,
 } from './task-create-steps';
 import { emitEvent, taskAssignedEvent, taskCreatedEvent } from '@hbcfield/shared/microservices';
+import type { Prisma } from '@prisma/client';
 
 /**
  * A task as a record: create it, edit it, delete it, and re-point a space's
@@ -62,7 +63,7 @@ export class TaskRecordsService {
     // not be created already assigned to someone who cannot see it.
     await this.assignment.assertAssigneesCanReceiveTasks(
       [data.assignedToId, ...assigneeIds],
-      (data as any).workflowId,
+      data.workflowId,
       data.organizationId,
     );
 
@@ -181,7 +182,7 @@ export class TaskRecordsService {
     emitEvent(this.notificationClient, taskCreatedEvent, task);
 
     // Opened to a role: the record, then the first wave (the free ones now).
-    if (openRole) await this.rolePool.afterOpened(task.id, data.userId, openRole, (task as any).openSpots ?? 1);
+    if (openRole) await this.rolePool.afterOpened(task.id, data.userId, openRole, task.openSpots ?? 1);
 
     this.support.invalidateStatusCountsCache(task.organizationId);
 
@@ -189,7 +190,11 @@ export class TaskRecordsService {
   }
 
   /** The CREATED record, and — when it was born assigned — the ASSIGNED record and the push. */
-  private async announceCreated(task: any, userId: string, assignedToId: string | null) {
+  private async announceCreated(
+    task: Prisma.TaskGetPayload<{ include: typeof TASK_CREATE_INCLUDE }>,
+    userId: string,
+    assignedToId: string | null,
+  ) {
     // Create task event
     await this.support.createTaskEvent(task.id, userId, TaskEventType.CREATED);
 

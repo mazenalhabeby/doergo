@@ -13,6 +13,7 @@ import {
 } from './dto';
 import { TasksControllerBase } from './tasks-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /tasks/:id — checklist items, subtasks and dependencies. */
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -38,7 +39,7 @@ export class TaskChecklistController extends TasksControllerBase {
   async addChecklistItem(
     @Param('id') id: string,
     @Body() addChecklistItemDto: AddChecklistItemDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.tasksQueueService.addChecklistItem({
       taskId: id,
@@ -54,7 +55,7 @@ export class TaskChecklistController extends TasksControllerBase {
   async reorderChecklist(
     @Param('id') id: string,
     @Body() reorderChecklistDto: ReorderChecklistDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.tasksQueueService.reorderChecklist({
       taskId: id,
@@ -71,7 +72,7 @@ export class TaskChecklistController extends TasksControllerBase {
     @Param('id') id: string,
     @Param('itemId') itemId: string,
     @Body() updateChecklistItemDto: UpdateChecklistItemDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.tasksQueueService.updateChecklistItem({
       taskId: id,
@@ -85,7 +86,7 @@ export class TaskChecklistController extends TasksControllerBase {
   @Delete(':id/checklist/:itemId')
   @DenyExternal()
   @ApiOperation({ summary: 'Delete a checklist item' })
-  async deleteChecklistItem(@Param('id') id: string, @Param('itemId') itemId: string, @Request() req: any) {
+  async deleteChecklistItem(@Param('id') id: string, @Param('itemId') itemId: string, @Request() req: AuthedRequest) {
     return this.tasksQueueService.deleteChecklistItem({
       taskId: id,
       itemId,
@@ -119,7 +120,7 @@ export class TaskChecklistController extends TasksControllerBase {
   */
   @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Create a subtask under a task' })
-  async createSubtask(@Param('id') id: string, @Body() createTaskDto: CreateTaskDto, @Request() req: any) {
+  async createSubtask(@Param('id') id: string, @Body() createTaskDto: CreateTaskDto, @Request() req: AuthedRequest) {
     return this.tasksQueueService.createSubtask({
       ...createTaskDto,
       parentId: id,
@@ -140,7 +141,7 @@ export class TaskChecklistController extends TasksControllerBase {
 
   @Get(':id/subtasks')
   @ApiOperation({ summary: 'Get subtasks of a task' })
-  async getSubtasks(@Param('id') id: string, @Request() req: any) {
+  async getSubtasks(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.tasksService.getSubtasks({
       taskId: id,
       ...taskActor(req),
@@ -159,7 +160,11 @@ export class TaskChecklistController extends TasksControllerBase {
   // migration onward (audit T-B1).
   @RequireModule('dependencies')
   @ApiOperation({ summary: 'Add a dependency to a task (this task becomes the successor)' })
-  async addDependency(@Param('id') id: string, @Body() createDependencyDto: CreateDependencyDto, @Request() req: any) {
+  async addDependency(
+    @Param('id') id: string,
+    @Body() createDependencyDto: CreateDependencyDto,
+    @Request() req: AuthedRequest,
+  ) {
     return this.tasksQueueService.addDependency({
       ...createDependencyDto,
       successorId: id,
@@ -179,7 +184,7 @@ export class TaskChecklistController extends TasksControllerBase {
   // migration onward (audit T-B1).
   @RequireModule('dependencies')
   @ApiOperation({ summary: 'Remove a dependency from a task' })
-  async removeDependency(@Param('id') _id: string, @Param('depId') depId: string, @Request() req: any) {
+  async removeDependency(@Param('id') _id: string, @Param('depId') depId: string, @Request() req: AuthedRequest) {
     return this.tasksQueueService.removeDependency({
       dependencyId: depId,
       userId: req.user.id,

@@ -8,6 +8,8 @@ import { SupportService } from './support.service';
 import { CreateTicketDto, AddMessageDto } from './dto';
 import type { SupportAttachmentMessage } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /*
   ⚠️ Contract mismatches, kept as they are (the handler declares narrower types than arrive):
   the DTO lets an attachment's `fileSize` be absent, and `page`/`limit` travel as the query's strings.
@@ -29,7 +31,7 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Support entitlements for the current org (SLA, live chat)' })
-  getConfig(@Req() req: any) {
+  getConfig(@Req() req: AuthedRequest) {
     // Support promises follow what the organization BOUGHT, not a rank.
     const addOns = (req.user.orgAddOns ?? []) as string[];
     return {
@@ -49,10 +51,10 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Open a support ticket' })
-  createTicket(@Body() dto: CreateTicketDto, @Req() req: any) {
+  createTicket(@Body() dto: CreateTicketDto, @Req() req: AuthedRequest) {
     return this.support.createTicket({
       id: dto.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       createdById: req.user.id,
       orgAddOns: req.user.orgAddOns ?? [],
       subject: dto.subject,
@@ -71,7 +73,7 @@ export class SupportController {
     @Query('status') status: string,
     @Query('page') page: string,
     @Query('limit') limit: string,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     return this.support.list({ createdById: req.user.id, status, page: wireNumber(page), limit: wireNumber(limit) });
   }
@@ -80,10 +82,10 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Get one of my tickets (thread)' })
-  getMine(@Param('id') id: string, @Req() req: any) {
+  getMine(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.support.thread({
       ticketId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       userId: req.user.id,
       asAgent: false,
     });
@@ -93,7 +95,7 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @ApiOperation({ summary: 'Reply to my ticket' })
-  reply(@Param('id') id: string, @Body() dto: AddMessageDto, @Req() req: any) {
+  reply(@Param('id') id: string, @Body() dto: AddMessageDto, @Req() req: AuthedRequest) {
     return this.support.addMessage({
       id: dto.id,
       ticketId: id,
@@ -101,7 +103,7 @@ export class SupportController {
       authorType: 'CUSTOMER',
       body: dto.body,
       attachments: wireAttachments(dto.attachments),
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       userId: req.user.id,
     });
   }
@@ -110,7 +112,7 @@ export class SupportController {
   @ApiBearerAuth()
   @Throttle({ default: { limit: 120, ttl: 60000 } })
   @ApiOperation({ summary: 'Mark my ticket read' })
-  readMine(@Param('id') id: string, @Req() req: any) {
+  readMine(@Param('id') id: string, @Req() req: AuthedRequest) {
     return this.support.markRead({ ticketId: id, reader: 'CUSTOMER', userId: req.user.id });
   }
 

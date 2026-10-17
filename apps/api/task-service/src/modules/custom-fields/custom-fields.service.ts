@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException, ConflictException } from '@nes
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService, type TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
+import type { Prisma, CustomFieldType } from '@prisma/client';
 
 @Injectable()
 export class CustomFieldsService {
@@ -27,7 +28,7 @@ export class CustomFieldsService {
     limit?: number;
     offset?: number;
   }) {
-    let where: any = { organizationId: data.organizationId };
+    let where: Prisma.CustomFieldDefinitionWhereInput = { organizationId: data.organizationId };
     if (data.forWorkflow === '__none__') {
       where = { organizationId: data.organizationId, isActive: true, workflowId: null };
     } else if (data.forWorkflow) {
@@ -53,7 +54,7 @@ export class CustomFieldsService {
     name: string;
     key: string;
     type: string;
-    options?: any;
+    options?: unknown;
     isRequired?: boolean;
     position?: number;
     /** Task Type this field belongs to; null/undefined → global (all tasks). */
@@ -107,13 +108,14 @@ export class CustomFieldsService {
         data: {
           name: data.name,
           key,
-          type: data.type as any,
-          options: data.options,
+          type: data.type as CustomFieldType,
+          // The options are stored as the request sent them (a DROPDOWN's list is checked above).
+          options: data.options as Prisma.InputJsonValue,
           isRequired: data.isRequired || false,
           position,
           workflowId,
           organizationId: data.organizationId } });
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'P2002') {
         throw new ConflictException(
           `A field named "${data.name}" already exists${workflowId ? ' for this task type' : ''}.`,
@@ -132,7 +134,7 @@ export class CustomFieldsService {
     id: string;
     organizationId: string;
     name?: string;
-    options?: any;
+    options?: unknown;
     isRequired?: boolean;
     position?: number;
     isActive?: boolean;
@@ -146,7 +148,7 @@ export class CustomFieldsService {
       where: { id: data.id },
       data: {
         ...(data.name !== undefined && { name: data.name }),
-        ...(data.options !== undefined && { options: data.options }),
+        ...(data.options !== undefined && { options: data.options as Prisma.InputJsonValue }),
         ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
         ...(data.position !== undefined && { position: data.position }),
         ...(data.isActive !== undefined && { isActive: data.isActive }) } });

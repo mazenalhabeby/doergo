@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, AssetStatus } from '@prisma/client';
 import { success, normalizeDetailRows, keepFieldsForKind, type HandoverPlan, assertFoundInOrg } from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
 import { AssetHoldersService, type HolderInput } from './asset-holders.service';
@@ -160,7 +160,7 @@ export class AssetUpdateService extends AssetsBase {
         ...(data.serialNumber !== undefined && { serialNumber: data.serialNumber }),
         ...(data.model !== undefined && { model: data.model }),
         ...(data.manufacturer !== undefined && { manufacturer: data.manufacturer }),
-        ...(data.status && { status: data.status as any }),
+        ...(data.status && { status: data.status as AssetStatus }),
         ...(data.installDate !== undefined && { installDate: data.installDate ? new Date(data.installDate) : null }),
         ...(data.warrantyExpiry !== undefined && { warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : null }),
         ...(data.locationAddress !== undefined && { locationAddress: data.locationAddress }),
@@ -204,7 +204,7 @@ export class AssetUpdateService extends AssetsBase {
       });
 
       if (holderRows) {
-        handover = await this.custody.apply(tx as any, {
+        handover = await this.custody.apply(tx, {
           assetId: data.id,
           organizationId: data.organizationId,
           actorId: data.userId,

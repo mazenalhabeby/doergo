@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Role } from '@hbcfield/shared';
 import type { TaskVisibilityFacts as SharedTaskVisibilityFacts } from '@hbcfield/shared/microservices';
 
@@ -12,7 +13,10 @@ export type TaskVisibilityFacts = SharedTaskVisibilityFacts;
  * matched a member on `assignedToId` alone while the list also matched
  * co-assignees. A phone's offline copy must be the same set the list shows.
  */
-export function buildTaskVisibilityWhere(opts: TaskVisibilityFacts): { organizationId: string; AND?: any[] } {
+export function buildTaskVisibilityWhere(opts: TaskVisibilityFacts): {
+  organizationId: string;
+  AND?: Prisma.TaskWhereInput[];
+} {
   const { userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds } = opts;
   if (userRole === Role.ADMIN || canViewAllTasks) {
     return { organizationId };

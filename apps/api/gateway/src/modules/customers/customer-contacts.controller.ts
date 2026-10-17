@@ -8,6 +8,8 @@ import {
   promoteCustomerContact,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * /customers/:id — contact people: who works at a company, which companies a
  * person contacts, attaching one, making one a client.
@@ -18,20 +20,20 @@ import {
 export class CustomerContactsController extends CustomersControllerBase {
   @Get(':id/contacts')
   @ApiOperation({ summary: 'Who works at this company' })
-  async listContacts(@Param('id') id: string, @Request() req: any) {
+  async listContacts(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(listCustomerContacts, {
       companyId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
 
   @Get(':id/companies')
   @ApiOperation({ summary: 'Which companies this person is a contact at' })
-  async listContactCompanies(@Param('id') id: string, @Request() req: any) {
+  async listContactCompanies(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(listCustomerContactCompanies, {
       personId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
@@ -47,7 +49,7 @@ export class CustomerContactsController extends CustomersControllerBase {
       role?: string;
       isPrimary?: boolean;
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.auth(addCustomerContact, {
       companyId: id,
@@ -55,17 +57,17 @@ export class CustomerContactsController extends CustomersControllerBase {
       person: body?.person,
       role: body?.role,
       isPrimary: body?.isPrimary,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }
 
   @Post(':id/promote')
   @ApiOperation({ summary: 'Make a contact person a client in their own right' })
-  async promoteContact(@Param('id') id: string, @Request() req: any) {
+  async promoteContact(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.auth(promoteCustomerContact, {
       personId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       caller: this.caller(req),
     });
   }

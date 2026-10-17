@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Header, HttpCode, NotFoundException, Post, Query, Request, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  HttpCode,
+  NotFoundException,
+  Post,
+  Query,
+  Request,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { safeEqual } from '@hbcfield/shared';
 import { Public, RequirePermission } from '../../common/decorators';
@@ -11,6 +22,8 @@ import { SyncMediaLinksDto, SyncPullQueryDto, SyncPushDto, SyncTelemetryDto } fr
 import { SyncPullGatewayService } from './sync-pull.gateway.service';
 import { SyncPushService } from './sync-push.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('sync')
 @ApiBearerAuth()
 @Controller('sync')
@@ -42,8 +55,11 @@ export class SyncController {
   // row, and each batch already bounds itself to 50 operations.
   @Throttle({ short: { limit: 5, ttl: 1000 }, medium: { limit: 20, ttl: 10_000 }, long: { limit: 60, ttl: 60_000 } })
   @ApiOperation({ summary: 'Apply queued offline operations' })
-  async push(@Body() dto: SyncPushDto, @Request() req: any) {
-    const response = await this.pushService.push({ headers: req.headers, ip: req.ip }, dto.operations as SyncOperation[]);
+  async push(@Body() dto: SyncPushDto, @Request() req: AuthedRequest) {
+    const response = await this.pushService.push(
+      { headers: req.headers, ip: req.ip },
+      dto.operations as SyncOperation[],
+    );
     void this.health.countResults(response.results);
     return response;
   }
@@ -57,7 +73,7 @@ export class SyncController {
    */
   @Get('pull')
   @ApiOperation({ summary: 'Changes since a cursor, per scope' })
-  async pull(@Query() query: SyncPullQueryDto, @Request() req: any) {
+  async pull(@Query() query: SyncPullQueryDto, @Request() req: AuthedRequest) {
     return this.pullService.pull({
       scope: query.scope,
       cursor: query.cursor ?? null,
@@ -71,8 +87,8 @@ export class SyncController {
   @HttpCode(204)
   @Throttle({ short: { limit: 2, ttl: 1000 }, medium: { limit: 5, ttl: 60_000 }, long: { limit: 30, ttl: 3_600_000 } })
   @ApiOperation({ summary: "Report this phone's sync queue health" })
-  async telemetry(@Body() dto: SyncTelemetryDto, @Request() req: any) {
-    await this.health.record({ userId: req.user.id, organizationId: req.user.organizationId }, dto);
+  async telemetry(@Body() dto: SyncTelemetryDto, @Request() req: AuthedRequest) {
+    await this.health.record({ userId: req.user.id, organizationId: callerOrgId(req.user) }, dto);
   }
 
   /**
@@ -85,8 +101,8 @@ export class SyncController {
   @Get('health')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: "Members' phone sync health (counts only)" })
-  async memberHealth(@Request() req: any) {
-    return this.health.forOrganization(req.user.organizationId);
+  async memberHealth(@Request() req: AuthedRequest) {
+    return this.health.forOrganization(callerOrgId(req.user));
   }
 
   /**
@@ -100,7 +116,7 @@ export class SyncController {
   @Get('metrics')
   @Header('Content-Type', 'text/plain; version=0.0.4')
   @ApiOperation({ summary: 'Offline sync metrics (Prometheus, token-protected)' })
-  async metrics(@Request() req: any) {
+  async metrics(@Request() req: AuthedRequest) {
     const expected = this.config.get<string>('METRICS_TOKEN');
     if (!expected) throw new NotFoundException();
     const given = String(req.headers?.authorization ?? '').replace(/^Bearer\s+/i, '');
@@ -112,7 +128,7 @@ export class SyncController {
   @Post('media-links')
   @HttpCode(200)
   @ApiOperation({ summary: 'Signed links for task photos, for offline viewing' })
-  async mediaLinks(@Body() dto: SyncMediaLinksDto, @Request() req: any) {
+  async mediaLinks(@Body() dto: SyncMediaLinksDto, @Request() req: AuthedRequest) {
     return this.pullService.mediaLinks({
       ids: dto.ids,
       ...taskActor(req),

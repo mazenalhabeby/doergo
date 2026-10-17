@@ -211,7 +211,7 @@ export class LegalEntitiesService {
 
   /** Is this id one of the organization's ACTIVE companies? Null and '' mean "not set" and pass. */
   async assertUsable(organizationId: string, id: string | null | undefined): Promise<Fail | null> {
-    const r = await usableLegalEntityId(this.prisma as any, organizationId, id);
+    const r = await usableLegalEntityId(this.prisma, organizationId, id);
     return r.ok ? null : fail(HttpStatus.BAD_REQUEST, COMPANY_UNKNOWN_MESSAGE, 'COMPANY_UNKNOWN');
   }
 

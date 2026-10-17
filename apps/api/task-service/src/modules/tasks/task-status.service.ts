@@ -242,7 +242,7 @@ export class TaskStatusService {
       Judged after every other gate and BEFORE anything is written: a refused
       form must leave the job exactly where it was.
     */
-    const submission: PreparedStepSubmission | null = await prepareStepSubmission(this.prisma as any, {
+    const submission: PreparedStepSubmission | null = await prepareStepSubmission(this.prisma, {
       task: { id: task.id },
       workflow: wf,
       statusKey: data.status,

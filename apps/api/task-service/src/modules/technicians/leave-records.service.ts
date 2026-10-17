@@ -5,6 +5,7 @@ import { leaveYearFor } from './leave-ledger.service';
 import { GetTimeOffDto } from './dto';
 import { SPACE_BRIEF } from './technicians-helpers';
 import { LeaveRecordsOrgBase } from './leave-records-org.base';
+import type { Prisma } from '@prisma/client';
 
 /** Leave as a record: entered by the office, listed, counted in working days, the balance. */
 @Injectable()
@@ -118,7 +119,7 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
       throw new NotFoundException('Employee not found in organization');
     }
 
-    const where: any = { technicianId };
+    const where: Prisma.TimeOffWhereInput = { technicianId };
     if (status) {
       where.status = status;
     }
@@ -163,7 +164,7 @@ export class LeaveRecordsService extends LeaveRecordsOrgBase {
       the rota permission held in a workspace reaches the people OF that workspace, not the org.
     */
     if (dto.callerId !== dto.technicianId) {
-      await assertMemberInScope(this.prisma as any, {
+      await assertMemberInScope(this.prisma, {
         userId: dto.technicianId,
         organizationId: dto.organizationId,
         scopeSpaceIds: dto.scopeSpaceIds,

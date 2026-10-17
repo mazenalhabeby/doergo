@@ -18,6 +18,7 @@ import {
   supportTicketCreatedEvent,
   supportTicketUpdatedEvent,
 } from '@hbcfield/shared/microservices';
+import type { SupportCategory, SupportChannel, Prisma, SupportMessage, SupportTicket } from '@prisma/client';
 
 @Injectable()
 export class SupportService extends SupportBase {
@@ -61,8 +62,8 @@ export class SupportService extends SupportBase {
         organizationId: data.organizationId,
         createdById: data.createdById,
         subject: data.subject.trim().slice(0, 200),
-        category: (data.category as any) ?? 'OTHER',
-        channel: (data.channel as any) ?? 'WEB',
+        category: (data.category as SupportCategory) ?? 'OTHER',
+        channel: (data.channel as SupportChannel) ?? 'WEB',
         status: 'OPEN',
         priority,
         // Kept as a record of what they had bought when the ticket was
@@ -77,7 +78,7 @@ export class SupportService extends SupportBase {
             authorId: data.createdById,
             authorType: 'CUSTOMER',
             body: data.body,
-            attachments: (data.attachments ?? []) as any,
+            attachments: (data.attachments ?? []),
           },
         },
       },
@@ -140,7 +141,7 @@ export class SupportService extends SupportBase {
 
     // Decide the ticket state transition BEFORE writing so message + ticket commit
     // together (a message must never persist with stale ticket status/timestamps).
-    const patch: Record<string, any> = {};
+    const patch: Record<string, unknown> = {};
     let firstAgentReply = false;
     if (!isInternal) {
       if (isAgent) {
@@ -157,7 +158,7 @@ export class SupportService extends SupportBase {
       }
     }
 
-    const writes: any[] = [
+    const writes: Prisma.PrismaPromise<unknown>[] = [
       this.prisma.supportMessage.create({
         data: {
           ...(data.id ? { id: data.id } : {}),
@@ -165,7 +166,7 @@ export class SupportService extends SupportBase {
           authorId: data.authorId,
           authorType: data.authorType,
           body: data.body,
-          attachments: (data.attachments ?? []) as any,
+          attachments: (data.attachments ?? []),
           isInternalNote: isInternal,
         },
       }),
@@ -174,8 +175,9 @@ export class SupportService extends SupportBase {
       writes.push(this.prisma.supportTicket.update({ where: { id: ticket.id }, data: patch }));
     }
     const results = await this.prisma.$transaction(writes);
-    const message = results[0];
-    const updated = Object.keys(patch).length ? results[results.length - 1] : ticket;
+    // The first write is the message; when the ticket changed, the last is the updated ticket.
+    const message = results[0] as SupportMessage;
+    const updated = Object.keys(patch).length ? (results[results.length - 1] as SupportTicket) : ticket;
 
     // First human reply landed — stop the breach clock (after the reply is committed).
     if (firstAgentReply) await this.cancelSlaJob(ticket.id);
@@ -201,7 +203,7 @@ export class SupportService extends SupportBase {
   // to clear. Reassigning the team moves the ticket between scoped queues.
   async assign(data: { ticketId: string; agentId?: string | null; teamId?: string | null; scope?: SupportAgentScope }) {
     await this.agentTicket(data.ticketId, data.scope);
-    const patch: Record<string, any> = {};
+    const patch: Record<string, unknown> = {};
     if ('agentId' in data) patch.assignedAgentId = data.agentId ?? null;
     if ('teamId' in data) patch.assignedTeamId = data.teamId ?? null;
     const ticket = await this.prisma.supportTicket.update({
@@ -215,7 +217,7 @@ export class SupportService extends SupportBase {
   async setStatus(data: { ticketId: string; status: SupportStatus; scope?: SupportAgentScope }) {
     await this.agentTicket(data.ticketId, data.scope);
     const now = new Date();
-    const extra: Record<string, any> = {};
+    const extra: Record<string, unknown> = {};
     if (data.status === 'RESOLVED') extra.resolvedAt = now;
     if (data.status === 'CLOSED') extra.closedAt = now;
     const ticket = await this.prisma.supportTicket.update({

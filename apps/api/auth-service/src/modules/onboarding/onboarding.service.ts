@@ -13,6 +13,8 @@ import {
   generateSecureCode,
 } from '@hbcfield/shared';
 import { BillingTrialService } from './../billing/billing-trial.service';
+import { orphanUser } from './orphan-user';
+import { permissionColumns, NEW_ACCOUNT_USER_SELECT } from '../../common/records/permission-columns';
 
 @Injectable()
 export class OnboardingService {
@@ -28,21 +30,13 @@ export class OnboardingService {
    * Path A: Create organization for an orphan user.
    * Creates org with join code, updates user to ADMIN with onboardingCompleted=true.
    */
-  async createOrganization(userId: string, data: { name: string; address?: string; industry?: string; firstSpaceName?: string }) {
+  async createOrganization(
+    userId: string,
+    data: { name: string; address?: string; industry?: string; firstSpaceName?: string },
+  ) {
     // Verify user exists and needs onboarding
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-
-    if (!user) {
-      return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'User not found' };
-    }
-
-    if (user.onboardingCompleted) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Onboarding already completed' };
-    }
-
-    if (user.organizationId) {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'User already belongs to an organization' };
-    }
+    const orphan = await orphanUser(this.prisma, userId);
+    if ('refusal' in orphan) return orphan.refusal;
 
     // Generate org join code
     const joinCode = generateSecureCode(ORG_CODE_LENGTH, ORG_CODE_CHARSET);
@@ -76,28 +70,9 @@ export class OnboardingService {
           role: 'ADMIN',
           onboardingCompleted: true,
 
-          canCreateTasks: defaultPerms.canCreateTasks,
-          taskCreationScope: defaultPerms.taskCreationScope,
-          canViewAllTasks: defaultPerms.canViewAllTasks,
-          canAssignTasks: defaultPerms.canAssignTasks,
-          canManageUsers: defaultPerms.canManageUsers,
+          ...permissionColumns(defaultPerms),
         },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          organizationId: true,
-          onboardingCompleted: true,
-
-          canCreateTasks: true,
-          taskCreationScope: true,
-          canViewAllTasks: true,
-          canAssignTasks: true,
-          canManageUsers: true,
-
-        },
+        select: NEW_ACCOUNT_USER_SELECT,
       });
 
       return { organization, user: updatedUser, joinCode };

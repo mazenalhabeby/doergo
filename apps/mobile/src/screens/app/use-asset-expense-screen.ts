@@ -6,6 +6,7 @@ import { assetsApi, uploadToPresignedUrl } from '../../lib/api';
 import { moneyToCents } from '@hbcfield/shared/client';
 import { submitExpenseFromPhone } from '../../offline/assets/expense-actions';
 import { useAssetExpenseScreenData } from './use-asset-expense-screen-data';
+import { caught } from '../../lib/caught';
 export { type Stage } from './use-asset-expense-screen-data';
 
 /** AssetExpenseScreen's state and handlers — everything before its markup, moved here unchanged. */
@@ -150,8 +151,8 @@ export function useAssetExpenseScreen() {
       discardShot();
       forgetHeldAssets(); // the profile's count and list read this again
       router.back();
-    } catch (e: any) {
-      toast.error(e?.message || t('expenses.sendFailed', 'Could not send it'));
+    } catch (e: unknown) {
+      toast.error(caught(e).message || t('expenses.sendFailed', 'Could not send it'));
     } finally {
       setSending(false);
     }

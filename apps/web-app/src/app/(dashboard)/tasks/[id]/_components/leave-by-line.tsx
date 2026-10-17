@@ -4,12 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Car } from "lucide-react"
 import { trackingApi, type Task } from "@/lib/api"
-import {
-  departureAdvice,
-  straightLineTravel,
-  haversineDistance,
-  needsTravelEstimate,
-} from "@hbcfield/shared/client"
+import { departureAdvice, straightLineTravel, haversineDistance, needsTravelEstimate } from "@hbcfield/shared/client"
 import { keys } from "@/lib/query-keys"
 import { dateLocale } from "@/lib/format-date"
 
@@ -33,7 +28,7 @@ import { dateLocale } from "@/lib/format-date"
 export function LeaveByLine({ task }: { task: Task }) {
   const { t } = useTranslation()
 
-  const wanted = needsTravelEstimate(task as any) && !!task.assignedToId
+  const wanted = needsTravelEstimate(task) && !!task.assignedToId
 
   const { data: where } = useQuery({
     queryKey: keys.taskExtras.workerLocation(task.assignedToId),
@@ -47,9 +42,7 @@ export function LeaveByLine({ task }: { task: Task }) {
 
   if (!wanted || !where?.lat || !where?.lng) return null
 
-  const travel = straightLineTravel(
-    haversineDistance(where.lat, where.lng, task.locationLat!, task.locationLng!),
-  )
+  const travel = straightLineTravel(haversineDistance(where.lat, where.lng, task.locationLat!, task.locationLng!))
   const advice = departureAdvice({
     now: new Date(),
     appointment: task.dueDate ? new Date(task.dueDate) : null,
@@ -61,7 +54,9 @@ export function LeaveByLine({ task }: { task: Task }) {
   const late = advice.state === "late"
 
   return (
-    <div className={`mt-0.5 flex items-center gap-1.5 text-[11px] ${late ? "text-destructive" : "text-muted-foreground"}`}>
+    <div
+      className={`mt-0.5 flex items-center gap-1.5 text-[11px] ${late ? "text-destructive" : "text-muted-foreground"}`}
+    >
       <Car className="size-3 shrink-0" />
       <span>
         {late

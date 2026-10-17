@@ -22,6 +22,8 @@ import {
   type RpcContract,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * Per-space B2C portal: configuration + unit/apartment catalog. The portal lives
  * IN the space (Portal.spaceId). A "unit" is the portal's entity — an apartment
@@ -60,10 +62,10 @@ export class SpacePortalController {
   @Get('portals')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "List the space's client portals (a space can run several)" })
-  async listPortals(@Param('spaceId') spaceId: string, @Request() req: any) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+  async listPortals(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalList, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
     });
@@ -79,11 +81,11 @@ export class SpacePortalController {
   async createPortal(
     @Param('spaceId') spaceId: string,
     @Body() body: { templateKey?: string; name?: string },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalCreateSpace, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       templateKey: body.templateKey,
       name: body.name,
@@ -93,21 +95,25 @@ export class SpacePortalController {
   @Get()
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "The space's portal config (entity type)" })
-  async get(@Param('spaceId') spaceId: string, @Request() req: any) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+  async get(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     // A reader must not create the (billed) portal by opening the page.
     const manage = scopeFor(req.user, 'canManagePortals');
     const mayCreate = manage === null || manage.includes(spaceId);
-    return this.auth(portalGetForSpace, { organizationId: req.user.organizationId, spaceId, mayCreate });
+    return this.auth(portalGetForSpace, { organizationId: callerOrgId(req.user), spaceId, mayCreate });
   }
 
   @Patch()
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: "Set the space portal's entity type" })
-  async update(@Param('spaceId') spaceId: string, @Body() body: { templateKey?: string }, @Request() req: any) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+  async update(
+    @Param('spaceId') spaceId: string,
+    @Body() body: { templateKey?: string },
+    @Request() req: AuthedRequest,
+  ) {
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalUpdateForSpace, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       templateKey: body.templateKey,
     });
@@ -116,9 +122,9 @@ export class SpacePortalController {
   // ── Unit / apartment catalog ──
   @Get('units')
   @RequirePermissionInSpace('canViewPortal')
-  async listUnits(@Param('spaceId') spaceId: string, @Request() req: any) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
-    return this.auth(portalListSpaceUnits, { organizationId: req.user.organizationId, spaceId });
+  async listUnits(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
+    return this.auth(portalListSpaceUnits, { organizationId: callerOrgId(req.user), spaceId });
   }
 
   @Post('units')
@@ -126,9 +132,9 @@ export class SpacePortalController {
   async addUnit(
     @Param('spaceId') spaceId: string,
     @Body() body: { name?: string; address?: string; lat?: number; lng?: number },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    const orgId = req.user.organizationId;
+    const orgId = callerOrgId(req.user);
     await this.requirePortalModule(spaceId, orgId);
     const portal: any = await this.auth(portalGetForSpace, { organizationId: orgId, spaceId });
     return this.auth(portalCreateUnit, {
@@ -148,10 +154,10 @@ export class SpacePortalController {
   async updateUnit(
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
-    @Body() body: any,
-    @Request() req: any,
+    @Body() body: Record<string, unknown>,
+    @Request() req: AuthedRequest,
   ) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     // Whitelist explicitly — never spread the untyped body (audit I-B1).
     //
     // This read `{ id, organizationId: req.user.organizationId, ...body }`: the
@@ -165,7 +171,7 @@ export class SpacePortalController {
     return this.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body),
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       actorId: req.user.id,
       scopeSpaceId: spaceId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -174,11 +180,11 @@ export class SpacePortalController {
 
   @Delete('units/:unitId')
   @RequirePermissionInSpace('canManagePortals')
-  async deleteUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
-    await this.requirePortalModule(spaceId, req.user.organizationId);
+  async deleteUnit(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
+    await this.requirePortalModule(spaceId, callerOrgId(req.user));
     return this.auth(portalDeleteUnit, {
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceId: spaceId,
     });
   }
@@ -190,9 +196,9 @@ export class SpacePortalController {
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
     @Body() body: { customerId: string },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    const orgId = req.user.organizationId;
+    const orgId = callerOrgId(req.user);
     await this.requirePortalModule(spaceId, orgId);
     // The unit must be THIS workspace's and the client in reach (scopeSpaceIds),
     // before anything is written.

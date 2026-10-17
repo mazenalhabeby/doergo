@@ -9,6 +9,7 @@ import {
 } from '@hbcfield/shared';
 import { tzFromCoords, spaceCurrency } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
+import type { SpaceKind } from '@prisma/client';
 
 @Injectable()
 export class LocationsService extends SpaceServiceBase {
@@ -83,7 +84,7 @@ export class LocationsService extends SpaceServiceBase {
         enabledModules: data.enabledModules ?? DEFAULT_ORG_MODULES,
         workflowId: data.workflowId ?? undefined,
         // Ownership kind + customer contact fields (only meaningful for CUSTOMER).
-        kind: (data.kind as any) ?? undefined,
+        kind: (data.kind as SpaceKind) ?? undefined,
         contactName: data.contactName ?? undefined,
         contactEmail: data.contactEmail ?? undefined,
         contactPhone: data.contactPhone ?? undefined,

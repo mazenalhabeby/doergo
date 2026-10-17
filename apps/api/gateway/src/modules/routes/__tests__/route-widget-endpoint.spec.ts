@@ -19,6 +19,7 @@ import { OptimizeRouteDto } from '../dto/optimize-route.dto';
 import { RoutesController } from '../routes.controller';
 import { RoutesService } from '../routes.service';
 
+import { fakeReq } from '../../../common/testing/fake-request';
 const START = { lat: 48.105, lng: 16.335 };
 const VIENNA = [
   { id: 'billa', lat: 48.2015, lng: 16.3905 },
@@ -26,7 +27,8 @@ const VIENNA = [
   { id: 'spar', lat: 48.1928, lng: 16.4122 },
   { id: 'rewe', lat: 48.079, lng: 16.316 },
 ];
-const many = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `s${i}`, lat: 48.1 + i / 1000, lng: 16.3 + i / 2000 }));
+const many = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({ id: `s${i}`, lat: 48.1 + i / 1000, lng: 16.3 + i / 2000 }));
 
 /** The gateway's own pipe options (main.ts). */
 async function errorsOf(body: unknown) {
@@ -37,7 +39,9 @@ async function errorsOf(body: unknown) {
 
 describe('route widget — the request body', () => {
   it('accepts what the phone sends', async () => {
-    expect(await errorsOf({ start: START, stops: VIENNA.map((s) => ({ ...s, label: s.id, address: 'Wien' })) })).toHaveLength(0);
+    expect(
+      await errorsOf({ start: START, stops: VIENNA.map((s) => ({ ...s, label: s.id, address: 'Wien' })) }),
+    ).toHaveLength(0);
   });
 
   it('refuses a request with no start (it was a 500)', async () => {
@@ -74,14 +78,16 @@ describe('route widget — the answer', () => {
   const key = process.env.GOOGLE_PLACES_API_KEY;
   afterEach(() => {
     fetchSpy.mockReset();
-    if (key === undefined) delete process.env.GOOGLE_PLACES_API_KEY; else process.env.GOOGLE_PLACES_API_KEY = key;
+    if (key === undefined) delete process.env.GOOGLE_PLACES_API_KEY;
+    else process.env.GOOGLE_PLACES_API_KEY = key;
   });
   afterAll(() => fetchSpy.mockRestore());
 
   async function service(googleKey?: string) {
     jest.resetModules();
     delete process.env.OSRM_URL;
-    if (googleKey) process.env.GOOGLE_PLACES_API_KEY = googleKey; else delete process.env.GOOGLE_PLACES_API_KEY;
+    if (googleKey) process.env.GOOGLE_PLACES_API_KEY = googleKey;
+    else delete process.env.GOOGLE_PLACES_API_KEY;
     const { RoutesService: S } = await import('../routes.service');
     return new S();
   }
@@ -127,15 +133,24 @@ describe('route widget — who may ask', () => {
 
   it.each([
     ['tracking in an assigned workspace', { spaceModules: ['tracking'] }, true],
-    ['tracking only org-wide, workspaces resolved without it', { spaceModules: ['crm'], orgModules: ['tracking'] }, false],
+    [
+      'tracking only org-wide, workspaces resolved without it',
+      { spaceModules: ['crm'], orgModules: ['tracking'] },
+      false,
+    ],
     ['an older session with no workspace list — the org list decides', { orgModules: ['tracking'] }, true],
     ['no tracking anywhere', { spaceModules: [], orgModules: [] }, false],
     ['no modules at all', {}, false],
   ])('%s', async (_n, user, allowed) => {
-    const call = () => ctl.optimize(body, { user });
+    const call = () => ctl.optimize(body, fakeReq({ user }));
     if (allowed) await expect(call()).resolves.toBeDefined();
     else {
-      try { await call(); throw new Error('allowed'); } catch (e: any) { expect(e.getStatus?.()).toBe(402); }
+      try {
+        await call();
+        throw new Error('allowed');
+      } catch (e: any) {
+        expect(e.getStatus?.()).toBe(402);
+      }
     }
   });
 });
@@ -147,7 +162,12 @@ describe('route widget — the throttle, on an app of its own', () => {
   class ThrottledRoutes {
     @Post('optimize')
     @Throttle({ default: { limit: 20, ttl: 60000 } })
-    optimize(@Body() dto: OptimizeRouteDto, @Request() req: any) { return new RoutesController({ optimize: async () => ({ order: dto.stops.map((s) => s.id) }) } as never).optimize(dto, req); }
+    optimize(@Body() dto: OptimizeRouteDto, @Request() req: any) {
+      return new RoutesController({ optimize: async () => ({ order: dto.stops.map((s) => s.id) }) } as never).optimize(
+        dto,
+        req,
+      );
+    }
   }
 
   beforeAll(async () => {
@@ -157,16 +177,30 @@ describe('route widget — the throttle, on an app of its own', () => {
       providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
     }).compile();
     app = mod.createNestApplication();
-    app.use((req: any, _res: unknown, next: () => void) => { req.user = { spaceModules: ['tracking'] }; next(); });
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } }));
+    app.use((req: any, _res: unknown, next: () => void) => {
+      req.user = { spaceModules: ['tracking'] };
+      next();
+    });
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+        transformOptions: { enableImplicitConversion: true },
+      }),
+    );
     await app.init();
   });
-  afterAll(async () => { await app?.close(); });
+  afterAll(async () => {
+    await app?.close();
+  });
 
   it('answers 20 plans a minute and refuses the 21st', async () => {
     const codes: number[] = [];
     for (let i = 0; i < 21; i++) {
-      codes.push((await request(app.getHttpServer()).post('/routes/optimize').send({ start: START, stops: VIENNA })).status);
+      codes.push(
+        (await request(app.getHttpServer()).post('/routes/optimize').send({ start: START, stops: VIENNA })).status,
+      );
     }
     expect(codes.slice(0, 20)).toEqual(Array(20).fill(201));
     expect(codes[20]).toBe(429);

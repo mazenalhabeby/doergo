@@ -6,6 +6,8 @@ import { assertExternalMayWriteTask } from '../../common/external-task-write';
 import { TasksQueueService } from './tasks.queue.service';
 import { TasksService } from './tasks.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /**
  * What every /tasks controller shares: its services, and the checks before a write
  * (fields the org bought, an external member's own jobs, assigning in a
@@ -25,7 +27,7 @@ export abstract class TasksControllerBase {
    * premium field the org's tier/modules don't entitle. DRY via isFeatureEntitled.
    */
   protected assertTaskFieldEntitlements(
-    user: any,
+    user: SessionUser,
     dto: { sprintId?: string; epicId?: string; phaseId?: string; storyPoints?: number },
   ) {
     const checks: Array<[unknown, string]> = [
@@ -55,12 +57,12 @@ export abstract class TasksControllerBase {
    * An external member writes (comment, attachment) only on a job they raised —
    * see `assertExternalMayWriteTask`. Internal callers pass with no lookup.
    */
-  protected assertExternalMayWrite(req: any, taskId: string, opts?: { attachmentId?: string }) {
+  protected assertExternalMayWrite(req: AuthedRequest, taskId: string, opts?: { attachmentId?: string }) {
     return assertExternalMayWriteTask(req, taskId, (data) => this.tasksService.findOne(data), opts);
   }
 
   /** May the caller assign work in this workspace? (org-wide, or a space grant there) */
-  protected assertMayAssignIn(req: any, spaceId?: string) {
+  protected assertMayAssignIn(req: AuthedRequest, spaceId?: string) {
     if (isAdmin(req.user) || req.user.canAssignTasks === true) return;
     if (spaceId && (scopeFor(req.user, 'canAssignTasks') ?? []).includes(spaceId)) return;
     throw new ForbiddenException('You do not have permission to assign work in this workspace');

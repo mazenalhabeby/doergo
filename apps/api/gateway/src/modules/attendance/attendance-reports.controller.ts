@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { RequirePermissionInSpace } from '../../common/decorators';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /attendance/reports — summary, week, month, CSV export. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -21,11 +23,11 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   async getAttendanceSummary(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
-    @Query('userId') userId?: string,
-    @Request() req?: any,
+    @Query('userId') userId: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.attendanceReports.getAttendanceSummary({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       startDate,
@@ -36,15 +38,20 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   @Get('reports/weekly')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get weekly attendance report' })
-  @ApiQuery({ name: 'weekStartDate', required: false, type: String, description: 'Week start date (defaults to current week)' })
+  @ApiQuery({
+    name: 'weekStartDate',
+    required: false,
+    type: String,
+    description: 'Week start date (defaults to current week)',
+  })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
   async getWeeklyReport(
-    @Query('weekStartDate') weekStartDate?: string,
-    @Query('userId') userId?: string,
-    @Request() req?: any,
+    @Query('weekStartDate') weekStartDate: string | undefined,
+    @Query('userId') userId: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.attendanceReports.getWeeklyReport({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       weekStartDate,
@@ -58,13 +65,13 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   @ApiQuery({ name: 'month', required: false, type: Number, description: 'Month 1-12 (defaults to current)' })
   @ApiQuery({ name: 'userId', required: false, type: String, description: 'Filter by specific user' })
   async getMonthlyReport(
-    @Query('year') year?: number,
-    @Query('month') month?: number,
-    @Query('userId') userId?: string,
-    @Request() req?: any,
+    @Query('year') year: number | undefined,
+    @Query('month') month: number | undefined,
+    @Query('userId') userId: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.attendanceReports.getMonthlyReport({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       userId,
       year: year ? Number(year) : undefined,
@@ -81,11 +88,11 @@ export class AttendanceReportsController extends AttendanceControllerBase {
   async exportToCSV(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
-    @Query('userId') userId?: string,
-    @Request() req?: any,
+    @Query('userId') userId: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.attendanceReports.exportToCSV({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
       startDate,
       endDate,

@@ -6,6 +6,7 @@ import {
   assertUsersInOrg,
   assertCustomerInOrg,
 } from '../../common/tenant-scope.util';
+import type { TaskPriority } from '@prisma/client';
 
 /**
  * What defining and running a repeat share: the frequency rules, the next run, the
@@ -162,7 +163,7 @@ export abstract class RecurringTasksBase {
       id: string;
       title: string;
       description: string | null;
-      priority: any;
+      priority: TaskPriority;
       spaceId: string | null;
       workflowId: string | null;
       customerId: string | null;
@@ -188,7 +189,7 @@ export abstract class RecurringTasksBase {
         title: template.title,
         description: template.description,
         priority: template.priority,
-        status: status as any,
+        status: status,
         spaceId: template.spaceId ?? null,
         workflowId: template.workflowId ?? null,
         // The client it repeats for, onto every task it makes. Without this a

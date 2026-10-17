@@ -6,6 +6,7 @@ import { DenyExternal } from '../../common/decorators/deny-external.decorator';
 import { RoutesService } from './routes.service';
 import { OptimizeRouteDto } from './dto/optimize-route.dto';
 
+import type { AuthedRequest } from '../../common/request.types';
 @ApiTags('routes')
 @Controller('routes')
 export class RoutesController {
@@ -30,7 +31,7 @@ export class RoutesController {
   @DenyExternal()
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Optimize a multi-stop visit route' })
-  optimize(@Body() dto: OptimizeRouteDto, @Request() req: any) {
+  optimize(@Body() dto: OptimizeRouteDto, @Request() req: AuthedRequest) {
     if (!moduleAnywhere(req.user, 'tracking')) {
       throw new HttpException(
         {

@@ -43,7 +43,7 @@ export class AppVersionInterceptor implements NestInterceptor {
 
   constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     try {
       const req = context.switchToHttp().getRequest();
       const version = req?.headers?.['x-app-version'];

@@ -16,6 +16,13 @@ import {
 } from '@hbcfield/shared';
 import { JobTimeService } from './handover/job-time.service';
 import { PERSON, HISTORY_PAGE, Person, personOf, iso } from './task-report-helpers';
+import type {
+  ReportTask,
+  ReportFileRow,
+  ReportChecklistRow,
+  ReportSubmissionRow,
+  ReportDetailRow,
+} from './task-report-helpers';
 import { TaskReportParties } from './task-report-parties';
 
 /**
@@ -80,7 +87,7 @@ export abstract class TaskReportSections extends TaskReportParties {
     });
   }
 
-  protected request(task: any, created: unknown): TaskReportRequest {
+  protected request(task: ReportTask, created: unknown): TaskReportRequest {
     const m = (created ?? {}) as { source?: string; templateId?: string; templateTitle?: string };
     const kind =
       task.source === 'CUSTOMER_PORTAL'
@@ -134,7 +141,7 @@ export abstract class TaskReportSections extends TaskReportParties {
     };
   }
 
-  protected checklistItem(i: any): TaskReportChecklistItem {
+  protected checklistItem(i: ReportChecklistRow): TaskReportChecklistItem {
     return {
       id: i.id,
       text: i.text,
@@ -151,11 +158,11 @@ export abstract class TaskReportSections extends TaskReportParties {
    * which are this job's own (it scopes the lookup to the task). A stored id
    * that names anything else is dropped from the value too, not just unlinked.
    */
-  protected stepAnswers(rows: any[]): TaskReportStepSubmission[] {
+  protected stepAnswers(rows: ReportSubmissionRow[]): TaskReportStepSubmission[] {
     return rows.map((r) => {
       const form = parseStoredStepForm(r.form);
       const answers = (r.answers ?? {}) as StepFormAnswers;
-      const files = (r.files ?? {}) as Record<string, any>;
+      const files = (r.files ?? {}) as Record<string, ReportFileRow>;
       const by = personOf(r.submittedBy);
       return {
         id: r.id,
@@ -183,9 +190,9 @@ export abstract class TaskReportSections extends TaskReportParties {
     });
   }
 
-  protected details(rows: any[]): TaskReportDetail[] {
+  protected details(rows: ReportDetailRow[]): TaskReportDetail[] {
     return rows
-      .filter((v) => typeof v.value === 'string' && v.value.trim() !== '')
+      .filter((v): v is ReportDetailRow & { value: string } => typeof v.value === 'string' && v.value.trim() !== '')
       .map((v) => ({
         id: v.definitionId,
         name: v.definition?.name ?? '',
@@ -196,7 +203,7 @@ export abstract class TaskReportSections extends TaskReportParties {
   }
 
   /** A signed file row, as the report shows it — never the stored provider URL or key. */
-  protected file(f: any, by: Person | null | undefined): TaskReportFile {
+  protected file(f: ReportFileRow, by: Person | null | undefined): TaskReportFile {
     return {
       id: f.id,
       fileName: f.fileName,

@@ -26,7 +26,7 @@ export abstract class CustomersServiceBase {
 
   /** A client's company: one of this organization's active companies, or null. Anything else is refused. */
   protected async clientCompany(organizationId: string, value: unknown): Promise<string | null | undefined> {
-    const r = await usableLegalEntityId(this.prisma as any, organizationId, value);
+    const r = await usableLegalEntityId(this.prisma, organizationId, value);
     if (!r.ok) throw new BadRequestException({ message: COMPANY_UNKNOWN_MESSAGE, code: 'COMPANY_UNKNOWN' });
     return r.id;
   }

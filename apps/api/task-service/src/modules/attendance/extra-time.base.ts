@@ -228,7 +228,7 @@ export abstract class ExtraTimeBase {
       where: { userId, spaceId, organizationId, role: { isActive: true } },
       include: { role: { select: { permissions: true } } },
     });
-    if ((assignment?.role?.permissions as any)?.canApproveOvertime === true) return true;
+    if ((assignment?.role?.permissions as { canApproveOvertime?: boolean } | null)?.canApproveOvertime === true) return true;
     // Standing in for a leader who approves overtime here (or everywhere) today.
     if (grantHolds(await standInGrant(this.prisma, userId, organizationId), 'canApproveOvertime', spaceId)) return true;
     // Org admins / user managers can always approve.

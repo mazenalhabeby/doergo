@@ -7,34 +7,15 @@ import { PortalServiceBase } from './portal-service.base';
 export class SpacePortalService extends PortalServiceBase {
   // Entity-type → label for the space's portal (what a "unit" is called there).
   private static readonly ENTITY_LABELS: Record<string, string> = {
-    rental: 'Apartment', logistics: 'Order', workplace: 'Workspace', custom: 'Unit',
+    rental: 'Apartment',
+    logistics: 'Order',
+    workplace: 'Workspace',
+    custom: 'Unit',
   };
 
   async createPortal(data: { organizationId: string; templateKey?: string; name?: string }) {
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
-    const portal = await this.prisma.portal.create({
-      data: {
-        organizationId: data.organizationId,
-        name: data.name?.trim() || template.vertical,
-        templateKey: template.key,
-        entityLabel: template.entityLabel,
-        contactLabel: template.contactLabel,
-        accent: template.accent,
-        features: template.features as unknown as object,
-      },
-    });
-    await this.prisma.intakeCategory.createMany({
-      data: templateToIntakeCategories(template).map((r) => ({
-        ...r,
-        organizationId: data.organizationId,
-        portalId: portal.id,
-      })),
-    });
-    // Org flag = "has at least one portal" (kept for guards/back-compat).
-    await this.prisma.organization.update({
-      where: { id: data.organizationId },
-      data: { customerPortalEnabled: true },
-    });
+    const portal = await this.seedPortal(data.organizationId, template, data.name);
     return this.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
@@ -47,30 +28,7 @@ export class SpacePortalService extends PortalServiceBase {
     const template = PORTAL_TEMPLATES[data.templateKey || 'rental'] || PORTAL_TEMPLATES.rental;
     // Apartment entity ⇒ the Assets module must be on (fail before creating).
     if (template.key === 'rental') await this.assertApartmentsModule(data.organizationId, data.spaceId);
-    const portal = await this.prisma.portal.create({
-      data: {
-        organizationId: data.organizationId,
-        spaceId: data.spaceId,
-        name: data.name?.trim() || template.vertical,
-        templateKey: template.key,
-        entityLabel: template.entityLabel,
-        contactLabel: template.contactLabel,
-        accent: template.accent,
-        features: template.features as unknown as object,
-      },
-    });
-    await this.prisma.intakeCategory.createMany({
-      data: templateToIntakeCategories(template).map((r) => ({
-        ...r,
-        organizationId: data.organizationId,
-        portalId: portal.id,
-        spaceId: data.spaceId,
-      })),
-    });
-    await this.prisma.organization.update({
-      where: { id: data.organizationId },
-      data: { customerPortalEnabled: true },
-    });
+    const portal = await this.seedPortal(data.organizationId, template, data.name, data.spaceId);
     return this.getPortal({ id: portal.id, organizationId: data.organizationId });
   }
 
@@ -85,30 +43,7 @@ export class SpacePortalService extends PortalServiceBase {
     });
     if (existing) return { data: { id: existing.id } };
     const template = PORTAL_TEMPLATES.rental;
-    const portal = await this.prisma.portal.create({
-      data: {
-        organizationId: data.organizationId,
-        name: data.name?.trim() || template.vertical,
-        templateKey: template.key,
-        entityLabel: template.entityLabel,
-        contactLabel: template.contactLabel,
-        accent: template.accent,
-        features: template.features as unknown as object,
-        spaceId: data.spaceId,
-      },
-    });
-    await this.prisma.intakeCategory.createMany({
-      data: templateToIntakeCategories(template).map((r) => ({
-        ...r,
-        organizationId: data.organizationId,
-        portalId: portal.id,
-        spaceId: data.spaceId,
-      })),
-    });
-    await this.prisma.organization.update({
-      where: { id: data.organizationId },
-      data: { customerPortalEnabled: true },
-    });
+    const portal = await this.seedPortal(data.organizationId, template, data.name, data.spaceId);
     return { data: { id: portal.id } };
   }
 
@@ -160,5 +95,43 @@ export class SpacePortalService extends PortalServiceBase {
       take: 500,
     });
     return { data: await this.withResidentUsers(rows) };
+  }
+
+  /**
+   * A portal from a template: the portal row, its intake categories, and the
+   * organization flag "has at least one portal" (kept for guards/back-compat).
+   * `spaceId` ties the portal and its categories to a workspace.
+   */
+  private async seedPortal(
+    organizationId: string,
+    template: (typeof PORTAL_TEMPLATES)[string],
+    name: string | undefined,
+    spaceId?: string,
+  ) {
+    const portal = await this.prisma.portal.create({
+      data: {
+        organizationId,
+        ...(spaceId !== undefined ? { spaceId } : {}),
+        name: name?.trim() || template.vertical,
+        templateKey: template.key,
+        entityLabel: template.entityLabel,
+        contactLabel: template.contactLabel,
+        accent: template.accent,
+        features: template.features as unknown as object,
+      },
+    });
+    await this.prisma.intakeCategory.createMany({
+      data: templateToIntakeCategories(template).map((r) => ({
+        ...r,
+        organizationId,
+        portalId: portal.id,
+        ...(spaceId !== undefined ? { spaceId } : {}),
+      })),
+    });
+    await this.prisma.organization.update({
+      where: { id: organizationId },
+      data: { customerPortalEnabled: true },
+    });
+    return portal;
   }
 }

@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { SessionEvents } from '../../common/session-events/session-events.service';
 import { memberScopeFilter, Role, TaskStatus, personSearchOr } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
@@ -12,8 +13,6 @@ import { isOnline } from './users-common';
  */
 @Injectable()
 export class EmployeesService {
-
-
   constructor(
     private readonly prisma: PrismaService,
     // Optional: socket revocation is best effort, and unit tests that do not
@@ -38,7 +37,7 @@ export class EmployeesService {
     } = dto;
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.UserWhereInput = {
       role: Role.EMPLOYEE,
       organizationId,
       /*
@@ -78,7 +77,7 @@ export class EmployeesService {
     if (nameMatch) where.OR = nameMatch;
 
     // Build orderBy
-    let orderBy: any;
+    let orderBy: Prisma.UserOrderByWithRelationInput | Prisma.UserOrderByWithRelationInput[];
     switch (sortBy) {
       case 'name':
         orderBy = [{ firstName: sortOrder }, { lastName: sortOrder }];

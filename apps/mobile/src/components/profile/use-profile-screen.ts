@@ -22,6 +22,7 @@ import { useTourScroll } from '../tour';
 import { useShift } from '../../offline/attendance/use-shift';
 import { offersClockInPick } from '@hbcfield/shared/client';
 import { hasUnsentLocalWork } from '../../lib/session/end-session';
+import { caught } from '../../lib/caught';
 
 /** ProfileScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useProfileScreen() {
@@ -56,24 +57,30 @@ export function useProfileScreen() {
   const tourScroll = useTourScroll();
 
   // Availability control (mirrors the web navbar toggle): Available / Busy / Away.
-  const handleSetPresence = useCallback(async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
-    setSavingPresence(true);
-    try {
-      if (offline.engine && user?.id) {
-        const outcome = await updateOwnProfile(offline.engine, user.id, { presence });
-        if (outcome.kind === 'refused') throw new Error(outcome.message);
-        patchUser({ presence });
-        if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-        return;
+  const handleSetPresence = useCallback(
+    async (presence: 'AVAILABLE' | 'BUSY' | 'AWAY') => {
+      setSavingPresence(true);
+      try {
+        if (offline.engine && user?.id) {
+          const outcome = await updateOwnProfile(offline.engine, user.id, { presence });
+          if (outcome.kind === 'refused') throw new Error(outcome.message);
+          patchUser({ presence });
+          if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
+          return;
+        }
+        await userApi.setPresence(presence);
+        await refreshUser();
+      } catch (err) {
+        toast.error(
+          t('common.error'),
+          err instanceof Error ? err.message : t('profile.status.failed', 'Could not update status'),
+        );
+      } finally {
+        setSavingPresence(false);
       }
-      await userApi.setPresence(presence);
-      await refreshUser();
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('profile.status.failed', 'Could not update status'));
-    } finally {
-      setSavingPresence(false);
-    }
-  }, [refreshUser, toast, t, offline.engine, user?.id, patchUser]);
+    },
+    [refreshUser, toast, t, offline.engine, user?.id, patchUser],
+  );
   const hasRefreshed = useRef(false);
   const lastFetchTimeRef = useRef(0);
 
@@ -86,7 +93,7 @@ export function useProfileScreen() {
         refreshUser();
       }
       hasRefreshed.current = true;
-    }, [refreshUser])
+    }, [refreshUser]),
   );
 
   const isTechnician = user?.role === Role.EMPLOYEE;
@@ -109,37 +116,52 @@ export function useProfileScreen() {
       if (!change) void refreshUser();
     });
   }, [offline.avatar, refreshUser]);
-  const shownAvatarUri = pendingAvatar?.kind === 'photo' ? pendingAvatar.uri
-    : pendingAvatar?.kind === 'remove' ? null
-    : user?.avatarUrl ? resolveMediaUrl(user.avatarUrl) : null;
+  const shownAvatarUri =
+    pendingAvatar?.kind === 'photo'
+      ? pendingAvatar.uri
+      : pendingAvatar?.kind === 'remove'
+        ? null
+        : user?.avatarUrl
+          ? resolveMediaUrl(user.avatarUrl)
+          : null;
   const hasAvatar = !!shownAvatarUri;
 
   // ---- avatar upload flow ------------------------------------------------
 
-  const uploadAvatar = useCallback(async (uri: string, fileName: string, mimeType: string) => {
-    setAvatarLoading(true);
-    try {
-      if (offline.avatar && offline.files) {
-        // Kept on the phone first, so it survives no signal and a closed app.
-        const fileId = uuidv7();
-        const kept = await offline.files.keep({ id: fileId, kind: 'photo', mime: mimeType, uri });
-        await offline.avatar.set({ kind: 'photo', fileId, uri: kept.path, mime: kept.mime, fileName, at: Date.now() });
-        const result = await offline.avatar.flush();
-        if (result === 'waiting') toast.info(t('offline.savedForLater'));
-        if (result === 'refused') toast.error(t('profile.uploadFailed'), t('profile.couldNotUpload'));
-        return;
-      }
-      // Upload the avatar (multipart) — returns the new avatar URL
-      await avatarApi.upload(uri, fileName, mimeType);
+  const uploadAvatar = useCallback(
+    async (uri: string, fileName: string, mimeType: string) => {
+      setAvatarLoading(true);
+      try {
+        if (offline.avatar && offline.files) {
+          // Kept on the phone first, so it survives no signal and a closed app.
+          const fileId = uuidv7();
+          const kept = await offline.files.keep({ id: fileId, kind: 'photo', mime: mimeType, uri });
+          await offline.avatar.set({
+            kind: 'photo',
+            fileId,
+            uri: kept.path,
+            mime: kept.mime,
+            fileName,
+            at: Date.now(),
+          });
+          const result = await offline.avatar.flush();
+          if (result === 'waiting') toast.info(t('offline.savedForLater'));
+          if (result === 'refused') toast.error(t('profile.uploadFailed'), t('profile.couldNotUpload'));
+          return;
+        }
+        // Upload the avatar (multipart) — returns the new avatar URL
+        await avatarApi.upload(uri, fileName, mimeType);
 
-      // Refresh user data
-      await refreshUser();
-    } catch (err: any) {
-      toast.error(t('profile.uploadFailed'), err?.message || t('profile.couldNotUpload'));
-    } finally {
-      setAvatarLoading(false);
-    }
-  }, [refreshUser, offline.avatar, offline.files]);
+        // Refresh user data
+        await refreshUser();
+      } catch (err: unknown) {
+        toast.error(t('profile.uploadFailed'), caught(err).message || t('profile.couldNotUpload'));
+      } finally {
+        setAvatarLoading(false);
+      }
+    },
+    [refreshUser, offline.avatar, offline.files],
+  );
 
   const handleRemoveAvatar = useCallback(async () => {
     setAvatarLoading(true);
@@ -152,8 +174,8 @@ export function useProfileScreen() {
       }
       await avatarApi.remove();
       await refreshUser();
-    } catch (err: any) {
-      toast.error(t('common.error'), err?.message || t('profile.couldNotRemove'));
+    } catch (err: unknown) {
+      toast.error(t('common.error'), caught(err).message || t('profile.couldNotRemove'));
     } finally {
       setAvatarLoading(false);
     }
@@ -164,17 +186,20 @@ export function useProfileScreen() {
   const handleAvatarPress = useCallback(() => {
     if (!avatarLoading) setPhotoMenu(true);
   }, [avatarLoading]);
-  const pickPhoto = useCallback(async (from: 'camera' | 'gallery') => {
-    setPhotoMenu(false);
-    if (from === 'camera') {
-      const photo = await takePhoto('avatar');
-      if (photo) void uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
-    } else {
-      const images = await pickFromGallery('avatar');
-      const img = images[0];
-      if (img) void uploadAvatar(img.uri, img.fileName, img.mimeType);
-    }
-  }, [takePhoto, pickFromGallery, uploadAvatar]);
+  const pickPhoto = useCallback(
+    async (from: 'camera' | 'gallery') => {
+      setPhotoMenu(false);
+      if (from === 'camera') {
+        const photo = await takePhoto('avatar');
+        if (photo) void uploadAvatar(photo.uri, photo.fileName, photo.mimeType);
+      } else {
+        const images = await pickFromGallery('avatar');
+        const img = images[0];
+        if (img) void uploadAvatar(img.uri, img.fileName, img.mimeType);
+      }
+    },
+    [takePhoto, pickFromGallery, uploadAvatar],
+  );
 
   // ---- handlers -----------------------------------------------------------
 

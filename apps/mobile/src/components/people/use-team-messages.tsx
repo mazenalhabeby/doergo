@@ -13,6 +13,10 @@ import {
   chatWhenShort,
   type ChatConversation,
   type ChatSearchHit,
+  type ChatMessageEvent,
+  type ChatMessageChangedEvent,
+  type ChatReadEvent,
+  type ChatConversationUpdatedEvent,
 } from '@hbcfield/shared/client';
 import { useAuth } from '../../contexts/auth-context';
 import { useTheme } from '../../contexts/theme-context';
@@ -138,7 +142,7 @@ export function useTeamMessages({ header }: Pick<{ header: React.ReactElement },
   useEffect(() => {
     if (!isAuthenticated) return;
     const offs = [
-      subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+      subscribe(SocketEvents.CHAT_MESSAGE, (d: ChatMessageEvent) => {
         const current = listRef.current;
         if (!current) return;
         const next = applyToConversations(current, d ?? {}, { meId, openId: null });
@@ -146,14 +150,14 @@ export function useTeamMessages({ header }: Pick<{ header: React.ReactElement },
         else reload.call();
       }),
       // Read anywhere — including by me on another screen or device: the row's number goes too.
-      subscribe(SocketEvents.CHAT_READ, (d: any) => {
+      subscribe(SocketEvents.CHAT_READ, (d: ChatReadEvent) => {
         if (d?.conversationId) setList((l) => (l ? applyRead(l, d, meId) : l));
       }),
-      subscribe(SocketEvents.CHAT_MESSAGE_CHANGED, (d: any) => {
+      subscribe(SocketEvents.CHAT_MESSAGE_CHANGED, (d: ChatMessageChangedEvent) => {
         if (d?.message?.id) setList((l) => (l ? applyChangedToConversations(l, d) : l));
       }),
       // A group changed or a job's crew moved: the list is read again; taken out, the row goes now.
-      subscribe(SocketEvents.CHAT_CONVERSATION_UPDATED, (d: any) => {
+      subscribe(SocketEvents.CHAT_CONVERSATION_UPDATED, (d: ChatConversationUpdatedEvent) => {
         if (d?.removed && d?.conversationId) setList((l) => (l ? l.filter((x) => x.id !== d.conversationId) : l));
         reload.call();
       }),

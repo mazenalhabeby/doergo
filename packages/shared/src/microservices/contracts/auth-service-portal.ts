@@ -61,7 +61,7 @@ export const portalCreateUnit = rpc<{
   contactName?: string | null;
   contactPhone?: string | null;
   residentUserId?: string | null;
-  details?: any[];
+  details?: unknown[];
   actorId?: string;
   crmCaller?: CrmCaller; // set by the CRM address routes only — see assertClientAddressesEditable
   scopeSpaceIds?: SpaceScopeIds; // set by the portal routes — the workspaces the caller runs portals in
@@ -81,7 +81,7 @@ export const portalUpdateUnit = rpc<{
   contactName?: string | null;
   contactPhone?: string | null;
   residentUserId?: string | null;
-  details?: any[];
+  details?: unknown[];
   actorId?: string;
   scopeCustomerId?: string; // when set, the unit must belong to this customer
   /**

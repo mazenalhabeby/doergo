@@ -24,7 +24,7 @@ export class ChatSearchService {
   async search(data: { userId: string; organizationId: string; q: unknown; before?: string; limit?: unknown }) {
     const query = chatSearchQuery(data.q);
     if (!query) throw new BadRequestException({ message: 'Type a word to search for', code: CHAT_CODES.SEARCH_EMPTY });
-    const limit = clampListLimit(data.limit as any, 30, 50);
+    const limit = clampListLimit(data.limit, 30, 50);
     const cursor = parseHistoryCursor(data.before);
     const older = cursor
       ? cursor.id

@@ -24,6 +24,7 @@ import { COLORS } from '../../lib/constants';
 import { logTypeLabel } from '../../lib/log-display';
 import { useOffline } from '../../offline/offline-context';
 import { logFromPhone } from '../../offline/assets/log-actions';
+import { caught } from '../../lib/caught';
 
 /**
  * "What did you do?" — one log entry against something I hold.
@@ -107,8 +108,8 @@ export function useAssetLogScreen() {
         // to look up an asset somebody was not given (the register's door is
         // `from=register`, read under the workspace permission instead).
         if (alive) setHeld(periods.find((h) => h.assetId === assetId) ?? null);
-      } catch (e: any) {
-        if (alive) toast.error(e?.message || tt('logbook.loadFailed', 'Could not open that'));
+      } catch (e: unknown) {
+        if (alive) toast.error(caught(e).message || tt('logbook.loadFailed', 'Could not open that'));
       } finally {
         if (alive) setLoading(false);
       }
@@ -251,8 +252,8 @@ export function useAssetLogScreen() {
       if (photo) forgetPhoto(photo.uri);
       forgetHeldAssets(); // the profile's count and list read this again
       router.back();
-    } catch (e: any) {
-      toast.error(e?.message || tt('logbook.sendFailed', 'Could not send it'));
+    } catch (e: unknown) {
+      toast.error(caught(e).message || tt('logbook.sendFailed', 'Could not send it'));
     } finally {
       setSending(false);
     }

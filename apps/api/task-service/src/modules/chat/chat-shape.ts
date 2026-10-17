@@ -17,8 +17,33 @@ export function previewOf(body: string | null | undefined): string {
   return (body ?? '').slice(0, CHAT_PREVIEW_CHARS);
 }
 
+type When = Date | string | null;
+
+/** What shaping reads of a conversation row — every read (list, open, send, search) selects at least this. */
+export interface ShapeableConversation {
+  id: string;
+  organizationId: string;
+  type: string;
+  title?: string | null;
+  createdById?: string | null;
+  createdAt: When;
+  lastMessageAt?: When;
+  originSpaceId?: string | null;
+  lastMessageId?: string | null;
+  lastSenderId?: string | null;
+  lastMessagePreview?: string | null;
+  task?: { id: string; title: string; status: string } | null;
+  members?: Array<{
+    userId: string;
+    user?: { id: string } | null;
+    unreadCount?: number | null;
+    mutedUntil?: When;
+    lastReadAt?: When;
+  }> | null;
+}
+
 /** The stored newest message as the list row's `lastMessage` (no join to messages). */
-function storedLastMessage(c: any) {
+function storedLastMessage(c: ShapeableConversation) {
   if (!c.lastMessageId) return null;
   return {
     id: c.lastMessageId,
@@ -31,16 +56,17 @@ function storedLastMessage(c: any) {
 }
 
 /** Shape a conversation from the viewer's perspective (adds otherMember for DMs). */
-export function shapeConversation(c: any, viewerId: string, isClosed = false, opts: { managesPeople?: boolean } = {}) {
+export function shapeConversation(c: ShapeableConversation, viewerId: string, isClosed = false, opts: { managesPeople?: boolean } = {}) {
   const isExternal = !!c.originSpaceId;
   // Across an organization boundary, presence does not travel — the same rule
   // the contacts directory and the typing relay apply. Being reachable for work
   // is not the same as being observable. Marked as well as stripped: the avatar
   // needs to know not to draw a status dot, and "no presence" alone reads as offline.
-  const hide = (u: any) => (u && isExternal ? { ...u, presence: null, isExternal: true } : u);
-  const members = (c.members ?? []).map((m: any) => hide(m.user)).filter(Boolean);
-  const otherMember = c.type === 'DIRECT' ? (members.find((u: any) => u.id !== viewerId) ?? null) : null;
-  const mine = (c.members ?? []).find((m: any) => m.userId === viewerId);
+  const hide = <U extends { id: string }>(u: U | null | undefined) =>
+    u && isExternal ? { ...u, presence: null, isExternal: true } : u;
+  const members = (c.members ?? []).map((m) => hide(m.user)).filter((u) => !!u);
+  const otherMember = c.type === 'DIRECT' ? (members.find((u) => u!.id !== viewerId) ?? null) : null;
+  const mine = (c.members ?? []).find((m) => m.userId === viewerId);
   return {
     id: c.id,
     organizationId: c.organizationId,
@@ -65,7 +91,7 @@ export function shapeConversation(c: any, viewerId: string, isClosed = false, op
     canManage: mayManageGroup(c, viewerId, !!opts.managesPeople),
     // Each member's last read, for "✓✓ Read" / "Seen by N". Across companies a
     // read time is presence by another name, so it does not travel there.
-    readAt: isExternal ? {} : Object.fromEntries((c.members ?? []).map((m: any) => [m.userId, m.lastReadAt ?? null])),
+    readAt: isExternal ? {} : Object.fromEntries((c.members ?? []).map((m) => [m.userId, m.lastReadAt ?? null])),
   };
 }
 

@@ -16,6 +16,8 @@ export class TaskDeclineService extends TaskAssignmentBase {
     userRole: string;
     canViewAllTasks?: boolean;
     organizationId: string;
+    /** Why the worker declines — optional, sent by the gateway. */
+    reason?: string | null;
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -40,7 +42,7 @@ export class TaskDeclineService extends TaskAssignmentBase {
         taskId: task.id,
         userId: data.userId,
         organizationId: data.organizationId,
-        reason: (data as any).reason ?? null,
+        reason: data.reason ?? null,
       });
     }
     if (task.assignedToId !== data.userId) {

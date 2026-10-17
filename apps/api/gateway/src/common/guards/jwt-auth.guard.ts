@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { IS_PUBLIC_KEY } from '@hbcfield/shared';
 import { AuthTokenCache, secondsUntilExp } from '../cache/auth-token-cache.service';
 import { sendRpc, validateToken } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../request.types';
+import type { MaybeAuthedRequest } from '../request.types';
 
 /**
  * Authenticates every non-public request by validating the access token.
@@ -65,9 +67,12 @@ export class JwtAuthGuard implements CanActivate {
 
       // Attach user to request and cache the validated user (TTL capped to the
       // token's remaining lifetime so an entry can never outlive its token).
-      request.user = result.user;
+      // The contract types the reply's user as the CurrentUserData subset every service knows; the
+      // payload is the whole validated session the rest of the gateway reads (SessionUser).
+      const session = result.user as SessionUser;
+      request.user = session;
       const remaining = secondsUntilExp(token) ?? this.cache.ttl;
-      await this.cache.set(token, result.user, Math.min(this.cache.ttl, remaining));
+      await this.cache.set(token, session, Math.min(this.cache.ttl, remaining));
       return true;
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -77,7 +82,7 @@ export class JwtAuthGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
+  private extractTokenFromHeader(request: MaybeAuthedRequest): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type ThemeColors } from '../../lib/constants';
 
 export type StepId = 'category' | 'issue' | 'describe' | 'access' | 'time' | 'location' | 'contact';
 
@@ -17,14 +17,17 @@ export function Option({
   label: string;
   left?: React.ReactNode;
   badge?: string;
-  colors: any;
+  colors: ThemeColors;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={[
         styles.opt,
-        { backgroundColor: selected ? colors.primaryLight : colors.card, borderColor: selected ? COLORS.primary : colors.border },
+        {
+          backgroundColor: selected ? colors.primaryLight : colors.card,
+          borderColor: selected ? COLORS.primary : colors.border,
+        },
       ]}
     >
       {left}
@@ -42,13 +45,30 @@ export function Option({
 
 export const styles = StyleSheet.create({
   fill: { flex: 1, alignItems: 'stretch', justifyContent: 'flex-start' },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.sm,
+  },
   back: { width: 38, height: 38, borderRadius: 12, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   topTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg },
   topStep: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.xs, marginTop: 1 },
-  progress: { height: 6, borderRadius: 4, marginHorizontal: SPACING.lg, marginVertical: SPACING.md, overflow: 'hidden' },
+  progress: {
+    height: 6,
+    borderRadius: 4,
+    marginHorizontal: SPACING.lg,
+    marginVertical: SPACING.md,
+    overflow: 'hidden',
+  },
   progressFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 4 },
-  q: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.xxl, marginHorizontal: SPACING.lg, marginBottom: SPACING.md },
+  q: {
+    fontFamily: 'Outfit_800ExtraBold',
+    fontSize: FONT_SIZE.xxl,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
   smartChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -93,7 +113,15 @@ export const styles = StyleSheet.create({
     fontFamily: 'Outfit_400Regular',
     fontSize: FONT_SIZE.base,
   },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: SPACING.lg, paddingBottom: SPACING.xxl, borderTopWidth: 1 },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: SPACING.lg,
+    paddingBottom: SPACING.xxl,
+    borderTopWidth: 1,
+  },
   cta: { borderRadius: RADIUS.md, paddingVertical: 15, alignItems: 'center' },
   ctaText: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg, color: '#fff' },
 });

@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, AssetStatus } from '@prisma/client';
 import { success, normalizeDetailRows } from '@hbcfield/shared';
 import { type AssetActor } from './asset-access.service';
 import { AssetHoldersService } from './asset-holders.service';
@@ -93,7 +93,7 @@ export class AssetCreateService extends AssetsBase {
         serialNumber: data.serialNumber,
         model: data.model,
         manufacturer: data.manufacturer,
-        status: (data.status as any) || 'ACTIVE',
+        status: (data.status as AssetStatus) || 'ACTIVE',
         installDate: data.installDate ? new Date(data.installDate) : null,
         warrantyExpiry: data.warrantyExpiry ? new Date(data.warrantyExpiry) : null,
         locationAddress: data.locationAddress,

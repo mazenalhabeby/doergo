@@ -1,14 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  visibleTypeSelfWhere,
-  type DocumentCadence,
-  type DocumentDirection,
-  type SignatureMode,
-  routeProblem,
-} from '@hbcfield/shared';
+import { visibleTypeSelfWhere, routeProblem } from '@hbcfield/shared';
 import { Prisma } from '@prisma/client';
 import { type DocumentActor, assertCanManageTypes, assertCanManageVisibility, normaliseKey } from './document-common';
 import { DocumentTypesBase } from './document-types.base';
+import { type documentsCreateType, type RpcRequest } from '@hbcfield/shared/microservices';
 
 /**
  * The document type catalogue: what can be filed, who must supply it, who may see it.
@@ -17,7 +12,6 @@ import { DocumentTypesBase } from './document-types.base';
  */
 @Injectable()
 export class DocumentTypesService extends DocumentTypesBase {
-
   async listTypes(data: {
     organizationId: string;
     includeInactive?: boolean;
@@ -46,11 +40,11 @@ export class DocumentTypesService extends DocumentTypesBase {
         */
         ...(data.manage
           ? {}
-          : visibleTypeSelfWhere({
+          : (visibleTypeSelfWhere({
               roleId: data.roleId ?? null,
               isAdmin: !!data.isAdmin,
               userId: data.userId ?? null,
-            }) ?? {}),
+            }) ?? {})),
         organizationId: data.organizationId,
         ...(data.includeInactive ? {} : { isActive: true }),
       },
@@ -58,37 +52,8 @@ export class DocumentTypesService extends DocumentTypesBase {
     });
   }
 
-  async createType(data: {
-    actor: DocumentActor;
-    key: string;
-    label: string;
-    description?: string | null;
-    cadence?: DocumentCadence;
-    direction?: DocumentDirection;
-    retentionMonths?: number | null;
-    signatureMode?: SignatureMode;
-    isCredential?: boolean;
-    hasExpiry?: boolean;
-    requiredForWorkflowIds?: string[];
-    requiredFromAll?: boolean;
-    requiredFromRoleIds?: string[];
-    /** Roles that may SEE documents of this type. Empty = no restriction. */
-    visibleToRoleIds?: string[];
-    twoSided?: boolean;
-    /** Sheets of paper rather than a card — refused together with twoSided. */
-    multiPage?: boolean;
-    scanShape?: string;
-    position?: number;
-    /**
-     * The signing route: an ordered list of {role}, or null for one signature.
-     *
-     * ⚠️ This was missing here while `updateType` accepted it, so a type created
-     * WITH a signing route was created without one — silently, since every other
-     * field saved. The only way to get a route onto a new type was to create it,
-     * reopen it, and set the route a second time.
-     */
-    signerRoute?: unknown;
-  }) {
+  // The request is the message contract's (shared with the gateway) — one definition, not two.
+  async createType(data: RpcRequest<typeof documentsCreateType>) {
     assertCanManageTypes(data.actor);
 
     const key = normaliseKey(data.key);
@@ -128,7 +93,7 @@ export class DocumentTypesService extends DocumentTypesBase {
           isCredential: data.isCredential ?? false,
           // A credential without an expiry is legitimate — some qualifications
           // do not lapse — so this is not forced, only defaulted.
-          hasExpiry: data.hasExpiry ?? (data.isCredential ?? false),
+          hasExpiry: data.hasExpiry ?? data.isCredential ?? false,
           requiredForWorkflowIds: data.requiredForWorkflowIds ?? [],
           // Nothing is expected of anybody unless it is said explicitly. Every
           // SUPPLIED type that exists today means "we accept this if you send

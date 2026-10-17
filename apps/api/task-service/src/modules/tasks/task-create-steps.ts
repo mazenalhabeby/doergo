@@ -46,9 +46,9 @@ export async function settleCreateSpace(prisma: PrismaService, data: any, isUntr
 }
 
 export interface CreatePlacement {
-  locationLat: any;
-  locationLng: any;
-  locationAddress: any;
+  locationLat: number | null | undefined;
+  locationLng: number | null | undefined;
+  locationAddress: string | null | undefined;
   spaceWorkflowId: string | null;
   /** The org the task will BELONG to. */
   effectiveOrgId: string;

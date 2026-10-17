@@ -21,6 +21,7 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ChatReachLookup } from '../chat/chat-reach.lookup';
 import { sendRpc, auditLogList } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /** /organizations/audit-logs — who did what, when. */
 @ApiTags('organizations')
@@ -56,7 +57,7 @@ export class AuditLogController {
       page?: string;
       limit?: string;
     },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const isAdmin = user.role === Role.ADMIN;
 

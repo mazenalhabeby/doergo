@@ -10,8 +10,8 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   /** A new support message. Internal notes go to agents only; else customer + agents. */
   emitSupportMessage(payload: {
     ticketId: string;
-    message: any;
-    ticket: any;
+    message: unknown;
+    ticket: unknown;
     isInternalNote?: boolean;
     customerId: string;
   }) {
@@ -24,7 +24,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   }
 
   /** Ticket status/assignment/SLA changed → refresh the customer + agent views. */
-  emitSupportTicketUpdated(ticket: any) {
+  emitSupportTicketUpdated(ticket: { createdById?: string | null } & Record<string, unknown>) {
     this.messagesSent += 1;
     const evt = { ticket };
     this.server.to('support-agents').emit(SocketEvents.SUPPORT_TICKET_UPDATED, evt);
@@ -34,7 +34,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   }
 
   /** SLA breached → agents only (escalation surfaces in the inbox). */
-  emitSupportSlaBreached(ticket: any) {
+  emitSupportSlaBreached(ticket: Record<string, unknown>) {
     this.messagesSent += 1;
     this.logger.warn(`[EMIT] support SLA breached: ticket ${ticket?.id}`);
     this.server.to('support-agents').emit(SocketEvents.SUPPORT_TICKET_UPDATED, { ticket, slaBreached: true });
@@ -48,7 +48,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
    *  other devices) — they're already joined to user:{id} after authenticate. */
   emitChatMessage(payload: {
     conversationId: string;
-    message: any;
+    message: { senderId?: string } & Record<string, unknown>;
     recipients: string[];
     /** Each member's unread count for the thread and their unread total (servers since 2026-10-15). */
     unread?: Record<string, number>;
@@ -109,7 +109,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   /**
    * Emit an event to all clients in an organization
    */
-  emitToOrganization(organizationId: string, event: string, data: any) {
+  emitToOrganization(organizationId: string, event: string, data: unknown) {
     this.logger.log(`[EMIT] ${event} to org:${organizationId}`);
     this.messagesSent++;
     this.server.to(`org:${organizationId}`).emit(event, data);
@@ -118,7 +118,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   /**
    * Emit an event to a specific user
    */
-  emitToUser(userId: string, event: string, data: any) {
+  emitToUser(userId: string, event: string, data: unknown) {
     this.logger.log(`[EMIT] ${event} to user:${userId}`);
     this.messagesSent++;
     this.server.to(`user:${userId}`).emit(event, data);
@@ -127,7 +127,7 @@ export abstract class GatewayChatEmitsBase extends GatewayPresenceBase {
   /**
    * Emit an event to all clients with a specific role
    */
-  emitToRole(organizationId: string, role: string, event: string, data: any) {
+  emitToRole(organizationId: string, role: string, event: string, data: unknown) {
     // Org-scoped: never broadcast to a global role room (sec audit C5).
     if (!organizationId) return;
     this.logger.log(`[EMIT] ${event} to role:${organizationId}:${role}`);

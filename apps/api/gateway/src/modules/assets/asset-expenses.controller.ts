@@ -7,6 +7,7 @@ import { ReceiptPresignDto, ReadReceiptDto, SubmitExpenseDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /assets — expenses: filing one with its slip, the office's queue and decision, a receipt link. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -26,7 +27,7 @@ export class AssetExpensesController {
   @Get('expenses/pending')
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Expenses waiting for a decision' })
-  async pendingExpenses(@Query('limit') limit: number, @Request() req: any) {
+  async pendingExpenses(@Query('limit') limit: number, @Request() req: AuthedRequest) {
     return this.assetsService.expensePending({
       limit,
       ...assetActor(req),
@@ -46,7 +47,7 @@ export class AssetExpensesController {
   async reviewExpense(
     @Param('entryId') entryId: string,
     @Body() body: { decision?: 'accept' | 'reject'; note?: string },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsService.expenseReview({
       entryId,
@@ -71,7 +72,7 @@ export class AssetExpensesController {
   @Post('expenses/:entryId/receipt-url')
   @DenyExternal()
   @ApiOperation({ summary: 'A short-lived link to one receipt' })
-  async receiptUrl(@Param('entryId') entryId: string, @Request() req: any) {
+  async receiptUrl(@Param('entryId') entryId: string, @Request() req: AuthedRequest) {
     return this.assetsService.expenseReceiptUrl({
       entryId,
       ...assetActor(req),
@@ -95,7 +96,7 @@ export class AssetExpensesController {
   @DenyExternal()
   @ApiOperation({ summary: 'Upload URL for a receipt' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async presignReceipt(@Param('id') id: string, @Body() dto: ReceiptPresignDto, @Request() req: any) {
+  async presignReceipt(@Param('id') id: string, @Body() dto: ReceiptPresignDto, @Request() req: AuthedRequest) {
     return this.assetsService.expensePresign({
       id,
       ...dto,
@@ -119,7 +120,7 @@ export class AssetExpensesController {
   @DenyExternal()
   @ApiOperation({ summary: 'Read a PDF receipt I just uploaded' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async readReceipt(@Param('id') id: string, @Body() dto: ReadReceiptDto, @Request() req: any) {
+  async readReceipt(@Param('id') id: string, @Body() dto: ReadReceiptDto, @Request() req: AuthedRequest) {
     return this.assetsService.expenseRead({
       id,
       ...dto,
@@ -132,7 +133,7 @@ export class AssetExpensesController {
   @DenyExternal()
   @ApiOperation({ summary: 'File an expense against something I hold' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async submitExpense(@Param('id') id: string, @Body() dto: SubmitExpenseDto, @Request() req: any) {
+  async submitExpense(@Param('id') id: string, @Body() dto: SubmitExpenseDto, @Request() req: AuthedRequest) {
     return this.assetsService.expenseSubmit({
       id,
       ...dto,

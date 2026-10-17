@@ -26,7 +26,7 @@ import { TaskChecklistService } from './task-checklist.service';
 import { AttachmentsService } from '../attachments/attachments.service';
 import { CustomFieldsService } from '../custom-fields/custom-fields.service';
 import { ReportReadService } from './../reports/report-read.service';
-import { personOf, iso } from './task-report-helpers';
+import { personOf, iso, type ReportTask, type ReportIssuerRow } from './task-report-helpers';
 
 /**
  * The job report's parties: who issues it (the company), the client and their
@@ -50,12 +50,12 @@ export abstract class TaskReportParties {
   // ───────────────────────────── sections ─────────────────────────────
 
   protected async header(
-    task: any,
+    task: ReportTask,
     statuses: TaskReportStatus[],
     time: Awaited<ReturnType<JobTimeService['forTask']>>,
     events: TaskReportEvent[],
     work: TaskReportWork | null | undefined,
-    entities: any[],
+    entities: ReportIssuerRow[],
     issuerId: string | null,
     clientShown: boolean,
     workflowName: string | null,
@@ -69,8 +69,8 @@ export abstract class TaskReportParties {
     // The LEAD row; a job assigned before crews existed names its lead only on `assignedToId`.
     const lead =
       (
-        task.assignees.find((a: any) => a.role === 'LEAD') ??
-        task.assignees.find((a: any) => a.userId === task.assignedToId)
+        task.assignees.find((a) => a.role === 'LEAD') ??
+        task.assignees.find((a) => a.userId === task.assignedToId)
       )?.user ?? null;
 
     return {
@@ -107,12 +107,12 @@ export abstract class TaskReportParties {
       createdBy: personOf(task.createdBy),
       dueDate: iso(task.dueDate),
       startedAt: time.startedBy?.at ?? moves[0]?.at ?? null,
-      startedBy: personOf((time.startedBy as any)?.forUser ?? (time.startedBy as any)?.user) ?? moves[0]?.actor ?? null,
+      startedBy: personOf((time.startedBy)?.forUser ?? (time.startedBy)?.user) ?? moves[0]?.actor ?? null,
       finishedAt,
       taskType: workflowName,
       totalMinutes: time.total.travel + time.total.working + time.total.blocked,
       lead: personOf(lead),
-      crew: task.assignees.map((a: any) => ({
+      crew: task.assignees.map((a) => ({
         person: personOf(a.user)!,
         role: a.role === 'LEAD' ? 'LEAD' : 'MEMBER',
       })),
@@ -132,8 +132,8 @@ export abstract class TaskReportParties {
    * picks, so the picker can say which company "automatic" means.
    */
   protected issuerIds(
-    task: any,
-    entities: any[],
+    task: ReportTask,
+    entities: ReportIssuerRow[],
     chosen: string | null,
   ): { used: string | null; automatic: string | null } {
     const main = entities.find((e) => e.isMain)?.id ?? null;
@@ -146,7 +146,7 @@ export abstract class TaskReportParties {
   }
 
   /** The issuing company (invoice rule: workspace → client → main), else the organization profile. */
-  protected issuer(entity: any, org: any): TaskReportIssuer {
+  protected issuer(entity: ReportIssuerRow | null, org: ReportTask['organization']): TaskReportIssuer {
     if (entity) {
       return {
         name: entity.legalName,
@@ -194,7 +194,7 @@ export abstract class TaskReportParties {
     return crmReachesClientIn(crmReachOfRow(row as never), customer, facts.userId);
   }
 
-  protected client(c: any, shown: boolean) {
+  protected client(c: NonNullable<ReportTask['customer']>, shown: boolean) {
     return {
       id: c.id,
       name: c.name,
@@ -209,7 +209,7 @@ export abstract class TaskReportParties {
   }
 
   /** The client's primary contact person (CRM), else the site's own contact, else the client's contact name. */
-  protected async contact(task: any, clientShown: boolean) {
+  protected async contact(task: ReportTask, clientShown: boolean) {
     if (clientShown && task.customer) {
       const primary = await this.prisma.customerContact.findFirst({
         where: { companyId: task.customer.id, isPrimary: true },

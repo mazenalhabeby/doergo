@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { caught } from '../lib/caught';
 
 interface UseFetchDataOptions<T> {
   /** Function that performs the API call(s) and returns data */
@@ -29,10 +30,7 @@ interface UseFetchDataResult<T> {
  * - Fetch deduplication via ref
  * - 401 errors (silently ignored — auth context handles redirect)
  */
-export function useFetchData<T>({
-  fetcher,
-  initialData,
-}: UseFetchDataOptions<T>): UseFetchDataResult<T> {
+export function useFetchData<T>({ fetcher, initialData }: UseFetchDataOptions<T>): UseFetchDataResult<T> {
   const [data, setData] = useState<T | undefined>(initialData);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -51,9 +49,9 @@ export function useFetchData<T>({
 
         const result = await fetcher();
         setData(result);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // 401 = session expired; auth context handles redirect
-        if (err?.statusCode === 401 || err?.message?.includes('Session expired')) {
+        if (caught(err).statusCode === 401 || caught(err).message?.includes('Session expired')) {
           return;
         }
         setError(err instanceof Error ? err.message : 'Failed to load data');

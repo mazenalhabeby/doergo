@@ -34,7 +34,7 @@ export function OpenRoleCard({ task }: { task: Task }) {
 
   const open = isOpenToRole(task)
   const { taken, of } = spotsTaken(task)
-  const onIt = !!user && ((task as any).assignees ?? []).some((a: any) => (a.userId ?? a.user?.id) === user.id)
+  const onIt = !!user && (task.assignees ?? []).some((a) => (a.userId ?? a.user?.id) === user.id)
   const mayAssign = user?.role === "ADMIN" || hasPermission("canAssignTasks")
 
   const { data: openForMe = [] } = useQuery({
@@ -54,7 +54,9 @@ export function OpenRoleCard({ task }: { task: Task }) {
   const fail = (e: unknown) => {
     const err = e as { code?: string; params?: { takers?: string[] } }
     if (err?.code === "ROLE_TASK_TAKEN") {
-      notify.error(t("tasks.role.tookFirst", { names: (err.params?.takers ?? []).join(", ") || t("tasks.role.someoneElse") }))
+      notify.error(
+        t("tasks.role.tookFirst", { names: (err.params?.takers ?? []).join(", ") || t("tasks.role.someoneElse") }),
+      )
       refresh()
       return
     }
@@ -63,12 +65,20 @@ export function OpenRoleCard({ task }: { task: Task }) {
 
   const take = useMutation({
     mutationFn: () => tasksApi.take(task.id),
-    onSuccess: () => { notify.success(t("tasks.role.youTookIt")); refresh() },
+    onSuccess: () => {
+      notify.success(t("tasks.role.youTookIt"))
+      refresh()
+    },
     onError: fail,
   })
   const giveBack = useMutation({
     mutationFn: () => tasksApi.returnToRole(task.id, reason.trim() || undefined),
-    onSuccess: () => { notify.success(t("tasks.role.returned")); setReturning(false); setReason(""); refresh() },
+    onSuccess: () => {
+      notify.success(t("tasks.role.returned"))
+      setReturning(false)
+      setReason("")
+      refresh()
+    },
     onError: fail,
   })
   const setRole = useMutation({
@@ -80,7 +90,8 @@ export function OpenRoleCard({ task }: { task: Task }) {
   if (!task.openRoleId) return null
   const roleName = task.openRole?.name ?? ""
   // "Not started" by facts, as the server asks it — a custom flow's first step counts (the server has the last word).
-  const notStarted = !["EN_ROUTE", "ARRIVED", "IN_PROGRESS", "BLOCKED"].includes(task.status) && !isWorkOver(task.status)
+  const notStarted =
+    !["EN_ROUTE", "ARRIVED", "IN_PROGRESS", "BLOCKED"].includes(task.status) && !isWorkOver(task.status)
   const openMin = task.openedAt ? Math.max(0, Math.round((Date.now() - Date.parse(task.openedAt)) / 60_000)) : null
 
   return (
@@ -101,7 +112,11 @@ export function OpenRoleCard({ task }: { task: Task }) {
 
         {mayTake && (
           <Button size="sm" onClick={() => take.mutate()} disabled={take.isPending}>
-            {take.isPending ? <Loader2 className="mr-1.5 size-3.5 animate-spin" /> : <Hand className="mr-1.5 size-3.5" />}
+            {take.isPending ? (
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+            ) : (
+              <Hand className="mr-1.5 size-3.5" />
+            )}
             {t("tasks.role.take")}
           </Button>
         )}
@@ -141,7 +156,8 @@ export function OpenRoleCard({ task }: { task: Task }) {
               className="px-1.5 disabled:opacity-40"
               disabled={setRole.isPending || of <= Math.max(1, taken)}
               onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of - 1 })}
-              aria-label={t("tasks.role.fewer")}>
+              aria-label={t("tasks.role.fewer")}
+            >
               <Minus className="size-3" />
             </button>
             <span className="w-5 text-center tabular-nums text-foreground">{of}</span>
@@ -150,7 +166,8 @@ export function OpenRoleCard({ task }: { task: Task }) {
               className="px-1.5 disabled:opacity-40"
               disabled={setRole.isPending || of >= ROLE_SPOTS_MAX}
               onClick={() => setRole.mutate({ roleId: task.openRoleId!, spots: of + 1 })}
-              aria-label={t("tasks.role.more")}>
+              aria-label={t("tasks.role.more")}
+            >
               <Plus className="size-3" />
             </button>
           </div>
@@ -159,7 +176,8 @@ export function OpenRoleCard({ task }: { task: Task }) {
             variant="ghost"
             className="h-7 text-xs"
             disabled={setRole.isPending}
-            onClick={() => setRole.mutate({ roleId: null })}>
+            onClick={() => setRole.mutate({ roleId: null })}
+          >
             {t("tasks.role.close")}
           </Button>
         </div>

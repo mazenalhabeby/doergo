@@ -4,13 +4,20 @@ import { attendanceAuthority } from '../attendance-authority';
 import { attendanceControllers } from '../../modules/attendance/__tests__/attendance-controllers.fixture';
 import { ShiftIssuesController } from '../../modules/shift-issues/shift-issues.controller';
 
+import { fakeReq } from '../testing/fake-request';
 /*
   Somebody ELSE's work log or shift issue: reading needs canViewSpaceAttendance,
   changing needs canReconcileAttendance — from the RESOLVED access, org-wide or
   per space. Both controllers used to read the flat org columns
   `canManageUsers || canViewAllTasks`, each in its own private copy.
 */
-const user = (extra: any = {}) => ({ id: 'u-1', role: 'EMPLOYEE', organizationId: 'org-1', access: { org: {}, perSpace: {} }, ...extra });
+const user = (extra: any = {}) => ({
+  id: 'u-1',
+  role: 'EMPLOYEE',
+  organizationId: 'org-1',
+  access: { org: {}, perSpace: {} },
+  ...extra,
+});
 
 describe('attendanceAuthority', () => {
   it('reads and writes are different permissions', () => {
@@ -20,36 +27,54 @@ describe('attendanceAuthority', () => {
   });
 
   it('org-wide or an administrator is canManage with no space list', () => {
-    expect(attendanceAuthority({ user: user({ access: { org: { canReconcileAttendance: true }, perSpace: {} } }) }, 'write'))
-      .toEqual({ canManage: true, spaceIds: undefined });
-    expect(attendanceAuthority({ user: user({ role: 'ADMIN' }) }, 'read')).toEqual({ canManage: true, spaceIds: undefined });
+    expect(
+      attendanceAuthority({ user: user({ access: { org: { canReconcileAttendance: true }, perSpace: {} } }) }, 'write'),
+    ).toEqual({ canManage: true, spaceIds: undefined });
+    expect(attendanceAuthority({ user: user({ role: 'ADMIN' }) }, 'read')).toEqual({
+      canManage: true,
+      spaceIds: undefined,
+    });
   });
 
   it('the flat columns no longer count — "view all tasks" is not authority over shifts', () => {
-    expect(attendanceAuthority({ user: user({ canViewAllTasks: true, canManageUsers: true }) }, 'read'))
-      .toEqual({ canManage: false, spaceIds: [] });
+    expect(attendanceAuthority({ user: user({ canViewAllTasks: true, canManageUsers: true }) }, 'read')).toEqual({
+      canManage: false,
+      spaceIds: [],
+    });
   });
 });
 
 describe('the controllers forward it', () => {
   const supervisor = {
-    user: user({ access: { org: {}, perSpace: { s1: { canViewSpaceAttendance: true, canReconcileAttendance: true }, s2: { canViewSpaceAttendance: true } } } }),
+    user: user({
+      access: {
+        org: {},
+        perSpace: {
+          s1: { canViewSpaceAttendance: true, canReconcileAttendance: true },
+          s2: { canViewSpaceAttendance: true },
+        },
+      },
+    }),
   };
 
   it('work log: a read carries the viewing spaces, a write the reconciling ones', async () => {
     const svc = { worklogList: jest.fn(), worklogDeleteNote: jest.fn() };
     const c = attendanceControllers(svc as any, {} as any);
-    await c.worklogList('e1', supervisor);
-    await c.worklogDelete('n1', supervisor);
-    expect(svc.worklogList).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, manageSpaceIds: ['s1', 's2'] }));
-    expect(svc.worklogDeleteNote).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, manageSpaceIds: ['s1'] }));
+    await c.worklogList('e1', fakeReq(supervisor));
+    await c.worklogDelete('n1', fakeReq(supervisor));
+    expect(svc.worklogList).toHaveBeenCalledWith(
+      expect.objectContaining({ canManage: false, manageSpaceIds: ['s1', 's2'] }),
+    );
+    expect(svc.worklogDeleteNote).toHaveBeenCalledWith(
+      expect.objectContaining({ canManage: false, manageSpaceIds: ['s1'] }),
+    );
   });
 
   it('shift issues: the same split', async () => {
     const svc = { list: jest.fn(), setStatus: jest.fn() };
     const c = new ShiftIssuesController(svc as any);
-    await c.list('OPEN', 'all', supervisor);
-    await c.setStatus('i1', { status: 'RESOLVED' } as any, supervisor);
+    await c.list('OPEN', 'all', fakeReq(supervisor));
+    await c.setStatus('i1', { status: 'RESOLVED' } as any, fakeReq(supervisor));
     expect(svc.list).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, ledSpaceIds: ['s1', 's2'] }));
     expect(svc.setStatus).toHaveBeenCalledWith(expect.objectContaining({ canManage: false, ledSpaceIds: ['s1'] }));
   });

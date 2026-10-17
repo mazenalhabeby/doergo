@@ -112,7 +112,7 @@ export class MemberEmailsService implements OnModuleDestroy {
     });
     return rows
       .filter(
-        (u: any) =>
+        (u) =>
           u.isActive &&
           !u.isExternal &&
           u.role !== 'CUSTOMER' &&
@@ -124,7 +124,7 @@ export class MemberEmailsService implements OnModuleDestroy {
           isDeliverableAddress(u.email) &&
           emailAllowed(u.organization.notificationPrefs, u.notificationPrefs, kind),
       )
-      .map((u: any) => ({ id: u.id, email: u.email, firstName: u.firstName ?? '' }));
+      .map((u) => ({ id: u.id, email: u.email, firstName: u.firstName ?? '' }));
   }
 
   // ── Tasks ───────────────────────────────────────────────────────────────

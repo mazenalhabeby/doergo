@@ -204,3 +204,26 @@ export interface TimeOffRequestFacts {
  * they are (no behaviour change, CODE_AUDIT.md §12) — typed so the gap is visible.
  */
 export type SentNotRead<K extends string> = { [F in K]?: unknown };
+
+/** A support ticket as its events carry it — the handler reads the id; screens get the rest as sent. */
+export interface SupportTicketFacts {
+  id: string;
+  createdById?: string | null;
+  [field: string]: unknown;
+}
+
+/** A support message: an agent's reply (authorType AGENT) pushes its body to the customer. */
+export interface SupportMessageFacts {
+  authorType?: string;
+  body: string;
+  [field: string]: unknown;
+}
+
+/** A chat message as the push reads it: who sent it and its words or files; screens get the rest. */
+export interface ChatMessageFacts {
+  sender?: { firstName?: string | null; lastName?: string | null; name?: string | null } | null;
+  body?: string | null;
+  /** The message's JSON column — written as an array of files. */
+  attachments?: unknown;
+  [field: string]: unknown;
+}

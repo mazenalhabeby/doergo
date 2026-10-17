@@ -10,6 +10,7 @@ import {
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
 import { emitEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import type { TaskAssigneeRole } from '@prisma/client';
 
 /** Adding and removing people on a job's crew, and releasing a member who left from their open work. */
 @Injectable()
@@ -53,7 +54,7 @@ export class TaskCrewMembersService extends TaskAssignmentBase {
     });
     await this.assertAssigneesAreQualified([user.id], [user], assigneeTask?.workflowId, assigneeTask?.organizationId);
 
-    const role = (data.role as any) || 'MEMBER';
+    const role = (data.role as TaskAssigneeRole) || 'MEMBER';
 
     // If adding as LEAD, demote existing LEAD to MEMBER
     if (role === 'LEAD') {

@@ -35,12 +35,31 @@ export type RoutingKind = 'notify' | 'contact' | 'approve';
  * service. It also states plainly which tables this reads.
  */
 export interface RoutingPrisma {
-  spaceAssignment: { findMany(args: any): Promise<any[]> };
-  companyLocation: { findMany(args: any): Promise<any[]> };
+  spaceAssignment: { findMany(args: unknown): Promise<RoutingAssignmentRow[]> };
+  companyLocation: { findMany(args: unknown): Promise<RoutingSpaceRow[]> };
+}
+
+/** The per-member override columns, and the space-level default columns. */
+type OverrideColumn =
+  'notifyRoleIds' | 'notifyUserIds' | 'contactRoleIds' | 'contactUserIds' | 'approveRoleIds' | 'approveUserIds';
+type SpaceColumn = 'notifyRoleIds' | 'contactRoleIds' | 'approveRoleIds';
+
+/** An assignment row as the reads below select it (each read selects a subset). */
+interface RoutingAssignmentRow extends Partial<Record<OverrideColumn, string[]>> {
+  spaceId: string;
+  userId?: string;
+  roleId?: string | null;
+  organizationId?: string;
+  role?: { permissions: unknown } | null;
+}
+
+/** A workspace row with its routing config columns. */
+interface RoutingSpaceRow extends Partial<Record<SpaceColumn, string[]>> {
+  id: string;
 }
 
 /** The per-member override columns for one kind. */
-function overrideColumns(kind: RoutingKind): { roleIds: string; userIds: string } {
+function overrideColumns(kind: RoutingKind): { roleIds: OverrideColumn; userIds: OverrideColumn } {
   switch (kind) {
     case 'contact':
       return { roleIds: 'contactRoleIds', userIds: 'contactUserIds' };
@@ -52,7 +71,7 @@ function overrideColumns(kind: RoutingKind): { roleIds: string; userIds: string 
 }
 
 /** The space-level default column for one kind. */
-function spaceColumn(kind: RoutingKind): string {
+function spaceColumn(kind: RoutingKind): SpaceColumn {
   return kind === 'contact' ? 'contactRoleIds' : kind === 'approve' ? 'approveRoleIds' : 'notifyRoleIds';
 }
 
@@ -70,7 +89,7 @@ export async function spaceIdsForUser(prisma: RoutingPrisma, userId: string): Pr
     where: { userId, ...effective },
     select: { spaceId: true },
   });
-  return [...new Set(assignments.map((a: any) => a.spaceId as string))];
+  return [...new Set(assignments.map((a) => a.spaceId))];
 }
 
 /** One assignment, as the eligibility rule needs to see it. */
@@ -136,9 +155,7 @@ export async function spaceRoleHolders(
     }),
   ]);
 
-  const cfgBySpace = new Map<string, string[]>(
-    spaces.map((s: any) => [s.id as string, (s[col] ?? []) as string[]]),
-  );
+  const cfgBySpace = new Map<string, string[]>(spaces.map((s) => [s.id, s[col] ?? []]));
   return eligibleRoutingTargets(assignments as RoutingAssignment[], cfgBySpace, allowLeaderDefault);
 }
 
@@ -188,12 +205,12 @@ export async function resolveMemberRouting(
   });
   if (mineAll.length === 0) return out;
 
-  const allSpaceIds = [...new Set(mineAll.map((a: any) => a.spaceId as string))];
-  const mine = mineAll.filter((a: any) => a.organizationId === organizationId);
+  const allSpaceIds = [...new Set(mineAll.map((a) => a.spaceId))];
+  const mine = mineAll.filter((a) => a.organizationId === organizationId);
 
   const overrideRoleIdsBySpace = new Map<string, string[]>();
   const overrideSpaces = new Set<string>();
-  for (const a of mine as any[]) {
+  for (const a of mine) {
     const roleIds: string[] = a[roleCol] ?? [];
     const userIds: string[] = a[userCol] ?? [];
     if (roleIds.length || userIds.length) {
@@ -217,7 +234,7 @@ export async function resolveMemberRouting(
           where: { id: { in: defaultSpaces } },
           select: { id: true, notifyRoleIds: true, contactRoleIds: true, approveRoleIds: true },
         })
-      : Promise.resolve([] as any[]),
+      : Promise.resolve([] as RoutingSpaceRow[]),
     prisma.spaceAssignment.findMany({
       where: { spaceId: { in: relevantSpaces }, organizationId, role: { isActive: true } },
       select: { userId: true, spaceId: true, roleId: true, role: { select: { permissions: true } } },
@@ -226,12 +243,8 @@ export async function resolveMemberRouting(
 
   // A space the person overrode by role id: only those roles count, and the
   // leader default never applies there.
-  const overrideHolders = (holders as any[]).filter((h) => overrideRoleIdsBySpace.has(h.spaceId));
-  for (const id of eligibleRoutingTargets(
-    overrideHolders as RoutingAssignment[],
-    overrideRoleIdsBySpace,
-    false,
-  )) {
+  const overrideHolders = holders.filter((h) => overrideRoleIdsBySpace.has(h.spaceId));
+  for (const id of eligibleRoutingTargets(overrideHolders as RoutingAssignment[], overrideRoleIdsBySpace, false)) {
     out.add(id);
   }
 
@@ -239,15 +252,9 @@ export async function resolveMemberRouting(
   // leaders when allowed).
   if (defaultSpaces.length) {
     const defaultSpaceSet = new Set(defaultSpaces);
-    const cfgBySpace = new Map<string, string[]>(
-      (spaces as any[]).map((s) => [s.id as string, (s[spaceCol] ?? []) as string[]]),
-    );
-    const defaultHolders = (holders as any[]).filter((h) => defaultSpaceSet.has(h.spaceId));
-    for (const id of eligibleRoutingTargets(
-      defaultHolders as RoutingAssignment[],
-      cfgBySpace,
-      allowLeaderDefault,
-    )) {
+    const cfgBySpace = new Map<string, string[]>(spaces.map((s) => [s.id, s[spaceCol] ?? []]));
+    const defaultHolders = holders.filter((h) => defaultSpaceSet.has(h.spaceId));
+    for (const id of eligibleRoutingTargets(defaultHolders as RoutingAssignment[], cfgBySpace, allowLeaderDefault)) {
       out.add(id);
     }
   }

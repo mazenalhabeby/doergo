@@ -12,9 +12,9 @@ import { isAdmin } from '../guards/role-helpers';
  * space manager's business, not every colleague's.
  */
 export function mayManageSpaceMembers(user: unknown, spaceId: string): boolean {
-  const u = user as { canManageUsers?: boolean; access?: ResolvedAccess } | null | undefined;
+  const u = user as { role?: string; canManageUsers?: boolean; access?: ResolvedAccess } | null | undefined;
   if (!u) return false;
-  if (isAdmin(u as any)) return true;
+  if (isAdmin(u as { role: string })) return true;
   if (u.canManageUsers === true) return true;
   return accessAllows(u.access, 'canManageUsers', spaceId);
 }
@@ -44,7 +44,7 @@ export function mayGrantSpaceRoles(user: unknown, spaceId: string): boolean {
 function holdsHereOrOrgWide(user: unknown, key: AccessPermissionKey, spaceId: string): boolean {
   const u = user as (Record<string, unknown> & { access?: ResolvedAccess }) | null | undefined;
   if (!u) return false;
-  if (isAdmin(u as any)) return true;
+  if (isAdmin(u as { role: string })) return true;
   // Flat fields are org-wide by construction (orgFlagFields), bridges applied.
   if (u[key] === true || u.canManageWorkspaces === true) return true;
   return accessAllows(u.access, key, spaceId) || accessAllows(u.access, 'canManageWorkspaces');
@@ -55,9 +55,13 @@ function holdsHereOrOrgWide(user: unknown, key: AccessPermissionKey, spaceId: st
  * its work, assigning it, supervising its attendance, managing its people.
  */
 const ROSTER_VIEW_KEYS: AccessPermissionKey[] = [
-  'canViewAllTasks', 'canAssignTasks', 'canViewSpaceAttendance', 'canManageUsers',
+  'canViewAllTasks',
+  'canAssignTasks',
+  'canViewSpaceAttendance',
+  'canManageUsers',
   // Whoever decides who is in a workspace, or what they may do there, must be able to see who is.
-  'canAddSpaceMembers', 'canGrantSpaceRoles',
+  'canAddSpaceMembers',
+  'canGrantSpaceRoles',
   // Handing equipment to somebody in the workspace (custody is limited to its people) needs to see who they are.
   'canManageAssets',
 ];
@@ -72,7 +76,7 @@ const ROSTER_VIEW_KEYS: AccessPermissionKey[] = [
 export function mayViewSpaceRoster(user: unknown, spaceId: string): boolean {
   const u = user as { canViewAllTasks?: boolean; isExternal?: boolean; access?: ResolvedAccess } | null | undefined;
   if (!u) return false;
-  if (isAdmin(u as any)) return true;
+  if (isAdmin(u as { role: string })) return true;
   if (u.canViewAllTasks === true && u.isExternal !== true) return true;
   return ROSTER_VIEW_KEYS.some((k) => accessAllows(u.access, k, spaceId));
 }
@@ -96,7 +100,13 @@ export function stripSpaceTerms<T>(rows: T, mayManage: boolean): T {
  * list already drops the contact fields; the single read (`GET /locations/:id`)
  * returned all of it to anybody who could see the workspace.
  */
-const WORKSPACE_TERMS_KEYS = new Set(['contactName', 'contactEmail', 'contactPhone', 'billableRateCents', 'costRateCents']);
+const WORKSPACE_TERMS_KEYS = new Set([
+  'contactName',
+  'contactEmail',
+  'contactPhone',
+  'billableRateCents',
+  'costRateCents',
+]);
 
 /** One workspace record with its client contact and rates removed unless the caller manages it. */
 export function stripWorkspaceTerms<T>(space: T, mayManage: boolean): T {

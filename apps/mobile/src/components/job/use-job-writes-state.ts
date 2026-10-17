@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { tasksApi, taskAttachmentsApi, TaskStatus, type Task } from '../../lib/api';
+import { tasksApi, taskAttachmentsApi, TaskStatus, type Comment, type Task } from '../../lib/api';
+import type { DetailAttachment } from '../../lib/api/types';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
 import { useOffline } from '../../offline/offline-context';
@@ -124,7 +125,8 @@ export function useJobWritesState(
             fail(refusalText(outcome));
             return false;
           }
-          const saved = (outcome.kind === 'done' ? outcome.response : null) as any;
+          // The server's copy of the comment when it was sent now.
+          const saved = (outcome.kind === 'done' ? outcome.response : null) as Comment | null;
           setComments((prev) => [
             ...prev.filter((c) => c.id !== commentId),
             {
@@ -167,13 +169,13 @@ export function useJobWritesState(
             offline.files!.uriFor(fileId, mime),
           )
         : [];
-      let server: any[] | null = null;
+      let server: DetailAttachment[] | null = null;
       try {
         server = (await taskAttachmentsApi.getAttachments(taskId)) || [];
       } catch {
         // Offline: keep what the page already had from the server.
       }
-      setAttachments((prev) => mergeAttachments(server ?? prev.filter((a: any) => !a.pendingSync), held));
+      setAttachments((prev) => mergeAttachments(server ?? prev.filter((a) => !a.pendingSync), held));
     },
     [offline.engine, offline.files, setAttachments],
   );

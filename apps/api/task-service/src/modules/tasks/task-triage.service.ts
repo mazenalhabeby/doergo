@@ -12,6 +12,7 @@ import {
 } from '@hbcfield/shared';
 import { TaskPortalBase } from './task-portal.base';
 import { emitEvent, taskAssignedEvent, taskUpdatedEvent } from '@hbcfield/shared/microservices';
+import type { TaskPriority } from '@prisma/client';
 
 /** Turning a client's request into a job, closing it, or sending it back — triage. */
 @Injectable()
@@ -140,7 +141,7 @@ export class TaskTriageService extends TaskPortalBase {
         spaceId: data.spaceId,
         workflowId: effWorkflowId,
         status: initialStatus,
-        priority: (data.priority as any) || task.priority,
+        priority: (data.priority as TaskPriority) || task.priority,
         assignedToId,
         triaged: true,
         locationAddress: routedAddress,

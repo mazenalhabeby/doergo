@@ -6,6 +6,7 @@ import { taskActor, taskRequester, assignSpaceIds, grantedSpaceIds } from '../ta
 import { SearchController } from '../../modules/search/search.controller';
 import { tasksControllers } from '../../modules/tasks/__tests__/tasks-controllers.fixture';
 
+import { fakeReq } from '../testing/fake-request';
 /**
  * One caller for every task route.
  *
@@ -46,19 +47,19 @@ describe('taskActor', () => {
   });
 
   it('does not narrow an administrator or an org-wide grant', () => {
-    expect(taskActor(member({ role: Role.ADMIN })).viewAllSpaceIds).toBeUndefined();
+    expect(taskActor(fakeReq(member({ role: Role.ADMIN }))).viewAllSpaceIds).toBeUndefined();
     const orgWide = member();
     (orgWide.user.access as any).org = { canViewAllTasks: true };
-    expect(taskActor(orgWide).viewAllSpaceIds).toBeUndefined();
+    expect(taskActor(fakeReq(orgWide)).viewAllSpaceIds).toBeUndefined();
   });
 
   it('keeps "granted nowhere" as an EMPTY list, never as absent', () => {
-    expect(taskActor(member({ access: { org: {}, perSpace: {} } })).viewAllSpaceIds).toEqual([]);
-    expect(taskActor(member({ access: undefined })).sharedSpaceIds).toEqual([]);
+    expect(taskActor(fakeReq(member({ access: { org: {}, perSpace: {} } }))).viewAllSpaceIds).toEqual([]);
+    expect(taskActor(fakeReq(member({ access: undefined }))).sharedSpaceIds).toEqual([]);
   });
 
   it('taskRequester never carries a userId that could overwrite the person acted on', () => {
-    const r = taskRequester(member());
+    const r = taskRequester(fakeReq(member()));
     expect(r).not.toHaveProperty('userId');
     expect(r.requestUserId).toBe('u1');
     expect(r.viewAllSpaceIds).toEqual(['s1']);
@@ -90,14 +91,14 @@ describe('task routes build no caller by hand', () => {
 
 describe('grantedSpaceIds / assignSpaceIds', () => {
   it('narrows a member to the spaces their roles grant it in', () => {
-    expect(assignSpaceIds(member())).toEqual(['s2']);
-    expect(grantedSpaceIds(member(), 'canCreateTasks')).toEqual([]);
+    expect(assignSpaceIds(fakeReq(member()))).toEqual(['s2']);
+    expect(grantedSpaceIds(fakeReq(member()), 'canCreateTasks')).toEqual([]);
   });
   it('does not narrow an administrator or an org-wide grant', () => {
-    expect(assignSpaceIds(member({ role: Role.ADMIN }))).toBeUndefined();
+    expect(assignSpaceIds(fakeReq(member({ role: Role.ADMIN })))).toBeUndefined();
     const orgWide = member();
     (orgWide.user.access as any).org = { canAssignTasks: true };
-    expect(assignSpaceIds(orgWide)).toBeUndefined();
+    expect(assignSpaceIds(fakeReq(orgWide))).toBeUndefined();
   });
 });
 
@@ -107,30 +108,44 @@ describe('routes the lead named', () => {
   it('search forwards the space grants and the shares', async () => {
     const taskClient = { send: jest.fn(() => of({ tasks: [], spaces: [] })) };
     const c = new SearchController(taskClient as any, { send: jest.fn() } as any);
-    await c.search('pump', spaceMember);
-    expect((taskClient.send.mock.calls[0] as any)[1]).toMatchObject({ viewAllSpaceIds: ['s1'], sharedSpaceIds: ['x9'], query: 'pump' });
+    await c.search('pump', fakeReq(spaceMember));
+    expect((taskClient.send.mock.calls[0] as any)[1]).toMatchObject({
+      viewAllSpaceIds: ['s1'],
+      sharedSpaceIds: ['x9'],
+      query: 'pump',
+    });
   });
 
   it('a subtask carries the assigning right, org-wide and per space', async () => {
     const queue = { createSubtask: jest.fn() };
     const c = tasksControllers(queue as any, {} as any);
-    await c.createSubtask('p1', { title: 'x' } as any, spaceMember);
-    expect(queue.createSubtask).toHaveBeenCalledWith(expect.objectContaining({ canAssignTasks: false, assignSpaceIds: ['s2'], parentId: 'p1' }));
+    await c.createSubtask('p1', { title: 'x' } as any, fakeReq(spaceMember));
+    expect(queue.createSubtask).toHaveBeenCalledWith(
+      expect.objectContaining({ canAssignTasks: false, assignSpaceIds: ['s2'], parentId: 'p1' }),
+    );
   });
 
   it('resume carries the space grants it used to drop', async () => {
     const queue = { resumeWork: jest.fn() };
     const c = tasksControllers(queue as any, {} as any);
-    await c.resumeWork('t1', {} as any, spaceMember);
+    await c.resumeWork('t1', {} as any, fakeReq(spaceMember));
     // A write: the space grants travel, a guest's shares never do.
-    expect(queue.resumeWork).toHaveBeenCalledWith(expect.objectContaining({ id: 't1', viewAllSpaceIds: ['s1'], sharedSpaceIds: [] }));
+    expect(queue.resumeWork).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 't1', viewAllSpaceIds: ['s1'], sharedSpaceIds: [] }),
+    );
   });
 });
 
 describe('taskActor — shared spaces are read, never written', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { taskActor: actor } = require('../task-actor');
-  const user = { id: 'g1', role: 'EMPLOYEE', organizationId: 'guest-org', canViewAllTasks: true, access: { org: {}, perSpace: {}, sharedSpaces: [{ spaceId: 'host-space' }] } };
+  const user = {
+    id: 'g1',
+    role: 'EMPLOYEE',
+    organizationId: 'guest-org',
+    canViewAllTasks: true,
+    access: { org: {}, perSpace: {}, sharedSpaces: [{ spaceId: 'host-space' }] },
+  };
 
   it('only a read that opts in carries the shared spaces', () => {
     expect(actor({ user, method: 'GET' }, { crossOrgRead: true }).sharedSpaceIds).toEqual(['host-space']);
@@ -138,7 +153,10 @@ describe('taskActor — shared spaces are read, never written', () => {
     expect(actor({ user, method: 'GET' }).sharedSpaceIds).toEqual([]);
   });
 
-  it.each(['POST', 'PATCH', 'PUT', 'DELETE'])('a %s carries none — a guest’s own-org grant must not write a host’s job', (method) => {
-    expect(actor({ user, method }, { crossOrgRead: true }).sharedSpaceIds).toEqual([]);
-  });
+  it.each(['POST', 'PATCH', 'PUT', 'DELETE'])(
+    'a %s carries none — a guest’s own-org grant must not write a host’s job',
+    (method) => {
+      expect(actor({ user, method }, { crossOrgRead: true }).sharedSpaceIds).toEqual([]);
+    },
+  );
 });

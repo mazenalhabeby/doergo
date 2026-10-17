@@ -63,23 +63,27 @@ export function AssignSheet({
   const load = useCallback(async () => {
     setRows(null);
     setFailed(false);
-    const roster = spaceId
-      ? await locationsApi.getRosters([spaceId]).catch(() => null)
-      : null;
+    const roster = spaceId ? await locationsApi.getRosters([spaceId]).catch(() => null) : null;
     const onRoster = roster ? new Set(roster.map((a) => a.userId)) : null;
     try {
       const result = await techniciansApi.list({ status: 'active', limit: 50 });
-      const all: TechnicianListItem[] = Array.isArray(result) ? result : ((result as any)?.data ?? []);
-      setRows(all
-        .filter((m) => !onRoster || onRoster.has(m.id))
-        .map((m) => ({
-          id: m.id, firstName: m.firstName, lastName: m.lastName,
-          role: m.position || m.specialty || null,
-          state: [
-            m.isOnline ? t('job.assign.online') : null,
-            t('job.assign.jobs', { count: m.currentTaskCount ?? 0 }),
-          ].filter(Boolean).join(' · '),
-        })));
+      const all: TechnicianListItem[] = Array.isArray(result) ? result : (result?.data ?? []);
+      setRows(
+        all
+          .filter((m) => !onRoster || onRoster.has(m.id))
+          .map((m) => ({
+            id: m.id,
+            firstName: m.firstName,
+            lastName: m.lastName,
+            role: m.position || m.specialty || null,
+            state: [
+              m.isOnline ? t('job.assign.online') : null,
+              t('job.assign.jobs', { count: m.currentTaskCount ?? 0 }),
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          })),
+      );
     } catch {
       // The directory refused — the roster is the answer when there is one.
       if (roster) {
@@ -112,16 +116,28 @@ export function AssignSheet({
   return (
     <JobSheet visible={visible} onClose={onClose} title={t('job.assign.title')} busy={busy}>
       {offline ? (
-        <AText variant="caption" tone="warn">{t('job.needsSignal')}</AText>
+        <AText variant="caption" tone="warn">
+          {t('job.needsSignal')}
+        </AText>
       ) : rows === null ? (
-        <View style={{ paddingVertical: amazen.space(6), alignItems: 'center' }}><ActivityIndicator color={c.accent} /></View>
+        <View style={{ paddingVertical: amazen.space(6), alignItems: 'center' }}>
+          <ActivityIndicator color={c.accent} />
+        </View>
       ) : (
         <>
           {(rows?.length ?? 0) > 8 ? (
             <JobField value={q} onChangeText={setQ} placeholder={t('job.assign.search')} autoCorrect={false} />
           ) : null}
-          {failed ? <AText variant="caption" tone="critical">{t('job.assign.failed')}</AText> : null}
-          {!failed && shown.length === 0 ? <AText variant="caption" tone="ink">{t('job.assign.none')}</AText> : null}
+          {failed ? (
+            <AText variant="caption" tone="critical">
+              {t('job.assign.failed')}
+            </AText>
+          ) : null}
+          {!failed && shown.length === 0 ? (
+            <AText variant="caption" tone="ink">
+              {t('job.assign.none')}
+            </AText>
+          ) : null}
           {shown.map((m) => {
             const sel = m.id === current;
             return (
@@ -133,16 +149,24 @@ export function AssignSheet({
                 accessibilityState={{ selected: sel, disabled: busy }}
                 accessibilityLabel={personName(m)}
                 style={({ pressed }) => ({
-                  flexDirection: 'row', alignItems: 'center', gap: amazen.space(3),
-                  paddingVertical: amazen.space(2.25), paddingHorizontal: amazen.space(1), borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: amazen.space(3),
+                  paddingVertical: amazen.space(2.25),
+                  paddingHorizontal: amazen.space(1),
+                  borderRadius: 12,
                   backgroundColor: sel ? c.accentTint : pressed ? c.tile : 'transparent',
                 })}
               >
                 <Initials first={m.firstName} last={m.lastName} size={34} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, lineHeight: 20 }}>{personName(m)}</AText>
+                  <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, lineHeight: 20 }}>
+                    {personName(m)}
+                  </AText>
                   {m.role || m.state ? (
-                    <AText variant="caption" tone="ink" numberOfLines={1}>{[m.role, m.state].filter(Boolean).join(' · ')}</AText>
+                    <AText variant="caption" tone="ink" numberOfLines={1}>
+                      {[m.role, m.state].filter(Boolean).join(' · ')}
+                    </AText>
                   ) : null}
                 </View>
                 {sel ? <Pill tone="accent" label={t('job.assign.now')} /> : null}

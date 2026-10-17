@@ -39,16 +39,16 @@ export class PlatformTrialService {
         subscription: { select: { stripeSubscriptionId: true } },
       },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     if (org.subStatus !== 'TRIALING') {
-      return { success: false, statusCode: 400, message: 'This organization is not on a trial.' } as any;
+      return { success: false, statusCode: 400, message: 'This organization is not on a trial.' };
     }
     if (org.subscription?.stripeSubscriptionId) {
       return {
         success: false,
         statusCode: 400,
         message: 'This organization already has a subscription — end the trial in Stripe, not here.',
-      } as any;
+      };
     }
 
     const now = new Date();
@@ -71,7 +71,7 @@ export class PlatformTrialService {
       where: { id: data.organizationId },
       select: { id: true, name: true, trialEndsAt: true },
     });
-    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
+    if (!org) return { success: false, statusCode: 404, message: 'Organization not found' };
     const days = Math.max(1, Math.min(365, Math.floor(data.days || 0)));
     const base = org.trialEndsAt && org.trialEndsAt.getTime() > Date.now() ? org.trialEndsAt.getTime() : Date.now();
     const trialEndsAt = new Date(base + days * 86_400_000);

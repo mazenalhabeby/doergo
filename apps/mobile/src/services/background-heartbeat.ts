@@ -33,59 +33,62 @@ export function newestFix<T extends RawFix>(locations: readonly T[] | null | und
 }
 
 // Define the background task
-TaskManager.defineTask(TASK_NAME, async ({ data, error }: any) => {
-  if (error) {
-    console.error('[Heartbeat] Background task error:', error);
-    return;
-  }
-
-  if (!data?.locations?.length) return;
-
-  // Stop only on a genuine logout (token absent). A transient keychain read
-  // error must NOT deregister the heartbeat. (Sec audit H12.)
-  let token: string | null;
-  try {
-    token = await getAccessToken();
-  } catch {
-    return; // transient read failure — skip this tick, keep the heartbeat alive
-  }
-  if (!token) {
-    console.log('[Heartbeat] No auth token, stopping background tracking');
-    await stopBackgroundHeartbeat();
-    return;
-  }
-
-  // The automatic clock's held departure goes once its exit grace has passed — this is the wake that sends it.
-  await autoClockWake();
-
-  const location = newestFix<RawFix>(data.locations);
-  if (!location) return;
-  const point = {
-    lat: location.coords.latitude,
-    lng: location.coords.longitude,
-    accuracy: location.coords.accuracy || undefined,
-    recordedAt: new Date(location.timestamp ?? Date.now()).toISOString(),
-  };
-  // What was kept without signal goes first, so the live check-in is judged after it.
-  if (!(await keptCheckIns.flush().catch(() => false))) {
-    await keptCheckIns.keep(point);
-    return;
-  }
-  try {
-    const result = await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
-
-    if (result.autoClockedOut) {
-      console.log('[Heartbeat] Auto-clocked out by server, stopping background tracking');
-      await stopBackgroundHeartbeat();
+TaskManager.defineTask(
+  TASK_NAME,
+  async ({ data, error }: TaskManager.TaskManagerTaskBody<{ locations?: RawFix[] }>) => {
+    if (error) {
+      console.error('[Heartbeat] Background task error:', error);
+      return;
     }
-  } catch (err) {
-    if (isUnreachable(err)) {
+
+    if (!data?.locations?.length) return;
+
+    // Stop only on a genuine logout (token absent). A transient keychain read
+    // error must NOT deregister the heartbeat. (Sec audit H12.)
+    let token: string | null;
+    try {
+      token = await getAccessToken();
+    } catch {
+      return; // transient read failure — skip this tick, keep the heartbeat alive
+    }
+    if (!token) {
+      console.log('[Heartbeat] No auth token, stopping background tracking');
+      await stopBackgroundHeartbeat();
+      return;
+    }
+
+    // The automatic clock's held departure goes once its exit grace has passed — this is the wake that sends it.
+    await autoClockWake();
+
+    const location = newestFix<RawFix>(data.locations);
+    if (!location) return;
+    const point = {
+      lat: location.coords.latitude,
+      lng: location.coords.longitude,
+      accuracy: location.coords.accuracy || undefined,
+      recordedAt: new Date(location.timestamp ?? Date.now()).toISOString(),
+    };
+    // What was kept without signal goes first, so the live check-in is judged after it.
+    if (!(await keptCheckIns.flush().catch(() => false))) {
       await keptCheckIns.keep(point);
       return;
     }
-    console.error('[Heartbeat] Failed to send heartbeat:', err);
-  }
-});
+    try {
+      const result = await attendanceApi.heartbeat({ lat: point.lat, lng: point.lng, accuracy: point.accuracy });
+
+      if (result.autoClockedOut) {
+        console.log('[Heartbeat] Auto-clocked out by server, stopping background tracking');
+        await stopBackgroundHeartbeat();
+      }
+    } catch (err) {
+      if (isUnreachable(err)) {
+        await keptCheckIns.keep(point);
+        return;
+      }
+      console.error('[Heartbeat] Failed to send heartbeat:', err);
+    }
+  },
+);
 
 /**
  * Start background location tracking for attendance heartbeat.
@@ -118,10 +121,10 @@ export async function startBackgroundHeartbeat(): Promise<boolean> {
     // instant crossing detection geofencing provides.
     await Location.startLocationUpdatesAsync(TASK_NAME, {
       accuracy: Location.Accuracy.Balanced,
-      timeInterval: 15 * 60 * 1000,      // Safety-net poll every 15 min (was 5)
-      distanceInterval: 150,             // Or every 150 m moved (was 50)
+      timeInterval: 15 * 60 * 1000, // Safety-net poll every 15 min (was 5)
+      distanceInterval: 150, // Or every 150 m moved (was 50)
       deferredUpdatesInterval: 15 * 60 * 1000,
-      pausesUpdatesAutomatically: true,  // iOS: let the OS pause when stationary
+      pausesUpdatesAutomatically: true, // iOS: let the OS pause when stationary
       activityType: Location.ActivityType.Other,
       showsBackgroundLocationIndicator: true, // iOS blue bar
       // In the member's language — it stays on their lock screen for the whole shift.

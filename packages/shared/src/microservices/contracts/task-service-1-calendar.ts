@@ -57,7 +57,10 @@ export const calendarSetDetectedPlace = rpc<{
   stateCode?: string | null;
   stateName?: string | null;
 }>('calendar_set_detected_place');
-export const calendarPlacesToDetect = rpc<{ limit?: number } | undefined>('calendar_places_to_detect');
+export const calendarPlacesToDetect = rpc<
+  { limit?: number } | undefined,
+  { data?: { id: string; organizationId: string; lat: number; lng: number }[] } | null
+>('calendar_places_to_detect');
 export const calendarEventCreate = rpc<CalendarCaller & { input: CalendarEventMessage; clientId?: string }>(
   'calendar_event_create',
 );

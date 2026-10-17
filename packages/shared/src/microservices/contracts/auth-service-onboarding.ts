@@ -53,9 +53,11 @@ export const onboardingUpdateLeavePolicy = rpc<{
   policy?: Record<string, unknown>;
   defaultLeaveAllowance?: number;
 }>('onboarding_update_leave_policy');
-export const updateProfileBadges = rpc<{ organizationId: string; profileBadges: any }>('update_profile_badges');
+export const updateProfileBadges = rpc<{ organizationId: string; profileBadges: unknown }>('update_profile_badges');
 export const getProfileBadges = rpc<{ organizationId: string }>('get_profile_badges');
 export const getOrgProfile = rpc<{ organizationId: string }>('get_org_profile');
-export const updateOrgProfile = rpc<{ organizationId: string; updates: any }>('update_org_profile');
-export const updateOrgNotificationPrefs = rpc<{ organizationId: string; prefs: any }>('update_org_notification_prefs');
-export const updateSecuritySettings = rpc<{ organizationId: string; settings: any }>('update_security_settings');
+export const updateOrgProfile = rpc<{ organizationId: string; updates: Record<string, unknown> }>('update_org_profile');
+export const updateOrgNotificationPrefs = rpc<{ organizationId: string; prefs: unknown }>(
+  'update_org_notification_prefs',
+);
+export const updateSecuritySettings = rpc<{ organizationId: string; settings: unknown }>('update_security_settings');

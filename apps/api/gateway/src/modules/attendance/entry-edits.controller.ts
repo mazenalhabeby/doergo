@@ -4,6 +4,8 @@ import { RequirePermissionInSpace } from '../../common/decorators';
 import { AddManualEntriesDto } from './dto';
 import { AttendanceControllerBase } from './attendance-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /** /attendance/entries — correcting, inspecting, deleting and adding entries by hand. */
 @ApiTags('attendance')
 @ApiBearerAuth()
@@ -14,19 +16,20 @@ export class EntryEditsController extends AttendanceControllerBase {
   @ApiOperation({ summary: 'Edit a time entry (manager correction)' })
   async editEntry(
     @Param('id') entryId: string,
-    @Body() body: {
+    @Body()
+    body: {
       clockInAt?: string;
       clockOutAt?: string;
       notes?: string;
       timezone?: string;
       reason: string;
     },
-    @Request() req?: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.entryDecisions.editEntry({
       entryId,
       editorId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
       clockInAt: body.clockInAt,
       clockOutAt: body.clockOutAt,
@@ -44,10 +47,10 @@ export class EntryEditsController extends AttendanceControllerBase {
   @Get('entries/:id/presence')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Where a member worked through one entry: on site, in the field or remote' })
-  async getEntryPresence(@Param('id') entryId: string, @Request() req?: any) {
+  async getEntryPresence(@Param('id') entryId: string, @Request() req: AuthedRequest) {
     return this.entryDecisions.getEntryPresence({
       entryId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
@@ -55,10 +58,10 @@ export class EntryEditsController extends AttendanceControllerBase {
   @Get('entries/:id/history')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get the full edit history for a time entry' })
-  async getEntryHistory(@Param('id') entryId: string, @Request() req?: any) {
+  async getEntryHistory(@Param('id') entryId: string, @Request() req: AuthedRequest) {
     return this.entryDecisions.getEntryHistory({
       entryId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
     });
   }
@@ -68,11 +71,11 @@ export class EntryEditsController extends AttendanceControllerBase {
   @Delete('entries/:id')
   @RequirePermissionInSpace('canDeleteAttendance')
   @ApiOperation({ summary: 'Delete a time entry (admin)' })
-  async deleteEntry(@Param('id') entryId: string, @Request() req?: any) {
+  async deleteEntry(@Param('id') entryId: string, @Request() req: AuthedRequest) {
     return this.entryDecisions.deleteEntry({
       entryId,
       editorId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canDeleteAttendance'),
     });
   }
@@ -82,7 +85,7 @@ export class EntryEditsController extends AttendanceControllerBase {
   @ApiOperation({
     summary: 'Admin: add/back-date attendance for an employee (single day, or a weekday-filtered date-range backfill)',
   })
-  async addManualEntries(@Body() body: AddManualEntriesDto, @Request() req?: any) {
+  async addManualEntries(@Body() body: AddManualEntriesDto, @Request() req: AuthedRequest) {
     return this.entryDecisions.addManualEntries({
       userId: body.userId,
       locationId: body.locationId,
@@ -99,7 +102,7 @@ export class EntryEditsController extends AttendanceControllerBase {
       notes: body.notes,
       reason: body.reason,
       editorId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: this.scope(req, 'canReconcileAttendance'),
     });
   }

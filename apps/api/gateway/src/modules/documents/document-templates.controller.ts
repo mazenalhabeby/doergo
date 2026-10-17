@@ -9,6 +9,8 @@ import { documentActor, requestContext } from './documents.actor';
 import { CreateTemplateDto, PreviewTemplateDto, IssueFromTemplateDto, UpdateTemplateDto } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /** /documents/templates — contract templates, and issuing a contract from one. */
 @ApiTags('documents')
 @ApiBearerAuth()
@@ -27,7 +29,7 @@ export class DocumentTemplatesController {
   @Get('templates')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Contract templates' })
-  async listTemplates(@CurrentUser() user: CurrentUserData, @Query('includeInactive') includeInactive?: string) {
+  async listTemplates(@CurrentUser() user: SessionUser, @Query('includeInactive') includeInactive?: string) {
     return this.documents.listTemplates({
       actor: documentActor(user),
       includeInactive: includeInactive === 'true',
@@ -37,7 +39,7 @@ export class DocumentTemplatesController {
   @Post('templates')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Create a contract template' })
-  async createTemplate(@CurrentUser() user: CurrentUserData, @Body() body: CreateTemplateDto) {
+  async createTemplate(@CurrentUser() user: SessionUser, @Body() body: CreateTemplateDto) {
     return this.documents.createTemplate({ actor: documentActor(user), ...body });
   }
 
@@ -47,28 +49,28 @@ export class DocumentTemplatesController {
   // every keystroke — a person clicking Preview does not reach this rate.
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Lay a draft out as the PDF a member would receive — stores nothing' })
-  async previewTemplate(@CurrentUser() user: CurrentUserData, @Body() body: PreviewTemplateDto) {
+  async previewTemplate(@CurrentUser() user: SessionUser, @Body() body: PreviewTemplateDto) {
     return this.documents.previewTemplate({ actor: documentActor(user), ...body });
   }
 
   @Patch('templates/:id')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Edit a template (bumps its version; issued documents are untouched)' })
-  async updateTemplate(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Body() body: UpdateTemplateDto) {
+  async updateTemplate(@CurrentUser() user: SessionUser, @Param('id') id: string, @Body() body: UpdateTemplateDto) {
     return this.documents.updateTemplate({ actor: documentActor(user), id, patch: body });
   }
 
   @Delete('templates/:id')
   @RequirePermission('canManageDocumentTemplates')
   @ApiOperation({ summary: 'Retire a template' })
-  async deactivateTemplate(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async deactivateTemplate(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     return this.documents.deactivateTemplate({ actor: documentActor(user), id });
   }
 
   @Post('issue-contract')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Render and issue a contract to one member' })
-  async issueContract(@CurrentUser() user: CurrentUserData, @Body() body: IssueFromTemplateDto, @Req() req: any) {
+  async issueContract(@CurrentUser() user: SessionUser, @Body() body: IssueFromTemplateDto, @Req() req: AuthedRequest) {
     return this.documents.issueFromTemplate({
       actor: documentActor(user),
       userId: body.userId,

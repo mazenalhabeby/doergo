@@ -24,10 +24,9 @@ Notifications.setNotificationHandler({
     // Already answered on this phone (a clock-in waiting to send, say): show nothing.
     // Nobody signed in: show nothing either — a signed-out phone is not anyone's inbox.
     const signedIn = !!(await getAccessToken().catch(() => null));
-    const show = signedIn && !isNotificationSuppressed(
-      notification.request.content.data as Record<string, unknown> | undefined,
-      Date.now(),
-    );
+    const show =
+      signedIn &&
+      !isNotificationSuppressed(notification.request.content.data as Record<string, unknown> | undefined, Date.now());
     return {
       shouldShowAlert: show,
       shouldPlaySound: show,
@@ -57,7 +56,7 @@ function isNewTap(response: Notifications.NotificationResponse): boolean {
 interface NotificationData {
   type?: string;
   taskId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export function usePushNotifications(options: UsePushNotificationsOptions = {}) {
@@ -67,19 +66,15 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
   // Setup notification listeners
   useEffect(() => {
     // Listener for notifications received while app is foregrounded
-    notificationListener.current = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        options.onNotificationReceived?.(notification);
-      }
-    );
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      options.onNotificationReceived?.(notification);
+    });
 
     // Listener for when user taps on notification
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const handler = options.onNotificationResponse;
-        if (handler && isNewTap(response)) handler(response);
-      }
-    );
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const handler = options.onNotificationResponse;
+      if (handler && isNewTap(response)) handler(response);
+    });
 
     return () => {
       if (notificationListener.current) {
@@ -147,7 +142,11 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
       await Notifications.setNotificationCategoryAsync(CALENDAR_INVITE_CATEGORY, [
         { identifier: CALENDAR_ACTIONS.accept, buttonTitle: i18n.t('calendar.push.accept'), options: open },
         { identifier: CALENDAR_ACTIONS.maybe, buttonTitle: i18n.t('calendar.push.maybe'), options: open },
-        { identifier: CALENDAR_ACTIONS.decline, buttonTitle: i18n.t('calendar.push.decline'), options: { ...open, isDestructive: true } },
+        {
+          identifier: CALENDAR_ACTIONS.decline,
+          buttonTitle: i18n.t('calendar.push.decline'),
+          options: { ...open, isDestructive: true },
+        },
       ]).catch(() => undefined);
       // The automatic clock's buttons (src/services/auto-clock/notifications.ts): Undo, Still working, Clock out.
       await registerAutoClockCategories();
@@ -218,11 +217,12 @@ export function usePushNotifications(options: UsePushNotificationsOptions = {}) 
 
 // Helper function to extract task ID from notification
 export function getTaskIdFromNotification(
-  notification: Notifications.Notification | Notifications.NotificationResponse
+  notification: Notifications.Notification | Notifications.NotificationResponse,
 ): string | null {
-  const data = 'notification' in notification
-    ? (notification.notification.request.content.data as NotificationData)
-    : (notification.request.content.data as NotificationData);
+  const data =
+    'notification' in notification
+      ? (notification.notification.request.content.data as NotificationData)
+      : (notification.request.content.data as NotificationData);
 
   return data?.taskId ?? null;
 }

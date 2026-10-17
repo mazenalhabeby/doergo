@@ -2,16 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useAuth } from '../../../src/contexts/auth-context';
 import { useTheme } from '../../../src/contexts/theme-context';
 import { ScreenContainer } from '../../../src/components';
 import { manageRowsFor } from '../../../src/lib/manage-rows';
 import { holds } from '../../../src/lib/permissions';
 import { ShiftIssueListSheet, ShiftIssueThreadSheet } from '../../../src/components/shift-issue-sheet';
-import {
-  SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS
-} from '../../../src/lib/constants';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, SHADOWS } from '../../../src/lib/constants';
 import { useTabSafe } from '../../../src/components/amazen';
 
 export default function ManageScreen() {
@@ -36,46 +34,47 @@ export default function ManageScreen() {
 
   return (
     <ScreenContainer width="content" style={{ backgroundColor: colors.surface }}>
-    <ScrollView
-      style={[s.container, { backgroundColor: colors.surface }]}
-      contentContainerStyle={[s.content, { paddingBottom: tabSafe }]}
-      showsVerticalScrollIndicator={false}
-    >
-      {rows.map((item) => (
-        <TouchableOpacity
-          key={item.route}
-          style={[s.row, { backgroundColor: colors.card }]}
-          onPress={() =>
-            item.route === 'sheet:issues' ? setIssuesOpen(true) : router.push(item.route as any)
-          }
-          activeOpacity={0.6}
-        >
-          <View style={[s.iconBox, { backgroundColor: item.color + '15' }]}>
-            <Ionicons name={item.icon as any} size={22} color={item.color} />
-          </View>
-          <View style={s.textCol}>
-            <Text style={[s.label, { color: colors.textPrimary }]}>{t(item.labelKey)}</Text>
-            <Text style={[s.desc, { color: colors.textMuted }]}>{t(item.descKey)}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+      <ScrollView
+        style={[s.container, { backgroundColor: colors.surface }]}
+        contentContainerStyle={[s.content, { paddingBottom: tabSafe }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {rows.map((item) => (
+          <TouchableOpacity
+            key={item.route}
+            style={[s.row, { backgroundColor: colors.card }]}
+            onPress={() => (item.route === 'sheet:issues' ? setIssuesOpen(true) : router.push(item.route as Href))}
+            activeOpacity={0.6}
+          >
+            <View style={[s.iconBox, { backgroundColor: item.color + '15' }]}>
+              <Ionicons name={item.icon} size={22} color={item.color} />
+            </View>
+            <View style={s.textCol}>
+              <Text style={[s.label, { color: colors.textPrimary }]}>{t(item.labelKey)}</Text>
+              <Text style={[s.desc, { color: colors.textMuted }]}>{t(item.descKey)}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
-    <ShiftIssueListSheet
-      visible={issuesOpen}
-      onClose={() => setIssuesOpen(false)}
-      onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }}
-    />
-    <ShiftIssueThreadSheet
-      visible={!!issueId}
-      issueId={issueId}
-      onClose={() => setIssueId(null)}
-      /* Whether the actions render is the server's call in the end; this only
+      <ShiftIssueListSheet
+        visible={issuesOpen}
+        onClose={() => setIssuesOpen(false)}
+        onOpen={(id) => {
+          setIssuesOpen(false);
+          setIssueId(id);
+        }}
+      />
+      <ShiftIssueThreadSheet
+        visible={!!issueId}
+        issueId={issueId}
+        onClose={() => setIssueId(null)}
+        /* Whether the actions render is the server's call in the end; this only
          decides what to draw, and it asks the same question the API does. */
-      canManage={holds(user, 'canViewAllTasks')}
-      currentUserId={user?.id}
-    />
+        canManage={holds(user, 'canViewAllTasks')}
+        currentUserId={user?.id}
+      />
     </ScreenContainer>
   );
 }

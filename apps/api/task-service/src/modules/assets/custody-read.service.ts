@@ -108,7 +108,7 @@ export class CustodyReadService extends AssetCustodyBase {
       Without this the button would be hidden from everybody who needs it, or
       shown to every organization that never bought Assets.
     */
-    return success({ ...(held as any).data, canPropose });
+    return success({ ...held.data, canPropose });
   }
 
   /** Does anything here get handed to a member at all? One small query. */

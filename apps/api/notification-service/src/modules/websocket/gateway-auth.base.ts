@@ -4,6 +4,7 @@ import { SocketEvents, platformCan } from '@hbcfield/shared';
 import { operatorMaySupport, resolveSocketAccess, socketMayOpenTask, type SocketAccess } from './socket-access';
 import type { ClientInfo } from './gateway.types';
 import { GatewayChatEmitsBase } from './gateway-chat-emits.base';
+import type { AccessTokenClaims } from './socket-payloads';
 
 /**
  * The bodies of the `authenticate`, `authenticate_agent` and `join_task` handlers —
@@ -24,13 +25,13 @@ export abstract class GatewayAuthBase extends GatewayChatEmitsBase {
     }
 
     // Verify JWT token
-    let decoded: any;
+    let decoded: AccessTokenClaims;
     try {
       // Pin the algorithm so a token can't force verification under a different
       // scheme (none-alg / RS↔HS confusion) — defense-in-depth (L10).
-      decoded = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] });
-    } catch (err: any) {
-      this.logger.warn(`[AUTH] Client ${client.id} rejected: invalid/expired token - ${err.message}`);
+      decoded = jwt.verify(token, this.jwtSecret, { algorithms: ['HS256'] }) as AccessTokenClaims;
+    } catch (err: unknown) {
+      this.logger.warn(`[AUTH] Client ${client.id} rejected: invalid/expired token - ${(err as Error).message}`);
       return { success: false, error: 'Invalid or expired token' };
     }
 
@@ -195,9 +196,11 @@ export abstract class GatewayAuthBase extends GatewayChatEmitsBase {
     // role holds manageSupport (socket-access.ts operatorMaySupport). Like an
     // app socket, it is cut when the token lapses.
     if (this.platformJwtSecret && auth.token) {
-      let p: any = null;
+      let p: (AccessTokenClaims & { typ?: unknown }) | null = null;
       try {
-        p = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] });
+        p = jwt.verify(auth.token, this.platformJwtSecret, { algorithms: ['HS256'] }) as AccessTokenClaims & {
+          typ?: unknown;
+        };
       } catch {
         /* invalid token */
       }

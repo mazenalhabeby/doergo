@@ -202,7 +202,7 @@ export class RolePoolService extends RolePoolBase {
     try {
       // The row id from the read above: a second return arriving at once finds nothing to delete.
       await this.prisma.taskAssignee.delete({ where: { id: mine.id } });
-    } catch (e: any) {
+    } catch (e) {
       if (e?.code === 'P2025') throw new NotFoundException('Task not found');
       throw e;
     }

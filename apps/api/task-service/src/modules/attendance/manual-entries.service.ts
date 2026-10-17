@@ -8,9 +8,11 @@ import {
   assertManualRangeShape,
   manualBreakPlacement,
   manualEntryRow,
+  type ManualEntryRow,
   manualTargetDates,
   type ManualEntriesInput,
 } from './manual-entries-steps';
+import type { Prisma } from '@prisma/client';
 
 /** Hours the office adds by hand ("they were here") — one person or several, one day or many. */
 @Injectable()
@@ -82,7 +84,7 @@ export class ManualEntriesService extends EntryServiceBase {
     const taken = new Set(existing.map((e) => utcToZonedYmd(e.clockInAt)));
 
     const now = new Date();
-    const toCreate: any[] = [];
+    const toCreate: ManualEntryRow[] = [];
     let skipped = 0;
     for (const ymd of dates) {
       if (taken.has(ymd)) {
@@ -134,7 +136,7 @@ export class ManualEntriesService extends EntryServiceBase {
   */
   private async writeManualEntries(
     data: ManualEntriesInput,
-    toCreate: any[],
+    toCreate: ManualEntryRow[],
     rest: { breakOffsetMin: number; breakMin: number; reason: string },
   ) {
     const { breakOffsetMin, breakMin, reason } = rest;

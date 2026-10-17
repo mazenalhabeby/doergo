@@ -9,10 +9,10 @@
  * Its own module so tests can hand in pdf.js directly: under Jest, an import
  * built this way resolves against the first test file's (torn-down) environment.
  */
-const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<any>;
-let pdfjsModule: Promise<any> | null = null;
+const esmImport = new Function('s', 'return import(s)') as (s: string) => Promise<unknown>;
+let pdfjsModule: Promise<unknown> | null = null;
 
-export function loadPdfjs(): Promise<any> {
+export function loadPdfjs(): Promise<unknown> {
   return (pdfjsModule ??= esmImport('pdfjs-dist/legacy/build/pdf.mjs').catch((e) => {
     pdfjsModule = null;
     throw e;

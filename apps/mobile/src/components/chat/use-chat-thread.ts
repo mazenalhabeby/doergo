@@ -8,6 +8,11 @@ import {
   type ChatAttachment,
   type ChatConversation,
   type ChatMessage,
+  type ChatMessageEvent,
+  type ChatMessageChangedEvent,
+  type ChatReadEvent,
+  type ChatConversationUpdatedEvent,
+  type ChatTypingEvent,
 } from '@hbcfield/shared/client';
 import { useSocketContext } from '../../contexts/socket-context';
 import { chatApi } from '../../lib/api';
@@ -143,7 +148,7 @@ export function useChatThread(
     if (!isAuthenticated) return;
     const mine = (id?: string) => !!activeRef.current && id === activeRef.current.id;
     const offs = [
-      subscribe(SocketEvents.CHAT_MESSAGE, (d: any) => {
+      subscribe(SocketEvents.CHAT_MESSAGE, (d: ChatMessageEvent) => {
         if (!mine(d?.conversationId ?? d?.message?.conversationId)) return;
         setPeerTyping(false);
         if (isPlaceable(d?.message)) setMessages((m) => appendMessage(m, d.message as ChatMessage));
@@ -151,15 +156,15 @@ export function useChatThread(
         // Read only while it is on screen; a thread left behind in its tab reads nothing.
         if (d?.message?.senderId !== meId && focusedRef.current) later.current!.read.call();
       }),
-      subscribe(SocketEvents.CHAT_MESSAGE_CHANGED, (d: any) => {
+      subscribe(SocketEvents.CHAT_MESSAGE_CHANGED, (d: ChatMessageChangedEvent) => {
         if (mine(d?.conversationId) && d?.message?.id) setMessages((m) => replaceMessage(m, d.message));
       }),
-      subscribe(SocketEvents.CHAT_READ, (d: any) => {
+      subscribe(SocketEvents.CHAT_READ, (d: ChatReadEvent) => {
         if (mine(d?.conversationId)) setActive((c) => (c ? applyRead([c], d, meId)[0]! : c));
       }),
       // A group changed or a job's crew moved: the open conversation takes its new members and name;
       // taken out of it, the screen leaves.
-      subscribe(SocketEvents.CHAT_CONVERSATION_UPDATED, (d: any) => {
+      subscribe(SocketEvents.CHAT_CONVERSATION_UPDATED, (d: ChatConversationUpdatedEvent) => {
         if (!mine(d?.conversationId)) return;
         if (d?.removed) {
           setActive(null);
@@ -174,7 +179,7 @@ export function useChatThread(
           })
           .catch(() => undefined);
       }),
-      subscribe(SocketEvents.CHAT_TYPING, (d: any) => {
+      subscribe(SocketEvents.CHAT_TYPING, (d: ChatTypingEvent) => {
         if (!mine(d?.conversationId) || d?.from === meId) return;
         setPeerTyping(true);
         if (typingTimer.current) clearTimeout(typingTimer.current);

@@ -10,7 +10,7 @@ import {
   localPartsIn,
   type AutoClockStartWindow,
 } from '@hbcfield/shared';
-import { VALID_DAYS } from './space-helpers';
+import { assertValidScheduleDays } from './space-helpers';
 import { SpaceServiceBase } from './space-service.base';
 
 /** A member's terms in one workspace: roles, bill terms, the automatic clock. */
@@ -91,14 +91,7 @@ export class AssignmentTermsService extends SpaceServiceBase {
     }
 
     // Validate schedule days if provided
-    if (data.schedule && data.schedule.length > 0) {
-      const invalidDays = data.schedule.filter((day) => !VALID_DAYS.includes(day));
-      if (invalidDays.length > 0) {
-        throw new BadRequestException(
-          `Invalid schedule days: ${invalidDays.join(', ')}. Valid days: ${VALID_DAYS.join(', ')}`,
-        );
-      }
-    }
+    assertValidScheduleDays(data.schedule);
 
     // If setting as primary, unset other primary assignments for this user
     if (data.isPrimary) {
@@ -112,7 +105,7 @@ export class AssignmentTermsService extends SpaceServiceBase {
       });
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.SpaceAssignmentUncheckedUpdateInput = {};
     if (data.isPrimary !== undefined) updateData.isPrimary = data.isPrimary;
     if (data.schedule !== undefined) updateData.schedule = data.schedule;
     if (data.effectiveFrom !== undefined) updateData.effectiveFrom = new Date(data.effectiveFrom);
@@ -139,11 +132,11 @@ export class AssignmentTermsService extends SpaceServiceBase {
           params: { field: parsed.field },
         });
       }
-      updateData.autoClockStartWindow = parsed.value ?? Prisma.DbNull;
+      updateData.autoClockStartWindow = (parsed.value as Prisma.InputJsonValue | null) ?? Prisma.DbNull;
     } else if (data.autoClockMode === 'PRESENCE' && assignment.autoClockMode !== 'PRESENCE') {
       // Switched to arriving and leaving: start from their own habit here, which the office can change.
       const suggested = await this.suggestStartWindow(assignment.userId, assignment.spaceId);
-      updateData.autoClockStartWindow = suggested ?? Prisma.DbNull;
+      updateData.autoClockStartWindow = (suggested as Prisma.InputJsonValue | null) ?? Prisma.DbNull;
     }
 
     const updated = await this.prisma.spaceAssignment.update({

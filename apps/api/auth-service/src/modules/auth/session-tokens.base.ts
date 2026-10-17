@@ -1,6 +1,6 @@
 import { notEndedWhere, DEFAULT_REFRESH_TOKEN_TTL } from '@hbcfield/shared';
 import { Injectable, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -94,7 +94,7 @@ export abstract class SessionTokensBase {
     // organizationId is embedded so downstream services (e.g. the Socket.IO
     // gateway) can scope rooms from the verified token instead of trusting a
     // client-supplied org id.
-    const basePayload: Record<string, any> = { sub: userId, email, role };
+    const basePayload: Record<string, unknown> = { sub: userId, email, role };
     if (organizationId) basePayload.organizationId = organizationId;
     // Lets the Socket.IO gateway scope task events to admins + "view all tasks"
     // holders (a room they join) instead of broadcasting to the whole org.
@@ -109,9 +109,8 @@ export abstract class SessionTokensBase {
     // login: web honors rememberMe → 24h/30d; mobile → env default 90d) overrides
     // the env default and is carried forward across rotations via the `rtl` claim.
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';
-    // Typed loose (like accessExpiration, which is any from configService) so the
-    // jsonwebtoken `expiresIn` StringValue overload accepts it.
-    const refreshExpiration: any =
+    // A duration such as "90d" from the session or the environment.
+    const refreshExpiration: string =
       refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || DEFAULT_REFRESH_TOKEN_TTL;
 
     this.logger.log(`Generating tokens with refreshExpiration=${refreshExpiration}`);
@@ -130,7 +129,8 @@ export abstract class SessionTokensBase {
       { ...basePayload, jti: randomUUID(), rtl: refreshExpiration },
       {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
-        expiresIn: refreshExpiration,
+        // jsonwebtoken types a duration string as its own StringValue.
+        expiresIn: refreshExpiration as JwtSignOptions['expiresIn'],
       },
     );
 

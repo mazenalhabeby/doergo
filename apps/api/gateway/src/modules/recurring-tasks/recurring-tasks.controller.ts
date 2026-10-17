@@ -8,6 +8,8 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { CreateRecurringTaskDto, UpdateRecurringTaskDto } from './dto';
 import { RecurringTasksService } from './recurring-tasks.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('recurring-tasks')
 @ApiBearerAuth()
 @RequirePlan('recurring') // Professional+ (write routes; reads pass through)
@@ -26,9 +28,9 @@ export class RecurringTasksController {
   */
   @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'List organization recurring task templates' })
-  async findAll(@Request() req: any) {
+  async findAll(@Request() req: AuthedRequest) {
     return this.recurringTasksService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceIds: scopeIdsFor(req.user, 'canViewAllTasks'),
     });
   }
@@ -36,10 +38,10 @@ export class RecurringTasksController {
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Create a recurring task template' })
-  async create(@Body() dto: CreateRecurringTaskDto, @Request() req: any) {
+  async create(@Body() dto: CreateRecurringTaskDto, @Request() req: AuthedRequest) {
     return this.recurringTasksService.create({
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       createdById: req.user.id,
     });
   }
@@ -47,35 +49,31 @@ export class RecurringTasksController {
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update a recurring task template' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateRecurringTaskDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateRecurringTaskDto, @Request() req: AuthedRequest) {
     return this.recurringTasksService.update({
       id,
       ...dto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a recurring task template' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.recurringTasksService.remove({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Post(':id/generate')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Manually trigger task generation from template' })
-  async generate(@Param('id') id: string, @Request() req: any) {
+  async generate(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.recurringTasksService.generate({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       userId: req.user.id,
     });
   }

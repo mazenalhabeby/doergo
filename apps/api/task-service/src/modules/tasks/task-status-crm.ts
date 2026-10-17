@@ -53,13 +53,13 @@ export async function applyStepFormCrm(
             caller: { userId: args.userId, role: args.userRole },
           }).pipe(timeout(5000)),
         );
-      } catch (err: any) {
+      } catch (err) {
         deps.logger.warn(
           `Step form CRM ${intent.type} skipped for submission ${args.submissionId}: ${err?.message ?? err}`,
         );
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     deps.logger.warn(`Step form CRM failed for submission ${args.submissionId}: ${err?.message ?? err}`);
   }
 }

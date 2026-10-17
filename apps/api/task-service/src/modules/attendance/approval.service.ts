@@ -5,6 +5,7 @@ import { assertNotSelfDecision } from './self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { MEMBER_SELECT } from './attendance-selects';
 import { EntryServiceBase } from './entry-service.base';
+import type { TimeEntryStatus } from '@prisma/client';
 
 @Injectable()
 export class ApprovalService extends EntryServiceBase {
@@ -30,7 +31,7 @@ export class ApprovalService extends EntryServiceBase {
       // 'not found', which is also the right thing to tell them.
       ...scopeWhere(data.scopeSpaceIds),
       approvalStatus: ApprovalStatus.PENDING,
-      status: { not: 'CLOCKED_IN' as any }, // Only completed entries
+      status: { not: 'CLOCKED_IN' as TimeEntryStatus }, // Only completed entries
     };
 
     /*
@@ -232,7 +233,7 @@ export class ApprovalService extends EntryServiceBase {
           notes: data.notes,
         });
         results.approved.push(entryId);
-      } catch (error: any) {
+      } catch (error) {
         results.failed.push({ id: entryId, reason: error.message });
       }
     }

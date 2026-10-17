@@ -24,6 +24,7 @@ import {
 } from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators';
+import type { SessionUser } from '../../common/request.types';
 
 /** Who needs the NAMES of the companies: whoever invoices, or chooses who invoices a workspace or a client. */
 const READ_KEYS: AccessPermissionKey[] = [
@@ -64,7 +65,7 @@ export class LegalEntitiesController {
 
   @Get()
   @ApiOperation({ summary: "The organization's companies (bank accounts only for invoicing)" })
-  async list(@Query('includeInactive') includeInactive: string | undefined, @CurrentUser() user: CurrentUserData) {
+  async list(@Query('includeInactive') includeInactive: string | undefined, @CurrentUser() user: SessionUser) {
     const admin = isAdmin(user);
     if (!admin && !READ_KEYS.some((k) => holds(user, k))) {
       throw new ForbiddenException('You do not have permission to see the companies');
@@ -80,35 +81,35 @@ export class LegalEntitiesController {
   @Post()
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Add a company' })
-  create(@Body() body: Record<string, unknown>, @CurrentUser() user: CurrentUserData) {
+  create(@Body() body: Record<string, unknown>, @CurrentUser() user: SessionUser) {
     return this.call('legal_entity_create', { organizationId: user.organizationId, input: body ?? {} });
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: "Edit a company's details or bank accounts" })
-  update(@Param('id') id: string, @Body() body: Record<string, unknown>, @CurrentUser() user: CurrentUserData) {
+  update(@Param('id') id: string, @Body() body: Record<string, unknown>, @CurrentUser() user: SessionUser) {
     return this.call('legal_entity_update', { organizationId: user.organizationId, id, input: body ?? {} });
   }
 
   @Post(':id/main')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Make this the main company' })
-  setMain(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  setMain(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return this.call('legal_entity_set_main', { organizationId: user.organizationId, id });
   }
 
   @Post(':id/deactivate')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Switch a company off (issued invoices keep it)' })
-  deactivate(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  deactivate(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return this.call('legal_entity_set_active', { organizationId: user.organizationId, id, active: false });
   }
 
   @Post(':id/reactivate')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Switch a company back on' })
-  reactivate(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  reactivate(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return this.call('legal_entity_set_active', { organizationId: user.organizationId, id, active: true });
   }
 }

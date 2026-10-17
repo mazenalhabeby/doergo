@@ -14,6 +14,7 @@ import { overlayTask } from '../../offline/tasks/overlay';
 import { restoreRoute } from '../../offline/routes/saved-route';
 import { planDay } from '../../offline/routes/plan-route';
 import { isStalePlan } from '../../lib/route-day';
+import { caught } from '../../lib/caught';
 
 export type LatLng = { lat: number; lng: number; label?: string };
 
@@ -63,20 +64,24 @@ export function useRoutePlannerScreenData() {
         const ops = offline.engine.operations();
         all = (await offline.records.list<Task>('tasks')).map((r) => overlayTask(r.data, ops) as Task);
       }
-      all ??= await tasksApi.list({ limit: 100 } as any);
+      all ??= await tasksApi.list({ limit: 100 });
       const mine = (all || []).filter((x) => isMyRouteStop(x, user?.id));
       setTasks(mine);
       // Preselect all by default.
       setSelected(Object.fromEntries(mine.map((x) => [x.id, true])));
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load tasks');
+    } catch (e: unknown) {
+      setError(caught(e).message || 'Failed to load tasks');
     } finally {
       setLoading(false);
     }
   }, [user?.id, offline.records, offline.engine]);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { locateMe(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    load();
+  }, [load]);
+  useEffect(() => {
+    locateMe();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /*
     ⚠️ NOT A HOOK, and it used to be called `useMyLocation`.
@@ -92,13 +97,24 @@ export function useRoutePlannerScreenData() {
     try {
       const pos = await getFix({ purpose: 'pick', ask: true });
       setStart({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: t('route.myLocation', 'My location') });
-    } catch { /* ignore */ } finally { setLocating(false); }
+    } catch {
+      /* ignore */
+    } finally {
+      setLocating(false);
+    }
   };
 
   const stops: RouteStop[] = useMemo(
-    () => tasks
-      .filter((x) => selected[x.id])
-      .map((x) => ({ id: x.id, lat: x.locationLat as number, lng: x.locationLng as number, label: x.title, address: x.locationAddress })),
+    () =>
+      tasks
+        .filter((x) => selected[x.id])
+        .map((x) => ({
+          id: x.id,
+          lat: x.locationLat as number,
+          lng: x.locationLng as number,
+          label: x.title,
+          address: x.locationAddress,
+        })),
     [tasks, selected],
   );
 
@@ -107,7 +123,11 @@ export function useRoutePlannerScreenData() {
   useEffect(() => {
     if (restored.current || loading || !user?.id || tasks.length === 0) return;
     restored.current = true;
-    void restoreRoute(AsyncStorage, user.id, tasks.map((x) => x.id)).then((plan) => {
+    void restoreRoute(
+      AsyncStorage,
+      user.id,
+      tasks.map((x) => x.id),
+    ).then((plan) => {
       if (!plan) return;
       restoredPlan.current = plan;
       setResult((current) => current ?? plan);
@@ -134,17 +154,25 @@ export function useRoutePlannerScreenData() {
   const optimize = async () => {
     setError(null);
     const from = start ?? (stops[0] ? { lat: stops[0].lat, lng: stops[0].lng } : null);
-    if (!from) { setError(t('route.needStart', 'Turn on location to set your start point')); return; }
+    if (!from) {
+      setError(t('route.needStart', 'Turn on location to set your start point'));
+      return;
+    }
     const list = start ? stops : stops.slice(1);
-    if (list.length === 0) { setError(t('route.needStops', 'Select at least one stop')); return; }
+    if (list.length === 0) {
+      setError(t('route.needStops', 'Select at least one stop'));
+      return;
+    }
     setOptimizing(true);
     try {
       // ONE implementation with the home's route card (offline/routes/plan-route.ts).
       const r = user?.id ? await planDay(user.id, start, stops) : null;
       if (r) setResult(r);
-    } catch (e: any) {
-      setError(e?.message || 'Could not optimize the route');
-    } finally { setOptimizing(false); }
+    } catch (e: unknown) {
+      setError(caught(e).message || 'Could not optimize the route');
+    } finally {
+      setOptimizing(false);
+    }
   };
 
   const orderedStops: RouteStop[] = useMemo(() => {
@@ -154,7 +182,8 @@ export function useRoutePlannerScreenData() {
   }, [result, stops]);
 
   const polyline = useMemo(() => {
-    const g: any = result?.geometry;
+    // GeoJSON from the routing engine (a LineString); anything else draws no line.
+    const g = result?.geometry as { coordinates?: unknown } | null | undefined;
     const coords = g?.coordinates;
     if (!Array.isArray(coords)) return [];
     return coords.map((c: number[]) => ({ latitude: c[1], longitude: c[0] }));

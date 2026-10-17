@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, WorkModel, SpaceKind } from '@prisma/client';
 import { rearmNoShiftSessions } from '../attendance/no-shift-rearm';
 import { assertWorkflowInOrg } from '../../common/tenant-scope.util';
 import {
@@ -66,7 +66,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
       throw new NotFoundException('Company location not found');
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.CompanyLocationUncheckedUpdateInput = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.lat !== undefined) updateData.lat = data.lat;
@@ -84,7 +84,9 @@ export class SpaceUpdateService extends SpaceServiceBase {
     // Only touched when the caller actually sent the field: a PATCH that is
     // renaming the space must not wipe a boundary somebody drew.
     if ('geofencePolygon' in data) {
-      updateData.geofencePolygon = this.cleanPolygon(data.geofencePolygon);
+      // ⚠️ cleanPolygon answers null to clear the boundary; Prisma's type for a nullable JSON column wants
+      // Prisma.DbNull there, not null. Kept as it is (CODE_AUDIT.md §12) — typed so the gap is visible.
+      updateData.geofencePolygon = this.cleanPolygon(data.geofencePolygon) as Prisma.InputJsonValue;
     }
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.enabledModules !== undefined) updateData.enabledModules = data.enabledModules;
@@ -93,7 +95,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
       await assertWorkflowInOrg(this.prisma, data.workflowId || null, existing.organizationId);
       updateData.workflowId = data.workflowId || null;
     }
-    if (data.workModel !== undefined) updateData.workModel = data.workModel;
+    if (data.workModel !== undefined) updateData.workModel = data.workModel as WorkModel;
     /*
       The ceiling on working away from this site.
 
@@ -146,7 +148,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
             params: { field: parsed.field },
           });
         }
-        updateData.autoClock = parsed.value;
+        updateData.autoClock = parsed.value as unknown as Prisma.InputJsonValue;
       }
     }
     // Clocking in with no shift — validated for the same reason as the policy above.
@@ -193,7 +195,7 @@ export class SpaceUpdateService extends SpaceServiceBase {
       }
     }
     // Ownership kind + customer contact fields.
-    if (data.kind !== undefined) updateData.kind = data.kind;
+    if (data.kind !== undefined) updateData.kind = data.kind as SpaceKind;
     if (data.contactName !== undefined) updateData.contactName = data.contactName || null;
     if (data.contactEmail !== undefined) updateData.contactEmail = data.contactEmail || null;
     if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone || null;

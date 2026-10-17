@@ -11,24 +11,27 @@ import { periodDays, periodQuery, type PeriodValue } from "@/components/ui/perio
  * outstanding day regardless of the period, for the calendar.
  */
 export function useWorkGather({
-  source, spaceId, customerId, periodValue,
+  source,
+  spaceId,
+  customerId,
+  periodValue,
 }: {
   source: "space" | "client" | "none"
   spaceId: string | undefined
   customerId: string
   periodValue: PeriodValue
 }) {
-
   // Completed, unbilled work — from whichever end was chosen, over whichever
   // days were named. Both ends are optional: blank means everything still
   // outstanding, which is right for a one-off job.
   const period = periodQuery(periodValue)
 
-  const gatherSource = source === "space" && spaceId
-    ? { spaceId, ...period }
-    : source === "client" && customerId
-      ? { customerId, ...period }
-      : null
+  const gatherSource =
+    source === "space" && spaceId
+      ? { spaceId, ...period }
+      : source === "client" && customerId
+        ? { customerId, ...period }
+        : null
   /*
     ⚠️ ALWAYS FRESH. What is still to bill moves whenever a rate, a role, a
     clock-in or another invoice changes — often in another tab a moment ago.
@@ -46,9 +49,9 @@ export function useWorkGather({
     */
     placeholderData: (prev, prevQuery) => {
       const was = prevQuery?.queryKey[1] as { spaceId?: string; customerId?: string } | null | undefined
-      return was && gatherSource && was.spaceId === (gatherSource as any).spaceId && was.customerId === (gatherSource as any).customerId
-        ? prev
-        : undefined
+      // Either a workspace or a client source: the other id is simply absent.
+      const now: { spaceId?: string; customerId?: string } | null = gatherSource
+      return was && now && was.spaceId === now.spaceId && was.customerId === now.customerId ? prev : undefined
     },
   })
   /*

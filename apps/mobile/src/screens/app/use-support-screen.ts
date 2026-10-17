@@ -14,6 +14,9 @@ import { useQueuedCreate } from '../../offline/actions/queued-create';
 
 export type SupportView = 'list' | 'new' | 'thread';
 
+/** `support.message`: a message on a ticket, with the ticket's new status when it moved. */
+type SupportMessageEvent = { ticketId?: string; message?: unknown; ticket?: { status?: SupportTicket['status'] } } | null;
+
 /** SupportScreen's state and handlers — everything before its markup, moved here unchanged. */
 export function useSupportScreen() {
   const { t } = useTranslation();
@@ -142,7 +145,7 @@ export function useSupportScreen() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const offs = [
-      subscribe(SocketEvents.SUPPORT_MESSAGE, (d: any) => {
+      subscribe(SocketEvents.SUPPORT_MESSAGE, (d: SupportMessageEvent) => {
         later.current!.list.call();
         const open = activeRef.current;
         if (!open || d?.ticketId !== open.id) return;
@@ -160,7 +163,7 @@ export function useSupportScreen() {
         }
       }),
       subscribe(SocketEvents.SUPPORT_TICKET_UPDATED, () => later.current!.list.call()),
-      subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: any) => setAgentOnline(!!d?.online)),
+      subscribe(SocketEvents.SUPPORT_AGENT_PRESENCE, (d: { online?: boolean } | null) => setAgentOnline(!!d?.online)),
     ];
     return () => offs.forEach((o) => o());
   }, [isAuthenticated, subscribe]);

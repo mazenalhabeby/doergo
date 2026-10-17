@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { type CrmCaller } from '../customers/customers.service';
 import { SELECTABLE_ASSET_WHERE, type SpaceScopeIds } from '@hbcfield/shared';
 import { PortalServiceBase } from './portal-service.base';
+import { withAuthors } from '../../common/records/with-authors';
 
 /** Reading addresses (units): one, a client's, a list, their activity, the assets on them. */
 @Injectable()
@@ -27,15 +28,7 @@ export class PortalUnitsService extends PortalServiceBase {
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
-    const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
-    const authors = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
-    const byId = new Map(authors.map((a) => [a.id, a]));
-    return { data: rows.map((r) => ({ ...r, author: r.authorId ? (byId.get(r.authorId) ?? null) : null })) };
+    return { data: await withAuthors(this.prisma, rows) };
   }
 
   async addUnitActivity(data: {

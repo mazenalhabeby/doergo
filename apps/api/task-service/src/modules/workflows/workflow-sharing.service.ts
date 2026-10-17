@@ -84,7 +84,7 @@ export class WorkflowSharingService extends WorkflowServiceBase {
     // name; the copy takes the first free variant so both can be told apart.
     const name = await this.freeLocalName(source.name, data.spaceId, data.organizationId);
 
-    const created: any = await this.workflows.create({
+    const created = await this.workflows.create({
       name,
       organizationId: data.organizationId,
       ownerSpaceId: data.spaceId,

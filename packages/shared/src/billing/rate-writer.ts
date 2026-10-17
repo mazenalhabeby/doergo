@@ -24,16 +24,14 @@ import {
 } from './rate-history';
 
 /**
- * The slice of a Prisma client this needs — a transaction client fits.
- * Typed loosely on purpose: Prisma's generated generics are not assignable to a
- * narrow structural type, and the rows are re-shaped by `toRateRow` anyway.
+ * The slice of a Prisma client this needs — a transaction client fits. Method syntax keeps the
+ * argument check bivariant, so Prisma's generic methods satisfy `args: unknown`; the rows are the
+ * columns RATE_ROW_SELECT reads, re-shaped by `toRateRow`.
  */
 export interface RateHistoryStore {
   rateHistory: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    create(args: any): Promise<unknown>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    findMany(args: any): Promise<any[]>;
+    create(args: unknown): Promise<unknown>;
+    findMany(args: unknown): Promise<RawRateRow[]>;
   };
 }
 
@@ -100,11 +98,14 @@ export async function writeRateChange(
     kind: input.kind,
     spaceId: input.spaceId ?? null,
   };
-  const before = (await store.rateHistory.findMany({ where: series, select: RATE_ROW_SELECT })) as RawRateRow[];
+  const before = await store.rateHistory.findMany({ where: series, select: RATE_ROW_SELECT });
   // The first rate this record ever had, with no start day given, applies since always.
   const plan = planRateChange({ ...input, today, sinceAlways: before.length === 0 });
   await store.rateHistory.create({ data: plan.row });
-  const book = new RateBook([...before.map(toRateRow), toRateRow({ ...plan.row, spaceId: plan.row.spaceId, createdAt: new Date() })]);
+  const book = new RateBook([
+    ...before.map(toRateRow),
+    toRateRow({ ...plan.row, spaceId: plan.row.spaceId, createdAt: new Date() }),
+  ]);
   return {
     effectiveFrom: plan.effectiveFrom,
     cents: plan.cents,
@@ -140,7 +141,11 @@ export async function loadRateBook(
   add('ASSIGNMENT', targets.assignmentIds);
   // A role's day rate: this workspace's own rows AND the role's default (no workspace).
   if (targets.roleIds?.length) {
-    add('ROLE', targets.roleIds, targets.roleSpaceId ? { OR: [{ spaceId: targets.roleSpaceId }, { spaceId: null }] } : { spaceId: null });
+    add(
+      'ROLE',
+      targets.roleIds,
+      targets.roleSpaceId ? { OR: [{ spaceId: targets.roleSpaceId }, { spaceId: null }] } : { spaceId: null },
+    );
   }
   if (or.length === 0) return new RateBook([]);
   const rows = await store.rateHistory.findMany({

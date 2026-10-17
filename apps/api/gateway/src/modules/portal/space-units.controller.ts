@@ -19,6 +19,8 @@ import {
   type RpcContract,
 } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * Apartments / Units directory for a space (the `apartments` module). The unit
  * is the hub: a resident lives in it — a MEMBER (residentUserId) for staff
@@ -70,9 +72,9 @@ export class SpaceUnitsController {
   */
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "The space's apartments / units" })
-  async list(@Param('spaceId') spaceId: string, @Request() req: any) {
-    await this.requireModule(spaceId, req.user.organizationId);
-    return this.auth(portalListSpaceUnits, { organizationId: req.user.organizationId, spaceId });
+  async list(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
+    await this.requireModule(spaceId, callerOrgId(req.user));
+    return this.auth(portalListSpaceUnits, { organizationId: callerOrgId(req.user), spaceId });
   }
 
   @Post()
@@ -92,11 +94,11 @@ export class SpaceUnitsController {
       customerId?: string | null;
       details?: any[];
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    await this.requireModule(spaceId, req.user.organizationId);
+    await this.requireModule(spaceId, callerOrgId(req.user));
     return this.auth(portalCreateUnit, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       name: body.name?.trim() || body.address || 'Unit',
       address: body.address,
@@ -120,10 +122,10 @@ export class SpaceUnitsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('unitId') unitId: string,
-    @Body() body: any,
-    @Request() req: any,
+    @Body() body: Record<string, unknown>,
+    @Request() req: AuthedRequest,
   ) {
-    await this.requireModule(spaceId, req.user.organizationId);
+    await this.requireModule(spaceId, callerOrgId(req.user));
     // Whitelist, identity LAST. This spread the body after the token's
     // organizationId, so a body naming another organization (or an actorId)
     // replaced it — a cross-tenant write. One pick shared with every unit route.
@@ -132,7 +134,7 @@ export class SpaceUnitsController {
     return this.auth(portalUpdateUnit, {
       ...unitFieldsFor(portalUpdateUnit, body),
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       actorId: req.user.id,
       scopeSpaceId: spaceId,
       scopeSpaceIds: portalScope(req.user, 'canManagePortals'),
@@ -142,11 +144,11 @@ export class SpaceUnitsController {
   @Delete(':unitId')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Remove an apartment / unit' })
-  async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: any) {
-    await this.requireModule(spaceId, req.user.organizationId);
+  async remove(@Param('spaceId') spaceId: string, @Param('unitId') unitId: string, @Request() req: AuthedRequest) {
+    await this.requireModule(spaceId, callerOrgId(req.user));
     return this.auth(portalDeleteUnit, {
       id: unitId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       scopeSpaceId: spaceId,
     });
   }
@@ -159,11 +161,11 @@ export class SpaceUnitsController {
   async assignMember(
     @Param('spaceId') spaceId: string,
     @Body() body: { userId: string; unitId?: string | null },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
-    await this.requireModule(spaceId, req.user.organizationId);
+    await this.requireModule(spaceId, callerOrgId(req.user));
     return this.auth(portalSetMemberApartment, {
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceId,
       userId: body.userId,
       unitId: body.unitId ?? null,
@@ -189,11 +191,11 @@ export class UnitDetailController {
   @Get(':id')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: 'Get one apartment / unit with its resident' })
-  get(@Param('id') id: string, @Request() req: any) {
+  get(@Param('id') id: string, @Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.authClient, portalGetUnit, {
         id,
-        organizationId: req.user.organizationId,
+        organizationId: callerOrgId(req.user),
         scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
       }),
     );
@@ -202,11 +204,11 @@ export class UnitDetailController {
   @Get(':id/activities')
   @RequirePermissionInSpace('canViewPortal')
   @ApiOperation({ summary: "An apartment's activity timeline (notes + system events)" })
-  activities(@Param('id') id: string, @Request() req: any) {
+  activities(@Param('id') id: string, @Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.authClient, portalListUnitActivities, {
         id,
-        organizationId: req.user.organizationId,
+        organizationId: callerOrgId(req.user),
         scopeSpaceIds: portalScope(req.user, 'canViewPortal'),
       }),
     );
@@ -215,11 +217,11 @@ export class UnitDetailController {
   @Post(':id/activities')
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'Add a note to an apartment' })
-  addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: any) {
+  addActivity(@Param('id') id: string, @Body() body: { body?: string }, @Request() req: AuthedRequest) {
     return firstValueFrom(
       sendRpc(this.authClient, portalAddUnitActivity, {
         id,
-        organizationId: req.user.organizationId,
+        organizationId: callerOrgId(req.user),
         body: body.body,
         authorId: req.user.id,
         scopeSpaceIds: portalScope(req.user, 'canManagePortals'),

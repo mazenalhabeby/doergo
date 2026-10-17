@@ -172,10 +172,10 @@ export class SignInService {
         };
       }
 
-      const clientPlatform = String((data as any).clientPlatform ?? '')
+      const clientPlatform = String(data.clientPlatform ?? '')
         .toLowerCase()
         .trim();
-      if ((clientPlatform === 'web' || clientPlatform === 'mobile') && !canUsePlatform(user as any, clientPlatform)) {
+      if ((clientPlatform === 'web' || clientPlatform === 'mobile') && !canUsePlatform(user, clientPlatform)) {
         return {
           success: false,
           statusCode: HttpStatus.FORBIDDEN,

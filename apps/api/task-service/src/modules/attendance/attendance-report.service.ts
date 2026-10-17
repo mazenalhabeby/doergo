@@ -96,7 +96,7 @@ export class AttendanceReportService {
       byUser[userId].locations.add(entry.location.name);
     }
 
-    const userSummaries = Object.values(byUser).map((u: any) => ({
+    const userSummaries = Object.values(byUser).map((u) => ({
       user: u.user,
       totalHours: Math.round((u.totalMinutes / 60) * 10) / 10,
       shifts: u.shifts,
@@ -123,7 +123,7 @@ export class AttendanceReportService {
       byLocation[locId].uniqueUsers.add(entry.userId);
     }
 
-    const locationSummaries = Object.values(byLocation).map((l: any) => ({
+    const locationSummaries = Object.values(byLocation).map((l) => ({
       location: l.location,
       totalHours: Math.round((l.totalMinutes / 60) * 10) / 10,
       shifts: l.shifts,

@@ -5,6 +5,8 @@ import type {
   ShiftIssueCreatedMessage,
   ShiftIssueEventMessage,
   SentNotRead,
+  SupportMessageFacts,
+  SupportTicketFacts,
 } from './events-types';
 
 /**
@@ -112,18 +114,18 @@ export const shiftIssueCreatedEvent = event<ShiftIssueCreatedMessage>('shift_iss
 
 export const shiftIssueEventEvent = event<ShiftIssueEventMessage>('shift_issue_event');
 
-export const supportTicketCreatedEvent = event<{ ticket: any }>('support_ticket_created');
+export const supportTicketCreatedEvent = event<{ ticket: SupportTicketFacts }>('support_ticket_created');
 
 export const supportMessageEvent = event<
   {
     ticketId: string;
-    message: any;
-    ticket: any;
+    message: SupportMessageFacts;
+    ticket: SupportTicketFacts;
     isInternalNote?: boolean;
     customerId: string;
   } & SentNotRead<'organizationId'>
 >('support_message');
 
-export const supportTicketUpdatedEvent = event<{ ticket: any }>('support_ticket_updated');
+export const supportTicketUpdatedEvent = event<{ ticket: SupportTicketFacts }>('support_ticket_updated');
 
-export const supportSlaBreachedEvent = event<{ ticket: any }>('support_sla_breached');
+export const supportSlaBreachedEvent = event<{ ticket: SupportTicketFacts }>('support_sla_breached');

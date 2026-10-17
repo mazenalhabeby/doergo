@@ -12,6 +12,7 @@ import {
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAdminService } from './platform-admin.service';
 
+import type { PlatformRequest } from '../../common/request.types';
 /**
  * Only these fields of a staff edit are read. The PATH id is the target; a body
  * `id` (or `byUserId`) is ignored rather than spread over it.
@@ -46,10 +47,10 @@ export class PlatformAuthController {
   private unwrap<T>(result: any): T {
     return assertServiceOk(result) as T;
   }
-  private actor(req: any): string | undefined {
+  private actor(req: PlatformRequest): string | undefined {
     return req.platformUser?.id;
   }
-  private session(req: any): { iat?: number; authTime?: number } {
+  private session(req: PlatformRequest): { iat?: number; authTime?: number } {
     return req.platformSession ?? {};
   }
 
@@ -66,14 +67,14 @@ export class PlatformAuthController {
   @Post('auth/bootstrap')
   @UseGuards(PlatformAdminGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  async bootstrap(@Body() body: any) {
+  async bootstrap(@Body() body: Record<string, unknown>) {
     return this.unwrap(await this.svc.bootstrapOwner(pickStaffCreate(body, undefined)));
   }
 
   @Get('auth/me')
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
-  async me(@Request() req: any) {
+  async me(@Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.me({ userId: this.actor(req)! }));
   }
 
@@ -84,7 +85,7 @@ export class PlatformAuthController {
   @Post('auth/logout')
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
-  async logout(@Request() req: any) {
+  async logout(@Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.logout({ userId: this.actor(req)!, iat: this.session(req).iat }));
   }
 
@@ -93,7 +94,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
-  async refresh(@Request() req: any) {
+  async refresh(@Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.refresh({ userId: this.actor(req)!, authTime: this.session(req).authTime }));
   }
 
@@ -102,7 +103,10 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async changePassword(@Body() body: { currentPassword?: string; newPassword?: string }, @Request() req: any) {
+  async changePassword(
+    @Body() body: { currentPassword?: string; newPassword?: string },
+    @Request() req: PlatformRequest,
+  ) {
     return this.unwrap(
       await this.svc.changePassword({
         userId: this.actor(req),
@@ -118,7 +122,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async setup2fa(@Body() body: { code?: string }, @Request() req: any) {
+  async setup2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.setup2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -128,7 +132,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async enable2fa(@Body() body: { code?: string }, @Request() req: any) {
+  async enable2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.enable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -138,7 +142,7 @@ export class PlatformAuthController {
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async disable2fa(@Body() body: { code?: string }, @Request() req: any) {
+  async disable2fa(@Body() body: { code?: string }, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.disable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
     );
@@ -155,21 +159,21 @@ export class PlatformAuthController {
   @Post('users')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async createUser(@Body() body: any, @Request() req: any) {
+  async createUser(@Body() body: Record<string, unknown>, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.createUser(pickStaffCreate(body, this.actor(req))));
   }
 
   @Patch('users/:id')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async updateUser(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+  async updateUser(@Param('id') id: string, @Body() body: Record<string, unknown>, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.updateUser(pickStaffPatch(id, body, this.actor(req))));
   }
 
   @Post('users/:id/reset-password')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async resetPassword(@Param('id') id: string, @Body() body: { password?: string }, @Request() req: any) {
+  async resetPassword(@Param('id') id: string, @Body() body: { password?: string }, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.resetPassword({ id, password: body?.password, byUserId: this.actor(req) }));
   }
 
@@ -177,7 +181,7 @@ export class PlatformAuthController {
   @Post('users/:id/reset-2fa')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async reset2fa(@Param('id') id: string, @Request() req: any) {
+  async reset2fa(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.reset2fa({ id, byUserId: this.actor(req) }));
   }
 }

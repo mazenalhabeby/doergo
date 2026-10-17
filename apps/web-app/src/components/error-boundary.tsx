@@ -31,8 +31,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
     if (typeof window !== "undefined") {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sentry = (window as any).Sentry
+        // Sentry is optional and, when present, a global the page did not import.
+        const sentry = (window as Window & { Sentry?: { captureException?: (error: unknown, hint?: object) => void } })
+          .Sentry
         if (sentry && typeof sentry.captureException === "function") {
           sentry.captureException(error, {
             extra: { componentStack: errorInfo.componentStack },
@@ -63,13 +64,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
  * Reusable error fallback UI used by both the class-based ErrorBoundary and
  * Next.js error.tsx pages.
  */
-export function ErrorFallback({
-  error,
-  reset,
-}: {
-  error: Error | null
-  reset: () => void
-}) {
+export function ErrorFallback({ error, reset }: { error: Error | null; reset: () => void }) {
   const { t } = useTranslation()
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
@@ -77,12 +72,8 @@ export function ErrorFallback({
         <div className="size-14 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="size-7 text-red-600 dark:text-red-400" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground mb-2">
-          {t("errors.somethingWentWrong")}
-        </h2>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-          {error?.message || t("errors.unexpected")}
-        </p>
+        <h2 className="text-lg font-semibold text-foreground mb-2">{t("errors.somethingWentWrong")}</h2>
+        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{error?.message || t("errors.unexpected")}</p>
         <div className="flex items-center justify-center gap-3">
           <Button onClick={reset}>
             <RefreshCw className="size-4 mr-2" />

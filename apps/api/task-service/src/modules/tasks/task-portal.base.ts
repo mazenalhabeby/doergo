@@ -10,6 +10,24 @@ import { TaskAssignmentService } from './task-assignment.service';
  * What reading and triaging client requests share: a request as the office sees
  * it, and the workspaces the caller may read them in.
  */
+type When = Date | string;
+/** What the portal shows of a request: the three reads (list, triage inbox, one) all include at least this. */
+interface PortalRequestRow {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  unitId?: string | null;
+  unit?: { name: string } | null;
+  triaged?: boolean | null;
+  spaceId?: string | null;
+  space?: { name: string } | null;
+  assignedToId?: string | null;
+  createdAt: When;
+  updatedAt: When;
+  workflow?: { statuses: { key: string; name: string; capabilities?: string[] | null }[] } | null;
+}
+
 @Injectable()
 export abstract class TaskPortalBase {
 
@@ -27,8 +45,8 @@ export abstract class TaskPortalBase {
   // customerId (passed from the verified token, never the client body) so a
   // customer can only ever see their own requests.
 
-  protected portalRequestShape(task: any) {
-    const statuses: any[] = task.workflow?.statuses ?? [];
+  protected portalRequestShape(task: PortalRequestRow) {
+    const statuses = task.workflow?.statuses ?? [];
     const curIdx = statuses.findIndex((s) => s.key === task.status);
     const timeline = statuses.map((s, i) => ({
       label: s.name,

@@ -4,18 +4,22 @@ import { DENY_EXTERNAL_KEY } from '../../../common/decorators/deny-external.deco
 import { reportSpaceScope } from '../../../common/guards/report-access.guard';
 import { AnalyticsController } from '../analytics.controller';
 
+import { fakeReq, fakeUser } from '../../../common/testing/fake-request';
 /*
   The report guard ADMITS anybody holding canViewReports or canViewAllTasks in
   any workspace. What they read must then be narrowed to those workspaces, an
   external member must never reach the organization's figures, and a schedule
   — which runs with no reader — is set up only by an org-wide reader.
 */
-const member = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}, extra: any = {}) =>
-  ({ id: 'u-1', role: 'EMPLOYEE', organizationId: 'org-1', access: { org, perSpace }, ...extra });
+const member = (
+  org: Record<string, boolean>,
+  perSpace: Record<string, Record<string, boolean>> = {},
+  extra: any = {},
+) => ({ id: 'u-1', role: 'EMPLOYEE', organizationId: 'org-1', access: { org, perSpace }, ...extra });
 
 describe('reportSpaceScope', () => {
   it('admin and org-wide holders are not narrowed', () => {
-    expect(reportSpaceScope({ role: 'ADMIN' })).toBeNull();
+    expect(reportSpaceScope(fakeUser({ role: 'ADMIN' }))).toBeNull();
     expect(reportSpaceScope(member({ canViewReports: true }))).toBeNull();
     expect(reportSpaceScope(member({ canViewAllTasks: true }))).toBeNull();
   });
@@ -38,22 +42,22 @@ describe('AnalyticsController', () => {
   const scoped = { user: member({}, { a: { canViewReports: true } }) };
   beforeEach(() => client.send.mockClear());
 
-  it('forwards the reader\'s scope with a run and a timesheet', async () => {
-    await ctrl.run({ definition: {} }, scoped);
+  it("forwards the reader's scope with a run and a timesheet", async () => {
+    await ctrl.run({ definition: {} }, fakeReq(scoped));
     expect((client.send.mock.calls[0] as any)[1].scopeSpaceIds).toEqual(['a']);
-    await ctrl.timesheet(scoped, 'u-2');
+    await ctrl.timesheet(fakeReq(scoped), 'u-2');
     expect((client.send.mock.calls[1] as any)[1].scopeSpaceIds).toEqual(['a']);
   });
 
   it('a space-scoped reader cannot create, change or delete a schedule', async () => {
-    await expect(ctrl.createSchedule({}, scoped)).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(ctrl.updateSchedule('s', {}, scoped)).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(ctrl.deleteSchedule('s', scoped)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(ctrl.createSchedule({} as never, fakeReq(scoped))).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(ctrl.updateSchedule('s', {}, fakeReq(scoped))).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(ctrl.deleteSchedule('s', fakeReq(scoped))).rejects.toBeInstanceOf(ForbiddenException);
     expect(client.send).not.toHaveBeenCalled();
   });
 
   it('saved-report edits carry who is asking, for the owner check', async () => {
-    await ctrl.deleteSaved('r-1', scoped);
+    await ctrl.deleteSaved('r-1', fakeReq(scoped));
     expect((client.send.mock.calls[0] as any)[1]).toMatchObject({ userId: 'u-1', isAdmin: false });
   });
 });

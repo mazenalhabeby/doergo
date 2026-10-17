@@ -6,6 +6,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { TaskAccessService } from '../../common/task-access/task-access.service';
 import { NotificationRoutingService } from '../../common/notification-routing.service';
 import { TaskEventType, success, getRedisConfig } from '@hbcfield/shared';
+import type { Prisma } from '@prisma/client';
 
 const STATUS_COUNTS_TTL = 30; // seconds
 
@@ -107,7 +108,7 @@ export class TaskSupportService {
     }
 
     // Same visibility rule the list uses — see task-visibility.ts.
-    const where: any = buildTaskVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
+    const where: Prisma.TaskWhereInput = buildTaskVisibilityWhere({ userId, userRole, canViewAllTasks, organizationId, viewAllSpaceIds });
 
     // Space filter — verify it belongs to the user's org before applying
     if (spaceId) {

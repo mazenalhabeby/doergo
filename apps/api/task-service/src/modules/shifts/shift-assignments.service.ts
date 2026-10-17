@@ -3,6 +3,7 @@ import { assertSpaceInOrg, assertUserInOrg } from '../../common/tenant-scope.uti
 import { success, scopeAllows, type SpaceScopeIds } from '@hbcfield/shared';
 import { earliestOf } from './shifts-helpers';
 import { ShiftsBase } from './shifts.base';
+import type { Prisma, ShiftRecurrence } from '@prisma/client';
 
 /** Who works which shift, and when: listing, adding, changing, removing an assignment. */
 @Injectable()
@@ -12,7 +13,7 @@ export class ShiftAssignmentsService extends ShiftsBase {
   /** Active rota for a space (optionally including ended assignments). */
   async listAssignments(data: { organizationId: string; spaceId: string; includeEnded?: boolean; scopeSpaceIds?: SpaceScopeIds }) {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.scopeSpaceIds });
-    const where: any = { organizationId: data.organizationId, spaceId: data.spaceId };
+    const where: Prisma.ShiftAssignmentWhereInput = { organizationId: data.organizationId, spaceId: data.spaceId };
     if (!data.includeEnded) where.isActive = true;
     const assignments = await this.prisma.shiftAssignment.findMany({
       where,
@@ -61,7 +62,7 @@ export class ShiftAssignmentsService extends ShiftsBase {
         spaceId: data.spaceId,
         userId: data.userId,
         shiftId: data.shiftId,
-        recurrence: data.recurrence as any,
+        recurrence: data.recurrence as ShiftRecurrence,
         daysOfWeek: data.daysOfWeek ?? [],
         daysOfMonth: data.daysOfMonth ?? [],
         dates,

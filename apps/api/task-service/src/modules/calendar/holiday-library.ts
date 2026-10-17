@@ -45,8 +45,8 @@ export function libraryHolidays(
   try {
     const hd = reg ? new Holidays(country, reg, { languages: [l] }) : new Holidays(country, { languages: [l] });
     out = (hd.getHolidays(year) || [])
-      .filter((h: any) => h.type === 'public')
-      .map((h: any) => ({
+      .filter((h) => h.type === 'public')
+      .map((h) => ({
         key: libraryHolidayKey(year, String(h.rule ?? h.name)),
         date: String(h.date).slice(0, 10),
         days: ruleDurationDays(h.rule),

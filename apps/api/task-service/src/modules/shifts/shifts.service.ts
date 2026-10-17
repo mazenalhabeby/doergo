@@ -8,6 +8,7 @@ import {
   type SpaceScopeIds,
 } from '@hbcfield/shared';
 import { ShiftsBase } from './shifts.base';
+import type { Prisma } from '@prisma/client';
 
 export { weekOf } from './shifts-helpers';
 
@@ -23,7 +24,7 @@ export class ShiftsService extends ShiftsBase {
 
   /** List shifts for an org; optionally only those usable in a given space (space-scoped + org-wide). */
   async listShifts(data: { organizationId: string; spaceId?: string; scopeSpaceIds?: SpaceScopeIds }) {
-    const where: any = { organizationId: data.organizationId };
+    const where: Prisma.ShiftWhereInput = { organizationId: data.organizationId };
     if (data.spaceId) where.OR = [{ spaceId: data.spaceId }, { spaceId: null }];
     /*
       Narrowed to the caller's granted spaces, and org-wide templates
@@ -35,7 +36,10 @@ export class ShiftsService extends ShiftsBase {
     if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
       // Explicit about the three states rather than relying on `[]` being
       // truthy — granted NOWHERE must still narrow, to nothing.
-      where.AND = [...(where.AND ?? []), { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] }];
+      where.AND = [
+        ...((where.AND as Prisma.ShiftWhereInput[] | undefined) ?? []),
+        { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] },
+      ];
     }
     const shifts = await this.prisma.shift.findMany({
       where,

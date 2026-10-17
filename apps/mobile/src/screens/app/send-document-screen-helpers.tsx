@@ -1,10 +1,18 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
-import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '../../lib/constants';
 
 /** SendDocumentScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 export function Field({
-  colors, label, value, onChange,
-}: { colors: any; label: string; value: string; onChange: (v: string) => void }) {
+  colors,
+  label,
+  value,
+  onChange,
+}: {
+  colors: FieldColors;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <View style={[s.field, { borderColor: colors.border }]}>
       <Text style={[s.fieldLabel, { color: colors.textMuted }]}>{label}</Text>
@@ -39,7 +47,7 @@ export const s = StyleSheet.create({
     borderRadius: RADIUS.md,
     padding: SPACING.md,
   },
-  verdictTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any },
+  verdictTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold },
   verdictSub: { fontSize: FONT_SIZE.xs, marginTop: 3, lineHeight: 17 },
 
   label: { fontSize: FONT_SIZE.xs, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.sm },
@@ -47,5 +55,4 @@ export const s = StyleSheet.create({
   fieldLabel: { fontSize: FONT_SIZE.xs, textTransform: 'uppercase', letterSpacing: 0.6 },
   input: { fontSize: FONT_SIZE.base, paddingVertical: 6 },
   warn: { color: '#f59e0b', fontSize: FONT_SIZE.xs, marginTop: SPACING.sm },
-
 });

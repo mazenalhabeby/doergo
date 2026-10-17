@@ -1,5 +1,5 @@
 /** What the permission builder reads and writes: the database it needs, its refusals, its input and result. */
-import { ROLE_COMBO_MESSAGES } from '../../billing/work-roles';
+import { ROLE_COMBO_MESSAGES, type RoleKindValue } from '../../billing/work-roles';
 import { PERMISSION_KEYS, type PermissionSet } from '../../types/permissions';
 import { SHARED_ROLE_WHERE } from '../personal-role';
 
@@ -25,18 +25,53 @@ import { SHARED_ROLE_WHERE } from '../personal-role';
  * it to its own exception (`toHttpRefusal` below gives them the parts).
  */
 
-/** The structural slice of a Prisma client (or transaction) this needs. */
+/**
+ * The structural slice of a Prisma client (or transaction) this needs. Each row type is the
+ * union of what the reads here select (relations optional: a read that does not select one
+ * does not read it), so any Prisma client satisfies it without shared naming a service.
+ */
 export interface AssignmentPermissionsDb {
   spaceAssignment: {
-    findFirst(args: any): Promise<any>;
-    update(args: any): Promise<any>;
+    findFirst(args: unknown): Promise<AssignmentRow | null>;
+    update(args: unknown): Promise<unknown>;
   };
   accessRole: {
-    findFirst(args: any): Promise<any>;
-    findMany(args: any): Promise<any[]>;
-    upsert(args: any): Promise<any>;
-    deleteMany(args: any): Promise<{ count: number }>;
+    findFirst(args: unknown): Promise<AccessRoleRow | null>;
+    findMany(args: unknown): Promise<AccessRoleRow[]>;
+    upsert(args: unknown): Promise<{ id: string }>;
+    deleteMany(args: unknown): Promise<{ count: number }>;
   };
+}
+
+/** A workspace assignment as ASSIGNMENT_SELECT (set) or the builder read (read) selects it. */
+export interface AssignmentRow {
+  id: string;
+  spaceId: string;
+  userId: string;
+  roleId: string | null;
+  workRoleId?: string | null;
+  allowSecondRole?: boolean;
+  role?: { id?: string; name?: string; permissions: unknown; personalAssignmentId?: string | null } | null;
+  space?: { name: string } | null;
+  user?: {
+    isExternal?: boolean;
+    firstName?: string | null;
+    lastName?: string | null;
+    enabledModules?: unknown;
+    memberRole?: { permissions: unknown } | null;
+    spaceAssignments?: Array<{ role: { permissions: unknown } | null }>;
+  } | null;
+}
+
+/** An access role as the reads here select it. */
+export interface AccessRoleRow {
+  id: string;
+  name: string;
+  permissions: unknown;
+  kind?: RoleKindValue;
+  color?: string | null;
+  isSystem?: boolean;
+  personalAssignmentId?: string | null;
 }
 
 export type AssignmentPermissionsErrorCode =
@@ -67,7 +102,9 @@ export class AssignmentPermissionsError extends Error {
 
 /** The granted keys of a set, as one comparable string. */
 function grantedKey(p: PermissionSet): string {
-  return PERMISSION_KEYS.filter((k) => p[k] === true).sort().join(',');
+  return PERMISSION_KEYS.filter((k) => p[k] === true)
+    .sort()
+    .join(',');
 }
 
 const ASSIGNMENT_SELECT = {

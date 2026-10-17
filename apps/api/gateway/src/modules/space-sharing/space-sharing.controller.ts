@@ -19,6 +19,7 @@ import { SpaceModulesService } from '../../common/space-modules.service';
 import { RequirePermission } from '../../common/decorators';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { OrgEventsService } from '../../common/events/org-events.service';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * Cross-org space sharing. OWNER routes (`/locations/:spaceId/shares…`) require
@@ -82,7 +83,11 @@ export class SpaceSharingController {
   @Post('locations/:spaceId/shares')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Share this space with another org (invite)' })
-  async createShare(@Param('spaceId') spaceId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
+  async createShare(
+    @Param('spaceId') spaceId: string,
+    @Body() body: Record<string, unknown>,
+    @CurrentUser() u: SessionUser,
+  ) {
     await this.requireModule(spaceId, u.organizationId);
     return this.sendShareMutation(
       'space_share_create',
@@ -105,7 +110,7 @@ export class SpaceSharingController {
   @Get('locations/:spaceId/shares')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "List this space's cross-org shares" })
-  listForSpace(@Param('spaceId') spaceId: string, @CurrentUser() u: CurrentUserData) {
+  listForSpace(@Param('spaceId') spaceId: string, @CurrentUser() u: SessionUser) {
     return this.send('space_share_list_for_space', { ownerOrgId: u.organizationId, spaceId });
   }
 
@@ -115,8 +120,8 @@ export class SpaceSharingController {
   updateShare(
     @Param('spaceId') spaceId: string,
     @Param('shareId') shareId: string,
-    @Body() body: any,
-    @CurrentUser() u: CurrentUserData,
+    @Body() body: Record<string, unknown>,
+    @CurrentUser() u: SessionUser,
   ) {
     // Whitelist mutable fields explicitly — never spread the untyped body, which
     // would let a malicious `ownerOrgId`/`shareId` override the tenant scope
@@ -140,7 +145,7 @@ export class SpaceSharingController {
   @Delete('locations/:spaceId/shares/:shareId')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Revoke a share' })
-  revokeShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @CurrentUser() u: CurrentUserData) {
+  revokeShare(@Param('spaceId') spaceId: string, @Param('shareId') shareId: string, @CurrentUser() u: SessionUser) {
     return this.sendShareMutation(
       'space_share_revoke',
       { ownerOrgId: u.organizationId, shareId },
@@ -151,11 +156,7 @@ export class SpaceSharingController {
   @Get('locations/:spaceId/share-requests')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Guest requests against this space (owner view)' })
-  listRequestsOwner(
-    @Param('spaceId') spaceId: string,
-    @Query('status') status: string,
-    @CurrentUser() u: CurrentUserData,
-  ) {
+  listRequestsOwner(@Param('spaceId') spaceId: string, @Query('status') status: string, @CurrentUser() u: SessionUser) {
     return this.send('space_share_request_list', { ownerOrgId: u.organizationId, spaceId, status });
   }
 
@@ -165,7 +166,7 @@ export class SpaceSharingController {
   resolveRequest(
     @Param('requestId') requestId: string,
     @Body() body: { approve: boolean },
-    @CurrentUser() u: CurrentUserData,
+    @CurrentUser() u: SessionUser,
   ) {
     return this.sendShareMutation(
       'space_share_request_resolve',
@@ -178,14 +179,14 @@ export class SpaceSharingController {
   @Get('shared-spaces')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Spaces shared WITH my org (pending invites + active)' })
-  listIncoming(@CurrentUser() u: CurrentUserData) {
+  listIncoming(@CurrentUser() u: SessionUser) {
     return this.send('space_share_list_incoming', { guestOrgId: u.organizationId });
   }
 
   @Post('shared-spaces/:shareId/respond')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Accept or decline a share invite' })
-  respond(@Param('shareId') shareId: string, @Body() body: { accept: boolean }, @CurrentUser() u: CurrentUserData) {
+  respond(@Param('shareId') shareId: string, @Body() body: { accept: boolean }, @CurrentUser() u: SessionUser) {
     return this.sendShareMutation(
       'space_share_respond',
       { guestOrgId: u.organizationId, shareId, accept: !!body.accept, userId: u.id },
@@ -196,7 +197,11 @@ export class SpaceSharingController {
   @Post('shared-spaces/:shareId/requests')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Request more tasks/workers on a shared space' })
-  createRequest(@Param('shareId') shareId: string, @Body() body: any, @CurrentUser() u: CurrentUserData) {
+  createRequest(
+    @Param('shareId') shareId: string,
+    @Body() body: Record<string, unknown>,
+    @CurrentUser() u: SessionUser,
+  ) {
     return this.send('space_share_request_create', {
       guestOrgId: u.organizationId,
       userId: u.id,
@@ -210,11 +215,7 @@ export class SpaceSharingController {
   @Get('shared-spaces/:spaceId/requests')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: "My org's requests on a shared space (guest view)" })
-  listRequestsGuest(
-    @Param('spaceId') spaceId: string,
-    @Query('status') status: string,
-    @CurrentUser() u: CurrentUserData,
-  ) {
+  listRequestsGuest(@Param('spaceId') spaceId: string, @Query('status') status: string, @CurrentUser() u: SessionUser) {
     return this.send('space_share_request_list', { guestOrgId: u.organizationId, spaceId, status });
   }
 }

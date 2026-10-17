@@ -11,11 +11,23 @@ import type { TriageInput } from '../../lib/api/portal-office';
 import { holdsIn } from '../../lib/permissions';
 import { formatDay } from '../../lib/money';
 import { useResponsive } from '../../lib/responsive';
-import { AText, ChoicePill, FilterRow, Ground, HeaderBack, PrimaryButton, ScreenHeader, Pill, SectionLabel, SheetOption } from '../amazen';
+import {
+  AText,
+  ChoicePill,
+  FilterRow,
+  Ground,
+  HeaderBack,
+  PrimaryButton,
+  ScreenHeader,
+  Pill,
+  SectionLabel,
+  SheetOption,
+} from '../amazen';
 import { centeredContent } from '../screen-container';
 import { JobSheet } from '../job/job-ui';
 import { knownRequest, requestsOfPortal, type ListedRequest } from './requests-store';
 import { FactsWell } from '../facts-well';
+import { caught } from '../../lib/caught';
 
 const PRIORITIES: TriageInput['priority'][] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
@@ -48,7 +60,11 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
   useEffect(() => {
     if (req) return;
     requestsOfPortal(portalId, spaceId)
-      .then((rows) => { const hit = rows.find((x) => x.id === id); if (hit) setReq(hit); else setMissing(true); })
+      .then((rows) => {
+        const hit = rows.find((x) => x.id === id);
+        if (hit) setReq(hit);
+        else setMissing(true);
+      })
       .catch(() => setMissing(true));
   }, [req, id, portalId, spaceId]);
 
@@ -57,7 +73,10 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
 
   useEffect(() => {
     if (!sheet || !mayAssign || roster) return;
-    locationsApi.getAssignedMembers(spaceId).then(setRoster).catch(() => setRoster([]));
+    locationsApi
+      .getAssignedMembers(spaceId)
+      .then(setRoster)
+      .catch(() => setRoster([]));
   }, [sheet, mayAssign, roster, spaceId]);
 
   const triage = useCallback(async () => {
@@ -67,8 +86,8 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
       toast.success(t('clientRequests.jobCreated', 'Job created'));
       setSheet(false);
       router.replace(`/(app)/task/${id}` as Href);
-    } catch (e: any) {
-      toast.error(e?.message || t('register.failed', 'That did not work — try again.'));
+    } catch (e: unknown) {
+      toast.error(caught(e).message || t('register.failed', 'That did not work — try again.'));
     } finally {
       setBusy(false);
     }
@@ -97,7 +116,12 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
 
   const facts: [string, string][] = [
     [t('clientRequests.from', 'From'), req.customerName ?? '—'],
-    ...(req.unitName ? [[t('clientRequests.unit', 'Unit'), [req.unitName, req.unitAddress].filter(Boolean).join(' · ')]] as [string, string][] : []),
+    ...(req.unitName
+      ? ([[t('clientRequests.unit', 'Unit'), [req.unitName, req.unitAddress].filter(Boolean).join(' · ')]] as [
+          string,
+          string,
+        ][])
+      : []),
     [t('clientRequests.sent', 'Sent'), formatDay(req.createdAt, i18n.language)],
   ];
   const waiting = !req.triaged;
@@ -109,9 +133,12 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
         contentContainerStyle={[
           { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) },
           wide,
-        ]}>
+        ]}
+      >
         <View style={{ gap: amazen.space(1.5), alignItems: 'flex-start' }}>
-          <AText variant="h2" tone="strong">{req.title}</AText>
+          <AText variant="h2" tone="strong">
+            {req.title}
+          </AText>
           <Pill
             label={waiting ? t('clientRequests.waiting', 'Waiting') : t('clientRequests.becameJob', 'Became a job')}
             tone={waiting ? 'warn' : 'accent'}
@@ -119,7 +146,9 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
         </View>
         {req.description ? (
           <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, padding: amazen.space(3.5) }}>
-            <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{req.description}</AText>
+            <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>
+              {req.description}
+            </AText>
           </View>
         ) : null}
         <FactsWell amazen={amazen} facts={facts} lines={2} />
@@ -138,9 +167,13 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
             backgroundColor: c.canvas,
           },
           wide,
-        ]}>
+        ]}
+      >
         {!waiting ? (
-          <PrimaryButton label={t('clientRequests.openJob', 'Open the job')} onPress={() => router.replace(`/(app)/task/${id}` as Href)} />
+          <PrimaryButton
+            label={t('clientRequests.openJob', 'Open the job')}
+            onPress={() => router.replace(`/(app)/task/${id}` as Href)}
+          />
         ) : mayAnswer ? (
           <PrimaryButton label={t('clientRequests.turnIntoJob', 'Turn into a job')} onPress={() => setSheet(true)} />
         ) : (
@@ -155,15 +188,20 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
         onClose={() => setSheet(false)}
         busy={busy}
         title={t('clientRequests.turnIntoJob', 'Turn into a job')}
-        eyebrow={<SectionLabel>{req.title}</SectionLabel>}>
+        eyebrow={<SectionLabel>{req.title}</SectionLabel>}
+      >
         <SectionLabel>{t('clientRequests.priority', 'Priority')}</SectionLabel>
         <FilterRow>
-          {PRIORITIES.map((p) => <ChoicePill key={p} label={t(`priority.${p}`)} on={priority === p} onPress={() => setPriority(p)} />)}
+          {PRIORITIES.map((p) => (
+            <ChoicePill key={p} label={t(`priority.${p}`)} on={priority === p} onPress={() => setPriority(p)} />
+          ))}
         </FilterRow>
         {mayAssign ? (
           <>
             <SectionLabel>{t('clientRequests.whoDoesIt', 'Who does it')}</SectionLabel>
-            {roster === null ? <ActivityIndicator color={c.accent} /> : (
+            {roster === null ? (
+              <ActivityIndicator color={c.accent} />
+            ) : (
               <>
                 <SheetOption
                   label={t('clientRequests.decideLater', 'Decide later')}
@@ -171,19 +209,26 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
                   onPress={() => setWorker(null)}
                 />
                 {/* Only people who can take a job — a profile without Tasks is refused by the server. */}
-                {roster.filter((m) => m.user && canReceiveTasks(m.user as never)).map((m) => (
-                  <SheetOption
-                    key={m.userId}
-                    label={personName(m.user)}
-                    tone={worker === m.userId ? 'accent' : 'strong'}
-                    onPress={() => setWorker(m.userId)}
-                  />
-                ))}
+                {roster
+                  .filter((m) => m.user && canReceiveTasks(m.user as never))
+                  .map((m) => (
+                    <SheetOption
+                      key={m.userId}
+                      label={personName(m.user)}
+                      tone={worker === m.userId ? 'accent' : 'strong'}
+                      onPress={() => setWorker(m.userId)}
+                    />
+                  ))}
               </>
             )}
           </>
         ) : null}
-        <PrimaryButton label={t('clientRequests.createJob', 'Create job')} loading={busy} disabled={busy} onPress={() => void triage()} />
+        <PrimaryButton
+          label={t('clientRequests.createJob', 'Create job')}
+          loading={busy}
+          disabled={busy}
+          onPress={() => void triage()}
+        />
         <AText variant="caption" tone="muted">
           {t('clientRequests.residentSees', 'The resident sees their request move on in their app.')}
         </AText>

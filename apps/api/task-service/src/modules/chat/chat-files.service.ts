@@ -63,7 +63,7 @@ export class ChatFilesService {
     const prefix = this.prefix(conv);
     const store = requireObjectStore(this.store);
     return Promise.all(
-      attachments.map(async (a: any) => {
+      attachments.map(async (a) => {
         const key =
           typeof a?.fileKey === 'string' && a.fileKey.startsWith(prefix) && !a.fileKey.includes('..')
             ? a.fileKey
@@ -93,7 +93,7 @@ export class ChatFilesService {
     const prefix = this.prefix(conv);
     return Promise.all(
       messages.map(async (m) => {
-        const list = Array.isArray(m.attachments) ? (m.attachments as any[]) : [];
+        const list = Array.isArray(m.attachments) ? (m.attachments) : [];
         if (list.length === 0) return m;
         const ours = list.filter((a) => typeof a?.fileKey === 'string' && a.fileKey.startsWith(prefix));
         return { ...m, attachments: await this.media.signAll(ours) };

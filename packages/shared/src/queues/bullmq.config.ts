@@ -19,6 +19,7 @@
  * }
  */
 import { BullRootModuleOptions, RegisterQueueOptions } from '@nestjs/bullmq';
+import type { FactoryProvider, ModuleMetadata } from '@nestjs/common';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { getRedisConfig } from '../microservices/redis.config';
 import { QueueName, DEFAULT_JOB_OPTIONS } from './constants';
@@ -35,9 +36,9 @@ export const getBullMQRedisConfig = getRedisConfig;
  * Used in both gateway (producer) and services (consumers)
  */
 export function createBullMQConfig(): {
-  imports: any[];
+  imports: NonNullable<ModuleMetadata['imports']>;
   useFactory: (configService: ConfigService) => BullRootModuleOptions;
-  inject: any[];
+  inject: NonNullable<FactoryProvider['inject']>;
 } {
   return {
     imports: [ConfigModule],
@@ -76,4 +77,3 @@ export function createQueueOptions(
     ...options,
   };
 }
-

@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { isTeamColor, type RoutingConditions } from '@hbcfield/shared';
@@ -61,8 +62,14 @@ export class PlatformSupportTeamsService {
     return ok(team);
   }
 
-  async updateTeam(d: { teamId: string; name?: string; color?: string | null; description?: string | null; isActive?: boolean }) {
-    const patch: Record<string, any> = {};
+  async updateTeam(d: {
+    teamId: string;
+    name?: string;
+    color?: string | null;
+    description?: string | null;
+    isActive?: boolean;
+  }) {
+    const patch: Prisma.SupportTeamUpdateInput = {};
     if (d.name !== undefined) patch.name = d.name.trim().slice(0, 80);
     if (d.color !== undefined) {
       // Rendered into a style attribute on the console — a colour is a colour.
@@ -91,8 +98,8 @@ export class PlatformSupportTeamsService {
     if (!user) return fail('Platform user not found', 404);
     const member = await this.prisma.supportTeamMember.upsert({
       where: { teamId_platformUserId: { teamId: d.teamId, platformUserId: d.platformUserId } },
-      create: { teamId: d.teamId, platformUserId: d.platformUserId, teamRole: (d.teamRole as any) ?? 'AGENT' },
-      update: { teamRole: (d.teamRole as any) ?? 'AGENT' },
+      create: { teamId: d.teamId, platformUserId: d.platformUserId, teamRole: d.teamRole ?? 'AGENT' },
+      update: { teamRole: d.teamRole ?? 'AGENT' },
     });
     return ok(member);
   }
@@ -114,7 +121,7 @@ export class PlatformSupportTeamsService {
     if (!d?.name?.trim()) return fail('Rule name is required');
     const data = {
       name: d.name.trim().slice(0, 80),
-      conditions: (d.conditions ?? {}) as any,
+      conditions: (d.conditions ?? {}) as Prisma.InputJsonValue,
       order: d.order ?? 0,
       isActive: d.isActive ?? true,
     };

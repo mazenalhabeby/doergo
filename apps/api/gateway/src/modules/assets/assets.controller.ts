@@ -7,6 +7,7 @@ import { CreateAssetDto, UpdateAssetDto, AssetQueryDto } from './dto';
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 @ApiTags('assets')
 @ApiBearerAuth()
 /*
@@ -62,7 +63,7 @@ export class AssetsController {
   */
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Create a new asset' })
-  async create(@Body() dto: CreateAssetDto, @Request() req: any) {
+  async create(@Body() dto: CreateAssetDto, @Request() req: AuthedRequest) {
     return this.assetsQueueService.create({
       ...dto,
       ...assetActor(req),
@@ -77,7 +78,7 @@ export class AssetsController {
   @Get()
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'List assets — the organization’s, or one workspace’s' })
-  async findAll(@Query() query: AssetQueryDto, @Request() req: any) {
+  async findAll(@Query() query: AssetQueryDto, @Request() req: AuthedRequest) {
     return this.assetsService.findAll({
       ...query,
       ...assetActor(req),
@@ -88,7 +89,7 @@ export class AssetsController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Get asset by ID' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async findOne(@Param('id') id: string, @Request() req: any) {
+  async findOne(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsService.findOne({
       id,
       ...assetActor(req),
@@ -103,11 +104,7 @@ export class AssetsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Update an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateAssetDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateAssetDto, @Request() req: AuthedRequest) {
     return this.assetsQueueService.update({
       id,
       ...dto,
@@ -120,7 +117,7 @@ export class AssetsController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Delete an asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async delete(@Param('id') id: string, @Request() req: any) {
+  async delete(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsQueueService.delete({
       id,
       ...assetActor(req),
@@ -136,10 +133,10 @@ export class AssetsController {
   @ApiQuery({ name: 'scope', required: false, enum: ['done', 'all'] })
   async getMaintenanceHistory(
     @Param('id') id: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('scope') scope?: 'done' | 'all',
-    @Request() req?: any,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Query('scope') scope: ('done' | 'all') | undefined,
+    @Request() req: AuthedRequest,
   ) {
     return this.assetsService.getMaintenanceHistory({
       id,

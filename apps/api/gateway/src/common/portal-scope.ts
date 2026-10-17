@@ -1,5 +1,6 @@
 import { scopeFor } from './permission-scope';
 
+import type { SessionUser } from './request.types';
 /** The three portal keys, weakest first: read requests · answer them · run the portal. */
 export type PortalKey = 'canViewPortal' | 'canAnswerPortal' | 'canManagePortals';
 
@@ -26,6 +27,6 @@ export type PortalKey = 'canViewPortal' | 'canAnswerPortal' | 'canManagePortals'
  * portal) is never inside a list of ids, so it is reachable with the org-wide
  * key only. That is the intended answer, not a side effect.
  */
-export function portalScope(user: any, key: PortalKey): string[] | undefined {
+export function portalScope(user: SessionUser | null | undefined, key: PortalKey): string[] | undefined {
   return scopeFor(user, key) ?? undefined;
 }

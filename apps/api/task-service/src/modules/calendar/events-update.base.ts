@@ -25,6 +25,7 @@ import {
   seriesEndOf,
 } from './events-helpers';
 import { EventsBase } from './events.base';
+import type { Prisma } from '@prisma/client';
 
 export abstract class EventsUpdateBase extends EventsBase {
   /** The times of an event, read and checked. */
@@ -182,7 +183,7 @@ export abstract class EventsUpdateBase extends EventsBase {
           endAt,
           allDay,
           timezone: tz,
-          repeat: (repeat as any) ?? null,
+          repeat: (repeat as unknown as Prisma.InputJsonValue) ?? null,
           seriesEndAt: seriesEndOf(startAt, endAt, repeat, tz),
           reminderOffsets: offsets,
           ...(input.kind ? { kind: input.kind === 'REMINDER' ? 'REMINDER' : 'APPOINTMENT' } : {}),

@@ -7,6 +7,7 @@ import {
   success,
   accessAllowsInSpace,
   canReceiveTasks,
+  type ResolvedAccess,
 } from '@hbcfield/shared';
 import { assertMayAssign, assertTargetIsInSpace } from './task-scope';
 import { TaskAssignmentBase } from './task-assignment.base';
@@ -86,6 +87,8 @@ export class TaskAssignmentService extends TaskAssignmentBase {
     /** Spaces where the caller holds canAssignTasks through a SPACE role. */
     assignSpaceIds?: string[];
     organizationId: string;
+    /** The caller's resolved access, forwarded by the gateway (cross-org shared spaces). */
+    access?: ResolvedAccess | null;
   }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
@@ -98,7 +101,7 @@ export class TaskAssignmentService extends TaskAssignmentBase {
     // Authorization: own-org tasks always; a foreign task ONLY with a cross-org
     // CONTROL grant (canAssignTasks) for that task's real space.
     if (task.organizationId !== data.organizationId) {
-      if (!task.spaceId || !accessAllowsInSpace((data as any).access, 'canAssignTasks', task.spaceId)) {
+      if (!task.spaceId || !accessAllowsInSpace(data.access, 'canAssignTasks', task.spaceId)) {
         this.logger.warn(`Authorization denied: assign task across orgs`, { userId: data.userId, taskId: data.id });
         throw new ForbiddenException('You can only assign tasks in your organization');
       }

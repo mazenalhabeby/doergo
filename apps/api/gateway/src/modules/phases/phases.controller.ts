@@ -7,6 +7,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { CreatePhaseDto, UpdatePhaseDto } from './dto';
 import { PhasesService } from './phases.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('phases')
 @ApiBearerAuth()
 @RequireModule('phases') // Business+ — gates ALL mutations (create/update/delete); reads pass
@@ -17,10 +19,10 @@ export class PhasesController {
   @Get()
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'List organization phases' })
-  async findAll(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
+  async findAll(@Query('spaceId') spaceId: string | undefined, @Request() req: AuthedRequest) {
     // A space sees its own phases plus the organization-wide ones.
     return this.phasesService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       ...(spaceId && { spaceId }),
     });
   }
@@ -29,35 +31,31 @@ export class PhasesController {
   @Roles(Role.ADMIN)
   @RequireModule('phases')
   @ApiOperation({ summary: 'Create a new phase' })
-  async create(@Body() createPhaseDto: CreatePhaseDto, @Request() req: any) {
+  async create(@Body() createPhaseDto: CreatePhaseDto, @Request() req: AuthedRequest) {
     return this.phasesService.create({
       ...createPhaseDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update a phase' })
-  async update(
-    @Param('id') id: string,
-    @Body() updatePhaseDto: UpdatePhaseDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() updatePhaseDto: UpdatePhaseDto, @Request() req: AuthedRequest) {
     return this.phasesService.update({
       id,
       ...updatePhaseDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a phase' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.phasesService.remove({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

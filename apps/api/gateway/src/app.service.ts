@@ -46,7 +46,7 @@ export class AppService {
     pattern: string,
   ): Promise<{ status: string; latencyMs?: number; verified?: boolean; answeredBy?: string }> {
     const start = Date.now();
-    const reply: any = await firstValueFrom(
+    const reply: Record<string, unknown> | null = await firstValueFrom(
       client.send({ cmd: pattern }, {}).pipe(
         timeout(3000),
         catchError(() => of(null)),

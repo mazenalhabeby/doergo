@@ -1,14 +1,5 @@
 import type { ResolvedAccess as ResolvedGrants } from '@hbcfield/shared/client';
-import {
-  
-
-  TimeEntryStatus,
-  BreakType,
-  Role,
-  Platform,
-  TaskStatus,
-  TaskPriority,
-} from '@hbcfield/shared/client';
+import { TimeEntryStatus, BreakType, Role, Platform, TaskStatus, TaskPriority } from '@hbcfield/shared/client';
 import type {
   CompanyLocation,
   TimeEntry,
@@ -217,4 +208,13 @@ export interface LoginResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+}
+
+/** One of a task's files: the server's row, or a photo held on this phone until it is sent. */
+export interface DetailAttachment {
+  id: string;
+  fileName?: string;
+  fileUrl?: string;
+  fileType?: string;
+  pendingSync?: boolean;
 }

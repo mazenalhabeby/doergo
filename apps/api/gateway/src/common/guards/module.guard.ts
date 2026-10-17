@@ -5,6 +5,8 @@ import { MODULE_KEY } from '../decorators/require-module.decorator';
 import { isFeatureEntitled } from '../entitlements';
 import { SpaceModulesService, moduleRefusal } from '../space-modules.service';
 
+import type { SessionUser } from '../request.types';
+import type { MaybeAuthedRequest } from '../request.types';
 const MODULE_KEYS = new Set<string>(AVAILABLE_MODULES.map((m) => m.key));
 
 /** Routes whose `:id` names a planning object that knows its own space. */
@@ -50,10 +52,7 @@ export class ModuleGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const required = this.reflector.getAllAndOverride<string>(MODULE_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const required = this.reflector.getAllAndOverride<string>(MODULE_KEY, [context.getHandler(), context.getClass()]);
     if (!required) return true;
 
     const req = context.switchToHttp().getRequest();
@@ -97,7 +96,7 @@ export class ModuleGuard implements CanActivate {
    * `get_effective_modules`, which refuses a space belonging to another tenant —
    * so a forged id resolves to nothing and falls back rather than widening.
    */
-  private async resolveSpaceModules(req: any, user: any): Promise<string[] | null> {
+  private async resolveSpaceModules(req: MaybeAuthedRequest, user: SessionUser): Promise<string[] | null> {
     const orgId = user.organizationId;
     if (!orgId) return null;
 
@@ -151,8 +150,12 @@ export class ModuleGuard implements CanActivate {
       let a clock-in at a workspace with Time Tracking switched off fall back to
       the organization's list and be accepted.
     */
-    const explicit = req.params?.spaceId ?? req.body?.spaceId ?? req.query?.spaceId
-      ?? (this.routeIs(req, '/attendance') ? req.body?.locationId : null) ?? null;
+    const explicit =
+      req.params?.spaceId ??
+      req.body?.spaceId ??
+      req.query?.spaceId ??
+      (this.routeIs(req, '/attendance') ? req.body?.locationId : null) ??
+      null;
     if (typeof explicit === 'string' && explicit) {
       return this.spaceModules.forSpace(explicit, orgId);
     }
@@ -161,7 +164,7 @@ export class ModuleGuard implements CanActivate {
   }
 
   /** `:id` means a different thing per controller, so match on the path. */
-  private routeIs(req: any, segment: string): boolean {
+  private routeIs(req: MaybeAuthedRequest, segment: string): boolean {
     const url: string = req.route?.path ?? req.originalUrl ?? req.url ?? '';
     return url.includes(segment);
   }

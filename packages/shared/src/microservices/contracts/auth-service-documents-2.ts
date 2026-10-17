@@ -102,6 +102,6 @@ export const documentsLinkSign = rpc<{
   name: string;
   role?: string | null;
   idempotencyKey: string;
-  ctx?: any;
+  ctx?: RequestContext;
 }>('documents_link_sign');
 export const documentsLinkReissue = rpc<{ email: string }>('documents_link_reissue');

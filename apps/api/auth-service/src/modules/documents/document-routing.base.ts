@@ -101,7 +101,7 @@ export abstract class DocumentRoutingBase {
     if (role === 'RESPONSIBLE') {
       // allowLeaderDefault false: a space nobody configured contributes no one.
       // Sign-off is not something to fall into by being a space leader.
-      const ids = await resolveMemberRouting(this.prisma as any, organizationId, memberId, 'approve', false);
+      const ids = await resolveMemberRouting(this.prisma, organizationId, memberId, 'approve', false);
       ids.delete(memberId); // nobody approves their own hours
       if (ids.size === 0) return [];
       const users = await this.prisma.user.findMany({

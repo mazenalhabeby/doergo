@@ -27,6 +27,7 @@ import {
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
 import { getTechnicianStats } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 @ApiTags('employees')
 @ApiBearerAuth()
@@ -57,7 +58,7 @@ export class EmployeesController {
     different set than the page.
   */
   @RequirePermissionInSpace('canViewAllTasks')
-  async listEmployees(@Query() query: ListEmployeesDto, @CurrentUser() user: CurrentUserData) {
+  async listEmployees(@Query() query: ListEmployeesDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, listTechnicians, {
         ...query,
@@ -77,7 +78,7 @@ export class EmployeesController {
   @ApiResponse({ status: 201, description: 'Employee created' })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   @RequirePermission('canManageUsers')
-  async createEmployee(@Body() dto: CreateEmployeeDto, @CurrentUser() user: CurrentUserData) {
+  async createEmployee(@Body() dto: CreateEmployeeDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, createTechnician, {
         ...dto,
@@ -98,7 +99,7 @@ export class EmployeesController {
   @ApiResponse({ status: 200, description: 'Employee detail retrieved' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermissionInSpace('canViewAllTasks')
-  async getEmployeeDetail(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getEmployeeDetail(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, getTechnicianDetail, {
         id,
@@ -120,12 +121,12 @@ export class EmployeesController {
             Computed server-side from the resolved grant, never from the client.
           */
         viewerSpaceIds:
-          isAdmin(user as any) || user.canViewAllTasks || user.canManageUsers
+          isAdmin(user) || user.canViewAllTasks || user.canManageUsers
             ? null
             : Array.from(
                 new Set([
-                  ...(spacesGranting((user as any)?.access, 'canViewAllTasks') ?? []),
-                  ...(spacesGranting((user as any)?.access, 'canViewSpaceAttendance') ?? []),
+                  ...(spacesGranting(user.access, 'canViewAllTasks') ?? []),
+                  ...(spacesGranting(user.access, 'canViewSpaceAttendance') ?? []),
                 ]),
               ),
         // Coordinates are their own permission — see lastLocation in the
@@ -144,7 +145,7 @@ export class EmployeesController {
   @ApiParam({ name: 'id', description: 'Employee ID' })
   @ApiResponse({ status: 200, description: 'Stats retrieved' })
   @RequirePermissionInSpace('canViewAllTasks')
-  async getEmployeeStats(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async getEmployeeStats(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     // Route to task-service for task stats (task data lives there)
     return firstValueFrom(
       sendRpc(this.taskClient, getTechnicianStats, {
@@ -166,7 +167,7 @@ export class EmployeesController {
   @ApiResponse({ status: 200, description: 'Employee updated' })
   @ApiResponse({ status: 404, description: 'Employee not found' })
   @RequirePermission('canManageUsers')
-  async updateEmployee(@Param('id') id: string, @Body() dto: UpdateEmployeeDto, @CurrentUser() user: CurrentUserData) {
+  async updateEmployee(@Param('id') id: string, @Body() dto: UpdateEmployeeDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, updateTechnician, {
         id,
@@ -201,7 +202,7 @@ export class EmployeesController {
     description: 'Cannot deactivate employee with active tasks',
   })
   @RequirePermission('canManageUsers')
-  async deactivateEmployee(@Param('id') id: string, @CurrentUser() user: CurrentUserData) {
+  async deactivateEmployee(@Param('id') id: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, deactivateTechnician, {
         id,

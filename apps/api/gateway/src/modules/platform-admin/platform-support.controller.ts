@@ -6,6 +6,7 @@ import { PlatformAuditInterceptor } from '../../common/interceptors/platform-aud
 import { PlatformSupportService } from './platform-support.service';
 import type { RpcRequest, supportInbox, supportAddMessage, supportSetStatus } from '@hbcfield/shared/microservices';
 
+import type { PlatformRequest } from '../../common/request.types';
 /*
   ⚠️ Contract mismatches, kept as they are — the handler declares narrower types than arrive:
   the inbox `view` and a ticket `status` are the client's raw strings (or absent), the agent id
@@ -20,8 +21,8 @@ const asWire = <C, K extends keyof RpcRequest<C>>(v: unknown) => v as Wire<C, K>
  * triage and what is assigned to them. Sent with EVERY ticket operation — the
  * task-service answers 404 for a ticket outside it.
  */
-export function supportScopeOf(req: any): SupportAgentScope {
-  const u = req?.platformUser ?? {};
+export function supportScopeOf(req: PlatformRequest): SupportAgentScope {
+  const u: Record<string, unknown> = req?.platformUser ?? {};
   return {
     isSupervisor: u.isSupportSupervisor === true,
     teamIds: Array.isArray(u.supportTeamIds) ? u.supportTeamIds : [],
@@ -42,13 +43,13 @@ export function supportScopeOf(req: any): SupportAgentScope {
 @RequirePlatformPerm('manageSupport')
 export class PlatformSupportController {
   constructor(private readonly svc: PlatformSupportService) {}
-  private unwrap<T>(r: any): T {
+  private unwrap<T>(r: unknown): T {
     return assertServiceOk(r) as T;
   }
 
   @Get('inbox')
   async inbox(
-    @Request() req: any,
+    @Request() req: PlatformRequest,
     @Query('status') status?: string,
     @Query('tier') tier?: string,
     @Query('atRisk') atRisk?: string,
@@ -73,7 +74,7 @@ export class PlatformSupportController {
   }
 
   @Get('tickets/:id')
-  async thread(@Param('id') id: string, @Request() req: any) {
+  async thread(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.thread(id, supportScopeOf(req)));
   }
 
@@ -81,7 +82,7 @@ export class PlatformSupportController {
   async reply(
     @Param('id') id: string,
     @Body() body: { body?: string; attachments?: any[]; isInternalNote?: boolean },
-    @Request() req: any,
+    @Request() req: PlatformRequest,
   ) {
     const scope = supportScopeOf(req);
     return this.unwrap(
@@ -99,7 +100,7 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/status')
-  async status(@Param('id') id: string, @Body() body: { status?: string }, @Request() req: any) {
+  async status(@Param('id') id: string, @Body() body: { status?: string }, @Request() req: PlatformRequest) {
     const status = asWire<typeof supportSetStatus, 'status'>(body?.status);
     return this.unwrap(await this.svc.setStatus({ ticketId: id, status, scope: supportScopeOf(req) }));
   }
@@ -108,7 +109,7 @@ export class PlatformSupportController {
   async assign(
     @Param('id') id: string,
     @Body() body: { agentId?: string | null; teamId?: string | null },
-    @Request() req: any,
+    @Request() req: PlatformRequest,
   ) {
     const scope = supportScopeOf(req);
     // Build a sparse patch: only keys present are changed. With neither field the
@@ -124,7 +125,7 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/read')
-  async read(@Param('id') id: string, @Request() req: any) {
+  async read(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.markRead(id, supportScopeOf(req)));
   }
 }

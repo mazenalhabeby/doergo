@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Role } from '@hbcfield/shared';
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -10,11 +11,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
  */
 @Injectable()
 export class MemberDirectoryService {
-
-
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findOne(id: string, organizationId?: string) {
     // Tenant isolation (S1): when the caller's org is supplied, scope the lookup
@@ -67,7 +64,7 @@ export class MemberDirectoryService {
     if (!organizationId) {
       throw new BadRequestException('organizationId is required');
     }
-    const where: any = { isActive: true, organizationId };
+    const where: Prisma.UserWhereInput = { isActive: true, organizationId };
 
     const workers = await this.prisma.user.findMany({
       where,
@@ -140,12 +137,7 @@ export class MemberDirectoryService {
         organizationId,
         isActive: true,
         id: { not: userId },
-        OR: [
-          { role: Role.ADMIN },
-          { canViewAllTasks: true },
-          { canAssignTasks: true },
-          { canManageUsers: true },
-        ],
+        OR: [{ role: Role.ADMIN }, { canViewAllTasks: true }, { canAssignTasks: true }, { canManageUsers: true }],
       },
       select: {
         id: true,
@@ -166,9 +158,7 @@ export class MemberDirectoryService {
 
     // SELECTED → only the explicitly allowed contacts; ALL → everyone in the directory.
     const data =
-      me.contactScope === 'SELECTED'
-        ? candidates.filter((c) => me.contactAllowedIds.includes(c.id))
-        : candidates;
+      me.contactScope === 'SELECTED' ? candidates.filter((c) => me.contactAllowedIds.includes(c.id)) : candidates;
 
     return { success: true, data };
   }

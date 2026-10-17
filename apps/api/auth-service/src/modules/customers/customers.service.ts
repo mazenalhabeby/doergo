@@ -149,11 +149,14 @@ export class CustomersService extends CustomersServiceBase {
     // resolve the entity (portal label) they belong to.
     const [login, portal] = await Promise.all([
       this.prisma.user.findFirst({
-        where: { customerId: id, organizationId, role: 'CUSTOMER' as any },
+        where: { customerId: id, organizationId, role: 'CUSTOMER' as const },
         select: { id: true, isActive: true },
       }),
       customer.portalId
-        ? this.prisma.portal.findFirst({ where: { id: customer.portalId, organizationId }, select: { name: true, entityLabel: true } })
+        ? this.prisma.portal.findFirst({
+            where: { id: customer.portalId, organizationId },
+            select: { name: true, entityLabel: true },
+          })
         : Promise.resolve(null),
     ]);
 
@@ -161,11 +164,11 @@ export class CustomersService extends CustomersServiceBase {
       data: {
         ...customer,
         app: {
-          invited: customer.isPortalResident,        // access granted (invite sent)
-          accepted: !!login,                          // signed up → has a login
-          active: !!login?.isActive,                  // login not revoked
+          invited: customer.isPortalResident, // access granted (invite sent)
+          accepted: !!login, // signed up → has a login
+          active: !!login?.isActive, // login not revoked
           portalName: portal?.name ?? null,
-          entityLabel: portal?.entityLabel ?? null,   // Apartment / Order / Workspace…
+          entityLabel: portal?.entityLabel ?? null, // Apartment / Order / Workspace…
         },
         // Caller's CRM abilities on THIS record — lets the detail UI hide actions
         // it can't take (the server still enforces every one of them).

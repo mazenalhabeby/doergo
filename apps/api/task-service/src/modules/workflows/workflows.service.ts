@@ -160,7 +160,7 @@ export class WorkflowsService extends WorkflowServiceBase {
 
       return created;
       });
-    } catch (err: any) {
+    } catch (err) {
       // Race: another request created the same name between the check and insert.
       if (err?.code === 'P2002') {
         throw new ConflictException(`A task type named "${name}" already exists.`);
@@ -220,7 +220,7 @@ export class WorkflowsService extends WorkflowServiceBase {
           _count: { select: { tasks: true } },
         },
       });
-    } catch (err: any) {
+    } catch (err) {
       if (err?.code === 'P2002') {
         throw new ConflictException(`A task type named "${newName}" already exists.`);
       }

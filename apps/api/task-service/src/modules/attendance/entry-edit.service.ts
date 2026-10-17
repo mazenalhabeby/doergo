@@ -13,6 +13,7 @@ import { assertNotSelfDecision } from './self-decision';
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { approvalFor } from './attendance-occurrence';
 import { EntryServiceBase } from './entry-service.base';
+import type { Prisma } from '@prisma/client';
 
 /** The office correcting one entry: times, rests, the reason — audited. */
 @Injectable()
@@ -92,7 +93,7 @@ export class EntryEditService extends EntryServiceBase {
       });
     }
 
-    const updateData: any = {
+    const updateData: Prisma.TimeEntryUncheckedUpdateInput = {
       isEdited: true,
       editedById: data.editorId,
       editedAt: new Date(),

@@ -18,8 +18,11 @@ export interface RecordRow<T = unknown> {
 
 type ChangeListener = (scope: string) => void;
 
+/** A pulled row: its id and time, and the fields that may name a parent. */
+type PulledRow = { id: string; updatedAt?: string | null; taskId?: string | null; conversationId?: string | null };
+
 /** Which field of a pulled row names its parent, per scope. */
-const PARENT_OF: Record<string, (row: any) => string | null> = {
+const PARENT_OF: Record<string, (row: PulledRow) => string | null> = {
   comments: (r) => r.taskId ?? null,
   attachments: (r) => r.taskId ?? null,
   chat_messages: (r) => r.conversationId ?? null,
@@ -41,15 +44,29 @@ export class RecordsStore {
   }
 
   async listByParent<T>(scope: string, parentId: string): Promise<RecordRow<T>[]> {
-    const rows = await this.db.getAllAsync<{ id: string; parent_id: string | null; data: string; server_updated_at: string | null }>(
-      'SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ? AND parent_id = ?',
-      [scope, parentId],
-    );
-    return rows.map((r) => ({ id: r.id, parentId: r.parent_id, data: JSON.parse(r.data) as T, serverUpdatedAt: r.server_updated_at }));
+    const rows = await this.db.getAllAsync<{
+      id: string;
+      parent_id: string | null;
+      data: string;
+      server_updated_at: string | null;
+    }>('SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ? AND parent_id = ?', [
+      scope,
+      parentId,
+    ]);
+    return rows.map((r) => ({
+      id: r.id,
+      parentId: r.parent_id,
+      data: JSON.parse(r.data) as T,
+      serverUpdatedAt: r.server_updated_at,
+    }));
   }
 
   /** Replace every record of a scope under one parent — a task's notes as the API returned them. */
-  async replaceChildren(scope: string, parentId: string, rows: { id: string; updatedAt?: string | null }[]): Promise<void> {
+  async replaceChildren(
+    scope: string,
+    parentId: string,
+    rows: { id: string; updatedAt?: string | null }[],
+  ): Promise<void> {
     await this.db.withTransactionAsync(async (txn) => {
       await txn.runAsync('DELETE FROM records WHERE scope = ? AND parent_id = ?', [scope, parentId]);
       for (const row of rows) {
@@ -63,19 +80,30 @@ export class RecordsStore {
   }
 
   async list<T>(scope: string): Promise<RecordRow<T>[]> {
-    const rows = await this.db.getAllAsync<{ id: string; parent_id: string | null; data: string; server_updated_at: string | null }>(
-      'SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ?',
-      [scope],
-    );
-    return rows.map((r) => ({ id: r.id, parentId: r.parent_id, data: JSON.parse(r.data) as T, serverUpdatedAt: r.server_updated_at }));
+    const rows = await this.db.getAllAsync<{
+      id: string;
+      parent_id: string | null;
+      data: string;
+      server_updated_at: string | null;
+    }>('SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ?', [scope]);
+    return rows.map((r) => ({
+      id: r.id,
+      parentId: r.parent_id,
+      data: JSON.parse(r.data) as T,
+      serverUpdatedAt: r.server_updated_at,
+    }));
   }
 
   async get<T>(scope: string, id: string): Promise<RecordRow<T> | null> {
-    const r = await this.db.getFirstAsync<{ id: string; parent_id: string | null; data: string; server_updated_at: string | null }>(
-      'SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ? AND id = ?',
-      [scope, id],
-    );
-    return r ? { id: r.id, parentId: r.parent_id, data: JSON.parse(r.data) as T, serverUpdatedAt: r.server_updated_at } : null;
+    const r = await this.db.getFirstAsync<{
+      id: string;
+      parent_id: string | null;
+      data: string;
+      server_updated_at: string | null;
+    }>('SELECT id, parent_id, data, server_updated_at FROM records WHERE scope = ? AND id = ?', [scope, id]);
+    return r
+      ? { id: r.id, parentId: r.parent_id, data: JSON.parse(r.data) as T, serverUpdatedAt: r.server_updated_at }
+      : null;
   }
 
   /**
@@ -86,16 +114,22 @@ export class RecordsStore {
   async applyPull(
     scope: string,
     page: Pick<SyncPullResponse, 'rows' | 'deleted' | 'reset' | 'scopeIds' | 'cursor'>,
-    options: { parentOf?: (row: any) => string | null; keep?: ReadonlySet<string>; firstPage: boolean },
+    options: { parentOf?: (row: PulledRow) => string | null; keep?: ReadonlySet<string>; firstPage: boolean },
   ): Promise<void> {
     await this.db.withTransactionAsync(async (txn) => {
       if (page.reset && options.firstPage) {
         await txn.runAsync('DELETE FROM records WHERE scope = ?', [scope]);
       }
-      for (const row of page.rows as { id: string; updatedAt?: string | null }[]) {
+      for (const row of page.rows as PulledRow[]) {
         await txn.runAsync(
           'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
-          [scope, row.id, (options.parentOf ?? PARENT_OF[scope])?.(row) ?? null, JSON.stringify(row), (row.updatedAt as string | undefined) ?? null],
+          [
+            scope,
+            row.id,
+            (options.parentOf ?? PARENT_OF[scope])?.(row) ?? null,
+            JSON.stringify(row),
+            (row.updatedAt as string | undefined) ?? null,
+          ],
         );
       }
       for (const id of page.deleted) {
@@ -111,16 +145,21 @@ export class RecordsStore {
           }
         }
       }
-      await txn.runAsync(
-        'INSERT OR REPLACE INTO sync_state (scope, cursor, last_pull_at) VALUES (?, ?, ?)',
-        [scope, page.cursor, Date.now()],
-      );
+      await txn.runAsync('INSERT OR REPLACE INTO sync_state (scope, cursor, last_pull_at) VALUES (?, ?, ?)', [
+        scope,
+        page.cursor,
+        Date.now(),
+      ]);
     });
     this.changed(scope);
   }
 
   /** Replace one record with the server's answer to a push. */
-  async upsert(scope: string, row: { id: string; updatedAt?: string | null }, parentId: string | null = null): Promise<void> {
+  async upsert(
+    scope: string,
+    row: { id: string; updatedAt?: string | null },
+    parentId: string | null = null,
+  ): Promise<void> {
     await this.db.runAsync(
       'INSERT OR REPLACE INTO records (scope, id, parent_id, data, server_updated_at) VALUES (?, ?, ?, ?, ?)',
       [scope, row.id, parentId, JSON.stringify(row), row.updatedAt ?? null],

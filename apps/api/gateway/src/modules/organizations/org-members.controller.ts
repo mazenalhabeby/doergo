@@ -19,6 +19,7 @@ import {
   transferOwnership,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /organizations/members — the list, one member, a worker's statement, contacts,
@@ -46,7 +47,7 @@ export class OrgMembersController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List organization members' })
   @ApiResponse({ status: 200, description: 'Members list' })
-  async listMembers(@Query() query: ListMembersQueryDto, @CurrentUser() user: CurrentUserData) {
+  async listMembers(@Query() query: ListMembersQueryDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, listOrgMembers, {
         organizationId: callerOrgId(user),
@@ -56,9 +57,9 @@ export class OrgMembersController {
         limit: query.limit ? Number(query.limit) : undefined,
         // Leadership pickers: let the database pick the admins and managers
         // rather than shipping the whole staff list for the browser to filter.
-        managersOnly: query.managersOnly === true || (query.managersOnly as any) === 'true',
+        managersOnly: query.managersOnly === true || (query.managersOnly as unknown) === 'true',
         excludeId: query.excludeId,
-        lite: query.lite === true || (query.lite as any) === 'true',
+        lite: query.lite === true || (query.lite as unknown) === 'true',
         includeIds: query.includeIds
           ? String(query.includeIds)
               .split(',')
@@ -89,7 +90,7 @@ export class OrgMembersController {
     @Param('id') memberId: string,
     @Query('from') from: string | undefined,
     @Query('to') to: string | undefined,
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, memberStatement, {
@@ -106,7 +107,7 @@ export class OrgMembersController {
   @Get('members/:id')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Get a single organization member (same shape as the list row)' })
-  async getMember(@Param('id') memberId: string, @CurrentUser() user: CurrentUserData) {
+  async getMember(@Param('id') memberId: string, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, getOrgMember, {
         memberId,
@@ -120,7 +121,7 @@ export class OrgMembersController {
   @Get('contacts')
   @ApiOperation({ summary: 'List the org admins/managers to contact — any org member' })
   @ApiResponse({ status: 200, description: 'Contacts list' })
-  async listContacts(@CurrentUser() user: CurrentUserData) {
+  async listContacts(@CurrentUser() user: SessionUser) {
     const contacts = await firstValueFrom(
       sendRpc(this.authClient, listOrgContacts, {
         organizationId: user.organizationId,
@@ -142,7 +143,7 @@ export class OrgMembersController {
   @Post('transfer-ownership')
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'Transfer organization ownership to another member' })
-  async transferOwnership(@Body() dto: TransferOwnershipDto, @CurrentUser() user: CurrentUserData) {
+  async transferOwnership(@Body() dto: TransferOwnershipDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, transferOwnership, {
         organizationId: user.organizationId,

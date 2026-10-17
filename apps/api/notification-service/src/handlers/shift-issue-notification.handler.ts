@@ -78,7 +78,7 @@ export class ShiftIssueNotificationHandler {
 const SEVERITIES = new Set(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 
 /** What happened on the thread, when it was not somebody writing in it. */
-function systemLine(data: any): Msg {
+function systemLine(data: EventPayload<typeof shiftIssueEventEvent>): Msg {
   const name = data.actorName || msg('common.someone');
   // The reason is what the person typed, attached as written.
   const reason = data.event?.body ? ` — ${String(data.event.body).slice(0, 80)}` : '';
@@ -86,7 +86,9 @@ function systemLine(data: any): Msg {
     case 'ACKNOWLEDGED':
       return msg('issue.event.acknowledged', { name });
     case 'ASSIGNED':
-      return msg('issue.event.assigned', { name: data.event?.metadata?.assignedToName || msg('common.someone') });
+      return msg('issue.event.assigned', {
+        name: (data.event?.metadata?.assignedToName as string | undefined) || msg('common.someone'),
+      });
     case 'RESOLVED':
       return msg('issue.event.resolved', { name, reason });
     case 'REOPENED':

@@ -55,11 +55,11 @@ export class CustomerReminderScheduler {
       if (claim.count !== 1) continue;
       notified++;
 
-      const customer: any = (r as any).customer;
+      const customer = r.customer;
       // Recipients: a specific assignee if set, else every assigned manager,
       // else the owner, else whoever set it.
-      const recipients = (r as any).reminderAssigneeId
-        ? [(r as any).reminderAssigneeId as string]
+      const recipients = r.reminderAssigneeId
+        ? [r.reminderAssigneeId]
         : Array.from(
             new Set(
               [

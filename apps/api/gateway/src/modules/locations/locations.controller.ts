@@ -30,6 +30,8 @@ import { CreateLocationDto, UpdateLocationDto } from './dto';
 import { locationListScope, shapeLocationList } from './locations-controller-helpers';
 import { LocationsControllerBase } from './locations-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 export { locationListScope, shapeLocationList } from './locations-controller-helpers';
 
 @ApiTags('locations')
@@ -40,17 +42,17 @@ export class LocationsController extends LocationsControllerBase {
   @Post()
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Create a new company location' })
-  async create(@Body() dto: CreateLocationDto, @Request() req: any) {
+  async create(@Body() dto: CreateLocationDto, @Request() req: AuthedRequest) {
     // A space can never enable a module the org's plan tier doesn't include.
-    if (Array.isArray((dto as any).enabledModules)) {
-      (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
+    if (Array.isArray(dto.enabledModules)) {
+      dto.enabledModules = capModulesToCatalogue(dto.enabledModules);
     }
     const created = await this.locationsQueueService.create({
       ...dto,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     // Where is it? Looked up once for its public holidays (in the background).
     this.placeDetector.nudge();
     return created;
@@ -67,18 +69,18 @@ export class LocationsController extends LocationsControllerBase {
     description: "PROJECT | COMPANY | CUSTOMER | 'all'. Default hides CUSTOMER spaces from " + 'work pickers.',
   })
   async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('includeInactive') includeInactive?: boolean,
-    @Query('kind') kind?: string,
-    @Request() req?: any,
+    @Query('page') page: number | undefined,
+    @Query('limit') limit: number | undefined,
+    @Query('includeInactive') includeInactive: boolean | undefined,
+    @Query('kind') kind: string | undefined,
+    @Request() req: AuthedRequest,
   ) {
     const result: any = await this.locationsService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       page: page ? Math.max(1, Number(page) || 1) : 1,
       // The workspace pickers ask for the whole directory, hence the higher ceiling.
       limit: clampListLimit(limit, 20, 500),
-      includeInactive: includeInactive === true || includeInactive === ('true' as any),
+      includeInactive: includeInactive === true || (includeInactive as unknown) === 'true',
       // Default (undefined) excludes CUSTOMER; the Spaces directory passes 'all'.
       kind: kind || undefined,
       /*
@@ -105,10 +107,10 @@ export class LocationsController extends LocationsControllerBase {
   // NOTE: must be declared before @Get(':id') so 'team' isn't matched as an id.
   @Get('team')
   @ApiOperation({ summary: "Colleagues in the requesting user's visible spaces" })
-  async getTeam(@Request() req: any) {
+  async getTeam(@Request() req: AuthedRequest) {
     const team = await this.locationsService.getColleagues({
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       spaceScope: getSpaceScope(req.user),
     });
     return this.chatReach.annotate(team, req.user);
@@ -132,14 +134,14 @@ export class LocationsController extends LocationsControllerBase {
   // asked PER SPACE (`mayViewSpaceRoster`), an external member has no own/all
   // path, and a bill rate leaves only for whoever manages that space's people.
   // Cost rates stop at the LabourCostInterceptor on this class.
-  async getRosters(@Query('ids') ids: string, @Request() req: any) {
+  async getRosters(@Query('ids') ids: string, @Request() req: AuthedRequest) {
     const locationIds = (ids || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
     const res: any = await this.locationsService.getLocationAssignmentsBatch({
       locationIds,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       requesterId: req.user.id,
       spaceScope: req.user.isExternal === true ? 'tasks' : getSpaceScope(req.user),
       viewAllIds: locationIds.filter((id) => mayViewSpaceRoster(req.user, id)),
@@ -160,11 +162,11 @@ export class LocationsController extends LocationsControllerBase {
   // A space a caller has no claim to returns NotFound.
   @Get(':id')
   @ApiOperation({ summary: 'Get a company location by ID' })
-  async findOne(@Param('id') id: string, @Request() req: any) {
+  async findOne(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.locationsService.findOne({
       id,
-      organizationId: req.user.organizationId,
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s: any) => s.spaceId),
+      organizationId: callerOrgId(req.user),
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).map((s) => s.spaceId),
       /*
         What leaked was the client's CONTACTS and the negotiated RATES — those
         go only to somebody who manages this workspace (`mayManage`; task-service
@@ -201,23 +203,23 @@ export class LocationsController extends LocationsControllerBase {
   @Post(':id/default')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: "Make this space the organization's default" })
-  async makeDefault(@Param('id') id: string, @Request() req: any) {
+  async makeDefault(@Param('id') id: string, @Request() req: AuthedRequest) {
     const result = await this.locationsQueueService.setDefault({
       id,
       // From the token, never the body: the space id is checked against THIS
       // organization, so a guessed id from another tenant finds nothing.
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 
   @Patch(':id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a company location' })
-  async update(@Param('id') id: string, @Body() dto: UpdateLocationDto, @Request() req: any) {
-    if (Array.isArray((dto as any).enabledModules)) {
-      (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
+  async update(@Param('id') id: string, @Body() dto: UpdateLocationDto, @Request() req: AuthedRequest) {
+    if (Array.isArray(dto.enabledModules)) {
+      dto.enabledModules = capModulesToCatalogue(dto.enabledModules);
     }
     const updated = await this.locationsQueueService.update({
       id,
@@ -226,38 +228,38 @@ export class LocationsController extends LocationsControllerBase {
       organizationId: req.user.organizationId,
     });
     // Modules may have changed — and an archived space stops being billed.
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     // …and the module gates read this space's list from a 30-second cache; a
     // module switched on must not stay refused (or off stay allowed) until it lapses.
-    this.spaceModules.invalidate(id, req.user.organizationId);
+    this.spaceModules.invalidate(id, callerOrgId(req.user));
     // A moved workspace is looked up again for its public holidays (in the background).
-    if ((dto as any).lat !== undefined || (dto as any).lng !== undefined) this.placeDetector.nudge();
+    if (dto.lat !== undefined || dto.lng !== undefined) this.placeDetector.nudge();
     return updated;
   }
 
   @Delete(':id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Deactivate a company location' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     const result = await this.locationsQueueService.remove({
       id,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 
   @Delete(':id/permanent')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Permanently delete an empty company location (no tasks/attendance/shifts)' })
-  async purge(@Param('id') id: string, @Request() req: any) {
+  async purge(@Param('id') id: string, @Request() req: AuthedRequest) {
     const result = await this.locationsQueueService.purge({
       id,
       userId: req.user.id,
       organizationId: req.user.organizationId,
     });
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -273,7 +275,7 @@ export class LocationsController extends LocationsControllerBase {
   */
   @RequirePermissionInSpace('canViewAllTasks')
   @ApiOperation({ summary: 'Get effective modules for a space (falls back to org defaults)' })
-  async getEffectiveModules(@Param('id') id: string, @Request() req: any) {
+  async getEffectiveModules(@Param('id') id: string, @Request() req: AuthedRequest) {
     // null for an org-wide holder, a list otherwise.
     const scope = scopeFor(req.user, 'canViewAllTasks');
     if (scope !== null && !scope.includes(id)) {
@@ -281,7 +283,7 @@ export class LocationsController extends LocationsControllerBase {
     }
     return this.locationsService.getEffectiveModules({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

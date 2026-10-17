@@ -14,6 +14,12 @@ export interface ApprovalContext {
   currency?: string | null;
 }
 
+/**
+ * One row of a kind's OWN list route, as the inbox reads it. Loose on purpose: thirteen kinds,
+ * each read through its existing route (self-dispatch), each normalizer picking the few fields
+ * it shows. Typing it means a response type per kind's route — not done yet (CODE_AUDIT §12).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Row = Record<string, any>;
 
 export const iso = (v: unknown): string | null => {

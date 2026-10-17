@@ -11,6 +11,7 @@ import { SyncPushService } from '../../sync/sync-push.service';
 import { SYNC_OPERATIONS } from '@hbcfield/shared';
 import { tasksControllers, taskRoute } from './tasks-controllers.fixture';
 
+import { fakeReq } from '../../../common/testing/fake-request';
 const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
 
 describe('PATCH /tasks/:id/status carries step-form answers', () => {
@@ -21,42 +22,67 @@ describe('PATCH /tasks/:id/status carries step-form answers', () => {
   });
 
   it('refuses answers that are not an object', async () => {
-    await expect(pipe.transform({ status: 'VISITED', answers: ['x'] }, { type: 'body', metatype: UpdateStatusDto })).rejects.toBeDefined();
-    await expect(pipe.transform({ status: 'VISITED', answers: 'x' }, { type: 'body', metatype: UpdateStatusDto })).rejects.toBeDefined();
+    await expect(
+      pipe.transform({ status: 'VISITED', answers: ['x'] }, { type: 'body', metatype: UpdateStatusDto }),
+    ).rejects.toBeDefined();
+    await expect(
+      pipe.transform({ status: 'VISITED', answers: 'x' }, { type: 'body', metatype: UpdateStatusDto }),
+    ).rejects.toBeDefined();
   });
 
   it('forwards the answers to the status job, with the caller identity after them', async () => {
     const queue = { updateTaskStatus: jest.fn().mockResolvedValue({ success: true }) };
     const controller = tasksControllers(queue as any, {} as any);
     const req = { user: { id: 'u1', role: 'EMPLOYEE', organizationId: 'o1', canViewAllTasks: false } };
-    await controller.updateStatus('t1', { status: 'VISITED', answers: { outcome: 'Won' } } as any, req);
-    expect(queue.updateTaskStatus).toHaveBeenCalledWith(expect.objectContaining({
-      id: 't1', status: 'VISITED', answers: { outcome: 'Won' }, userId: 'u1', organizationId: 'o1',
-    }));
+    await controller.updateStatus('t1', { status: 'VISITED', answers: { outcome: 'Won' } } as any, fakeReq(req));
+    expect(queue.updateTaskStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 't1',
+        status: 'VISITED',
+        answers: { outcome: 'Won' },
+        userId: 'u1',
+        organizationId: 'o1',
+      }),
+    );
   });
 });
 
 describe('GET /tasks/:id/submissions', () => {
   it('asks task-service with exactly the facts GET /tasks/:id uses (the same access check)', async () => {
-    const tasks = { findOne: jest.fn().mockResolvedValue({}), getSubmissions: jest.fn().mockResolvedValue({ data: [] }) };
+    const tasks = {
+      findOne: jest.fn().mockResolvedValue({}),
+      getSubmissions: jest.fn().mockResolvedValue({ data: [] }),
+    };
     const controller = tasksControllers({} as any, tasks as any);
     const req = {
       user: {
-        id: 'u1', role: 'EMPLOYEE', organizationId: 'o1', canViewAllTasks: false, canAssignTasks: false,
+        id: 'u1',
+        role: 'EMPLOYEE',
+        organizationId: 'o1',
+        canViewAllTasks: false,
+        canAssignTasks: false,
         access: { sharedSpaces: [{ spaceId: 'shared1' }] },
       },
     };
-    await controller.findOne('t1', req);
-    await controller.getSubmissions('t1', req);
+    await controller.findOne('t1', fakeReq(req));
+    await controller.getSubmissions('t1', fakeReq(req));
     // Both routes forward the one task caller (common/task-actor.ts), so the
     // facts are now identical — no field to set aside.
     expect(tasks.getSubmissions.mock.calls[0][0]).toEqual(tasks.findOne.mock.calls[0][0]);
-    expect(tasks.getSubmissions.mock.calls[0][0]).toMatchObject({ id: 't1', userId: 'u1', organizationId: 'o1', sharedSpaceIds: ['shared1'] });
+    expect(tasks.getSubmissions.mock.calls[0][0]).toMatchObject({
+      id: 't1',
+      userId: 'u1',
+      organizationId: 'o1',
+      sharedSpaceIds: ['shared1'],
+    });
   });
 
   it('declares no looser gate than reading the task itself', () => {
     const proto = new Proxy({}, { get: (_t, name: string) => taskRoute(name) }) as any;
-    const keys = (fn: object) => Reflect.getMetadataKeys(fn).filter((k: unknown) => typeof k === 'string' && !String(k).startsWith('swagger') && k !== 'path' && k !== 'method');
+    const keys = (fn: object) =>
+      Reflect.getMetadataKeys(fn).filter(
+        (k: unknown) => typeof k === 'string' && !String(k).startsWith('swagger') && k !== 'path' && k !== 'method',
+      );
     expect(keys(proto.getSubmissions)).toEqual(keys(proto.findOne));
   });
 });
@@ -64,11 +90,16 @@ describe('GET /tasks/:id/submissions', () => {
 describe('workflow steps accept a form', () => {
   it('on create and on update, and null clears it', async () => {
     const form = { fields: [{ type: 'note', label: 'Notes', required: true }] };
-    const created = await pipe.transform({ name: 'Visited', key: 'VISITED', form }, { type: 'body', metatype: CreateWorkflowStatusDto });
+    const created = await pipe.transform(
+      { name: 'Visited', key: 'VISITED', form },
+      { type: 'body', metatype: CreateWorkflowStatusDto },
+    );
     expect(created.form).toEqual(form);
     const cleared = await pipe.transform({ form: null }, { type: 'body', metatype: UpdateWorkflowStatusDto });
     expect(cleared.form).toBeNull();
-    await expect(pipe.transform({ form: 'x' }, { type: 'body', metatype: UpdateWorkflowStatusDto })).rejects.toBeDefined();
+    await expect(
+      pipe.transform({ form: 'x' }, { type: 'body', metatype: UpdateWorkflowStatusDto }),
+    ).rejects.toBeDefined();
   });
 });
 
@@ -84,31 +115,56 @@ describe('a step-form refusal reaches the client with its code and params', () =
       }),
     } as unknown as ArgumentsHost;
     new GlobalExceptionFilter().catch(
-      { statusCode: 400, message: 'Some answers this step asks for are missing or not valid.', code: 'STEP_FORM_INVALID', params: { statusKey: 'VISITED', errors } },
+      {
+        statusCode: 400,
+        message: 'Some answers this step asks for are missing or not valid.',
+        code: 'STEP_FORM_INVALID',
+        params: { statusKey: 'VISITED', errors },
+      },
       host,
     );
-    expect(json.mock.calls[0][0]).toMatchObject({ statusCode: 400, code: 'STEP_FORM_INVALID', params: { statusKey: 'VISITED', errors } });
+    expect(json.mock.calls[0][0]).toMatchObject({
+      statusCode: 400,
+      code: 'STEP_FORM_INVALID',
+      params: { statusKey: 'VISITED', errors },
+    });
   });
 
   it('through a sync push — the answers travel in the body, the refusal comes back coded', async () => {
     expect(SYNC_OPERATIONS['task.status']).toEqual({ method: 'PATCH', path: '/tasks/:taskId/status' });
-    const service = new SyncPushService({ get: (k: string) => ({ PORT: '4000', API_PREFIX: 'api/v1' } as any)[k] } as any);
+    const service = new SyncPushService({
+      get: (k: string) => (({ PORT: '4000', API_PREFIX: 'api/v1' }) as any)[k],
+    } as any);
     const sent: any[] = [];
     (global as any).fetch = jest.fn(async (_url: string, init: any) => {
       sent.push(JSON.parse(init.body));
       return {
-        ok: false, status: 400, headers: { get: () => null },
-        json: async () => ({ code: 'STEP_FORM_FOREIGN_FILE', message: 'nope', params: { statusKey: 'VISITED', fileIds: ['x'] } }),
+        ok: false,
+        status: 400,
+        headers: { get: () => null },
+        json: async () => ({
+          code: 'STEP_FORM_FOREIGN_FILE',
+          message: 'nope',
+          params: { statusKey: 'VISITED', fileIds: ['x'] },
+        }),
       } as any;
     });
-    const res = await service.push(
-      { headers: { authorization: 'Bearer t' }, ip: '203.0.113.9' } as any,
-      [{
-        id: '0190f3c2-7b1a-7c3d-9e4f-000000000001', op: 'task.status', lane: 'task:t1',
-        payload: { params: { taskId: 't1' }, body: { status: 'VISITED', expectedFrom: 'WORKING', answers: { outcome: 'Won', pics: ['x'] } } },
-      }],
-    );
+    const res = await service.push({ headers: { authorization: 'Bearer t' }, ip: '203.0.113.9' } as any, [
+      {
+        id: '0190f3c2-7b1a-7c3d-9e4f-000000000001',
+        op: 'task.status',
+        lane: 'task:t1',
+        payload: {
+          params: { taskId: 't1' },
+          body: { status: 'VISITED', expectedFrom: 'WORKING', answers: { outcome: 'Won', pics: ['x'] } },
+        },
+      },
+    ]);
     expect(sent[0].answers).toEqual({ outcome: 'Won', pics: ['x'] });
-    expect(res.results[0]).toMatchObject({ status: 'rejected', code: 'STEP_FORM_FOREIGN_FILE', params: { statusKey: 'VISITED', fileIds: ['x'] } });
+    expect(res.results[0]).toMatchObject({
+      status: 'rejected',
+      code: 'STEP_FORM_FOREIGN_FILE',
+      params: { statusKey: 'VISITED', fileIds: ['x'] },
+    });
   });
 });

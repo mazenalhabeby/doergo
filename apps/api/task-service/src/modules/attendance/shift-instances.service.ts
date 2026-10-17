@@ -87,7 +87,7 @@ export class ShiftInstancesService {
         const physical = a.space.lat != null && a.space.lng != null;
         const tz = physical ? zoneOf(a.space.timezone) : zoneOf(a.user.timezone, a.user.organization?.timezone);
         for (const dateStr of this.localDaysInWindow(now, horizon, tz)) {
-          const win = this.shiftResolver.matchAndWindowForDate(a as any, tz, dateStr);
+          const win = this.shiftResolver.matchAndWindowForDate(a, tz, dateStr);
           if (!win) continue;
           if (win.expectedClockOutAt.getTime() < now.getTime()) continue; // already over
           const graceMin = a.shift.graceMin ?? SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES;

@@ -1,3 +1,4 @@
+import type { Prisma, InvitationStatus } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import { clampListLimit } from '@hbcfield/shared';
@@ -55,9 +56,10 @@ export class InvitationAdminService extends InvitationServiceBase {
     const limit = clampListLimit(data.limit, 10, 50);
     const skip = (page - 1) * limit;
 
-    const where: any = { organizationId: data.organizationId };
+    const where: Prisma.InvitationWhereInput = { organizationId: data.organizationId };
     if (data.status && data.status !== 'all') {
-      where.status = data.status;
+      // A filter from the query string; Prisma refuses a value that is not a status (as it always did).
+      where.status = data.status as InvitationStatus;
     }
 
     const [invitations, total] = await Promise.all([

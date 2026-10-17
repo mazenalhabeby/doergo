@@ -17,6 +17,7 @@ import {
   joinRequestRejectedEvent,
 } from '@hbcfield/shared/microservices';
 import { callerOrgId } from '../../common/caller-org';
+import type { SessionUser } from '../../common/request.types';
 
 @ApiTags('join-requests')
 @Controller('join-requests')
@@ -33,7 +34,7 @@ export class JoinRequestsController {
   @RequirePermission('canManageUsers')
   @ApiOperation({ summary: 'List join requests for organization' })
   @ApiResponse({ status: 200, description: 'Join requests list' })
-  async list(@Query() query: ListJoinRequestsDto, @CurrentUser() user: CurrentUserData) {
+  async list(@Query() query: ListJoinRequestsDto, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.authClient, onboardingListJoinRequests, {
         ...query,
@@ -48,7 +49,7 @@ export class JoinRequestsController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request approved' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async approve(@Param('id') id: string, @Body() dto: ApproveJoinRequestDto, @CurrentUser() user: CurrentUserData) {
+  async approve(@Param('id') id: string, @Body() dto: ApproveJoinRequestDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingApproveJoinRequest, {
         // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.
@@ -92,7 +93,7 @@ export class JoinRequestsController {
   @ApiParam({ name: 'id', description: 'Join request ID' })
   @ApiResponse({ status: 200, description: 'Join request rejected' })
   @ApiResponse({ status: 404, description: 'Join request not found' })
-  async reject(@Param('id') id: string, @Body() dto: RejectJoinRequestDto, @CurrentUser() user: CurrentUserData) {
+  async reject(@Param('id') id: string, @Body() dto: RejectJoinRequestDto, @CurrentUser() user: SessionUser) {
     const result = await firstValueFrom(
       sendRpc(this.authClient, onboardingRejectJoinRequest, {
         // The body first, the caller's identity after it: nothing sent can stand in for who is deciding.

@@ -10,6 +10,7 @@ import { attendanceApi, type NoShow } from '../../../lib/api';
 import type { TimeEntry } from '../../../lib/api/types';
 import { holds } from '../../../lib/permissions';
 import { type Segment, type Period, PAGE, NO_SHOW_DAYS, type Feed, dayISO } from './attendance-review-helpers';
+import { caught } from '../../../lib/caught';
 
 /** The review's state, loading and paging — the first half of `useAttendanceReviewScreen`, moved here unchanged. */
 export function useAttendanceReviewScreenData() {
@@ -106,9 +107,10 @@ export function useAttendanceReviewScreenData() {
     [rangeParams, debouncedSearch],
   );
 
-  const setFeed = useCallback((which: Segment, feed: Feed<any> | null) => {
-    if (which === 'records') setRecords(feed);
-    else setNoShows(feed);
+  // The segment decides which kind of row the feed holds (fetchPage reads the same segment).
+  const setFeed = useCallback((which: Segment, feed: Feed<TimeEntry | NoShow> | null) => {
+    if (which === 'records') setRecords(feed as Feed<TimeEntry> | null);
+    else setNoShows(feed as Feed<NoShow> | null);
   }, []);
 
   /*
@@ -127,9 +129,9 @@ export function useAttendanceReviewScreenData() {
         const rows = await fetchPage(which, 1);
         setFeed(which, { rows, page: 1, done: rows.length < PAGE });
         lastLoadedRef.current[which] = Date.now();
-      } catch (err: any) {
-        if (err?.statusCode === 401) return;
-        toast.error(t('common.error'), err?.message || t('attendanceReview.failedToLoad'));
+      } catch (err: unknown) {
+        if (caught(err).statusCode === 401) return;
+        toast.error(t('common.error'), caught(err).message || t('attendanceReview.failedToLoad'));
       } finally {
         setIsLoading(false);
         setIsRefreshing(false);

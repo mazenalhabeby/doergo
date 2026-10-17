@@ -97,7 +97,7 @@ export class ChatService extends ChatServiceBase {
       include: { members: { include: { user: userSelect } }, task: CHAT_TASK_SELECT },
     });
     const [closed, over, managesPeople] = await Promise.all([
-      this.crossOrg.closedConversationIds(data.userId, rows as any),
+      this.crossOrg.closedConversationIds(data.userId, rows),
       // A job's chat closes when the job is over.
       this.tasks.closedIds(rows),
       // "May rename this group" — asked only when the list holds a group.

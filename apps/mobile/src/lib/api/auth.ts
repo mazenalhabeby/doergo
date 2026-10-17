@@ -95,7 +95,10 @@ export const userApi = {
   },
   // Your own notification switches on the server, and which member emails the
   // organization allows at all (the ceiling — notifications/email-prefs in shared).
-  getNotificationPrefs: async (): Promise<{ prefs: Record<string, boolean>; organizationAllows: Record<string, boolean> }> => {
+  getNotificationPrefs: async (): Promise<{
+    prefs: Record<string, boolean>;
+    organizationAllows: Record<string, boolean>;
+  }> => {
     return call(E.notifications.prefs);
   },
   // Merge-update your own switches: only the keys given change.
@@ -134,12 +137,13 @@ export const avatarApi = {
       uri,
       name: fileName,
       type: fileType,
-    } as any);
+      // React Native's FormData takes a file as { uri, name, type }; the DOM typing knows only Blob.
+    } as unknown as Blob);
     // Multipart through the client: the token, a 401 → refresh, the long upload timeout, never retried.
     return call(E.users.uploadAvatar, undefined, { body: formData });
   },
 
-  remove: async (): Promise<any> => {
+  remove: async (): Promise<unknown> => {
     return call(E.users.removeAvatar);
   },
 };

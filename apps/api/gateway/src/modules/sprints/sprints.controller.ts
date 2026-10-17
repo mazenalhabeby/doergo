@@ -19,6 +19,8 @@ import { RequireModule } from '../../common/decorators/require-module.decorator'
 import { CreateSprintDto, UpdateSprintDto } from './dto';
 import { SprintsService } from './sprints.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 @ApiTags('sprints')
 @ApiBearerAuth()
 @RequireModule('sprints') // Business+ — gates ALL mutations (create/update/start/complete/delete); reads pass
@@ -35,10 +37,10 @@ export class SprintsController {
     // A space sees its own sprints plus the organization-wide ones. Omit it and
     // the answer is everything, which is what it always was.
     @Query('spaceId') spaceId: string | undefined,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.sprintsService.findAll({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       ...(status && { status }),
       ...(spaceId && { spaceId }),
     });
@@ -50,10 +52,10 @@ export class SprintsController {
   @ApiQuery({ name: 'limit', required: false, description: 'Number of sprints to include (default 6)' })
   async getVelocity(
     @Query('limit', new DefaultValuePipe(6), ParseIntPipe) limit: number,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     return this.sprintsService.getVelocity({
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       limit,
     });
   }
@@ -61,20 +63,20 @@ export class SprintsController {
   @Get(':id')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get a sprint with its tasks' })
-  async findOne(@Param('id') id: string, @Request() req: any) {
+  async findOne(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.sprintsService.findOne({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Get(':id/report')
   @RequirePermission('canViewAllTasks')
   @ApiOperation({ summary: 'Get sprint report (burndown, velocity, stats)' })
-  async getReport(@Param('id') id: string, @Request() req: any) {
+  async getReport(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.sprintsService.getReport({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
@@ -82,55 +84,51 @@ export class SprintsController {
   @Roles(Role.ADMIN)
   @RequireModule('sprints')
   @ApiOperation({ summary: 'Create a new sprint' })
-  async create(@Body() createSprintDto: CreateSprintDto, @Request() req: any) {
+  async create(@Body() createSprintDto: CreateSprintDto, @Request() req: AuthedRequest) {
     return this.sprintsService.create({
       ...createSprintDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update a sprint' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateSprintDto: UpdateSprintDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() updateSprintDto: UpdateSprintDto, @Request() req: AuthedRequest) {
     return this.sprintsService.update({
       id,
       ...updateSprintDto,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Post(':id/start')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Start a sprint (changes status to ACTIVE)' })
-  async start(@Param('id') id: string, @Request() req: any) {
+  async start(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.sprintsService.start({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Post(':id/complete')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Complete a sprint (changes status to COMPLETED)' })
-  async complete(@Param('id') id: string, @Request() req: any) {
+  async complete(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.sprintsService.complete({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a sprint' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.sprintsService.remove({
       id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
     });
   }
 }

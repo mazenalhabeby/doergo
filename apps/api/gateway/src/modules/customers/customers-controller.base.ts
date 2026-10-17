@@ -6,6 +6,7 @@ import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { SpaceModulesService } from '../../common/space-modules.service';
 import { sendRpc, getCustomer, type RpcContract } from '@hbcfield/shared/microservices';
 
+import type { AuthedRequest } from '../../common/request.types';
 /**
  * What every /customers controller shares: asking auth-service, a write that
  * re-bills and announces, the caller as auth-service reads them, the workspace's
@@ -45,7 +46,7 @@ export abstract class CustomersControllerBase {
   }
 
   /** Caller context for CRM cap resolution + per-record ownership (server-authoritative). */
-  protected caller(req: any) {
+  protected caller(req: AuthedRequest) {
     return { userId: req.user.id, role: req.user.role };
   }
 

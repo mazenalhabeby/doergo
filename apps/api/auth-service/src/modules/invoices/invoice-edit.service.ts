@@ -1,35 +1,15 @@
 import { Injectable, HttpStatus } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, type InvoiceStatus } from '@prisma/client';
 import { invoiceNumberPrefix, invoiceTotalsFromSubtotal, PERSON_BRIEF_SELECT } from '@hbcfield/shared';
 import { dayStart, dayEnd, invoiceDay } from './work-source';
+import type { InvoiceUpdateFields } from '@hbcfield/shared/microservices';
 import { InvoiceServiceBase } from './invoice-service.base';
+import { jsonColumn } from '../../common/records/json-column';
 
 /** Changing an invoice: its fields, and its state (draft, issued, sent, paid, cancelled). */
 @Injectable()
 export class InvoiceEditService extends InvoiceServiceBase {
-  async update(
-    id: string,
-    organizationId: string,
-    data: {
-      clientName?: string;
-      clientEmail?: string;
-      clientAddress?: string;
-      currency?: string;
-      exchangeRate?: number | string | null;
-      exchangeRateSource?: string | null;
-      exchangeRateDate?: string | null;
-      showLineTags?: boolean;
-      taxRate?: number;
-      discount?: number;
-      issueDate?: string;
-      dueDate?: string;
-      servicePeriodFrom?: string | null;
-      servicePeriodTo?: string | null;
-      notes?: string;
-      /** Another company issues this draft; null = back to the workspace's / client's / main one. */
-      legalEntityId?: string | null;
-    },
-  ) {
+  async update(id: string, organizationId: string, data: InvoiceUpdateFields) {
     const invoice = await this.prisma.invoice.findFirst({
       where: { id, organizationId },
     });
@@ -50,7 +30,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
       };
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.InvoiceUncheckedUpdateInput = {};
     if (data.clientName !== undefined) updateData.clientName = data.clientName;
     if (data.clientEmail !== undefined) updateData.clientEmail = data.clientEmail;
     if (data.clientAddress !== undefined) updateData.clientAddress = data.clientAddress;
@@ -132,8 +112,8 @@ export class InvoiceEditService extends InvoiceServiceBase {
           },
         });
         break;
-      } catch (err: any) {
-        if (renumber !== null && err?.code === 'P2002' && attempt < 4) continue;
+      } catch (err: unknown) {
+        if (renumber !== null && (err as { code?: string })?.code === 'P2002' && attempt < 4) continue;
         throw err;
       }
     }
@@ -197,7 +177,8 @@ export class InvoiceEditService extends InvoiceServiceBase {
       };
     }
 
-    const updateData: any = { status };
+    // `status` was checked against the allowed transitions above.
+    const updateData: Prisma.InvoiceUncheckedUpdateInput = { status: status as InvoiceStatus };
     if (status === 'PAID') {
       updateData.paidAt = new Date();
     }
@@ -216,7 +197,7 @@ export class InvoiceEditService extends InvoiceServiceBase {
           message: 'This invoice has no company to issue it — choose one first.',
         };
       }
-      updateData.issuer = live;
+      updateData.issuer = jsonColumn(live);
       updateData.legalEntityId = live.legalEntityId;
     } else if (status === 'DRAFT') {
       updateData.issuer = Prisma.DbNull;

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { declaredPath, resolveAuditRoute, auditAction, auditBody } from './audit-helpers';
 import { sendRpc, auditLogWrite } from '@hbcfield/shared/microservices';
+import type { MaybeAuthedRequest, ServiceErrorLike } from '../request.types';
 // Re-exported: the route-naming tests import it from here.
 export { fromDeclaredPath } from './audit-helpers';
 
@@ -53,7 +54,7 @@ export class AuditInterceptor implements NestInterceptor {
     );
   }
 
-  private record(req: any, ok: boolean, err?: any, declared?: string | null): void {
+  private record(req: MaybeAuthedRequest, ok: boolean, err?: unknown, declared?: string | null): void {
     try {
       const method: string = req.method;
       if (!MUTATING.has(method)) return;
@@ -72,7 +73,8 @@ export class AuditInterceptor implements NestInterceptor {
 
       const isUserTarget = resourceType === 'members' || resourceType === 'users' || resourceType === 'technicians';
 
-      const status: number | undefined = ok ? req.res?.statusCode : err?.status || err?.statusCode || 500;
+      const e = err as ServiceErrorLike | undefined;
+      const status: number | undefined = ok ? req.res?.statusCode : e?.status || e?.statusCode || 500;
 
       const payload = {
         eventType,
@@ -81,7 +83,8 @@ export class AuditInterceptor implements NestInterceptor {
         ...(isUserTarget && resourceId ? { targetUserId: resourceId } : {}),
         resourceType,
         resourceId,
-        ipAddress: req.ip || req.headers?.['x-forwarded-for'],
+        // Node joins a repeated x-forwarded-for into one string.
+        ipAddress: req.ip || (req.headers?.['x-forwarded-for'] as string | undefined),
         userAgent: req.headers?.['user-agent'],
         metadata: {
           method,
@@ -91,7 +94,7 @@ export class AuditInterceptor implements NestInterceptor {
           ...(auditBody(method, normalized, req.body) !== undefined
             ? { body: auditBody(method, normalized, req.body) }
             : {}),
-          ...(ok ? {} : { error: err?.message }),
+          ...(ok ? {} : { error: e?.message }),
         },
       };
 

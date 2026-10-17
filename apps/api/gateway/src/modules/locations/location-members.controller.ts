@@ -26,6 +26,8 @@ import { AssignMemberDto, UpdateAssignmentDto } from './dto';
 import { AUTO_CLOCK_MEMBER_FIELDS } from './locations-controller-helpers';
 import { LocationsControllerBase } from './locations-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * /locations/:id/members — a workspace's people: the roster, assigning, changing
  * an assignment, removing.
@@ -35,7 +37,6 @@ import { LocationsControllerBase } from './locations-controller.base';
 @UseInterceptors(LabourCostInterceptor)
 @Controller('locations')
 export class LocationMembersController extends LocationsControllerBase {
-
   // ==================== MEMBER ASSIGNMENT ENDPOINTS ====================
 
   @Get(':id/members')
@@ -57,15 +58,13 @@ export class LocationMembersController extends LocationsControllerBase {
     people; cost rates already stop at the LabourCostInterceptor on this class.
   */
   @ApiOperation({ summary: 'Get members assigned to a location' })
-  async getLocationMembers(@Param('id') id: string, @Request() req: any) {
+  async getLocationMembers(@Param('id') id: string, @Request() req: AuthedRequest) {
     const res: any = await this.locationsService.getLocationAssignments({
       locationId: id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       // Cross-org shared spaces whose owner enabled "show workers" — the only
       // foreign rosters this caller may read (server-authoritative).
-      sharedSpaceIds: (req.user.access?.sharedSpaces ?? [])
-        .filter((s: any) => s.showWorkers)
-        .map((s: any) => s.spaceId),
+      sharedSpaceIds: (req.user.access?.sharedSpaces ?? []).filter((s) => s.showWorkers).map((s) => s.spaceId),
       requesterId: req.user.id,
       spaceScope: req.user.isExternal === true ? 'tasks' : getSpaceScope(req.user),
       canViewAll: mayViewSpaceRoster(req.user, id),
@@ -94,11 +93,7 @@ export class LocationMembersController extends LocationsControllerBase {
   // somebody grants nothing by itself.
   @Post(':id/members')
   @ApiOperation({ summary: 'Assign a member to a location' })
-  async assignMember(
-    @Param('id') locationId: string,
-    @Body() dto: AssignMemberDto,
-    @Request() req: any,
-  ) {
+  async assignMember(@Param('id') locationId: string, @Body() dto: AssignMemberDto, @Request() req: AuthedRequest) {
     this.assertMayManageMembersIn(req, locationId);
     const result = await this.locationsQueueService.assignMember({
       ...dto,
@@ -118,7 +113,7 @@ export class LocationMembersController extends LocationsControllerBase {
       day billed at the wrong rate, and — worse to use — a price that does not
       move when you change the thing that sets it.
     */
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -141,13 +136,15 @@ export class LocationMembersController extends LocationsControllerBase {
     @Param('id') locationId: string,
     @Param('assignmentId') assignmentId: string,
     @Body() dto: UpdateAssignmentDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     const u = req.user;
     const orgWide = isAdmin(u) || accessAllows(u?.access, 'canManageWorkspaces');
     if (!orgWide) {
       const workspaceManager = accessAllows(u?.access, 'canManageWorkspaces', locationId);
-      const onlyAutoClock = Object.entries(dto ?? {}).every(([k, v]) => AUTO_CLOCK_MEMBER_FIELDS.has(k) || v === undefined);
+      const onlyAutoClock = Object.entries(dto ?? {}).every(
+        ([k, v]) => AUTO_CLOCK_MEMBER_FIELDS.has(k) || v === undefined,
+      );
       if (!workspaceManager && !(onlyAutoClock && mayManageSpaceMembers(u, locationId))) {
         throw new ForbiddenException('You do not have permission to manage the members of this workspace');
       }
@@ -159,7 +156,7 @@ export class LocationMembersController extends LocationsControllerBase {
       spaceId: orgWide ? undefined : locationId,
     });
     // Same reason as assignMember: this route can change the assignment's role.
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 
@@ -176,7 +173,7 @@ export class LocationMembersController extends LocationsControllerBase {
   async removeAssignment(
     @Param('id') locationId: string,
     @Param('assignmentId') assignmentId: string,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     this.assertMayManageMembersIn(req, locationId);
     const orgWide = isAdmin(req.user) || accessAllows(req.user?.access, 'canManageWorkspaces');
@@ -187,7 +184,7 @@ export class LocationMembersController extends LocationsControllerBase {
       outrankPerms: outrankCeiling(req.user, locationId),
     });
     // Losing a space role can move an external member back to the full seat.
-    this.rebill(req.user.organizationId);
+    this.rebill(callerOrgId(req.user));
     return result;
   }
 }

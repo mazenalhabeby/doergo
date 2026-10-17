@@ -2,7 +2,7 @@
 import type { AbortSignalLike, FetchInit, FetchLike, HeadersLike, HttpMethod } from '../transport';
 import { ApiError } from '../api-error';
 import type { Page, PageMeta } from '../envelope';
-import type { Endpoint, EndpointArgs, EndpointBody, EndpointResult } from '../define';
+import type { AnyEndpoint, EndpointArgs, EndpointBody, EndpointResult } from '../define';
 
 // ── configuration ─────────────────────────────────────────────────────────────
 
@@ -183,7 +183,7 @@ export interface ApiClient {
   /** A list with its `meta` (total, totalPages). Never merged and never answered from the cache. */
   page<T = unknown>(path: string, opts?: Omit<RequestOptions, 'body' | 'unwrap'>): Promise<Page<T>>;
   /** Call a defined endpoint: method, encoded path, offline verdict and auth all come from the definition. */
-  call<D extends Endpoint<any, any, any>>(def: D, ...rest: CallArgs<EndpointArgs<D>, EndpointBody<D>>): Promise<EndpointResult<D>>;
+  call<D extends AnyEndpoint>(def: D, ...rest: CallArgs<EndpointArgs<D>, EndpointBody<D>>): Promise<EndpointResult<D>>;
   /** Forget every merged GET — on sign-out, before anything else. */
   clearInflight(): void;
 }

@@ -12,10 +12,11 @@ export interface ModuleUsageCounts {
 
 /** The database shape the count needs — any Prisma client (or transaction) satisfies it. */
 export interface BillableUsageDb {
-  assetCategory: { findMany(args: any): Promise<Array<{ id: string; spaceId: string | null }>> };
-  asset: { groupBy(args: any): any };
-  customer: { groupBy(args: any): any };
-  portal: { groupBy(args: any): any };
+  assetCategory: { findMany(args: unknown): Promise<Array<{ id: string; spaceId: string | null }>> };
+  // Prisma's groupBy returns a conditional generic type; the rows are typed where they are folded.
+  asset: { groupBy(args: unknown): PromiseLike<unknown> };
+  customer: { groupBy(args: unknown): PromiseLike<unknown> };
+  portal: { groupBy(args: unknown): PromiseLike<unknown> };
 }
 
 type GroupRow = { _count: { _all: number } };
@@ -55,14 +56,22 @@ export async function countBillableUsage(
 ): Promise<{ assets: ModuleUsageCounts; crm: ModuleUsageCounts; b2c_portal: ModuleUsageCounts }> {
   const [types, assetRows, clientRows, portalRows] = await Promise.all([
     db.assetCategory.findMany({ where: { organizationId }, select: { id: true, spaceId: true } }),
-    db.asset.groupBy({ by: ['categoryId'], where: { ...BILLABLE_ASSET_WHERE, organizationId }, _count: { _all: true } }),
-    db.customer.groupBy({ by: ['spaceId'], where: { ...BILLABLE_CLIENT_WHERE, organizationId }, _count: { _all: true } }),
+    db.asset.groupBy({
+      by: ['categoryId'],
+      where: { ...BILLABLE_ASSET_WHERE, organizationId },
+      _count: { _all: true },
+    }),
+    db.customer.groupBy({
+      by: ['spaceId'],
+      where: { ...BILLABLE_CLIENT_WHERE, organizationId },
+      _count: { _all: true },
+    }),
     db.portal.groupBy({ by: ['spaceId'], where: { ...BILLABLE_PORTAL_WHERE, organizationId }, _count: { _all: true } }),
   ]);
   const spaceOfType = new Map(types.map((t) => [t.id, t.spaceId]));
   return {
     assets: fold(assetRows as Array<GroupRow & { categoryId: string | null }>, (r) =>
-      r.categoryId ? spaceOfType.get(r.categoryId) ?? null : null,
+      r.categoryId ? (spaceOfType.get(r.categoryId) ?? null) : null,
     ),
     crm: fold(clientRows as Array<GroupRow & { spaceId: string | null }>, (r) => r.spaceId ?? null),
     b2c_portal: fold(portalRows as Array<GroupRow & { spaceId: string | null }>, (r) => r.spaceId ?? null),

@@ -1,5 +1,6 @@
 /** task-service misc-1 handlers — contracts (request types are what the handler reads). */
 import { rpc } from '../contract';
+import type { AuthServiceReply } from './auth-service-replies';
 import type { TaskSearchInput } from './task-service-1-types';
 import type { SpaceScopeIds } from '../../access/space-scope';
 
@@ -29,7 +30,10 @@ export const findOneLocation = rpc<{
   viewScopeSpaceIds?: string[] | null;
   mayManage?: boolean;
 }>('find_one_location');
-export const getEffectiveModules = rpc<{ id: string; organizationId: string }>('get_effective_modules');
+export const getEffectiveModules = rpc<
+  { id: string; organizationId: string },
+  AuthServiceReply<{ enabledModules?: unknown }>
+>('get_effective_modules');
 export const getLocationAssignments = rpc<{
   locationId: string;
   organizationId: string;

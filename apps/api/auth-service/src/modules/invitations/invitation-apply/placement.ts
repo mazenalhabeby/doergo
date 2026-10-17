@@ -42,7 +42,12 @@ export async function invitationSpaceGrantNow(
   const perms = whitelistPermissions(invitation.spacePermissions, 'space');
   for (const k of externalForbiddenIn(perms)) delete perms[k];
   if (invitation.createdById && invitation.spaceId) {
-    const ceiling = await loadSpacePermissionCeiling(tx as any, invitation.createdById, invitation.organizationId, invitation.spaceId);
+    const ceiling = await loadSpacePermissionCeiling(
+      tx,
+      invitation.createdById,
+      invitation.organizationId,
+      invitation.spaceId,
+    );
     if (!ceiling) return {}; // the inviter has left the organization: nothing they granted stands
     if (!ceiling.isAdmin) {
       for (const k of PERMISSION_KEYS) if (perms[k] === true && ceiling.perms[k] !== true) delete perms[k];
@@ -87,8 +92,10 @@ export async function applyInvitationPlacement(
 
   // Pre-set weekly schedule (FIXED invites). Owner: task-service (see above).
   if (invitation.scheduleType === 'FIXED' && Array.isArray(invitation.schedule)) {
-    const rows = (invitation.schedule as any[]).filter(
-      (r) => r && typeof r.dayOfWeek === 'number' && r.startTime && r.endTime,
+    // The JSON column as the invite form wrote it; rows that are not a day + two times are skipped.
+    type ScheduleRow = { dayOfWeek: number; startTime: string; endTime: string; isActive?: boolean };
+    const rows = (invitation.schedule as Partial<ScheduleRow>[]).filter(
+      (r): r is ScheduleRow => !!r && typeof r.dayOfWeek === 'number' && !!r.startTime && !!r.endTime,
     );
     if (rows.length > 0) {
       await tx.technicianSchedule.createMany({
@@ -143,7 +150,7 @@ export async function applyInvitationPlacement(
   */
   if (built && !existing) {
     const perms = await invitationSpaceGrantNow(tx, invitation);
-    await setAssignmentPermissions(tx as any, {
+    await setAssignmentPermissions(tx, {
       organizationId: invitation.organizationId,
       assignmentId: assignment.id,
       spaceId: invitation.spaceId,

@@ -1,3 +1,4 @@
+import type { CustomerActivityType } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { findPrior } from '@hbcfield/shared';
@@ -10,6 +11,7 @@ import {
   advanceDate,
 } from './customers-helpers';
 import { CustomersServiceBase } from './customers-service.base';
+import { withAuthors } from '../../common/records/with-authors';
 
 /** A client's timeline: notes, calls, reminders. */
 @Injectable()
@@ -22,15 +24,7 @@ export class CustomerActivitiesService extends CustomersServiceBase {
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
-    const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
-    const authors = authorIds.length
-      ? await this.prisma.user.findMany({
-          where: { id: { in: authorIds } },
-          select: { id: true, firstName: true, lastName: true },
-        })
-      : [];
-    const byId = new Map(authors.map((a) => [a.id, a]));
-    return { data: rows.map((r) => ({ ...r, author: r.authorId ? (byId.get(r.authorId) ?? null) : null })) };
+    return { data: await withAuthors(this.prisma, rows) };
   }
 
   async addActivity(data: {
@@ -56,7 +50,8 @@ export class CustomerActivitiesService extends CustomersServiceBase {
       isSame: (a) => a.customerId === data.customerId && a.authorId === (data.authorId ?? null),
     });
     if (prior) return { data: prior };
-    const type = (data.type ?? 'NOTE') as any;
+    // Stored as sent; the database refuses a value that is not an activity type (as it always did).
+    const type = (data.type ?? 'NOTE') as CustomerActivityType;
     const isReminder = type === 'REMINDER';
     const dueAt = data.dueAt ? new Date(data.dueAt) : null;
     const remindBeforeMin = isReminder ? Math.max(0, Math.floor(data.remindBeforeMin ?? 0)) : null;

@@ -19,7 +19,7 @@ export class EventReadService extends EventsBase {
   /** Colleagues for the invite picker — the same circle `inviteable` accepts. */
   async people(dto: Caller & { q?: string }) {
     const q = clean(dto.q, 60);
-    const wide = isAdmin({ role: dto.role } as any) || dto.canManageUsers || dto.orgWideView;
+    const wide = isAdmin({ role: dto.role as string }) || dto.canManageUsers || dto.orgWideView;
     const circle = wide ? null : await this.circleOf(dto);
     const rows = await this.prisma.user.findMany({
       where: {

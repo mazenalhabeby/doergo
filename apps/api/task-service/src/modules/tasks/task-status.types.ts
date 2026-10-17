@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { OccurrenceEvidence } from '@hbcfield/shared';
+import type { OccurrenceEvidence, ResolvedAccess } from '@hbcfield/shared';
 
 /** What `TaskStatusService.updateStatus` is asked. */
 export interface UpdateStatusInput {
@@ -31,7 +31,7 @@ export interface UpdateStatusInput {
   answers?: unknown;
   // Server-authoritative cross-org grant map (forwarded from the gateway).
   // Used to allow a guest org to move a task in a space explicitly shared to it.
-  access?: unknown;
+  access?: ResolvedAccess | null;
   /**
    * The office starting somebody's job for them (packages/shared/src/tasks/job-time.ts):
    * why — required — and optionally when it really started. Recorded as the

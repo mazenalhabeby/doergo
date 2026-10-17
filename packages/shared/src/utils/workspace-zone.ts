@@ -22,8 +22,8 @@ export function zoneOf(...zones: Array<string | null | undefined>): string {
 }
 
 export interface WorkspaceZoneDb {
-  companyLocation: { findFirst(args: any): Promise<{ timezone: string | null } | null> };
-  organization: { findUnique(args: any): Promise<{ timezone: string | null } | null> };
+  companyLocation: { findFirst(args: unknown): Promise<{ timezone: string | null } | null> };
+  organization: { findUnique(args: unknown): Promise<{ timezone: string | null } | null> };
 }
 
 export async function workspaceZone(

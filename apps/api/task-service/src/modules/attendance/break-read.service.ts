@@ -5,6 +5,7 @@ import { success, paginated, SERVICE_NAMES, buildDateRangeFilter, buildSingleDay
 import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { CountedTimeService } from './counted-time.service';
+import type { Prisma, BreakType } from '@prisma/client';
 
 /** Reading rests: one entry's, who is resting now, the history, the summary. */
 @Injectable()
@@ -132,7 +133,7 @@ export class BreakReadService {
     const dateFilter = data.date ? { startedAt: buildSingleDayFilter(data.date) } : {};
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.BreakWhereInput = {
       ...dateFilter,
       timeEntry: {
         organizationId: data.organizationId,
@@ -140,7 +141,7 @@ export class BreakReadService {
         ...scopeWhere(data.scopeSpaceIds),
         ...(data.userId ? { userId: data.userId } : {}),
       },
-      ...(data.type ? { type: data.type } : {}),
+      ...(data.type ? { type: data.type as BreakType } : {}),
     };
 
     const [breaks, total] = await Promise.all([
@@ -202,8 +203,9 @@ export class BreakReadService {
     const dateFilter = buildDateRangeFilter(data.startDate, data.endDate);
 
     // Build where clause
-    const where: any = {
-      startedAt: dateFilter,
+    const where: Prisma.BreakWhereInput = {
+      // startDate and endDate are required on this read, so the range is never null.
+      startedAt: dateFilter as Prisma.DateTimeFilter,
       timeEntry: {
         organizationId: data.organizationId,
         // Only the caller's granted spaces — see attendance-scope.ts.
@@ -232,7 +234,7 @@ export class BreakReadService {
       totalBreaks > 0 ? Math.round(totalBreakMinutes / totalBreaks) : 0;
 
     // Group by type
-    const breaksByType = {
+    const breaksByType: Record<'LUNCH' | 'SHORT' | 'OTHER', { count: number; totalMinutes: number; averageMinutes?: number }> = {
       LUNCH: { count: 0, totalMinutes: 0 },
       SHORT: { count: 0, totalMinutes: 0 },
       OTHER: { count: 0, totalMinutes: 0 },
@@ -249,11 +251,11 @@ export class BreakReadService {
     // Calculate averages per type
     for (const type of Object.keys(breaksByType) as Array<'LUNCH' | 'SHORT' | 'OTHER'>) {
       if (breaksByType[type].count > 0) {
-        (breaksByType[type] as any).averageMinutes = Math.round(
+        breaksByType[type].averageMinutes = Math.round(
           breaksByType[type].totalMinutes / breaksByType[type].count,
         );
       } else {
-        (breaksByType[type] as any).averageMinutes = 0;
+        breaksByType[type].averageMinutes = 0;
       }
     }
 

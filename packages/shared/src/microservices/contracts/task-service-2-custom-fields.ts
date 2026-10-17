@@ -7,7 +7,7 @@ export const createCustomField = rpc<{
   name: string;
   key: string;
   type: string;
-  options?: any;
+  options?: unknown;
   isRequired?: boolean;
   position?: number;
   workflowId?: null | string;
@@ -17,7 +17,7 @@ export const updateCustomField = rpc<{
   id: string;
   organizationId: string;
   name?: string;
-  options?: any;
+  options?: unknown;
   isRequired?: boolean;
   position?: number;
   isActive?: boolean;

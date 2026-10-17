@@ -5,7 +5,7 @@ import { EquipmentFrame } from '../../components/equipment/equipment-frame';
 import { CaptureReviewFoot } from '../../components/equipment/capture-review';
 import { CaptureCamera, CaptureSkip } from '../../components/equipment/capture-camera';
 import { MediaAccessScreen } from '../../permissions/media-access-screen';
-import { COLORS, SPACING, RADIUS, FONT_SIZE } from '../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, type FieldColors } from '../../lib/constants';
 import { useAssetExpenseScreen } from './use-asset-expense-screen';
 import { NotAllowed } from '../../components/not-allowed';
 export { type Stage } from './use-asset-expense-screen';
@@ -222,11 +222,11 @@ export function Field({
   t,
   children,
 }: {
-  colors: any;
+  colors: FieldColors;
   label: string;
   certain: boolean;
   unknown: boolean;
-  t: any;
+  t: (k: string, d: string, o?: Record<string, unknown>) => string;
   children: React.ReactNode;
 }) {
   const border = unknown ? colors.border : certain ? 'rgba(22,163,74,.45)' : 'rgba(245,158,11,.5)';

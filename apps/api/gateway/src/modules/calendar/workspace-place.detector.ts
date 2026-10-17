@@ -59,9 +59,8 @@ export class WorkspacePlaceDetector implements OnModuleInit, OnModuleDestroy {
     let done = 0;
     try {
       for (let round = 0; round < 10; round++) {
-        const res: any = await firstValueFrom(
-          sendRpc(this.taskClient, calendarPlacesToDetect, { limit: PAGE }).pipe(timeout(10_000)),
-        );
+        const res: { data?: { id: string; organizationId: string; lat: number; lng: number }[] } | null =
+          await firstValueFrom(sendRpc(this.taskClient, calendarPlacesToDetect, { limit: PAGE }).pipe(timeout(10_000)));
         const rows: { id: string; organizationId: string; lat: number; lng: number }[] = res?.data ?? [];
         if (!rows.length) break;
         for (const r of rows) {

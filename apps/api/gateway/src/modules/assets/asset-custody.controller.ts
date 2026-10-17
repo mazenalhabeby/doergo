@@ -7,6 +7,7 @@ import { HandOverDto, CreateLogEntryDto, LogPresignDto, LogListQueryDto, LogSumm
 import { RequireModule } from '../../common/decorators/require-module.decorator';
 import { assetActor } from './asset-actor';
 
+import type { AuthedRequest } from '../../common/request.types';
 /** /assets/:id — custody (who holds it, handing it over) and its logbook. */
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -29,7 +30,7 @@ export class AssetCustodyController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Who has held this, and what it cost them' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async custody(@Param('id') id: string, @Request() req: any) {
+  async custody(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.assetsService.custodyTimeline({
       id,
       ...assetActor(req),
@@ -47,7 +48,7 @@ export class AssetCustodyController {
   @RequirePermissionInSpace('canManageAssets')
   @ApiOperation({ summary: 'Hand this over' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async handOver(@Param('id') id: string, @Body() dto: HandOverDto, @Request() req: any) {
+  async handOver(@Param('id') id: string, @Body() dto: HandOverDto, @Request() req: AuthedRequest) {
     return this.assetsService.custodyHandOver({
       id,
       ...dto,
@@ -68,7 +69,7 @@ export class AssetCustodyController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'The logbook of one asset, newest first' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async listLog(@Param('id') id: string, @Query() query: LogListQueryDto, @Request() req: any) {
+  async listLog(@Param('id') id: string, @Query() query: LogListQueryDto, @Request() req: AuthedRequest) {
     return this.assetsService.logList({ id, ...query, ...assetActor(req) });
   }
 
@@ -76,7 +77,7 @@ export class AssetCustodyController {
   @RequirePermissionInSpace('canViewAssets')
   @ApiOperation({ summary: 'Latest readings, next due, and who spent what in a period' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async logSummary(@Param('id') id: string, @Query() query: LogSummaryQueryDto, @Request() req: any) {
+  async logSummary(@Param('id') id: string, @Query() query: LogSummaryQueryDto, @Request() req: AuthedRequest) {
     return this.assetsService.logSummary({ id, ...query, ...assetActor(req) });
   }
 
@@ -98,14 +99,14 @@ export class AssetCustodyController {
   @Post(':id/log/presign')
   @ApiOperation({ summary: 'Upload URL for a logbook photo' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async presignLog(@Param('id') id: string, @Body() dto: LogPresignDto, @Request() req: any) {
+  async presignLog(@Param('id') id: string, @Body() dto: LogPresignDto, @Request() req: AuthedRequest) {
     return this.assetsService.logPresign({ id, ...dto, ...assetActor(req) });
   }
 
   @Post(':id/log')
   @ApiOperation({ summary: 'Log something done to this asset' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
-  async createLog(@Param('id') id: string, @Body() dto: CreateLogEntryDto, @Request() req: any) {
+  async createLog(@Param('id') id: string, @Body() dto: CreateLogEntryDto, @Request() req: AuthedRequest) {
     return this.assetsService.logCreate({ id, ...dto, ...assetActor(req) });
   }
 
@@ -119,7 +120,7 @@ export class AssetCustodyController {
   @ApiOperation({ summary: 'Remove a logbook entry' })
   @ApiParam({ name: 'id', description: 'Asset ID' })
   @ApiParam({ name: 'entryId', description: 'Entry ID' })
-  async removeLog(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: any) {
+  async removeLog(@Param('id') id: string, @Param('entryId') entryId: string, @Request() req: AuthedRequest) {
     return this.assetsService.logRemove({ id, entryId, ...assetActor(req) });
   }
 }

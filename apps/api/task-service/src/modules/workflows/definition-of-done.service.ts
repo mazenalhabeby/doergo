@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { success, assertFoundInOrg } from '@hbcfield/shared';
 import { WorkflowServiceBase } from './workflow-service.base';
+import type { Prisma } from '@prisma/client';
 
 /** A step's definition of done: reading, setting, removing it. */
 @Injectable()
@@ -11,7 +12,7 @@ export class DefinitionOfDoneService extends WorkflowServiceBase {
    * Get active Definition of Done for an organization, optionally filtered by workflow
    */
   async getDefinitionOfDone(data: { organizationId: string; workflowId?: string }) {
-    const where: any = {
+    const where: Prisma.DefinitionOfDoneWhereInput = {
       organizationId: data.organizationId,
       isActive: true,
     };

@@ -28,6 +28,12 @@ const CHOICE_CLASS =
   "focus:text-accent-foreground data-[disabled]:pointer-events-none " +
   "data-[disabled]:opacity-50"
 
+/**
+ * A Radix menu part (ContextMenu or DropdownMenu) — only a constraint: each namespace's own prop and
+ * ref types reach the callers through `N`. A narrower type here replaces them (every menu caller then
+ * fails to type-check), so the constraint stays open.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Part = React.ForwardRefExoticComponent<any>
 
 interface MenuNamespace {

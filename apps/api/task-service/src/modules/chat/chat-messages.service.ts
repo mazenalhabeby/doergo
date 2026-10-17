@@ -6,6 +6,7 @@ import { CHAT_USER_SELECT as userSelect, previewOf, visibleMessage } from './cha
 import type { TaskAccessFacts } from '../../common/task-access/task-access.service';
 import { ChatServiceBase } from './chat-service.base';
 import { emitEvent, chatBadgeEvent, chatMessageEvent, chatReadEvent } from '@hbcfield/shared/microservices';
+import type { Prisma } from '@prisma/client';
 
 /** Inside one conversation: its history, sending (with an attachment), marking read, muting. */
 @Injectable()
@@ -113,7 +114,7 @@ export class ChatMessagesService extends ChatServiceBase {
           conversationId: data.conversationId,
           senderId: data.senderId,
           body,
-          attachments: attachments as any,
+          attachments: attachments as unknown as Prisma.InputJsonValue,
           sentAt,
           createdAt: now,
         },

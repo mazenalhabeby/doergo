@@ -9,6 +9,8 @@ import { taskActor, assignSpaceIds, grantedSpaceIds } from '../../common/task-ac
 import { CreateTaskDto, UpdateTaskDto, AssignTaskDto, UpdateStatusDto, SetOpenRoleDto, ReturnToRoleDto } from './dto';
 import { TasksControllerBase } from './tasks-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 export { normalizeQueryParams } from './tasks-controller-helpers';
 
 @ApiTags('tasks')
@@ -18,16 +20,16 @@ export class TasksController extends TasksControllerBase {
   @Post()
   @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Create a new task' })
-  async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
+  async create(@Body() createTaskDto: CreateTaskDto, @Request() req: AuthedRequest) {
     this.assertTaskFieldEntitlements(req.user, createTaskDto);
 
     // Creating into a cross-org space shared with the caller: the caller's OWN-org
     // taskCreationScope (NONE/SELF/SPACE) doesn't apply — the per-space grant
     // governs, and the task-service authorizes against the real space + the
     // forwarded access. Detect it (server-authoritative) and skip own-org scoping.
-    const targetSpaceId = (createTaskDto as any).spaceId;
+    const targetSpaceId = createTaskDto.spaceId;
     const isForeignShared =
-      !!targetSpaceId && (req.user.access?.sharedSpaces ?? []).some((s: any) => s.spaceId === targetSpaceId);
+      !!targetSpaceId && (req.user.access?.sharedSpaces ?? []).some((s) => s.spaceId === targetSpaceId);
 
     if (!isForeignShared) {
       const scope = req.user.taskCreationScope || 'NONE';
@@ -113,7 +115,7 @@ export class TasksController extends TasksControllerBase {
   @Get(':id/suggested-employees')
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Get suggested employees for a task with scoring' })
-  async getSuggestedEmployees(@Param('id') id: string, @Request() req: any) {
+  async getSuggestedEmployees(@Param('id') id: string, @Request() req: AuthedRequest) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.getSuggestedEmployees({
       taskId: id,
@@ -128,18 +130,18 @@ export class TasksController extends TasksControllerBase {
   @Post(':id/take')
   @DenyExternal()
   @ApiOperation({ summary: 'Take a place on a task open to your work role — the first to take each place gets it' })
-  async take(@Param('id') id: string, @Request() req: any) {
-    return this.tasksService.roleTaskTake({ taskId: id, userId: req.user.id, organizationId: req.user.organizationId });
+  async take(@Param('id') id: string, @Request() req: AuthedRequest) {
+    return this.tasksService.roleTaskTake({ taskId: id, userId: req.user.id, organizationId: callerOrgId(req.user) });
   }
 
   @Post(':id/return-to-role')
   @DenyExternal()
   @ApiOperation({ summary: 'Hand a role task back to its role (before the work starts); it is offered again' })
-  async returnToRole(@Param('id') id: string, @Body() body: ReturnToRoleDto, @Request() req: any) {
+  async returnToRole(@Param('id') id: string, @Body() body: ReturnToRoleDto, @Request() req: AuthedRequest) {
     return this.tasksService.roleTaskReturn({
       taskId: id,
       userId: req.user.id,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       reason: body.reason ?? null,
     });
   }
@@ -147,14 +149,14 @@ export class TasksController extends TasksControllerBase {
   @Put(':id/open-role')
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Open a task to a work role, change how many it needs, or close it (roleId null)' })
-  async setOpenRole(@Param('id') id: string, @Body() body: SetOpenRoleDto, @Request() req: any) {
+  async setOpenRole(@Param('id') id: string, @Body() body: SetOpenRoleDto, @Request() req: AuthedRequest) {
     return this.tasksService.roleTaskSetOpen({
       taskId: id,
       roleId: body.roleId ?? null,
       spots: body.spots,
       userId: req.user.id,
       userRole: req.user.role,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       canAssignTasks: req.user.canAssignTasks,
       assignSpaceIds: assignSpaceIds(req),
     });
@@ -162,7 +164,7 @@ export class TasksController extends TasksControllerBase {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a task by ID' })
-  async findOne(@Param('id') id: string, @Request() req: any) {
+  async findOne(@Param('id') id: string, @Request() req: AuthedRequest) {
     // READ operation - use direct microservice call (faster, no queue overhead)
     return this.tasksService.findOne({
       id,
@@ -173,7 +175,7 @@ export class TasksController extends TasksControllerBase {
   @Put(':id')
   @RequirePermissionInSpace('canCreateTasks')
   @ApiOperation({ summary: 'Update a task' })
-  async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: any) {
+  async update(@Param('id') id: string, @Body() updateTaskDto: UpdateTaskDto, @Request() req: AuthedRequest) {
     this.assertTaskFieldEntitlements(req.user, updateTaskDto);
     return this.tasksQueueService.updateTask({
       id,
@@ -192,7 +194,7 @@ export class TasksController extends TasksControllerBase {
   @Patch(':id/assign')
   @RequirePermissionInSpace('canAssignTasks')
   @ApiOperation({ summary: 'Assign a task to an employee' })
-  async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: any) {
+  async assign(@Param('id') id: string, @Body() assignTaskDto: AssignTaskDto, @Request() req: AuthedRequest) {
     return this.tasksQueueService.assignTask({
       id,
       ...assignTaskDto,
@@ -205,7 +207,7 @@ export class TasksController extends TasksControllerBase {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update task status (role-based: EMPLOYEE can start/block/complete, others can cancel)' })
-  async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto, @Request() req: any) {
+  async updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateStatusDto, @Request() req: AuthedRequest) {
     return this.tasksQueueService.updateTaskStatus({
       id,
       ...updateStatusDto,
@@ -215,7 +217,7 @@ export class TasksController extends TasksControllerBase {
 
   @Post(':id/decline')
   @ApiOperation({ summary: 'Decline task assignment (assigned user)' })
-  async declineTask(@Param('id') id: string, @Request() req: any) {
+  async declineTask(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.tasksQueueService.declineTask({
       id,
       ...taskActor(req),
@@ -225,7 +227,7 @@ export class TasksController extends TasksControllerBase {
   @Delete(':id')
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete a task (ADMIN only)' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: AuthedRequest) {
     return this.tasksQueueService.deleteTask({
       id,
       ...taskActor(req),

@@ -4,6 +4,7 @@ import { scopeWhere, type AttendanceScope } from '@hbcfield/shared';
 import { clampListLimit, clampListPage } from '@hbcfield/shared';
 import { ATTENDANCE_LOCATION_SELECT } from './attendance-selects';
 import { AttendanceReadBase } from './attendance-read.base';
+import type { Prisma } from '@prisma/client';
 
 /**
  * Reading attendance: the caller's running shift, their history, a
@@ -146,7 +147,7 @@ export class AttendanceReadService extends AttendanceReadBase {
     const limit = clampListLimit(data.limit, 20);
     const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where: Prisma.TimeEntryWhereInput = {
       userId: data.userId,
       organizationId: data.organizationId,
       /*

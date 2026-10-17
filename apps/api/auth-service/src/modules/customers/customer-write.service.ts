@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { keepOrgUserIds } from '../../common/records/org-user-ids';
 import { crmCapsIn } from '@hbcfield/shared';
@@ -16,6 +17,7 @@ import {
   withContactKeys,
 } from './customers-helpers';
 import { CustomersServiceBase } from './customers-service.base';
+import { jsonColumn, optionalJsonColumn } from '../../common/records/json-column';
 
 /** Creating a client and changing one. */
 @Injectable()
@@ -85,7 +87,7 @@ export class CustomerWriteService extends CustomersServiceBase {
         locale,
         currency,
         legalEntityId,
-        details: (sanitizeDetails(dto.details) ?? undefined) as any,
+        details: optionalJsonColumn(sanitizeDetails(dto.details)),
       }),
       select: customerSelect,
     });
@@ -202,7 +204,7 @@ export class CustomerWriteService extends CustomersServiceBase {
     const company = await this.clientCompany(organizationId, dto.legalEntityId);
     if (company !== undefined) data.legalEntityId = company;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
-    if (dto.details !== undefined) data.details = (sanitizeDetails(dto.details) ?? []) as any;
+    if (dto.details !== undefined) data.details = jsonColumn(sanitizeDetails(dto.details) ?? []);
     if (dto.managerIds !== undefined)
       data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
     // Cross-tenant guards: refs (space/portal) and ownerId must belong to the org.

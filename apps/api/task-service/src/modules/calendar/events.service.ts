@@ -10,6 +10,7 @@ import {
 } from '@hbcfield/shared';
 import { Caller, EventInput, validZone, clean, reminderEventOf, seriesEndOf } from './events-helpers';
 import { EventsUpdateBase } from './events-update.base';
+import type { Prisma } from '@prisma/client';
 
 export { type Caller, type EventInput, reminderEventOf, seriesEndOf } from './events-helpers';
 
@@ -77,7 +78,7 @@ export class EventsService extends EventsUpdateBase {
         meetingMode: where.mode, placeKind: where.place, placeSpaceId: where.placeSpaceId,
         room: where.room, phone: where.phone, callDirection: where.callDirection,
         startAt, endAt, allDay, timezone: tz,
-        repeat: (repeat as any) ?? undefined,
+        repeat: (repeat as unknown as Prisma.InputJsonValue) ?? undefined,
         seriesEndAt: seriesEndOf(startAt, endAt, repeat, tz),
         reminderOffsets: offsets,
         visibility: input.visibility === 'DETAILS' ? 'DETAILS' : 'BUSY',

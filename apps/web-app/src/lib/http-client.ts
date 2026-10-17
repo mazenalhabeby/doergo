@@ -30,8 +30,10 @@ import {
   isApiError,
   type ApiClient,
   type ApiClientConfig,
-  type Endpoint,
+  type AnyEndpoint,
+  type CallArgs as SharedCallArgs,
   type EndpointArgs,
+  type EndpointBody,
   type RefreshResult,
 } from "@hbcfield/shared/client"
 import { API_BASE_URL, AUTH_BASE_URL, serverApiBaseUrl } from "./endpoints"
@@ -106,7 +108,8 @@ export const authHttp: ApiClient = createApiClient(authClientConfig())
 export function createServerApiClient(revalidateSeconds: number): ApiClient {
   return createApiClient({
     baseUrl: serverApiBaseUrl,
-    fetch: (url: string, init?: RequestInit) => fetch(url, { ...init, next: { revalidate: revalidateSeconds } } as RequestInit),
+    fetch: (url: string, init?: RequestInit) =>
+      fetch(url, { ...init, next: { revalidate: revalidateSeconds } } as RequestInit),
     timeoutMs: 10_000,
     retry: { maxRetries: 0 },
   })
@@ -162,9 +165,10 @@ interface CallOptions {
   headers?: Record<string, string>
 }
 
-type CallRest<D> = void extends EndpointArgs<D>
-  ? [args?: EndpointArgs<D>, opts?: CallOptions]
-  : [args: EndpointArgs<D>, opts?: CallOptions]
+type CallRest<D> =
+  void extends EndpointArgs<D>
+    ? [args?: EndpointArgs<D>, opts?: CallOptions]
+    : [args: EndpointArgs<D>, opts?: CallOptions]
 
 /**
  * Call an endpoint from the shared table and get the web's result shape. The
@@ -174,11 +178,15 @@ type CallRest<D> = void extends EndpointArgs<D>
  *
  *   const res = await call(apiEndpoints.tasks.get, { id }) as ApiResponse<TaskResponse>
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function call<D extends Endpoint<any, any, any>>(def: D, ...rest: CallRest<D>): Promise<ApiResponse<any>> {
+export function call<D extends AnyEndpoint>(def: D, ...rest: CallRest<D>): Promise<ApiResponse<unknown>> {
   const [args, opts] = rest as [EndpointArgs<D> | undefined, CallOptions | undefined]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return asResult(http.call(def, args as any, { ...(opts ?? {}), unwrap: "raw" } as any))
+  // The same arguments, plus `unwrap: 'raw'`. The shared rest tuple is a conditional type on D, which a
+  // value built here cannot be checked against generically — hence the one cast to it.
+  const forwarded = [args, { ...(opts ?? {}), unwrap: "raw" }] as unknown as SharedCallArgs<
+    EndpointArgs<D>,
+    EndpointBody<D>
+  >
+  return asResult(http.call(def, ...forwarded))
 }
 
 // ── a Response-shaped read, for the geocoding proxy ───────────────────────────
@@ -196,8 +204,7 @@ export interface RequestOptions {
 export interface PlainResponse {
   ok: boolean
   status: number
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  json(): Promise<any>
+  json(): Promise<unknown>
 }
 
 /**

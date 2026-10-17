@@ -19,6 +19,7 @@ import type { Response } from 'express';
 import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { BlogGatewayService } from './blog.service';
+import type { RpcRequest, blogCreate } from '@hbcfield/shared/microservices';
 
 /**
  * The only kinds of picture a blog post may carry.
@@ -48,7 +49,7 @@ export function blogImageMime(mime: unknown): string | null {
 export class BlogController {
   constructor(private readonly svc: BlogGatewayService) {}
 
-  private unwrap<T>(result: any): T {
+  private unwrap<T>(result: unknown): T {
     return assertServiceOk(result) as T;
   }
 
@@ -99,7 +100,7 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async create(@Body() body: any) {
+  async create(@Body() body: RpcRequest<typeof blogCreate>) {
     return this.unwrap(await this.svc.create(body ?? {}));
   }
 
@@ -107,7 +108,7 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
     return this.unwrap(await this.svc.update({ ...(body ?? {}), id }));
   }
 

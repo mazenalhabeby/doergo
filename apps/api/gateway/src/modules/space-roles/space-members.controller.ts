@@ -24,6 +24,8 @@ import { RequirePlan } from '../../common/decorators/require-plan.decorator';
 import { assertCanManageSpace } from './space-roles-controller-helpers';
 import { SpaceRolesControllerBase } from './space-roles-controller.base';
 
+import type { AuthedRequest } from '../../common/request.types';
+import { callerOrgId } from '../../common/caller-org';
 /**
  * /spaces/:spaceId/members — a workspace's people: the list, assigning, their
  * roles, their routing, their rate, removing.
@@ -34,19 +36,18 @@ import { SpaceRolesControllerBase } from './space-roles-controller.base';
 @UseInterceptors(LabourCostInterceptor)
 @Controller()
 export class SpaceMembersController extends SpaceRolesControllerBase {
-
   // Member endpoints allow EITHER org canManageUsers OR the space-manager
   // delegation (canManageUsers within THIS space). Enforced manually against the
   // route's spaceId — so the generic org-only guard is intentionally omitted.
 
   @Get('spaces/:spaceId/members')
   @ApiOperation({ summary: 'List members of a space with their roles + routing' })
-  listMembers(@Param('spaceId') spaceId: string, @Request() req: any) {
+  listMembers(@Param('spaceId') spaceId: string, @Request() req: AuthedRequest) {
     assertCanManageSpace(req.user, spaceId);
     // ⚠️ Cost rates are stripped by LabourCostInterceptor for anyone without
     // canViewLabourCost: managing a workspace's people is not the same as being
     // allowed to see what their hours cost the company.
-    return this.service.listMembers({ spaceId, organizationId: req.user.organizationId });
+    return this.service.listMembers({ spaceId, organizationId: callerOrgId(req.user) });
   }
 
   /**
@@ -58,29 +59,32 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
    * service decides per field with the authority sent below.
    */
   @Patch('spaces/:spaceId/members/:memberId/roles')
-  @ApiOperation({ summary: 'Set a member\'s work role, management role and billing in this workspace' })
+  @ApiOperation({ summary: "Set a member's work role, management role and billing in this workspace" })
   updateMemberRoles(
     @Param('spaceId') spaceId: string,
     @Param('memberId') memberId: string,
     @Body() body: UpdateMemberRolesDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     const authority = spaceMemberAuthority(req.user, spaceId);
     assertAnyAuthority(authority);
-    return this.thenRebill(req, this.service.updateMemberRoles({
-      spaceId,
-      memberId,
-      organizationId: req.user.organizationId,
-      workRoleId: body.workRoleId,
-      managementRoleId: body.managementRoleId,
-      allowSecondRole: body.allowSecondRole,
-      billBy: body.billBy,
-      hoursBasis: body.hoursBasis,
-      // The management role is authority: same ceiling as assigning one.
-      requesterPerms: grantCeiling(req.user, spaceId),
-      authority,
-      outrankCheck: !managesMembersOrgWide(req.user),
-    }));
+    return this.thenRebill(
+      req,
+      this.service.updateMemberRoles({
+        spaceId,
+        memberId,
+        organizationId: callerOrgId(req.user),
+        workRoleId: body.workRoleId,
+        managementRoleId: body.managementRoleId,
+        allowSecondRole: body.allowSecondRole,
+        billBy: body.billBy,
+        hoursBasis: body.hoursBasis,
+        // The management role is authority: same ceiling as assigning one.
+        requesterPerms: grantCeiling(req.user, spaceId),
+        authority,
+        outrankCheck: !managesMembersOrgWide(req.user),
+      }),
+    );
   }
 
   /**
@@ -94,42 +98,44 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
   assignMember(
     @Param('spaceId') spaceId: string,
     @Body() body: { userId: string; spaceRoleId?: string | null },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     const authority = spaceMemberAuthority(req.user, spaceId);
     assertAnyAuthority(authority);
-    return this.thenRebill(req, this.service.assignMember({
-      spaceId,
-      userId: body.userId,
-      spaceRoleId: body.spaceRoleId ?? null,
-      organizationId: req.user.organizationId,
-      createdById: req.user.id,
-      // The role being handed out is loaded in the service, so the ceiling is
-      // checked there. Null means "no ceiling" and is set ONLY for an admin,
-      // who holds everything and could never trip it.
-      requesterPerms: grantCeiling(req.user, spaceId),
-      authority,
-      outrankCheck: !managesMembersOrgWide(req.user),
-    }));
+    return this.thenRebill(
+      req,
+      this.service.assignMember({
+        spaceId,
+        userId: body.userId,
+        spaceRoleId: body.spaceRoleId ?? null,
+        organizationId: callerOrgId(req.user),
+        createdById: req.user.id,
+        // The role being handed out is loaded in the service, so the ceiling is
+        // checked there. Null means "no ceiling" and is set ONLY for an admin,
+        // who holds everything and could never trip it.
+        requesterPerms: grantCeiling(req.user, spaceId),
+        authority,
+        outrankCheck: !managesMembersOrgWide(req.user),
+      }),
+    );
   }
 
   /** Take somebody off this workspace — `canAddSpaceMembers` here, never somebody who holds more than you. */
   @Delete('spaces/:spaceId/members/:memberId')
   @ApiOperation({ summary: 'Remove a member from a space' })
-  removeMember(
-    @Param('spaceId') spaceId: string,
-    @Param('memberId') memberId: string,
-    @Request() req: any,
-  ) {
+  removeMember(@Param('spaceId') spaceId: string, @Param('memberId') memberId: string, @Request() req: AuthedRequest) {
     if (!spaceMemberAuthority(req.user, spaceId).addMembers) {
       throw new ForbiddenException('You do not have permission to remove people from this workspace');
     }
-    return this.thenRebill(req, this.service.removeMember({
-      spaceId,
-      memberId,
-      organizationId: req.user.organizationId,
-      outrankPerms: outrankCeiling(req.user, spaceId),
-    }));
+    return this.thenRebill(
+      req,
+      this.service.removeMember({
+        spaceId,
+        memberId,
+        organizationId: callerOrgId(req.user),
+        outrankPerms: outrankCeiling(req.user, spaceId),
+      }),
+    );
   }
 
   @Patch('spaces/:spaceId/members/:memberId/routing')
@@ -146,10 +152,10 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
       approveRoleIds?: string[];
       approveUserIds?: string[];
     },
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     assertCanManageSpace(req.user, spaceId);
-    return this.service.updateMemberRouting({ ...body, spaceId, memberId, organizationId: req.user.organizationId });
+    return this.service.updateMemberRouting({ ...body, spaceId, memberId, organizationId: callerOrgId(req.user) });
   }
 
   /**
@@ -172,14 +178,14 @@ export class SpaceMembersController extends SpaceRolesControllerBase {
     @Param('spaceId') spaceId: string,
     @Param('memberId') memberId: string,
     @Body() body: UpdateMemberRateDto,
-    @Request() req: any,
+    @Request() req: AuthedRequest,
   ) {
     assertCanManageSpace(req.user, spaceId);
     // A cost from somebody who may not see costs is refused by LabourCostInterceptor.
     return this.service.updateMemberRate({
       spaceId,
       memberId,
-      organizationId: req.user.organizationId,
+      organizationId: callerOrgId(req.user),
       effectiveFrom: body.effectiveFrom,
       createdById: req.user.id,
       billRateCents: body.billRateCents,

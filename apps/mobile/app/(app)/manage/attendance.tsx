@@ -121,7 +121,7 @@ export default function AttendanceReviewScreen() {
           <Skeleton.ListScreen />
         ) : (
           <FlatList
-            data={rows as any[]}
+            data={rows}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) =>
               segment === 'noshows' ? <NoShowCard row={item as NoShow} /> : <EntryCard entry={item as TimeEntry} />

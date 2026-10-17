@@ -9,6 +9,7 @@ import {
 } from '@hbcfield/shared';
 import { publicMessageWhere } from './support-helpers';
 import { SupportBase } from './support.base';
+import type { Prisma, SupportStatus } from '@prisma/client';
 
 /** Reading support: a customer's tickets, one thread, and the agents' inbox. */
 @Injectable()
@@ -17,8 +18,8 @@ export class SupportInboxService extends SupportBase {
   async listForCustomer(data: { createdById: string; status?: string; page?: number; limit?: number }) {
     const page = clampListPage(data.page);
     const limit = clampListLimit(data.limit, 20, 100);
-    const where: any = { createdById: data.createdById };
-    if (data.status) where.status = data.status;
+    const where: Prisma.SupportTicketWhereInput = { createdById: data.createdById };
+    if (data.status) where.status = data.status as SupportStatus;
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.supportTicket.findMany({
         where,
@@ -94,8 +95,8 @@ export class SupportInboxService extends SupportBase {
   }) {
     const page = clampListPage(data.page);
     const limit = clampListLimit(data.limit, 25, 100);
-    const where: any = {};
-    if (data.status) where.status = data.status;
+    const where: Prisma.SupportTicketWhereInput = {};
+    if (data.status) where.status = data.status as SupportStatus;
     else where.status = { in: ['OPEN', 'PENDING_AGENT', 'PENDING_CUSTOMER'] };
     if (data.tier) where.planTierAtCreation = data.tier;
     if (data.atRisk) {
@@ -115,12 +116,12 @@ export class SupportInboxService extends SupportBase {
     const teamIds = scope.teamIds;
 
     // Optional explicit view narrows further, but never beyond `allowed`.
-    const viewClauses: any[] = [];
+    const viewClauses: Prisma.SupportTicketWhereInput[] = [];
     if (data.view === 'mine' && scope.platformUserId) viewClauses.push({ assignedAgentId: scope.platformUserId });
     else if (data.view === 'unassigned') viewClauses.push({ assignedTeamId: null });
     else if (data.view === 'team' && teamIds.length) viewClauses.push({ assignedTeamId: { in: teamIds } });
 
-    const andParts: any[] = [];
+    const andParts: Prisma.SupportTicketWhereInput[] = [];
     if (allowed) andParts.push(allowed);
     if (viewClauses.length) andParts.push({ OR: viewClauses });
     if (andParts.length) where.AND = andParts;

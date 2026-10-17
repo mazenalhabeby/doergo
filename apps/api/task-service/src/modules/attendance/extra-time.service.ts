@@ -174,7 +174,7 @@ export class ExtraTimeService extends ExtraTimeBase {
         include: { role: { select: { permissions: true } } },
       });
       const spaceIds = assignments
-        .filter((a) => (a.role?.permissions as any)?.canApproveOvertime === true)
+        .filter((a) => (a.role?.permissions as { canApproveOvertime?: boolean } | null)?.canApproveOvertime === true)
         .map((a) => a.spaceId);
       // A stand-in decides where the leader they cover does — everywhere, or in those workspaces.
       const standIn = await standInGrant(this.prisma, data.userId, data.organizationId);

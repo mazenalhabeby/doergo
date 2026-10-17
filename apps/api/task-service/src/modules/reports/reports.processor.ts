@@ -29,7 +29,7 @@ export class ReportsProcessor extends JobProcessor {
   /**
    * Route job to appropriate handler based on job name
    */
-  protected async handleJob(job: Job<any, any, string>): Promise<any> {
+  protected async handleJob(job: Job<any, any, string>): Promise<unknown> {
     const { name, data } = job;
 
     switch (name) {

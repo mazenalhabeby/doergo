@@ -54,9 +54,7 @@ export class RoutesService {
   private readonly logger = new Logger(RoutesService.name);
 
   async optimize(req: RouteOptimizeRequest): Promise<OptimizedRoute> {
-    const stops = (req.stops || []).filter(
-      (s) => Number.isFinite(s.lat) && Number.isFinite(s.lng),
-    );
+    const stops = (req.stops || []).filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng));
     if (stops.length === 0) {
       return {
         order: [],
@@ -78,7 +76,9 @@ export class RoutesService {
       `nearest-neighbour` engine already tells the screen it is a rough order.
     */
     if (stops.length > MAX_STOPS) {
-      this.logger.warn(`optimize: ${stops.length} stops is over the engine limit (${MAX_STOPS}); ordering them without an engine`);
+      this.logger.warn(
+        `optimize: ${stops.length} stops is over the engine limit (${MAX_STOPS}); ordering them without an engine`,
+      );
       return this.optimizeFallback(req, stops);
     }
     const capped = stops;
@@ -92,8 +92,8 @@ export class RoutesService {
     if (GOOGLE_KEY) {
       try {
         return await this.optimizeWithGoogle(req, capped);
-      } catch (err: any) {
-        this.logger.warn(`Google Routes failed (${err?.message}); trying the next engine`);
+      } catch (err: unknown) {
+        this.logger.warn(`Google Routes failed (${(err as Error | undefined)?.message}); trying the next engine`);
       }
     }
 
@@ -103,17 +103,14 @@ export class RoutesService {
 
     try {
       return await this.optimizeWithOsrm(req, capped);
-    } catch (err: any) {
-      this.logger.warn(`OSRM /trip failed (${err?.message}); using nearest-neighbour fallback`);
+    } catch (err: unknown) {
+      this.logger.warn(`OSRM /trip failed (${(err as Error | undefined)?.message}); using nearest-neighbour fallback`);
       return this.optimizeFallback(req, capped);
     }
   }
 
   // ── Google Routes (computeRoutes) ──────────────────────────────────────────
-  private async optimizeWithGoogle(
-    req: RouteOptimizeRequest,
-    stops: RouteStop[],
-  ): Promise<OptimizedRoute> {
+  private async optimizeWithGoogle(req: RouteOptimizeRequest, stops: RouteStop[]): Promise<OptimizedRoute> {
     const pt = (p: LatLng) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });
     const hasEnd = !!req.end;
     // Somewhere to finish: an explicit end, back to the start for a round trip,
@@ -165,12 +162,12 @@ export class RoutesService {
       nothing to optimize, in which case the order we sent stands.
     */
     const optIdx: number[] | undefined = route.optimizedIntermediateWaypointIndex;
-    const orderedIntermediates = Array.isArray(optIdx) && optIdx.length === intermediates.length
-      ? optIdx.map((i) => intermediates[i]!)
-      : intermediates;
-    const orderedStops = hasEnd || req.roundTrip
-      ? orderedIntermediates
-      : [...orderedIntermediates, stops[stops.length - 1]!];
+    const orderedIntermediates =
+      Array.isArray(optIdx) && optIdx.length === intermediates.length
+        ? optIdx.map((i) => intermediates[i]!)
+        : intermediates;
+    const orderedStops =
+      hasEnd || req.roundTrip ? orderedIntermediates : [...orderedIntermediates, stops[stops.length - 1]!];
 
     const seq: (LatLng & { label?: string; stopId?: string })[] = [
       { lat: req.start.lat, lng: req.start.lng, label: req.start.label },
@@ -205,10 +202,7 @@ export class RoutesService {
   }
 
   // ── OSRM Trip ──────────────────────────────────────────────────────────────
-  private async optimizeWithOsrm(
-    req: RouteOptimizeRequest,
-    stops: RouteStop[],
-  ): Promise<OptimizedRoute> {
+  private async optimizeWithOsrm(req: RouteOptimizeRequest, stops: RouteStop[]): Promise<OptimizedRoute> {
     const hasEnd = !!req.end;
     // Waypoint order sent to OSRM: start, stops…, [end]. Indices 1..N are stops.
     const points: LatLng[] = [req.start, ...stops];

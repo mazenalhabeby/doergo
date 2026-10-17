@@ -1,6 +1,7 @@
 import { rpc } from '../contract';
 import type { AssignmentPermissionsChoice } from '../../access/assignment-permissions/types';
 import type { PermissionSet } from '../../types/permissions/keys';
+import type { RoleKindValue } from '../../billing/work-roles';
 import type { SpaceMemberAuthorityMessage } from './task-service-2-types';
 
 /** task-service `space-roles` handlers — the request each one reads. */
@@ -12,7 +13,7 @@ export const createSpaceRole = rpc<{
   description?: string;
   color?: string;
   permissions?: PermissionSet;
-  kind?: any;
+  kind?: RoleKindValue;
   spaceId?: string;
 }>('create_space_role');
 export const updateSpaceRole = rpc<{
@@ -23,7 +24,7 @@ export const updateSpaceRole = rpc<{
   color?: string;
   permissions?: PermissionSet;
   isActive?: boolean;
-  kind?: any;
+  kind?: RoleKindValue;
   requesterPerms?: null | PermissionSet;
 }>('update_space_role');
 export const setWorkRoleHere = rpc<{ organizationId: string; spaceId: string; roleId: string; active: boolean }>(

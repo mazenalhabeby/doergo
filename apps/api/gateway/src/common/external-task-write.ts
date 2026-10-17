@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { RpcRequest, findTask } from '@hbcfield/shared/microservices';
 import { taskActor } from './task-actor';
+import type { SessionUser } from './request.types';
 
 /** Reads one task through task-service's gate (`find_task`). */
 export type TaskReader = (data: RpcRequest<typeof findTask>) => Promise<unknown>;
@@ -28,7 +29,7 @@ export const EXTERNAL_TASK_WRITE_MESSAGE =
  * their own task and somebody else's photo.
  */
 export async function assertExternalMayWriteTask(
-  req: { user?: any; method?: string },
+  req: { user?: SessionUser; method?: string },
   taskId: string,
   readTask: TaskReader,
   opts: { attachmentId?: string } = {},
@@ -36,8 +37,9 @@ export async function assertExternalMayWriteTask(
   const user = req?.user;
   if (user?.isExternal !== true) return;
 
-  const res: any = await readTask({ id: taskId, ...taskActor(req) });
-  const task = res && typeof res === 'object' && 'data' in res ? res.data : res;
+  const res: unknown = await readTask({ id: taskId, ...taskActor(req) });
+  const task = (res && typeof res === 'object' && 'data' in res ? (res as { data: unknown }).data : res) as
+    { createdById?: string; attachments?: Array<{ id?: string }> } | null | undefined;
   if (!task || task.createdById !== user.id) {
     throw new ForbiddenException(EXTERNAL_TASK_WRITE_MESSAGE);
   }

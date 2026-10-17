@@ -1,3 +1,4 @@
+import type { Prisma, JoinPolicy } from '@prisma/client';
 import { ORG_NOTIFICATION_PREF_KEYS, pickBooleanPrefs, parseLeavePolicy } from '@hbcfield/shared';
 import { Injectable, Logger, HttpStatus, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -5,6 +6,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
 import { SERVICE_NAMES, ORG_CODE_LENGTH, ORG_CODE_CHARSET, hashCode, generateSecureCode } from '@hbcfield/shared';
 import { LEAVE_POLICY_SELECT, leavePolicyOf, LEAVE_POLICY_REFUSALS } from './onboarding-helpers';
+import { jsonColumn } from '../../common/records/json-column';
 
 /**
  * Organization settings: join code and policy, leave policy, profile badges,
@@ -80,7 +82,7 @@ export class OrgSettingsService {
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { joinPolicy: joinPolicy as any },
+      data: { joinPolicy: joinPolicy as JoinPolicy }, // checked against validPolicies above
     });
 
     this.logger.log(`Join policy updated to ${joinPolicy} for org ${organizationId}`);
@@ -112,7 +114,9 @@ export class OrgSettingsService {
       ...(v.carryOverMaxDays !== undefined ? { carryOverMaxDays: v.carryOverMaxDays } : {}),
       ...(v.carryExpiresAfterMonths !== undefined ? { carryExpiresAfterMonths: v.carryExpiresAfterMonths } : {}),
       ...(v.leaveTrackingStartedOn !== undefined
-        ? { leaveTrackingStartedOn: v.leaveTrackingStartedOn ? new Date(`${v.leaveTrackingStartedOn}T00:00:00Z`) : null }
+        ? {
+            leaveTrackingStartedOn: v.leaveTrackingStartedOn ? new Date(`${v.leaveTrackingStartedOn}T00:00:00Z`) : null,
+          }
         : {}),
     };
     const org = await this.prisma.organization.update({
@@ -125,12 +129,14 @@ export class OrgSettingsService {
     return { success: true, data: leavePolicyOf(org) };
   }
 
-  async updateProfileBadges(organizationId: string, profileBadges: any) {
+  async updateProfileBadges(organizationId: string, sent: unknown) {
+    const profileBadges = sent as { showRole?: unknown; showSpecialty?: unknown } | null | undefined;
     // Validate the shape
-    const valid = profileBadges
-      && typeof profileBadges === 'object'
-      && typeof profileBadges.showRole === 'boolean'
-      && typeof profileBadges.showSpecialty === 'boolean';
+    const valid =
+      profileBadges &&
+      typeof profileBadges === 'object' &&
+      typeof profileBadges.showRole === 'boolean' &&
+      typeof profileBadges.showSpecialty === 'boolean';
 
     if (!valid) {
       return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'Invalid profile badges config' };
@@ -138,7 +144,7 @@ export class OrgSettingsService {
 
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { profileBadges },
+      data: { profileBadges: jsonColumn(profileBadges) },
     });
 
     return { success: true, data: { profileBadges } };
@@ -180,10 +186,11 @@ export class OrgSettingsService {
     return { success: true, data: { notificationPrefs: merged } };
   }
 
-  async updateSecuritySettings(organizationId: string, settings: any) {
+  async updateSecuritySettings(organizationId: string, settings: unknown) {
     await this.prisma.organization.update({
       where: { id: organizationId },
-      data: { securitySettings: settings },
+      // Stored as sent (a JSON column); the settings screen owns its shape.
+      data: { securitySettings: settings as Prisma.InputJsonValue },
     });
 
     return { success: true, data: { securitySettings: settings } };

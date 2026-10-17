@@ -3,12 +3,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { DateField } from '../../components';
 import { useFormPalette } from '../../components/equipment/equipment-frame';
 import { type KindLogField, type LogValueProblem } from '@hbcfield/shared/client';
-import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../lib/constants';
+import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT, type FieldColors } from '../../lib/constants';
 
 /** AssetLogScreen's module-level helpers, moved here unchanged so its sections can read them too. */
 /** One field, drawn for its type. The problem, if any, is said under it in plain words. */
 export function FieldInput({
-  field, value, onChange, problem, photo, onPhoto, onRemovePhoto, colors, t,
+  field,
+  value,
+  onChange,
+  problem,
+  photo,
+  onPhoto,
+  onRemovePhoto,
+  colors,
+  t,
 }: {
   field: KindLogField;
   value: string;
@@ -17,7 +25,7 @@ export function FieldInput({
   photo: { uri: string; mime: string } | null;
   onPhoto: (from: 'camera' | 'library') => void;
   onRemovePhoto: () => void;
-  colors: any;
+  colors: FieldColors;
   t: (k: string, d: string, o?: Record<string, unknown>) => string;
 }) {
   const { COLORS } = useFormPalette();
@@ -160,17 +168,30 @@ export const s = StyleSheet.create({
 
   block: { marginBottom: SPACING.md },
   label: { fontSize: FONT_SIZE.xs, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: SPACING.sm },
-  inputRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+  },
   input: { fontSize: FONT_SIZE.base, paddingVertical: 10 },
   money: { fontSize: 22, fontWeight: '700' },
-  suffix: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium as any, marginLeft: SPACING.sm },
+  suffix: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.medium, marginLeft: SPACING.sm },
   boxed: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: SPACING.md },
   error: { color: COLORS.error, fontSize: FONT_SIZE.xs, marginTop: 4 },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   chip: { borderWidth: 1, borderRadius: 99, paddingHorizontal: SPACING.md, paddingVertical: 8 },
 
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md },
+  photoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
   link: { color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '700' },
 
   secondary: {
@@ -184,7 +205,13 @@ export const s = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   secondaryText: { fontSize: FONT_SIZE.sm, fontWeight: '700' },
-  primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
+  primary: {
+    borderRadius: RADIUS.md,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPACING.lg,
+  },
   primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
   footnote: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md },
 });

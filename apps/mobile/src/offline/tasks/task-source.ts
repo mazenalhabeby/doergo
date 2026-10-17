@@ -1,8 +1,10 @@
-import { getStatusCapabilities } from '@hbcfield/shared/client';
+import { getStatusCapabilities, type FlowStatus } from '@hbcfield/shared/client';
 import { isUnreachable } from '../actions/unreachable';
 import { tasksApi } from '../../lib/api/tasks';
 import { taskAttachmentsApi } from '../../lib/api/attachments';
-import type { Comment, Task } from '../../lib/api/types';
+import type { Comment, DetailAttachment, Task } from '../../lib/api/types';
+
+export type { DetailAttachment };
 import type { RecordsStore } from '../db/records-store';
 import type { OutboxOp } from '../outbox/types';
 import { mergeAttachments, mergeComments, overlayTask, pendingAttachments, pendingComments } from './overlay';
@@ -10,10 +12,19 @@ import { mergeAttachments, mergeComments, overlayTask, pendingAttachments, pendi
 /** Where a task detail came from — the screen says "saved on this phone" for the second. */
 export type Source = 'server' | 'phone';
 
+/** The workflow as a task carries it: its statuses with their stored rows (form, capabilities…). */
+export interface TaskWorkflow {
+  id?: string;
+  name?: string | null;
+  statuses?: Array<Partial<FlowStatus> & { name?: string; [field: string]: unknown }>;
+}
+
+export type DetailTask = Task & { pendingSync?: boolean; workflow?: TaskWorkflow; capabilities?: string[] };
+
 interface TaskDetail {
-  task: Task & { pendingSync?: boolean; workflow?: any; capabilities?: string[] };
+  task: DetailTask;
   comments: (Comment & { pendingSync?: boolean })[];
-  attachments: any[];
+  attachments: DetailAttachment[];
   source: Source;
 }
 
@@ -47,8 +58,8 @@ export async function loadTaskDetail(
       taskAttachmentsApi.getAttachments(id).catch(() => []),
     ]);
     if (records) {
-      void records.upsert('taskDetail', { ...(task as any), updatedAt: task.updatedAt }).catch(() => undefined);
-      void records.replaceChildren('comments', id, comments as any).catch(() => undefined);
+      void records.upsert('taskDetail', { ...task, updatedAt: task.updatedAt }).catch(() => undefined);
+      void records.replaceChildren('comments', id, comments).catch(() => undefined);
     }
     return {
       task: overlayTask(task, operations),
@@ -62,7 +73,7 @@ export async function loadTaskDetail(
     if (!local) throw err;
     const comments = (await records.listByParent<Comment>('comments', id)).map((r) => r.data);
     // Saved rows carry no link (links expire); the photo itself, if kept, is on the phone.
-    const attachments = (await records.listByParent<any>('attachments', id)).map((r) => {
+    const attachments = (await records.listByParent<DetailAttachment>('attachments', id)).map((r) => {
       const kept = cachedMediaUri?.(r.data.id) ?? null;
       return kept ? { ...r.data, fileUrl: kept, url: kept } : r.data;
     });
@@ -79,8 +90,14 @@ export async function loadTaskDetail(
  * The fullest copy the phone has: the last detail the server sent, else the
  * list row plus its flow — enough to show the task and offer its next step.
  */
+/** A task as the phone stores it: the detail's fields, and the list row's references to its flow. */
+type StoredTask = DetailTask & { workflowId?: string | null; space?: { workflowId?: string | null } | null };
+
 async function localTaskDetail(id: string, records: RecordsStore): Promise<TaskDetail['task'] | null> {
-  const [detail, row] = await Promise.all([records.get<any>('taskDetail', id), records.get<any>('tasks', id)]);
+  const [detail, row] = await Promise.all([
+    records.get<StoredTask>('taskDetail', id),
+    records.get<StoredTask>('tasks', id),
+  ]);
   // The list row is refreshed by every pull; the saved detail only when opened.
   // Prefer whichever the server wrote last, keeping the detail's extra fields.
   const base =
@@ -88,15 +105,15 @@ async function localTaskDetail(id: string, records: RecordsStore): Promise<TaskD
       ? (row.data.updatedAt ?? '') > (detail.data.updatedAt ?? '')
         ? { ...detail.data, ...row.data }
         : detail.data
-      : detail?.data ?? row?.data;
+      : (detail?.data ?? row?.data);
   if (!base) return null;
 
   if (!base.workflow) {
     const flowId = base.workflowId ?? base.space?.workflowId ?? null;
-    const flow = flowId ? (await records.get<any>('workflows', flowId))?.data : null;
+    const flow = flowId ? (await records.get<TaskWorkflow>('workflows', flowId))?.data : null;
     if (flow) base.workflow = flow;
   }
-  const current = base.workflow?.statuses?.find((s: any) => s.key === base.status);
-  base.capabilities = current ? current.capabilities ?? [] : getStatusCapabilities(base.workflow?.name, base.status);
+  const current = base.workflow?.statuses?.find((s) => s.key === base.status);
+  base.capabilities = current ? (current.capabilities ?? []) : getStatusCapabilities(base.workflow?.name, base.status);
   return base;
 }

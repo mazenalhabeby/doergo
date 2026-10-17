@@ -44,14 +44,14 @@ export const TASK_LIST_INCLUDE = {
  */
 export async function annotateTracksLocation<T extends { workflowId?: string | null; space?: { workflowId?: string | null } | null }>(
   tasks: T[],
-  getWorkflow: (id: string) => Promise<{ statuses?: unknown; name?: string } | null>,
+  getWorkflow: (id: string) => Promise<{ statuses?: { capabilities?: string[] | null }[] | null; name?: string } | null>,
 ): Promise<(T & { tracksLocation: boolean })[]> {
   const flowIds = [...new Set(tasks.map((t) => t.workflowId ?? t.space?.workflowId ?? null).filter(Boolean))] as string[];
   const tracksByFlow = new Map<string, boolean>();
   await Promise.all(
     flowIds.map(async (id) => {
       const wf = await getWorkflow(id);
-      tracksByFlow.set(id, flowTracksLocation(wf?.statuses as any, wf?.name));
+      tracksByFlow.set(id, flowTracksLocation(wf?.statuses, wf?.name));
     }),
   );
   return tasks.map((t) => {

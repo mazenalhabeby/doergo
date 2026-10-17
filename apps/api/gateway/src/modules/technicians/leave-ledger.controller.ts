@@ -17,6 +17,7 @@ import {
   listLeaveAdjustments,
   addLeaveAdjustment,
 } from '@hbcfield/shared/microservices';
+import type { SessionUser } from '../../common/request.types';
 
 /**
  * /employees — the leave ledger: opening balances and adjustments. ⚠️ Registered
@@ -44,7 +45,7 @@ export class LeaveLedgerController {
     summary: 'Starting balances: members in scope with what is saved for the leave year containing `on`',
   })
   @RequirePermissionInSpace('canManageRota')
-  async getLeaveOpening(@Query('on') on: string | undefined, @CurrentUser() user: CurrentUserData) {
+  async getLeaveOpening(@Query('on') on: string | undefined, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, getLeaveOpening, {
         organizationId: callerOrgId(user),
@@ -60,7 +61,7 @@ export class LeaveLedgerController {
     summary: 'Read a pasted table and match each line to a member (email, then full name). Writes nothing.',
   })
   @RequirePermissionInSpace('canManageRota')
-  async matchLeaveOpening(@Body() body: { text?: string }, @CurrentUser() user: CurrentUserData) {
+  async matchLeaveOpening(@Body() body: { text?: string }, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, matchLeaveOpening, {
         organizationId: callerOrgId(user),
@@ -76,7 +77,7 @@ export class LeaveLedgerController {
   @RequirePermissionInSpace('canManageRota')
   async saveLeaveOpening(
     @Body() body: { on?: string; rows?: Array<{ userId: string; used: number; carried: number }> },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, saveLeaveOpening, {
@@ -94,7 +95,7 @@ export class LeaveLedgerController {
   @ApiOperation({ summary: 'Undo a ledger line — it stays visible and counts for nothing' })
   @ApiParam({ name: 'adjustmentId', description: 'Ledger line ID' })
   @RequirePermissionInSpace('canManageRota')
-  async voidLeaveAdjustment(@Param('adjustmentId') adjustmentId: string, @CurrentUser() user: CurrentUserData) {
+  async voidLeaveAdjustment(@Param('adjustmentId') adjustmentId: string, @CurrentUser() user: SessionUser) {
     return firstValueFrom(
       sendRpc(this.taskClient, voidLeaveAdjustment, {
         adjustmentId,
@@ -113,7 +114,7 @@ export class LeaveLedgerController {
     @Param('id') id: string,
     @Query('on') on: string | undefined,
     @Query('year') year: string | undefined,
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     const scope = leaveReadScope(user);
     if (user.id !== id && scope !== undefined && scope.length === 0)
@@ -141,7 +142,7 @@ export class LeaveLedgerController {
   async addLeaveAdjustment(
     @Param('id') id: string,
     @Body() body: { kind?: string; days?: number; on?: string; reason?: string | null },
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
   ) {
     return firstValueFrom(
       sendRpc(this.taskClient, addLeaveAdjustment, {

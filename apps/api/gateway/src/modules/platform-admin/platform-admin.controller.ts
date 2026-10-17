@@ -23,6 +23,7 @@ import { PlatformAuditInterceptor } from '../../common/interceptors/platform-aud
 // validated, duplicate-free list of real add-on keys — never "omitted = all".
 import { SetAddOnsDto } from '../billing/dto';
 
+import type { PlatformRequest } from '../../common/request.types';
 /*
   Offline mode on or off.
 
@@ -53,10 +54,10 @@ export class PlatformAdminController {
     private readonly authCache: AuthTokenCache,
   ) {}
 
-  private unwrap<T>(result: any): T {
+  private unwrap<T>(result: unknown): T {
     return assertServiceOk(result) as T;
   }
-  private actor(req: any): string | undefined {
+  private actor(req: PlatformRequest): string | undefined {
     return req.platformUser?.id;
   }
 
@@ -103,7 +104,7 @@ export class PlatformAdminController {
   /** The viewer's ROLE travels so the service can leave member emails out for support readers. */
   @Get('orgs/:id')
   @RequirePlatformPerm('view')
-  async orgDetail(@Param('id') id: string, @Request() req: any) {
+  async orgDetail(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.orgDetail({ organizationId: id, viewerRole: req.platformUser?.role }));
   }
 
@@ -131,7 +132,7 @@ export class PlatformAdminController {
 
   @Post('orgs/:id/extend-trial')
   @RequirePlatformPerm('extendTrial')
-  async extendTrial(@Param('id') id: string, @Body() body: { days?: number }, @Request() req: any) {
+  async extendTrial(@Param('id') id: string, @Body() body: { days?: number }, @Request() req: PlatformRequest) {
     return this.unwrap(
       await this.svc.extendTrial({ organizationId: id, days: Number(body?.days) || 14, byUserId: this.actor(req) }),
     );
@@ -140,7 +141,7 @@ export class PlatformAdminController {
   /** End a trial now — the mirror of extend, and the operator's cue to the customer. */
   @Post('orgs/:id/end-trial')
   @RequirePlatformPerm('extendTrial')
-  async endTrial(@Param('id') id: string, @Request() req: any) {
+  async endTrial(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.endTrial({ organizationId: id, byUserId: this.actor(req) }));
   }
 
@@ -161,7 +162,7 @@ export class PlatformAdminController {
   async setAgreedPrice(
     @Param('id') id: string,
     @Body() body: { monthlyCents?: number; until?: string | null; note?: string | null },
-    @Request() req: any,
+    @Request() req: PlatformRequest,
   ) {
     return this.unwrap(
       await this.svc.setAgreedPrice({
@@ -177,20 +178,20 @@ export class PlatformAdminController {
   /** Put them back on the price list. Can multiply what they pay — confirmed on the console. */
   @Delete('orgs/:id/agreed-price')
   @RequirePlatformPerm('billingOps')
-  async clearAgreedPrice(@Param('id') id: string, @Request() req: any) {
+  async clearAgreedPrice(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.clearAgreedPrice({ organizationId: id, byUserId: this.actor(req) }));
   }
 
   @Post('orgs/:id/suspend')
   @RequirePlatformPerm('manageOrgs')
-  async suspend(@Param('id') id: string, @Request() req: any) {
+  async suspend(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.suspend({ organizationId: id, byUserId: this.actor(req) }));
   }
 
   /** The offline-first mobile app, on or off for one organization — the staged rollout. */
   @Post('orgs/:id/offline-mode')
   @RequirePlatformPerm('manageOrgs')
-  async setOfflineMode(@Param('id') id: string, @Body() body: OfflineModeDto, @Request() req: any) {
+  async setOfflineMode(@Param('id') id: string, @Body() body: OfflineModeDto, @Request() req: PlatformRequest) {
     const result = this.unwrap(
       await this.svc.setOfflineMode({ organizationId: id, enabled: body.enabled, byUserId: this.actor(req) }),
     );
@@ -201,7 +202,7 @@ export class PlatformAdminController {
 
   @Post('orgs/:id/reactivate')
   @RequirePlatformPerm('manageOrgs')
-  async reactivate(@Param('id') id: string, @Request() req: any) {
+  async reactivate(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) }));
   }
 
@@ -217,7 +218,7 @@ export class PlatformAdminController {
 
   @Post('billing-alerts/:id/ack')
   @RequirePlatformPerm('manageOrgs')
-  async ackBillingAlert(@Param('id') id: string, @Request() req: any) {
+  async ackBillingAlert(@Param('id') id: string, @Request() req: PlatformRequest) {
     return this.unwrap(await this.svc.ackBillingAlert({ id, byUserId: this.actor(req) }));
   }
 
@@ -238,7 +239,7 @@ export class PlatformAdminController {
   async setBillingMode(
     @Param('id') id: string,
     @Body() body: { mode?: string; invoiceDueDays?: number },
-    @Request() req: any,
+    @Request() req: PlatformRequest,
   ) {
     const mode = String(body?.mode ?? '').toUpperCase();
     // Validated here as well as in the service: an unknown mode must never
@@ -269,7 +270,7 @@ export class PlatformAdminController {
    */
   @Post('orgs/:id/add-ons')
   @RequirePlatformPerm('billingOps')
-  async setAddOns(@Param('id') id: string, @Body() body: SetAddOnsDto, @Request() req: any) {
+  async setAddOns(@Param('id') id: string, @Body() body: SetAddOnsDto, @Request() req: PlatformRequest) {
     const result = this.unwrap(
       await this.svc.setAddOns({ organizationId: id, addOns: body.addOns, byUserId: this.actor(req) }),
     );

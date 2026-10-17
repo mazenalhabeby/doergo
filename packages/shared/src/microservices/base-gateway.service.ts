@@ -11,7 +11,7 @@
  *     super(client, 'TasksService');
  *   }
  *
- *   async findAll(data: Record<string, any>) {
+ *   async findAll(data: Record<string, unknown>) {
  *     return this.send({ cmd: 'find_all_tasks' }, data);
  *   }
  * }

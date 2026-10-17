@@ -15,6 +15,7 @@ import {
 import { holdsIn } from '../../lib/permissions';
 import { useResponsive } from '../../lib/responsive';
 import { centeredContent } from '../screen-container';
+import { caught } from '../../lib/caught';
 
 /** RegisterRecord's state and handlers — everything before its markup, moved here unchanged. */
 export function useRegisterRecord({ id }: Pick<{ id: string }, 'id'>) {
@@ -48,7 +49,11 @@ export function useRegisterRecord({ id }: Pick<{ id: string }, 'id'>) {
   }, [id]);
 
   /* Again on every return — an entry just filed from the logbook form shows at once. */
-  useFocusEffect(useCallback(() => { void reload(); }, [reload]));
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload]),
+  );
 
   const spaceId = asset?.category?.spaceId ?? null;
   const mayLog = holdsIn(user as never, 'canLogAssets', spaceId);
@@ -66,7 +71,10 @@ export function useRegisterRecord({ id }: Pick<{ id: string }, 'id'>) {
   /* The people of this workspace — whom it can be handed to. Read only when the sheet opens. */
   useEffect(() => {
     if (sheet !== 'handover' || roster || !spaceId) return;
-    locationsApi.getAssignedMembers(spaceId).then(setRoster).catch(() => setRoster([]));
+    locationsApi
+      .getAssignedMembers(spaceId)
+      .then(setRoster)
+      .catch(() => setRoster([]));
   }, [sheet, roster, spaceId]);
 
   const more = useCallback(async () => {
@@ -76,22 +84,29 @@ export function useRegisterRecord({ id }: Pick<{ id: string }, 'id'>) {
       const page = await assetRegisterApi.log(id, cursor);
       setEntries((prev) => [...prev, ...page.entries]);
       setCursor(page.nextCursor);
-    } catch { /* the button stays; try again */ } finally { setMoreBusy(false); }
+    } catch {
+      /* the button stays; try again */
+    } finally {
+      setMoreBusy(false);
+    }
   }, [cursor, moreBusy, id]);
 
-  const act = useCallback(async (what: () => Promise<unknown>, done: string) => {
-    setBusy(true);
-    try {
-      await what();
-      toast.success(done);
-      setSheet(null);
-      await reload();
-    } catch (e: any) {
-      toast.error(e?.message || t('register.failed', 'That did not work — try again.'));
-    } finally {
-      setBusy(false);
-    }
-  }, [reload, toast, t]);
+  const act = useCallback(
+    async (what: () => Promise<unknown>, done: string) => {
+      setBusy(true);
+      try {
+        await what();
+        toast.success(done);
+        setSheet(null);
+        await reload();
+      } catch (e: unknown) {
+        toast.error(caught(e).message || t('register.failed', 'That did not work — try again.'));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [reload, toast, t],
+  );
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/equipment' as Href));
 

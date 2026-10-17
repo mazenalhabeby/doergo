@@ -159,7 +159,7 @@ export class RoleAdminService extends SpaceRolesBase {
     if (role.kind !== 'WORK') throw new BadRequestException('Only a work role has a day rate');
     const result = await withRateErrors(() =>
       this.prisma.$transaction((tx) =>
-        writeRateChange(tx as any, {
+        writeRateChange(tx, {
           organizationId: data.organizationId,
           target: 'ROLE',
           targetId: role.id,

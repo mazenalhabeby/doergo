@@ -17,6 +17,8 @@ import {
 } from './dto/documents.dto';
 import { OrgEventsService } from '../../common/events/org-events.service';
 
+import type { AuthedRequest } from '../../common/request.types';
+import type { SessionUser } from '../../common/request.types';
 /**
  * The personnel file, over HTTP.
  *
@@ -51,18 +53,14 @@ export class DocumentsController {
   @RequirePermission('canIssueDocuments')
   @Throttle({ default: { limit: 60, ttl: 60000 } }) // a payroll batch, not a scraper
   @ApiOperation({ summary: 'Get a direct upload link' })
-  async presignUpload(@CurrentUser() user: CurrentUserData, @Body() body: PresignUploadDto) {
+  async presignUpload(@CurrentUser() user: SessionUser, @Body() body: PresignUploadDto) {
     return this.documents.presignUpload({ actor: documentActor(user), ...body });
   }
 
   @Post()
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'File an uploaded document against a member' })
-  async confirmUpload(
-    @CurrentUser() user: CurrentUserData,
-    @Body() body: ConfirmUploadDto,
-    @Req() req: any,
-  ) {
+  async confirmUpload(@CurrentUser() user: SessionUser, @Body() body: ConfirmUploadDto, @Req() req: AuthedRequest) {
     const created = await this.documents.confirmUpload({
       actor: documentActor(user),
       ...body,
@@ -84,9 +82,9 @@ export class DocumentsController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({ summary: 'Choose who sees documents: hide from the member, or limit to roles' })
   async setVisibility(
-    @CurrentUser() user: CurrentUserData,
+    @CurrentUser() user: SessionUser,
     @Body() body: SetDocumentVisibilityDto,
-    @Req() req: any,
+    @Req() req: AuthedRequest,
   ) {
     const result = await this.documents.setVisibility({
       actor: documentActor(user),
@@ -105,11 +103,7 @@ export class DocumentsController {
   @RequirePermission('canDeleteDocuments')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Erase documents for good (signatures included); audit-logged' })
-  async deleteDocuments(
-    @CurrentUser() user: CurrentUserData,
-    @Body() body: DeleteDocumentsDto,
-    @Req() req: any,
-  ) {
+  async deleteDocuments(@CurrentUser() user: SessionUser, @Body() body: DeleteDocumentsDto, @Req() req: AuthedRequest) {
     const result = await this.documents.deleteDocuments({
       actor: documentActor(user),
       documentIds: body.documentIds,
@@ -123,7 +117,7 @@ export class DocumentsController {
   @Post(':id/revoke')
   @RequirePermission('canIssueDocuments')
   @ApiOperation({ summary: 'Withdraw a document (marks it revoked; never deletes)' })
-  async revoke(@CurrentUser() user: CurrentUserData, @Param('id') id: string, @Req() req: any) {
+  async revoke(@CurrentUser() user: SessionUser, @Param('id') id: string, @Req() req: AuthedRequest) {
     return this.documents.revoke({
       actor: documentActor(user),
       documentId: id,
@@ -140,11 +134,7 @@ export class DocumentsController {
   @Post('export')
   @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   @ApiOperation({ summary: 'Export every document in a member’s file' })
-  async export(
-    @CurrentUser() user: CurrentUserData,
-    @Body() body: { userId?: string },
-    @Req() req: any,
-  ) {
+  async export(@CurrentUser() user: SessionUser, @Body() body: { userId?: string }, @Req() req: AuthedRequest) {
     return this.documents.export({
       actor: documentActor(user),
       targetUserId: body?.userId,
@@ -155,7 +145,7 @@ export class DocumentsController {
   @Get('browse')
   @RequirePermission('canViewMemberDocuments')
   @ApiOperation({ summary: 'Browse issued documents as folders' })
-  async browse(@CurrentUser() user: CurrentUserData, @Query() query: BrowseQueryDto) {
+  async browse(@CurrentUser() user: SessionUser, @Query() query: BrowseQueryDto) {
     return this.documents.browse({
       actor: documentActor(user),
       groupBy: query.groupBy,
@@ -178,7 +168,7 @@ export class DocumentsController {
   @Get('sent')
   @RequirePermission('canViewMemberDocuments')
   @ApiOperation({ summary: 'The register: every document in the organization — issued and supplied — by state' })
-  async listIssued(@CurrentUser() user: CurrentUserData, @Query() query: ListIssuedQueryDto) {
+  async listIssued(@CurrentUser() user: SessionUser, @Query() query: ListIssuedQueryDto) {
     return this.documents.listIssued({
       actor: documentActor(user),
       tab: query.tab,
@@ -195,7 +185,7 @@ export class DocumentsController {
 
   @Get()
   @ApiOperation({ summary: 'List documents — your own, or a member’s if permitted' })
-  async list(@CurrentUser() user: CurrentUserData, @Query() query: ListDocumentsQueryDto) {
+  async list(@CurrentUser() user: SessionUser, @Query() query: ListDocumentsQueryDto) {
     return this.documents.list({
       actor: documentActor(user),
       targetUserId: query.userId,
@@ -213,11 +203,7 @@ export class DocumentsController {
   @Post(':id/download-url')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Mint a short-lived download link and record the open' })
-  async downloadUrl(
-    @CurrentUser() user: CurrentUserData,
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
+  async downloadUrl(@CurrentUser() user: SessionUser, @Param('id') id: string, @Req() req: AuthedRequest) {
     return this.documents.downloadUrl({
       actor: documentActor(user),
       documentId: id,
@@ -227,7 +213,7 @@ export class DocumentsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remove a document you supplied yourself' })
-  async deleteOwn(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+  async deleteOwn(@CurrentUser() user: SessionUser, @Param('id') id: string) {
     return this.documents.deleteOwn({ actor: documentActor(user), documentId: id });
   }
 }

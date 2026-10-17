@@ -1,5 +1,6 @@
 import { isAdmin, spacesGranting } from '@hbcfield/shared';
 
+import type { SessionUser } from './request.types';
 /**
  * May this caller see where people ARE (coordinates, last location)?
  *
@@ -15,7 +16,10 @@ import { isAdmin, spacesGranting } from '@hbcfield/shared';
  *                      with the person's own workspaces; until it does, a
  *                      per-space grant shows no coordinates — closed, not open.
  */
-export function trackingVisibility(user: any): { canViewTracking: boolean; trackingSpaceIds: string[] | undefined } {
+export function trackingVisibility(user: SessionUser): {
+  canViewTracking: boolean;
+  trackingSpaceIds: string[] | undefined;
+} {
   if (!user) return { canViewTracking: false, trackingSpaceIds: [] };
   if (isAdmin(user)) return { canViewTracking: true, trackingSpaceIds: undefined };
   const granted = spacesGranting(user.access, 'canViewTracking');
