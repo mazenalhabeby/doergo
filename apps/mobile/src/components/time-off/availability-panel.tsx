@@ -33,7 +33,10 @@ export function TeamAvailabilityPanel({
           <AText variant="body" tone="strong" style={{ fontSize: 14 }}>
             {t('timeOff.teamAvailability.techsAvailable', { available: insights.worstAvailable, total: insights.worstTotal })}
             {insights.worstDay ? (
-              <AText variant="caption" tone="muted">{` ${t('timeOff.teamAvailability.worst', { date: formatShortDate(insights.worstDay, locale) })}`}</AText>
+              <AText
+                variant="caption"
+                tone="muted"
+              >{` ${t('timeOff.teamAvailability.worst', { date: formatShortDate(insights.worstDay, locale) })}`}</AText>
             ) : null}
           </AText>
           {insights.lowCoverage ? (

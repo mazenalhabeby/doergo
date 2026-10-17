@@ -50,7 +50,12 @@ export function ExplainStep({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: amazen.layout.gutter, gap: amazen.layout.block, paddingBottom: amazen.space(6) }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: amazen.layout.gutter,
+          gap: amazen.layout.block,
+          paddingBottom: amazen.space(6),
+        }}>
         <View style={{ gap: amazen.space(1.5), paddingTop: amazen.space(2) }}>
           <Eyebrow tone="onGradient">{t('contactsImport.explain.eyebrow')}</Eyebrow>
           <AText variant="h2" tone="strong">{t('contactsImport.explain.title')}</AText>
@@ -60,8 +65,24 @@ export function ExplainStep({
             <View key={p.title}>
               {i ? <WellDivider /> : null}
               <View style={{ flexDirection: 'row', gap: amazen.space(3), paddingVertical: amazen.space(3.5) }}>
-                <View style={{ width: 44, height: 44, borderRadius: amazen.radius.tile, alignItems: 'center', justifyContent: 'center', backgroundColor: p.accent ? c.accentTint : c.tile }}>
-                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={p.accent ? c.accent : c.ink} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: amazen.radius.tile,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: p.accent ? c.accentTint : c.tile,
+                  }}>
+                  <Svg
+                    width={22}
+                    height={22}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={p.accent ? c.accent : c.ink}
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round">
                     {p.icon}
                   </Svg>
                 </View>
@@ -73,9 +94,13 @@ export function ExplainStep({
             </View>
           ))}
         </Well>
-        <AText variant="caption" tone="onGradient" style={{ paddingHorizontal: amazen.space(1) }}>{t('contactsImport.explain.choice')}</AText>
+        <AText variant="caption" tone="onGradient" style={{ paddingHorizontal: amazen.space(1) }}>
+          {t('contactsImport.explain.choice')}
+        </AText>
         {!available ? (
-          <AText variant="caption" tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{t('contactsImport.explain.unavailable')}</AText>
+          <AText variant="caption" tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>
+            {t('contactsImport.explain.unavailable')}
+          </AText>
         ) : access.blocked ? (
           <AText variant="caption" tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{t('contactsImport.explain.blocked')}</AText>
         ) : null}

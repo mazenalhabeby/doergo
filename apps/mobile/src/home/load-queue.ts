@@ -54,7 +54,9 @@ export interface LoadQueue {
   clear(): void;
 }
 
-export function createLoadQueue(opts: { now?: () => number; setTimer?: typeof setTimeout; clearTimer?: typeof clearTimeout } = {}): LoadQueue {
+export function createLoadQueue(
+  opts: { now?: () => number; setTimer?: typeof setTimeout; clearTimer?: typeof clearTimeout } = {},
+): LoadQueue {
   const now = opts.now ?? Date.now;
   const setTimer = opts.setTimer ?? setTimeout;
   const clearTimer = opts.clearTimer ?? clearTimeout;
@@ -96,7 +98,13 @@ export function createLoadQueue(opts: { now?: () => number; setTimer?: typeof se
     // Everything asked for this card so far, together; asks that arrive while it runs make the next round.
     const runs = [...e.runs.values()];
     e.runs = new Map();
-    const results = runs.map((run) => { try { return Promise.resolve(run()).catch(() => undefined); } catch { return Promise.resolve(); } });
+    const results = runs.map((run) => {
+      try {
+        return Promise.resolve(run()).catch(() => undefined);
+      } catch {
+        return Promise.resolve();
+      }
+    });
     Promise.all(results).then(() => finish(k));
   }
 

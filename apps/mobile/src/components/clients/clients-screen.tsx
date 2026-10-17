@@ -132,7 +132,10 @@ export function ClientsScreen() {
   const openClient = useCallback((id: string) => router.push(`/(app)/customer/${id}` as Href), []);
 
   const spaceName = useCallback((id?: string | null) => (id ? spaces.find((s) => s.id === id)?.name ?? null : null), [spaces]);
-  const stage = useCallback((key?: string) => t(`customers.stages.${key || 'LEAD'}`, { defaultValue: customerStageLabel(key || 'LEAD') }), [t]);
+  const stage = useCallback(
+    (key?: string) => t(`customers.stages.${key || 'LEAD'}`, { defaultValue: customerStageLabel(key || 'LEAD') }),
+    [t],
+  );
   const tagContact = useMemo(() => ({ label: t('customers.list.contactTag', 'Contact'), tone: 'muted' as const }), [t]);
   const tagApp = useMemo(() => ({ label: t('customers.hasApp', 'App'), tone: 'accent' as const }), [t]);
   const filtered = !!search.trim() || filter !== 'all' || !!spaceId;
@@ -160,7 +163,17 @@ export function ClientsScreen() {
       <ScreenHeader
         title={t('customers.title', 'Clients')}
         leading={<HeaderBack onPress={() => (router.canGoBack() ? router.back() : router.navigate('/(app)/(tabs)/more' as Href))} />}
-        actions={canAdd ? [{ label: `＋ ${t('customers.addShort', 'Add')}`, a11yLabel: t('customers.add', 'Add client'), onPress: () => setAdding(true) }] : undefined}
+        actions={
+          canAdd
+            ? [
+                {
+                  label: `＋ ${t('customers.addShort', 'Add')}`,
+                  a11yLabel: t('customers.add', 'Add client'),
+                  onPress: () => setAdding(true),
+                },
+              ]
+            : undefined
+        }
         style={wide ?? undefined}
       />
       <FlatList
@@ -179,7 +192,11 @@ export function ClientsScreen() {
           <View style={{ paddingVertical: amazen.space(8), alignItems: 'center' }}>
             {loading
               ? <ActivityIndicator color={c.accent} />
-              : <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{filtered ? t('customers.list.emptyFiltered') : t('customers.empty')}</AText>}
+              : (
+                  <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+                    {filtered ? t('customers.list.emptyFiltered') : t('customers.empty')}
+                  </AText>
+                )}
           </View>
         }
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: amazen.space(5) }} color={c.accent} /> : null}
@@ -200,7 +217,15 @@ export function ClientsScreen() {
           );
         }}
       />
-      {canAdd ? <AddClientSheet visible={adding} onClose={() => setAdding(false)} spaces={spaces} startSpaceId={spaceId} onAdded={refresh} /> : null}
+      {canAdd ? (
+        <AddClientSheet
+          visible={adding}
+          onClose={() => setAdding(false)}
+          spaces={spaces}
+          startSpaceId={spaceId}
+          onAdded={refresh}
+        />
+      ) : null}
     </Ground>
   );
 }

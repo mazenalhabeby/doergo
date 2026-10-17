@@ -49,7 +49,16 @@ export async function readPhoneContacts(): Promise<PhoneContact[]> {
   if (!c) return [];
   const { Fields, ContactTypes } = c;
   const res = await c.getContactsAsync({
-    fields: [Fields.Name, Fields.FirstName, Fields.LastName, Fields.Company, Fields.JobTitle, Fields.Emails, Fields.PhoneNumbers, Fields.ContactType],
+    fields: [
+      Fields.Name,
+      Fields.FirstName,
+      Fields.LastName,
+      Fields.Company,
+      Fields.JobTitle,
+      Fields.Emails,
+      Fields.PhoneNumbers,
+      Fields.ContactType,
+    ],
   });
   const out: PhoneContact[] = [];
   for (const x of res.data) {

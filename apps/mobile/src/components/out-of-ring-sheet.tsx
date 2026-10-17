@@ -136,7 +136,11 @@ export function OutOfRingSheet({ visible, spaceName, onClose, onSubmit, isLoadin
         <TextInput
           style={[
             styles.reasonInput,
-            { backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc', borderColor: reason.trim() ? ACCENT : colors.border, color: colors.textPrimary },
+            {
+              backgroundColor: isDark ? colors.surfaceRaised : '#f8fafc',
+              borderColor: reason.trim() ? ACCENT : colors.border,
+              color: colors.textPrimary,
+            },
           ]}
           placeholder={t('attendance.outOfRing.reasonPlaceholder')}
           placeholderTextColor={colors.textMuted}

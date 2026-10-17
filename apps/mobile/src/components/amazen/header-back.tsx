@@ -70,7 +70,15 @@ export function HeaderBack({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={t('common.back')}
       hitSlop={6}
-      style={({ pressed }) => ({ width: 43, height: 43, borderRadius: 22, backgroundColor: amazen.color.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}
+      style={({ pressed }) => ({
+        width: 43,
+        height: 43,
+        borderRadius: 22,
+        backgroundColor: amazen.color.tile,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.75 : 1,
+      })}
     >
       <AText variant="body" tone="strong" style={{ fontSize: 22, lineHeight: 26 }}>‹</AText>
     </Pressable>

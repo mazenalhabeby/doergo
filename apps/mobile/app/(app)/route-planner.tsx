@@ -8,7 +8,15 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { DetentSheet, type Detent } from '../../src/components/route/detent-sheet';
 import { BlurSheet } from '../../src/components/blur-sheet';
 import { SheetPanel } from '../../src/components/sheet-panel';
-import { detectNavApps, navDecision, preferredNavApp, rememberNavApp, rememberedNavApp, soleNavApp, type InstalledNavApp } from '../../src/lib/nav-apps';
+import {
+  detectNavApps,
+  navDecision,
+  preferredNavApp,
+  rememberNavApp,
+  rememberedNavApp,
+  soleNavApp,
+  type InstalledNavApp,
+} from '../../src/lib/nav-apps';
 import { PressableScale } from '../../src/components/pressable-scale';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -19,7 +27,15 @@ import { isMyRouteStop, hasArrived } from '../../src/lib/my-route';
 import { useAuth } from '../../src/contexts/auth-context';
 import { useTheme } from '../../src/contexts/theme-context';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
-import { buildGoogleMapsUrl, buildNavUrl, stopsAheadOf, type NavApp, type RouteStop, type OptimizedRoute, formatDuration } from '@hbcfield/shared/client';
+import {
+  buildGoogleMapsUrl,
+  buildNavUrl,
+  stopsAheadOf,
+  type NavApp,
+  type RouteStop,
+  type OptimizedRoute,
+  formatDuration,
+} from '@hbcfield/shared/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOffline } from '../../src/offline/offline-context';
 import { overlayTask } from '../../src/offline/tasks/overlay';
@@ -133,7 +149,14 @@ export default function RoutePlannerScreen() {
             {/* Numbered once the route is ordered — the number IS the plan, and
                 a default red pin cannot carry it. */}
             <View style={styles.pin}>
-              <View style={[styles.pinBubble, { backgroundColor: result ? COLORS.primary : colors.card, borderColor: result ? COLORS.primary : colors.border }]}>
+              <View
+                style={[
+                  styles.pinBubble,
+                  {
+                    backgroundColor: result ? COLORS.primary : colors.card,
+                    borderColor: result ? COLORS.primary : colors.border,
+                  },
+                ]}>
                 <Text style={[styles.pinText, { color: result ? '#fff' : colors.textPrimary }]}>
                   {result ? String(i + 1) : '•'}
                 </Text>
@@ -147,16 +170,31 @@ export default function RoutePlannerScreen() {
       {/* Floating controls — the map's furniture, not a header bar. A solid bar
           across the top would crop the very thing it sits on. */}
       <View style={[styles.floatTop, { top: insets.top + 8 }]} pointerEvents="box-none">
-        <PressableScale onPress={() => router.back()} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('common.back', 'Back')}>
+        <PressableScale
+          onPress={() => router.back()}
+          style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back', 'Back')}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </PressableScale>
         <View style={styles.floatTopRight}>
-          <PressableScale onPress={() => { locateMe(); fitToRoute(true); }} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
+          <PressableScale
+            onPress={() => {
+              locateMe();
+              fitToRoute(true);
+            }}
+            style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('route.useMyLocation', 'Use my location')}>
             {locating
               ? <ActivityIndicator size="small" color={COLORS.primary} />
               : <Ionicons name="locate" size={20} color={COLORS.primary} />}
           </PressableScale>
-          <PressableScale onPress={() => fitToRoute(true)} style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('route.fitRoute', 'Show the whole route')}>
+          <PressableScale
+            onPress={() => fitToRoute(true)}
+            style={[styles.fab, { backgroundColor: colors.card, borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('route.fitRoute', 'Show the whole route')}>
             <Ionicons name="scan-outline" size={20} color={colors.textPrimary} />
           </PressableScale>
         </View>

@@ -140,7 +140,18 @@ export function Tag({ label, tone }: { label: string; tone?: 'warn' }) {
   const c = amazen.color;
   return (
     <View style={{ borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1, backgroundColor: tone === 'warn' ? c.warnTint : c.tile }}>
-      <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 1, textTransform: 'uppercase', color: tone === 'warn' ? c.warn : c.ink }}>{label}</AText>
+      <AText
+        numberOfLines={1}
+        style={{
+          fontFamily: amazen.font.mono,
+          fontSize: 9.5,
+          letterSpacing: 1,
+          textTransform: 'uppercase',
+          color: tone === 'warn' ? c.warn : c.ink,
+        }}
+      >
+        {label}
+      </AText>
     </View>
   );
 }

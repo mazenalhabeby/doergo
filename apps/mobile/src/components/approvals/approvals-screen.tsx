@@ -2,7 +2,14 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, SectionList, View } from 'react-native';
 import { router, useFocusEffect, type Href, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { APPROVAL_GROUPS, APPROVAL_KINDS, describeApproval, type ApprovalItem, type ApprovalKind, type ApprovalT } from '@hbcfield/shared/client';
+import {
+  APPROVAL_GROUPS,
+  APPROVAL_KINDS,
+  describeApproval,
+  type ApprovalItem,
+  type ApprovalKind,
+  type ApprovalT,
+} from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { isExternalMember } from '../../lib/member-reach';
@@ -117,9 +124,22 @@ export function ApprovalsScreen() {
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load('refresh')} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load('refresh')}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
         renderSectionHeader={({ section }) => (
-          <SectionLabel tone={section.group === 'NOW' ? 'critical' : 'muted'} style={{ paddingTop: amazen.space(3), paddingBottom: amazen.space(1.5), paddingHorizontal: amazen.space(1) }}>
+          <SectionLabel
+            tone={section.group === 'NOW' ? 'critical' : 'muted'}
+            style={{
+              paddingTop: amazen.space(3),
+              paddingBottom: amazen.space(1.5),
+              paddingHorizontal: amazen.space(1),
+            }}>
             {`${t(`approvals.groups.${section.group}`)} · ${section.data.length}`}
           </SectionLabel>
         )}
@@ -141,8 +161,19 @@ export function ApprovalsScreen() {
               first={index === 0}
               last={index === section.data.length - 1}
               title={item.subject.name || t('approvals.someone')}
-              detail={[text.headline, lead, item.space?.name, item.step ? t('approvals.step.short', { role: item.step.roleName }) : null].filter(Boolean).join(' · ')}
-              trailing={<AText variant="caption" tone="muted" numeric>{item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}</AText>}
+              detail={[
+                text.headline,
+                lead,
+                item.space?.name,
+                item.step ? t('approvals.step.short', { role: item.step.roleName }) : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              trailing={
+                <AText variant="caption" tone="muted" numeric>
+                  {item.raisedAt ? formatDay(item.raisedAt, i18n.language) : ''}
+                </AText>
+              }
               onPress={() => router.push({ pathname: '/(app)/approval/[key]', params: { key: approvalKey(item) } } as never)}
             />
           );

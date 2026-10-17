@@ -59,7 +59,9 @@ export default function EditProfile() {
           <Text style={[styles.readonlyText, { color: colors.textMuted }]}>{user?.email}</Text>
           <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
         </View>
-        <Text style={[styles.hint, { color: colors.textMuted }]}>{t('portal.emailReadonly', 'Your email is your login and can’t be changed here.')}</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>
+          {t('portal.emailReadonly', 'Your email is your login and can’t be changed here.')}
+        </Text>
       </PortalField>
     </PortalFormScreen>
   );

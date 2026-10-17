@@ -49,7 +49,9 @@ export function JobFiles({
         <View style={{ flex: 1 }}><SectionLabel>{t('job.files.title', { count: files.length })}</SectionLabel></View>
         {uploading ? <ActivityIndicator size="small" color={c.accent} /> : null}
       </View>
-      <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, minHeight: side || 60 }}>
+      <View
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, minHeight: side || 60 }}>
         {files.map((f) => {
           const image = (f.fileType ?? '').startsWith('image/');
           return (
@@ -65,14 +67,34 @@ export function JobFiles({
                 <Image source={{ uri: f.fileUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
               ) : (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 6 }}>
-                  <AText variant="caption" tone="ink" numberOfLines={1} style={{ fontFamily: amazen.font.mono, textTransform: 'uppercase' }}>
+                  <AText
+                    variant="caption"
+                    tone="ink"
+                    numberOfLines={1}
+                    style={{ fontFamily: amazen.font.mono, textTransform: 'uppercase' }}>
                     {(f.fileName ?? '').split('.').pop()?.slice(0, 4) || 'FILE'}
                   </AText>
-                  <AText variant="caption" tone="muted" numberOfLines={2} style={{ fontSize: 10, lineHeight: 12, textAlign: 'center' }}>{f.fileName}</AText>
+                  <AText
+                    variant="caption"
+                    tone="muted"
+                    numberOfLines={2}
+                    style={{ fontSize: 10, lineHeight: 12, textAlign: 'center' }}
+                  >
+                    {f.fileName}
+                  </AText>
                 </View>
               )}
               {f.pendingSync ? (
-                <View style={{ position: 'absolute', right: 5, top: 5, borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, backgroundColor: c.canvas }}>
+                <View
+                  style={{
+                    position: 'absolute',
+                    right: 5,
+                    top: 5,
+                    borderRadius: 4,
+                    paddingHorizontal: 4,
+                    paddingVertical: 1,
+                    backgroundColor: c.canvas,
+                  }}>
                   <AText variant="caption" tone="ink" style={{ fontSize: 9, lineHeight: 12 }}>{t('job.files.sending')}</AText>
                 </View>
               ) : null}
@@ -95,7 +117,19 @@ export function JobFiles({
 }
 
 /** A dashed square that adds — the camera and the gallery. Also New job's photo row. */
-export function AddTile({ side, label, onPress, disabled, children }: { side: number; label: string; onPress: () => void; disabled?: boolean; children: React.ReactNode }) {
+export function AddTile({
+  side,
+  label,
+  onPress,
+  disabled,
+  children,
+}: {
+  side: number;
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (

@@ -20,7 +20,13 @@ import {
   availabilityInsights as insightsFor, datesWithStatus, filterRequests, getDayCount, mondayDow,
   scheduleDayMap, timeOffStats, toDateString, type RequestFilter,
 } from '../../../src/components/time-off/helpers';
-import { daysNotAnswered, mapLimited, mergeAvailability, planAvailabilityFetch, rangeUnsupported } from '../../../src/components/time-off/availability-plan';
+import {
+  daysNotAnswered,
+  mapLimited,
+  mergeAvailability,
+  planAvailabilityFetch,
+  rangeUnsupported,
+} from '../../../src/components/time-off/availability-plan';
 import { TimeOffStatsRow, ScheduleNotSetBanner } from '../../../src/components/time-off/stats-row';
 import { TimeOffCalendarCard } from '../../../src/components/time-off/calendar-card';
 import { TeamAvailabilityPanel } from '../../../src/components/time-off/availability-panel';
@@ -121,7 +127,10 @@ export default function RequestsScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         // ⚠️ Room for the floating tab pill — it reserves no layout of its own.
-        contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe + amazen.space(6), gap: amazen.space(3) }, wide]}
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: tabSafe + amazen.space(6), gap: amazen.space(3) },
+          wide,
+        ]}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[c.accent]} tintColor={c.accent} />}
       >
         <TimeOffStatsRow stats={stats} />
@@ -164,7 +173,12 @@ export default function RequestsScreen() {
         </TourTarget>
 
         {!formKind && hasRangeSelected && canSeeTeamAvailability ? (
-          <TeamAvailabilityPanel loading={isLoadingAvailability} failed={availabilityError} insights={availabilityInsights} locale={locale} />
+          <TeamAvailabilityPanel
+            loading={isLoadingAvailability}
+            failed={availabilityError}
+            insights={availabilityInsights}
+            locale={locale}
+          />
         ) : null}
 
         {!formKind && hasRangeSelected ? (

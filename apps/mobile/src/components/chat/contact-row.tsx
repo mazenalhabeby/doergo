@@ -32,13 +32,27 @@ export const ContactRow = memo(function ContactRow({
   const c = amazen.color;
   const r = amazen.radius.panel;
   return (
-    <View style={{ backgroundColor: c.well, paddingHorizontal: amazen.space(3.5), borderTopLeftRadius: first ? r : 0, borderTopRightRadius: first ? r : 0, borderBottomLeftRadius: last ? r : 0, borderBottomRightRadius: last ? r : 0 }}>
+    <View
+      style={{
+        backgroundColor: c.well,
+        paddingHorizontal: amazen.space(3.5),
+        borderTopLeftRadius: first ? r : 0,
+        borderTopRightRadius: first ? r : 0,
+        borderBottomLeftRadius: last ? r : 0,
+        borderBottomRightRadius: last ? r : 0,
+      }}>
       {first ? null : <WellDivider />}
       <Pressable
         onPress={() => onPick(u.id)}
         accessibilityRole={selected !== undefined ? 'checkbox' : 'button'}
         accessibilityState={selected !== undefined ? { checked: selected } : undefined}
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          paddingVertical: amazen.space(2.75),
+          opacity: pressed ? 0.85 : 1,
+        })}
       >
         <PersonAvatar person={u} presence={u.presence ?? null} />
         <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 }}>

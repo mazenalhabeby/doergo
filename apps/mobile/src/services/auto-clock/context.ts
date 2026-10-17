@@ -73,7 +73,9 @@ export function handleAutoRegionEvent(kind: 'enter' | 'exit', spaceId: string, a
  * when there is nothing to do: the sealed store is read and nothing is opened
  * unless a visit is in progress or a step is waiting.
  */
-export function autoClockWake(opts: { checkShift?: boolean; using?: { engine: SyncEngine; records: RecordsStore | null } } = {}): Promise<void> {
+export function autoClockWake(
+  opts: { checkShift?: boolean; using?: { engine: SyncEngine; records: RecordsStore | null } } = {},
+): Promise<void> {
   return withAutoClock((deps) => reevaluate(deps, { checkShift: opts.checkShift }), {
     using: opts.using,
     worthIt: (s) =>

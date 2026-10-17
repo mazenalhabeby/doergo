@@ -111,7 +111,16 @@ export function TourOverlay({
           {/* The ring follows the target's own shape (`step.radius`). */}
           <View
             pointerEvents="none"
-            style={{ position: 'absolute', left: hx, top: hy, width: hw, height: hh, borderRadius: radius, borderWidth: 2, borderColor: c.accent }}
+            style={{
+              position: 'absolute',
+              left: hx,
+              top: hy,
+              width: hw,
+              height: hh,
+              borderRadius: radius,
+              borderWidth: 2,
+              borderColor: c.accent,
+            }}
           />
 
           {isTap && (
@@ -135,7 +144,14 @@ export function TourOverlay({
             </View>
             <View style={{ padding: amazen.space(4), gap: amazen.space(1.5) }}>
               <View style={styles.row}>
-                <AText style={{ color: c.accent, fontFamily: amazen.font.mono, fontSize: 10.5, letterSpacing: 1.4, textTransform: 'uppercase' }}>
+                <AText
+                  style={{
+                    color: c.accent,
+                    fontFamily: amazen.font.mono,
+                    fontSize: 10.5,
+                    letterSpacing: 1.4,
+                    textTransform: 'uppercase',
+                  }}>
                   {t('tours.progress', { current: position, total })}
                 </AText>
                 <Pressable onPress={onSkip} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('tours.skip')}>
@@ -206,7 +222,10 @@ function Host({ children }: { children: ReactNode }) {
 /** A rounded rectangle as an SVG sub-path — the hole in the dimming. */
 function roundedRect(x: number, y: number, w: number, h: number, r: number): string {
   const q = Math.max(0, Math.min(r, w / 2, h / 2));
-  return `M${x + q} ${y}H${x + w - q}A${q} ${q} 0 0 1 ${x + w} ${y + q}V${y + h - q}A${q} ${q} 0 0 1 ${x + w - q} ${y + h}H${x + q}A${q} ${q} 0 0 1 ${x} ${y + h - q}V${y + q}A${q} ${q} 0 0 1 ${x + q} ${y}Z`;
+  return (
+    `M${x + q} ${y}H${x + w - q}A${q} ${q} 0 0 1 ${x + w} ${y + q}V${y + h - q}A${q} ${q} 0 0 1 ` +
+    `${x + w - q} ${y + h}H${x + q}A${q} ${q} 0 0 1 ${x} ${y + h - q}V${y + q}A${q} ${q} 0 0 1 ${x + q} ${y}Z`
+  );
 }
 
 const styles = StyleSheet.create({

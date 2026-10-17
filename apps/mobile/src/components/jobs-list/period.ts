@@ -62,7 +62,11 @@ export const JOB_BANDS: readonly JobBand[] = ['doing', 'blocked', 'overdue', 'to
  *    what the READER is doing; it sits by its date (overdue, else today).
  *  - otherwise by its date, the shared `workBand` rule — upcoming reads Later.
  */
-export function bandOf(task: Pick<Task, 'status' | 'dueDate' | 'priority' | 'id' | 'title'>, facts: JobFacts, now: Date = new Date()): JobBand {
+export function bandOf(
+  task: Pick<Task, 'status' | 'dueDate' | 'priority' | 'id' | 'title'>,
+  facts: JobFacts,
+  now: Date = new Date(),
+): JobBand {
   if (facts.closed) return 'done';
   if (task.status === 'BLOCKED') return 'blocked';
   const shared = workBand(task as never, now);

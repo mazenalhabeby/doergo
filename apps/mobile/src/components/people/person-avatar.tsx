@@ -43,7 +43,15 @@ export function PersonAvatar({
       {img ? (
         <CachedImage uri={img} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.tile }} />
       ) : (
-        <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <AText style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: Math.round(size * 0.32) }}>{initials}</AText>
         </View>
       )}

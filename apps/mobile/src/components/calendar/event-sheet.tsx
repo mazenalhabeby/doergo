@@ -59,7 +59,7 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
   const when = s && e
     ? ev!.allDay
       ? s.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })
-      : `${s.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })} · ${s.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}–${e.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}`
+      : (`${s.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' })} · ` + `${s.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}–${e.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })}`)
     : '';
   const going = ev?.attendees.filter((a) => a.response === 'ACCEPTED').length ?? 0;
   const safeLink = httpsUrl(ev?.meetingUrl, false);
@@ -70,29 +70,80 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
       onClose={onClose}
       busy={busy}
       title={ev?.title ?? (gone ? t('calendar.gone', 'This is no longer in your calendar') : ' ')}
-      eyebrow={ev ? <AText variant="caption" tone="accent" style={{ fontSize: 11, letterSpacing: 0.6 }}>{t(ev.kind === 'REMINDER' ? 'calendar.reminder' : 'calendar.appointment').toUpperCase()}</AText> : undefined}
+      eyebrow={
+        ev ? (
+          <AText variant="caption" tone="accent" style={{ fontSize: 11, letterSpacing: 0.6 }}>
+            {t(ev.kind === 'REMINDER' ? 'calendar.reminder' : 'calendar.appointment').toUpperCase()}
+          </AText>
+        ) : undefined
+      }
     >
       {ev ? (
         <>
           <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
             <Row label={t('calendar.when', 'When')} value={when} />
-            {ev.meetingMode === 'IN_PERSON' && ev.placeKind === 'OFFICE' && ev.placeSpace ? <Row label={t('calendar.place.OFFICE', 'Our office')} value={[ev.placeSpace.name, ev.room].filter(Boolean).join(' · ')} /> : null}
+            {ev.meetingMode === 'IN_PERSON' && ev.placeKind === 'OFFICE' && ev.placeSpace ? (
+              <Row
+                label={t('calendar.place.OFFICE', 'Our office')}
+                value={[ev.placeSpace.name, ev.room].filter(Boolean).join(' · ')}
+              />
+            ) : null}
             {ev.location && ev.meetingMode !== 'PHONE' ? <Row label={t('calendar.where', 'Where')} value={ev.location} /> : null}
-            {ev.meetingMode === 'ONLINE' && meetingProvider(ev.meetingUrl) ? <Row label={t('calendar.mode.ONLINE', 'Online')} value={MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]} /> : null}
-            {ev.meetingMode === 'PHONE' && ev.phone ? <Row label={t('calendar.mode.PHONE', 'Phone')} value={`${ev.phone} · ${t(`calendar.call.${ev.callDirection ?? 'OUTGOING'}`)}`} /> : null}
+            {ev.meetingMode === 'ONLINE' && meetingProvider(ev.meetingUrl) ? (
+              <Row
+                label={t('calendar.mode.ONLINE', 'Online')}
+                value={MEETING_PROVIDER_NAMES[meetingProvider(ev.meetingUrl)!]}
+              />
+            ) : null}
+            {ev.meetingMode === 'PHONE' && ev.phone ? (
+              <Row
+                label={t('calendar.mode.PHONE', 'Phone')}
+                value={`${ev.phone} · ${t(`calendar.call.${ev.callDirection ?? 'OUTGOING'}`)}`}
+              />
+            ) : null}
             {ev.customer ? <Row label={t('calendar.client', 'Client')} value={ev.customer.name} /> : null}
-            {ev.reminders.length ? <Row label={t('calendar.remind', 'Remind')} value={ev.reminders.map((m) => offsetText(m, t)).join(', ')} /> : null}
-            {ev.attendees.length > 1 ? <Row label={t('calendar.people', 'People')} value={t('calendar.going', { count: going, total: ev.attendees.length })} /> : null}
+            {ev.reminders.length ? (
+              <Row
+                label={t('calendar.remind', 'Remind')}
+                value={ev.reminders.map((m) => offsetText(m, t)).join(', ')}
+              />
+            ) : null}
+            {ev.attendees.length > 1 ? (
+              <Row
+                label={t('calendar.people', 'People')}
+                value={t('calendar.going', { count: going, total: ev.attendees.length })}
+              />
+            ) : null}
           </Sunken>
 
           {ev.attendees.length > 1 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {ev.attendees.map((a) => {
-                const tone = a.response === 'ACCEPTED' ? c.accent : a.response === 'DECLINED' ? c.critical : a.response === 'MAYBE' ? c.warn : c.inkMuted;
+                const tone =
+                  a.response === 'ACCEPTED'
+                    ? c.accent
+                    : a.response === 'DECLINED'
+                      ? c.critical
+                      : a.response === 'MAYBE'
+                        ? c.warn
+                        : c.inkMuted;
                 return (
-                  <View key={a.userId} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: c.tile }}>
+                  <View
+                    key={a.userId}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                      borderRadius: 999,
+                      paddingHorizontal: 10,
+                      paddingVertical: 5,
+                      backgroundColor: c.tile,
+                    }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: tone }} />
-                    <AText variant="caption" tone="ink" style={{ fontSize: 12 }}>{a.firstName}{a.isOrganizer ? ` · ${t('calendar.organizer', 'organizer')}` : ''}</AText>
+                    <AText variant="caption" tone="ink" style={{ fontSize: 12 }}>
+                      {a.firstName}
+                      {a.isOrganizer ? ` · ${t('calendar.organizer', 'organizer')}` : ''}
+                    </AText>
                   </View>
                 );
               })}
@@ -102,9 +153,19 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
           {ev.description ? <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 20 }}>{ev.description}</AText> : null}
 
           {safeLink ? <PrimaryButton label={t('calendar.join', 'Join')} onPress={() => void openSafeUrl(safeLink)} /> : null}
-          {ev.meetingMode === 'PHONE' && telUrl(ev.phone) ? <PrimaryButton label={t('calendar.callNow', 'Call')} onPress={() => void openSafeUrl(telUrl(ev.phone))} /> : null}
+          {ev.meetingMode === 'PHONE' && telUrl(ev.phone) ? (
+            <PrimaryButton label={t('calendar.callNow', 'Call')} onPress={() => void openSafeUrl(telUrl(ev.phone))} />
+          ) : null}
           {ev.meetingMode === 'IN_PERSON' && ev.location ? (
-            <QuietButton label={t('calendar.directions', 'Directions')} tone="accent" onPress={() => void openSafeUrl(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location!)}`)} />
+            <QuietButton
+              label={t('calendar.directions', 'Directions')}
+              tone="accent"
+              onPress={() =>
+                void openSafeUrl(
+                  `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.location!)}`,
+                )
+              }
+            />
           ) : null}
 
           {!ev.canEdit ? (
@@ -120,7 +181,16 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
                       onPress={() => void act(() => calendarApi.respond(ev.id, v), t('calendar.answered', 'Answer sent'))}
                       accessibilityRole="button"
                       accessibilityState={{ selected: on }}
-                      style={({ pressed }) => ({ flex: 1, alignItems: 'center', paddingVertical: amazen.space(2.75), borderRadius: 16, backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1, borderColor: on ? c.accent : 'transparent', opacity: pressed ? 0.8 : 1 })}
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        alignItems: 'center',
+                        paddingVertical: amazen.space(2.75),
+                        borderRadius: 16,
+                        backgroundColor: on ? c.accentTint : c.tile,
+                        borderWidth: 1,
+                        borderColor: on ? c.accent : 'transparent',
+                        opacity: pressed ? 0.8 : 1,
+                      })}
                     >
                       <AText variant="caption" style={{ fontSize: 13, color: on ? c.accent : c.inkStrong }}>{t(key)}</AText>
                     </Pressable>
@@ -133,13 +203,36 @@ export function EventSheet({ eventId, onClose, onChanged }: { eventId: string | 
           <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
             {ev.reminders.length > 0 ? (
               <>
-                <View style={{ flex: 1 }}><QuietButton label={t('calendar.snooze', '+10 min')} onPress={() => void act(() => calendarApi.snooze(ev.id, 10), t('calendar.snoozed', 'Reminding you again in 10 minutes'))} disabled={busy} /></View>
-                <View style={{ flex: 1 }}><QuietButton label={t('calendar.done', 'Done')} tone="accent" onPress={() => void act(() => calendarApi.done(ev.id), undefined, true)} disabled={busy} /></View>
+                <View style={{ flex: 1 }}>
+                  <QuietButton
+                    label={t('calendar.snooze', '+10 min')}
+                    onPress={() =>
+                      void act(
+                        () => calendarApi.snooze(ev.id, 10),
+                        t('calendar.snoozed', 'Reminding you again in 10 minutes'),
+                      )
+                    }
+                    disabled={busy}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <QuietButton
+                    label={t('calendar.done', 'Done')}
+                    tone="accent"
+                    onPress={() => void act(() => calendarApi.done(ev.id), undefined, true)}
+                    disabled={busy}
+                  />
+                </View>
               </>
             ) : null}
           </View>
           {ev.canEdit ? (
-            <QuietButton label={t('calendar.cancelEvent', 'Cancel it')} tone="critical" onPress={() => void act(() => calendarApi.cancel(ev.id), t('calendar.canceledToast', 'Canceled'), true)} disabled={busy} />
+            <QuietButton
+              label={t('calendar.cancelEvent', 'Cancel it')}
+              tone="critical"
+              onPress={() => void act(() => calendarApi.cancel(ev.id), t('calendar.canceledToast', 'Canceled'), true)}
+              disabled={busy}
+            />
           ) : null}
         </>
       ) : !gone ? (

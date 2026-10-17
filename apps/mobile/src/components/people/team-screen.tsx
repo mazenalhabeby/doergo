@@ -100,7 +100,18 @@ export function TeamScreen() {
           }
           ListEmptyComponent={empty}
           contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe }, wide]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                await load();
+                setRefreshing(false);
+              }}
+              tintColor={c.accent}
+              colors={[c.accent]}
+            />
+          }
           renderSectionHeader={({ section }) => (
             <SectionLabel
               style={{

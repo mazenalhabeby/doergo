@@ -18,7 +18,10 @@ export function AppQueryProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const client = useMemo(
-    () => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, gcTime: 5 * 60_000, retry: 1, refetchOnWindowFocus: false } } }),
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { staleTime: 30_000, gcTime: 5 * 60_000, retry: 1, refetchOnWindowFocus: false } },
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [userId],
   );

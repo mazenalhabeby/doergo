@@ -42,7 +42,12 @@ export function FiltersSheet({
         {[{ spaceId: '', name: t('calendar.myCalendar', 'My calendar') }, ...places].map((p) => {
           const on = (spaceId ?? '') === p.spaceId;
           return (
-            <Pressable key={p.spaceId || 'me'} onPress={() => onSpace(p.spaceId || null)} accessibilityRole="radio" accessibilityState={{ selected: on }} style={row(on)}>
+            <Pressable
+              key={p.spaceId || 'me'}
+              onPress={() => onSpace(p.spaceId || null)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on }}
+              style={row(on)}>
               <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14 }}>{p.name}</AText>
               {on ? <AText variant="body" tone="accent">✓</AText> : null}
             </Pressable>
@@ -59,7 +64,16 @@ export function FiltersSheet({
               onPress={() => onLayers(on ? layers.filter((x) => x !== l) : [...layers, l])}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: on }}
-              style={{ width: '48%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: amazen.space(2.75), borderRadius: 14, backgroundColor: c.well, opacity: on ? 1 : 0.55 }}
+              style={{
+                width: '48%',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                padding: amazen.space(2.75),
+                borderRadius: 14,
+                backgroundColor: c.well,
+                opacity: on ? 1 : 0.55,
+              }}
             >
               <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: LAYER_COLOR[l] }} />
               <AText variant="caption" tone="strong" style={{ flex: 1, fontSize: 13 }} numberOfLines={1}>{t(`calendar.layer.${l}`)}</AText>
@@ -69,7 +83,14 @@ export function FiltersSheet({
         })}
       </View>
       {showSchedule ? (
-        <QuietButton label={t('calendar.teamSchedule', 'Team — who is off, plan cover')} tone="accent" onPress={() => { onClose(); router.push('/(app)/manage/time-off-requests' as Href); }} />
+        <QuietButton
+          label={t('calendar.teamSchedule', 'Team — who is off, plan cover')}
+          tone="accent"
+          onPress={() => {
+            onClose();
+            router.push('/(app)/manage/time-off-requests' as Href);
+          }}
+        />
       ) : null}
     </JobSheet>
   );
@@ -79,7 +100,19 @@ export function FiltersSheet({
  * A leave on the calendar. Somebody's own: where it stands. A colleague's PENDING request, for
  * somebody who decides leave: the way to Approvals, where it is decided — the one place.
  */
-export function LeaveSheet({ item, mine, canDecide, onClose, onChanged }: { item: CalendarItem | null; mine: boolean; canDecide: boolean; onClose: () => void; onChanged: () => void }) {
+export function LeaveSheet({
+  item,
+  mine,
+  canDecide,
+  onClose,
+  onChanged,
+}: {
+  item: CalendarItem | null;
+  mine: boolean;
+  canDecide: boolean;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
   const { t, i18n } = useTranslation();
   if (!item) return null;
   const s = new Date(`${item.start}T12:00:00`), e = new Date(`${item.end}T12:00:00`);
@@ -89,12 +122,18 @@ export function LeaveSheet({ item, mine, canDecide, onClose, onChanged }: { item
     <JobSheet
       visible={!!item}
       onClose={onClose}
-      eyebrow={`${t(`calendar.leaveType.${item.note ?? 'VACATION'}`, item.note ?? '')}${item.status === 'PENDING' ? ` · ${t('calendar.requested', 'requested')}` : ''}`}
+      eyebrow={(`${t(`calendar.leaveType.${item.note ?? 'VACATION'}`, item.note ?? '')}` + `${item.status === 'PENDING' ? ` · ${t('calendar.requested', 'requested')}` : ''}`)}
       title={item.title}
     >
       <AText variant="body" tone="ink">{item.start === item.end ? fmt(s) : `${fmt(s)} – ${fmt(e)}`}</AText>
       {decide ? (
-        <PrimaryButton label={t('approvals.decideInApprovals')} onPress={() => { onClose(); router.push('/(app)/approvals?kind=request' as Href); }} />
+        <PrimaryButton
+          label={t('approvals.decideInApprovals')}
+          onPress={() => {
+            onClose();
+            router.push('/(app)/approvals?kind=request' as Href);
+          }}
+        />
       ) : null}
       <QuietButton
         label={mine ? t('calendar.openTimeOff', 'My time off') : t('calendar.openSchedule', 'Open in Schedule')}

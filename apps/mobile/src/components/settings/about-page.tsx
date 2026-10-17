@@ -56,25 +56,53 @@ export function AboutPage() {
   return (
     <SettingsPage title={t('profile.about.title', 'About')}>
       <View style={{ alignItems: 'center', gap: amazen.space(1.5), paddingVertical: amazen.space(2) }}>
-        <View style={{ width: 76, height: 76, borderRadius: 22, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: 76,
+            height: 76,
+            borderRadius: 22,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <Ionicons name="construct" size={34} color={c.accent} />
         </View>
         <AText variant="h2" tone="strong" style={{ fontSize: 22 }}>{t('common.appName', 'HBCField')}</AText>
-        <AText style={{ color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase' }}>{t('profile.about.tagline')}</AText>
+        <AText
+          style={{
+            color: c.inkOnGlass,
+            fontFamily: amazen.font.mono,
+            fontSize: 11,
+            letterSpacing: 1.4,
+            textTransform: 'uppercase',
+          }}
+        >
+          {t('profile.about.tagline')}
+        </AText>
       </View>
 
       {/* The answer first: up to date, or not — in words. */}
       <StateCard
         tone={behind ? 'warn' : 'accent'}
         mark={behind ? '↑' : undefined}
-        title={behind ? t('settings.about.ready', { version: status!.latest, defaultValue: 'Version {{version}} is ready' }) : t('settings.about.upToDate', 'Up to date')}
+        title={
+          behind
+            ? t('settings.about.ready', { version: status!.latest, defaultValue: 'Version {{version}} is ready' })
+            : t('settings.about.upToDate', 'Up to date')
+        }
         sub={behind
           ? t('settings.about.youHave', { version, defaultValue: 'You have {{version}}. The store has the new one.' })
           : updateAt
-            ? t('settings.about.received', { version, date: updateAt, defaultValue: 'Version {{version}} · latest improvements received {{date}}' })
+            ? t('settings.about.received', {
+                version,
+                date: updateAt,
+                defaultValue: 'Version {{version}} · latest improvements received {{date}}',
+              })
             : t('settings.about.versionOnly', { version, defaultValue: 'Version {{version}}' })}
       />
-      {behind && status?.downloadUrl ? <PrimaryButton label={t('settings.bio.update', 'Update')} onPress={() => void openUpdate(status.downloadUrl)} /> : null}
+      {behind && status?.downloadUrl ? (
+        <PrimaryButton label={t('settings.bio.update', 'Update')} onPress={() => void openUpdate(status.downloadUrl)} />
+      ) : null}
 
       <Well style={{ padding: amazen.space(3.5) }}>
         <AText variant="body" tone="ink" style={{ fontSize: 13.5, lineHeight: 20 }}>{t('profile.about.description')}</AText>
@@ -86,26 +114,62 @@ export function AboutPage() {
           [t('profile.menu.privacyPolicy', 'Privacy policy'), 'https://hbcfield.com/privacy'],
         ].map(([label, url], i) => (
           <Pressable key={url} onPress={() => void Linking.openURL(url).catch(() => undefined)} accessibilityRole="link"
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1 })}>
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: amazen.space(3),
+              borderTopWidth: i === 0 ? 0 : 1,
+              borderTopColor: c.lineWell,
+              opacity: pressed ? 0.75 : 1,
+            })}>
             <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14.5 }}>{label}</AText>
             <Ionicons name="open-outline" size={17} color={c.inkMuted} />
           </Pressable>
         ))}
       </Well>
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.about.forSupport', 'For support')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
+        {t('settings.about.forSupport', 'For support')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {facts.map(([k, v], i) => (
-          <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: amazen.space(2.5), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+          <View
+            key={k}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              gap: 12,
+              paddingVertical: amazen.space(2.5),
+              borderTopWidth: i === 0 ? 0 : 1,
+              borderTopColor: c.lineWell,
+            }}>
             <AText variant="caption" tone="muted">{k}</AText>
-            <AText selectable numberOfLines={1} style={{ flexShrink: 1, textAlign: 'right', fontFamily: amazen.font.mono, fontSize: 12.5, color: c.ink }}>{v}</AText>
+            <AText
+              selectable
+              numberOfLines={1}
+              style={{ flexShrink: 1, textAlign: 'right', fontFamily: amazen.font.mono, fontSize: 12.5, color: c.ink }}
+            >
+              {v}
+            </AText>
           </View>
         ))}
       </Well>
-      <Pressable onPress={copy} accessibilityRole="button" style={({ pressed }) => ({ alignSelf: 'center', borderRadius: amazen.radius.full, backgroundColor: c.tile, paddingHorizontal: 18, paddingVertical: 10, opacity: pressed ? 0.8 : 1 })}>
+      <Pressable
+        onPress={copy}
+        accessibilityRole="button"
+        style={({ pressed }) => ({
+          alignSelf: 'center',
+          borderRadius: amazen.radius.full,
+          backgroundColor: c.tile,
+          paddingHorizontal: 18,
+          paddingVertical: 10,
+          opacity: pressed ? 0.8 : 1,
+        })}>
         <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>{t('settings.about.copy', 'Copy for support')}</AText>
       </Pressable>
-      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('common.copyrightYear', { year: new Date().getFullYear() })}</AText>
+      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+        {t('common.copyrightYear', { year: new Date().getFullYear() })}
+      </AText>
     </SettingsPage>
   );
 }

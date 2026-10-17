@@ -65,7 +65,11 @@ export function moveKind(to: string, resolved: { form: StepForm | null; source: 
 }
 
 /** Does any step of this workflow ask something? Then the job may have reports to show. */
-export function workflowAsks(workflow: WorkflowWithForms | null | undefined, steps: readonly FlowStatus[], workflowName?: string | null): boolean {
+export function workflowAsks(
+  workflow: WorkflowWithForms | null | undefined,
+  steps: readonly FlowStatus[],
+  workflowName?: string | null,
+): boolean {
   return steps.some((s) => !!formForMove(workflow, steps, s.key, workflowName).form);
 }
 

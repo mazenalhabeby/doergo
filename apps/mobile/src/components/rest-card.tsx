@@ -54,7 +54,11 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
     try {
       const result = (await fn()) as ActionOutcome | undefined;
       if (result && typeof result === 'object' && 'kind' in result && result.kind === 'refused') {
-        toast.error((result.code && t(`offline.errors.${result.code}`, { defaultValue: '' })) || result.message || t('common.error', 'Something went wrong'));
+        toast.error(
+          (result.code && t(`offline.errors.${result.code}`, { defaultValue: '' })) ||
+            result.message ||
+            t('common.error', 'Something went wrong'),
+        );
         return;
       }
       onChanged();
@@ -111,7 +115,13 @@ export function RestCard({ entryId, plan, activeBreak, onChanged }: RestCardProp
 
         <TouchableOpacity
           style={[styles.primary, { backgroundColor: '#059669' }]}
-          onPress={() => run('end', () => shiftActions.endRest({ entryId, breakId: activeBreak.id }), t('attendance.rest.ended', 'Back to work'))}
+          onPress={() =>
+            run(
+              'end',
+              () => shiftActions.endRest({ entryId, breakId: activeBreak.id }),
+              t('attendance.rest.ended', 'Back to work'),
+            )
+          }
           disabled={busy !== null}
           activeOpacity={0.8}
         >

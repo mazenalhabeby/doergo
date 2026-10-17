@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
+import { readSource } from '../../test-utils/read-source';
 
 /**
  * A bottom sheet must not draw its own surface.
@@ -54,7 +55,7 @@ describe('bottom sheets use the shared surface', () => {
 
   it('every sheet renders a SheetPanel, or is a named exemption', () => {
     const bad = files.filter(
-      (f) => !HAND_ROLLED[f] && !fs.readFileSync(path.join(ROOT, f), 'utf8').includes('<SheetPanel'),
+      (f) => !HAND_ROLLED[f] && !readSource(path.join(ROOT, f), 'utf8').includes('<SheetPanel'),
     );
     expect(bad).toEqual([]);
   });

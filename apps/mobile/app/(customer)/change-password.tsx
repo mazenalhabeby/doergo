@@ -31,7 +31,10 @@ export default function ChangePassword() {
       Alert.alert(t('portal.done', 'Done'), t('portal.passwordChanged', 'Your password has been changed.'));
       router.back();
     } catch (e) {
-      Alert.alert(t('common.error', 'Error'), e instanceof Error ? e.message : t('portal.passwordFailed', 'Could not change your password.'));
+      Alert.alert(
+        t('common.error', 'Error'),
+        e instanceof Error ? e.message : t('portal.passwordFailed', 'Could not change your password.'),
+      );
     } finally {
       setSaving(false);
     }
@@ -55,7 +58,21 @@ export default function ChangePassword() {
   );
 }
 
-function PwField({ label, value, onChange, show, colors, error }: { label: string; value: string; onChange: (v: string) => void; show: boolean; colors: any; error?: string }) {
+function PwField({
+  label,
+  value,
+  onChange,
+  show,
+  colors,
+  error,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  colors: any;
+  error?: string;
+}) {
   return (
     <PortalField label={label}>
       <TextInput

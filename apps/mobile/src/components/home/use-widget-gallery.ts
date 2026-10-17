@@ -55,7 +55,12 @@ export function useWidgetGallery({
   */
   const [before, setBefore] = useState<Set<string>>(onHome);
   const [addedNow, setAddedNow] = useState<string[]>([]);
-  useEffect(() => { if (visible) { setBefore(new Set(onHome)); setAddedNow([]); } }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (visible) {
+      setBefore(new Set(onHome));
+      setAddedNow([]);
+    }
+  }, [visible]); // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => onClose(addedNow);
   const toggle = (key: string) => {
     selection();

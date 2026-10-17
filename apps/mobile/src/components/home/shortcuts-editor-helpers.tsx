@@ -9,7 +9,24 @@ export function Badge({ n, ring, style }: { n: number; ring: string; style?: Sty
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={[{ position: 'absolute', top: 6, right: 6, minWidth: 19, height: 19, paddingHorizontal: 4, borderRadius: 10, backgroundColor: c.warn, borderWidth: 2, borderColor: ring, alignItems: 'center', justifyContent: 'center' }, style]}>
+    <View
+      style={[
+        {
+          position: 'absolute',
+          top: 6,
+          right: 6,
+          minWidth: 19,
+          height: 19,
+          paddingHorizontal: 4,
+          borderRadius: 10,
+          backgroundColor: c.warn,
+          borderWidth: 2,
+          borderColor: ring,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        style,
+      ]}>
       <AText variant="caption" numeric style={{ fontSize: 10, lineHeight: 12, color: c.warnInk }}>{n > 9 ? '9+' : String(n)}</AText>
     </View>
   );

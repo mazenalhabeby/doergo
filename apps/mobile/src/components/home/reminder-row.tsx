@@ -90,15 +90,48 @@ export function ReminderRow({
           disabled={state !== 'open'}
           accessibilityRole="button"
           accessibilityLabel={`${title}. ${reason}`}
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(2.5), opacity: pressed ? 0.75 : 1 })}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: amazen.space(2.5),
+            paddingVertical: amazen.space(2.5),
+            opacity: pressed ? 0.75 : 1,
+          })}
         >
           {/* A company is a rounded square, a person a circle — the rule `ClientAvatar` uses — with the kind as a badge. */}
           <View style={{ width: 36, height: 36 }}>
-            <View style={{ width: 36, height: 36, borderRadius: company ? 11 : 18, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
-              <AText variant="caption" tone="ink" style={{ fontSize: 11.5, fontFamily: amazen.font.sansMedium }}>{personInitials(r.name, '·')}</AText>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: company ? 11 : 18,
+                backgroundColor: c.tile,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <AText variant="caption" tone="ink" style={{ fontSize: 11.5, fontFamily: amazen.font.sansMedium }}>
+                {personInitials(r.name, '·')}
+              </AText>
             </View>
-            <View style={{ position: 'absolute', right: -3, bottom: -3, width: 16, height: 16, borderRadius: 5, backgroundColor: badge, borderWidth: 2, borderColor: c.well, alignItems: 'center', justifyContent: 'center' }}>
-              {company ? <ClientCompanyGlyph size={10} color={c.inkMuted} contrast={badge} /> : <ClientPersonGlyph size={10} color={c.inkMuted} />}
+            <View
+              style={{
+                position: 'absolute',
+                right: -3,
+                bottom: -3,
+                width: 16,
+                height: 16,
+                borderRadius: 5,
+                backgroundColor: badge,
+                borderWidth: 2,
+                borderColor: c.well,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              {company ? (
+                <ClientCompanyGlyph size={10} color={c.inkMuted} contrast={badge} />
+              ) : (
+                <ClientPersonGlyph size={10} color={c.inkMuted} />
+              )}
             </View>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -131,16 +164,42 @@ export function ReminderRow({
       {/* The undo line sits over the row it replaced — same height, so nothing below moves. */}
       <Reanimated.View
         pointerEvents={state === 'undo' ? 'auto' : 'none'}
-        style={[{ position: 'absolute', left: 46, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }, undoStyle]}
+        style={[
+          {
+            position: 'absolute',
+            left: 46,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: amazen.space(2),
+          },
+          undoStyle,
+        ]}
       >
         <AText variant="body" numberOfLines={1} style={{ flex: 1, fontSize: 13.5 }}>
-          <AText variant="body" tone="strong" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>{t('clientsCard.done', { defaultValue: 'Done.' })}</AText>
+          <AText variant="body" tone="strong" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>
+            {t('clientsCard.done', { defaultValue: 'Done.' })}
+          </AText>
           <AText variant="body" tone="ink" style={{ fontSize: 13.5 }}>{' '}{r.name}</AText>
         </AText>
         <Pressable onPress={onUndo} hitSlop={10} accessibilityRole="button" style={{ paddingVertical: 6, paddingHorizontal: 4 }}>
-          <AText variant="body" tone="accent" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>{t('clientsCard.undo', { defaultValue: 'Undo' })}</AText>
+          <AText variant="body" tone="accent" style={{ fontSize: 13.5, fontFamily: amazen.font.sansMedium }}>
+            {t('clientsCard.undo', { defaultValue: 'Undo' })}
+          </AText>
         </Pressable>
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 6, height: 2, borderRadius: 1, backgroundColor: c.tile, overflow: 'hidden' }}>
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 6,
+            height: 2,
+            borderRadius: 1,
+            backgroundColor: c.tile,
+            overflow: 'hidden',
+          }}>
           <Reanimated.View style={[{ height: 2, backgroundColor: c.accent }, barStyle]} />
         </View>
       </Reanimated.View>

@@ -24,7 +24,13 @@ export function WellDoor({
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(1), opacity: pressed ? 0.75 : 1 })}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          paddingVertical: amazen.space(1),
+          opacity: pressed ? 0.75 : 1,
+        })}
       >
         {lead}
         <View style={{ flex: 1, minWidth: 0 }}>

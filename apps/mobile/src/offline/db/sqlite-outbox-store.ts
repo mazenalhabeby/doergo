@@ -7,7 +7,7 @@ interface Row {
   next_attempt_at: number | null; last_error: string | null; response: string | null; created_at: number; updated_at: number;
 }
 
-const COLUMNS = 'id, user_id, organization_id, op, lane, entity_id, depends_on, payload, evidence, state, attempts, next_attempt_at, last_error, response, created_at, updated_at';
+const COLUMNS = ('id, user_id, organization_id, op, lane, entity_id, depends_on, payload, ' + 'evidence, state, attempts, next_attempt_at, last_error, response, ' + 'created_at, updated_at');
 
 function toRow(op: OutboxOp): (string | number | null)[] {
   return [

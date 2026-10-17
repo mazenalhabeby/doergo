@@ -5,6 +5,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 const LOCALES = ['en', 'de', 'es', 'fr', 'it'] as const;
 const dir = path.join(__dirname, '../../i18n/locales');
@@ -14,7 +15,7 @@ const all = Object.fromEntries(LOCALES.map((l) => [l, load(l)]));
 /** Every `t('…')` key the card and its drawing ask for. */
 function keysUsed(): string[] {
   const files = ['../../components/home/route-card.tsx', '../../components/home/route-sketch.tsx'];
-  const src = files.map((f) => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
+  const src = files.map((f) => readSource(path.join(__dirname, f), 'utf8')).join('\n');
   return [...new Set([...src.matchAll(/\bt\('([A-Za-z0-9_.]+)'/g)].map((m) => m[1]!))];
 }
 const lookup = (obj: any, key: string) => key.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);

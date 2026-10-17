@@ -34,7 +34,12 @@ export function useRecordScreen({ id, linkedTab }: Pick<{ id: string; linkedTab?
   useEffect(() => {
     if (!record?.spaceId) { setSpaceName(null); return; }
     let live = true;
-    locationsApi.list().then((rows) => { if (live) setSpaceName(rows.find((x) => x.id === record.spaceId)?.name ?? null); }).catch(() => undefined);
+    locationsApi
+      .list()
+      .then((rows) => {
+        if (live) setSpaceName(rows.find((x) => x.id === record.spaceId)?.name ?? null);
+      })
+      .catch(() => undefined);
     return () => { live = false; };
   }, [record?.spaceId]);
 
@@ -56,7 +61,12 @@ export function useRecordScreen({ id, linkedTab }: Pick<{ id: string; linkedTab?
     const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
     if (dayKey(iso) === dayKey(today.toISOString())) return t('customers.record.today', 'Today');
     if (dayKey(iso) === dayKey(yesterday.toISOString())) return t('customers.record.yesterday', 'Yesterday');
-    return d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' });
+    return d.toLocaleDateString(i18n.language, {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric',
+    });
   }, [t, i18n.language]);
 
   const feedItems = useMemo<FeedItem[]>(() => {
@@ -100,7 +110,9 @@ export function useRecordScreen({ id, linkedTab }: Pick<{ id: string; linkedTab?
   const renderReminder = useCallback(({ item, index }: ListRenderItemInfo<PendingActivity>) => (
     <>
       {m.showDone && index === m.openReminders.length && index > 0 ? (
-        <SectionLabel style={{ paddingTop: amazen.space(2), paddingBottom: amazen.space(2) }}>{t('customers.record.reminders.done')}</SectionLabel>
+        <SectionLabel style={{ paddingTop: amazen.space(2), paddingBottom: amazen.space(2) }}>
+          {t('customers.record.reminders.done')}
+        </SectionLabel>
       ) : null}
       {renderActivity(item, index < m.reminderRows.length - 1 && index !== m.openReminders.length - 1)}
     </>

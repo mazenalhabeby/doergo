@@ -66,7 +66,11 @@ export function StripBox({
           <AText variant="h3" numeric style={{ color: ink, fontSize: 19, lineHeight: 24 }}>{count ?? ''}</AText>
         </GlyphTile>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19, fontFamily: amazen.font.sansMedium }}>
+          <AText
+            variant="body"
+            tone="strong"
+            numberOfLines={1}
+            style={{ fontSize: 14, lineHeight: 19, fontFamily: amazen.font.sansMedium }}>
             {title}
           </AText>
           <AText variant="caption" numberOfLines={2} style={{ color: tone === 'calm' ? c.inkMuted : ink, marginTop: 1 }}>

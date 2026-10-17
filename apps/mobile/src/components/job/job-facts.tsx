@@ -18,11 +18,24 @@ export function JobFacts({ facts }: { facts: Fact[] }) {
   const shown = facts.filter((f) => f.value);
   if (!shown.length) return null;
   return (
-    <View style={{ backgroundColor: c.tile, borderRadius: 18, paddingVertical: amazen.space(3), paddingHorizontal: amazen.space(3.5), gap: amazen.space(2) }}>
+    <View
+      style={{
+        backgroundColor: c.tile,
+        borderRadius: 18,
+        paddingVertical: amazen.space(3),
+        paddingHorizontal: amazen.space(3.5),
+        gap: amazen.space(2),
+      }}>
       {shown.map((f) => (
         <View key={f.label} style={{ flexDirection: 'row', gap: amazen.space(3) }}>
           <AText variant="caption" tone="muted" numberOfLines={1} style={{ width: 84, fontSize: 12.5, lineHeight: 18 }}>{f.label}</AText>
-          <AText variant="caption" numberOfLines={3} style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: f.tone === 'warn' ? c.warn : c.inkStrong }}>{f.value}</AText>
+          <AText
+            variant="caption"
+            numberOfLines={3}
+            style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: f.tone === 'warn' ? c.warn : c.inkStrong }}
+          >
+            {f.value}
+          </AText>
         </View>
       ))}
     </View>

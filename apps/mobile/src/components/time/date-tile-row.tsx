@@ -31,11 +31,26 @@ export function DateTileRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.5), opacity: pressed ? 0.8 : 1 })}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(2.5),
+        opacity: pressed ? 0.8 : 1,
+      })}
     >
       <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center' }}>
         <AText variant="body" tone="strong" style={{ fontSize: 17, lineHeight: 20 }}>{tileTop}</AText>
-        <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9, lineHeight: 12, letterSpacing: 1, color: c.inkMuted, textTransform: 'uppercase' }}>
+        <AText
+          numberOfLines={1}
+          style={{
+            fontFamily: amazen.font.mono,
+            fontSize: 9,
+            lineHeight: 12,
+            letterSpacing: 1,
+            color: c.inkMuted,
+            textTransform: 'uppercase',
+          }}>
           {tileBottom}
         </AText>
       </View>

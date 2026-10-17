@@ -78,7 +78,11 @@ export default function ReportWizard() {
       // Written somewhere without signal, it waits on the phone and is sent when it can be.
       const outcome = await requestCreate.run({ lane: `portal:${user?.id ?? 'me'}`, body: input }, () => portalApi.submit(input));
       if (outcome.kind === 'refused') {
-        throw new Error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('portal.submitFailed', 'Please try again in a moment.'));
+        throw new Error(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('portal.submitFailed', 'Please try again in a moment.'),
+        );
       }
       if (outcome.kind === 'queued') {
         Alert.alert(t('offline.savedForLater'), t('portal.sentWhenOnline', 'It will be sent as soon as you are back online.'));
@@ -200,8 +204,18 @@ export default function ReportWizard() {
         {step === 'access' && (
           <>
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.access', 'Can we enter if you’re out?')}</Text>
-            <Option selected={access === true} colors={colors} onPress={() => setAccess(true)} label={t('portal.accessYes', 'Yes, entry permitted')} />
-            <Option selected={access === false} colors={colors} onPress={() => setAccess(false)} label={t('portal.accessNo', 'No, I’ll be there')} />
+            <Option
+              selected={access === true}
+              colors={colors}
+              onPress={() => setAccess(true)}
+              label={t('portal.accessYes', 'Yes, entry permitted')}
+            />
+            <Option
+              selected={access === false}
+              colors={colors}
+              onPress={() => setAccess(false)}
+              label={t('portal.accessNo', 'No, I’ll be there')}
+            />
           </>
         )}
 
@@ -231,7 +245,13 @@ export default function ReportWizard() {
           <>
             <Text style={[styles.q, { color: colors.textPrimary }]}>{t('portal.contactHow', 'How should we reach you?')}</Text>
             {(['PUSH', 'EMAIL', 'PHONE'] as const).map((cp) => (
-              <Option key={cp} selected={contact === cp} colors={colors} onPress={() => setContact(cp)} label={t(`portal.contactPref.${cp}`, cp)} />
+              <Option
+                key={cp}
+                selected={contact === cp}
+                colors={colors}
+                onPress={() => setContact(cp)}
+                label={t(`portal.contactPref.${cp}`, cp)}
+              />
             ))}
           </>
         )}

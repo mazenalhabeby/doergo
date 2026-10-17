@@ -47,17 +47,43 @@ function ContactRowBase({ link, side, onOpen, onMore, labels, waiting, busy, fir
   const person = side === 'person' ? link.person : null;
   const primary = link.isPrimary === true;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: busy ? 0.5 : 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(2.75),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: c.lineWell,
+        opacity: busy ? 0.5 : 1,
+      }}>
       <Pressable
         onPress={() => onOpen(end.id)}
         disabled={busy || !!waiting}
         accessibilityRole={waiting ? 'text' : 'button'}
         accessibilityLabel={waiting ? `${end.name} — ${waiting}` : end.name}
-        style={({ pressed }) => ({ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), opacity: pressed ? 0.75 : 1 })}
+        style={({ pressed }) => ({
+          flex: 1,
+          minWidth: 0,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          opacity: pressed ? 0.75 : 1,
+        })}
       >
         {/* A person is round and a company square — the rule `ClientAvatar` keeps everywhere. */}
-        <View style={{ width: 38, height: 38, borderRadius: side === 'company' ? 12 : 19, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 12.5 }}>{personInitials(end.name, '·')}</AText>
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: side === 'company' ? 12 : 19,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <AText variant="caption" style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 12.5 }}>
+            {personInitials(end.name, '·')}
+          </AText>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -69,8 +95,22 @@ function ContactRowBase({ link, side, onOpen, onMore, labels, waiting, busy, fir
           {!waiting && link.role ? <AText variant="caption" tone="muted" numberOfLines={1}>{link.role}</AText> : null}
         </View>
       </Pressable>
-      {telUrl(person?.phone) ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void openSafeUrl(telUrl(person?.phone))} /> : null}
-      {mailtoUrl(person?.email) ? <RoundButton Glyph={EmailGlyph} label={labels.email} size={34} onPress={() => void openSafeUrl(mailtoUrl(person?.email))} /> : null}
+      {telUrl(person?.phone) ? (
+        <RoundButton
+          Glyph={CallGlyph}
+          label={labels.call}
+          size={34}
+          onPress={() => void openSafeUrl(telUrl(person?.phone))}
+        />
+      ) : null}
+      {mailtoUrl(person?.email) ? (
+        <RoundButton
+          Glyph={EmailGlyph}
+          label={labels.email}
+          size={34}
+          onPress={() => void openSafeUrl(mailtoUrl(person?.email))}
+        />
+      ) : null}
       {onMore ? (
         <Pressable onPress={() => onMore(link)} disabled={busy} hitSlop={10} accessibilityRole="button" accessibilityLabel={`${labels.more}: ${end.name}`}
           style={({ pressed }) => ({ width: 30, height: 34, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>

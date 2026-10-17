@@ -30,7 +30,15 @@ export function GlyphTile({
 }) {
   const fill = over(tint, behind);
   return (
-    <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: fill, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        backgroundColor: fill,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
       {Glyph ? <Glyph size={glyphSize ?? Math.round(size * 0.57)} color={color} contrast={fill} /> : children}
     </View>
   );

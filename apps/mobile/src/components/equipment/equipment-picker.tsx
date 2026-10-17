@@ -51,17 +51,25 @@ export function EquipmentPicker({ what }: { what: 'expense' | 'log' }) {
     <EquipmentFrame title={title}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(2.5) }}>
         {failed ? (
-          <AText variant="body" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>{t('myAssets.loadFailed', 'Could not load what you hold')}</AText>
+          <AText variant="body" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>
+            {t('myAssets.loadFailed', 'Could not load what you hold')}
+          </AText>
         ) : list === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>{t('common.loading', 'Loading…')}</AText>
+          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>
+            {t('common.loading', 'Loading…')}
+          </AText>
         ) : list.length === 0 ? (
           <View style={{ alignItems: 'center', gap: amazen.space(2), paddingVertical: amazen.space(8) }}>
             <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />
-            <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{t('equipment.nothingFits', 'Nothing you hold takes this.')}</AText>
+            <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+              {t('equipment.nothingFits', 'Nothing you hold takes this.')}
+            </AText>
           </View>
         ) : (
           <>
-            <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazen.space(1) }}>{t('equipment.whichOne', 'For which one?')}</AText>
+            <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazen.space(1) }}>
+              {t('equipment.whichOne', 'For which one?')}
+            </AText>
             {list.map((h) => (
               <SheetOption
                 key={h.id}

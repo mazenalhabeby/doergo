@@ -115,19 +115,36 @@ export function UpdatePage({ status, onVisibleChange }: { status: VersionStatus;
 
   return (
     <Modal visible transparent={false} animationType="slide" statusBarTranslucent onRequestClose={later}>
-      <View style={[styles.page, { backgroundColor: colors.background, paddingTop: insets.top + SPACING.xl, paddingBottom: insets.bottom + SPACING.lg }]}>
+      <View
+        style={[
+          styles.page,
+          {
+            backgroundColor: colors.background,
+            paddingTop: insets.top + SPACING.xl,
+            paddingBottom: insets.bottom + SPACING.lg,
+          },
+        ]}>
         <View style={styles.body}>
           <Image source={require('../../assets/icon.png')} style={styles.icon} />
           <Text style={[styles.version, { color: COLORS.primary }]}>{t('updatePage.version', { version })}</Text>
           <Text style={[styles.title, { color: colors.textPrimary }]}>{note?.title ?? t('updatePage.title')}</Text>
-          <Text style={[styles.lead, { color: colors.textSecondary }]}>{note ? note.lead.replace('{{store}}', store) : t('updatePage.lead', { store })}</Text>
+          <Text style={[styles.lead, { color: colors.textSecondary }]}>
+            {note ? note.lead.replace('{{store}}', store) : t('updatePage.lead', { store })}
+          </Text>
           <View style={styles.points}>
             {points.map((p, i) => (
               <View key={`${p.icon}-${i}`} style={[styles.point, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name={p.icon} size={20} color={COLORS.primary} />
                 <View style={{ flex: 1 }}>
                   {p.title ? <Text style={[styles.pointTitle, { color: colors.textPrimary }]}>{p.title}</Text> : null}
-                  <Text style={[p.title ? styles.pointBody : styles.pointText, { color: p.title ? colors.textSecondary : colors.textPrimary }]}>{p.text}</Text>
+                  <Text
+                    style={[
+                      p.title ? styles.pointBody : styles.pointText,
+                      { color: p.title ? colors.textSecondary : colors.textPrimary },
+                    ]}
+                  >
+                    {p.text}
+                  </Text>
                 </View>
               </View>
             ))}

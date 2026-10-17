@@ -59,9 +59,33 @@ export function RecordAbout({
   const address = record.address?.trim();
   const website = record.website?.trim();
   const facts: { key: string; label: string; value: string; action?: { label: string; onPress: () => void } }[] = [];
-  if (address) facts.push({ key: 'address', label: t('customers.record.fAddress', 'Address'), value: address, action: geoUrl(address) ? { label: t('customers.record.directions', 'Directions'), onPress: () => void openSafeUrl(geoUrl(address)) } : undefined });
-  if (phone) facts.push({ key: 'phone', label: t('customers.fPhone'), value: phone, action: telUrl(phone) ? { label: t('customers.record.call'), onPress: () => void openSafeUrl(telUrl(phone)) } : undefined });
-  if (email) facts.push({ key: 'email', label: t('customers.fEmail'), value: email, action: mailtoUrl(email) ? { label: t('customers.record.write', 'Write'), onPress: () => void openSafeUrl(mailtoUrl(email)) } : undefined });
+  if (address)
+    facts.push({
+      key: 'address',
+      label: t('customers.record.fAddress', 'Address'),
+      value: address,
+      action: geoUrl(address)
+        ? { label: t('customers.record.directions', 'Directions'), onPress: () => void openSafeUrl(geoUrl(address)) }
+        : undefined,
+    });
+  if (phone)
+    facts.push({
+      key: 'phone',
+      label: t('customers.fPhone'),
+      value: phone,
+      action: telUrl(phone)
+        ? { label: t('customers.record.call'), onPress: () => void openSafeUrl(telUrl(phone)) }
+        : undefined,
+    });
+  if (email)
+    facts.push({
+      key: 'email',
+      label: t('customers.fEmail'),
+      value: email,
+      action: mailtoUrl(email)
+        ? { label: t('customers.record.write', 'Write'), onPress: () => void openSafeUrl(mailtoUrl(email)) }
+        : undefined,
+    });
   if (company) {
     for (const field of COMPANY_ONLY_FIELDS) {
       const v = (record[field as CompanyOnlyField] as string | null | undefined)?.trim();
@@ -114,7 +138,9 @@ export function RecordAbout({
         />
       ) : null}
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{t(company ? 'customers.record.details' : 'customers.record.detailsPerson')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>
+        {t(company ? 'customers.record.details' : 'customers.record.detailsPerson')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {facts.map((f, i) => (
           <Fact key={f.key} first={i === 0} label={f.label} value={f.value} action={f.action} />
@@ -137,7 +163,9 @@ export function RecordAbout({
 
       {model.addresses.length > 0 ? (
         <>
-          <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('customers.record.addresses')} · ${model.addresses.length}`}</SectionLabel>
+          <SectionLabel
+            style={{ paddingHorizontal: amazen.space(1) }}
+          >{`${t('customers.record.addresses')} · ${model.addresses.length}`}</SectionLabel>
           <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
             {model.addresses.map((a, i) => <AddressRow key={a.id} first={i === 0} address={a} labels={addressLabels} />)}
           </Well>
@@ -154,9 +182,35 @@ function Fact({ label, value, action, first, muted, chevron }: {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell }}>
-      <AText numberOfLines={2} style={{ width: 86, color: c.inkMuted, fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 1.1, textTransform: 'uppercase' }}>{label}</AText>
-      <AText variant="body" selectable style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 19, color: muted ? c.inkMuted : c.inkStrong }}>{value}</AText>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(3),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: c.lineWell,
+      }}>
+      <AText
+        numberOfLines={2}
+        style={{
+          width: 86,
+          color: c.inkMuted,
+          fontFamily: amazen.font.mono,
+          fontSize: 10,
+          letterSpacing: 1.1,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </AText>
+      <AText
+        variant="body"
+        selectable
+        style={{ flex: 1, minWidth: 0, fontSize: 14, lineHeight: 19, color: muted ? c.inkMuted : c.inkStrong }}
+      >
+        {value}
+      </AText>
       {action ? (
         <Pressable onPress={action.onPress} hitSlop={8} accessibilityRole="button">
           <AText variant="caption" style={{ color: c.accent, fontSize: 13 }}>{action.label}</AText>
@@ -188,7 +242,11 @@ function LinkSection({
     <>
       <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${title}${links.length ? ` · ${links.length}` : ''}`}</SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-        {links.length === 0 ? <AText variant="body" tone="muted" style={{ paddingVertical: amazen.space(3), fontSize: 13.5 }}>{empty}</AText> : null}
+        {links.length === 0 ? (
+          <AText variant="body" tone="muted" style={{ paddingVertical: amazen.space(3), fontSize: 13.5 }}>
+            {empty}
+          </AText>
+        ) : null}
         {links.map((link, i) => (
           <ContactRow
             key={link.id}
@@ -212,7 +270,15 @@ function AddRow({ label, onPress }: { label: string; onPress: () => void }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ paddingVertical: amazen.space(3), borderTopWidth: 1, borderTopColor: c.lineWell, opacity: pressed ? 0.7 : 1 })}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        paddingVertical: amazen.space(3),
+        borderTopWidth: 1,
+        borderTopColor: c.lineWell,
+        opacity: pressed ? 0.7 : 1,
+      })}>
       <AText variant="body" style={{ color: c.accent, fontSize: 13.5 }}>{`＋ ${label}`}</AText>
     </Pressable>
   );

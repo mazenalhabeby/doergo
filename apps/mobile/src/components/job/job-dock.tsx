@@ -59,7 +59,9 @@ export function JobDock({
       style={{ paddingTop: amazen.space(3), paddingHorizontal: amazen.space(4), paddingBottom: Math.max(bottomInset, amazen.space(4)), gap: amazen.space(2), backgroundColor: c.canvas }}
     >
       {timer ? (
-        <TourTarget name="taskdetail-timer" style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5), alignSelf: 'flex-start' }}>
+        <TourTarget
+          name="taskdetail-timer"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5), alignSelf: 'flex-start' }}>
           <LiveDot color={c.accent} live={timer.live} size={7} />
           <AText variant="caption" tone="ink" numeric numberOfLines={1} style={{ flexShrink: 1 }}>{timer.text}</AText>
           {timer.retry ? (
@@ -74,10 +76,24 @@ export function JobDock({
         <Banner tone="accent" text={closedText} />
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-          {primary ? <TourTarget name="taskdetail-actions" style={{ flex: 1, flexDirection: 'row' }}><JadeButton {...primary} /></TourTarget> : <View style={{ flex: 1 }} />}
+          {primary ? (
+            <TourTarget name="taskdetail-actions" style={{ flex: 1, flexDirection: 'row' }}>
+              <JadeButton {...primary} />
+            </TourTarget>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
           {onEdit ? <RoundButton Glyph={EditGlyph} label={t('job.dock.edit')} onPress={onEdit} /> : null}
-          {navigate ? <TourTarget name="taskdetail-navigate"><RoundButton Glyph={NavigateGlyph} label={t('job.dock.navigate')} tone="jade" onPress={navigate} /></TourTarget> : null}
-          {onMore ? <TourTarget name="taskdetail-more"><RoundButton Glyph={MoreGlyph} label={t('job.dock.more')} onPress={onMore} /></TourTarget> : null}
+          {navigate ? (
+            <TourTarget name="taskdetail-navigate">
+              <RoundButton Glyph={NavigateGlyph} label={t('job.dock.navigate')} tone="jade" onPress={navigate} />
+            </TourTarget>
+          ) : null}
+          {onMore ? (
+            <TourTarget name="taskdetail-more">
+              <RoundButton Glyph={MoreGlyph} label={t('job.dock.more')} onPress={onMore} />
+            </TourTarget>
+          ) : null}
         </View>
       )}
     </View>
@@ -100,10 +116,30 @@ export function JadeButton({ label, detail, Glyph, onPress, disabled, loading }:
     >
       <LinearGradient
         colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
-        style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: amazen.space(2), paddingHorizontal: amazen.space(4.5) }}
+        style={{
+          minHeight: 46,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: amazen.space(2),
+          paddingHorizontal: amazen.space(4.5),
+        }}
       >
-        {loading ? <ActivityIndicator size="small" color={c.accentInk} /> : Glyph ? <Glyph size={20} color={c.accentInk} contrast={c.accentSolid} /> : null}
-        <AText variant="body" tone="accentInk" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontFamily: amazen.font.sansMedium }}>{label}</AText>
+        {loading ? (
+          <ActivityIndicator size="small" color={c.accentInk} />
+        ) : Glyph ? (
+          <Glyph size={20} color={c.accentInk} contrast={c.accentSolid} />
+        ) : null}
+        <AText
+          variant="body"
+          tone="accentInk"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          style={{ flexShrink: 1, fontFamily: amazen.font.sansMedium }}
+        >
+          {label}
+        </AText>
         {detail ? <AText variant="caption" tone="accentInk" numeric numberOfLines={1} style={{ opacity: 0.75 }}>{detail}</AText> : null}
       </LinearGradient>
     </Pressable>

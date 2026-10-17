@@ -77,10 +77,20 @@ export function JobSheet({
       <SheetPanel
         onClose={close}
         maxHeightFraction={0.9}
-        style={{ backgroundColor: c.well, borderTopLeftRadius: amazen.radius.sheet, borderTopRightRadius: amazen.radius.sheet, paddingHorizontal: amazen.space(4.5), paddingTop: amazen.space(2) }}
+        style={{
+          backgroundColor: c.well,
+          borderTopLeftRadius: amazen.radius.sheet,
+          borderTopRightRadius: amazen.radius.sheet,
+          paddingHorizontal: amazen.space(4.5),
+          paddingTop: amazen.space(2),
+        }}
       >
         {scroll ? (
-          <ScrollView style={{ flexGrow: 0, flexShrink: 1 }} scrollEnabled={scrollEnabled} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ flexGrow: 0, flexShrink: 1 }}
+            scrollEnabled={scrollEnabled}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
             {body}
           </ScrollView>
         ) : body}

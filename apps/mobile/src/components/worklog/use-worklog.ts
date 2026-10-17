@@ -52,7 +52,13 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
         const items = await readLegacy(timeEntryId);
         setLegacyPending(items.map((i) => ({
           id: i.id, timeEntryId, body: i.body, at: i.at, pendingSync: true,
-          attachments: (i.photos ?? []).map((ph, n) => ({ id: `${i.id}_${n}`, fileName: ph.fileName, mimeType: ph.mimeType, fileUrl: ph.uri, url: ph.uri })),
+          attachments: (i.photos ?? []).map((ph, n) => ({
+            id: `${i.id}_${n}`,
+            fileName: ph.fileName,
+            mimeType: ph.mimeType,
+            fileUrl: ph.uri,
+            url: ph.uri,
+          })),
         }) as unknown as WorklogItem));
       }
       setLoading(false);
@@ -104,7 +110,12 @@ export function useWorklog(timeEntryId: string | null, enabled: boolean) {
           photos: photos.map((p) => ({ uri: p.uri, fileName: p.fileName, mimeType: p.mimeType, width: p.width, height: p.height })),
         });
         if (outcome.kind === 'refused') {
-          toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('common.error'));
+          toast.error(
+            t('common.error'),
+            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+              outcome.message ||
+              t('common.error'),
+          );
           return false;
         }
       } else {

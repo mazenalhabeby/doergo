@@ -194,7 +194,10 @@ export type Translate = (key: string, opts: { defaultValue: string }) => string;
 export function stepLabelFor(task: Task, flows: Map<string, unknown>, t: Translate): string {
   const canonical = (fallback: string) => t(`status.${task.status}`, { defaultValue: fallback });
   const id = flowIdOf(task);
-  const raw = id ? (flows.get(id) as { statuses?: Array<{ key?: string; name?: string; label?: string; nameKey?: string | null }> } | undefined) : undefined;
+  const raw = id
+    ? (flows.get(id) as
+        { statuses?: Array<{ key?: string; name?: string; label?: string; nameKey?: string | null }> } | undefined)
+    : undefined;
   const row = raw?.statuses?.find((s) => s.key === task.status);
   if (row) {
     const name = row.name ?? row.label ?? task.status;
@@ -241,7 +244,10 @@ export function nextJobAfter(tasks: Task[], day: Date, isOpen: (t: Task) => bool
 }
 
 /** Org-wide: the day as three figures instead of forty-seven rows. */
-export function figuresFor(others: Task[], isOpen: (t: Task) => boolean): { open: number; urgent: number; unassigned: number; sites: number } {
+export function figuresFor(
+  others: Task[],
+  isOpen: (t: Task) => boolean,
+): { open: number; urgent: number; unassigned: number; sites: number } {
   const open = others.filter(isOpen);
   return {
     open: open.length,

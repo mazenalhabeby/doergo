@@ -53,9 +53,22 @@ export function RecordHero({
   const acts: { key: string; label: string; Glyph: typeof CallGlyph; jade?: boolean; onPress: () => void }[] = [];
   // Built from typed CRM text: each link is one scheme or no button (`safe-links.ts`).
   const tel = telUrl(phone), mail = mailtoUrl(email), geo = geoUrl(address);
-  if (tel) acts.push({ key: 'call', label: t('customers.record.call'), Glyph: CallGlyph, jade: true, onPress: () => void openSafeUrl(tel) });
+  if (tel)
+    acts.push({
+      key: 'call',
+      label: t('customers.record.call'),
+      Glyph: CallGlyph,
+      jade: true,
+      onPress: () => void openSafeUrl(tel),
+    });
   if (mail) acts.push({ key: 'email', label: t('customers.record.email'), Glyph: EmailGlyph, onPress: () => void openSafeUrl(mail) });
-  if (geo) acts.push({ key: 'dir', label: t('customers.record.directions', 'Directions'), Glyph: NavigateGlyph, onPress: () => void openSafeUrl(geo) });
+  if (geo)
+    acts.push({
+      key: 'dir',
+      label: t('customers.record.directions', 'Directions'),
+      Glyph: NavigateGlyph,
+      onPress: () => void openSafeUrl(geo),
+    });
   acts.push({ key: 'remind', label: t('customers.record.remind', 'Remind'), Glyph: ReminderGlyph, onPress: onRemind });
 
   const app = record.app;
@@ -68,16 +81,41 @@ export function RecordHero({
   return (
     <GlassCard style={{ gap: amazen.space(4) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3.5) }}>
-        <View style={{ width: 58, height: 58, borderRadius: company ? 18 : 29, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: company ? 18 : 29,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <AText style={{ color: c.accent, fontFamily: amazen.font.sansMedium, fontSize: 19 }}>{personInitials(record.name, '·')}</AText>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="h2" tone="strong" numberOfLines={2} style={{ fontSize: 22, lineHeight: 26 }}>{record.name}</AText>
-          <AText numberOfLines={1} style={{ marginTop: 4, color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 10.5, letterSpacing: 1.3, textTransform: 'uppercase' }}>{kindLine}</AText>
+          <AText
+            numberOfLines={1}
+            style={{
+              marginTop: 4,
+              color: c.inkOnGlass,
+              fontFamily: amazen.font.mono,
+              fontSize: 10.5,
+              letterSpacing: 1.3,
+              textTransform: 'uppercase',
+            }}
+          >
+            {kindLine}
+          </AText>
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', justifyContent: acts.length < 4 ? 'flex-start' : 'space-between', gap: acts.length < 4 ? amazen.space(5) : 0 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: acts.length < 4 ? 'flex-start' : 'space-between',
+          gap: acts.length < 4 ? amazen.space(5) : 0,
+        }}>
         {acts.map((a) => (
           <View key={a.key} style={{ alignItems: 'center', gap: 6, minWidth: 64 }}>
             <RoundButton Glyph={a.Glyph} label={a.label} tone={a.jade ? 'jade' : 'plain'} size={50} onPress={a.onPress} />
@@ -105,7 +143,18 @@ export function RecordHero({
                   style={{ flex: 1, gap: 6 }}
                 >
                   <View style={{ height: 5, borderRadius: 3, backgroundColor: reached ? c.accent : c.tile }} />
-                  <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 0.8, textTransform: 'uppercase', color: current ? c.accent : c.inkMuted }}>{stageName(key)}</AText>
+                  <AText
+                    numberOfLines={1}
+                    style={{
+                      fontFamily: amazen.font.mono,
+                      fontSize: 9.5,
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                      color: current ? c.accent : c.inkMuted,
+                    }}
+                  >
+                    {stageName(key)}
+                  </AText>
                 </Pressable>
               );
             })}
@@ -115,9 +164,23 @@ export function RecordHero({
               onPress={() => onStage(inactive ? 'LEAD' : 'INACTIVE')}
               disabled={!canWork}
               accessibilityRole="button"
-              style={{ alignSelf: 'flex-end', borderRadius: amazen.radius.full, borderWidth: 1, borderColor: inactive ? c.warn : c.lineGlass, paddingHorizontal: 10, paddingVertical: 4 }}
+              style={{
+                alignSelf: 'flex-end',
+                borderRadius: amazen.radius.full,
+                borderWidth: 1,
+                borderColor: inactive ? c.warn : c.lineGlass,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+              }}
             >
-              <AText style={{ fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', color: inactive ? c.warn : c.inkOnGlass }}>
+              <AText
+                style={{
+                  fontFamily: amazen.font.mono,
+                  fontSize: 10,
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                  color: inactive ? c.warn : c.inkOnGlass,
+                }}>
                 {inactive ? `● ${stageName('INACTIVE')}` : t('customers.record.markInactive', 'Mark inactive')}
               </AText>
             </Pressable>

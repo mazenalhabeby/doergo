@@ -31,9 +31,25 @@ export function useDocumentTag() {
     if (d.needsSignature) return { label: t('documents.tag.sign', 'Sign'), tone: 'warn' };
     if (d.status === 'PENDING_VERIFICATION') return { label: t('documents.status.pendingVerification'), tone: 'neutral' };
     if (d.status === 'REJECTED') return { label: t('documents.tag.sentBack', 'Sent back'), tone: 'critical' };
-    if (d.standing === 'EXPIRED') return { label: d.expiresOn ? t('documents.tag.expiredOn', { date: dayOf(d.expiresOn), defaultValue: 'Expired {{date}}' }) : t('documents.standing.expired'), tone: 'critical' };
-    if (d.standing === 'EXPIRING') return { label: d.expiresOn ? t('documents.tag.expiresOn', { date: dayOf(d.expiresOn), defaultValue: 'Expires {{date}}' }) : t('documents.standing.expiring'), tone: 'warn' };
-    if (d.standing === 'VALID' && d.expiresOn) return { label: t('documents.tag.validTo', { date: dayOf(d.expiresOn), defaultValue: 'Valid to {{date}}' }), tone: 'accent' };
+    if (d.standing === 'EXPIRED')
+      return {
+        label: d.expiresOn
+          ? t('documents.tag.expiredOn', { date: dayOf(d.expiresOn), defaultValue: 'Expired {{date}}' })
+          : t('documents.standing.expired'),
+        tone: 'critical',
+      };
+    if (d.standing === 'EXPIRING')
+      return {
+        label: d.expiresOn
+          ? t('documents.tag.expiresOn', { date: dayOf(d.expiresOn), defaultValue: 'Expires {{date}}' })
+          : t('documents.standing.expiring'),
+        tone: 'warn',
+      };
+    if (d.standing === 'VALID' && d.expiresOn)
+      return {
+        label: t('documents.tag.validTo', { date: dayOf(d.expiresOn), defaultValue: 'Valid to {{date}}' }),
+        tone: 'accent',
+      };
     if (d.status === 'SIGNED') return { label: t('documents.tag.signed', 'Signed'), tone: 'accent' };
     return null;
   };
@@ -84,12 +100,44 @@ export const DocumentRow = memo(function DocumentRow({
         borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1,
       })}
     >
-      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: doc.needsSignature ? c.accentTint : c.tile, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: doc.needsSignature ? c.accentTint : c.tile,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <Ionicons name={documentTypeIcon(doc.typeKey)} size={18} color={doc.needsSignature ? c.accent : c.ink} />
-        {doc.unread ? <View style={{ position: 'absolute', top: -2, right: -2, width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent, borderWidth: 2, borderColor: c.well }} /> : null}
+        {doc.unread ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: -2,
+              right: -2,
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: c.accent,
+              borderWidth: 2,
+              borderColor: c.well,
+            }}
+          />
+        ) : null}
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-        <AText variant="body" numberOfLines={1} style={{ fontSize: 14.5, color: c.inkStrong, fontFamily: doc.unread ? amazen.font.sansMedium : amazen.font.sans }}>{doc.title}</AText>
+        <AText
+          variant="body"
+          numberOfLines={1}
+          style={{
+            fontSize: 14.5,
+            color: c.inkStrong,
+            fontFamily: doc.unread ? amazen.font.sansMedium : amazen.font.sans,
+          }}
+        >
+          {doc.title}
+        </AText>
         <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText>
         {tag || onPaper ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>

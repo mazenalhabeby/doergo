@@ -53,10 +53,36 @@ export function MoreSheet({
       {options.map((o) => {
         switch (o.kind) {
           case 'step': return <SheetOption key={`step:${o.to}`} label={labelOf(o.to)} onPress={() => onPick(o)} />;
-          case 'issue': return <SheetOption key="issue" Glyph={IssueGlyph} tone="critical" label={t('job.more.issue')} hint={t('job.more.issueHint')} onPress={() => onPick(o)} />;
-          case 'decline': return <SheetOption key="decline" tone="critical" label={t('job.more.decline')} hint={t('job.more.declineHint')} onPress={() => onPick(o)} />;
+          case 'issue':
+            return (
+              <SheetOption
+                key="issue"
+                Glyph={IssueGlyph}
+                tone="critical"
+                label={t('job.more.issue')}
+                hint={t('job.more.issueHint')}
+                onPress={() => onPick(o)}
+              />
+            );
+          case 'decline':
+            return (
+              <SheetOption
+                key="decline"
+                tone="critical"
+                label={t('job.more.decline')}
+                hint={t('job.more.declineHint')}
+                onPress={() => onPick(o)}
+              />
+            );
           case 'maps': return <SheetOption key="maps" Glyph={NavigateGlyph} label={t('job.more.maps')} onPress={() => onPick(o)} />;
-          case 'assign': return <SheetOption key="assign" label={assigned ? t('job.dock.reassign') : t('job.dock.assign')} onPress={() => onPick(o)} />;
+          case 'assign':
+            return (
+              <SheetOption
+                key="assign"
+                label={assigned ? t('job.dock.reassign') : t('job.dock.assign')}
+                onPress={() => onPick(o)}
+              />
+            );
           case 'edit': return <SheetOption key="edit" Glyph={EditGlyph} label={t('job.more.edit')} onPress={() => onPick(o)} />;
           case 'cancel': return <SheetOption key="cancel" tone="critical" label={t('job.more.cancel')} onPress={() => onPick(o)} />;
           default: return null;

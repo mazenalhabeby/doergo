@@ -80,7 +80,17 @@ export function DocumentsScreen() {
       <ScreenHeader
         title={t('profile.documents', 'Documents')}
         leading={<HeaderBack onPress={back} />}
-        actions={canAdd ? [{ label: `＋ ${t('documents.add', 'Add')}`, a11yLabel: t('documents.supply.action'), onPress: () => setSupply({ typeId: null }) }] : undefined}
+        actions={
+          canAdd
+            ? [
+                {
+                  label: `＋ ${t('documents.add', 'Add')}`,
+                  a11yLabel: t('documents.supply.action'),
+                  onPress: () => setSupply({ typeId: null }),
+                },
+              ]
+            : undefined
+        }
         style={wide ?? undefined}
       />
       <SectionList
@@ -91,10 +101,22 @@ export function DocumentsScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load('refresh')} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load('refresh')}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
         ListHeaderComponent={header}
         renderSectionHeader={({ section }) => (
-          <SectionLabel tone={section.tone} style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(4), paddingBottom: amazen.space(2) }}>{section.title}</SectionLabel>
+          <SectionLabel
+            tone={section.tone}
+            style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(4), paddingBottom: amazen.space(2) }}
+          >
+            {section.title}
+          </SectionLabel>
         )}
         renderItem={({ item, index, section }) => {
           const r0 = amazen.radius.panel;
@@ -117,12 +139,21 @@ export function DocumentsScreen() {
             ) : state === 'failed' ? (
               <>
                 <AText variant="body" tone="onGlass">{t('documents.loadFailed')}</AText>
-                <PrimaryButton label={t('common.retry', 'Try again')} onPress={() => { setState('loading'); void load(); }} style={{ alignSelf: 'stretch', marginTop: amazen.space(2) }} />
+                <PrimaryButton
+                  label={t('common.retry', 'Try again')}
+                  onPress={() => {
+                    setState('loading');
+                    void load();
+                  }}
+                  style={{ alignSelf: 'stretch', marginTop: amazen.space(2) }}
+                />
               </>
             ) : (
               <>
                 <AText variant="body" tone="strong">{filtered ? t('documents.noMatches') : t('documents.my.empty')}</AText>
-                <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{filtered ? t('documents.noMatchesHint') : t('documents.my.emptyHint')}</AText>
+                <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+                  {filtered ? t('documents.noMatchesHint') : t('documents.my.emptyHint')}
+                </AText>
               </>
             )}
           </View>
@@ -135,7 +166,14 @@ export function DocumentsScreen() {
           <>
             <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
               <Fact first label={t('documents.fact.kind', 'Kind')} value={opened.typeLabel} />
-              <Fact label={opened.status === 'PENDING_VERIFICATION' || opened.status === 'REJECTED' ? t('documents.fact.sentIn', 'Sent in') : t('documents.fact.issued', 'Issued')} value={dayOf(opened.issuedAt)} />
+              <Fact
+                label={
+                  opened.status === 'PENDING_VERIFICATION' || opened.status === 'REJECTED'
+                    ? t('documents.fact.sentIn', 'Sent in')
+                    : t('documents.fact.issued', 'Issued')
+                }
+                value={dayOf(opened.issuedAt)}
+              />
               {opened.periodMonth || opened.periodYear ? <Fact label={t('documents.fact.period', 'For')} value={periodOf(opened)} /> : null}
               {opened.expiresOn ? <Fact label={t('documents.fact.validUntil', 'Valid until')} value={dayOf(opened.expiresOn)} /> : null}
               {tag ? <Fact label={t('documents.fact.state', 'State')} value={tag.label} tone={tag.tone} /> : null}
@@ -145,8 +183,16 @@ export function DocumentsScreen() {
                 <AText variant="body" style={{ color: c.critical, fontSize: 13.5, lineHeight: 19 }}>{`“${opened.rejectionReason}”`}</AText>
               </View>
             ) : null}
-            {onPaperOf(opened) ? <AText variant="caption" tone="muted">{t('documents.onPaperHint', 'Sign a printed copy and hand it back to the office.')}</AText> : null}
-            <PrimaryButton label={t('documents.openTheFile', 'Open the file')} loading={opening === opened.id} onPress={() => void openFile(opened)} />
+            {onPaperOf(opened) ? (
+              <AText variant="caption" tone="muted">
+                {t('documents.onPaperHint', 'Sign a printed copy and hand it back to the office.')}
+              </AText>
+            ) : null}
+            <PrimaryButton
+              label={t('documents.openTheFile', 'Open the file')}
+              loading={opening === opened.id}
+              onPress={() => void openFile(opened)}
+            />
             {opened.status === 'REJECTED' || opened.standing === 'EXPIRED' || opened.standing === 'EXPIRING' ? (
               <SheetOption label={t('documents.sendNew', 'Send a new one')} tone="accent" onPress={() => sendNew(opened.typeId)} />
             ) : null}
@@ -155,19 +201,52 @@ export function DocumentsScreen() {
       </JobSheet>
 
       {/* ---------- filter pickers ---------- */}
-      <JobSheet visible={!!picker} onClose={() => setPicker(null)} title={picker === 'year' ? t('documents.filter.year') : t('documents.filter.type')}>
+      <JobSheet
+        visible={!!picker}
+        onClose={() => setPicker(null)}
+        title={picker === 'year' ? t('documents.filter.year') : t('documents.filter.type')}>
         {picker === 'type' ? (
           <>
-            <SheetOption label={`${t('documents.filter.anyType')} · ${countFor({ typeId: null })}`} tone={typeId ? 'strong' : 'accent'} onPress={() => { setTypeId(null); setPicker(null); }} />
+            <SheetOption
+              label={`${t('documents.filter.anyType')} · ${countFor({ typeId: null })}`}
+              tone={typeId ? 'strong' : 'accent'}
+              onPress={() => {
+                setTypeId(null);
+                setPicker(null);
+              }}
+            />
             {usedTypes.map((ty) => (
-              <SheetOption key={ty.id} label={`${ty.label} · ${countFor({ typeId: ty.id })}`} tone={typeId === ty.id ? 'accent' : 'strong'} onPress={() => { setTypeId(ty.id); setPicker(null); }} />
+              <SheetOption
+                key={ty.id}
+                label={`${ty.label} · ${countFor({ typeId: ty.id })}`}
+                tone={typeId === ty.id ? 'accent' : 'strong'}
+                onPress={() => {
+                  setTypeId(ty.id);
+                  setPicker(null);
+                }}
+              />
             ))}
           </>
         ) : picker === 'year' ? (
           <>
-            <SheetOption label={`${t('documents.filter.anyYear')} · ${countFor({ year: null })}`} tone={year === null ? 'accent' : 'strong'} onPress={() => { setYear(null); setPicker(null); }} />
+            <SheetOption
+              label={`${t('documents.filter.anyYear')} · ${countFor({ year: null })}`}
+              tone={year === null ? 'accent' : 'strong'}
+              onPress={() => {
+                setYear(null);
+                setPicker(null);
+              }}
+            />
             {years.map((y) => (
-              <SheetOption key={y} label={`${y} · ${countFor({ year: y })}`} tone={year === y ? 'accent' : 'strong'} onPress={() => { setYear(y); setPicker(null); }} />
+              <SheetOption
+                key={y}
+                label={`${y} · ${countFor({ year: y })}`}
+                tone={year === y ? 'accent' : 'strong'}
+                onPress={() => {
+                  setYear(y);
+                  setPicker(null);
+                }}
+              />
             ))}
           </>
         ) : null}

@@ -61,7 +61,9 @@ export function AccountPage() {
     bioSub = t('settings.bio.needsUpdate', 'Needs a newer version of the app');
     bioHelp = {
       text: t('settings.bio.needsUpdateBody', 'This version of HBCField cannot use it. The next one from the store can.'),
-      action: version?.downloadUrl ? { label: t('settings.bio.update', 'Update'), onPress: () => void openUpdate(version.downloadUrl) } : undefined,
+      action: version?.downloadUrl
+        ? { label: t('settings.bio.update', 'Update'), onPress: () => void openUpdate(version.downloadUrl) }
+        : undefined,
     };
   } else if (cap.reason === 'no-hardware') {
     bioSub = t('settings.bio.noSensor', 'This phone has neither');
@@ -94,7 +96,16 @@ export function AccountPage() {
       <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{t('settings.account.signingIn', 'Signing in')}</SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {cap?.kind === 'ready' ? (
-          <SwitchRow first title={bioTitle} sub={bioSub} value={bio.enrolled} disabled={bio.busy} onChange={(on) => { void (on ? bio.enroll() : bio.disable()); }} />
+          <SwitchRow
+            first
+            title={bioTitle}
+            sub={bioSub}
+            value={bio.enrolled}
+            disabled={bio.busy}
+            onChange={(on) => {
+              void (on ? bio.enroll() : bio.disable());
+            }}
+          />
         ) : (
           <View style={{ flexDirection: 'row', gap: amazen.space(3), paddingVertical: amazen.space(3) }}>
             <BiometricIcon method={bio.method} size={22} color={c.inkMuted} />
@@ -103,7 +114,17 @@ export function AccountPage() {
               <AText variant="caption" tone="muted">{bioSub}</AText>
               {bioHelp ? <AText variant="caption" tone="ink" style={{ marginTop: 6, lineHeight: 18 }}>{bioHelp.text}</AText> : null}
               {bioHelp?.action ? (
-                <Pressable onPress={bioHelp.action.onPress} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: 8, borderRadius: amazen.radius.full, backgroundColor: c.tile, paddingHorizontal: 14, paddingVertical: 8 }}>
+                <Pressable
+                  onPress={bioHelp.action.onPress}
+                  accessibilityRole="button"
+                  style={{
+                    alignSelf: 'flex-start',
+                    marginTop: 8,
+                    borderRadius: amazen.radius.full,
+                    backgroundColor: c.tile,
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                  }}>
                   <AText variant="caption" style={{ color: c.accent, fontSize: 13 }}>{bioHelp.action.label}</AText>
                 </Pressable>
               ) : null}
@@ -111,16 +132,31 @@ export function AccountPage() {
           </View>
         )}
         <Pressable onPress={() => router.push('/(app)/profile/password' as Href)} accessibilityRole="button"
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), borderTopWidth: 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : 1 })}>
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: amazen.space(3),
+            paddingVertical: amazen.space(3),
+            borderTopWidth: 1,
+            borderTopColor: c.lineWell,
+            opacity: pressed ? 0.75 : 1,
+          })}>
           <View style={{ flex: 1, gap: 2 }}>
             <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{t('profile.account.changePassword', 'Change password')}</AText>
-            <AText variant="caption" tone="muted">{t('settings.account.passwordRule', { count: MIN_PASSWORD, defaultValue: 'At least {{count}} characters' })}</AText>
+            <AText variant="caption" tone="muted">
+              {t('settings.account.passwordRule', {
+                count: MIN_PASSWORD,
+                defaultValue: 'At least {{count}} characters',
+              })}
+            </AText>
           </View>
           <AText variant="body" tone="muted">›</AText>
         </Pressable>
       </Well>
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.account.you', 'You')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
+        {t('settings.account.you', 'You')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {[[t('profile.account.nameLabel'), personName(user)], [t('profile.account.emailLabel'), user?.email ?? '']].map(([k, v], i) => (
           <View key={k} style={{ paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, gap: 2 }}>
@@ -130,21 +166,48 @@ export function AccountPage() {
         ))}
       </Well>
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.account.leaving', 'Leaving')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
+        {t('settings.account.leaving', 'Leaving')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-        <Pressable onPress={() => setDeleting(true)} accessibilityRole="button" style={({ pressed }) => ({ paddingVertical: amazen.space(3), gap: 2, opacity: pressed ? 0.75 : 1 })}>
+        <Pressable
+          onPress={() => setDeleting(true)}
+          accessibilityRole="button"
+          style={({ pressed }) => ({ paddingVertical: amazen.space(3), gap: 2, opacity: pressed ? 0.75 : 1 })}>
           <AText variant="body" style={{ fontSize: 14.5, color: c.critical }}>{t('settings.account.delete', 'Delete my account')}</AText>
           <AText variant="caption" tone="muted">{t('settings.account.deleteSub', 'Asks for your password first')}</AText>
         </Pressable>
       </Well>
 
-      <JobSheet visible={deleting} onClose={() => { setDeleting(false); setDeletePassword(''); }} busy={busy} title={t('profile.account.deleteConfirmTitle', 'Delete your account?')}>
+      <JobSheet
+        visible={deleting}
+        onClose={() => {
+          setDeleting(false);
+          setDeletePassword('');
+        }}
+        busy={busy}
+        title={t('profile.account.deleteConfirmTitle', 'Delete your account?')}>
         <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>
-          {t('settings.account.deleteBody', 'Your sign-in, your photo and your settings are deleted, and you are signed out on every phone. The work you did stays with your organization: jobs, hours, documents.')}
+          {t('settings.account.deleteBody', ('Your sign-in, your photo and your settings are deleted, and you are ' + 'signed out on every phone. The work you did stays with your ' + 'organization: jobs, hours, documents.'))}
         </AText>
-        <PasswordField value={deletePassword} onChange={setDeletePassword} placeholder={t('settings.account.yourPassword', 'Your password')} />
-        <PrimaryButton label={t('settings.account.keep', 'Keep my account')} onPress={() => { setDeleting(false); setDeletePassword(''); }} />
-        <SheetOption label={t('settings.account.deleteIt', 'Delete it')} tone="critical" disabled={busy} onPress={() => void deleteAccount()} />
+        <PasswordField
+          value={deletePassword}
+          onChange={setDeletePassword}
+          placeholder={t('settings.account.yourPassword', 'Your password')}
+        />
+        <PrimaryButton
+          label={t('settings.account.keep', 'Keep my account')}
+          onPress={() => {
+            setDeleting(false);
+            setDeletePassword('');
+          }}
+        />
+        <SheetOption
+          label={t('settings.account.deleteIt', 'Delete it')}
+          tone="critical"
+          disabled={busy}
+          onPress={() => void deleteAccount()}
+        />
       </JobSheet>
     </SettingsPage>
   );
@@ -157,7 +220,16 @@ function PasswordField({ value, onChange, placeholder }: { value: string; onChan
   const { t } = useTranslation();
   const [shown, setShown] = useState(false);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: c.sunken, borderRadius: 16, borderWidth: 1.5, borderColor: c.lineWell, paddingHorizontal: amazen.space(3.5) }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: c.sunken,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: c.lineWell,
+        paddingHorizontal: amazen.space(3.5),
+      }}>
       <TextInput
         value={value}
         onChangeText={onChange}
@@ -170,7 +242,9 @@ function PasswordField({ value, onChange, placeholder }: { value: string; onChan
         accessibilityLabel={placeholder}
       />
       <Pressable onPress={() => setShown((s) => !s)} hitSlop={10} accessibilityRole="button">
-        <AText variant="caption" style={{ color: c.accent }}>{shown ? t('settings.account.hide', 'Hide') : t('settings.account.show', 'Show')}</AText>
+        <AText variant="caption" style={{ color: c.accent }}>
+          {shown ? t('settings.account.hide', 'Hide') : t('settings.account.show', 'Show')}
+        </AText>
       </Pressable>
     </View>
   );
@@ -209,9 +283,17 @@ export function PasswordPage() {
         <PasswordField value={next} onChange={setNext} placeholder={t('profile.account.newPasswordLabel', 'New password')} />
         <PasswordField value={again} onChange={setAgain} placeholder={t('settings.account.again', 'New password again')} />
         <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazen.space(1) }}>
-          {t('settings.account.passwordNote', { count: MIN_PASSWORD, defaultValue: 'At least {{count}} characters. You stay signed in on this phone.' })}
+          {t('settings.account.passwordNote', {
+            count: MIN_PASSWORD,
+            defaultValue: 'At least {{count}} characters. You stay signed in on this phone.',
+          })}
         </AText>
-        <PrimaryButton label={t('profile.account.changePassword', 'Change password')} loading={busy} disabled={!current || !next || !again} onPress={() => void save()} />
+        <PrimaryButton
+          label={t('profile.account.changePassword', 'Change password')}
+          loading={busy}
+          disabled={!current || !next || !again}
+          onPress={() => void save()}
+        />
       </SettingsPage>
     </KeyboardAvoidingView>
   );

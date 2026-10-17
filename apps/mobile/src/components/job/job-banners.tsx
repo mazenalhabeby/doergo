@@ -103,5 +103,10 @@ function LeaveBy({ dueDate, taskLat, taskLng, here, atSite }: {
           : t('tasks.beThere.title', { time: dueDate ? time(new Date(dueDate)) : '' });
     }
   })();
-  return <Banner tone={advice.state === 'late' ? 'warn' : 'accent'} text={drive && advice.state !== 'late' ? `${line} · ${drive}` : line} />;
+  return (
+    <Banner
+      tone={advice.state === 'late' ? 'warn' : 'accent'}
+      text={drive && advice.state !== 'late' ? `${line} · ${drive}` : line}
+    />
+  );
 }

@@ -39,7 +39,9 @@ export function useSupportScreen() {
   const [error, setError] = useState<string | null>(null);
 
   // Requests and replies written with no signal wait in the outbox and show here meanwhile.
-  const ticketCreate = useQueuedCreate<{ subject: string; body: string }>('support.ticket', { onAccepted: () => void loadListRef.current?.() });
+  const ticketCreate = useQueuedCreate<{ subject: string; body: string }>('support.ticket', {
+    onAccepted: () => void loadListRef.current?.(),
+  });
   const replyCreate = useQueuedCreate<{ body: string }>('support.message', {
     onAccepted: () => {
       const open = activeRef.current;
@@ -147,7 +149,11 @@ export function useSupportScreen() {
         const msg = d?.message;
         if (isPlaceable(msg) && !(msg as { isInternalNote?: boolean }).isInternalNote) {
           setActive((cur) => (cur && cur.id === open.id
-            ? { ...cur, status: d?.ticket?.status ?? cur.status, messages: appendMessage(cur.messages ?? [], msg as NonNullable<SupportTicket['messages']>[number]) }
+            ? {
+                ...cur,
+                status: d?.ticket?.status ?? cur.status,
+                messages: appendMessage(cur.messages ?? [], msg as NonNullable<SupportTicket['messages']>[number]),
+              }
             : cur));
         } else if (!isPlaceable(msg)) {
           later.current!.ticket.call();
@@ -164,9 +170,15 @@ export function useSupportScreen() {
     setSending(true);
     try {
       const input = { subject: subject.trim(), body: body.trim(), channel: 'MOBILE' };
-      const outcome = await ticketCreate.run({ lane: 'support:new', body: input }, () => supportApi.create({ subject: input.subject, body: input.body }));
+      const outcome = await ticketCreate.run({ lane: 'support:new', body: input }, () =>
+        supportApi.create({ subject: input.subject, body: input.body }),
+      );
       if (outcome.kind === 'refused') {
-        setError((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('support.sendError', 'Could not send. Please try again.'));
+        setError(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('support.sendError', 'Could not send. Please try again.'),
+        );
         return;
       }
       setSubject('');
@@ -196,7 +208,11 @@ export function useSupportScreen() {
         () => supportApi.reply(active.id, text),
       );
       if (outcome.kind === 'refused') {
-        setError((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('support.sendError', 'Could not send. Please try again.'));
+        setError(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('support.sendError', 'Could not send. Please try again.'),
+        );
         return;
       }
       setReply('');

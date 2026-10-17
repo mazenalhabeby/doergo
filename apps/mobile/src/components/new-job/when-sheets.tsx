@@ -18,7 +18,19 @@ import { DayPickerTop, WeekdayHeads } from './day-picker-parts';
 
 
 /** A cell in a grid of choices — a day, an hour, a minute. */
-function Cell({ label, on, today, disabled, onPress }: { label: string; on: boolean; today?: boolean; disabled?: boolean; onPress: () => void }) {
+function Cell({
+  label,
+  on,
+  today,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  on: boolean;
+  today?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
@@ -67,7 +79,14 @@ export function DaySheet({ visible, value, onPick, onClear, onClose }: {
 
   return (
     <JobSheet visible={visible} onClose={onClose} title={t('newJob.whichDay')}>
-      <DayPickerTop year={view.y} month={view.m} onToday={() => pick(now)} onTomorrow={() => pick(tomorrow)} onShift={shift} prevDisabled={atStart} />
+      <DayPickerTop
+        year={view.y}
+        month={view.m}
+        onToday={() => pick(now)}
+        onTomorrow={() => pick(tomorrow)}
+        onShift={shift}
+        prevDisabled={atStart}
+      />
       <View style={{ gap: 4 }}>
         <WeekdayHeads />
         {weeks.map((week, wi) => (
@@ -111,11 +130,15 @@ export function TimeSheet({ visible, value, onPick, onClear, onClose, title }: {
     setH(Number(hh) || (value ? 0 : 9));
     setM(Number(mm) || 0);
   }, [visible, value]);
-  const rows = <T,>(xs: readonly T[], per: number) => Array.from({ length: Math.ceil(xs.length / per) }, (_, i) => xs.slice(i * per, i * per + per));
+  const rows = <T,>(xs: readonly T[], per: number) =>
+    Array.from({ length: Math.ceil(xs.length / per) }, (_, i) => xs.slice(i * per, i * per + per));
 
   return (
     <JobSheet visible={visible} onClose={onClose} title={title ?? t('createTask.beThereAt')}>
-      <AText numeric style={{ fontSize: 34, lineHeight: 40, textAlign: 'center', color: amazen.color.inkStrong }}>{`${two(h)}:${two(m)}`}</AText>
+      <AText
+        numeric
+        style={{ fontSize: 34, lineHeight: 40, textAlign: 'center', color: amazen.color.inkStrong }}
+      >{`${two(h)}:${two(m)}`}</AText>
       <View style={{ gap: 4 }}>
         {rows(HOURS, 6).map((r, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: 4 }}>
@@ -132,7 +155,18 @@ export function TimeSheet({ visible, value, onPick, onClear, onClose, title }: {
         ))}
       </View>
       <View style={{ flexDirection: 'row', gap: amazen.space(2), alignItems: 'center' }}>
-        {value ? <View style={{ flex: 1 }}><QuietButton tone="critical" label={t('common.clear')} onPress={() => { onClear(); onClose(); }} /></View> : null}
+        {value ? (
+          <View style={{ flex: 1 }}>
+            <QuietButton
+              tone="critical"
+              label={t('common.clear')}
+              onPress={() => {
+                onClear();
+                onClose();
+              }}
+            />
+          </View>
+        ) : null}
         <PrimaryButton label={t('common.done')} onPress={() => { onPick(`${two(h)}:${two(m)}`); onClose(); }} style={{ flex: 1 }} />
       </View>
     </JobSheet>

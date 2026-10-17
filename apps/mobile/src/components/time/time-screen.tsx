@@ -103,7 +103,17 @@ export function TimeScreen() {
       <ScreenHeader
         title={t('tabs.attendance')}
         tour={{ title: 'attendance-header' }}
-        actions={timeOffOn ? [{ label: t('time.off.title', 'Time off'), onPress: () => setRequestOpen(true), tourKey: 'attendance-timeoff' }] : undefined}
+        actions={
+          timeOffOn
+            ? [
+                {
+                  label: t('time.off.title', 'Time off'),
+                  onPress: () => setRequestOpen(true),
+                  tourKey: 'attendance-timeoff',
+                },
+              ]
+            : undefined
+        }
         style={wide ?? undefined}
       />
       <ScrollView
@@ -111,7 +121,14 @@ export function TimeScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
       >
         <OfflineBanner />
 

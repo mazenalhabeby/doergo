@@ -53,7 +53,11 @@ export function useShiftWatch(status: AttendanceStatus | null, refresh: () => Pr
     lastBeat.current = Date.now();
     try {
       const pos = await getFix({ purpose: 'heartbeat' });
-      const result = await attendanceApi.heartbeat({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy || undefined });
+      const result = await attendanceApi.heartbeat({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy || undefined,
+      });
       if (result.autoClockedOut) {
         await stopBackgroundHeartbeat();
         await stopGeofence();

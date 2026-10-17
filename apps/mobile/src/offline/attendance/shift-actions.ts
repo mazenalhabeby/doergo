@@ -34,7 +34,14 @@ interface StepOrigin {
 }
 
 type ClockInStep = { locationId?: string; isRemote?: boolean; awayReason?: string; fix: OccurrenceFix };
-type ClockOutStep = { entryId: string; fix?: OccurrenceFix | null; notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] };
+type ClockOutStep = {
+  entryId: string;
+  fix?: OccurrenceFix | null;
+  notes?: string;
+  earlyReason?: string;
+  overtimeReason?: string;
+  handovers?: { taskId: string; note: string }[];
+};
 
 /** The one clock-in operation — a tap and the automatic clock file the same thing. */
 function clockInRequest(engine: SyncEngine, entryId: string, input: ClockInStep & StepOrigin): EnqueueInput {
@@ -113,7 +120,13 @@ export async function autoClockInFromPhone(
 ): Promise<{ entryId: string; opId: string }> {
   const entryId = uuidv7();
   const op = await engine.enqueue(
-    clockInRequest(engine, entryId, { locationId: input.locationId, fix: input.fix, trigger: 'AUTO', occurredAt: input.at, holdUntil: input.holdUntil }),
+    clockInRequest(engine, entryId, {
+      locationId: input.locationId,
+      fix: input.fix,
+      trigger: 'AUTO',
+      occurredAt: input.at,
+      holdUntil: input.holdUntil,
+    }),
   );
   return { entryId, opId: op.id };
 }
@@ -138,7 +151,10 @@ export async function autoClockOutFromPhone(
  * after the clock-in, with the tap's own time for the server to judge the
  * AUTO_CLOCK_UNDO_MINUTES window by.
  */
-export async function undoAutoClockInFromPhone(engine: SyncEngine, input: { entryId: string }): Promise<ActionOutcome | { kind: 'withdrawn' }> {
+export async function undoAutoClockInFromPhone(
+  engine: SyncEngine,
+  input: { entryId: string },
+): Promise<ActionOutcome | { kind: 'withdrawn' }> {
   const clockIn = openOpFor(engine.operations(), 'attendance.clockIn', (b) => b.id === input.entryId);
   if (clockIn && (await engine.cancelPending(clockIn.id))) return { kind: 'withdrawn' };
   const op = await engine.enqueueAndSettle({

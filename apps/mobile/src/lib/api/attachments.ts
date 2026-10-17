@@ -7,7 +7,10 @@ export const taskAttachmentsApi = {
     return call(E.tasks.attachmentPresign, { id: taskId }, { body: { fileName, fileType } });
   },
 
-  confirmUpload: async (taskId: string, data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number }): Promise<any> => {
+  confirmUpload: async (
+    taskId: string,
+    data: { fileName: string; fileKey?: string; fileUrl?: string; fileType: string; fileSize?: number },
+  ): Promise<any> => {
     return call(E.tasks.attachmentConfirm, { id: taskId }, { body: data });
   },
 

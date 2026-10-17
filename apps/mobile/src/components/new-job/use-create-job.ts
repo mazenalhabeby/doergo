@@ -36,7 +36,12 @@ export function useCreateJob() {
           body: input as unknown as Record<string, unknown>,
         });
         if (created.outcome.kind === 'refused') {
-          toast.error(t('common.error'), (created.outcome.code && t(`offline.errors.${created.outcome.code}`, { defaultValue: '' })) || created.outcome.message || t('createTask.failedToCreate'));
+          toast.error(
+            t('common.error'),
+            (created.outcome.code && t(`offline.errors.${created.outcome.code}`, { defaultValue: '' })) ||
+              created.outcome.message ||
+              t('createTask.failedToCreate'),
+          );
           return { kind: 'failed' };
         }
         for (const photo of photos) {

@@ -147,7 +147,11 @@ export function NextUp({
         {pending.attention > 0 ? <Pill tone="critical" label={t('offline.chip.attention')} />
           : task.pendingSync || pending.waiting > 0 ? <Pill label={t('offline.chip.waiting')} /> : null}
       </View>
-      <Pressable onPress={() => onOpen()} accessibilityRole="button" accessibilityLabel={`${t('myWork.openJob')}: ${task.title}`} style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
+      <Pressable
+        onPress={() => onOpen()}
+        accessibilityRole="button"
+        accessibilityLabel={`${t('myWork.openJob')}: ${task.title}`}
+        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
         <AText variant="h3" tone="strong" numberOfLines={2} style={{ fontSize: 17, lineHeight: 23 }}>{task.title}</AText>
         {meta ? <AText variant="caption" tone="ink" numberOfLines={1}>{meta}</AText> : null}
       </Pressable>
@@ -163,7 +167,14 @@ export function NextUp({
         ) : (
           <View style={{ flex: 1 }}><QuietButton label={t('myWork.openJob')} onPress={() => onOpen()} /></View>
         )}
-        {moving && hasPlace ? <RoundButton Glyph={NavigateGlyph} tone="jade" label={t('job.dock.navigate')} onPress={() => openJobInMaps(task, 'navigate')} /> : null}
+        {moving && hasPlace ? (
+          <RoundButton
+            Glyph={NavigateGlyph}
+            tone="jade"
+            label={t('job.dock.navigate')}
+            onPress={() => openJobInMaps(task, 'navigate')}
+          />
+        ) : null}
         <RoundButton Glyph={MoreGlyph} label={t('job.dock.more')} onPress={() => setMore(true)} disabled={busy} />
       </View>
 

@@ -49,7 +49,14 @@ export const SignPad = forwardRef<SignPadHandle, {
         onTouchStart={() => onTouching?.(true)}
         onTouchEnd={() => onTouching?.(false)}
         onTouchCancel={() => onTouching?.(false)}
-        style={{ height, borderRadius: 16, overflow: 'hidden', borderWidth: 1.5, borderStyle: 'dashed', borderColor: ink ? c.accent : c.lineField }}
+        style={{
+          height,
+          borderRadius: 16,
+          overflow: 'hidden',
+          borderWidth: 1.5,
+          borderStyle: 'dashed',
+          borderColor: ink ? c.accent : c.lineField,
+        }}
       >
         <NativeSignaturePad ref={pad} penColor="#1e293b" strokeWidth={2.6} onChange={change} />
         {!ink ? (
@@ -59,7 +66,11 @@ export const SignPad = forwardRef<SignPadHandle, {
         ) : null}
       </View>
       {ink ? (
-        <Pressable onPress={() => pad.current?.clear()} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'flex-end', marginTop: amazen.space(1) }}>
+        <Pressable
+          onPress={() => pad.current?.clear()}
+          accessibilityRole="button"
+          hitSlop={8}
+          style={{ alignSelf: 'flex-end', marginTop: amazen.space(1) }}>
           <AText variant="caption" tone="accent">{t('common.clear')}</AText>
         </Pressable>
       ) : null}

@@ -64,7 +64,13 @@ export function overlayShift(
           pendingSync: STILL_MINE.has(op.state),
         } as unknown as PendingEntry;
         status = { ...(status ?? { assignedLocations: [] }), isClockedIn: true, currentEntry: entry } as ShiftView['status'];
-        breaks = { isClockedIn: true, isOnBreak: false, currentBreak: null, todayBreaks: breaks?.todayBreaks ?? [], totalBreakMinutes: breaks?.totalBreakMinutes ?? 0 };
+        breaks = {
+          isClockedIn: true,
+          isOnBreak: false,
+          currentBreak: null,
+          todayBreaks: breaks?.todayBreaks ?? [],
+          totalBreakMinutes: breaks?.totalBreakMinutes ?? 0,
+        };
         break;
       }
       case 'attendance.clockOut': {

@@ -201,8 +201,19 @@ export function ClientEditSheet({
           </View>
 
           <LabelledField label={t('customers.fName')} value={form.name} onChangeText={(v) => set('name', v)} autoCapitalize="words" />
-          <LabelledField label={t('customers.fContact')} value={form.contactName} onChangeText={(v) => set('contactName', v)} autoCapitalize="words" />
-          <LabelledField label={t('customers.fEmail')} value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
+          <LabelledField
+            label={t('customers.fContact')}
+            value={form.contactName}
+            onChangeText={(v) => set('contactName', v)}
+            autoCapitalize="words"
+          />
+          <LabelledField
+            label={t('customers.fEmail')}
+            value={form.email}
+            onChangeText={(v) => set('email', v)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
           <LabelledField label={t('customers.fPhone')} value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
 
           {isCompanyForm && (
@@ -247,7 +258,12 @@ export function ClientEditSheet({
           <FieldGroupTitle>{t('customers.locale')}</FieldGroupTitle>
           <View style={s.chips}>
             {[{ value: '', label: t('customers.localeSame') }, ...CLIENT_LOCALE_OPTIONS].map((o) => (
-              <ChoiceChip key={o.value || 'same'} label={o.label} selected={form.locale === o.value} onPress={() => set('locale', o.value)} />
+              <ChoiceChip
+                key={o.value || 'same'}
+                label={o.label}
+                selected={form.locale === o.value}
+                onPress={() => set('locale', o.value)}
+              />
             ))}
           </View>
           <AText variant="caption" tone="muted" style={{ marginTop: 8, lineHeight: 17 }}>{t('customers.localeHint')}</AText>

@@ -28,7 +28,11 @@ export const reportMyIssue = (engine: SyncEngine, taskId: string, reason: string
 export const resumeMine = (engine: SyncEngine, taskId: string) => crewOp(engine, 'task.selfResume', taskId);
 
 /** Handing the lead over is a decision, not a tap in the field: no evidence, still queued. */
-export function changeLead(engine: SyncEngine, taskId: string, body: { toUserId: string; scope: 'TODAY' | 'PERMANENT'; reason?: string }): Promise<ActionOutcome> {
+export function changeLead(
+  engine: SyncEngine,
+  taskId: string,
+  body: { toUserId: string; scope: 'TODAY' | 'PERMANENT'; reason?: string },
+): Promise<ActionOutcome> {
   return engine
     .enqueueAndSettle({ op: 'task.lead', lane: `task:${taskId}`, entityId: taskId, payload: { params: { taskId }, body } })
     .then((settled) => outcomeOf(engine, settled));

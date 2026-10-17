@@ -124,7 +124,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
               distance: formatDistance(view.away.metres),
               at: shift.workspace ?? '',
               who: shift.approver ?? t('shiftEnd.yourApprover', { defaultValue: 'your approver' }),
-              defaultValue: `You are ${formatDistance(view.away.metres)} from ${shift.workspace ?? ''}. The clock-out works — ${shift.approver ?? 'your approver'} will see where it happened.`,
+              defaultValue: (`You are ${formatDistance(view.away.metres)} from ${shift.workspace ?? ''}. The clock-out works — ` + `${shift.approver ?? 'your approver'} will see where it happened.`),
             })}
           </Strip>
         ) : null}
@@ -176,7 +176,7 @@ export function ClockOutSheet({ visible, onClose, onConfirm, isLoading = false, 
             {t('shiftEnd.askApproval', {
               who: shift.approver ?? t('shiftEnd.yourApprover', { defaultValue: 'your approver' }),
               duration: formatDuration(view.overBy),
-              defaultValue: `This asks ${shift.approver ?? 'your approver'} to approve ${formatDuration(view.overBy)} of extra time. You are clocked out either way.`,
+              defaultValue: (`This asks ${shift.approver ?? 'your approver'} to approve ` + `${formatDuration(view.overBy)} of extra time. You are clocked out either way.`),
             })}
           </Strip>
         ) : null}

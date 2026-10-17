@@ -44,14 +44,30 @@ export const TeamRow = memo(function TeamRow({
     <Pressable
       onPress={() => onOpen(x.id)}
       accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(2.75),
+        opacity: pressed ? 0.85 : 1,
+      })}
     >
       <PersonAvatar person={x} presence={x.presence} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{personName(x)}</AText>
-        <AText variant="caption" tone="muted" numberOfLines={1}>{[x.position, x.spaceName].filter(Boolean).join(' · ') || presenceText(x.presence, t)}</AText>
+        <AText variant="caption" tone="muted" numberOfLines={1}>
+          {[x.position, x.spaceName].filter(Boolean).join(' · ') || presenceText(x.presence, t)}
+        </AText>
       </View>
-      {canChat ? <RoundButton Glyph={MessagesGlyph} tone="jade" size={40} label={t('team.message', { defaultValue: 'Message {{name}}', name: x.firstName })} onPress={() => onMessage(x.id)} /> : null}
+      {canChat ? (
+        <RoundButton
+          Glyph={MessagesGlyph}
+          tone="jade"
+          size={40}
+          label={t('team.message', { defaultValue: 'Message {{name}}', name: x.firstName })}
+          onPress={() => onMessage(x.id)}
+        />
+      ) : null}
     </Pressable>
   );
   return (

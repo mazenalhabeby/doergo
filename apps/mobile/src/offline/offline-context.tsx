@@ -80,7 +80,11 @@ export function OfflineProvider({ children, variant = 'staff' }: {
       build — which is an afternoon of looking in the wrong place.
     */
     if (!user?.id || !user.organizationId) {
-      setValue(user?.id ? { ...UNAVAILABLE, unavailableReason: 'no-org', unavailableDetail: 'no organization on this account' } : UNAVAILABLE);
+      setValue(
+        user?.id
+          ? { ...UNAVAILABLE, unavailableReason: 'no-org', unavailableDetail: 'no organization on this account' }
+          : UNAVAILABLE,
+      );
       return;
     }
     const missing = missingOfflineParts();
@@ -145,7 +149,19 @@ export function OfflineProvider({ children, variant = 'staff' }: {
         forgetFile: (id) => files.forget(id),
         isUnreachable,
       });
-      setValue({ available: true, starting: false, engine: live, records, files, media, preferences, running: live, avatar, unavailableReason: null, unavailableDetail: null });
+      setValue({
+        available: true,
+        starting: false,
+        engine: live,
+        records,
+        files,
+        media,
+        preferences,
+        running: live,
+        avatar,
+        unavailableReason: null,
+        unavailableDetail: null,
+      });
       void avatar.flush();
       // Syncs itself now and then with the app closed — best effort, never relied on.
       void registerBackgroundSync({ userId: user.id, organizationId: user.organizationId! });

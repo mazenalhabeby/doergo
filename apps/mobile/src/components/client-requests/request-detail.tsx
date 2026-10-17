@@ -79,7 +79,9 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
     return (
       <Ground style={{ flex: 1 }}>
         <ScreenHeader title={t('clientRequests.title', 'Client requests')} leading={<HeaderBack onPress={back} />} />
-        <AText variant="body" tone="onGlass" style={{ textAlign: 'center', padding: amazen.space(8) }}>{t('clientRequests.notFound', 'This request is not in your workspaces.')}</AText>
+        <AText variant="body" tone="onGlass" style={{ textAlign: 'center', padding: amazen.space(8) }}>
+          {t('clientRequests.notFound', 'This request is not in your workspaces.')}
+        </AText>
       </Ground>
     );
   }
@@ -102,37 +104,86 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader title={req.reference} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
-      <ScrollView contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) }, wide]}>
+      <ScrollView
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) },
+          wide,
+        ]}>
         <View style={{ gap: amazen.space(1.5), alignItems: 'flex-start' }}>
           <AText variant="h2" tone="strong">{req.title}</AText>
-          <Pill label={waiting ? t('clientRequests.waiting', 'Waiting') : t('clientRequests.becameJob', 'Became a job')} tone={waiting ? 'warn' : 'accent'} />
+          <Pill
+            label={waiting ? t('clientRequests.waiting', 'Waiting') : t('clientRequests.becameJob', 'Became a job')}
+            tone={waiting ? 'warn' : 'accent'}
+          />
         </View>
         {req.description ? (
           <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, padding: amazen.space(3.5) }}>
             <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{req.description}</AText>
           </View>
         ) : null}
-        <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1.5) }}>
+        <View
+          style={{
+            backgroundColor: c.well,
+            borderRadius: amazen.radius.panel,
+            paddingHorizontal: amazen.space(3.5),
+            paddingVertical: amazen.space(1.5),
+          }}>
           {facts.map(([k, v], i) => (
-            <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: amazen.space(3), paddingVertical: amazen.space(2.25), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+            <View
+              key={k}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                gap: amazen.space(3),
+                paddingVertical: amazen.space(2.25),
+                borderTopWidth: i === 0 ? 0 : 1,
+                borderTopColor: c.lineWell,
+              }}>
               <AText variant="caption" style={{ color: c.inkMuted, fontSize: 13 }}>{k}</AText>
-              <AText variant="body" tone="strong" numberOfLines={2} style={{ fontSize: 13.5, flexShrink: 1, textAlign: 'right' }}>{v}</AText>
+              <AText
+                variant="body"
+                tone="strong"
+                numberOfLines={2}
+                style={{ fontSize: 13.5, flexShrink: 1, textAlign: 'right' }}
+              >
+                {v}
+              </AText>
             </View>
           ))}
         </View>
       </ScrollView>
 
-      <View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: amazen.space(4), paddingTop: amazen.space(3), paddingBottom: amazen.space(8), backgroundColor: c.canvas }, wide]}>
+      <View
+        style={[
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            paddingHorizontal: amazen.space(4),
+            paddingTop: amazen.space(3),
+            paddingBottom: amazen.space(8),
+            backgroundColor: c.canvas,
+          },
+          wide,
+        ]}>
         {!waiting ? (
           <PrimaryButton label={t('clientRequests.openJob', 'Open the job')} onPress={() => router.replace(`/(app)/task/${id}` as Href)} />
         ) : mayAnswer ? (
           <PrimaryButton label={t('clientRequests.turnIntoJob', 'Turn into a job')} onPress={() => setSheet(true)} />
         ) : (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('clientRequests.readOnly', 'You can read requests. Answering needs Answer in this workspace.')}</AText>
+          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+            {t('clientRequests.readOnly', 'You can read requests. Answering needs Answer in this workspace.')}
+          </AText>
         )}
       </View>
 
-      <JobSheet visible={sheet} onClose={() => setSheet(false)} busy={busy} title={t('clientRequests.turnIntoJob', 'Turn into a job')} eyebrow={<SectionLabel>{req.title}</SectionLabel>}>
+      <JobSheet
+        visible={sheet}
+        onClose={() => setSheet(false)}
+        busy={busy}
+        title={t('clientRequests.turnIntoJob', 'Turn into a job')}
+        eyebrow={<SectionLabel>{req.title}</SectionLabel>}>
         <SectionLabel>{t('clientRequests.priority', 'Priority')}</SectionLabel>
         <FilterRow>
           {PRIORITIES.map((p) => <ChoicePill key={p} label={t(`priority.${p}`)} on={priority === p} onPress={() => setPriority(p)} />)}
@@ -142,17 +193,28 @@ export function RequestDetail({ id, portalId, spaceId }: { id: string; portalId:
             <SectionLabel>{t('clientRequests.whoDoesIt', 'Who does it')}</SectionLabel>
             {roster === null ? <ActivityIndicator color={c.accent} /> : (
               <>
-                <SheetOption label={t('clientRequests.decideLater', 'Decide later')} tone={worker === null ? 'accent' : 'strong'} onPress={() => setWorker(null)} />
+                <SheetOption
+                  label={t('clientRequests.decideLater', 'Decide later')}
+                  tone={worker === null ? 'accent' : 'strong'}
+                  onPress={() => setWorker(null)}
+                />
                 {/* Only people who can take a job — a profile without Tasks is refused by the server. */}
                 {roster.filter((m) => m.user && canReceiveTasks(m.user as never)).map((m) => (
-                  <SheetOption key={m.userId} label={personName(m.user)} tone={worker === m.userId ? 'accent' : 'strong'} onPress={() => setWorker(m.userId)} />
+                  <SheetOption
+                    key={m.userId}
+                    label={personName(m.user)}
+                    tone={worker === m.userId ? 'accent' : 'strong'}
+                    onPress={() => setWorker(m.userId)}
+                  />
                 ))}
               </>
             )}
           </>
         ) : null}
         <PrimaryButton label={t('clientRequests.createJob', 'Create job')} loading={busy} disabled={busy} onPress={() => void triage()} />
-        <AText variant="caption" tone="muted">{t('clientRequests.residentSees', 'The resident sees their request move on in their app.')}</AText>
+        <AText variant="caption" tone="muted">
+          {t('clientRequests.residentSees', 'The resident sees their request move on in their app.')}
+        </AText>
       </JobSheet>
     </Ground>
   );

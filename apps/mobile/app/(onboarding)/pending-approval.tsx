@@ -99,8 +99,14 @@ export default function PendingApprovalScreen() {
             <View style={{ gap: amazen.space(3) }}>
               <PrimaryButton label={t('onboarding.pass.haveAnother')} onPress={anotherCode} />
               {requestId ? (
-                <Pressable onPress={() => setShowCancelConfirm(true)} hitSlop={10} accessibilityRole="button" style={{ alignSelf: 'center' }}>
-                  <AText variant="body" style={{ color: c.critical, fontSize: 13.5 }}>{t('onboarding.pendingApproval.cancelRequest')}</AText>
+                <Pressable
+                  onPress={() => setShowCancelConfirm(true)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  style={{ alignSelf: 'center' }}>
+                  <AText variant="body" style={{ color: c.critical, fontSize: 13.5 }}>
+                    {t('onboarding.pendingApproval.cancelRequest')}
+                  </AText>
                 </Pressable>
               ) : null}
             </View>
@@ -118,11 +124,32 @@ export default function PendingApprovalScreen() {
           roleTone={refused ? 'critical' : 'warn'}
           footLeft="HBCFIELD"
           footRight={refused ? '' : t('onboarding.pass.checksEvery')}
-          stamp={{ text: refused ? t('onboarding.pass.stripRefused') : t('onboarding.pass.stampPending'), tone: refused ? 'critical' : 'warn' }}
+          stamp={{
+            text: refused ? t('onboarding.pass.stripRefused') : t('onboarding.pass.stampPending'),
+            tone: refused ? 'critical' : 'warn',
+          }}
         />
         {requestMessage && !refused ? (
-          <View style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 18, padding: amazen.space(3.5), gap: 4 }}>
-            <AText style={{ color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase' }}>{t('onboarding.pendingApproval.yourMessage')}</AText>
+          <View
+            style={{
+              backgroundColor: c.glass,
+              borderWidth: 1,
+              borderColor: c.lineGlass,
+              borderRadius: 18,
+              padding: amazen.space(3.5),
+              gap: 4,
+            }}>
+            <AText
+              style={{
+                color: c.inkOnGlass,
+                fontFamily: amazen.font.mono,
+                fontSize: 10,
+                letterSpacing: 1.3,
+                textTransform: 'uppercase',
+              }}
+            >
+              {t('onboarding.pendingApproval.yourMessage')}
+            </AText>
             <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>{requestMessage}</AText>
           </View>
         ) : null}

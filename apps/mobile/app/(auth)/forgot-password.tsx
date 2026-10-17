@@ -58,7 +58,11 @@ export default function ForgotPasswordScreen() {
     <AuthFrame
       footer={
         <View style={{ gap: amazen.space(2.5) }}>
-          <AuthLinkLine text={t('auth.forgotPassword.rememberPassword')} link={t('auth.forgotPassword.signIn')} onPress={() => router.back()} />
+          <AuthLinkLine
+            text={t('auth.forgotPassword.rememberPassword')}
+            link={t('auth.forgotPassword.signIn')}
+            onPress={() => router.back()}
+          />
           <AuthHelp />
         </View>
       }
@@ -67,8 +71,16 @@ export default function ForgotPasswordScreen() {
         <AuthCard>
           <View style={{ alignItems: 'center', gap: amazen.space(2) }}>
             <FinishGlyph size={56} color={c.accent} contrast={c.accentInk} />
-            <AText variant="h2" tone="strong" style={{ fontSize: 21, fontFamily: amazen.font.sansLight, textAlign: 'center' }}>{t('auth.forgotPassword.sentTitle')}</AText>
-            <AText variant="body" tone="onGlass" style={{ fontSize: 13.5, lineHeight: 20, textAlign: 'center' }}>{t('auth.forgotPassword.sentMessage', { email })}</AText>
+            <AText
+              variant="h2"
+              tone="strong"
+              style={{ fontSize: 21, fontFamily: amazen.font.sansLight, textAlign: 'center' }}
+            >
+              {t('auth.forgotPassword.sentTitle')}
+            </AText>
+            <AText variant="body" tone="onGlass" style={{ fontSize: 13.5, lineHeight: 20, textAlign: 'center' }}>
+              {t('auth.forgotPassword.sentMessage', { email })}
+            </AText>
           </View>
           <PrimaryButton label={t('auth.forgotPassword.backToLogin')} onPress={() => router.back()} />
         </AuthCard>

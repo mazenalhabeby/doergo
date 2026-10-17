@@ -48,14 +48,45 @@ export function Row({
   const G = PROFILE_GLYPHS[glyph];
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={value ? `${label}, ${value}` : label}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), opacity: pressed ? 0.8 : 1 })}>
-      <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(3),
+        opacity: pressed ? 0.8 : 1,
+      })}>
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 11,
+          backgroundColor: c.accentTint,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <G size={19} color={c.accent} contrast={c.well} />
       </View>
       <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 14.5 }}>{label}</AText>
-      {value ? <AText variant="caption" numberOfLines={1} style={{ fontSize: 13, color: valueTone === 'accent' ? c.accent : c.inkMuted, maxWidth: '40%' }}>{value}</AText> : null}
+      {value ? (
+        <AText
+          variant="caption"
+          numberOfLines={1}
+          style={{ fontSize: 13, color: valueTone === 'accent' ? c.accent : c.inkMuted, maxWidth: '40%' }}
+        >
+          {value}
+        </AText>
+      ) : null}
       {count > 0 ? (
-        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: countTone === 'critical' ? c.criticalTint : c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            minWidth: 22,
+            height: 22,
+            borderRadius: 11,
+            paddingHorizontal: 6,
+            backgroundColor: countTone === 'critical' ? c.criticalTint : c.warnTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <AText variant="caption" tone={countTone} numeric>{String(count)}</AText>
         </View>
       ) : null}

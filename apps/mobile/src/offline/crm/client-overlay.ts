@@ -88,7 +88,14 @@ export function pendingContactLinks(
     const companyId = o.payload.params?.companyId;
     const name = body.$name ?? '';
     if (side === 'person' && companyId === recordId) {
-      rows.push({ id: o.id, opId: o.id, waiting: true, role: body.role ?? null, isPrimary: false, person: { id: body.$shownId ?? o.id, name } });
+      rows.push({
+        id: o.id,
+        opId: o.id,
+        waiting: true,
+        role: body.role ?? null,
+        isPrimary: false,
+        person: { id: body.$shownId ?? o.id, name },
+      });
     } else if (side === 'company' && body.personId === recordId && companyId) {
       rows.push({ id: o.id, opId: o.id, waiting: true, role: body.role ?? null, isPrimary: false, company: { id: companyId, name } });
     }

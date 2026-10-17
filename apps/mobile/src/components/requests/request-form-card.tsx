@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { REQUEST_LIMITS, detectRequest, formatDuration, localDateKey, type DetectedRequest, type RequestKind } from '@hbcfield/shared/client';
+import {
+  REQUEST_LIMITS,
+  detectRequest,
+  formatDuration,
+  localDateKey,
+  type DetectedRequest,
+  type RequestKind,
+} from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { AText, FilterPill, FilterRow, PrimaryButton, Well } from '../amazen';
 import { JobField, QuietButton, SectionLabel } from '../job/job-ui';
@@ -12,8 +19,8 @@ import { PrecheckCard } from './precheck-card';
 import { SuggestionCard } from './suggestion-card';
 import { useRequestPrecheck } from './use-request-precheck';
 import { OVERTIME_PRESETS, draftToBody, kindEffectKey, kindLabelKey, stepOvertime, type RequestBody } from './request-model';
-
-type Picker = 'start' | 'end' | 'startTime' | 'endTime' | null;
+import { useRequestFormCard } from './use-request-form-card';
+import { Stepper } from './request-form-card-helpers';
 
 /**
  * A REQUEST THAT IS NOT LEAVE — remote work, a changed day, overtime agreed in
@@ -47,52 +54,38 @@ export function RequestFormCard({
   onClose: () => void;
   onSubmit: (body: RequestBody) => void;
 }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const { t, i18n } = useTranslation();
-  const today = localDateKey(new Date());
-  const [start, setStart] = useState(today);
-  const [end, setEnd] = useState<string | null>(null);
-  const [spaceId, setSpaceId] = useState<string | null>(null);
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [minutes, setMinutes] = useState<number>(60);
-  const [reason, setReason] = useState('');
-  const [picker, setPicker] = useState<Picker>(null);
-  const [tried, setTried] = useState(false);
-
-  const spaces = options?.remoteSpaces ?? [];
-  // A fresh form for every kind; one workspace is chosen for the member.
-  useEffect(() => {
-    setStart(initial?.start && initial.start >= today ? initial.start : today);
-    setEnd(initial?.end ?? null);
-    setStartTime(initial?.startTime ?? ''); setEndTime(initial?.endTime ?? '');
-    setMinutes(initial?.minutes ? Math.min(REQUEST_LIMITS.OVERTIME_MAX_MINUTES, Math.max(REQUEST_LIMITS.OVERTIME_MIN_MINUTES, initial.minutes)) : 60);
-    setReason(initial?.reason ?? ''); setTried(false);
-    setSpaceId(spaces.length === 1 ? spaces[0]!.id : null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, spaces.length, initial]);
-
-  const range = kind === 'REMOTE' || kind === 'OTHER';
-  const built = draftToBody({
-    kind, startDate: start, endDate: range ? end : null,
-    spaceId: kind === 'REMOTE' ? spaceId : null,
-    startTime: kind === 'HOURS' ? startTime || null : null,
-    endTime: kind === 'HOURS' ? endTime || null : null,
-    minutes: kind === 'OVERTIME' ? minutes : null,
+  const {
+    amazen,
+    c,
+    t,
+    today,
+    start,
+    setStart,
+    end,
+    setEnd,
+    spaceId,
+    setSpaceId,
+    startTime,
+    setStartTime,
+    endTime,
+    setEndTime,
+    minutes,
+    setMinutes,
     reason,
-  });
-  const noSpace = kind === 'REMOTE' && spaces.length === 0;
-  // What a leader would check, once the form is complete enough to send.
-  const precheck = useRequestPrecheck(built.ok ? (built.body as unknown as Record<string, unknown>) : null);
-  // "Other" in words that ask for something the app has a form for.
-  const suggestion = useMemo(() => (kind === 'OTHER' && onSuggest ? detectRequest(reason) : null), [kind, reason, onSuggest]);
-  const effect = kindEffectKey(kind);
-  const dayLabel = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
-  const send = () => {
-    setTried(true);
-    if (built.ok && !busy) onSubmit(built.body);
-  };
+    setReason,
+    picker,
+    setPicker,
+    tried,
+    spaces,
+    range,
+    built,
+    noSpace,
+    precheck,
+    suggestion,
+    effect,
+    dayLabel,
+    send,
+  } = useRequestFormCard({ kind, options, busy, onClose, onSubmit, initial, onSuggest });
 
   return (
     <Well style={{ padding: amazen.space(4), gap: amazen.space(3.5) }}>
@@ -112,7 +105,13 @@ export function RequestFormCard({
         {range ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <AText variant="caption" tone="muted" style={{ width: 44 }}>{t('time.off.to', 'To')}</AText>
-            <FilterRow><FilterPill label={end ? dayLabel(end) : t('requests.form.sameDay', 'Same day')} on={!!end} onPress={() => setPicker('end')} /></FilterRow>
+            <FilterRow>
+              <FilterPill
+                label={end ? dayLabel(end) : t('requests.form.sameDay', 'Same day')}
+                on={!!end}
+                onPress={() => setPicker('end')}
+              />
+            </FilterRow>
           </View>
         ) : null}
       </View>
@@ -121,9 +120,15 @@ export function RequestFormCard({
         <View style={{ gap: amazen.space(1.5) }}>
           <SectionLabel>{t('requests.form.workspace', 'Workspace')}</SectionLabel>
           {noSpace ? (
-            <AText variant="caption" tone="warn" style={{ fontSize: 13 }}>{t('requests.noRemoteSpace', 'There is no workspace you may work remotely for.')}</AText>
+            <AText variant="caption" tone="warn" style={{ fontSize: 13 }}>
+              {t('requests.noRemoteSpace', 'There is no workspace you may work remotely for.')}
+            </AText>
           ) : (
-            <FilterRow>{spaces.map((s) => <FilterPill key={s.id} label={s.name} on={spaceId === s.id} onPress={() => setSpaceId(s.id)} />)}</FilterRow>
+            <FilterRow>
+              {spaces.map((s) => (
+                <FilterPill key={s.id} label={s.name} on={spaceId === s.id} onPress={() => setSpaceId(s.id)} />
+              ))}
+            </FilterRow>
           )}
         </View>
       ) : null}
@@ -133,11 +138,23 @@ export function RequestFormCard({
           <SectionLabel>{t('requests.form.newHours', 'New hours')}</SectionLabel>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <AText variant="caption" tone="muted" style={{ width: 44 }}>{t('requests.form.start', 'Start')}</AText>
-            <FilterRow><FilterPill label={startTime || t('requests.form.unchanged', 'Unchanged')} on={!!startTime} onPress={() => setPicker('startTime')} /></FilterRow>
+            <FilterRow>
+              <FilterPill
+                label={startTime || t('requests.form.unchanged', 'Unchanged')}
+                on={!!startTime}
+                onPress={() => setPicker('startTime')}
+              />
+            </FilterRow>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <AText variant="caption" tone="muted" style={{ width: 44 }}>{t('requests.form.end', 'End')}</AText>
-            <FilterRow><FilterPill label={endTime || t('requests.form.unchanged', 'Unchanged')} on={!!endTime} onPress={() => setPicker('endTime')} /></FilterRow>
+            <FilterRow>
+              <FilterPill
+                label={endTime || t('requests.form.unchanged', 'Unchanged')}
+                on={!!endTime}
+                onPress={() => setPicker('endTime')}
+              />
+            </FilterRow>
           </View>
         </View>
       ) : null}
@@ -147,7 +164,17 @@ export function RequestFormCard({
           <SectionLabel>{t('requests.form.howLong', 'How long')}</SectionLabel>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <Stepper sign="−" label={t('requests.form.less', '15 minutes less')} onPress={() => setMinutes((m) => stepOvertime(m, -1))} />
-            <AText numeric accessibilityLiveRegion="polite" style={{ flex: 1, textAlign: 'center', fontFamily: amazen.font.mono, fontSize: 40, lineHeight: 48, color: c.inkStrong }}>
+            <AText
+              numeric
+              accessibilityLiveRegion="polite"
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                fontFamily: amazen.font.mono,
+                fontSize: 40,
+                lineHeight: 48,
+                color: c.inkStrong,
+              }}>
               {`+${formatDuration(minutes)}`}
             </AText>
             <Stepper sign="+" label={t('requests.form.more', '15 minutes more')} onPress={() => setMinutes((m) => stepOvertime(m, 1))} />
@@ -156,24 +183,42 @@ export function RequestFormCard({
             {OVERTIME_PRESETS.map((m) => <FilterPill key={m} label={formatDuration(m)} on={minutes === m} onPress={() => setMinutes(m)} />)}
           </FilterRow>
           <AText variant="caption" tone="muted" style={{ fontSize: 12 }}>
-            {t('requests.form.overtimeRange', { defaultValue: 'Between {{min}} and {{max}}', min: formatDuration(REQUEST_LIMITS.OVERTIME_MIN_MINUTES), max: formatDuration(REQUEST_LIMITS.OVERTIME_MAX_MINUTES) })}
+            {t('requests.form.overtimeRange', {
+              defaultValue: 'Between {{min}} and {{max}}',
+              min: formatDuration(REQUEST_LIMITS.OVERTIME_MIN_MINUTES),
+              max: formatDuration(REQUEST_LIMITS.OVERTIME_MAX_MINUTES),
+            })}
           </AText>
         </View>
       ) : null}
 
       <View style={{ gap: amazen.space(1.5) }}>
-        <SectionLabel>{kind === 'OTHER' ? t('requests.form.reason', 'Reason') : t('requests.form.reasonOptional', 'Reason (optional)')}</SectionLabel>
+        <SectionLabel>
+          {kind === 'OTHER'
+            ? t('requests.form.reason', 'Reason')
+            : t('requests.form.reasonOptional', 'Reason (optional)')}
+        </SectionLabel>
         <JobField
           value={reason}
           onChangeText={setReason}
           multiline
           maxLength={REQUEST_LIMITS.REASON_MAX}
-          placeholder={kind === 'OTHER' ? t('requests.form.otherPlaceholder', 'What are you asking for?') : t('requests.form.reasonPlaceholder', 'A short reason')}
+          placeholder={
+            kind === 'OTHER'
+              ? t('requests.form.otherPlaceholder', 'What are you asking for?')
+              : t('requests.form.reasonPlaceholder', 'A short reason')
+          }
         />
       </View>
 
       {effect ? (
-        <View style={{ borderRadius: 16, paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3), backgroundColor: c.accentTint }}>
+        <View
+          style={{
+            borderRadius: 16,
+            paddingVertical: amazen.space(2.5),
+            paddingHorizontal: amazen.space(3),
+            backgroundColor: c.accentTint,
+          }}>
           <AText variant="caption" tone="accent" style={{ fontSize: 13, lineHeight: 18 }}>{t(effect)}</AText>
         </View>
       ) : null}
@@ -220,20 +265,5 @@ export function RequestFormCard({
         onClose={() => setPicker(null)}
       />
     </Well>
-  );
-}
-
-function Stepper({ sign, label, onPress }: { sign: string; label: string; onPress: () => void }) {
-  const { amazen } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={6}
-      style={({ pressed }) => ({ width: 48, height: 48, borderRadius: 24, backgroundColor: amazen.color.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}
-    >
-      <AText variant="h2" tone="strong">{sign}</AText>
-    </Pressable>
   );
 }

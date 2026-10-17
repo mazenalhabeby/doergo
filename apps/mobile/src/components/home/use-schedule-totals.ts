@@ -69,7 +69,11 @@ const EMPTY: ScheduleTotals = { monthMinutes: null, weekMinutes: null, lastToday
  */
 function revive(t: ScheduleTotals): ScheduleTotals {
   // A copy kept before `weekDays` existed has none — an empty week, not a crash.
-  return { ...t, lastIn: t.lastIn ? new Date(t.lastIn) : null, weekDays: Array.isArray(t.weekDays) && t.weekDays.length === 7 ? t.weekDays : EMPTY.weekDays };
+  return {
+    ...t,
+    lastIn: t.lastIn ? new Date(t.lastIn) : null,
+    weekDays: Array.isArray(t.weekDays) && t.weekDays.length === 7 ? t.weekDays : EMPTY.weekDays,
+  };
 }
 
 /** Counted minutes on one entry. Never the word "paid" anywhere it is shown. */

@@ -161,11 +161,19 @@ export function AddContactSheet({
           ) : (
             <>
               <LabelledField label={t('customers.fName')} value={name} onChangeText={setName} autoCapitalize="words" />
-              <LabelledField label={t('customers.fEmail')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+              <LabelledField
+                label={t('customers.fEmail')}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
               <LabelledField label={t('customers.fPhone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
               {/* The sentence that makes this safe to use freely — it says what
                   creating somebody here does NOT do to the bill. */}
-              <AText variant="caption" tone="muted" style={{ marginTop: 12, lineHeight: 18 }}>{t('customers.record.contactNotAClient')}</AText>
+              <AText variant="caption" tone="muted" style={{ marginTop: 12, lineHeight: 18 }}>
+                {t('customers.record.contactNotAClient')}
+              </AText>
             </>
           )}
 

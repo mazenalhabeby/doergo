@@ -41,7 +41,12 @@ export function legToNext(plan: OptimizedRoute | null, next: DayStop | undefined
  * starts at a plan start the driver has left (`legToNext`); `estimated` then
  * says the total is not a road figure.
  */
-export function routeFigures(plan: OptimizedRoute | null, ordered: readonly DayStop[], ahead: readonly DayStop[], position: LatLng | null = null) {
+export function routeFigures(
+  plan: OptimizedRoute | null,
+  ordered: readonly DayStop[],
+  ahead: readonly DayStop[],
+  position: LatLng | null = null,
+) {
   if (!plan) return { left: ahead.length, metresToGo: null as number | null, backBy: null as Date | null, estimated: false };
   // Legs arrive at waypoint i; waypoint 0 is the start. Sum the legs INTO the stops still ahead, plus any leg home.
   const aheadIds = new Set(ahead.map((s) => s.id));

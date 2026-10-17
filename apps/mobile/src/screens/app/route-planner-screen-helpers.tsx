@@ -49,7 +49,13 @@ export const PickRow = memo(function PickRow({ id, title, address, on, onToggle 
     <TouchableOpacity
       onPress={() => onToggle(id)}
       activeOpacity={0.7}
-      style={[styles.pickRow, { borderColor: on ? COLORS.primary : colors.border, backgroundColor: on ? 'rgba(37,99,235,0.06)' : 'transparent' }]}
+      style={[
+        styles.pickRow,
+        {
+          borderColor: on ? COLORS.primary : colors.border,
+          backgroundColor: on ? 'rgba(37,99,235,0.06)' : 'transparent',
+        },
+      ]}
     >
       <Ionicons name={on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={on ? COLORS.primary : colors.textMuted} />
       <View style={{ flex: 1 }}>

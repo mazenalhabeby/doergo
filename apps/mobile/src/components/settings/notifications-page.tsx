@@ -111,19 +111,35 @@ export function NotificationsPage() {
       <StateCard
         tone={granted ? 'accent' : 'warn'}
         mark={granted ? undefined : '!'}
-        title={granted ? t('settings.notif.allowed', 'This phone can notify you') : t('settings.notif.blocked', 'Notifications are off for this app')}
-        sub={granted ? t('settings.notif.allowedSub', "Allowed in the phone's settings") : t('settings.notif.blockedSub', "You will not hear about new jobs or your shift. Turn them on in the phone's settings.")}
+        title={
+          granted
+            ? t('settings.notif.allowed', 'This phone can notify you')
+            : t('settings.notif.blocked', 'Notifications are off for this app')
+        }
+        sub={granted ? t('settings.notif.allowedSub', "Allowed in the phone's settings") : t('settings.notif.blockedSub', ("You will not hear about new jobs or your shift. Turn them on in the " + "phone's settings."))}
       />
       {!granted ? <PrimaryButton label={t('settings.notif.allow', 'Allow notifications')} onPress={() => void fixPermission()} /> : null}
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.notif.onPhone', 'On this phone')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
+        {t('settings.notif.onPhone', 'On this phone')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {PUSH.map((k, i) => (
-          <SwitchRow key={k} first={i === 0} title={PUSH_TEXT[k][0]} sub={PUSH_TEXT[k][1]} value={on(k)} onChange={(v) => void set(k, v)} disabled={!granted || prefs === null} />
+          <SwitchRow
+            key={k}
+            first={i === 0}
+            title={PUSH_TEXT[k][0]}
+            sub={PUSH_TEXT[k][1]}
+            value={on(k)}
+            onChange={(v) => void set(k, v)}
+            disabled={!granted || prefs === null}
+          />
         ))}
       </Well>
 
-      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>{t('settings.notif.byEmail', 'By email')}</SectionLabel>
+      <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2) }}>
+        {t('settings.notif.byEmail', 'By email')}
+      </SectionLabel>
       <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
         {MEMBER_EMAILS.map((kind, i) => {
           const allowed = orgAllows[kind] !== false;
@@ -135,7 +151,11 @@ export function NotificationsPage() {
         })}
       </Well>
 
-      {prefs === null ? <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('settings.notif.offline', 'Needs a connection to change these.')}</AText> : null}
+      {prefs === null ? (
+        <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+          {t('settings.notif.offline', 'Needs a connection to change these.')}
+        </AText>
+      ) : null}
       <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingHorizontal: amazen.space(4) }}>
         {t('settings.notif.always', 'Messages from a colleague and anything that blocks your work always reach you.')}
       </AText>

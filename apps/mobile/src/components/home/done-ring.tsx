@@ -63,9 +63,51 @@ export function DoneRing({ done, onPress, label }: { done: boolean; onPress: () 
       accessibilityLabel={label}
       style={({ pressed }) => ({ width: SIZE, height: SIZE, transform: [{ scale: pressed && !done ? 0.9 : 1 }] })}
     >
-      <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', left: -6, top: -6, right: -6, bottom: -6, borderRadius: SIZE, borderWidth: 2, borderColor: c.accent }, burst]} />
-      <Reanimated.View style={[{ position: 'absolute', left: 1, top: 1, right: 1, bottom: 1, borderRadius: SIZE, borderWidth: 1.6, borderColor: `${c.ink}66` }, ring]} />
-      <Reanimated.View style={[{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderRadius: SIZE, backgroundColor: c.accentSolid }, fill]} />
+      <Reanimated.View
+        pointerEvents="none"
+        style={[
+          {
+            position: 'absolute',
+            left: -6,
+            top: -6,
+            right: -6,
+            bottom: -6,
+            borderRadius: SIZE,
+            borderWidth: 2,
+            borderColor: c.accent,
+          },
+          burst,
+        ]}
+      />
+      <Reanimated.View
+        style={[
+          {
+            position: 'absolute',
+            left: 1,
+            top: 1,
+            right: 1,
+            bottom: 1,
+            borderRadius: SIZE,
+            borderWidth: 1.6,
+            borderColor: `${c.ink}66`,
+          },
+          ring,
+        ]}
+      />
+      <Reanimated.View
+        style={[
+          {
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: SIZE,
+            backgroundColor: c.accentSolid,
+          },
+          fill,
+        ]}
+      />
       <View style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
         <Svg width={SIZE} height={SIZE} viewBox="0 0 36 36">
           <AnimatedPath

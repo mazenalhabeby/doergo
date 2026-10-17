@@ -13,7 +13,11 @@ export type AvatarChange =
   | { kind: 'remove'; at: number };
 
 export interface PendingAvatarDeps {
-  storage: { getItem(k: string): Promise<string | null>; setItem(k: string, v: string): Promise<void>; removeItem(k: string): Promise<void> };
+  storage: {
+    getItem(k: string): Promise<string | null>;
+    setItem(k: string, v: string): Promise<void>;
+    removeItem(k: string): Promise<void>;
+  };
   upload(uri: string, fileName: string, mime: string): Promise<unknown>;
   remove(): Promise<unknown>;
   /** Forget a kept photo once it has been sent or replaced. */

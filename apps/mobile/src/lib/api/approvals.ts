@@ -4,7 +4,16 @@
  * queued, because somebody else may make it first.
  */
 import { call, E } from './client';
-import type { ApprovalDecision, ApprovalKind, ApprovalRouting, ApprovalsCount, ApprovalsResponse, StandInInput, StandInView, StandInsResponse } from '@hbcfield/shared/client';
+import type {
+  ApprovalDecision,
+  ApprovalKind,
+  ApprovalRouting,
+  ApprovalsCount,
+  ApprovalsResponse,
+  StandInInput,
+  StandInView,
+  StandInsResponse,
+} from '@hbcfield/shared/client';
 
 export const approvalsApi = {
   list: async (): Promise<ApprovalsResponse> => {

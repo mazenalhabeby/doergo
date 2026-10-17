@@ -29,7 +29,7 @@ export function InkIcon({
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${ICON_VIEWBOX}">` +
       (flat
         ? iconMarkup(name)
-        : `<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`) +
+        : (`<defs><linearGradient id="ink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="` + `${to}"/></linearGradient></defs>${iconMarkup(name, 'url(#ink)')}`)) +
       '</svg>',
     [name, flat, from, to],
   );

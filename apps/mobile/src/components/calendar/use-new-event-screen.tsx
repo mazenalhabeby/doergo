@@ -84,7 +84,16 @@ export function useNewEventScreen() {
   useEffect(() => {
     if (!crm || !clientQ.trim()) { setClients([]); return; }
     let live = true;
-    const id = setTimeout(() => customersApi.list({ search: clientQ.trim(), limit: 8 }).then((r) => { if (live) setClients(r); }).catch(() => undefined), 220);
+    const id = setTimeout(
+      () =>
+        customersApi
+          .list({ search: clientQ.trim(), limit: 8 })
+          .then((r) => {
+            if (live) setClients(r);
+          })
+          .catch(() => undefined),
+      220,
+    );
     return () => { live = false; clearTimeout(id); };
   }, [clientQ, crm]);
 
@@ -116,7 +125,8 @@ export function useNewEventScreen() {
   const end = time && endTime ? localInstant(endDay, endTime) : null;
   // Shared with the web and the server (calendar/span.ts).
   const problem = start && end ? spanProblem(start, end) : endDay < day ? 'END_BEFORE_START' : null;
-  const label = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
+  const label = (d: string) =>
+    new Date(`${d}T12:00:00`).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
   /** Moving the start carries the end with it, so the duration already set is kept. */
   const pickStart = (d: string, tm: string) => {
     if (!tm) { setDay(d); setTime(''); setEndTime(''); if (endDay < d) setEndDay(d); return; }
@@ -125,7 +135,12 @@ export function useNewEventScreen() {
     setDay(d); setTime(tm); setEndDay(dayKey(prevEnd));
     setEndTime(`${String(prevEnd.getHours()).padStart(2, '0')}:${String(prevEnd.getMinutes()).padStart(2, '0')}`);
   };
-  const canSave = !!title.trim() && !busy && phoneOk && !problem && !(kind === 'APPOINTMENT' && mode === 'IN_PERSON' && place === 'CLIENT_SITE' && (!client || !location.trim()));
+  const canSave =
+    !!title.trim() &&
+    !busy &&
+    phoneOk &&
+    !problem &&
+    !(kind === 'APPOINTMENT' && mode === 'IN_PERSON' && place === 'CLIENT_SITE' && (!client || !location.trim()));
 
   const save = async () => {
     if (!canSave) return;
@@ -133,7 +148,9 @@ export function useNewEventScreen() {
     try {
       await calendarApi.create({
         kind, title: title.trim(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        ...(start && end ? { startAt: start.toISOString(), endAt: end.toISOString() } : { allDay: true, startDate: day, endDate: endDay < day ? day : endDay }),
+        ...(start && end
+          ? { startAt: start.toISOString(), endAt: end.toISOString() }
+          : { allDay: true, startDate: day, endDate: endDay < day ? day : endDay }),
         reminders, attendeeIds: people.map((x) => x.id),
         ...(crm ? { customerId: client?.id ?? null } : {}),
         ...(kind === 'APPOINTMENT' ? {
@@ -143,7 +160,11 @@ export function useNewEventScreen() {
         } : {}),
       });
       forgetCalendarPages();
-      toast.success(people.length ? t('calendar.invitedToast', { count: people.length }) : t('calendar.createdToast', 'Added to your calendar'));
+      toast.success(
+        people.length
+          ? t('calendar.invitedToast', { count: people.length })
+          : t('calendar.createdToast', 'Added to your calendar'),
+      );
       router.back();
     } catch (e) {
       toast.error(t('common.error', 'Error'), calendarError(e, t));
@@ -152,7 +173,11 @@ export function useNewEventScreen() {
     }
   };
 
-  const openJob = () => router.replace({ pathname: '/(app)/(tabs)/create-task', params: { due: (start ?? new Date(`${day}T00:00:00`)).toISOString() } } as never);
+  const openJob = () =>
+    router.replace({
+      pathname: '/(app)/(tabs)/create-task',
+      params: { due: (start ?? new Date(`${day}T00:00:00`)).toISOString() },
+    } as never);
   const openTimeOff = () => router.replace({ pathname: '/(app)/(tabs)/time-off', params: { from: day } } as never);
 
   const pill = (label: string, on: boolean, onPress: () => void) => <FilterPill key={label} label={label} on={on} onPress={onPress} />;

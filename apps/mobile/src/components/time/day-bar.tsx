@@ -33,7 +33,17 @@ export function DayBar({
   return (
     <View style={{ gap: amazen.space(1.5) }}>
       <View style={{ height: 10, borderRadius: 5, backgroundColor: c.tile, justifyContent: 'center' }}>
-        <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${Math.round(Math.min(1, Math.max(0, filled)) * 100)}%`, borderRadius: 5, backgroundColor: c.accentTint }} />
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: `${Math.round(Math.min(1, Math.max(0, filled)) * 100)}%`,
+            borderRadius: 5,
+            backgroundColor: c.accentTint,
+          }}
+        />
         {marks.map((m, i) => (
           <View
             key={i}

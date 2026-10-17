@@ -22,8 +22,9 @@ import { centeredContent } from '../screen-container';
 import { JobSheet, Pill, SectionLabel } from '../job/job-ui';
 import { forgetApproval, knownApproval, loadApprovals } from './approvals-store';
 import { WhoElse } from './who-else';
-
-const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+import { useApprovalDetail } from './use-approval-detail';
+import { ISO_DAY } from './approval-detail-helpers';
+import { ApprovalDetailView } from './approval-detail-view';
 
 /**
  * ONE WAITING DECISION — its facts, and the kind's own buttons
@@ -32,82 +33,32 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
  * (choosing an asset kind, a workspace) says so and offers nothing it cannot do.
  */
 export function ApprovalDetail({ itemKey }: { itemKey: string }) {
-  const { amazen } = useTheme();
-  const c = amazen.color;
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-  const r = useResponsive();
-  const wide = r.isTablet ? centeredContent(720) : null;
-
-  const [item, setItem] = useState<ApprovalItem | null>(knownApproval(itemKey));
-  const [missing, setMissing] = useState(false);
-  const [armed, setArmed] = useState<ApprovalActionSpec | null>(null);
-  const [reason, setReason] = useState('');
-  const [minutes, setMinutes] = useState('30');
-  const [expiresOn, setExpiresOn] = useState('');
-  // A missed shift: what happened, and whether the answer covers its whole run of days.
-  const [reasonCode, setReasonCode] = useState<NoShowExcuseReason>('SICK');
-  const [wholeRun, setWholeRun] = useState(true);
-  const [busy, setBusy] = useState(false);
-
-  // Opened from a link, or after the list moved on: read it again.
-  useEffect(() => {
-    if (item) return;
-    loadApprovals()
-      .then(() => { const hit = knownApproval(itemKey); if (hit) setItem(hit); else setMissing(true); })
-      .catch(() => setMissing(true));
-  }, [item, itemKey]);
-
-  useEffect(() => {
-    if (!item) return;
-    const d = item.data as Record<string, unknown>;
-    setMinutes(String(typeof d.requestedMinutes === 'number' ? d.requestedMinutes : 30));
-    setExpiresOn(typeof d.expiresOn === 'string' ? d.expiresOn.slice(0, 10) : '');
-  }, [item]);
-
-  const back = () => (router.canGoBack() ? router.back() : router.navigate('/(app)/approvals' as Href));
-
-  const decide = useCallback(async (a: ApprovalActionSpec) => {
-    if (!item) return;
-    setBusy(true);
-    try {
-      const res = await approvalsApi.decide({
-        kind: item.kind,
-        id: item.id,
-        action: a.id,
-        reason: a.reason !== 'none' && reason.trim() ? reason.trim() : undefined,
-        minutes: a.input === 'minutes' ? Number(minutes) : undefined,
-        expiresOn: a.input === 'expiresOn' && expiresOn ? expiresOn : undefined,
-        reasonCode: a.input === 'excuseReason' ? reasonCode : undefined,
-        wholeRun: runCount > 1 && wholeRun ? true : undefined,
-        spaceId: item.kind === 'clientRequest' ? (item.space?.id ?? (item.data.suggestedSpaceId as string | undefined)) : undefined,
-      });
-      if (res.stage === 'FIRST_STEP') {
-        // Step 1 of 2: theirs is in; the item stays in the list, now waiting for the second person.
-        toast.success(t('approvals.step.firstDone', { role: res.waitingFor ?? '' }));
-      } else {
-        forgetApproval(itemKey);
-        toast.success(t('approvals.decided', { name: item.subject.name || t('approvals.someone') }));
-      }
-      setArmed(null);
-      back();
-    } catch (e: any) {
-      toast.error(e?.message || t('approvals.loadFailed'));
-    } finally {
-      setBusy(false);
-    }
-  }, [item, itemKey, reason, minutes, expiresOn, reasonCode, wholeRun, toast, t]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const runCount = typeof item?.data.runCount === 'number' ? item.data.runCount : 0;
-  const press = (a: ApprovalActionSpec) => {
-    // A run of missed days asks first whether the answer covers all of them.
-    if (a.reason !== 'none' || a.input || runCount > 1) {
-      setReason('');
-      setReasonCode('SICK');
-      setWholeRun(true);
-      setArmed(a);
-    } else void decide(a);
-  };
+  const {
+    amazen,
+    c,
+    t,
+    i18n,
+    wide,
+    item,
+    missing,
+    armed,
+    setArmed,
+    reason,
+    setReason,
+    minutes,
+    setMinutes,
+    expiresOn,
+    setExpiresOn,
+    reasonCode,
+    setReasonCode,
+    wholeRun,
+    setWholeRun,
+    busy,
+    back,
+    decide,
+    runCount,
+    press,
+  } = useApprovalDetail({ itemKey });
 
   if (missing || !item) {
     return (
@@ -120,33 +71,39 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
     );
   }
 
-  const text = describeApproval(item, t as unknown as ApprovalT, i18n.language);
-  const actions = approvalActionsFor(item);
-  const pageOnly = item.canDecide && actions.length === 0 && !!APPROVAL_KIND_SPECS[item.kind].needsPage?.(item);
-  const facts: [string, string, string | undefined][] = [
-    ...(item.space ? [[t('approvals.fact.workspace'), item.space.name, undefined]] as [string, string, undefined][] : []),
-    ...text.facts.map((f) => [f.label, f.value, f.tone] as [string, string, string | undefined]),
-    ...(item.raisedAt ? [[t('approvals.fact.raised'), formatDay(item.raisedAt, i18n.language), undefined]] as [string, string, undefined][] : []),
-  ];
-
-  const minutesOk = Number.isInteger(Number(minutes)) && Number(minutes) >= 1 && Number(minutes) <= 1440;
-  const ready = armed
-    && !(armed.reason === 'required' && !reason.trim())
-    && !(armed.input === 'minutes' && !minutesOk)
-    && !(armed.input === 'expiresOn' && expiresOn !== '' && !ISO_DAY.test(expiresOn));
+  const { text, actions, pageOnly, facts, ready } = ApprovalDetailView({ t, i18n, item, armed, reason, minutes, expiresOn });
 
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader title={t(`approvals.kinds.${item.kind}`)} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
-      <ScrollView contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) }, wide]}>
+      <ScrollView
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(30), gap: amazen.space(3) },
+          wide,
+        ]}>
         <View style={{ gap: amazen.space(1.5), alignItems: 'flex-start' }}>
           <AText variant="h2" tone="strong">{item.subject.name || t('approvals.someone')}</AText>
           <AText variant="body" tone="onGlass">{text.headline}</AText>
           {item.group === 'NOW' ? <Pill label={t('approvals.groups.NOW')} tone="critical" /> : null}
         </View>
-        <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(1.5) }}>
+        <View
+          style={{
+            backgroundColor: c.well,
+            borderRadius: amazen.radius.panel,
+            paddingHorizontal: amazen.space(3.5),
+            paddingVertical: amazen.space(1.5),
+          }}>
           {facts.map(([k, v, tone], i) => (
-            <View key={k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: amazen.space(3), paddingVertical: amazen.space(2.25), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell }}>
+            <View
+              key={k}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                gap: amazen.space(3),
+                paddingVertical: amazen.space(2.25),
+                borderTopWidth: i === 0 ? 0 : 1,
+                borderTopColor: c.lineWell,
+              }}>
               <AText variant="caption" style={{ color: c.inkMuted, fontSize: 13 }}>{k}</AText>
               <AText
                 variant="body"
@@ -174,12 +131,41 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
       </ScrollView>
 
       {actions.length ? (
-        <View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: amazen.space(2), paddingHorizontal: amazen.space(4), paddingTop: amazen.space(3), paddingBottom: amazen.space(8), backgroundColor: c.canvas }, wide]}>
+        <View
+          style={[
+            {
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              flexDirection: 'row',
+              gap: amazen.space(2),
+              paddingHorizontal: amazen.space(4),
+              paddingTop: amazen.space(3),
+              paddingBottom: amazen.space(8),
+              backgroundColor: c.canvas,
+            },
+            wide,
+          ]}>
           {actions.slice().reverse().map((a) => (
             <View key={a.id} style={{ flex: 1 }}>
               {a.tone !== 'primary'
-                ? <GhostButton label={t(`approvals.actions.${a.labelKey}`)} tone={a.tone === 'danger' ? 'critical' : undefined} disabled={busy} onPress={() => press(a)} />
-                : <PrimaryButton label={t(`approvals.actions.${a.labelKey}`)} loading={busy && !armed} disabled={busy} onPress={() => press(a)} />}
+                ? (
+                    <GhostButton
+                      label={t(`approvals.actions.${a.labelKey}`)}
+                      tone={a.tone === 'danger' ? 'critical' : undefined}
+                      disabled={busy}
+                      onPress={() => press(a)}
+                    />
+                  )
+                : (
+                    <PrimaryButton
+                      label={t(`approvals.actions.${a.labelKey}`)}
+                      loading={busy && !armed}
+                      disabled={busy}
+                      onPress={() => press(a)}
+                    />
+                  )}
             </View>
           ))}
         </View>
@@ -201,7 +187,13 @@ export function ApprovalDetail({ itemKey }: { itemKey: string }) {
         {armed?.input === 'expiresOn' ? (
           <>
             <SectionLabel>{t('approvals.expiresOn')}</SectionLabel>
-            <GlassInput value={expiresOn} onChangeText={setExpiresOn} placeholder="2027-12-31" keyboardType="numbers-and-punctuation" maxLength={10} />
+            <GlassInput
+              value={expiresOn}
+              onChangeText={setExpiresOn}
+              placeholder="2027-12-31"
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+            />
           </>
         ) : null}
         {armed?.input === 'excuseReason' ? (

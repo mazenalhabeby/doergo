@@ -130,7 +130,14 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
 
       {/* What the server read off it — a wrong card is caught here, not by the office. */}
       {readFields && (readFields.holderName || readFields.documentNumber) ? (
-        <View style={{ backgroundColor: colors.surfaceRaised, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 4, marginTop: SPACING.sm }}>
+        <View
+          style={{
+            backgroundColor: colors.surfaceRaised,
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 4,
+            marginTop: SPACING.sm,
+          }}>
           {readFields.holderName ? (
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 }}>
               <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.nameOnIt', 'Name on it')}</Text>
@@ -138,7 +145,14 @@ export function CredentialSection({ cred }: { cred: CredentialPhoto }) {
             </View>
           ) : null}
           {readFields.documentNumber ? (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: readFields.holderName ? 1 : 0, borderTopColor: colors.border }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingVertical: 8,
+                borderTopWidth: readFields.holderName ? 1 : 0,
+                borderTopColor: colors.border,
+              }}>
               <Text style={{ color: colors.textMuted, fontSize: 13 }}>{t('documents.supply.numberOnIt', 'Number')}</Text>
               <Text style={{ color: colors.textPrimary, fontSize: 13.5 }}>{readFields.documentNumber}</Text>
             </View>

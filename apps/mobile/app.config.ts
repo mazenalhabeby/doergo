@@ -131,11 +131,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSLocationWhenInUseUsageDescription:
           'HBCField needs your location to verify you are at your assigned work site when clocking in.',
         NSLocationAlwaysAndWhenInUseUsageDescription:
-          'HBCField uses your location in the background to record your route to an assigned job site while you are on the way, and to verify you remain at your work site while clocked in. Background location stops automatically when you arrive or clock out.',
+          ('HBCField uses your location in the background to record your route to an ' + 'assigned job site while you are on the way, and to verify you remain at ' + 'your work site while clocked in. Background location stops automatically ' + 'when you arrive or clock out.'),
         NSCameraUsageDescription:
-          'HBCField uses the camera to photograph work for task and service reports, and to scan documents you provide to your employer, such as a licence or certificate.',
+          ('HBCField uses the camera to photograph work for task and service ' + 'reports, and to scan documents you provide to your employer, such as a ' + 'licence or certificate.'),
         NSPhotoLibraryUsageDescription:
-          'HBCField uses your photo library to attach images to tasks and service reports, and to submit a document you already have as a photo or scan.',
+          ('HBCField uses your photo library to attach images to tasks and service ' + 'reports, and to submit a document you already have as a photo or scan.'),
         UIBackgroundModes: ['remote-notification', 'location'],
         /*
           Which map apps the route planner may ASK about.
@@ -247,7 +247,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'expo-contacts',
         {
           contactsPermission:
-            'HBCField reads the contacts you choose so you can add the people you work with as clients. Only the ones you tick are saved; the rest stay on this phone.',
+            ('HBCField reads the contacts you choose so you can add the people you ' + 'work with as clients. Only the ones you tick are saved; the rest stay on ' + 'this phone.'),
         },
       ],
       // Android package visibility for the route planner's map-app detection.

@@ -49,16 +49,38 @@ export const ActivityRow = memo(function ActivityRow({
   const c = amazen.color;
   const overdue = activity.type === 'REMINDER' && !!activity.dueAt && !activity.doneAt && new Date(activity.dueAt).getTime() < Date.now();
   const done = !!activity.doneAt;
-  const ring = done ? c.accent : overdue ? c.critical : activity.type === 'REMINDER' ? c.warn : activity.type === 'NOTE' || activity.type === 'CALL' ? c.accent : c.inkMuted;
+  const ring = done
+    ? c.accent
+    : overdue
+      ? c.critical
+      : activity.type === 'REMINDER'
+        ? c.warn
+        : activity.type === 'NOTE' || activity.type === 'CALL'
+          ? c.accent
+          : c.inkMuted;
   return (
     <View style={{ flexDirection: 'row', gap: amazen.space(3) }}>
       <View style={{ width: 14, alignItems: 'center' }}>
-        <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 2, borderColor: ring, backgroundColor: done ? ring : 'transparent', marginTop: 5 }} />
+        <View
+          style={{
+            width: 12,
+            height: 12,
+            borderRadius: 6,
+            borderWidth: 2,
+            borderColor: ring,
+            backgroundColor: done ? ring : 'transparent',
+            marginTop: 5,
+          }}
+        />
         {continues ? <View style={{ flex: 1, width: 2, borderRadius: 1, backgroundColor: c.lineWell, marginTop: 4 }} /> : null}
       </View>
       <View style={{ flex: 1, minWidth: 0, paddingBottom: amazen.space(4) }}>
         <AText variant="body" tone={done ? 'muted' : 'strong'} style={{ fontSize: 14 }}>{heading}</AText>
-        {activity.body ? <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 20, marginTop: 2 }}>{activity.body}</AText> : null}
+        {activity.body ? (
+          <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 20, marginTop: 2 }}>
+            {activity.body}
+          </AText>
+        ) : null}
         <AText variant="caption" numberOfLines={2} style={{ marginTop: 3, color: c.inkMuted }}>
           {[...(tags ?? []).map((x) => x.label), meta].filter(Boolean).join(' · ')}
           {waiting ? <AText variant="caption" style={{ color: c.warn }}>{` · ${waiting}`}</AText> : null}
@@ -70,9 +92,26 @@ export const ActivityRow = memo(function ActivityRow({
             accessibilityRole="checkbox"
             accessibilityState={{ checked: done }}
             accessibilityLabel={doneLabel}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: amazen.space(2), alignSelf: 'flex-start', opacity: pressed ? 0.7 : 1 })}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: amazen.space(2),
+              alignSelf: 'flex-start',
+              opacity: pressed ? 0.7 : 1,
+            })}
           >
-            <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: done ? c.accent : c.lineGlass, backgroundColor: done ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
+                borderWidth: 2,
+                borderColor: done ? c.accent : c.lineGlass,
+                backgroundColor: done ? c.accent : 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
               {done ? <AText style={{ color: c.accentInk, fontSize: 11, lineHeight: 13 }}>✓</AText> : null}
             </View>
             <AText variant="caption" style={{ color: done ? c.accent : overdue ? c.critical : c.ink }}>{doneLabel}</AText>

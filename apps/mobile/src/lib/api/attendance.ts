@@ -1,5 +1,15 @@
 import { call, E } from './client';
-import type { TimeEntry, AttendanceStatus, Break, BreakStatus, ClockInInput, ClockOutInput, AttendanceHistoryParams, PaginatedResponse, GeofenceExcursion } from './types';
+import type {
+  TimeEntry,
+  AttendanceStatus,
+  Break,
+  BreakStatus,
+  ClockInInput,
+  ClockOutInput,
+  AttendanceHistoryParams,
+  PaginatedResponse,
+  GeofenceExcursion,
+} from './types';
 import type { BreakType } from './types';
 
 export type { NoShow } from '@hbcfield/shared/client';

@@ -21,7 +21,9 @@ export function NewJobPhotos({ photos, onRemove, onCamera, onGallery }: {
   const [width, setWidth] = useState(0);
   const side = width > 0 ? Math.floor((width - 3 * 8) / 4) : 0;
   return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, minHeight: side || 60 }}>
+    <View
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, minHeight: side || 60 }}>
       {photos.map((p, i) => (
         <View key={`${p.uri}:${i}`} style={{ width: side, height: side, borderRadius: 14, overflow: 'hidden', backgroundColor: c.tile }}>
           <Image source={{ uri: p.uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
@@ -30,7 +32,17 @@ export function NewJobPhotos({ photos, onRemove, onCamera, onGallery }: {
             accessibilityRole="button"
             accessibilityLabel={t('common.remove')}
             hitSlop={6}
-            style={{ position: 'absolute', right: 4, top: 4, width: 22, height: 22, borderRadius: 11, backgroundColor: c.canvas, alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              position: 'absolute',
+              right: 4,
+              top: 4,
+              width: 22,
+              height: 22,
+              borderRadius: 11,
+              backgroundColor: c.canvas,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             <CloseGlyph size={11} color={c.inkStrong} />
           </Pressable>

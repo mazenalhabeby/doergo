@@ -26,7 +26,16 @@ export function AuthFrame({ children, footer, compact }: { children: React.React
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[{ flexGrow: 1, paddingHorizontal: amazen.space(4), paddingTop: insets.top + amazen.space(compact ? 6 : 12), paddingBottom: insets.bottom + amazen.space(6), gap: amazen.space(4) }, r.isTablet && centeredContent(460)]}
+          contentContainerStyle={[
+            {
+              flexGrow: 1,
+              paddingHorizontal: amazen.space(4),
+              paddingTop: insets.top + amazen.space(compact ? 6 : 12),
+              paddingBottom: insets.bottom + amazen.space(6),
+              gap: amazen.space(4),
+            },
+            r.isTablet && centeredContent(460),
+          ]}
         >
           <View style={{ alignItems: 'center', gap: amazen.space(2), paddingBottom: amazen.space(2) }}>
             <AnimatedLogo size={compact ? 'default' : 'large'} variant="light" />
@@ -45,7 +54,15 @@ export function AuthCard({ title, sub, children }: { title?: string; sub?: strin
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, borderRadius: 26, padding: amazen.space(4.5), gap: amazen.space(3) }}>
+    <View
+      style={{
+        backgroundColor: c.glass,
+        borderWidth: 1,
+        borderColor: c.lineGlass,
+        borderRadius: 26,
+        padding: amazen.space(4.5),
+        gap: amazen.space(3),
+      }}>
       {title ? <AText variant="h2" tone="strong" style={{ fontSize: 21, fontFamily: amazen.font.sansLight }}>{title}</AText> : null}
       {sub ? <AText variant="body" tone="onGlass" style={{ fontSize: 13.5, marginTop: -amazen.space(1.5) }}>{sub}</AText> : null}
       {children}
@@ -65,8 +82,27 @@ export function AuthField({ label, error, secure, ...input }: TextInputProps & {
   const [focus, setFocus] = useState(false);
   return (
     <View style={{ gap: 6 }}>
-      <AText style={{ color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 1.3, textTransform: 'uppercase' }}>{label}</AText>
-      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: c.sunken, borderRadius: 14, borderWidth: 1.5, borderColor: error ? c.critical : focus ? c.accent : c.lineWell, paddingHorizontal: amazen.space(3.5) }}>
+      <AText
+        style={{
+          color: c.inkOnGlass,
+          fontFamily: amazen.font.mono,
+          fontSize: 10,
+          letterSpacing: 1.3,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </AText>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: c.sunken,
+          borderRadius: 14,
+          borderWidth: 1.5,
+          borderColor: error ? c.critical : focus ? c.accent : c.lineWell,
+          paddingHorizontal: amazen.space(3.5),
+        }}>
         <TextInput
           placeholderTextColor={c.inkMuted}
           autoCorrect={false}
@@ -79,7 +115,9 @@ export function AuthField({ label, error, secure, ...input }: TextInputProps & {
         />
         {secure ? (
           <Pressable onPress={() => setShown((s) => !s)} hitSlop={10} accessibilityRole="button">
-            <AText variant="caption" style={{ color: c.accent, fontSize: 13 }}>{shown ? t('settings.account.hide', 'Hide') : t('settings.account.show', 'Show')}</AText>
+            <AText variant="caption" style={{ color: c.accent, fontSize: 13 }}>
+              {shown ? t('settings.account.hide', 'Hide') : t('settings.account.show', 'Show')}
+            </AText>
           </Pressable>
         ) : null}
       </View>
@@ -104,5 +142,11 @@ export function AuthLinkLine({ text, link, onPress }: { text: string; link: stri
 /** "Need help? Contact support" — it had no link at all; it opens the help centre now. */
 export function AuthHelp() {
   const { t } = useTranslation();
-  return <AuthLinkLine text={t('auth.login.needHelp')} link={t('auth.login.contactSupport')} onPress={() => void Linking.openURL('https://hbcfield.com/help').catch(() => undefined)} />;
+  return (
+    <AuthLinkLine
+      text={t('auth.login.needHelp')}
+      link={t('auth.login.contactSupport')}
+      onPress={() => void Linking.openURL('https://hbcfield.com/help').catch(() => undefined)}
+    />
+  );
 }

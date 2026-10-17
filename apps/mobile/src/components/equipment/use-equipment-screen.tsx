@@ -34,7 +34,10 @@ export type Loaded = EquipmentLoaded;
 
 export const shapeOf = (h: HeldAsset) => normalizeKindShape(h.asset?.category?.config);
 
-export const canSpendOn = (h: HeldAsset) => { const s = shapeOf(h); return s.money.enabled && s.money.categories.some((c) => c.direction === 'out'); };
+export const canSpendOn = (h: HeldAsset) => {
+  const s = shapeOf(h);
+  return s.money.enabled && s.money.categories.some((c) => c.direction === 'out');
+};
 
 /** The kind's entry types a member can choose — Cost first where the kind records money going out. */
 export const typesFor = (h: HeldAsset) => logTypesForKind(shapeOf(h)).filter((ty) => ty.key !== COST_LOG_KEY || canSpendOn(h));
@@ -79,7 +82,15 @@ export function useEquipmentScreen() {
       ]);
       // Receipts on their own only on a server without the logbook — they are entries otherwise.
       const expenses = logged === null ? await assetsApi.myExpenses().catch(() => [] as MyExpense[]) : [];
-      const next: Loaded = { held: mine.periods, canPropose: mine.canPropose, expenses, proposals, entries: logged, due: dueSoon, at: Date.now() };
+      const next: Loaded = {
+        held: mine.periods,
+        canPropose: mine.canPropose,
+        expenses,
+        proposals,
+        entries: logged,
+        due: dueSoon,
+        at: Date.now(),
+      };
       setData(next);
       setStale(false);
       if (user?.id) rememberEquipment(user.id, next);
@@ -100,8 +111,15 @@ export function useEquipmentScreen() {
 
   /* Delivered while this screen is open → re-read, so "Waiting to send" turns into the office's answer. */
   const delivered = logEntriesDeliveredSince(operations, data?.at ?? 0)
-    + operations.filter((o) => (o.op === 'expense.submit' || o.op === 'proposal.raise') && o.state === 'done' && o.updatedAt > (data?.at ?? 0)).length;
-  useEffect(() => { if ((data?.at ?? 0) > 0 && delivered > 0) void load(); }, [delivered, load]); // eslint-disable-line react-hooks/exhaustive-deps
+    + operations.filter(
+        (o) =>
+          (o.op === 'expense.submit' || o.op === 'proposal.raise') &&
+          o.state === 'done' &&
+          o.updatedAt > (data?.at ?? 0),
+      ).length;
+  useEffect(() => {
+    if ((data?.at ?? 0) > 0 && delivered > 0) void load();
+  }, [delivered, load]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const queued = useMemo<QueuedSend[]>(() => operations
     .filter((o) => (o.op === 'expense.submit' || o.op === 'proposal.raise') && STILL_MINE.has(o.state))
@@ -137,7 +155,8 @@ export function useEquipmentScreen() {
   const dueLine = (d: DueItem) => {
     const unit = d.unit ? ` ${d.unit}` : '';
     if (d.stage === 'overdue') {
-      if (d.unitsLeft !== null && d.unitsLeft <= 0) return t('logbook.overdueUnits', { amount: `${Math.abs(d.unitsLeft).toLocaleString(lang)}${unit}` });
+      if (d.unitsLeft !== null && d.unitsLeft <= 0)
+        return t('logbook.overdueUnits', { amount: `${Math.abs(d.unitsLeft).toLocaleString(lang)}${unit}` });
       if (d.daysLeft !== null) return t('logbook.overdueDays', { count: Math.abs(d.daysLeft) });
       return t('logbook.overdue', 'Overdue');
     }
@@ -186,13 +205,29 @@ export function useEquipmentScreen() {
     const label = actLabel(h);
     return (
       <Pressable key={h.id} onPress={() => setOpened(h)} accessibilityRole="button" accessibilityLabel={a?.name}
-        style={({ pressed }) => ({ backgroundColor: c.well, borderRadius: amazen.radius.panel, padding: amazen.space(3.5), gap: amazen.space(3), opacity: pressed ? 0.9 : 1 })}>
+        style={({ pressed }) => ({
+          backgroundColor: c.well,
+          borderRadius: amazen.radius.panel,
+          padding: amazen.space(3.5),
+          gap: amazen.space(3),
+          opacity: pressed ? 0.9 : 1,
+        })}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
-          <View style={{ width: 46, height: 46, borderRadius: 14, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+          <View
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 14,
+              backgroundColor: c.accentTint,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
             <Ionicons name="cube-outline" size={21} color={c.accent} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15.5 }}>{a?.name ?? t('myAssets.anAsset', 'An asset')}</AText>
+            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15.5 }}>
+              {a?.name ?? t('myAssets.anAsset', 'An asset')}
+            </AText>
             <AText variant="caption" tone="muted" numberOfLines={1}>{sub || '—'}</AText>
           </View>
           <AText variant="body" tone="muted">›</AText>
@@ -203,7 +238,15 @@ export function useEquipmentScreen() {
             [t('equipment.held', 'Held'), t('custody.days', { count: custodyDays(h as never) })],
             [t('equipment.cost', 'Cost'), money(h.totals.outCents)],
           ].map(([k, v]) => (
-            <View key={k} style={{ flex: 1, backgroundColor: c.sunken, borderRadius: 14, paddingHorizontal: amazen.space(2.5), paddingVertical: amazen.space(2) }}>
+            <View
+              key={k}
+              style={{
+                flex: 1,
+                backgroundColor: c.sunken,
+                borderRadius: 14,
+                paddingHorizontal: amazen.space(2.5),
+                paddingVertical: amazen.space(2),
+              }}>
               <SectionLabel>{k}</SectionLabel>
               <AText variant="body" tone="strong" numeric numberOfLines={1} style={{ fontSize: 14, marginTop: 2 }}>{v}</AText>
             </View>

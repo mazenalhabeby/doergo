@@ -19,7 +19,15 @@ export function Notice({ text, warn }: { text: string; warn?: boolean }) {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ flexDirection: 'row', gap: 8, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, backgroundColor: warn ? c.warnTint : c.tile }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        gap: 8,
+        borderRadius: 12,
+        paddingHorizontal: 11,
+        paddingVertical: 9,
+        backgroundColor: warn ? c.warnTint : c.tile,
+      }}>
       <View style={{ width: 7, height: 7, borderRadius: 4, marginTop: 6, backgroundColor: warn ? c.warn : c.inkMuted }} />
       <AText variant="caption" style={{ flex: 1, fontSize: 12.5, lineHeight: 17, color: warn ? c.inkStrong : c.ink }}>{text}</AText>
     </View>
@@ -30,10 +38,25 @@ export function Marker({ kind, n }: { kind: 'done' | 'ahead' | 'none' | 'next'; 
   const { amazen } = useTheme();
   const c = amazen.color;
   const base = { width: 28, height: 28, borderRadius: 14, alignItems: 'center' as const, justifyContent: 'center' as const };
-  if (kind === 'next') return <View style={[base, { backgroundColor: c.accentSolid }]}><AText variant="caption" numeric style={{ color: c.accentInk }}>{n}</AText></View>;
+  if (kind === 'next')
+    return (
+      <View style={[base, { backgroundColor: c.accentSolid }]}>
+        <AText variant="caption" numeric style={{ color: c.accentInk }}>
+          {n}
+        </AText>
+      </View>
+    );
   if (kind === 'done') return <View style={[base, { backgroundColor: c.tile }]}><AText variant="caption" tone="muted">✓</AText></View>;
   return (
-    <View style={[base, { borderWidth: 1.6, borderColor: kind === 'none' ? c.lineGlass : `${c.ink}88`, borderStyle: kind === 'none' ? 'dashed' : 'solid' }]}>
+    <View
+      style={[
+        base,
+        {
+          borderWidth: 1.6,
+          borderColor: kind === 'none' ? c.lineGlass : `${c.ink}88`,
+          borderStyle: kind === 'none' ? 'dashed' : 'solid',
+        },
+      ]}>
       <AText variant="caption" tone="ink" numeric>{kind === 'none' ? '·' : n}</AText>
     </View>
   );
@@ -45,7 +68,16 @@ export function StopRow({ s, marker, n, onDrive }: { s: DayStop; marker: 'done' 
   const { t } = useTranslation();
   const { formatClock } = useTimeFormat();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderTopWidth: 1, borderTopColor: c.lineWell, opacity: marker === 'done' ? 0.6 : 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingVertical: 8,
+        borderTopWidth: 1,
+        borderTopColor: c.lineWell,
+        opacity: marker === 'done' ? 0.6 : 1,
+      }}>
       <Marker kind={marker} n={n} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>{s.label}</AText>
@@ -80,14 +112,37 @@ export function NextStop({ s, n, route, from, straight, onDrive }: {
   ].filter(Boolean).join(' · ');
   return (
     <Pressable onPress={onDrive} accessibilityRole="button" accessibilityLabel={t('routeCard.driveTo', { name: s.label })}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: 18, padding: 12, backgroundColor: c.tile, opacity: pressed ? 0.85 : 1 })}>
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        borderRadius: 18,
+        padding: 12,
+        backgroundColor: c.tile,
+        opacity: pressed ? 0.85 : 1,
+      })}>
       <Marker kind="next" n={n} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <AText variant="eyebrow" tone="accent" style={{ fontSize: 9.5 }}>{t('routeCard.nextStop')}</AText>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 15, lineHeight: 20, fontFamily: amazen.font.sansMedium }}>{s.label}</AText>
+        <AText
+          variant="body"
+          tone="strong"
+          numberOfLines={1}
+          style={{ fontSize: 15, lineHeight: 20, fontFamily: amazen.font.sansMedium }}
+        >
+          {s.label}
+        </AText>
         {facts ? <AText variant="caption" tone="muted" numberOfLines={1}>{facts}</AText> : null}
       </View>
-      <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 21,
+          backgroundColor: c.accentSolid,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <NavigateGlyph size={20} color={c.accentInk} contrast={c.accentSolid} />
       </View>
     </Pressable>
@@ -113,12 +168,28 @@ export function DriveDisc({ label, onPress }: { label: string; onPress: () => vo
   );
 }
 
-export function MenuRow({ title, detail, Glyph, onPress }: { title: string; detail?: string; Glyph: React.ComponentType<any>; onPress: () => void }) {
+export function MenuRow({
+  title,
+  detail,
+  Glyph,
+  onPress,
+}: {
+  title: string;
+  detail?: string;
+  Glyph: React.ComponentType<any>;
+  onPress: () => void;
+}) {
   const { amazen, colors } = useTheme();
   const c = amazen.color;
   return (
     <Pressable onPress={onPress} accessibilityRole="button"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), opacity: pressed ? 0.7 : 1 })}>
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(3),
+        opacity: pressed ? 0.7 : 1,
+      })}>
       <GlyphTile Glyph={Glyph} color={c.ink} tint={c.tile} behind={colors.card} size={34} glyphSize={19} />
       <View style={{ flex: 1 }}>
         <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{title}</AText>

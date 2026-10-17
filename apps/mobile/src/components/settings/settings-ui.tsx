@@ -20,7 +20,12 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
   return (
     <Ground style={{ flex: 1 }}>
       <ScreenHeader title={title} leading={<HeaderBack onPress={back} />} style={wide ?? undefined} />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          { paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) },
+          wide,
+        ]}>
         {children}
       </ScrollView>
     </Ground>
@@ -50,7 +55,17 @@ export function ChoiceRow({ on, onPress, title, sub, lead, disabled }: {
         <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{title}</AText>
         {typeof sub === 'string' ? <AText variant="caption" tone="muted">{sub}</AText> : sub}
       </View>
-      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? c.accent : c.lineGlass, backgroundColor: on ? c.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 11,
+          borderWidth: 2,
+          borderColor: on ? c.accent : c.lineGlass,
+          backgroundColor: on ? c.accent : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         {on ? <AText style={{ color: c.accentInk, fontSize: 12, lineHeight: 14 }}>✓</AText> : null}
       </View>
     </Pressable>
@@ -64,7 +79,16 @@ export function SwitchRow({ title, sub, value, onChange, disabled, first, note }
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: disabled ? 0.55 : 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(3),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: c.lineWell,
+        opacity: disabled ? 0.55 : 1,
+      }}>
       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
         <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{title}</AText>
         {sub ? <AText variant="caption" tone="muted">{sub}</AText> : null}
@@ -102,7 +126,15 @@ export function StateCard({ tone, mark, title, sub }: {
   const fg = tone === 'critical' ? c.critical : tone === 'warn' ? c.warn : c.accent;
   const bg = tone === 'critical' ? c.criticalTint : tone === 'warn' ? c.warnTint : c.accentTint;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(3.5), borderRadius: 20, backgroundColor: bg }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        padding: amazen.space(3.5),
+        borderRadius: 20,
+        backgroundColor: bg,
+      }}>
       {tone === 'accent' && mark === undefined ? (
         <FinishGlyph size={40} color={c.accent} contrast={c.accentInk} />
       ) : (

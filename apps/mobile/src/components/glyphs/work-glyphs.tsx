@@ -166,7 +166,7 @@ export function CallGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps
       <Path d="M20.4 1.8a9.6 9.6 0 0 1 2.4 2.4" fill="none" stroke={color} strokeOpacity={0.3} strokeWidth={1.9} strokeLinecap="round" />
       <Path d="M18.4 4.4a5.6 5.6 0 0 1 1.6 1.6" fill="none" stroke={color} strokeOpacity={0.55} strokeWidth={1.9} strokeLinecap="round" />
       <Path
-        d="M8.6 3.4c-1.1-.7-2.6-.3-3.2.9L4.3 6.4c-.5 1-.4 2.2.3 3.1a36 36 0 0 0 8.6 8.6c.9.7 2.1.8 3.1.3l2.1-1.1c1.2-.6 1.6-2.1.9-3.2l-1.4-2.2c-.6-.9-1.8-1.2-2.8-.7l-1.3.7a13.6 13.6 0 0 1-4.2-4.2l.7-1.3c.5-1 .2-2.2-.7-2.8Z"
+        d={"M8.6 3.4c-1.1-.7-2.6-.3-3.2.9L4.3 6.4c-.5 1-.4 2.2.3 3.1a36 36 0 0 0 8.6 " + "8.6c.9.7 2.1.8 3.1.3l2.1-1.1c1.2-.6 " + "1.6-2.1.9-3.2l-1.4-2.2c-.6-.9-1.8-1.2-2.8-.7l-1.3.7a13.6 13.6 0 0 " + "1-4.2-4.2l.7-1.3c.5-1 .2-2.2-.7-2.8Z"}
         fill={color}
         fillOpacity={0.95}
       />

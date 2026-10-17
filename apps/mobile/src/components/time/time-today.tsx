@@ -77,7 +77,10 @@ export function TimeToday({
       at: entry.clockOutAt,
       kind: 'out',
       title: t('time.today.clockedOut', 'Clocked out'),
-      sub: t('time.today.counted', { defaultValue: '{{time}} counted', time: formatDuration(entry.paidMinutes ?? entry.totalMinutes ?? 0) }),
+      sub: t('time.today.counted', {
+        defaultValue: '{{time}} counted',
+        time: formatDuration(entry.paidMinutes ?? entry.totalMinutes ?? 0),
+      }),
     });
   }
   rows.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
@@ -95,7 +98,15 @@ export function TimeToday({
           borderRadius: 18, padding: amazen.space(3), backgroundColor: c.tile, opacity: pressed ? 0.85 : 1,
         })}
       >
-        <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 12,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <ActivityGlyph size={20} color={c.accent} />
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -108,11 +119,23 @@ export function TimeToday({
             </AText>
           </View>
           <AText variant="caption" tone="ink" numberOfLines={1} style={{ fontSize: 12.5 }}>
-            {last ? `${clock(last.at)}  ${last.body}` : running ? t('worklog.tabHint', 'Log what you did today') : t('worklog.viewActivity', 'View activity')}
+            {last
+              ? `${clock(last.at)}  ${last.body}`
+              : running
+                ? t('worklog.tabHint', 'Log what you did today')
+                : t('worklog.viewActivity', 'View activity')}
           </AText>
         </View>
         {running ? (
-          <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center' }}>
+          <View
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: c.accentSolid,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
             <PlusGlyph size={16} color={c.accentInk} />
           </View>
         ) : (
@@ -125,7 +148,15 @@ export function TimeToday({
           <View key={`${r.kind}-${r.at}`} style={{ flexDirection: 'row', gap: amazen.space(2) }}>
             <AText variant="caption" tone="muted" numeric style={{ width: 46, paddingTop: 2 }}>{clock(r.at)}</AText>
             <View style={{ width: 14, alignItems: 'center' }}>
-              <View style={{ width: 10, height: 10, borderRadius: 5, marginTop: 4, backgroundColor: r.kind === 'rest' ? c.warn : r.kind === 'out' ? c.inkMuted : c.accent }} />
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  marginTop: 4,
+                  backgroundColor: r.kind === 'rest' ? c.warn : r.kind === 'out' ? c.inkMuted : c.accent,
+                }}
+              />
               {i < rows.length - 1 ? <View style={{ width: 2, flex: 1, minHeight: 18, backgroundColor: c.lineWell }} /> : null}
             </View>
             <View style={{ flex: 1, paddingBottom: amazen.space(3) }}>

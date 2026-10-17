@@ -103,7 +103,11 @@ export default function SupportScreen() {
             data={shownTickets}
             keyExtractor={(tk) => tk.id}
             initialNumToRender={14}
-            ListEmptyComponent={<Text style={[styles.empty, { color: colors.textSecondary }]}>{t('support.empty', 'No tickets yet.')}</Text>}
+            ListEmptyComponent={
+              <Text style={[styles.empty, { color: colors.textSecondary }]}>
+                {t('support.empty', 'No tickets yet.')}
+              </Text>
+            }
             renderItem={({ item }) => <TicketRow ticket={item} onOpen={openTicket} />}
           />
           <TouchableOpacity style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }]} onPress={() => setView('new')}>
@@ -127,7 +131,10 @@ export default function SupportScreen() {
             multiline
             style={[styles.input, styles.textarea, { color: colors.textPrimary, borderColor: colors.border }]}
           />
-          <TouchableOpacity style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }, sending && { opacity: 0.6 }]} disabled={sending} onPress={submitNew}>
+          <TouchableOpacity
+            style={[styles.primaryBtn, { marginBottom: SPACING.md + bottomPad }, sending && { opacity: 0.6 }]}
+            disabled={sending}
+            onPress={submitNew}>
             <Text style={styles.primaryBtnText}>{sending ? '…' : t('support.send', 'Send')}</Text>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -143,7 +150,11 @@ export default function SupportScreen() {
             keyboardShouldPersistTaps="handled"
             initialNumToRender={20}
             renderItem={({ item }) => (
-              <SupportBubble body={item.body} mine={item.authorType === 'CUSTOMER'} pending={!!(item as { pendingSync?: boolean }).pendingSync} />
+              <SupportBubble
+                body={item.body}
+                mine={item.authorType === 'CUSTOMER'}
+                pending={!!(item as { pendingSync?: boolean }).pendingSync}
+              />
             )}
           />
           <View style={[styles.replyBar, { borderColor: colors.border, paddingBottom: SPACING.sm + bottomPad }]}>

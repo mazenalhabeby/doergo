@@ -94,7 +94,15 @@ export default function RegisterScreen() {
   const ready = !!firstName.trim() && !!lastName.trim() && !!email.trim() && passwordChecks.every((x) => x.test);
 
   return (
-    <AuthFrame compact footer={<AuthLinkLine text={t('auth.register.hasAccount')} link={t('auth.register.signIn')} onPress={() => router.back()} />}>
+    <AuthFrame
+      compact
+      footer={
+        <AuthLinkLine
+          text={t('auth.register.hasAccount')}
+          link={t('auth.register.signIn')}
+          onPress={() => router.back()}
+        />
+      }>
       <AuthCard title={t('auth.register.title')} sub={t('auth.register.subtitle')}>
         <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
           <View style={{ flex: 1 }}>
@@ -113,17 +121,44 @@ export default function RegisterScreen() {
         {/* The rules, turning green as they are met — the button wakes when all four are. */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: -amazen.space(1) }}>
           {passwordChecks.map((x) => (
-            <View key={x.label} style={{ borderRadius: amazen.radius.full, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: x.test ? c.accentTint : c.tile }}>
-              <AText variant="caption" style={{ fontSize: 11.5, color: x.test ? c.accent : c.inkMuted }}>{`${x.test ? '✓ ' : ''}${x.label}`}</AText>
+            <View
+              key={x.label}
+              style={{
+                borderRadius: amazen.radius.full,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                backgroundColor: x.test ? c.accentTint : c.tile,
+              }}>
+              <AText
+                variant="caption"
+                style={{ fontSize: 11.5, color: x.test ? c.accent : c.inkMuted }}
+              >{`${x.test ? '✓ ' : ''}${x.label}`}</AText>
             </View>
           ))}
         </View>
-        <PrimaryButton label={t('auth.register.submitButton')} loading={isLoading} disabled={!ready} onPress={() => void handleRegister()} />
+        <PrimaryButton
+          label={t('auth.register.submitButton')}
+          loading={isLoading}
+          disabled={!ready}
+          onPress={() => void handleRegister()}
+        />
         <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', lineHeight: 17 }}>
           {t('auth.register.termsText')}
-          <AText variant="caption" style={{ color: c.accent }} onPress={() => void Linking.openURL('https://hbcfield.com/terms').catch(() => undefined)}>{t('auth.register.termsOfService')}</AText>
+          <AText
+            variant="caption"
+            style={{ color: c.accent }}
+            onPress={() => void Linking.openURL('https://hbcfield.com/terms').catch(() => undefined)}
+          >
+            {t('auth.register.termsOfService')}
+          </AText>
           {t('auth.register.and')}
-          <AText variant="caption" style={{ color: c.accent }} onPress={() => void Linking.openURL('https://hbcfield.com/privacy').catch(() => undefined)}>{t('auth.register.privacyPolicy')}</AText>
+          <AText
+            variant="caption"
+            style={{ color: c.accent }}
+            onPress={() => void Linking.openURL('https://hbcfield.com/privacy').catch(() => undefined)}
+          >
+            {t('auth.register.privacyPolicy')}
+          </AText>
         </AText>
       </AuthCard>
     </AuthFrame>

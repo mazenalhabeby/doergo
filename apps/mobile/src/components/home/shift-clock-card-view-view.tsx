@@ -6,7 +6,29 @@ import type { useShiftClockCardView } from './use-shift-clock-card-view';
 import type { ShiftClockCardView } from './shift-clock-card';
 
 /** What ShiftClockCardView works out after its early returns, moved here unchanged; called from the same place. */
-export function ShiftClockCardViewView({ noShift, onAskMoreTime, user, t, c, clockOf, totals, st, clockIn, busy }: { noShift: Parameters<typeof ShiftClockCardView>[0]['noShift']; onAskMoreTime: Parameters<typeof ShiftClockCardView>[0]['onAskMoreTime']; user: ReturnType<typeof useShiftClockCardView>['user']; t: ReturnType<typeof useShiftClockCardView>['t']; c: ReturnType<typeof useShiftClockCardView>['c']; clockOf: ReturnType<typeof useShiftClockCardView>['clockOf']; totals: ReturnType<typeof useShiftClockCardView>['totals']; st: ReturnType<typeof useShiftClockCardView>['st']; clockIn: ReturnType<typeof useShiftClockCardView>['clockIn']; busy: ReturnType<typeof useShiftClockCardView>['busy'] }) {
+export function ShiftClockCardViewView({
+  noShift,
+  onAskMoreTime,
+  user,
+  t,
+  c,
+  clockOf,
+  totals,
+  st,
+  clockIn,
+  busy,
+}: {
+  noShift: Parameters<typeof ShiftClockCardView>[0]['noShift'];
+  onAskMoreTime: Parameters<typeof ShiftClockCardView>[0]['onAskMoreTime'];
+  user: ReturnType<typeof useShiftClockCardView>['user'];
+  t: ReturnType<typeof useShiftClockCardView>['t'];
+  c: ReturnType<typeof useShiftClockCardView>['c'];
+  clockOf: ReturnType<typeof useShiftClockCardView>['clockOf'];
+  totals: ReturnType<typeof useShiftClockCardView>['totals'];
+  st: ReturnType<typeof useShiftClockCardView>['st'];
+  clockIn: ReturnType<typeof useShiftClockCardView>['clockIn'];
+  busy: ReturnType<typeof useShiftClockCardView>['busy'];
+}) {
   /*
     This week so far, with the shift that is running now added on. The totals
     hook only counts CLOSED entries — a running shift is not a total yet — and
@@ -44,7 +66,11 @@ export function ShiftClockCardViewView({ noShift, onAskMoreTime, user, t, c, clo
   // Off the clock only: what the workspace they are at still allows today, or that it allows nothing more.
   const offClock = !live && !resting && st.kind !== 'unconfirmed';
   const noShiftLine = offClock && noShift?.allowance.kind === 'limited'
-    ? t('shiftClock.noShiftLeft', { location: noShift.location.name, left: formatDuration(noShift.allowance.remainingMinutes), defaultValue: 'At {{location}} · no shift · {{left}} left today' })
+    ? t('shiftClock.noShiftLeft', {
+        location: noShift.location.name,
+        left: formatDuration(noShift.allowance.remainingMinutes),
+        defaultValue: 'At {{location}} · no shift · {{left}} left today',
+      })
     : null;
   const askMore = offClock && !!onAskMoreTime && noShift?.allowance.kind === 'refused' && noShift.allowance.reason === 'NO_HOURS_LEFT';
 

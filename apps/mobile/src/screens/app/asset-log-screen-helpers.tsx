@@ -38,9 +38,21 @@ export function FieldInput({
               <TouchableOpacity
                 key={o}
                 onPress={() => onChange(on ? '' : o)}
-                style={[s.chip, { borderColor: problem ? border : colors.border }, on && { backgroundColor: `${COLORS.primary}1a`, borderColor: COLORS.primary }]}
+                style={[
+                  s.chip,
+                  { borderColor: problem ? border : colors.border },
+                  on && { backgroundColor: `${COLORS.primary}1a`, borderColor: COLORS.primary },
+                ]}
               >
-                <Text style={{ fontSize: FONT_SIZE.sm, color: on ? COLORS.primary : colors.textPrimary, fontWeight: on ? '700' : '400' }}>{o}</Text>
+                <Text
+                  style={{
+                    fontSize: FONT_SIZE.sm,
+                    color: on ? COLORS.primary : colors.textPrimary,
+                    fontWeight: on ? '700' : '400',
+                  }}
+                >
+                  {o}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -120,7 +132,9 @@ export function FieldInput({
         {!!suffix && <Text style={[s.suffix, { color: colors.textMuted }]}>{suffix}</Text>}
       </View>
       {field.meter && !problem && (
-        <Text style={[s.hint, { color: colors.textMuted, textAlign: 'left' }]}>{t('logbook.meterHint', 'The reading on the counter now')}</Text>
+        <Text style={[s.hint, { color: colors.textMuted, textAlign: 'left' }]}>
+          {t('logbook.meterHint', 'The reading on the counter now')}
+        </Text>
       )}
       {error}
     </View>
@@ -159,7 +173,16 @@ export const s = StyleSheet.create({
   photoRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md },
   link: { color: COLORS.primary, fontSize: FONT_SIZE.xs, fontWeight: '700' },
 
-  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderRadius: RADIUS.md, height: 46, marginBottom: SPACING.lg },
+  secondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    height: 46,
+    marginBottom: SPACING.lg,
+  },
   secondaryText: { fontSize: FONT_SIZE.sm, fontWeight: '700' },
   primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
   primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },

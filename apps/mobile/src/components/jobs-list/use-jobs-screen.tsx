@@ -140,7 +140,11 @@ export function useJobsScreen({
       {list.localUpdatedAt !== null ? (
         <View style={{ alignItems: 'flex-end', marginTop: -amazen.space(2) }}><FreshnessLabel at={list.localUpdatedAt} /></View>
       ) : null}
-      {routeShown ? <TourTarget name="tasks-route"><RouteRow stops={routeStops} onPress={() => router.push('/(app)/route-planner' as Href)} /></TourTarget> : null}
+      {routeShown ? (
+        <TourTarget name="tasks-route">
+          <RouteRow stops={routeStops} onPress={() => router.push('/(app)/route-planner' as Href)} />
+        </TourTarget>
+      ) : null}
       {/* Jobs open to a work role I hold — the first to take each place gets it (shared tasks/role-pool.ts). */}
       <OpenForRole
         refreshKey={roleRefresh}
@@ -151,7 +155,13 @@ export function useJobsScreen({
         <View style={{ gap: amazen.space(2) }}>
           <SectionLabel tone="accent">{t('tasks.myWork.next.label')}</SectionLabel>
           <TourTarget name="tasks-next">
-            <NextUp task={next} flows={flows} writeStatus={writeStatus} onOpen={(sheet) => open(next, sheet)} onChanged={() => void list.fetchTasks()} />
+            <NextUp
+              task={next}
+              flows={flows}
+              writeStatus={writeStatus}
+              onOpen={(sheet) => open(next, sheet)}
+              onChanged={() => void list.fetchTasks()}
+            />
           </TourTarget>
         </View>
       ) : null}
@@ -163,19 +173,37 @@ export function useJobsScreen({
   const empty = list.isLoading ? (
     <View style={{ paddingVertical: amazen.space(10), alignItems: 'center' }}><ActivityIndicator color={c.accent} /></View>
   ) : list.error ? (
-    <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, padding: amazen.space(4), gap: amazen.space(3), marginTop: amazen.space(3.5) }}>
+    <View
+      style={{
+        backgroundColor: c.well,
+        borderRadius: amazen.radius.panel,
+        padding: amazen.space(4),
+        gap: amazen.space(3),
+        marginTop: amazen.space(3.5),
+      }}>
       <AText variant="body" tone="strong">{list.error}</AText>
       <QuietButton tone="accent" label={t('common.retry')} onPress={() => void list.fetchTasks()} />
     </View>
   ) : next ? null : (
-    <View style={{ backgroundColor: c.well, borderRadius: amazen.radius.panel, padding: amazen.space(4), gap: amazen.space(1), marginTop: amazen.space(3.5) }}>
-      <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium, fontSize: 16, lineHeight: 22 }}>{t(`jobsList.empty.${kind}`)}</AText>
+    <View
+      style={{
+        backgroundColor: c.well,
+        borderRadius: amazen.radius.panel,
+        padding: amazen.space(4),
+        gap: amazen.space(1),
+        marginTop: amazen.space(3.5),
+      }}>
+      <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium, fontSize: 16, lineHeight: 22 }}>
+        {t(`jobsList.empty.${kind}`)}
+      </AText>
       <AText variant="caption" tone="ink">{t(kind === 'search' ? 'jobsList.empty.searchHint' : 'jobsList.empty.hint')}</AText>
     </View>
   );
 
   const footer = tasks.length >= PAGE ? (
-    <AText variant="caption" tone="ink" style={{ textAlign: 'center', marginTop: amazen.space(4) }}>{t('jobsList.capped', { count: PAGE })}</AText>
+    <AText variant="caption" tone="ink" style={{ textAlign: 'center', marginTop: amazen.space(4) }}>
+      {t('jobsList.capped', { count: PAGE })}
+    </AText>
   ) : null;
 
   const firstId = sections[0]?.data[0]?.id;
@@ -197,7 +225,17 @@ export function useJobsScreen({
         ListEmptyComponent={empty}
         ListFooterComponent={footer}
         contentContainerStyle={[{ paddingHorizontal: pad, paddingTop: amazen.space(1), paddingBottom: tabSafe }, wide]}
-        refreshControl={<RefreshControl refreshing={list.isRefreshing} onRefresh={() => { setRoleRefresh((k) => k + 1); void list.refresh(); }} colors={[c.accentSolid]} tintColor={c.accent} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={list.isRefreshing}
+            onRefresh={() => {
+              setRoleRefresh((k) => k + 1);
+              void list.refresh();
+            }}
+            colors={[c.accentSolid]}
+            tintColor={c.accent}
+          />
+        }
         renderSectionHeader={({ section }) => (
           <View style={[s.wellTop, { backgroundColor: c.well, marginTop: amazen.space(3.5), paddingHorizontal: amazen.space(3.5) }]}>
             <SectionLabel tone={section.band === 'blocked' ? 'critical' : section.band === 'overdue' ? 'warn' : 'muted'}>
@@ -226,7 +264,11 @@ export function useJobsScreen({
             />
           );
           return (
-            <View style={[{ backgroundColor: c.well, paddingHorizontal: amazen.space(3.5) }, last ? [s.wellBottom, { paddingBottom: amazen.space(2) }] : null]}>
+            <View
+              style={[
+                { backgroundColor: c.well, paddingHorizontal: amazen.space(3.5) },
+                last ? [s.wellBottom, { paddingBottom: amazen.space(2) }] : null,
+              ]}>
               {item.id === firstId ? <TourTarget name="tasks-card">{row}</TourTarget> : row}
             </View>
           );

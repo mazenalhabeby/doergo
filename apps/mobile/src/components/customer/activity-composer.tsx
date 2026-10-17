@@ -164,7 +164,16 @@ export const ActivityComposer = memo(function ActivityComposer({
         as text nothing will ever schedule.
       */
       const input: ComposedActivity = isReminder
-        ? { ...base, ...reminderPayload({ dueAt, reminderKind: reminder.kind, remindBeforeMin: reminder.lead, repeat: reminder.repeat, reminderAssigneeId: reminder.assigneeId }) }
+        ? {
+            ...base,
+            ...reminderPayload({
+              dueAt,
+              reminderKind: reminder.kind,
+              remindBeforeMin: reminder.lead,
+              repeat: reminder.repeat,
+              reminderAssigneeId: reminder.assigneeId,
+            }),
+          }
         : base;
 
       const taken = await onSubmit(input);

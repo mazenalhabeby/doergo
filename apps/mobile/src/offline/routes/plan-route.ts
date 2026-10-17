@@ -26,7 +26,13 @@ export async function planDay(memberId: string, start: LatLng | null, stops: rea
     arrival — must never ride along. It also means nothing beyond the place
     and its label leaves the phone.
   */
-  const clean: RouteStop[] = stops.map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, ...(s.label ? { label: s.label } : {}), ...(s.address ? { address: s.address } : {}) }));
+  const clean: RouteStop[] = stops.map((s) => ({
+    id: s.id,
+    lat: s.lat,
+    lng: s.lng,
+    ...(s.label ? { label: s.label } : {}),
+    ...(s.address ? { address: s.address } : {}),
+  }));
   const from = start ? { lat: start.lat, lng: start.lng } : clean[0] ? { lat: clean[0].lat, lng: clean[0].lng } : null;
   const list = start ? clean : clean.slice(1);
   if (!from || list.length === 0) return null;

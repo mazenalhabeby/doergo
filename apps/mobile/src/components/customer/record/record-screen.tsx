@@ -20,6 +20,8 @@ import { RecordAbout } from './record-about';
 import { FILTERS, isWaiting, useClientRecord, type RecordTab } from './use-client-record';
 import { localDateKey } from '@hbcfield/shared/client';
 import { useRecordScreen } from './use-record-screen';
+import { useRecordScreenLogic } from './use-record-screen-logic';
+import { RecordScreenView } from './record-screen-view';
 
 /**
  * THE CLIENT RECORD — who they are and the four acts on top, then About,
@@ -52,7 +54,7 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
     feedItems,
     renderFeed,
     renderReminder,
-  } = useRecordScreen({ id, linkedTab });
+  } = useRecordScreenLogic({ id, linkedTab });
 
   if (m.loading || !record) {
     return (
@@ -67,33 +69,7 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
     );
   }
 
-  const tabs: { key: RecordTab; label: string; count?: number; alert?: boolean }[] = [
-    { key: 'information', label: t('customers.record.tabs.information') },
-    { key: 'activity', label: t('customers.record.tabs.activity') },
-    { key: 'reminders', label: t('customers.record.tabs.reminders'), count: m.openReminders.length, alert: m.overdueCount > 0 },
-  ];
-
-  /* The top of every tab: the card, and the tab switch under it. */
-  const top = (
-    <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
-      <RecordHero record={record} canWork={m.canWork} onStage={(k) => void m.setStage(k)} onRemind={askReminder} />
-      <View style={{ flexDirection: 'row', backgroundColor: c.sunken, borderRadius: amazen.radius.full, padding: 4 }}>
-        {tabs.map((tb) => {
-          const on = m.tab === tb.key;
-          return (
-            <Pressable key={tb.key} onPress={() => m.selectTab(tb.key)} accessibilityRole="tab" accessibilityState={{ selected: on }}
-              style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 5, paddingVertical: amazen.space(2.25), borderRadius: amazen.radius.full, backgroundColor: on ? c.tile : 'transparent' }}>
-              <AText variant="body" numberOfLines={1} style={{ fontSize: 13.5, color: on ? c.inkStrong : c.inkMuted }}>{tb.label}</AText>
-              {tb.count ? <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 10.5, color: tb.alert ? c.warn : c.accent }}>{String(tb.count)}</AText> : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-
-  const pad = [{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide];
-  const hidden = (k: RecordTab) => ({ flex: 1, display: m.tab === k ? 'flex' as const : 'none' as const });
+  const { top, pad, hidden } = RecordScreenView({ amazen, c, t, wide, m, record, askReminder });
 
   return (
     <Ground style={{ flex: 1 }}>
@@ -106,7 +82,11 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
 
       {m.seen.information ? (
         <View style={hidden('information')}>
-          <ScrollView contentContainerStyle={pad} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refresher}>
+          <ScrollView
+            contentContainerStyle={pad}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            refreshControl={refresher}>
             {top}
             <RecordAbout model={m} spaceName={spaceName} onMore={openMore} onLanguage={() => m.setLocaleOpen(true)} />
           </ScrollView>
@@ -139,7 +119,14 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
                   reminderRequest={reminderRequest}
                 />
                 <FilterRow>
-                  {FILTERS.map((f) => <FilterPill key={f.key} label={t(f.label)} on={m.filter === f.key} onPress={() => m.setFilter(f.key)} />)}
+                  {FILTERS.map((f) => (
+                    <FilterPill
+                      key={f.key}
+                      label={t(f.label)}
+                      on={m.filter === f.key}
+                      onPress={() => m.setFilter(f.key)}
+                    />
+                  ))}
                 </FilterRow>
               </View>
             }
@@ -165,19 +152,34 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
             ListHeaderComponent={
               <View style={{ gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
                 {top}
-                {m.overdueCount > 0 ? <Banner tone="warn" text={t('customers.record.reminders.overdue', { count: m.overdueCount })} /> : null}
+                {m.overdueCount > 0 ? (
+                  <Banner tone="warn" text={t('customers.record.reminders.overdue', { count: m.overdueCount })} />
+                ) : null}
               </View>
             }
             ListEmptyComponent={
-              <AText variant="body" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4) }}>{t('customers.record.reminders.none')}</AText>
+              <AText variant="body" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4) }}>
+                {t('customers.record.reminders.none')}
+              </AText>
             }
             ListFooterComponent={
               <View style={{ gap: amazen.space(3), paddingTop: amazen.space(3) }}>
-                {m.canWork ? <PrimaryButton label={`＋ ${t('customers.record.newReminder', 'New reminder')}`} onPress={askReminder} /> : null}
+                {m.canWork ? (
+                  <PrimaryButton
+                    label={`＋ ${t('customers.record.newReminder', 'New reminder')}`}
+                    onPress={askReminder}
+                  />
+                ) : null}
                 {m.doneReminders.length > 0 ? (
-                  <Pressable onPress={() => m.setShowDone((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: m.showDone }} style={{ alignSelf: 'center', padding: amazen.space(2) }}>
+                  <Pressable
+                    onPress={() => m.setShowDone((v) => !v)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: m.showDone }}
+                    style={{ alignSelf: 'center', padding: amazen.space(2) }}>
                     <AText variant="body" tone="onGlass" style={{ fontSize: 13.5 }}>
-                      {m.showDone ? t('customers.record.reminders.hideDone') : t('customers.record.reminders.showDone', { count: m.doneReminders.length })}
+                      {m.showDone
+                        ? t('customers.record.reminders.hideDone')
+                        : t('customers.record.reminders.showDone', { count: m.doneReminders.length })}
                     </AText>
                   </Pressable>
                 ) : null}
@@ -225,7 +227,14 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
           <>
             {/* The star is offered only where this record is the company, and only on a link the server has minted. */}
             {menu.link.person && !menu.link.isPrimary && !isWaiting(menu.link as never) ? (
-              <SheetOption label={t('customers.record.makePrimary')} onPress={() => { const l = menu.link; setMenu(null); void m.makePrimary(l); }} />
+              <SheetOption
+                label={t('customers.record.makePrimary')}
+                onPress={() => {
+                  const l = menu.link;
+                  setMenu(null);
+                  void m.makePrimary(l);
+                }}
+              />
             ) : null}
             <SheetOption
               label={t('customers.record.removeContact')}
@@ -241,7 +250,14 @@ export function RecordScreen({ id, linkedTab }: { id: string; linkedTab?: string
                 ? t('customers.record.removeContactPendingBody', { name: menu.link.person?.name ?? menu.link.company?.name ?? '' })
                 : t('customers.record.removeContactBody', { name: menu.link.person?.name ?? menu.link.company?.name ?? '' })}
             </AText>
-            <SheetOption label={t('customers.record.removeContactConfirm')} tone="critical" onPress={() => { setMenu(null); void m.confirmRemove(); }} />
+            <SheetOption
+              label={t('customers.record.removeContactConfirm')}
+              tone="critical"
+              onPress={() => {
+                setMenu(null);
+                void m.confirmRemove();
+              }}
+            />
             <SheetOption label={t('common.cancel', 'Cancel')} onPress={() => { setMenu(null); m.setRemoving(null); }} />
           </>
         ) : null}

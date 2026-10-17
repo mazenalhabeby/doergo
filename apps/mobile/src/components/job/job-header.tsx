@@ -30,16 +30,36 @@ export function JobTopRow({ taskId, jobId, pendingSync, fromPhone, onClose }: {
   const { waiting, attention } = usePendingFor(taskId);
   const waitingToSend = pendingSync || waiting > 0;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingHorizontal: amazen.space(4), paddingTop: amazen.space(2.5), paddingBottom: amazen.space(1.5) }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(2.5),
+        paddingHorizontal: amazen.space(4),
+        paddingTop: amazen.space(2.5),
+        paddingBottom: amazen.space(1.5),
+      }}>
       <AText variant="caption" tone="ink" numeric numberOfLines={1} style={{ flex: 1 }}>{jobId}</AText>
-      {attention > 0 ? <Pill tone="critical" label={t('offline.chip.attention')} /> : waitingToSend ? <Pill label={t('offline.chip.waiting')} /> : null}
+      {attention > 0 ? (
+        <Pill tone="critical" label={t('offline.chip.attention')} />
+      ) : waitingToSend ? (
+        <Pill label={t('offline.chip.waiting')} />
+      ) : null}
       {fromPhone ? <Pill label={t('offline.fromPhone')} /> : null}
       <Pressable
         onPress={onClose}
         accessibilityRole="button"
         accessibilityLabel={t('common.close')}
         hitSlop={6}
-        style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, backgroundColor: c.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}
+        style={({ pressed }) => ({
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: c.tile,
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: pressed ? 0.75 : 1,
+        })}
       >
         <CloseGlyph size={16} color={c.ink} />
       </Pressable>

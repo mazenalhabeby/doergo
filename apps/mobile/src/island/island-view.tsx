@@ -16,7 +16,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ISLAND, TONES, type Tone } from './tokens';
 import { FONT } from '../theme/amazen';
 import { impact } from '../lib/haptics';
-import { CAP, DROP_SIDE, EDGE, MAX_BODY_LINES, ICON, ICON_GAP, SIDE, readLayout, sealedBox, sealedVisible, type Cutout, type Layout, type Measured } from './geometry';
+import {
+  CAP,
+  DROP_SIDE,
+  EDGE,
+  MAX_BODY_LINES,
+  ICON,
+  ICON_GAP,
+  SIDE,
+  readLayout,
+  sealedBox,
+  sealedVisible,
+  type Cutout,
+  type Layout,
+  type Measured,
+} from './geometry';
 import { useIslandView, type IslandMessage } from './use-island-view';
 import { lineWidth, Glyph, styles } from './island-view-helpers';
 export { type IslandMessage } from './use-island-view';
@@ -131,7 +145,11 @@ export function IslandView({
               {layout.titleDrops || msg.body || msg.action ? (
                 <Animated.View style={[styles.drop, bodyStyle]}>
                   {layout.titleDrops ? <Text style={styles.title}>{msg.title}</Text> : null}
-                  {msg.body ? <Text numberOfLines={MAX_BODY_LINES} style={[styles.body, !msg.title && styles.bodyAlone]}>{msg.body}</Text> : null}
+                  {msg.body ? (
+                    <Text numberOfLines={MAX_BODY_LINES} style={[styles.body, !msg.title && styles.bodyAlone]}>
+                      {msg.body}
+                    </Text>
+                  ) : null}
                   {msg.action ? (
                     <Pressable onPress={msg.action.onPress} accessibilityRole="button" style={styles.action}>
                       <Text style={[styles.actionLabel, { color: look.fg }]}>{msg.action.label}</Text>

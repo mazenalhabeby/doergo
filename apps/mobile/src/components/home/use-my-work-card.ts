@@ -183,7 +183,10 @@ export function useMyWorkCard({ style }: Pick<{ style?: StyleProp<ViewStyle> }, 
   const isToday = sameDay(selected, today);
   const { mine, theirs } = useMemo(() => {
     const own = face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id));
-    const mineList = isToday && shape !== 'shifts' ? todaysOwn(own, selected, open, undefined, underWay) : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
+    const mineList =
+      isToday && shape !== 'shifts'
+        ? todaysOwn(own, selected, open, undefined, underWay)
+        : dayTasks.filter((x) => face === 'executor' || isMine(x, user?.id));
     return { mine: mineList, theirs: face === 'executor' ? [] as Task[] : dayTasks.filter((x) => !isMine(x, user?.id)) };
   }, [tasks, dayTasks, face, user?.id, isToday, selected, open, underWay, shape]);
 

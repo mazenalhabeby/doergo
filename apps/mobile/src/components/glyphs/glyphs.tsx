@@ -110,7 +110,15 @@ export function ActivityGlyph({ size = 24, color }: GlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={12} cy={12} r={9.4} fill={color} fillOpacity={0.18} />
-      <Path d="M3.2 12h3.4l2-5.6 3.3 11 2.3-5.4 1.4 2h5.2" fill="none" stroke={color} strokeOpacity={0.92} strokeWidth={2.3} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M3.2 12h3.4l2-5.6 3.3 11 2.3-5.4 1.4 2h5.2"
+        fill="none"
+        stroke={color}
+        strokeOpacity={0.92}
+        strokeWidth={2.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }

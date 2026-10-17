@@ -67,7 +67,15 @@ export function PrimaryButton({
         {loading ? <ActivityIndicator size="small" color={amazen.color.accentInk} /> : null}
         <AText variant="h3" tone="accentInk" numberOfLines={1} style={{ flexShrink: 1 }}>{label}</AText>
         {detail ? (
-          <AText variant="caption" tone="accentInk" numeric numberOfLines={1} style={{ fontFamily: amazen.font.mono, opacity: 0.75 }}>{detail}</AText>
+          <AText
+            variant="caption"
+            tone="accentInk"
+            numeric
+            numberOfLines={1}
+            style={{ fontFamily: amazen.font.mono, opacity: 0.75 }}
+          >
+            {detail}
+          </AText>
         ) : null}
       </LinearGradient>
     </Pressable>

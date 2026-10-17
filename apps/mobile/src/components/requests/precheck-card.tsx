@@ -26,10 +26,17 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
   if (precheck.balance && precheck.balance.after < 0) {
     lines.push({ tone: 'critical', text: t('requests.precheck.negative', { after: precheck.balance.after }) });
   }
-  if (precheck.cover === 'short' || precheck.cover === 'skill') lines.push({ tone: 'warn', text: t(`requests.precheck.cover.${precheck.cover}`) });
+  if (precheck.cover === 'short' || precheck.cover === 'skill')
+    lines.push({ tone: 'warn', text: t(`requests.precheck.cover.${precheck.cover}`) });
   if (precheck.dailyLimit?.over) {
     const d = precheck.dailyLimit;
-    lines.push({ tone: 'warn', text: t('requests.precheck.dailyLimit', { total: formatDuration(d.plannedMinutes + d.requestedMinutes), limit: formatDuration(d.limitMinutes) }) });
+    lines.push({
+      tone: 'warn',
+      text: t('requests.precheck.dailyLimit', {
+        total: formatDuration(d.plannedMinutes + d.requestedMinutes),
+        limit: formatDuration(d.limitMinutes),
+      }),
+    });
   }
   if (precheck.cover === 'tight') lines.push({ tone: 'warn', text: t('requests.precheck.cover.tight') });
   if (precheck.secondApproval) lines.push({ tone: 'accent', text: t('requests.precheck.second', { role: precheck.secondApproval }) });
@@ -37,10 +44,25 @@ export function PrecheckCard({ precheck, kind }: { precheck: RequestPrecheck | n
 
   const bg = lines[0]!.tone === 'critical' ? c.criticalTint : lines[0]!.tone === 'warn' ? c.warnTint : c.accentTint;
   return (
-    <View accessibilityRole="summary" style={{ borderRadius: 16, paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3), backgroundColor: bg, gap: amazen.space(1) }}>
-      <AText variant="caption" tone="muted" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>{t('requests.precheck.title')}</AText>
+    <View
+      accessibilityRole="summary"
+      style={{
+        borderRadius: 16,
+        paddingVertical: amazen.space(2.5),
+        paddingHorizontal: amazen.space(3),
+        backgroundColor: bg,
+        gap: amazen.space(1),
+      }}>
+      <AText variant="caption" tone="muted" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>
+        {t('requests.precheck.title')}
+      </AText>
       {lines.map((l, i) => (
-        <AText key={i} variant="caption" tone={l.tone === 'muted' ? 'muted' : l.tone} style={{ fontSize: 13, lineHeight: 18 }}>{`• ${l.text}`}</AText>
+        <AText
+          key={i}
+          variant="caption"
+          tone={l.tone === 'muted' ? 'muted' : l.tone}
+          style={{ fontSize: 13, lineHeight: 18 }}
+        >{`• ${l.text}`}</AText>
       ))}
     </View>
   );

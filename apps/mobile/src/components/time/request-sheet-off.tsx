@@ -7,7 +7,17 @@ import type { RequestSheetView } from './request-sheet-view';
 import type { RequestSheet } from './time-off-section';
 
 /** Part of RequestSheet's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function RequestSheetOff({ vm, canBack, grid, weekdays }: { vm: RequestSheetState; canBack: ReturnType<typeof RequestSheetView>['canBack']; grid: ReturnType<typeof RequestSheetView>['grid']; weekdays: Parameters<typeof RequestSheet>[0]['weekdays'] }) {
+export function RequestSheetOff({
+  vm,
+  canBack,
+  grid,
+  weekdays,
+}: {
+  vm: RequestSheetState;
+  canBack: ReturnType<typeof RequestSheetView>['canBack'];
+  grid: ReturnType<typeof RequestSheetView>['grid'];
+  weekdays: Parameters<typeof RequestSheet>[0]['weekdays'];
+}) {
   const {
     amazen,
     setMonth,
@@ -28,13 +38,24 @@ export function RequestSheetOff({ vm, canBack, grid, weekdays }: { vm: RequestSh
   return (
     <Sunken style={{ padding: amazen.space(3), gap: amazen.space(2) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Pressable disabled={!canBack} onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('time.off.prevMonth', 'Previous month')} style={{ opacity: canBack ? 1 : 0.3, paddingHorizontal: amazen.space(2) }}>
+        <Pressable
+          disabled={!canBack}
+          onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={t('time.off.prevMonth', 'Previous month')}
+          style={{ opacity: canBack ? 1 : 0.3, paddingHorizontal: amazen.space(2) }}>
           <AText variant="body" tone="strong">‹</AText>
         </Pressable>
         <AText variant="body" tone="strong" style={{ flex: 1, textAlign: 'center', fontSize: 14.5 }}>
           {month.toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
         </AText>
-        <Pressable onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('time.off.nextMonth', 'Next month')} style={{ paddingHorizontal: amazen.space(2) }}>
+        <Pressable
+          onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={t('time.off.nextMonth', 'Next month')}
+          style={{ paddingHorizontal: amazen.space(2) }}>
           <AText variant="body" tone="strong">›</AText>
         </Pressable>
       </View>
@@ -75,7 +96,17 @@ export function RequestSheetOff({ vm, canBack, grid, weekdays }: { vm: RequestSh
                   numeric
                   style={{
                     fontSize: 13.5,
-                    color: edge ? c.accentInk : holiday ? c.critical : mark === 'approved' ? c.accent : off ? c.inkMuted : dayKey(d) === dayKey(today) ? c.accent : c.inkStrong,
+                    color: edge
+                      ? c.accentInk
+                      : holiday
+                        ? c.critical
+                        : mark === 'approved'
+                          ? c.accent
+                          : off
+                            ? c.inkMuted
+                            : dayKey(d) === dayKey(today)
+                              ? c.accent
+                              : c.inkStrong,
                     opacity: off && !edge && !holiday ? 0.55 : 1,
                     textDecorationLine: inRange && (off || holiday) && !edge ? 'line-through' : 'none',
                   }}
@@ -88,9 +119,35 @@ export function RequestSheetOff({ vm, canBack, grid, weekdays }: { vm: RequestSh
         })}
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
-        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }} />} label={t('time.off.legendApproved', 'Approved')} />
-        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />} label={t('time.off.legendWaiting', 'Waiting')} />
-        {weekdays ? <Legend swatch={<AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.55 }}>7</AText>} label={t('time.off.legendOff', 'Not a working day')} /> : null}
+        <Legend
+          swatch={
+            <View
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: 3,
+                backgroundColor: c.accentTint,
+                borderWidth: 1,
+                borderColor: c.accent,
+              }}
+            />
+          }
+          label={t('time.off.legendApproved', 'Approved')}
+        />
+        <Legend
+          swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />}
+          label={t('time.off.legendWaiting', 'Waiting')}
+        />
+        {weekdays ? (
+          <Legend
+            swatch={
+              <AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.55 }}>
+                7
+              </AText>
+            }
+            label={t('time.off.legendOff', 'Not a working day')}
+          />
+        ) : null}
       </View>
     </Sunken>
   );

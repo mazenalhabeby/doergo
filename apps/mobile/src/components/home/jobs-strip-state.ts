@@ -23,13 +23,22 @@ export function jobsStripItems(mine: Pick<MyHandovers, 'owed' | 'paused'>, clock
   const owed = mine.owed.map((j) => ({ kind: 'owed' as const, taskId: j.id, title: j.title }));
   const seen = new Set(owed.map((o) => o.taskId));
   const paused = clockedIn
-    ? mine.paused.filter((j) => !seen.has(j.id)).map((j) => ({ kind: 'paused' as const, taskId: j.id, title: j.title, ...(j.workedMinutes ? { workedMinutes: j.workedMinutes } : {}) }))
+    ? mine.paused
+        .filter((j) => !seen.has(j.id))
+        .map((j) => ({
+          kind: 'paused' as const,
+          taskId: j.id,
+          title: j.title,
+          ...(j.workedMinutes ? { workedMinutes: j.workedMinutes } : {}),
+        }))
     : [];
   return [...owed, ...paused];
 }
 
 /** The two lines, as keys + values. The first item is named; the rest are counted. */
-export function jobsStripLines(items: JobsStripItem[]): { title: { k: string; v: Record<string, unknown> }; sub: { k: string; v: Record<string, unknown> } } | null {
+export function jobsStripLines(
+  items: JobsStripItem[],
+): { title: { k: string; v: Record<string, unknown> }; sub: { k: string; v: Record<string, unknown> } } | null {
   const first = items[0];
   if (!first) return null;
   const more = items.length - 1;

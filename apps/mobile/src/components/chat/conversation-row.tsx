@@ -34,17 +34,35 @@ export const ConversationRow = memo(function ConversationRow({
   const lastMsg = cv.lastMessage;
   const r = amazen.radius.panel;
   return (
-    <View style={{ backgroundColor: c.well, paddingHorizontal: amazen.space(3.5), borderTopLeftRadius: first ? r : 0, borderTopRightRadius: first ? r : 0, borderBottomLeftRadius: last ? r : 0, borderBottomRightRadius: last ? r : 0 }}>
+    <View
+      style={{
+        backgroundColor: c.well,
+        paddingHorizontal: amazen.space(3.5),
+        borderTopLeftRadius: first ? r : 0,
+        borderTopRightRadius: first ? r : 0,
+        borderBottomLeftRadius: last ? r : 0,
+        borderBottomRightRadius: last ? r : 0,
+      }}>
       {first ? null : <WellDivider />}
       <Pressable
         onPress={() => onOpen(cv)}
         accessibilityRole="button"
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2.75), opacity: pressed ? 0.85 : 1 })}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          paddingVertical: amazen.space(2.75),
+          opacity: pressed ? 0.85 : 1,
+        })}
       >
         <ConversationAvatar conv={cv} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5, fontFamily: unread ? amazen.font.sansMedium : amazen.font.sans }}>
+            <AText
+              variant="body"
+              tone="strong"
+              numberOfLines={1}
+              style={{ flexShrink: 1, fontSize: 14.5, fontFamily: unread ? amazen.font.sansMedium : amazen.font.sans }}>
               {conversationTitle(cv, i18n.language)}
             </AText>
             {cv.isExternal ? <Tag label={t('chat.external', 'External')} tone="warn" /> : null}

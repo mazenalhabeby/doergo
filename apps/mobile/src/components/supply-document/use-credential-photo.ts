@@ -149,14 +149,25 @@ export function useCredentialPhoto({
         else {
           // Kept for the queue as JPEG — a HEIC queued offline is just as unreadable later.
           const front = await ensureJpeg(photo.uri, photo.mimeType);
-          body.$front = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg', uri: front.uri })).id;
+          body.$front = (
+            await offline.files.keep({
+              id: uuidv7(),
+              kind: 'document',
+              mime: front.converted ? 'image/jpeg' : photo.mimeType || 'image/jpeg',
+              uri: front.uri,
+            })
+          ).id;
         }
         if (staged?.back?.key) body.backStagingKey = staged.back.key;
         else if (back) body.$back = (await offline.files.keep({ id: uuidv7(), kind: 'document', mime: 'image/jpeg', uri: back.uri })).id;
 
         const { outcome } = await createFromPhone(offline.engine, { op: 'document.supply', lane: `document:${type.id}`, body });
         if (outcome.kind === 'refused') {
-          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('documents.supply.failed'));
+          toast.error(
+            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+              outcome.message ||
+              t('documents.supply.failed'),
+          );
           setBusy(false);
           return false;
         }

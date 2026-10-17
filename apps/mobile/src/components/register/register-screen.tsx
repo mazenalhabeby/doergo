@@ -46,7 +46,14 @@ export function RegisterScreen() {
   useEffect(() => {
     let alive = true;
     setKindId(null);
-    assetRegisterApi.kinds(spaceId ?? undefined).then((k) => { if (alive) setKinds(k.filter((x) => x.count > 0)); }).catch(() => { if (alive) setKinds([]); });
+    assetRegisterApi
+      .kinds(spaceId ?? undefined)
+      .then((k) => {
+        if (alive) setKinds(k.filter((x) => x.count > 0));
+      })
+      .catch(() => {
+        if (alive) setKinds([]);
+      });
     return () => { alive = false; };
   }, [spaceId]);
 
@@ -113,7 +120,12 @@ export function RegisterScreen() {
       {kinds.length > 1 ? (
         <FilterRow>
           {[{ id: null as string | null, name: t('register.allKinds', 'All'), count: 0 }, ...kinds].map((k) => (
-            <FilterPill key={k.id ?? 'all'} label={k.id ? `${k.name} ${k.count}` : k.name} on={kindId === k.id} onPress={() => setKindId(k.id)} />
+            <FilterPill
+              key={k.id ?? 'all'}
+              label={k.id ? `${k.name} ${k.count}` : k.name}
+              on={kindId === k.id}
+              onPress={() => setKindId(k.id)}
+            />
           ))}
         </FilterRow>
       ) : null}
@@ -135,14 +147,27 @@ export function RegisterScreen() {
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load('refresh')} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load('refresh')}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
         onEndReached={loadMore}
         onEndReachedThreshold={0.4}
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(8), alignItems: 'center' }}>
             {loading || !loaded
               ? <ActivityIndicator color={c.accent} />
-              : <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{filtered ? t('register.emptyFiltered', 'Nothing matches.') : t('register.empty', 'No equipment in this workspace yet.')}</AText>}
+              : (
+                  <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+                    {filtered
+                      ? t('register.emptyFiltered', 'Nothing matches.')
+                      : t('register.empty', 'No equipment in this workspace yet.')}
+                  </AText>
+                )}
           </View>
         }
         ListFooterComponent={loadingMore ? <ActivityIndicator style={{ marginVertical: amazen.space(5) }} color={c.accent} /> : null}

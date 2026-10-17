@@ -115,7 +115,7 @@ export function useClockIn(opts: {
       if (location) await startGeofenceForSpace(location);
       await onClockedInRef.current?.();
       if (outcome.kind === 'queued') {
-        toast.info(t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'), t('attendance.offline.clockedInSavedBody', 'Recorded with the time and your location. It is sent when you are back online.'));
+        toast.info(t('attendance.offline.clockedInSaved', 'Clocked in · saved on this phone'), t('attendance.offline.clockedInSavedBody', ('Recorded with the time and your location. It is sent when you are back ' + 'online.')));
       } else {
         toast.success(
           t('common.success'),
@@ -156,7 +156,7 @@ export function useClockIn(opts: {
     }
     if (choice.kind === 'none') {
       if (mayClockInRemotely(user)) await clockInAt(null, fix);
-      else toast.error(t('common.error'), t('attendance.noAssignedLocations', 'You are not assigned to a workspace yet. Ask your admin to add you to one.'));
+      else toast.error(t('common.error'), t('attendance.noAssignedLocations', ('You are not assigned to a workspace yet. Ask your admin to add you to ' + 'one.')));
       return;
     }
     setSelectedLocation(choice.ranked[0]!.location);

@@ -121,7 +121,11 @@ export function useSendDocumentScreen() {
           },
         });
         if (outcome.kind === 'refused') {
-          toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('sendDoc.sendFailed', 'Could not send it'));
+          toast.error(
+            (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+              outcome.message ||
+              t('sendDoc.sendFailed', 'Could not send it'),
+          );
           return;
         }
         toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('sendDoc.sent', 'Sent — somebody will confirm it.'));

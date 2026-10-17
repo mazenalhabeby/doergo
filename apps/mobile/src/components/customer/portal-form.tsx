@@ -64,10 +64,24 @@ export function PortalField({ label, children }: { label: string; children: Reac
 }
 
 export const portalFormStyles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, borderBottomWidth: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+  },
   headerBtn: { minWidth: 56, height: 32, justifyContent: 'center' },
   headerTitle: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.xl },
   save: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.base, textAlign: 'right' },
   label: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginBottom: 6 },
-  input: { borderWidth: 1, borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 13, fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base },
+  input: {
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontFamily: 'Outfit_400Regular',
+    fontSize: FONT_SIZE.base,
+  },
 });

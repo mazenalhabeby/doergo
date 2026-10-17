@@ -130,7 +130,17 @@ export function useTabPill({
   const slots: TabPillItem[] = [
     ...items,
     ...(more
-      ? [{ key: '__more__', name: '__more__', label: more.label, focused: more.focused, badge: more.badge, onPress: more.onPress, tourKey: 'tab-more' }]
+      ? [
+          {
+            key: '__more__',
+            name: '__more__',
+            label: more.label,
+            focused: more.focused,
+            badge: more.badge,
+            onPress: more.onPress,
+            tourKey: 'tab-more',
+          },
+        ]
       : []),
   ];
   const activeIndex = Math.max(0, slots.findIndex((s) => s.focused));

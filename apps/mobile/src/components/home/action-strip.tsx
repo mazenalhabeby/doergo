@@ -120,7 +120,11 @@ export function ActionStrip() {
             onPress={() => go(items[0]!)}
             style={{ marginTop: amazen.space(4) }}
           />
-          <Pressable onPress={() => setOpen(false)} accessibilityRole="button" hitSlop={10} style={{ alignSelf: 'center', marginTop: amazen.space(3) }}>
+          <Pressable
+            onPress={() => setOpen(false)}
+            accessibilityRole="button"
+            hitSlop={10}
+            style={{ alignSelf: 'center', marginTop: amazen.space(3) }}>
             <AText variant="caption" tone="muted">{t('strip.notNow', { defaultValue: 'Not now' })}</AText>
           </Pressable>
         </SheetPanel>
@@ -157,7 +161,12 @@ function FadingList({ items, tone, onPick, say, surface }: {
 
   return (
     <View style={{ marginTop: amazen.space(4), maxHeight: ROW_H * VISIBLE_ROWS }}>
-      <ScrollView scrollEnabled={scrolls} onScroll={onScroll} scrollEventThrottle={32} showsVerticalScrollIndicator={false} bounces={scrolls}>
+      <ScrollView
+        scrollEnabled={scrolls}
+        onScroll={onScroll}
+        scrollEventThrottle={32}
+        showsVerticalScrollIndicator={false}
+        bounces={scrolls}>
         {items.map((item, i) => {
           const l = itemLines(item);
           const ink = item.blocksWork ? c.critical : item.kind === 'expiring' ? c.inkMuted : c.warn;
@@ -172,10 +181,22 @@ function FadingList({ items, tone, onPick, say, surface }: {
                 borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.7 : 1,
               })}
             >
-              <GlyphTile Glyph={glyphFor(item)} color={ink} tint={item.kind === 'expiring' ? c.tile : `${ink}1f`} behind={surface} glyphSize={16} />
+              <GlyphTile
+                Glyph={glyphFor(item)}
+                color={ink}
+                tint={item.kind === 'expiring' ? c.tile : `${ink}1f`}
+                behind={surface}
+                glyphSize={16}
+              />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 19 }}>{say(l.title)}</AText>
-                <AText variant="caption" numberOfLines={1} style={{ color: item.blocksWork ? c.critical : c.inkMuted, marginTop: 1 }}>{say(l.sub)}</AText>
+                <AText
+                  variant="caption"
+                  numberOfLines={1}
+                  style={{ color: item.blocksWork ? c.critical : c.inkMuted, marginTop: 1 }}
+                >
+                  {say(l.sub)}
+                </AText>
               </View>
               <AText variant="body" tone="muted">›</AText>
             </Pressable>

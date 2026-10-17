@@ -78,7 +78,12 @@ export default function OvertimeRequestScreen() {
       // The answer is kept and sent even with no signal — "yes, I am staying" must not be lost to a basement.
       const outcome = await respond.run({ lane: `overtime:${id}`, body }, () => overtimeApi.respond(body));
       if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('overtime.failedToRespond'));
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('overtime.failedToRespond'),
+        );
         return;
       }
       if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
@@ -141,7 +146,11 @@ export default function OvertimeRequestScreen() {
               {request.location?.name || t('common.unknownLocation')}
             </Text>
             <Text style={[styles.locationSub, { color: colors.textSecondary }]}>
-              {placeLine ? t(`overtime.place.${placeLine.key}`, { time: formatClock(placeLine.at, request.location?.timezone ?? undefined) }) : null}
+              {placeLine
+                ? t(`overtime.place.${placeLine.key}`, {
+                    time: formatClock(placeLine.at, request.location?.timezone ?? undefined),
+                  })
+                : null}
             </Text>
           </View>
         </View>
@@ -198,7 +207,9 @@ export default function OvertimeRequestScreen() {
             <View style={[styles.statusCard, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
               <ActivityIndicator size="small" color="#2563EB" />
               <Text style={styles.statusTitle}>{waitingText(request, t)}</Text>
-              <Text style={styles.statusSub}>{request.askedOf?.names?.length ? t('overtime.waitingToldSub') : t('overtime.waitingApprovalSub')}</Text>
+              <Text style={styles.statusSub}>
+                {request.askedOf?.names?.length ? t('overtime.waitingToldSub') : t('overtime.waitingApprovalSub')}
+              </Text>
             </View>
 
             {/* Path B option — get leader signature on this device */}

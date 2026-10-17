@@ -40,7 +40,15 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
   const open = t('myWork.openJob', { defaultValue: 'Open the job' });
 
   return (
-    <RNAnimated.View style={{ opacity: fade, backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4, marginVertical: amazen.space(1) }}>
+    <RNAnimated.View
+      style={{
+        opacity: fade,
+        backgroundColor: c.tile,
+        borderRadius: 20,
+        padding: amazen.space(3.5),
+        gap: 4,
+        marginVertical: amazen.space(1),
+      }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: late > 0 ? c.warn : c.accent }} />
         <Eyebrow tone={late > 0 ? 'warn' : 'muted'} style={{ flexShrink: 1 }}>{label}</Eyebrow>
@@ -50,12 +58,27 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
       {meta ? <AText variant="caption" tone="muted" numberOfLines={1}>{meta}</AText> : null}
 
       {/* ⚠️ The lift sits on a wrapper: `overflow: hidden` on the pill would clip its own shadow on iOS. */}
-      <View style={{ marginTop: amazen.space(2.5), borderRadius: amazen.radius.full, backgroundColor: c.accentSolid, shadowColor: c.accentSolid, shadowOpacity: 0.22, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 3 }}>
+      <View
+        style={{
+          marginTop: amazen.space(2.5),
+          borderRadius: amazen.radius.full,
+          backgroundColor: c.accentSolid,
+          shadowColor: c.accentSolid,
+          shadowOpacity: 0.22,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 3 },
+          elevation: 3,
+        }}>
         <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${open}: ${task.title}`}
           style={({ pressed }) => ({ borderRadius: amazen.radius.full, overflow: 'hidden', opacity: pressed ? 0.88 : 1 })}>
           <LinearGradient
             colors={amazen.gradient.primary as unknown as [string, string, ...string[]]}
-            style={{ minHeight: amazen.layout.tapMin + 2, alignItems: 'center', justifyContent: 'center', paddingHorizontal: amazen.space(4) }}
+            style={{
+              minHeight: amazen.layout.tapMin + 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: amazen.space(4),
+            }}
           >
             <AText variant="body" tone="accentInk" style={{ fontFamily: amazen.type.h3.fontFamily }}>{open}</AText>
           </LinearGradient>
@@ -65,7 +88,19 @@ export function ActiveRow({ task, label, clock, onOpen }: { task: Task; label: s
   );
 }
 
-export function PlainRow({ task, done, mine, clock, onPress }: { task: Task; done: boolean; mine: boolean; clock: (d: string) => string; onPress: () => void }) {
+export function PlainRow({
+  task,
+  done,
+  mine,
+  clock,
+  onPress,
+}: {
+  task: Task;
+  done: boolean;
+  mine: boolean;
+  clock: (d: string) => string;
+  onPress: () => void;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;
@@ -75,11 +110,30 @@ export function PlainRow({ task, done, mine, clock, onPress }: { task: Task; don
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={task.title}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(2), opacity: pressed ? 0.7 : 1 })}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(2.5),
+        paddingVertical: amazen.space(2),
+        opacity: pressed ? 0.7 : 1,
+      })}
     >
       {/* Solid = yours, hollow ring = somebody else's. */}
-      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: mine || !who ? (done ? c.inkMuted : c.accent) : 'transparent', borderWidth: mine || !who ? 0 : 1.5, borderColor: c.inkMuted }} />
-      <AText variant="body" tone={done ? 'muted' : 'strong'} numberOfLines={1} style={{ flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
+      <View
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: 4,
+          backgroundColor: mine || !who ? (done ? c.inkMuted : c.accent) : 'transparent',
+          borderWidth: mine || !who ? 0 : 1.5,
+          borderColor: c.inkMuted,
+        }}
+      />
+      <AText
+        variant="body"
+        tone={done ? 'muted' : 'strong'}
+        numberOfLines={1}
+        style={{ flex: 1, textDecorationLine: done ? 'line-through' : 'none' }}>
         {who ? <AText variant="body" tone="muted">{who} · </AText> : null}
         {task.title}
       </AText>
@@ -112,13 +166,21 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
   const others = week.filter((d) => !sameDay(d, selected) && shiftOn(schedule, d));
   return (
     <>
-      <Pressable onPress={onOpen} accessibilityRole="button" style={{ backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4 }}>
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        style={{ backgroundColor: c.tile, borderRadius: 20, padding: amazen.space(3.5), gap: 4 }}>
         {live ? (
           <>
             <Eyebrow tone="accent">{t('myWork.onTheClock', { defaultValue: 'On the clock' })}</Eyebrow>
             <AText variant="h3" tone="strong">{live.location?.name ?? t('myWork.shift', { defaultValue: 'Shift' })}</AText>
             <AText variant="caption" tone="muted" numeric>
-              {live.clockInAt ? t('myWork.since', { time: formatTime(live.clockInAt), defaultValue: `since ${formatTime(live.clockInAt)}` }) : ''}
+              {live.clockInAt
+                ? t('myWork.since', {
+                    time: formatTime(live.clockInAt),
+                    defaultValue: `since ${formatTime(live.clockInAt)}`,
+                  })
+                : ''}
               {sel ? ` · ${sel.startTime} → ${sel.endTime}` : ''}
             </AText>
           </>
@@ -126,7 +188,9 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
           <>
             <Eyebrow tone="muted">{t('myWork.shift', { defaultValue: 'Shift' })}</Eyebrow>
             <AText variant="h3" tone="strong" numeric>{sel.startTime} → {sel.endTime}</AText>
-            <AText variant="caption" tone="muted">{t('myWork.hours', { count: shiftHours(sel), defaultValue: `${shiftHours(sel)} h` })}</AText>
+            <AText variant="caption" tone="muted">
+              {t('myWork.hours', { count: shiftHours(sel), defaultValue: `${shiftHours(sel)} h` })}
+            </AText>
           </>
         ) : (
           <AText variant="body" tone="muted">
@@ -139,7 +203,15 @@ export function ShiftList({ schedule, selected, today, live, onOpen }: {
         return (
           <React.Fragment key={d.toISOString()}>
             {i > 0 ? <WellDivider /> : null}
-            <Pressable onPress={onOpen} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), paddingVertical: amazen.space(2) }}>
+            <Pressable
+              onPress={onOpen}
+              accessibilityRole="button"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: amazen.space(2.5),
+                paddingVertical: amazen.space(2),
+              }}>
               <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: d < today ? c.inkMuted : c.accent }} />
               <AText variant="body" tone="strong" style={{ flex: 1 }}>{weekdayName(d, 'long')}</AText>
               <AText variant="caption" tone="muted" numeric>{e.startTime} → {e.endTime}</AText>
@@ -174,7 +246,17 @@ export function Figures({ others, open, onPress }: { others: Task[]; open: (t: T
   );
 }
 
-export function Sentence({ title, body, tone = 'strong', children }: { title: string; body?: string; tone?: 'strong' | 'critical' | 'warn'; children?: React.ReactNode }) {
+export function Sentence({
+  title,
+  body,
+  tone = 'strong',
+  children,
+}: {
+  title: string;
+  body?: string;
+  tone?: 'strong' | 'critical' | 'warn';
+  children?: React.ReactNode;
+}) {
   return (
     <View style={{ gap: 2, paddingVertical: 4 }}>
       <AText variant="body" tone={tone} style={{ fontWeight: '500' }}>{title}</AText>

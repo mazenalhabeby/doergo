@@ -144,12 +144,32 @@ const styles = (c: ThemeColors) =>
     cardLines: { gap: 6 },
     line: { height: 6, borderRadius: 3, backgroundColor: c.border },
 
-    title: { fontSize: FONT_SIZE.xxl, fontWeight: FONT_WEIGHT.bold as any, color: c.textPrimary, textAlign: 'center', marginTop: SPACING.md },
-    subtitle: { fontSize: FONT_SIZE.sm, color: c.textMuted, textAlign: 'center', marginTop: SPACING.sm, lineHeight: 21, paddingHorizontal: SPACING.md },
+    title: {
+      fontSize: FONT_SIZE.xxl,
+      fontWeight: FONT_WEIGHT.bold as any,
+      color: c.textPrimary,
+      textAlign: 'center',
+      marginTop: SPACING.md,
+    },
+    subtitle: {
+      fontSize: FONT_SIZE.sm,
+      color: c.textMuted,
+      textAlign: 'center',
+      marginTop: SPACING.sm,
+      lineHeight: 21,
+      paddingHorizontal: SPACING.md,
+    },
 
     reasons: { width: '100%', gap: SPACING.md, marginTop: SPACING.xl, marginBottom: SPACING.xl },
     reason: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-    reasonIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: COLORS.primary + '1a', alignItems: 'center', justifyContent: 'center' },
+    reasonIcon: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: COLORS.primary + '1a',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     reasonText: { flex: 1, fontSize: FONT_SIZE.sm, color: c.textSecondary, lineHeight: 20 },
 
     blocked: { fontSize: FONT_SIZE.sm, color: '#f59e0b', textAlign: 'center', marginBottom: SPACING.md },

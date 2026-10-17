@@ -90,7 +90,11 @@ export function useJobsScreenData({
     }
     return m;
   }, [tasks, flows, user?.id]);
-  const factsOf = useCallback((task: ListTask): JobFacts => facts.get(task.id) ?? { mine: false, closed: false, canceled: false, underWay: false }, [facts]);
+  const factsOf = useCallback(
+    (task: ListTask): JobFacts =>
+      facts.get(task.id) ?? { mine: false, closed: false, canceled: false, underWay: false },
+    [facts],
+  );
 
   /* ---------------- the chips: this period's, only those with jobs ---------------- */
 
@@ -122,7 +126,10 @@ export function useJobsScreenData({
 
   const filterOptions = chips.map((c) => ({
     key: c.key,
-    label: c.key === 'all' ? t('jobsList.filters.all') : t('jobsList.filters.withCount', { label: t(`jobsList.filters.${c.key}`), count: c.count }),
+    label:
+      c.key === 'all'
+        ? t('jobsList.filters.all')
+        : t('jobsList.filters.withCount', { label: t(`jobsList.filters.${c.key}`), count: c.count }),
   }));
 
   /* ---------------- opening a job ---------------- */

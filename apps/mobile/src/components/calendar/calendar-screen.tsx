@@ -46,7 +46,11 @@ export function CalendarScreen() {
 
   // The last view is remembered on this phone (a convenience; Month when nothing is stored).
   useEffect(() => {
-    AsyncStorage.getItem(VIEW_KEY).then((v) => { if (v && (VIEWS as string[]).includes(v)) setView(v as CalendarView); }).catch(() => undefined);
+    AsyncStorage.getItem(VIEW_KEY)
+      .then((v) => {
+        if (v && (VIEWS as string[]).includes(v)) setView(v as CalendarView);
+      })
+      .catch(() => undefined);
   }, []);
   // Switching view keeps the day in hand: Month opens on its month, the others start on it.
   const choose = (v: CalendarView) => { setView(v); setAnchor(selected); AsyncStorage.setItem(VIEW_KEY, v).catch(() => undefined); };
@@ -78,7 +82,7 @@ export function CalendarScreen() {
     ? anchor.toLocaleDateString(loc, { month: 'long', year: 'numeric' })
     : view === 'day'
       ? anchor.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })
-      : `${anchor.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} – ${addDays(anchor, 2).toLocaleDateString(loc, { day: 'numeric', month: 'short' })}`;
+      : (`${anchor.toLocaleDateString(loc, { day: 'numeric', month: 'short' })} – ` + `${addDays(anchor, 2).toLocaleDateString(loc, { day: 'numeric', month: 'short' })}`);
 
   const open = (x: CalendarItem) => {
     if (x.ref?.type === 'event') setOpenEvent(x.ref.id);
@@ -89,7 +93,11 @@ export function CalendarScreen() {
   };
   const newAt = (at?: Date) => router.push({
     pathname: '/(app)/calendar-new',
-    params: { day: dayKey(at ?? (view === 'month' ? selected : anchor)), ...(at ? { hour: String(at.getHours()) } : {}), ...(spaceId ? { spaceId } : {}) },
+    params: {
+      day: dayKey(at ?? (view === 'month' ? selected : anchor)),
+      ...(at ? { hour: String(at.getHours()) } : {}),
+      ...(spaceId ? { spaceId } : {}),
+    },
   } as never);
   const goToday = () => { const n = new Date(); setAnchor(n); setSelected(n); };
   const step = (dir: -1 | 1) => {
@@ -99,7 +107,16 @@ export function CalendarScreen() {
   };
   const offToday = dayKey(anchor) !== todayKey || (view === 'month' && dayKey(selected) !== todayKey);
 
-  const iconBtn = { width: 36, height: 36, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass };
+  const iconBtn = {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: c.glass,
+    borderWidth: 1,
+    borderColor: c.lineGlass,
+  };
 
   return (
     <Ground style={{ flex: 1 }}>
@@ -116,14 +133,52 @@ export function CalendarScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
           <FilterPill label={`${placeName} ▾`} on={!!spaceId} onPress={() => setFilters(true)} />
           <View style={{ flex: 1 }} />
-          <Pressable onPress={() => step(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('calendar.previous', 'Previous')} style={iconBtn}><AText variant="body" tone="strong">‹</AText></Pressable>
-          <Pressable onPress={() => step(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('calendar.next', 'Next')} style={iconBtn}><AText variant="body" tone="strong">›</AText></Pressable>
+          <Pressable
+            onPress={() => step(-1)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('calendar.previous', 'Previous')}
+            style={iconBtn}
+          >
+            <AText variant="body" tone="strong">
+              ‹
+            </AText>
+          </Pressable>
+          <Pressable
+            onPress={() => step(1)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('calendar.next', 'Next')}
+            style={iconBtn}
+          >
+            <AText variant="body" tone="strong">
+              ›
+            </AText>
+          </Pressable>
         </View>
-        <View accessibilityRole="tablist" style={{ flexDirection: 'row', padding: 3, borderRadius: 14, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass }}>
+        <View
+          accessibilityRole="tablist"
+          style={{
+            flexDirection: 'row',
+            padding: 3,
+            borderRadius: 14,
+            backgroundColor: c.glass,
+            borderWidth: 1,
+            borderColor: c.lineGlass,
+          }}>
           {VIEWS.map((v) => (
             <Pressable key={v} onPress={() => choose(v)} accessibilityRole="tab" accessibilityState={{ selected: view === v }}
-              style={{ flex: 1, height: 32, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: view === v ? c.well : 'transparent' }}>
-              <AText variant="caption" style={{ fontSize: 13, color: view === v ? c.inkStrong : c.inkMuted }}>{t(`calendar.view.${v}`)}</AText>
+              style={{
+                flex: 1,
+                height: 32,
+                borderRadius: 11,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: view === v ? c.well : 'transparent',
+              }}>
+              <AText variant="caption" style={{ fontSize: 13, color: view === v ? c.inkStrong : c.inkMuted }}>
+                {t(`calendar.view.${v}`)}
+              </AText>
             </Pressable>
           ))}
         </View>
@@ -131,7 +186,9 @@ export function CalendarScreen() {
 
       {failed && !data ? (
         <Well style={{ marginHorizontal: amazen.space(4), padding: amazen.space(5), alignItems: 'center' }}>
-          <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>{t('calendar.offline', 'Needs a connection to load your calendar.')}</AText>
+          <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>
+            {t('calendar.offline', 'Needs a connection to load your calendar.')}
+          </AText>
         </Well>
       ) : null}
 
@@ -140,11 +197,33 @@ export function CalendarScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ gap: amazen.space(3), paddingBottom: tabSafe + 90 }}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await reload(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={async () => {
+                  setRefreshing(true);
+                  await reload();
+                  setRefreshing(false);
+                }}
+                tintColor={c.accent}
+                colors={[c.accent]}
+              />
+            }
           >
-            <MonthGrid anchor={anchor} selected={dayKey(selected)} items={items} kinds={kinds} onPick={(d) => { setSelected(d); if (d.getMonth() !== anchor.getMonth()) setAnchor(d); }} />
+            <MonthGrid
+              anchor={anchor}
+              selected={dayKey(selected)}
+              items={items}
+              kinds={kinds}
+              onPick={(d) => {
+                setSelected(d);
+                if (d.getMonth() !== anchor.getMonth()) setAnchor(d);
+              }}
+            />
             <AText variant="body" tone="strong" style={{ paddingHorizontal: 4, fontSize: 15 }}>
-              {dayKey(selected) === todayKey ? t('calendar.today', 'Today') : selected.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}
+              {dayKey(selected) === todayKey
+                ? t('calendar.today', 'Today')
+                : selected.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}
             </AText>
             <DayList items={items} day={dayKey(selected)} onOpen={open} />
           </ScrollView>
@@ -152,7 +231,13 @@ export function CalendarScreen() {
           <ListView from={from} days={31} items={items} kinds={kinds} onOpen={open} />
         ) : (
           <View style={{ flex: 1, paddingBottom: tabSafe }}>
-            <TimeGrid days={view === 'day' ? [anchor] : [anchor, addDays(anchor, 1), addDays(anchor, 2)]} items={items} kinds={kinds} onOpen={open} onPressHour={view === 'day' ? newAt : undefined} />
+            <TimeGrid
+              days={view === 'day' ? [anchor] : [anchor, addDays(anchor, 1), addDays(anchor, 2)]}
+              items={items}
+              kinds={kinds}
+              onOpen={open}
+              onPressHour={view === 'day' ? newAt : undefined}
+            />
           </View>
         )}
       </View>
@@ -161,9 +246,16 @@ export function CalendarScreen() {
         onPress={() => newAt()}
         accessibilityRole="button"
         accessibilityLabel={t('calendar.new', 'New')}
-        style={({ pressed }) => ({ position: 'absolute', right: amazen.space(5), bottom: tabSafe + amazen.space(2), opacity: pressed ? 0.88 : 1 })}
+        style={({ pressed }) => ({
+          position: 'absolute',
+          right: amazen.space(5),
+          bottom: tabSafe + amazen.space(2),
+          opacity: pressed ? 0.88 : 1,
+        })}
       >
-        <LinearGradient colors={amazen.gradient.primary as unknown as [string, string]} style={{ width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
+        <LinearGradient
+          colors={amazen.gradient.primary as unknown as [string, string]}
+          style={{ width: 58, height: 58, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}>
           <PlusGlyph size={26} color={c.accentInk} />
         </LinearGradient>
       </Pressable>
@@ -180,7 +272,13 @@ export function CalendarScreen() {
         showSchedule={showSchedule}
       />
       <EventSheet eventId={openEvent} onClose={() => setOpenEvent(null)} onChanged={reload} />
-      <LeaveSheet item={leave} mine={leave?.personId === (user as { id?: string } | null)?.id} canDecide={canDecideLeave} onClose={() => setLeave(null)} onChanged={reload} />
+      <LeaveSheet
+        item={leave}
+        mine={leave?.personId === (user as { id?: string } | null)?.id}
+        canDecide={canDecideLeave}
+        onClose={() => setLeave(null)}
+        onChanged={reload}
+      />
     </Ground>
   );
 }

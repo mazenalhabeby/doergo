@@ -130,7 +130,9 @@ export async function registerBackgroundSync(member: Member): Promise<void> {
   const lib = loadBackgroundTask();
   if (!lib) return;
   try {
-    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member), { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY });
+    await SecureStore.setItemAsync(MEMBER_KEY, JSON.stringify(member), {
+      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+    });
     if (await TaskManager.isTaskRegisteredAsync(BACKGROUND_SYNC_TASK)) return;
     // Minutes; the OS treats it as a floor, never a promise.
     await lib.registerTaskAsync(BACKGROUND_SYNC_TASK, { minimumInterval: 15 });

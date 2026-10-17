@@ -199,7 +199,11 @@ export function useTimeScreen() {
 
   // Counted so far on the running shift — today's bar includes it.
   const runningMinutes = entry
-    ? Math.max(0, Math.floor((now.getTime() - new Date(entry.countedStartAt ?? entry.clockInAt).getTime()) / 60_000) - (entry.unpaidBreakMinutes ?? 0))
+    ? Math.max(
+        0,
+        Math.floor((now.getTime() - new Date(entry.countedStartAt ?? entry.clockInAt).getTime()) / 60_000) -
+          (entry.unpaidBreakMinutes ?? 0),
+      )
     : 0;
   const finishedToday = !entry ? totals.lastToday : null;
   const wide = r.isTablet ? centeredContent(720) : null;

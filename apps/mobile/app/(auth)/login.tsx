@@ -12,174 +12,44 @@ import { AText, PrimaryButton } from '../../src/components/amazen';
 import { JobSheet, SheetOption } from '../../src/components/job/job-ui';
 import { AuthCard, AuthField, AuthFrame, AuthHelp, AuthLinkLine } from '../../src/components/auth/auth-ui';
 import { loadLastUser, shouldAutoPromptFor, type LastUser } from '../../src/lib/session/last-user';
+import { useLoginScreen } from '../../src/screens/auth/use-login-screen';
 
 export default function LoginScreen() {
-  const router = useRouter();
-  const { login, refreshUser, signedOutByUser } = useAuth();
-  const bio = useBiometricUnlock();
-  const [offerBiometric, setOfferBiometric] = useState(false);
-  /** Set when enabling here would take the fingerprint away from another account on this phone. */
-  const [offerReplaces, setOfferReplaces] = useState<string | null>(null);
-  /*
-    Who used this phone last. `undefined` until read, so nothing — not the
-    fingerprint card, not the auto-prompt — is decided on a guess.
-  */
-  const [lastUser, setLastUser] = useState<LastUser | null | undefined>(undefined);
-  useEffect(() => {
-    void loadLastUser().then(setLastUser);
-  }, []);
-  const { t } = useTranslation();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  /*
-    The member chose the password over the fingerprint. Only meaningful while
-    this phone holds a key; without one the form is the only screen there is.
-  */
-  const [usePassword, setUsePassword] = useState(false);
-
-  const { amazen } = useTheme();
-  const c = amazen.color;
-
-  // Animations
-
-  const validate = () => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = t('validation.emailRequired');
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = t('validation.emailInvalid');
-    }
-
-    if (!password) {
-      newErrors.password = t('validation.passwordRequired');
-    } else if (password.length < 8) {
-      newErrors.password = t('validation.passwordMinLength');
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  /*
-    Prompt on open when this phone is bound.
-
-    ⚠️ Once per mount, guarded by a ref. Re-prompting on every render — or on
-    every foreground, which the capability refresh triggers — puts the OS sheet
-    back up the instant somebody dismisses it to type their password, which
-    reads as the app refusing to let them in.
-  */
-  const unlockAndEnter = async () => {
-    if (await bio.unlock()) {
-      await refreshUser();
-      router.replace(ROUTES.home as Href);
-    }
-  };
-
-  const promptedRef = useRef(false);
-  useEffect(() => {
-    /*
-      ⚠️ Not straight after an explicit sign-out. Somebody who just tapped
-      "Sign out" and is met by a fingerprint sheet is one touch from being
-      signed straight back in. The button below stays; only the auto-prompt
-      waits for a real launch.
-    */
-    if (!bio.canUnlock || promptedRef.current || lastUser === undefined) return;
-    promptedRef.current = true;
-    /*
-      ⚠️ Only for the person who used this phone last. The key belongs to
-      whoever enrolled it; when a colleague has signed in here since, the OS
-      sheet would cover the card that names whose account it opens, and one
-      touch put them inside the FIRST person's account. They get the password
-      form instead, filled with their own email, and the fingerprint stays one
-      clearly labelled tap away.
-    */
-    if (!shouldAutoPromptFor(bio.owner?.userId, lastUser)) {
-      setUsePassword(true);
-      if (lastUser?.email) setEmail(lastUser.email);
-      return;
-    }
-    if (signedOutByUser) return;
-    void unlockAndEnter();
-  }, [bio.canUnlock, signedOutByUser, lastUser, bio.owner?.userId]);
-
-  const handleLogin = async () => {
-    if (!validate()) return;
-
-    setIsLoading(true);
-    try {
-      await login(email.toLowerCase().trim(), password);
-      /*
-        Offer it once, here, and never again from a banner.
-
-        This is the only moment the member has both a live session to bind and a
-        reason to care — and `enroll()` needs that session, so an offer anywhere
-        else would have to send them back through this screen anyway. Declined,
-        the switch still lives in Account.
-      */
-      /*
-        ⚠️ Resolved FRESH here, not read from hook state.
-
-        The hook resolves asynchronously on mount, and a fast sign-in finishes
-        first — so `bio.capability` is still null at this moment on exactly the
-        launch where somebody is most likely to be offered this. Reading it gave
-        a silent "no" and the offer never appeared.
-      */
-      const [cap, owner] = await Promise.all([resolveCapability(), getKeyOwner()]);
-      /*
-        ⚠️ Asked about THIS member, not "is anyone enrolled". `bio.enrolled` is
-        resolved signed-out, so it is true for whoever's key is on the phone —
-        which meant the member who tapped "Not Mike?" was never offered it.
-      */
-      const alreadyMine = !!owner && owner.email.toLowerCase() === email.toLowerCase().trim();
-      if (cap.kind === 'ready' && !alreadyMine) {
-        // One account per phone: say so when this would switch it off for somebody else.
-        setOfferReplaces(owner ? owner.name?.trim().split(/\s+/)[0] || owner.email : null);
-        setOfferBiometric(true);
-      } else {
-        router.replace(ROUTES.home as Href);
-      }
-    } catch (error) {
-      // Said under the password, where the eye already is — a toast covered the form it was about.
-      const message = error instanceof Error ? error.message : t('auth.login.loginFailed');
-      setErrors({ password: message });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /*
-    Fingerprint first when this phone holds a key; the form is one tap away.
-    ⚠️ Nothing is drawn in the card until the capability has resolved — the
-    first frame otherwise shows the form and swaps it for the fingerprint a
-    moment later, which reads as the screen changing its mind.
-  */
-  const resolved = bio.capability !== null && lastUser !== undefined;
-  const showBiometric = bio.canUnlock && !usePassword;
-  const ownerName = bio.owner?.name?.trim().split(/\s+/)[0] || bio.owner?.email || '';
-  const bioNotice =
-    bio.failure === 'invalidated' ? t('biometrics.invalidatedBody', { method: bio.label })
-      : bio.failure === 'rejected' ? t('biometrics.rejectedBody')
-        : bio.failure === 'unreachable' ? t('biometrics.unreachableBody')
-          : null;
-
-  const switchToPassword = (sameAccount: boolean) => {
-    setUsePassword(true);
-    setEmail(sameAccount ? bio.owner?.email ?? '' : '');
-    setPassword('');
-    setErrors({});
-  };
-
-  const goHome = () => { setOfferBiometric(false); router.replace(ROUTES.home as Href); };
+  const {
+    router,
+    bio,
+    offerBiometric,
+    offerReplaces,
+    t,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isLoading,
+    errors,
+    setErrors,
+    setUsePassword,
+    amazen,
+    c,
+    unlockAndEnter,
+    handleLogin,
+    resolved,
+    showBiometric,
+    ownerName,
+    bioNotice,
+    switchToPassword,
+    goHome,
+  } = useLoginScreen();
 
   return (
     <AuthFrame
       footer={resolved && !showBiometric ? (
         <View style={{ gap: amazen.space(2.5) }}>
-          <AuthLinkLine text={t('auth.login.noAccount')} link={t('auth.login.createOne')} onPress={() => router.push(ROUTES.register as Href)} />
+          <AuthLinkLine
+            text={t('auth.login.noAccount')}
+            link={t('auth.login.createOne')}
+            onPress={() => router.push(ROUTES.register as Href)}
+          />
           <AuthHelp />
         </View>
       ) : null}
@@ -188,7 +58,14 @@ export default function LoginScreen() {
         /* Face ID first when this phone holds a key — and WHOSE account it opens, or somebody signs in as a colleague. */
         <AuthCard>
           <View style={{ alignItems: 'center', gap: amazen.space(1) }}>
-            <AText variant="h2" tone="strong" numberOfLines={1} style={{ fontSize: 21, fontFamily: amazen.font.sansLight }}>{t('biometrics.welcomeBack', { name: ownerName })}</AText>
+            <AText
+              variant="h2"
+              tone="strong"
+              numberOfLines={1}
+              style={{ fontSize: 21, fontFamily: amazen.font.sansLight }}
+            >
+              {t('biometrics.welcomeBack', { name: ownerName })}
+            </AText>
             {bio.owner?.email ? <AText variant="caption" tone="onGlass" numberOfLines={1}>{bio.owner.email}</AText> : null}
           </View>
           <Pressable
@@ -196,7 +73,19 @@ export default function LoginScreen() {
             disabled={bio.busy}
             accessibilityRole="button"
             accessibilityLabel={t('biometrics.unlockWith', { method: bio.label })}
-            style={({ pressed }) => ({ alignSelf: 'center', width: 104, height: 104, borderRadius: 32, backgroundColor: c.accentTint, borderWidth: 1.5, borderColor: c.accent, alignItems: 'center', justifyContent: 'center', marginVertical: amazen.space(2), opacity: pressed ? 0.85 : 1 })}
+            style={({ pressed }) => ({
+              alignSelf: 'center',
+              width: 104,
+              height: 104,
+              borderRadius: 32,
+              backgroundColor: c.accentTint,
+              borderWidth: 1.5,
+              borderColor: c.accent,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginVertical: amazen.space(2),
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
             {bio.busy ? <ActivityIndicator color={c.accent} /> : <BiometricIcon method={bio.method} size={56} color={c.accent} />}
           </Pressable>
@@ -204,10 +93,20 @@ export default function LoginScreen() {
             {bio.failure === 'failed' ? t('biometrics.tapRetry') : t('biometrics.tapToUnlock', { method: bio.label })}
           </AText>
           <Pressable onPress={() => switchToPassword(true)} accessibilityRole="button"
-            style={({ pressed }) => ({ borderRadius: amazen.radius.full, backgroundColor: c.tile, paddingVertical: amazen.space(3), alignItems: 'center', opacity: pressed ? 0.8 : 1 })}>
+            style={({ pressed }) => ({
+              borderRadius: amazen.radius.full,
+              backgroundColor: c.tile,
+              paddingVertical: amazen.space(3),
+              alignItems: 'center',
+              opacity: pressed ? 0.8 : 1,
+            })}>
             <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{t('biometrics.usePassword')}</AText>
           </Pressable>
-          <Pressable onPress={() => switchToPassword(false)} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(1) }}>
+          <Pressable
+            onPress={() => switchToPassword(false)}
+            hitSlop={8}
+            accessibilityRole="button"
+            style={{ alignSelf: 'center', padding: amazen.space(1) }}>
             <AText variant="body" style={{ color: c.accent, fontSize: 13.5 }}>{t('biometrics.notYou', { name: ownerName })}</AText>
           </Pressable>
         </AuthCard>
@@ -216,9 +115,19 @@ export default function LoginScreen() {
           {/* One tap back to Face ID, for the member who owns it. */}
           {bio.canUnlock ? (
             <Pressable onPress={() => setUsePassword(false)} accessibilityRole="button"
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), borderRadius: 14, backgroundColor: c.accentTint, padding: amazen.space(3), opacity: pressed ? 0.85 : 1 })}>
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: amazen.space(2.5),
+                borderRadius: 14,
+                backgroundColor: c.accentTint,
+                padding: amazen.space(3),
+                opacity: pressed ? 0.85 : 1,
+              })}>
               <BiometricIcon method={bio.method} size={22} color={c.accent} />
-              <AText variant="body" numberOfLines={1} style={{ flex: 1, color: c.accent, fontSize: 13.5 }}>{t('biometrics.backTo', { method: bio.label, name: ownerName })}</AText>
+              <AText variant="body" numberOfLines={1} style={{ flex: 1, color: c.accent, fontSize: 13.5 }}>
+                {t('biometrics.backTo', { method: bio.label, name: ownerName })}
+              </AText>
             </Pressable>
           ) : null}
           {/* Why Face ID went: said once, where the password goes. */}
@@ -250,7 +159,11 @@ export default function LoginScreen() {
             returnKeyType="go"
             error={errors.password}
           />
-          <Pressable onPress={() => router.push(ROUTES.forgotPassword as Href)} hitSlop={8} accessibilityRole="link" style={{ alignSelf: 'flex-end', marginTop: -amazen.space(1) }}>
+          <Pressable
+            onPress={() => router.push(ROUTES.forgotPassword as Href)}
+            hitSlop={8}
+            accessibilityRole="link"
+            style={{ alignSelf: 'flex-end', marginTop: -amazen.space(1) }}>
             <AText variant="body" style={{ color: c.accent, fontSize: 13.5 }}>{t('auth.login.forgotPassword')}</AText>
           </Pressable>
           <PrimaryButton label={t('auth.login.submitButton')} loading={isLoading} onPress={() => void handleLogin()} />
@@ -259,16 +172,34 @@ export default function LoginScreen() {
 
       {/* Offered once, here — the only moment with both a live session to bind and a reason to care. */}
       <JobSheet visible={offerBiometric} onClose={goHome} title={t('biometrics.enableTitle', { method: bio.label })}>
-        <View style={{ alignSelf: 'center', width: 64, height: 64, borderRadius: 20, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+        <View
+          style={{
+            alignSelf: 'center',
+            width: 64,
+            height: 64,
+            borderRadius: 20,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
           <BiometricIcon method={bio.method} size={32} color={c.accent} />
         </View>
         <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('biometrics.enableBody')}</AText>
         {offerReplaces ? (
           <View style={{ borderRadius: 14, backgroundColor: c.warnTint, padding: amazen.space(3) }}>
-            <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>{t('biometrics.enableReplaces', { method: bio.label, name: offerReplaces })}</AText>
+            <AText variant="caption" tone="ink" style={{ lineHeight: 18 }}>
+              {t('biometrics.enableReplaces', { method: bio.label, name: offerReplaces })}
+            </AText>
           </View>
         ) : null}
-        <PrimaryButton label={t('biometrics.enable', { method: bio.label })} disabled={bio.busy} onPress={async () => { await bio.enroll(); goHome(); }} />
+        <PrimaryButton
+          label={t('biometrics.enable', { method: bio.label })}
+          disabled={bio.busy}
+          onPress={async () => {
+            await bio.enroll();
+            goHome();
+          }}
+        />
         <SheetOption label={t('biometrics.notNow')} onPress={goHome} />
       </JobSheet>
     </AuthFrame>

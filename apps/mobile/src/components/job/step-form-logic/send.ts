@@ -114,7 +114,8 @@ export async function prepareStepForm(args: {
  * office still read WHY.
  */
 export function reasonFromAnswers(form: Pick<StepForm, 'fields'>, answers: StepFormAnswers): string | undefined {
-  const pick = (t: StepFormFieldType) => form.fields.find((f) => f.type === t && typeof answers[f.id] === 'string' && String(answers[f.id]).trim());
+  const pick = (t: StepFormFieldType) =>
+    form.fields.find((f) => f.type === t && typeof answers[f.id] === 'string' && String(answers[f.id]).trim());
   const f = pick('note') ?? pick('choice');
   return f ? String(answers[f.id]).slice(0, 500) : undefined;
 }
@@ -142,7 +143,11 @@ export function refusalFieldErrors(
     return Object.keys(out).length ? out : { '*': 'invalid' };
   }
   if (o.code === STEP_FORM_REFUSAL.FOREIGN_FILE) {
-    const ids = new Set(Array.isArray(o.params?.fileIds) ? (o.params!.fileIds as unknown[]).filter((x): x is string => typeof x === 'string') : []);
+    const ids = new Set(
+      Array.isArray(o.params?.fileIds)
+        ? (o.params!.fileIds as unknown[]).filter((x): x is string => typeof x === 'string')
+        : [],
+    );
     const out: Record<string, string> = {};
     for (const [fieldId, v] of Object.entries(sent ?? {})) {
       const values = Array.isArray(v) ? v : [v];

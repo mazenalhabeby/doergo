@@ -95,7 +95,11 @@ export function AddClientSheet({
     try {
       const outcome = await clientCreate.run({ lane: 'crm:new', body: input }, () => customersApi.create(input));
       if (outcome.kind === 'refused') {
-        toast.error((outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('customers.addFailed', 'Could not add the client'));
+        toast.error(
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('customers.addFailed', 'Could not add the client'),
+        );
         return;
       }
       toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('customers.added', 'Client added'));
@@ -111,16 +115,34 @@ export function AddClientSheet({
   };
 
   return (
-    <JobSheet visible={visible} onClose={onClose} busy={saving} title={step === 'choose' ? t('customers.add', 'Add client') : t('customers.newClient', 'New client')}>
+    <JobSheet
+      visible={visible}
+      onClose={onClose}
+      busy={saving}
+      title={step === 'choose' ? t('customers.add', 'Add client') : t('customers.newClient', 'New client')}>
       {step === 'choose' ? (
         <>
           {canScan ? (
-            <SheetOption label={t('customers.scanCard', 'Scan a business card')} hint={t('customers.scanCardSub', 'Fills the form for you')} Glyph={ScanCardGlyph} onPress={scan} />
+            <SheetOption
+              label={t('customers.scanCard', 'Scan a business card')}
+              hint={t('customers.scanCardSub', 'Fills the form for you')}
+              Glyph={ScanCardGlyph}
+              onPress={scan}
+            />
           ) : null}
           {canImport ? (
-            <SheetOption label={t('contactsImport.option')} hint={t('contactsImport.optionSub')} Glyph={ImportContactsGlyph} onPress={importContacts} />
+            <SheetOption
+              label={t('contactsImport.option')}
+              hint={t('contactsImport.optionSub')}
+              Glyph={ImportContactsGlyph}
+              onPress={importContacts}
+            />
           ) : null}
-          <SheetOption label={t('customers.enterDetails', 'Enter details')} hint={t('customers.enterDetailsSub', 'Type it in')} onPress={() => setStep('form')} />
+          <SheetOption
+            label={t('customers.enterDetails', 'Enter details')}
+            hint={t('customers.enterDetailsSub', 'Type it in')}
+            onPress={() => setStep('form')}
+          />
         </>
       ) : (
         <>
@@ -129,7 +151,13 @@ export function AddClientSheet({
               const on = form.type === k;
               return (
                 <Pressable key={k} onPress={() => setForm((f) => ({ ...f, type: k }))} accessibilityRole="button" accessibilityState={{ selected: on }}
-                  style={{ flex: 1, alignItems: 'center', paddingVertical: amazen.space(2.25), borderRadius: amazen.radius.full, backgroundColor: on ? c.tile : 'transparent' }}>
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    paddingVertical: amazen.space(2.25),
+                    borderRadius: amazen.radius.full,
+                    backgroundColor: on ? c.tile : 'transparent',
+                  }}>
                   <AText variant="body" style={{ fontSize: 13.5, color: on ? c.inkStrong : c.inkMuted }}>
                     {k === 'COMPANY' ? t('customers.record.kindCompany', 'Company') : t('customers.record.kindPerson', 'Person')}
                   </AText>
@@ -137,10 +165,41 @@ export function AddClientSheet({
               );
             })}
           </View>
-          <JobField value={form.name} onChangeText={set('name')} placeholder={company ? t('customers.fCompanyName', 'Company name') : t('customers.fPersonName', 'Full name')} autoCapitalize="words" autoFocus maxLength={200} />
-          {company ? <JobField value={form.contactName} onChangeText={set('contactName')} placeholder={t('customers.fContactOptional', 'Contact person (optional)')} autoCapitalize="words" maxLength={200} /> : null}
-          <JobField value={form.phone} onChangeText={set('phone')} placeholder={t('customers.fPhone', 'Phone')} keyboardType="phone-pad" maxLength={40} />
-          <JobField value={form.email} onChangeText={set('email')} placeholder={t('customers.fEmail', 'Email')} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} maxLength={200} />
+          <JobField
+            value={form.name}
+            onChangeText={set('name')}
+            placeholder={
+              company ? t('customers.fCompanyName', 'Company name') : t('customers.fPersonName', 'Full name')
+            }
+            autoCapitalize="words"
+            autoFocus
+            maxLength={200}
+          />
+          {company ? (
+            <JobField
+              value={form.contactName}
+              onChangeText={set('contactName')}
+              placeholder={t('customers.fContactOptional', 'Contact person (optional)')}
+              autoCapitalize="words"
+              maxLength={200}
+            />
+          ) : null}
+          <JobField
+            value={form.phone}
+            onChangeText={set('phone')}
+            placeholder={t('customers.fPhone', 'Phone')}
+            keyboardType="phone-pad"
+            maxLength={40}
+          />
+          <JobField
+            value={form.email}
+            onChangeText={set('email')}
+            placeholder={t('customers.fEmail', 'Email')}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={200}
+          />
 
           {/* A client filed in no workspace is invisible in every workspace tab, so this is not an afterthought. */}
           {spaces.length ? (
@@ -161,7 +220,12 @@ export function AddClientSheet({
             ))}
           </FilterRow>
 
-          <PrimaryButton label={t('customers.save', 'Save client')} onPress={() => void save()} loading={saving} disabled={!form.name.trim()} />
+          <PrimaryButton
+            label={t('customers.save', 'Save client')}
+            onPress={() => void save()}
+            loading={saving}
+            disabled={!form.name.trim()}
+          />
         </>
       )}
     </JobSheet>

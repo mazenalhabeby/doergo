@@ -144,7 +144,13 @@ export function ImportContactsGlyph({ size = 24, color }: GlyphProps) {
       <Path d="M15.6 8.8c-2.2 0-4 1.6-4 3.6v.8h8v-.8c0-2-1.8-3.6-4-3.6Z" fill={color} fillOpacity={0.34} />
       <Circle cx={8.4} cy={4.8} r={3} fill={color} fillOpacity={0.95} />
       <Path d="M8.4 8.8c-2.6 0-4.6 1.9-4.6 4.2v.6h9.2V13c0-2.3-2-4.2-4.6-4.2Z" fill={color} fillOpacity={0.95} />
-      <Path d="M3 16.4v2.8a2.4 2.4 0 0 0 2.4 2.4h13.2a2.4 2.4 0 0 0 2.4-2.4v-2.8" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path
+        d="M3 16.4v2.8a2.4 2.4 0 0 0 2.4 2.4h13.2a2.4 2.4 0 0 0 2.4-2.4v-2.8"
+        fill="none"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
       <Path d="M12 13.8v5M9.6 16.6 12 19l2.4-2.4" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );

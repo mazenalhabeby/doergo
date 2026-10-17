@@ -58,7 +58,10 @@ export function shownAnswer(field: Pick<StepFormField, 'type'>, value: unknown):
   if (value === undefined || value === null || value === '') return null;
   switch (field.type) {
     case 'yesno': return typeof value === 'boolean' ? { kind: 'yesno', value } : null;
-    case 'photos': return Array.isArray(value) && value.length ? { kind: 'photos', ids: value.filter((x): x is string => typeof x === 'string') } : null;
+    case 'photos':
+      return Array.isArray(value) && value.length
+        ? { kind: 'photos', ids: value.filter((x): x is string => typeof x === 'string') }
+        : null;
     case 'signature': return typeof value === 'string' ? { kind: 'signature', id: value } : null;
     case 'number': return typeof value === 'number' ? { kind: 'text', text: String(value) } : null;
     default: return typeof value === 'string' ? { kind: 'text', text: value } : null;

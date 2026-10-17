@@ -76,7 +76,17 @@ export function JobFields({ taskId, editable }: { taskId: string; editable: bool
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
         {defs.map((d) => (
-          <View key={d.id} style={{ flexBasis: '47%', flexGrow: 1, backgroundColor: c.tile, borderRadius: 14, paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3), gap: 2 }}>
+          <View
+            key={d.id}
+            style={{
+              flexBasis: '47%',
+              flexGrow: 1,
+              backgroundColor: c.tile,
+              borderRadius: 14,
+              paddingVertical: amazen.space(2.5),
+              paddingHorizontal: amazen.space(3),
+              gap: 2,
+            }}>
             <AText variant="caption" tone="ink" numberOfLines={1}>{d.name}</AText>
             <AText variant="caption" tone="strong" numberOfLines={3} style={{ fontSize: 13, lineHeight: 18 }}>{shown(d)}</AText>
           </View>
@@ -102,7 +112,13 @@ function FieldEditor({ def, value, onChange }: { def: MobileCustomFieldDefinitio
   const { t } = useTranslation();
   const c = amazen.color;
   if (def.type === 'CHECKBOX') {
-    return <Switch value={value === 'true'} onValueChange={(b) => onChange(b ? 'true' : 'false')} trackColor={{ true: c.accentSolid, false: c.tile }} />;
+    return (
+      <Switch
+        value={value === 'true'}
+        onValueChange={(b) => onChange(b ? 'true' : 'false')}
+        trackColor={{ true: c.accentSolid, false: c.tile }}
+      />
+    );
   }
   if (def.type === 'DROPDOWN') {
     return (
@@ -115,7 +131,14 @@ function FieldEditor({ def, value, onChange }: { def: MobileCustomFieldDefinitio
               onPress={() => onChange(on ? '' : opt)}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
-              style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3.25), paddingVertical: amazen.space(1.75), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}
+              style={{
+                borderRadius: amazen.radius.full,
+                paddingHorizontal: amazen.space(3.25),
+                paddingVertical: amazen.space(1.75),
+                backgroundColor: on ? c.accentTint : c.tile,
+                borderWidth: 1.5,
+                borderColor: on ? c.accent : 'transparent',
+              }}
             >
               <AText variant="caption" style={{ color: on ? c.accent : c.ink, fontSize: 12.5 }}>{opt}</AText>
             </Pressable>

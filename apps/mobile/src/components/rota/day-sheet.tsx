@@ -23,11 +23,31 @@ export function Cell({ cell, shift, onPress }: { cell: RotaCell; shift?: RotaShi
       : cell.kind === 'leave'
         ? { backgroundColor: c.warnTint, color: c.warn }
         : { backgroundColor: 'transparent', color: c.lineField };
-  const text = cell.kind === 'shift' || cell.kind === 'schedule' ? `${short(cell.start)}\n${short(cell.end)}` : cell.kind === 'leave' ? t('rota.leaveCell', 'Leave') : '—';
+  const text =
+    cell.kind === 'shift' || cell.kind === 'schedule'
+      ? `${short(cell.start)}\n${short(cell.end)}`
+      : cell.kind === 'leave'
+        ? t('rota.leaveCell', 'Leave')
+        : '—';
   return (
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => ({ flex: 1, height: 44, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: style.backgroundColor, opacity: pressed ? 0.7 : 1, borderWidth: cell.kind === 'shift' && cell.source === 'once' ? 1 : 0, borderColor: tint })}>
-      <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 10, lineHeight: 13, textAlign: 'center', color: style.color }}>{text}</AText>
+      style={({ pressed }) => ({
+        flex: 1,
+        height: 44,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: style.backgroundColor,
+        opacity: pressed ? 0.7 : 1,
+        borderWidth: cell.kind === 'shift' && cell.source === 'once' ? 1 : 0,
+        borderColor: tint,
+      })}>
+      <AText
+        numeric
+        style={{ fontFamily: amazen.font.mono, fontSize: 10, lineHeight: 13, textAlign: 'center', color: style.color }}
+      >
+        {text}
+      </AText>
     </Pressable>
   );
 }
@@ -56,7 +76,15 @@ export function RoundArrow({ label, a11y, onPress }: { label: string; a11y: stri
   const { amazen } = useTheme();
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} hitSlop={6}
-      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, backgroundColor: amazen.color.tile, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.75 : 1 })}>
+      style={({ pressed }) => ({
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: amazen.color.tile,
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: pressed ? 0.75 : 1,
+      })}>
       <AText variant="body" tone="strong" style={{ fontSize: 20, lineHeight: 24 }}>{label}</AText>
     </Pressable>
   );
@@ -105,7 +133,16 @@ export function DaySheet({
     const on = choice === id;
     return (
       <Pressable key={id ?? 'off'} onPress={() => setChoice(id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), padding: amazen.space(3.25), borderRadius: 16, backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          padding: amazen.space(3.25),
+          borderRadius: 16,
+          backgroundColor: on ? c.accentTint : c.tile,
+          borderWidth: 1.5,
+          borderColor: on ? c.accent : 'transparent',
+        }}>
         <View style={{ width: 12, height: 12, borderRadius: 4, backgroundColor: id ? color ?? c.accent : c.lineField }} />
         <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14.5 }}>{name}</AText>
         {hours ? <AText variant="caption" tone="muted" numeric>{hours}</AText> : null}
@@ -124,7 +161,14 @@ export function DaySheet({
           const on = repeat === k;
           return (
             <Pressable key={k} onPress={() => setRepeat(k)} accessibilityRole="button" accessibilityState={{ selected: on }}
-              style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(2), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
+              style={{
+                borderRadius: amazen.radius.full,
+                paddingHorizontal: amazen.space(3),
+                paddingVertical: amazen.space(2),
+                backgroundColor: on ? c.accentTint : c.tile,
+                borderWidth: 1.5,
+                borderColor: on ? c.accent : 'transparent',
+              }}>
               <AText variant="caption" style={{ fontSize: 13, color: on ? c.accent : c.ink }}>
                 {k === 'once' ? t('rota.once', 'This day only') : t('rota.weekly', { defaultValue: 'Every {{weekday}}', weekday })}
               </AText>
@@ -132,9 +176,14 @@ export function DaySheet({
           );
         })}
       </View>
-      {offOnceBlocked ? <Banner tone="warn" text={t('rota.offOnceNeedsLeave', 'A single day off from a standing shift is time off — approve leave for it, or set it off every week.')} /> : null}
+      {offOnceBlocked ? <Banner tone="warn" text={t('rota.offOnceNeedsLeave', ('A single day off from a standing shift is time off — approve leave for ' + 'it, or set it off every week.'))} /> : null}
       {error ? <Banner tone="critical" text={error} /> : null}
-      <PrimaryButton label={t('common.save', 'Save')} onPress={() => void save()} disabled={offOnceBlocked || (choice === now && repeat === 'once')} loading={busy} />
+      <PrimaryButton
+        label={t('common.save', 'Save')}
+        onPress={() => void save()}
+        disabled={offOnceBlocked || (choice === now && repeat === 'once')}
+        loading={busy}
+      />
     </JobSheet>
   );
 }

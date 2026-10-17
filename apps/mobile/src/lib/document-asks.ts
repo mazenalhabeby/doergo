@@ -137,7 +137,12 @@ export function typeGroups(
     if (queuedTypeIds.has(type.id)) { checking.push({ typeId: type.id, label: type.label, onPhone: true, type }); continue; }
     const last = latestOf(type.id, docs);
     if (last?.status === 'PENDING_VERIFICATION') { checking.push({ typeId: type.id, label: type.label, onPhone: false, type }); continue; }
-    const settled = !!last && last.status !== 'REJECTED' && last.status !== 'REVOKED' && last.standing !== 'EXPIRED' && last.standing !== 'EXPIRING';
+    const settled =
+      !!last &&
+      last.status !== 'REJECTED' &&
+      last.status !== 'REVOKED' &&
+      last.standing !== 'EXPIRED' &&
+      last.standing !== 'EXPIRING';
     if (settled) continue; // approved and valid — gone
     other.push(type);
   }

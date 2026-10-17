@@ -67,7 +67,16 @@ const pill = StyleSheet.create({
 });
 
 const row = StyleSheet.create({
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: SPACING.lg, marginBottom: SPACING.sm, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.sm,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    padding: SPACING.md,
+  },
   thumb: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, fontWeight: '600' },
   sub: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginTop: 2 },

@@ -38,7 +38,7 @@ export function FaceIcon({ size = 64, color }: IconProps) {
     <Svg width={size} height={size} viewBox="0 0 64 64" fill="none">
       <Rect x={2} y={2} width={60} height={60} rx={30} fill={color} fillOpacity={0.08} />
       <G stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" fill="none">
-        <Path d="M16 24v-4a4 4 0 0 1 4-4h4M40 16h4a4 4 0 0 1 4 4v4M48 40v4a4 4 0 0 1-4 4h-4M24 48h-4a4 4 0 0 1-4-4v-4" strokeOpacity={0.55} />
+        <Path d={"M16 24v-4a4 4 0 0 1 4-4h4M40 16h4a4 4 0 0 1 4 4v4M48 40v4a4 4 0 0 1-4 " + "4h-4M24 48h-4a4 4 0 0 1-4-4v-4"} strokeOpacity={0.55} />
         <Path d="M25 27v3M39 27v3" />
         <Path d="M32 27v8h-2.5" strokeOpacity={0.85} />
         <Path d="M26 40c3.4 3 8.6 3 12 0" strokeOpacity={0.9} />

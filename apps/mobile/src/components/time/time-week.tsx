@@ -54,7 +54,12 @@ export function TimeWeek({
         <SectionLabel tone="accent">{`${fmt(monday)} – ${fmt(sunday)}`}</SectionLabel>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(1.5), height: 96 }} accessibilityLabel={t('time.week.a11y', { defaultValue: '{{time}} counted this week', time: formatDuration(total) })}>
+      <View
+        style={{ flexDirection: 'row', alignItems: 'flex-end', gap: amazen.space(1.5), height: 96 }}
+        accessibilityLabel={t('time.week.a11y', {
+          defaultValue: '{{time}} counted this week',
+          time: formatDuration(total),
+        })}>
         {days.map((m, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
             <View
@@ -75,7 +80,10 @@ export function TimeWeek({
       <View style={{ flexDirection: 'row', gap: amazen.space(2) }}>
         <Figure value={formatDuration(total)} label={t('time.week.counted', 'counted')} />
         <Figure value={String(worked)} label={t('time.week.days', { count: worked, defaultValue: 'days worked' })} />
-        <Figure value={monthMinutes == null ? '—' : formatDuration(monthMinutes + runningMinutes)} label={t('time.week.month', 'this month')} />
+        <Figure
+          value={monthMinutes == null ? '—' : formatDuration(monthMinutes + runningMinutes)}
+          label={t('time.week.month', 'this month')}
+        />
       </View>
     </Well>
   );
@@ -84,8 +92,25 @@ export function TimeWeek({
 function Figure({ value, label }: { value: string; label: string }) {
   const { amazen } = useTheme();
   return (
-    <View style={{ flex: 1, borderRadius: 14, backgroundColor: amazen.color.tile, paddingVertical: amazen.space(2.25), paddingHorizontal: amazen.space(2.5) }}>
-      <AText variant="body" tone="strong" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 18, lineHeight: 24 }}>{value}</AText>
+    <View
+      style={{
+        flex: 1,
+        borderRadius: 14,
+        backgroundColor: amazen.color.tile,
+        paddingVertical: amazen.space(2.25),
+        paddingHorizontal: amazen.space(2.5),
+      }}>
+      <AText
+        variant="body"
+        tone="strong"
+        numeric
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        style={{ fontSize: 18, lineHeight: 24 }}
+      >
+        {value}
+      </AText>
       <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10.5 }}>{label}</AText>
     </View>
   );

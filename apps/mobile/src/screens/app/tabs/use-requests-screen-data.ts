@@ -91,7 +91,14 @@ export function useRequestsScreenData() {
   const [chooserOpen, setChooserOpen] = useState(false);
   const [formKind, setFormKind] = useState<Exclude<RequestKind, 'LEAVE'> | null>(null);
   // Filled in from "This looks like…" — the member still checks and sends.
-  const [formInitial, setFormInitial] = useState<{ start?: string; end?: string; startTime?: string; endTime?: string; minutes?: number; reason?: string } | null>(null);
+  const [formInitial, setFormInitial] = useState<{
+    start?: string;
+    end?: string;
+    startTime?: string;
+    endTime?: string;
+    minutes?: number;
+    reason?: string;
+  } | null>(null);
 
   // The list
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('upcoming');

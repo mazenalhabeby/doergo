@@ -66,7 +66,7 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
                       left: toDrive.length,
                       total: orderedStops.length,
                     })
-                  : `${result.order.length} ${t('route.stopsWord', 'stops')} · ${formatDistance(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`)
+                  : (`${result.order.length} ${t('route.stopsWord', 'stops')} · ` + `${formatDistance(result.totalMeters)} · ${fmtDur(result.totalSeconds)}`))
               : `${selectedCount} ${t('route.selected', 'selected')}${start ? ` · ${start.label}` : ''}`}
           </Text>
 
@@ -85,7 +85,11 @@ export function RoutePlannerScreenYourRoute({ vm }: { vm: RoutePlannerScreenStat
           {!!error && <Text style={styles.sheetError}>{error}</Text>}
 
           {result ? (
-            <PressableScale onPress={openFullRoute} disabled={resuming} style={[styles.cta, { backgroundColor: COLORS.primary }]} accessibilityRole="button">
+            <PressableScale
+              onPress={openFullRoute}
+              disabled={resuming}
+              style={[styles.cta, { backgroundColor: COLORS.primary }]}
+              accessibilityRole="button">
               {resuming
                 ? <ActivityIndicator size="small" color="#fff" />
                 : <Ionicons name="navigate" size={17} color="#fff" />}

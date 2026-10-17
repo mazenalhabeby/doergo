@@ -46,9 +46,18 @@ export function AppearancePage() {
   ];
   return (
     <SettingsPage title={t('profile.theme.title', 'Appearance')}>
-      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.theme.lede', 'How the app looks. It changes as you tap.')}</AText>
+      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
+        {t('settings.theme.lede', 'How the app looks. It changes as you tap.')}
+      </AText>
       {OPTIONS.map((o) => (
-        <ChoiceRow key={o.mode} on={mode === o.mode} onPress={() => setMode(o.mode)} title={o.mode === 'system' ? t('settings.theme.system', 'Same as the phone') : t(`profile.theme.${o.mode}`)} sub={o.sub} lead={<Swatch mode={o.mode} />} />
+        <ChoiceRow
+          key={o.mode}
+          on={mode === o.mode}
+          onPress={() => setMode(o.mode)}
+          title={o.mode === 'system' ? t('settings.theme.system', 'Same as the phone') : t(`profile.theme.${o.mode}`)}
+          sub={o.sub}
+          lead={<Swatch mode={o.mode} />}
+        />
       ))}
     </SettingsPage>
   );
@@ -93,7 +102,9 @@ export function TimeFormatPage() {
   ];
   return (
     <SettingsPage title={t('profile.timeFormat.title', 'Time format')}>
-      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.time.lede', 'How times are written everywhere in the app.')}</AText>
+      <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
+        {t('settings.time.lede', 'How times are written everywhere in the app.')}
+      </AText>
       {OPTIONS.map((o) => (
         <ChoiceRow
           key={o.value}
@@ -104,7 +115,9 @@ export function TimeFormatPage() {
           sub={
             <View style={{ gap: 2, marginTop: 4 }}>
               <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 20, color: amazen.color.inkStrong }}>{o.now}</AText>
-              <AText variant="caption" tone="muted">{t('settings.time.shift', { shift: o.shift, defaultValue: 'A shift: {{shift}}' })}</AText>
+              <AText variant="caption" tone="muted">
+                {t('settings.time.shift', { shift: o.shift, defaultValue: 'A shift: {{shift}}' })}
+              </AText>
             </View>
           }
         />
@@ -159,7 +172,14 @@ export function ClockInPickPage() {
     <SettingsPage title={t('settings.clockIn.title')}>
       <AText variant="body" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>{t('settings.clockIn.question')}</AText>
       {OPTIONS.map((o) => (
-        <ChoiceRow key={o.value} on={current === o.value} disabled={saving} onPress={() => void choose(o.value)} title={o.title} sub={o.sub} />
+        <ChoiceRow
+          key={o.value}
+          on={current === o.value}
+          disabled={saving}
+          onPress={() => void choose(o.value)}
+          title={o.title}
+          sub={o.sub}
+        />
       ))}
       {places.length > 1 ? (
         <AText variant="caption" tone="onGlass" style={{ paddingHorizontal: amazenPad }}>
@@ -207,7 +227,9 @@ export function LanguagePage() {
         <ChoiceRow key={l.code} on={current === l.code} onPress={() => choose(l.code)} title={l.label}
           sub={`${GREETING[l.code] ?? ''}${user?.firstName ? `, ${user.firstName}` : ''}`} />
       ))}
-      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('settings.lang.emails', 'Your emails from HBCField come in this language too.')}</AText>
+      <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+        {t('settings.lang.emails', 'Your emails from HBCField come in this language too.')}
+      </AText>
     </SettingsPage>
   );
 }

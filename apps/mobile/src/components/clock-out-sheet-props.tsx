@@ -41,7 +41,12 @@ export interface ClockOutSheetProps {
    * columns and mean different things to an approver; writing either into
    * `notes` (rule 6) buries a reason in free text nothing can read.
    */
-  onConfirm: (input: { notes?: string; earlyReason?: string; overtimeReason?: string; handovers?: { taskId: string; note: string }[] }) => void;
+  onConfirm: (input: {
+    notes?: string;
+    earlyReason?: string;
+    overtimeReason?: string;
+    handovers?: { taskId: string; note: string }[];
+  }) => void;
   isLoading?: boolean;
   /** Everything the sheet shows. ⚠️ Nothing new is fetched — §11.4. */
   shift: ClockOutShift;

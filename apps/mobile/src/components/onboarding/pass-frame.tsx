@@ -29,10 +29,29 @@ export function PassFrame({ heading, children, dock }: { heading: string; childr
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[{ flexGrow: 1, paddingHorizontal: amazen.space(4), paddingTop: insets.top + amazen.space(4), paddingBottom: insets.bottom + amazen.space(4), gap: amazen.space(3) }, r.isTablet && centeredContent(460)]}
+          contentContainerStyle={[
+            {
+              flexGrow: 1,
+              paddingHorizontal: amazen.space(4),
+              paddingTop: insets.top + amazen.space(4),
+              paddingBottom: insets.bottom + amazen.space(4),
+              gap: amazen.space(3),
+            },
+            r.isTablet && centeredContent(460),
+          ]}
         >
           <View style={{ gap: 2 }}>
-            <AText style={{ color: c.inkOnGlass, fontFamily: amazen.font.mono, fontSize: 10, letterSpacing: 1.6, textTransform: 'uppercase' }}>{t('onboarding.pass.eyebrow')}</AText>
+            <AText
+              style={{
+                color: c.inkOnGlass,
+                fontFamily: amazen.font.mono,
+                fontSize: 10,
+                letterSpacing: 1.6,
+                textTransform: 'uppercase',
+              }}
+            >
+              {t('onboarding.pass.eyebrow')}
+            </AText>
             <AText variant="h2" tone="strong" style={{ fontSize: 26, lineHeight: 32, fontFamily: amazen.font.sansLight }}>{heading}</AText>
           </View>
           {children}
@@ -56,7 +75,19 @@ export function PassAlternatives({ items }: { items: { label: string; onPress: (
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'center', gap: amazen.space(2), flexWrap: 'wrap' }}>
       {items.map((it) => (
-        <Pressable key={it.label} onPress={it.onPress} accessibilityRole="button" style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1, borderWidth: 1, borderColor: c.lineGlass, backgroundColor: c.glass, borderRadius: 999, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(2) })}>
+        <Pressable
+          key={it.label}
+          onPress={it.onPress}
+          accessibilityRole="button"
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.6 : 1,
+            borderWidth: 1,
+            borderColor: c.lineGlass,
+            backgroundColor: c.glass,
+            borderRadius: 999,
+            paddingHorizontal: amazen.space(3.5),
+            paddingVertical: amazen.space(2),
+          })}>
           <AText variant="body" tone="strong" style={{ fontSize: 13.5 }}>{it.label}</AText>
         </Pressable>
       ))}

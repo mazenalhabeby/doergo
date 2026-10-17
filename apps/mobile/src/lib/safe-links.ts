@@ -47,7 +47,8 @@ export function telUrl(phone: string | null | undefined): string | null {
   An address and nothing else: no `?`, `&` or `#` that would add a subject, a
   body or more recipients, no spaces or line breaks, no second `@`.
 */
-const EMAIL = /^[A-Za-z0-9.!$%'*+/=^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+const EMAIL =
+  /^[A-Za-z0-9.!$%'*+/=^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
 
 export function mailtoUrl(email: string | null | undefined): string | null {
   if (typeof email !== 'string') return null;

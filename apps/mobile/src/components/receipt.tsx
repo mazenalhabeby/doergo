@@ -15,7 +15,15 @@ import { Row } from './clock-out-sheet-shared';
  * setting it like a statement is what makes it feel finished, and it is why
  * the figures line up as digits rather than as prose.
  */
-export function Receipt({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift; clockOf: (d: Date) => string }) {
+export function Receipt({
+  view,
+  shift,
+  clockOf,
+}: {
+  view: ReturnType<typeof readClockOut>;
+  shift: ClockOutShift;
+  clockOf: (d: Date) => string;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;

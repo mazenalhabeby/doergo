@@ -29,7 +29,12 @@ export function TodayCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const from = dayKey(today), to = dayKey(addDays(today, AHEAD_DAYS));
   const load = useCallback(async () => {
     try {
-      const r = await calendarApi.range({ from, to, layers: ['events', 'crm', 'holidays', 'leave'], lang: (i18n.language || 'en').slice(0, 2) });
+      const r = await calendarApi.range({
+        from,
+        to,
+        layers: ['events', 'crm', 'holidays', 'leave'],
+        lang: (i18n.language || 'en').slice(0, 2),
+      });
       setItems(r.items);
       setFailed(false);
     } catch {
@@ -69,14 +74,31 @@ export function TodayCard({ style }: { style?: StyleProp<ViewStyle> }) {
         </View>
 
         {first ? (
-          <Pressable onPress={() => router.push({ pathname: '/(app)/(tabs)/calendar', params: first.ref?.type === 'event' ? { event: first.ref.id } : {} } as never)} accessibilityRole="button">
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/(app)/(tabs)/calendar',
+                params: first.ref?.type === 'event' ? { event: first.ref.id } : {},
+              } as never)
+            }
+            accessibilityRole="button">
             <AText variant="h3" tone="strong" numberOfLines={2} style={{ fontSize: 21, lineHeight: 26 }}>{first.title}</AText>
             <AText variant="caption" tone="ink" numberOfLines={1} style={{ marginTop: 2 }}>
-              {[`${time(first.start)}–${time(first.end)}`, first.location, first.meetingUrl ? t('calendar.online', 'Online') : null].filter(Boolean).join(' · ')}
+              {[
+                `${time(first.start)}–${time(first.end)}`,
+                first.location,
+                first.meetingUrl ? t('calendar.online', 'Online') : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </AText>
           </Pressable>
         ) : (
-          <AText variant="body" tone="strong">{failed ? t('todayCard.offline', 'Needs a connection to see your day.') : t('todayCard.clear', 'Nothing else planned today.')}</AText>
+          <AText variant="body" tone="strong">
+            {failed
+              ? t('todayCard.offline', 'Needs a connection to see your day.')
+              : t('todayCard.clear', 'Nothing else planned today.')}
+          </AText>
         )}
 
         {todayList.slice(1).map((x) => (
@@ -90,8 +112,14 @@ export function TodayCard({ style }: { style?: StyleProp<ViewStyle> }) {
               <Row
                 key={x.id}
                 color={kindColor(x.kind, c, isDark)}
-                lead={fromKey(x.allDay ? (x.start < from ? from : x.start) : dayKey(new Date(x.start))).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric' })}
-                title={x.kind === 'leave' ? t('todayCard.leave', { defaultValue: 'Time off · {{name}}', name: x.personName ?? '' }) : x.title}
+                lead={fromKey(
+                  x.allDay ? (x.start < from ? from : x.start) : dayKey(new Date(x.start)),
+                ).toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric' })}
+                title={
+                  x.kind === 'leave'
+                    ? t('todayCard.leave', { defaultValue: 'Time off · {{name}}', name: x.personName ?? '' })
+                    : x.title
+                }
                 tag={x.kind === 'holiday' ? t('calendar.holiday', 'Holiday') : x.status === 'PENDING' ? (x.kind === 'leave' ? t('calendar.requested', 'requested') : t('todayCard.invited', 'Invited')) : undefined}
                 onPress={openCal}
               />
@@ -109,10 +137,28 @@ function Row({ color, lead, title, tag, onPress }: { color: string; lead: string
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(2), paddingHorizontal: amazen.space(3), borderRadius: 16, backgroundColor: c.tile, opacity: pressed ? 0.8 : 1 })}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(2),
+        paddingHorizontal: amazen.space(3),
+        borderRadius: 16,
+        backgroundColor: c.tile,
+        opacity: pressed ? 0.8 : 1,
+      })}>
       <AText variant="caption" numeric style={{ width: 52, fontFamily: amazen.font.mono, fontSize: 11.5, color: c.accent }}>{lead}</AText>
       <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 13.5 }}>{title}</AText>
-      {tag ? <AText variant="caption" style={{ fontSize: 11, color }}>{tag}</AText> : <View style={{ width: 5, height: 20, borderRadius: 3, backgroundColor: color }} />}
+      {tag ? (
+        <AText variant="caption" style={{ fontSize: 11, color }}>
+          {tag}
+        </AText>
+      ) : (
+        <View style={{ width: 5, height: 20, borderRadius: 3, backgroundColor: color }} />
+      )}
     </Pressable>
   );
 }

@@ -43,7 +43,10 @@ export class SqliteFileRegistry implements FileRegistry {
   }
 
   async totals(): Promise<{ count: number; bytes: number }> {
-    const r = await this.db.getFirstAsync<{ count: number; bytes: number | null }>('SELECT COUNT(*) AS count, SUM(bytes) AS bytes FROM files', []);
+    const r = await this.db.getFirstAsync<{ count: number; bytes: number | null }>(
+      'SELECT COUNT(*) AS count, SUM(bytes) AS bytes FROM files',
+      [],
+    );
     return { count: r?.count ?? 0, bytes: r?.bytes ?? 0 };
   }
 }

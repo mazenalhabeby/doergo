@@ -20,7 +20,16 @@ export function SearchField({ value, onChange, placeholder, clearLabel }: {
   const { amazen } = useTheme();
   const c = amazen.color;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2.5), backgroundColor: c.well, borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(4), height: 46 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(2.5),
+        backgroundColor: c.well,
+        borderRadius: amazen.radius.full,
+        paddingHorizontal: amazen.space(4),
+        height: 46,
+      }}>
       <Ionicons name="search" size={18} color={c.inkMuted} />
       <TextInput
         value={value}
@@ -67,10 +76,26 @@ export function Segmented<K extends string>({ options, value, onChange }: {
                 backgroundColor: on ? c.well : 'transparent',
                 opacity: pressed ? 0.8 : 1,
               },
-              on ? { shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 1 } : null,
+              on
+                ? {
+                    shadowColor: '#000',
+                    shadowOpacity: isDark ? 0.3 : 0.12,
+                    shadowRadius: 4,
+                    shadowOffset: { width: 0, height: 1 },
+                    elevation: 1,
+                  }
+                : null,
             ]}
           >
-            <AText variant="caption" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ fontSize: 13, lineHeight: 18, color: on ? c.inkStrong : c.ink, flexShrink: 1 }}>{o.label}</AText>
+            <AText
+              variant="caption"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={{ fontSize: 13, lineHeight: 18, color: on ? c.inkStrong : c.ink, flexShrink: 1 }}
+            >
+              {o.label}
+            </AText>
             {o.count != null ? (
               <AText numeric numberOfLines={1} style={{ fontSize: 11, lineHeight: 16, color: c.inkMuted }}>{String(o.count)}</AText>
             ) : null}
@@ -114,7 +139,13 @@ export function FilterChips<K extends string>({ options, value, onChange }: {
               opacity: pressed ? 0.8 : 1,
             })}
           >
-            <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, lineHeight: 17, color: on ? c.accent : c.ink }}>{o.label}</AText>
+            <AText
+              variant="caption"
+              numberOfLines={1}
+              style={{ fontSize: 12.5, lineHeight: 17, color: on ? c.accent : c.ink }}
+            >
+              {o.label}
+            </AText>
           </Pressable>
         );
       })}

@@ -61,7 +61,8 @@ interface NotificationData {
 }
 
 export function usePushNotifications(options: UsePushNotificationsOptions = {}) {
-  const { state, notificationListener, responseListener, registerForPushNotifications, unregisterPushToken } = usePushNotificationsData(options);
+  const { state, notificationListener, responseListener, registerForPushNotifications, unregisterPushToken } =
+    usePushNotificationsData(options);
 
   // Setup notification listeners
   useEffect(() => {

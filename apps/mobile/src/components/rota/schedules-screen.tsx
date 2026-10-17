@@ -125,7 +125,18 @@ export function SchedulesScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await load();
+              setRefreshing(false);
+            }}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
       >
         {failed && !week ? <Banner tone="critical" text={t('rota.failed', 'Could not load the schedule. Pull to try again.')} /> : null}
 
@@ -135,7 +146,14 @@ export function SchedulesScreen() {
               const on = s.id === (spaceId ?? week.space?.id);
               return (
                 <Pressable key={s.id} onPress={() => setSpaceId(s.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                  style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(2), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
+                  style={{
+                    borderRadius: amazen.radius.full,
+                    paddingHorizontal: amazen.space(3),
+                    paddingVertical: amazen.space(2),
+                    backgroundColor: on ? c.accentTint : c.tile,
+                    borderWidth: 1.5,
+                    borderColor: on ? c.accent : 'transparent',
+                  }}>
                   <AText variant="caption" numberOfLines={1} style={{ fontSize: 13, color: on ? c.accent : c.ink }}>{s.name}</AText>
                 </Pressable>
               );
@@ -147,7 +165,11 @@ export function SchedulesScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
             <RoundArrow label="‹" a11y={t('rota.prevWeek', 'Previous week')} onPress={() => shiftWeek(-1)} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <AText variant="body" tone="strong" style={{ fontSize: 15 }}>{`${fmt(shownDays[0]!, { day: 'numeric', month: 'short' })} – ${fmt(shownDays[6]!, { day: 'numeric', month: 'short' })}`}</AText>
+              <AText
+                variant="body"
+                tone="strong"
+                style={{ fontSize: 15 }}
+              >{(`${fmt(shownDays[0]!, { day: 'numeric', month: 'short' })} – ` + `${fmt(shownDays[6]!, { day: 'numeric', month: 'short' })}`)}</AText>
               {shownDays.includes(todayK) ? <SectionLabel tone="accent">{t('rota.thisWeek', 'This week')}</SectionLabel> : null}
             </View>
             <RoundArrow label="›" a11y={t('rota.nextWeek', 'Next week')} onPress={() => shiftWeek(1)} />
@@ -158,11 +180,21 @@ export function SchedulesScreen() {
         {!week ? (
           failed ? null : <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
         ) : !week.space ? (
-          <Well style={{ padding: amazen.space(5) }}><AText variant="body" tone="ink">{t('rota.noSpaces', 'No workspaces to show.')}</AText></Well>
+          <Well style={{ padding: amazen.space(5) }}>
+            <AText variant="body" tone="ink">
+              {t('rota.noSpaces', 'No workspaces to show.')}
+            </AText>
+          </Well>
         ) : week.people.length === 0 ? (
           <Well style={{ padding: amazen.space(5), gap: amazen.space(1) }}>
-            <AText variant="body" tone="strong">{t('rota.nobody', { defaultValue: 'Nobody is assigned to {{space}}', space: week.space.name })}</AText>
-            {canEdit ? <AText variant="caption" tone="muted">{t('rota.setUpOnWeb', 'Add shifts and people in the workspace’s Attendance settings on the web.')}</AText> : null}
+            <AText variant="body" tone="strong">
+              {t('rota.nobody', { defaultValue: 'Nobody is assigned to {{space}}', space: week.space.name })}
+            </AText>
+            {canEdit ? (
+              <AText variant="caption" tone="muted">
+                {t('rota.setUpOnWeb', 'Add shifts and people in the workspace’s Attendance settings on the web.')}
+              </AText>
+            ) : null}
           </Well>
         ) : (
           <>
@@ -172,10 +204,23 @@ export function SchedulesScreen() {
                 <View style={{ width: NAME_W }} />
                 {week.days.map((k) => (
                   <View key={k} style={{ flex: 1, alignItems: 'center' }}>
-                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 0.8, color: k === todayK ? c.accent : c.inkMuted, textTransform: 'uppercase' }}>
+                    <AText
+                      numberOfLines={1}
+                      style={{
+                        fontFamily: amazen.font.mono,
+                        fontSize: 9.5,
+                        letterSpacing: 0.8,
+                        color: k === todayK ? c.accent : c.inkMuted,
+                        textTransform: 'uppercase',
+                      }}>
                       {fmt(k, { weekday: 'short' })}
                     </AText>
-                    <AText numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 11, color: k === todayK ? c.accent : c.ink }}>{dayDate(k).getDate()}</AText>
+                    <AText
+                      numberOfLines={1}
+                      style={{ fontFamily: amazen.font.mono, fontSize: 11, color: k === todayK ? c.accent : c.ink }}
+                    >
+                      {dayDate(k).getDate()}
+                    </AText>
                   </View>
                 ))}
               </View>
@@ -183,22 +228,36 @@ export function SchedulesScreen() {
                 <View key={p.userId} style={{ flexDirection: 'row', gap: 3, marginTop: 3 }}>
                   <View style={{ width: NAME_W, justifyContent: 'center', paddingRight: 4 }}>
                     <AText variant="caption" tone="strong" numberOfLines={1} style={{ fontSize: 12.5 }}>{p.firstName}</AText>
-                    {p.position ? <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10 }}>{p.position}</AText> : null}
+                    {p.position ? (
+                      <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10 }}>
+                        {p.position}
+                      </AText>
+                    ) : null}
                   </View>
                   {p.days.map((cell) => (
                     <Cell
                       key={cell.date}
                       cell={cell}
                       shift={cell.kind === 'shift' ? shiftsById.get(cell.shiftId) : undefined}
-                      onPress={canEdit && cell.kind !== 'leave' ? () => setEditing({ userId: p.userId, name: p.firstName, cell }) : undefined}
+                      onPress={
+                        canEdit && cell.kind !== 'leave'
+                          ? () => setEditing({ userId: p.userId, name: p.firstName, cell })
+                          : undefined
+                      }
                     />
                   ))}
                 </View>
               ))}
             </Well>
-            <Legend shifts={week.shifts.filter((s) => week.people.some((p) => p.days.some((d) => d.kind === 'shift' && d.shiftId === s.id)))} />
+            <Legend
+              shifts={week.shifts.filter((s) =>
+                week.people.some((p) => p.days.some((d) => d.kind === 'shift' && d.shiftId === s.id)),
+              )}
+            />
             {!canEdit ? (
-              <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>{t('rota.readOnly', 'You can see the rota; a rota manager changes it.')}</AText>
+              <AText variant="caption" tone="onGlass" style={{ textAlign: 'center' }}>
+                {t('rota.readOnly', 'You can see the rota; a rota manager changes it.')}
+              </AText>
             ) : null}
           </>
         )}

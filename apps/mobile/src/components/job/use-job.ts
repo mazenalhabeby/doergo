@@ -3,7 +3,16 @@ import { onAppStateChange } from '../../lib/app-resume';
 import { getFix } from '../../lib/location-fix';
 import { useTranslation } from 'react-i18next';
 import { needsTravelEstimate, slotHeldBy } from '@hbcfield/shared/client';
-import { tasksApi, reportsApi, TaskStatus, type Comment, type ServiceReport, type StepSubmission, type Task, type TaskEvent } from '../../lib/api';
+import {
+  tasksApi,
+  reportsApi,
+  TaskStatus,
+  type Comment,
+  type ServiceReport,
+  type StepSubmission,
+  type Task,
+  type TaskEvent,
+} from '../../lib/api';
 import { useAuth } from '../../contexts/auth-context';
 import { useSocketContext } from '../../contexts/socket-context';
 import { useRefreshJobTime } from '../../hooks/useJobTime';

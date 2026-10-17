@@ -69,7 +69,12 @@ export function JobChecklist({
     and a refresh that lands MID-change is applied when the change settles
     rather than dropped.
   */
-  const key = fromServer.map((i) => `${i.id}:${i.position}:${i.text}:${i.isCompleted}:${i.assigneeId ?? ''}:${i.completedById ?? ''}:${i.completedAt ?? ''}`).join('|');
+  const key = fromServer
+    .map(
+      (i) =>
+        `${i.id}:${i.position}:${i.text}:${i.isCompleted}:${i.assigneeId ?? ''}:${i.completedById ?? ''}:${i.completedAt ?? ''}`,
+    )
+    .join('|');
   keyNow.current = key;
   useEffect(() => {
     if (inFlight.current === 0) setItems(fromServer);
@@ -119,7 +124,9 @@ export function JobChecklist({
   };
   const tick = async (item: CheckItem) => {
     inFlight.current += 1;
-    const ok = await tickOptimistic(item.id, !item.isCompleted, setItems, () => tasksApi.toggleChecklistItem(taskId, item.id, !item.isCompleted));
+    const ok = await tickOptimistic(item.id, !item.isCompleted, setItems, () =>
+      tasksApi.toggleChecklistItem(taskId, item.id, !item.isCompleted),
+    );
     settle();
     if (!ok) toast.error(t('job.checklist.failed'));
   };
@@ -153,14 +160,28 @@ export function JobChecklist({
     const stranded = team && !on && !!item.assigneeId && !mine && mayHandOut && left(item.assigneeId);
     const free = team && !item.assigneeId && !on;
     return (
-      <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), minHeight: amazen.layout.tapMin, paddingVertical: amazen.space(1.5) }}>
+      <View
+        key={item.id}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: amazen.space(3),
+          minHeight: amazen.layout.tapMin,
+          paddingVertical: amazen.space(1.5),
+        }}>
         <Pressable
           onPress={canTick ? () => void tick(item) : undefined}
           disabled={!canTick}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: on, disabled: !canTick }}
           accessibilityLabel={item.text}
-          style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), opacity: !canTick ? 0.6 : pressed ? 0.75 : 1 })}
+          style={({ pressed }) => ({
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: amazen.space(3),
+            opacity: !canTick ? 0.6 : pressed ? 0.75 : 1,
+          })}
         >
           <View style={{
             width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center',
@@ -169,11 +190,23 @@ export function JobChecklist({
             {on ? <TickGlyph size={14} color={c.accentInk} /> : null}
           </View>
           <View style={{ flex: 1, gap: 2 }}>
-            <AText variant="body" numberOfLines={3} style={{ fontSize: 14, lineHeight: 20, color: on ? c.inkMuted : c.inkStrong, textDecorationLine: on ? 'line-through' : 'none' }}>
+            <AText
+              variant="body"
+              numberOfLines={3}
+              style={{
+                fontSize: 14,
+                lineHeight: 20,
+                color: on ? c.inkMuted : c.inkStrong,
+                textDecorationLine: on ? 'line-through' : 'none',
+              }}>
               {item.text}
             </AText>
             {doneLine ? <AText variant="caption" tone="muted">{doneLine}</AText> : null}
-            {stranded ? <AText variant="caption" tone="warn">{t('job.checklist.ownerLeft', { name: firstName(item.assignee) })}</AText> : null}
+            {stranded ? (
+              <AText variant="caption" tone="warn">
+                {t('job.checklist.ownerLeft', { name: firstName(item.assignee) })}
+              </AText>
+            ) : null}
           </View>
         </Pressable>
         {team && item.assigneeId && !mine ? (
@@ -199,12 +232,22 @@ export function JobChecklist({
   return (
     <Well style={{ paddingVertical: amazen.space(3), paddingHorizontal: amazen.space(3.5) }}>
       <SectionLabel tone={canTick ? 'accent' : 'muted'}>{t('job.checklist.thisStep', { done, total: items.length })}</SectionLabel>
-      {mode === 'offline' ? <AText variant="caption" tone="warn" style={{ marginTop: amazen.space(1) }}>{t('job.checklist.offline')}</AText> : null}
+      {mode === 'offline' ? (
+        <AText variant="caption" tone="warn" style={{ marginTop: amazen.space(1) }}>
+          {t('job.checklist.offline')}
+        </AText>
+      ) : null}
       {mine.length ? (
         <>
-          <AText variant="caption" tone="accent" style={{ marginTop: amazen.space(2) }}>{t('job.checklist.mine', { count: mine.length })}</AText>
+          <AText variant="caption" tone="accent" style={{ marginTop: amazen.space(2) }}>
+            {t('job.checklist.mine', { count: mine.length })}
+          </AText>
           {mine.map(row)}
-          {rest.length ? <AText variant="caption" tone="muted" style={{ marginTop: amazen.space(2) }}>{t('job.checklist.crew', { count: rest.length })}</AText> : null}
+          {rest.length ? (
+            <AText variant="caption" tone="muted" style={{ marginTop: amazen.space(2) }}>
+              {t('job.checklist.crew', { count: rest.length })}
+            </AText>
+          ) : null}
         </>
       ) : null}
       {rest.map(row)}

@@ -91,7 +91,9 @@ function Updating() {
   const [w, setW] = useState(0);
   useEffect(() => {
     if (reduce || !w) return;
-    const loop = Animated.loop(Animated.timing(x, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }));
+    const loop = Animated.loop(
+      Animated.timing(x, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+    );
     loop.start();
     return () => loop.stop();
   }, [reduce, w, x]);

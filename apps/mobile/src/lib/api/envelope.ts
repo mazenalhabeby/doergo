@@ -33,6 +33,10 @@ export function refusalDetails(body: unknown): { code?: string; params?: Record<
   if (!isPlainObject(body)) return {};
   const err = isPlainObject(body.error) ? body.error : null;
   const code = typeof body.code === 'string' ? body.code : typeof err?.code === 'string' ? (err.code as string) : undefined;
-  const params = isPlainObject(body.params) ? body.params : isPlainObject(err?.params) ? (err!.params as Record<string, unknown>) : undefined;
+  const params = isPlainObject(body.params)
+    ? body.params
+    : isPlainObject(err?.params)
+      ? (err!.params as Record<string, unknown>)
+      : undefined;
   return { ...(code ? { code } : {}), ...(params ? { params } : {}) };
 }

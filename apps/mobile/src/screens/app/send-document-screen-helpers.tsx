@@ -23,9 +23,22 @@ export function Field({
 export const s = StyleSheet.create({
   safe: { flex: 1 },
   grow: { flex: 1, minWidth: 0 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.sm, borderBottomWidth: StyleSheet.hairlineWidth },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
 
-  verdict: { flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md },
+  verdict: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: SPACING.md,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
   verdictTitle: { fontSize: FONT_SIZE.sm, fontWeight: FONT_WEIGHT.semibold as any },
   verdictSub: { fontSize: FONT_SIZE.xs, marginTop: 3, lineHeight: 17 },
 

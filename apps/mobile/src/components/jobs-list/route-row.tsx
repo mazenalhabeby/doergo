@@ -25,11 +25,26 @@ export function RouteRow({ stops, onPress }: { stops: number; onPress: () => voi
         opacity: pressed ? 0.85 : 1,
       })}
     >
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: c.accentTint,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <NavigateGlyph size={18} color={c.accent} contrast={c.well} />
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <AText variant="body" tone="strong" numberOfLines={1} style={{ fontFamily: amazen.font.sansMedium, fontSize: 16, lineHeight: 22 }}>{t('route.planRoute')}</AText>
+        <AText
+          variant="body"
+          tone="strong"
+          numberOfLines={1}
+          style={{ fontFamily: amazen.font.sansMedium, fontSize: 16, lineHeight: 22 }}
+        >
+          {t('route.planRoute')}
+        </AText>
         <AText variant="caption" tone="ink" numberOfLines={1}>{t('route.stopCount', { count: stops })}</AText>
       </View>
       <AText variant="body" tone="ink">›</AText>

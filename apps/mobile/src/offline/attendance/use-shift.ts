@@ -6,7 +6,14 @@ import { useAuth } from '../../contexts/auth-context';
 import { useOffline, useSyncStatus } from '../offline-context';
 import { keptNow, keptOnDisk } from '../../home/remember/store';
 import { overlayShift, type ShiftView } from './shift-overlay';
-import { clockInFromPhone, clockOutFromPhone, endRestFromPhone, requestExtraTimeFromPhone, resolveClockOutFromPhone, startRestFromPhone } from './shift-actions';
+import {
+  clockInFromPhone,
+  clockOutFromPhone,
+  endRestFromPhone,
+  requestExtraTimeFromPhone,
+  resolveClockOutFromPhone,
+  startRestFromPhone,
+} from './shift-actions';
 import { KEPT_SHIFT as KEPT, loadShift, type KeptShift as Kept, type LoadedShift as Loaded } from './load-shift';
 
 // The read itself lives in load-shift.ts (no React — the background task calls it too).

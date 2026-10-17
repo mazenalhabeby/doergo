@@ -88,7 +88,9 @@ export default function RequestDetail() {
               {submitted ? (
                 <View style={styles.metaItem}>
                   <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
-                  <Text style={[styles.metaText, { color: colors.textMuted }]}>{t('portal.submittedOn', 'Submitted {{date}}', { date: submitted })}</Text>
+                  <Text style={[styles.metaText, { color: colors.textMuted }]}>
+                    {t('portal.submittedOn', 'Submitted {{date}}', { date: submitted })}
+                  </Text>
                 </View>
               ) : null}
             </View>
@@ -98,7 +100,10 @@ export default function RequestDetail() {
           {photos.length > 0 ? (
             <>
               <Text style={[styles.section, { color: colors.textPrimary }]}>{t('portal.photos', 'Photos')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.sm }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: SPACING.lg, gap: SPACING.sm }}>
                 {photos.map((a) => (
                   <Pressable key={a.id} onPress={() => void openSafeUrl(httpsUrl(a.fileUrl))}>
                     <Image source={{ uri: a.fileUrl }} style={[styles.photo, { borderColor: colors.border }]} resizeMode="cover" />
@@ -141,7 +146,14 @@ export default function RequestDetail() {
                       <View style={[styles.line, { backgroundColor: s.state === 'done' ? COLORS.success : colors.border }]} />
                     ) : null}
                   </View>
-                  <View style={[styles.stepBody, s.state === 'active' && { backgroundColor: isDark ? 'rgba(16,185,129,0.10)' : COLORS.primaryLight, borderColor: 'transparent' }]}>
+                  <View
+                    style={[
+                      styles.stepBody,
+                      s.state === 'active' && {
+                        backgroundColor: isDark ? 'rgba(16,185,129,0.10)' : COLORS.primaryLight,
+                        borderColor: 'transparent',
+                      },
+                    ]}>
                     <Text style={[styles.stepLabel, { color: colors.textPrimary }]}>{s.label}</Text>
                     <Text style={[styles.stepState, { color: s.state === 'active' ? COLORS.primary : colors.textMuted }]}>
                       {s.state === 'done'
@@ -175,7 +187,13 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm },
 
-  section: { fontFamily: 'Outfit_800ExtraBold', fontSize: FONT_SIZE.lg, marginHorizontal: SPACING.lg, marginTop: SPACING.lg, marginBottom: SPACING.md },
+  section: {
+    fontFamily: 'Outfit_800ExtraBold',
+    fontSize: FONT_SIZE.lg,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
   photo: { width: 96, height: 96, borderRadius: RADIUS.lg, borderWidth: 1 },
 
   descCard: { marginHorizontal: SPACING.lg, borderRadius: RADIUS.lg, borderWidth: 1, padding: SPACING.md },
@@ -186,7 +204,15 @@ const styles = StyleSheet.create({
   dot: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   pulse: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#fff' },
   line: { width: 2, flex: 1, marginTop: 2 },
-  stepBody: { flex: 1, marginBottom: SPACING.md, paddingHorizontal: SPACING.md, paddingVertical: SPACING.sm, borderRadius: RADIUS.md, borderWidth: 1, borderColor: 'transparent' },
+  stepBody: {
+    flex: 1,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
   stepLabel: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, fontWeight: '600' },
   stepState: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.sm, marginTop: 2 },
   empty: { fontFamily: 'Outfit_400Regular', fontSize: FONT_SIZE.base, textAlign: 'center', marginTop: SPACING.xxxl },

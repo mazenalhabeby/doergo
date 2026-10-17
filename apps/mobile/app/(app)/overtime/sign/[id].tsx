@@ -90,13 +90,24 @@ export default function OvertimeSignatureScreen() {
         notes: notes.trim() || undefined,
       };
       // Signed on this phone, so it can be sent from this phone later — the leader has already signed.
-      const outcome = await approve.run({ lane: `overtime:${id}`, params: { overtimeId: id! }, body }, () => overtimeApi.approveSignature(id!, body));
+      const outcome = await approve.run({ lane: `overtime:${id}`, params: { overtimeId: id! }, body }, () =>
+        overtimeApi.approveSignature(id!, body),
+      );
       if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('overtime.failedToApprove'));
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('overtime.failedToApprove'),
+        );
         return;
       }
       // A signature on this phone is a request: the person who signed confirms it from their own session.
-      toast.success(outcome.kind === 'queued' ? t('offline.savedForLater') : t('overtime.signedAwaitingConfirm', { name: body.leaderName }));
+      toast.success(
+        outcome.kind === 'queued'
+          ? t('offline.savedForLater')
+          : t('overtime.signedAwaitingConfirm', { name: body.leaderName }),
+      );
       router.back();
       router.back(); // Go back to attendance
     } catch (err) {
@@ -138,7 +149,11 @@ export default function OvertimeSignatureScreen() {
                   ]}
                   onPress={() => setSelectedLeader(leader)}
                 >
-                  <View style={[styles.leaderAvatar, { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted }]}>
+                  <View
+                    style={[
+                      styles.leaderAvatar,
+                      { backgroundColor: selectedLeader?.id === leader.id ? COLORS.primary : colors.textMuted },
+                    ]}>
                     <Text style={styles.leaderInitial}>{initialOf(leader)}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
@@ -165,7 +180,10 @@ export default function OvertimeSignatureScreen() {
                 key={opt.value}
                 style={[
                   styles.durationChip,
-                  { backgroundColor: duration === opt.value ? COLORS.primary : colors.card, borderColor: duration === opt.value ? COLORS.primary : colors.border },
+                  {
+                    backgroundColor: duration === opt.value ? COLORS.primary : colors.card,
+                    borderColor: duration === opt.value ? COLORS.primary : colors.border,
+                  },
                 ]}
                 onPress={() => setDuration(opt.value)}
               >
@@ -225,14 +243,28 @@ export default function OvertimeSignatureScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingVertical: SPACING.md, borderBottomWidth: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+  },
   content: { padding: SPACING.lg, gap: SPACING.lg, paddingBottom: 40 },
   infoCard: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
   infoText: { flex: 1, fontSize: FONT_SIZE.sm, color: '#1E40AF' },
   section: { gap: SPACING.sm },
   sectionTitle: { fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.semibold },
   leaderList: { gap: SPACING.sm },
-  leaderItem: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1.5 },
+  leaderItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    padding: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1.5,
+  },
   leaderItemSelected: { borderWidth: 2 },
   leaderAvatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   leaderInitial: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
@@ -242,8 +274,23 @@ const styles = StyleSheet.create({
   durationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   durationChip: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1 },
   durationChipText: { fontSize: FONT_SIZE.base, fontWeight: FONT_WEIGHT.semibold },
-  notesInput: { borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, fontSize: FONT_SIZE.base, minHeight: 80, textAlignVertical: 'top' },
-  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm, backgroundColor: COLORS.primary, paddingVertical: SPACING.lg, borderRadius: RADIUS.md },
+  notesInput: {
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    fontSize: FONT_SIZE.base,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  submitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.primary,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.md,
+  },
   submitBtnDisabled: { opacity: 0.5 },
   submitBtnText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: FONT_WEIGHT.bold },
 });

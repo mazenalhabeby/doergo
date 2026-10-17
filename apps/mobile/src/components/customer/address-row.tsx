@@ -34,10 +34,20 @@ export const AddressRow = memo(function AddressRow({
   const c = amazen.color;
   const text = address.address?.trim();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: amazen.space(3),
+        paddingVertical: amazen.space(3),
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: c.lineWell,
+      }}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>{address.label?.trim() || text || '—'}</AText>
+          <AText variant="body" tone="strong" numberOfLines={1} style={{ flexShrink: 1, fontSize: 14.5 }}>
+            {address.label?.trim() || text || '—'}
+          </AText>
           {address.isPrimary ? <Pill label={labels.primary} tone="accent" /> : null}
         </View>
         {/* Only when the label is not already the address itself. */}
@@ -48,9 +58,23 @@ export const AddressRow = memo(function AddressRow({
           </AText>
         ) : null}
       </View>
-      {telUrl(address.contactPhone) ? <RoundButton Glyph={CallGlyph} label={labels.call} size={34} onPress={() => void openSafeUrl(telUrl(address.contactPhone))} /> : null}
+      {telUrl(address.contactPhone) ? (
+        <RoundButton
+          Glyph={CallGlyph}
+          label={labels.call}
+          size={34}
+          onPress={() => void openSafeUrl(telUrl(address.contactPhone))}
+        />
+      ) : null}
       {/* `geo:` with a query is the platform-neutral form — Apple Maps on an iPhone, the person's own choice on Android. */}
-      {geoUrl(text) ? <RoundButton Glyph={NavigateGlyph} label={labels.navigate} size={34} onPress={() => void openSafeUrl(geoUrl(text))} /> : null}
+      {geoUrl(text) ? (
+        <RoundButton
+          Glyph={NavigateGlyph}
+          label={labels.navigate}
+          size={34}
+          onPress={() => void openSafeUrl(geoUrl(text))}
+        />
+      ) : null}
     </View>
   );
 });

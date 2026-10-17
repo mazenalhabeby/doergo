@@ -30,7 +30,17 @@ export function buildTelemetry(
     const code = o.lastError?.code;
     if (code && (OPEN_STATES.has(o.state) || ATTENTION_STATES.has(o.state))) codes[code] = (codes[code] ?? 0) + 1;
   }
-  return { appVersion, waiting, attention, oldestWaitingAt, byState, codes, filesWaiting: files.count, bytesWaiting: files.bytes, lastSuccessAt };
+  return {
+    appVersion,
+    waiting,
+    attention,
+    oldestWaitingAt,
+    byState,
+    codes,
+    filesWaiting: files.count,
+    bytesWaiting: files.bytes,
+    lastSuccessAt,
+  };
 }
 
 let lastSentAt = 0;

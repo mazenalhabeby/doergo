@@ -33,8 +33,20 @@ export function ReviewStep({
 
   const groups = [
     { key: 'new', title: t('contactsImport.review.newClients'), sub: names + more, n: summary.fresh, tone: 'accent' as const },
-    { key: 'contacts', title: t('contactsImport.review.contactPeople'), sub: t('contactsImport.review.contactPeopleSub'), n: summary.contactPeople, tone: 'ink' as const },
-    { key: 'existing', title: t('contactsImport.review.existing'), sub: t('contactsImport.review.existingSub'), n: summary.existing, tone: 'warn' as const },
+    {
+      key: 'contacts',
+      title: t('contactsImport.review.contactPeople'),
+      sub: t('contactsImport.review.contactPeopleSub'),
+      n: summary.contactPeople,
+      tone: 'ink' as const,
+    },
+    {
+      key: 'existing',
+      title: t('contactsImport.review.existing'),
+      sub: t('contactsImport.review.existingSub'),
+      n: summary.existing,
+      tone: 'warn' as const,
+    },
   ].filter((g) => g.n > 0);
 
   const fieldPills: { key: keyof ImportFields | 'name'; label: string }[] = [
@@ -46,7 +58,12 @@ export function ReviewStep({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: amazen.layout.gutter, gap: amazen.layout.block, paddingBottom: amazen.space(6) }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: amazen.layout.gutter,
+          gap: amazen.layout.block,
+          paddingBottom: amazen.space(6),
+        }}>
         <GlassCard style={{ gap: amazen.space(1) }}>
           <Eyebrow>{t('contactsImport.review.eyebrow')}</Eyebrow>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: amazen.space(2.5) }}>
@@ -77,7 +94,12 @@ export function ReviewStep({
               {g.key === 'existing' ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingBottom: amazen.space(3) }}>
                   <AText variant="caption" tone="ink" style={{ flex: 1 }}>{t('contactsImport.review.fill')}</AText>
-                  <Switch value={fillMissing} onValueChange={setFillMissing} trackColor={{ true: c.accentSolid, false: c.tile }} accessibilityLabel={t('contactsImport.review.fill')} />
+                  <Switch
+                    value={fillMissing}
+                    onValueChange={setFillMissing}
+                    trackColor={{ true: c.accentSolid, false: c.tile }}
+                    accessibilityLabel={t('contactsImport.review.fill')}
+                  />
                 </View>
               ) : null}
             </View>
@@ -99,7 +121,11 @@ export function ReviewStep({
             ))}
           </View>
         </View>
-        {!spaceId ? <AText variant="caption" tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{t('contactsImport.review.noSpace')}</AText> : null}
+        {!spaceId ? (
+          <AText variant="caption" tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>
+            {t('contactsImport.review.noSpace')}
+          </AText>
+        ) : null}
       </ScrollView>
       <View style={{ paddingHorizontal: amazen.layout.gutter, paddingBottom: amazen.space(4) }}>
         <PrimaryButton

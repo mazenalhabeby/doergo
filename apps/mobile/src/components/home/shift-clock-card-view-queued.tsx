@@ -12,7 +12,41 @@ import type { ShiftClockCardViewView } from './shift-clock-card-view-view';
 import type { ShiftClockCardView } from './shift-clock-card';
 
 /** Part of ShiftClockCardView's markup, moved here unchanged; it reads the page's state from `vm`. */
-export function ShiftClockCardViewQueued({ vm, style, linkToTime, eyebrow, caption, dotColor, live, eyebrowTone, resting, noShiftLine, weekSoFar, working, onSetRealTime, askMore, onAskMoreTime, shift }: { vm: ShiftClockCardViewState; style: Parameters<typeof ShiftClockCardView>[0]['style']; linkToTime: NonNullable<Parameters<typeof ShiftClockCardView>[0]['linkToTime']>; eyebrow: ReturnType<typeof ShiftClockCardViewView>['eyebrow']; caption: ReturnType<typeof ShiftClockCardViewView>['caption']; dotColor: ReturnType<typeof ShiftClockCardViewView>['dotColor']; live: ReturnType<typeof ShiftClockCardViewView>['live']; eyebrowTone: ReturnType<typeof ShiftClockCardViewView>['eyebrowTone']; resting: ReturnType<typeof ShiftClockCardViewView>['resting']; noShiftLine: ReturnType<typeof ShiftClockCardViewView>['noShiftLine']; weekSoFar: ReturnType<typeof ShiftClockCardViewView>['weekSoFar']; working: ReturnType<typeof ShiftClockCardViewView>['working']; onSetRealTime: Parameters<typeof ShiftClockCardView>[0]['onSetRealTime']; askMore: ReturnType<typeof ShiftClockCardViewView>['askMore']; onAskMoreTime: Parameters<typeof ShiftClockCardView>[0]['onAskMoreTime']; shift: Parameters<typeof ShiftClockCardView>[0]['shift'] }) {
+export function ShiftClockCardViewQueued({
+  vm,
+  style,
+  linkToTime,
+  eyebrow,
+  caption,
+  dotColor,
+  live,
+  eyebrowTone,
+  resting,
+  noShiftLine,
+  weekSoFar,
+  working,
+  onSetRealTime,
+  askMore,
+  onAskMoreTime,
+  shift,
+}: {
+  vm: ShiftClockCardViewState;
+  style: Parameters<typeof ShiftClockCardView>[0]['style'];
+  linkToTime: NonNullable<Parameters<typeof ShiftClockCardView>[0]['linkToTime']>;
+  eyebrow: ReturnType<typeof ShiftClockCardViewView>['eyebrow'];
+  caption: ReturnType<typeof ShiftClockCardViewView>['caption'];
+  dotColor: ReturnType<typeof ShiftClockCardViewView>['dotColor'];
+  live: ReturnType<typeof ShiftClockCardViewView>['live'];
+  eyebrowTone: ReturnType<typeof ShiftClockCardViewView>['eyebrowTone'];
+  resting: ReturnType<typeof ShiftClockCardViewView>['resting'];
+  noShiftLine: ReturnType<typeof ShiftClockCardViewView>['noShiftLine'];
+  weekSoFar: ReturnType<typeof ShiftClockCardViewView>['weekSoFar'];
+  working: ReturnType<typeof ShiftClockCardViewView>['working'];
+  onSetRealTime: Parameters<typeof ShiftClockCardView>[0]['onSetRealTime'];
+  askMore: ReturnType<typeof ShiftClockCardViewView>['askMore'];
+  onAskMoreTime: Parameters<typeof ShiftClockCardView>[0]['onAskMoreTime'];
+  shift: Parameters<typeof ShiftClockCardView>[0]['shift'];
+}) {
   const {
     amazen,
     router,

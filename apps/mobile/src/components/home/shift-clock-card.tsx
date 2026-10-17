@@ -74,7 +74,16 @@ export function ShiftClockCard({ style }: { style?: StyleProp<ViewStyle> }) {
   return <ShiftClockCardView shift={shift} style={style} />;
 }
 
-export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime }: ShiftClockCardViewProps) {
+export function ShiftClockCardView({
+  shift,
+  style,
+  linkToTime = true,
+  onSetRealTime,
+  openIssueId,
+  totals: given,
+  noShift,
+  onAskMoreTime,
+}: ShiftClockCardViewProps) {
   const vm = useShiftClockCardView({ shift, style, linkToTime, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime });
   const {
     user,
@@ -173,7 +182,24 @@ export function ShiftClockCardView({ shift, style, linkToTime = true, onSetRealT
 
   return (
     <>
-      <ShiftClockCardViewQueued vm={vm} style={style} linkToTime={linkToTime} eyebrow={eyebrow} caption={caption} dotColor={dotColor} live={live} eyebrowTone={eyebrowTone} resting={resting} noShiftLine={noShiftLine} weekSoFar={weekSoFar} working={working} onSetRealTime={onSetRealTime} askMore={askMore} onAskMoreTime={onAskMoreTime} shift={shift} />
+      <ShiftClockCardViewQueued
+        vm={vm}
+        style={style}
+        linkToTime={linkToTime}
+        eyebrow={eyebrow}
+        caption={caption}
+        dotColor={dotColor}
+        live={live}
+        eyebrowTone={eyebrowTone}
+        resting={resting}
+        noShiftLine={noShiftLine}
+        weekSoFar={weekSoFar}
+        working={working}
+        onSetRealTime={onSetRealTime}
+        askMore={askMore}
+        onAskMoreTime={onAskMoreTime}
+        shift={shift}
+      />
 
       <LocationPickerSheet {...clockIn.pickerProps} confirmDisabled={clockIn.isClockingIn} />
 

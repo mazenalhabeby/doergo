@@ -93,13 +93,28 @@ export async function sendIssueMessageFromPhone(
  * What the member has written into this issue that the server does not have
  * yet, shaped like its thread, photos pointing at the kept copies.
  */
-export function pendingIssueEvents(issueId: string, ops: readonly OutboxOp[], uriFor: (id: string, mime: string) => string, me: { id: string; name: string }): ShiftIssueEvent[] {
+export function pendingIssueEvents(
+  issueId: string,
+  ops: readonly OutboxOp[],
+  uriFor: (id: string, mime: string) => string,
+  me: { id: string; name: string },
+): ShiftIssueEvent[] {
   return ops
     .filter((o) => o.op === 'shiftIssue.message' && STILL_MINE.has(o.state) && o.payload.params?.issueId === issueId)
     .map((o) => {
       const b = (o.payload.body ?? {}) as { id: string; body?: string; photoPending?: boolean; photoName?: string; photoMime?: string };
       const mime = b.photoMime ?? 'image/jpeg';
-      const photo = b.photoPending ? [{ id: b.id, fileUrl: uriFor(b.id, mime), url: uriFor(b.id, mime), fileName: b.photoName ?? '', mimeType: mime }] : [];
+      const photo = b.photoPending
+        ? [
+            {
+              id: b.id,
+              fileUrl: uriFor(b.id, mime),
+              url: uriFor(b.id, mime),
+              fileName: b.photoName ?? '',
+              mimeType: mime,
+            },
+          ]
+        : [];
       return {
         id: b.id, type: 'MESSAGE', actorId: me.id, actorName: me.name, body: b.body || null,
         attachments: photo, at: new Date(o.createdAt).toISOString(), pendingSync: true,

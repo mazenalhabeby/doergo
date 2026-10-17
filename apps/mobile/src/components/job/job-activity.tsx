@@ -79,15 +79,40 @@ export function JobActivity({
         case 'HANDOVER_ADDED': return meta?.content ? by(t('job.activity.handover', { text: String(meta.content) })) : null;
         // A crew on one job (shared tasks/crew.ts): one person's own presence, and the lead.
         case 'CREW_JOINED': return by(t(meta?.viaLeaderAt ? 'job.activity.crewJoinedWithLeader' : 'job.activity.crewJoined'));
-        case 'CREW_LEFT': return by(t(meta?.why === 'CLOCK_OUT' ? 'job.activity.crewLeftClockOut' : meta?.why === 'OTHER_JOB' ? 'job.activity.crewLeftOtherJob' : 'job.activity.crewLeft'));
-        case 'SELF_BLOCKED': return by(meta?.reason ? t('job.activity.selfBlocked', { reason: String(meta.reason) }) : t('job.activity.selfBlockedPlain'));
+        case 'CREW_LEFT':
+          return by(
+            t(
+              meta?.why === 'CLOCK_OUT'
+                ? 'job.activity.crewLeftClockOut'
+                : meta?.why === 'OTHER_JOB'
+                  ? 'job.activity.crewLeftOtherJob'
+                  : 'job.activity.crewLeft',
+            ),
+          );
+        case 'SELF_BLOCKED':
+          return by(
+            meta?.reason
+              ? t('job.activity.selfBlocked', { reason: String(meta.reason) })
+              : t('job.activity.selfBlockedPlain'),
+          );
         case 'SELF_RESUMED': return by(t('job.activity.selfResumed'));
-        case 'LEAD_CHANGED': return t(meta?.scope === 'TODAY' ? 'job.activity.leadToday' : 'job.activity.leadForGood', { name: String(meta?.toName ?? '') });
+        case 'LEAD_CHANGED':
+          return t(meta?.scope === 'TODAY' ? 'job.activity.leadToday' : 'job.activity.leadForGood', {
+            name: String(meta?.toName ?? ''),
+          });
         case 'CHECKLIST_ITEM_TOGGLED':
-          return meta?.text ? by(t(meta?.isCompleted ? 'job.activity.ticked' : 'job.activity.unticked', { text: String(meta.text) })) : null;
+          return meta?.text
+            ? by(t(meta?.isCompleted ? 'job.activity.ticked' : 'job.activity.unticked', { text: String(meta.text) }))
+            : null;
         // Whose item it is now (shared tasks/checklist.ts) — given, taken, or given back.
         case 'CHECKLIST_ITEM_ASSIGNED':
-          return meta?.text ? by(meta?.toName ? t('job.activity.checklistOwner', { text: String(meta.text), name: String(meta.toName) }) : t('job.activity.checklistNoOwner', { text: String(meta.text) })) : null;
+          return meta?.text
+            ? by(
+                meta?.toName
+                  ? t('job.activity.checklistOwner', { text: String(meta.text), name: String(meta.toName) })
+                  : t('job.activity.checklistNoOwner', { text: String(meta.text) }),
+              )
+            : null;
         default: return null; // Comments are drawn as themselves; the rest is office bookkeeping.
       }
     };
@@ -102,7 +127,13 @@ export function JobActivity({
         if (text) out.push({ kind: 'event', id: e.id, at: e.createdAt, text, pending: false });
       }
     } else {
-      out.push({ kind: 'event', id: 'created', at: created.at, text: describe('CREATED', undefined, name(created.by)) ?? '', pending: false });
+      out.push({
+        kind: 'event',
+        id: 'created',
+        at: created.at,
+        text: describe('CREATED', undefined, name(created.by)) ?? '',
+        pending: false,
+      });
     }
     // Steps taken here this session that the timeline does not hold yet.
     const since = events?.reduce((m, e) => Math.max(m, new Date(e.createdAt).getTime()), 0) ?? 0;
@@ -156,7 +187,13 @@ export function JobActivity({
             maxLength={500}
             style={{ flex: 1, borderRadius: 22, minHeight: 46, maxHeight: 140, paddingTop: 12 }}
           />
-          <RoundButton Glyph={SendGlyph} label={t('job.activity.send')} tone="jade" onPress={() => void send()} disabled={busy || !draft.trim()} />
+          <RoundButton
+            Glyph={SendGlyph}
+            label={t('job.activity.send')}
+            tone="jade"
+            onPress={() => void send()}
+            disabled={busy || !draft.trim()}
+          />
         </View>
       ) : null}
     </View>

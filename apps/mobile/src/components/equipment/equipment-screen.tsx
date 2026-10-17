@@ -3,7 +3,16 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { normalizeKindShape, custodyDays, logTypesForKind, findLogType, kindMeters, COST_LOG_KEY, orgHasAddOn, formatMoney } from '@hbcfield/shared/client';
+import {
+  normalizeKindShape,
+  custodyDays,
+  logTypesForKind,
+  findLogType,
+  kindMeters,
+  COST_LOG_KEY,
+  orgHasAddOn,
+  formatMoney,
+} from '@hbcfield/shared/client';
 import { useTheme } from '../../contexts/theme-context';
 import { useAuth } from '../../contexts/auth-context';
 import { useToast } from '../../island/island-context';
@@ -22,6 +31,8 @@ import { centeredContent } from '../screen-container';
 import { Banner, JobSheet, Pill, SectionLabel, SheetOption } from '../job/job-ui';
 import { useEquipmentScreen, typesFor, logFor } from './use-equipment-screen';
 import { Fact, SentRow } from './equipment-screen-helpers';
+import { useEquipmentScreenLogic } from './use-equipment-screen-logic';
+import { EquipmentScreenStale } from './equipment-screen-stale';
 
 /**
  * MY EQUIPMENT — what is due, what you hold, and what you sent in.
@@ -32,6 +43,7 @@ import { Fact, SentRow } from './equipment-screen-helpers';
  * with a logbook, "Add a receipt" for one that only records money.
  */
 export function EquipmentScreen() {
+  const vm = useEquipmentScreenLogic();
   const {
     amazen,
     c,
@@ -63,7 +75,7 @@ export function EquipmentScreen() {
     offerContract,
     due,
     card,
-  } = useEquipmentScreen();
+  } = vm;
 
   return (
     <Ground style={{ flex: 1 }}>
@@ -82,57 +94,16 @@ export function EquipmentScreen() {
         windowSize={9}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load(true)}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
         ListHeaderComponent={
-          <View style={{ gap: amazen.space(3) }}>
-            {stale ? <Banner tone="warn" text={t('equipment.stale', 'Could not load just now — this is what the app last knew.')} action={{ label: t('common.retry', 'Try again'), onPress: () => void load(true) }} /> : null}
-
-            {data === null ? (
-              <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(8) }}>{t('common.loading', 'Loading…')}</AText>
-            ) : null}
-
-            {due.length > 0 ? (
-              <>
-                <SectionLabel tone="warn" style={{ paddingHorizontal: amazen.space(1) }}>{`${t('logbook.dueSoon', 'Due soon')} · ${due.length}`}</SectionLabel>
-                <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
-                  {due.map((d, i) => {
-                    const late = d.stage === 'overdue';
-                    return (
-                      <Pressable key={`${d.assetId}:${d.key}`} onPress={() => logFor(d.assetId, d.key)} accessibilityRole="button"
-                        style={({ pressed }) => ({ paddingVertical: amazen.space(3), borderTopWidth: i === 0 ? 0 : 1, borderTopColor: c.lineWell, gap: 6, opacity: pressed ? 0.75 : 1 })}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{`${d.assetName} · ${d.label}`}</AText>
-                            <AText variant="caption" numberOfLines={1} style={{ color: late ? c.critical : c.warn }}>{dueLine(d)}</AText>
-                          </View>
-                          <AText variant="body" tone="muted">›</AText>
-                        </View>
-                        <View style={{ height: 5, borderRadius: 3, backgroundColor: c.tile, overflow: 'hidden' }}>
-                          <View style={{ width: `${Math.min(100, Math.max(4, Math.round(d.progress * 100)))}%`, height: '100%', borderRadius: 3, backgroundColor: late ? c.critical : c.warn }} />
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </Well>
-              </>
-            ) : null}
-
-            {data && held.length === 0 && !stale ? (
-              <View style={{ alignItems: 'center', paddingVertical: amazen.space(8), gap: amazen.space(2) }}>
-                <Ionicons name="cube-outline" size={36} color={c.inkOnGlass} />
-                <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{t('myAssets.empty', 'No equipment has been handed to you yet.')}</AText>
-              </View>
-            ) : null}
-            {held.length > 0 ? <SectionLabel style={{ paddingHorizontal: amazen.space(1) }}>{`${t('equipment.youHold', 'You hold')} · ${held.length}`}</SectionLabel> : null}
-            {held.map(card)}
-
-            {offerContract ? (
-              <SheetOption label={t('documents.supply.contract', 'Contract for a vehicle or equipment')} hint={t('documents.supply.contractHint')} onPress={() => router.push('/(app)/send-document' as never)} />
-            ) : null}
-            {items.length > 0 ? (
-              <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(2), paddingBottom: 0 }}>{`${t('equipment.sentIn', 'Sent in')} · ${items.length}`}</SectionLabel>
-            ) : null}
-          </View>
+          <EquipmentScreenStale vm={vm} />
         }
         renderItem={({ item, index }) => (
           <SentRow
@@ -150,14 +121,21 @@ export function EquipmentScreen() {
       />
 
       {/* ---------- one piece of equipment ---------- */}
-      <JobSheet visible={!!opened} onClose={() => setOpened(null)} title={opened?.asset?.name} eyebrow={opened?.asset?.category?.name ? <SectionLabel>{opened.asset.category.name}</SectionLabel> : undefined}>
+      <JobSheet
+        visible={!!opened}
+        onClose={() => setOpened(null)}
+        title={opened?.asset?.name}
+        eyebrow={opened?.asset?.category?.name ? <SectionLabel>{opened.asset.category.name}</SectionLabel> : undefined}>
         {opened ? (() => {
           const a = opened.asset;
           const facts: [string, string][] = [];
           const mm = [a?.manufacturer, a?.model].filter(Boolean).join(' · ');
           if (mm) facts.push([t('equipment.makeModel', 'Make · model'), mm]);
           if (a?.serialNumber) facts.push([t('equipment.serial', 'Serial'), a.serialNumber]);
-          facts.push([t('equipment.withYouSince', 'With you since'), `${day(opened.startedAt)} · ${t('custody.days', { count: custodyDays(opened as never) })}`]);
+          facts.push([
+            t('equipment.withYouSince', 'With you since'),
+            `${day(opened.startedAt)} · ${t('custody.days', { count: custodyDays(opened as never) })}`,
+          ]);
           const mineDue = due.filter((d) => d.assetId === opened.assetId);
           const mineItems = items.filter((i) => i.assetId === opened.assetId).slice(0, 4);
           const label = actLabel(opened);
@@ -182,7 +160,16 @@ export function EquipmentScreen() {
                 <>
                   <SectionLabel tone="warn">{t('equipment.due', 'Due')}</SectionLabel>
                   <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
-                    {mineDue.map((d, i) => <Fact key={d.key} first={i === 0} label={d.label} value={dueLine(d)} tone={d.stage === 'overdue' ? 'critical' : 'warn'} onPress={() => fromSheet(() => logFor(d.assetId, d.key))} />)}
+                    {mineDue.map((d, i) => (
+                      <Fact
+                        key={d.key}
+                        first={i === 0}
+                        label={d.label}
+                        value={dueLine(d)}
+                        tone={d.stage === 'overdue' ? 'critical' : 'warn'}
+                        onPress={() => fromSheet(() => logFor(d.assetId, d.key))}
+                      />
+                    ))}
                   </View>
                 </>
               ) : null}
@@ -190,7 +177,14 @@ export function EquipmentScreen() {
                 <>
                   <SectionLabel>{t('equipment.lastEntries', 'Your last entries')}</SectionLabel>
                   <View style={{ backgroundColor: c.sunken, borderRadius: 18, paddingHorizontal: amazen.space(3.5) }}>
-                    {mineItems.map((i, n) => <Fact key={i.key} first={n === 0} label={`${whatOf(i)} · ${day(i.at)}`} value={i.reading ?? (i.amountCents ? money(i.amountCents) : stateWords(i))} />)}
+                    {mineItems.map((i, n) => (
+                      <Fact
+                        key={i.key}
+                        first={n === 0}
+                        label={`${whatOf(i)} · ${day(i.at)}`}
+                        value={i.reading ?? (i.amountCents ? money(i.amountCents) : stateWords(i))}
+                      />
+                    ))}
                   </View>
                 </>
               ) : null}
@@ -201,24 +195,45 @@ export function EquipmentScreen() {
       </JobSheet>
 
       {/* ---------- what did you do? ---------- */}
-      <JobSheet visible={!!picking} onClose={() => setPicking(null)} title={t('logbook.whatDidYouDo', 'What did you do?')} eyebrow={picking?.asset?.name ? <SectionLabel>{picking.asset.name}</SectionLabel> : undefined}>
+      <JobSheet
+        visible={!!picking}
+        onClose={() => setPicking(null)}
+        title={t('logbook.whatDidYouDo', 'What did you do?')}
+        eyebrow={picking?.asset?.name ? <SectionLabel>{picking.asset.name}</SectionLabel> : undefined}>
         {picking ? typesFor(picking).map((ty) => (
           <Pressable key={ty.key} onPress={() => { const h = picking; setPicking(null); setTimeout(() => logFor(h.assetId, ty.key), 280); }} accessibilityRole="button"
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), borderRadius: 16, paddingHorizontal: amazen.space(3.5), paddingVertical: amazen.space(3), backgroundColor: c.tile, opacity: pressed ? 0.8 : 1 })}>
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: amazen.space(3),
+              borderRadius: 16,
+              paddingHorizontal: amazen.space(3.5),
+              paddingVertical: amazen.space(3),
+              backgroundColor: c.tile,
+              opacity: pressed ? 0.8 : 1,
+            })}>
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: logColor(ty.color) }} />
             <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14.5 }}>{logTypeLabel(ty, t)}</AText>
-            {due.some((d) => d.assetId === picking.assetId && d.key === ty.key) ? <Pill label={t('equipment.due', 'Due')} tone="warn" /> : null}
+            {due.some((d) => d.assetId === picking.assetId && d.key === ty.key) ? (
+              <Pill label={t('equipment.due', 'Due')} tone="warn" />
+            ) : null}
             <AText variant="body" tone="muted">›</AText>
           </Pressable>
         )) : null}
       </JobSheet>
 
       {/* ---------- take it back? ---------- */}
-      <JobSheet visible={!!takingBack} onClose={() => setTakingBack(null)} busy={busy} title={t('equipment.takeBackTitle', 'Take it back?')}>
+      <JobSheet
+        visible={!!takingBack}
+        onClose={() => setTakingBack(null)}
+        busy={busy}
+        title={t('equipment.takeBackTitle', 'Take it back?')}>
         {takingBack ? (
           <>
             <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>
-              {[whatOf(takingBack), takingBack.about, takingBack.amountCents ? money(takingBack.amountCents) : null].filter(Boolean).join(' · ')}
+              {[whatOf(takingBack), takingBack.about, takingBack.amountCents ? money(takingBack.amountCents) : null]
+                .filter(Boolean)
+                .join(' · ')}
               {'. '}{t('equipment.takeBackBody', 'Nobody will review it.')}
             </AText>
             <PrimaryButton label={t('equipment.keepIt', 'Keep it')} onPress={() => setTakingBack(null)} />

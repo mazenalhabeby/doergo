@@ -80,7 +80,12 @@ export function JobRoleCard({ task, meId, onChanged }: { task: RoleTask; meId: s
       </SectionLabel>
       <AText variant="caption" tone="ink">{t('roleTasks.takenOf', { taken, of })}</AText>
       {mayTake ? (
-        <QuietButton tone="accent" label={busy ? t('roleTasks.taking') : t('roleTasks.take')} disabled={busy} onPress={() => void act('take')} />
+        <QuietButton
+          tone="accent"
+          label={busy ? t('roleTasks.taking') : t('roleTasks.take')}
+          disabled={busy}
+          onPress={() => void act('take')}
+        />
       ) : onIt && notStarted ? (
         <QuietButton tone="strong" label={t('roleTasks.giveBack')} disabled={busy} onPress={() => void act('back')} />
       ) : null}

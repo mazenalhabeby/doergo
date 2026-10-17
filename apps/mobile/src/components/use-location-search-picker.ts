@@ -78,7 +78,8 @@ export function useLocationSearchPicker({
         // client, so it carries the member's token like every other request.
         try {
           if (!sessionRef.current) sessionRef.current = genSessionToken();
-          const gd: { results?: Array<{ id?: string; label: string; lat?: number; lon?: number }> } | null = await call(E.geo.search, { q, limit: 6, session: sessionRef.current });
+          const gd: { results?: Array<{ id?: string; label: string; lat?: number; lon?: number }> } | null =
+            await call(E.geo.search, { q, limit: 6, session: sessionRef.current });
           const mapped: NominatimResult[] = (gd?.results || []).map(
             (r: { id?: string; label: string; lat?: number; lon?: number }, i: number) => ({
               place_id: i,

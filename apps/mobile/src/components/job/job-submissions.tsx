@@ -54,7 +54,14 @@ export function JobSubmissions({
             .filter((r) => r.a !== null);
           return (
             <Well key={s.id} style={{ paddingVertical: amazen.space(2.5), paddingHorizontal: amazen.space(3.5), gap: amazen.space(1) }}>
-              <AText variant="body" tone="strong" numberOfLines={2} style={{ fontFamily: amazen.font.sansMedium, flexShrink: 1 }}>{labelOf(s.statusKey)}</AText>
+              <AText
+                variant="body"
+                tone="strong"
+                numberOfLines={2}
+                style={{ fontFamily: amazen.font.sansMedium, flexShrink: 1 }}
+              >
+                {labelOf(s.statusKey)}
+              </AText>
               <AText variant="caption" tone="muted" numberOfLines={2}>
                 {who ? t('job.submissions.byAt', { name: who, when }) : when}
               </AText>
@@ -87,7 +94,11 @@ function Answer({ answer, files }: { answer: NonNullable<ReturnType<typeof shown
     case 'text':
       return <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>{answer.text}</AText>;
     case 'yesno':
-      return <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>{answer.value ? t('common.yes') : t('common.no')}</AText>;
+      return (
+        <AText variant="body" tone="strong" style={{ fontSize: 14, lineHeight: 20 }}>
+          {answer.value ? t('common.yes') : t('common.no')}
+        </AText>
+      );
     case 'photos':
       return (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -100,7 +111,14 @@ function Answer({ answer, files }: { answer: NonNullable<ReturnType<typeof shown
                 disabled={!url}
                 accessibilityRole="button"
                 accessibilityLabel={files[id]?.fileName ?? t('job.submissions.photo')}
-                style={({ pressed }) => ({ width: 64, height: 64, borderRadius: 14, overflow: 'hidden', backgroundColor: c.tile, opacity: pressed ? 0.8 : 1 })}
+                style={({ pressed }) => ({
+                  width: 64,
+                  height: 64,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  backgroundColor: c.tile,
+                  opacity: pressed ? 0.8 : 1,
+                })}
               >
                 {url ? <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" /> : null}
               </Pressable>
@@ -111,7 +129,15 @@ function Answer({ answer, files }: { answer: NonNullable<ReturnType<typeof shown
     case 'signature': {
       const url = urlOf(answer.id);
       return url ? (
-        <View style={{ height: 64, borderRadius: 12, backgroundColor: '#ffffff', overflow: 'hidden', borderWidth: 1, borderColor: c.lineWell }}>
+        <View
+          style={{
+            height: 64,
+            borderRadius: 12,
+            backgroundColor: '#ffffff',
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: c.lineWell,
+          }}>
           {/* The signature is ink on white by construction — the pad paints white into the picture. */}
           <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
         </View>

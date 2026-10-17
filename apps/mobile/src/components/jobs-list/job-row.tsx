@@ -82,7 +82,14 @@ export const JobRow = memo(function JobRow({
         <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: c.inkMuted }} />
       )}
       <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
-        <AText numberOfLines={1} style={{ fontFamily: amazen.font.sansMedium, fontSize: 14, lineHeight: 20, color: closed ? c.ink : c.inkStrong }}>
+        <AText
+          numberOfLines={1}
+          style={{
+            fontFamily: amazen.font.sansMedium,
+            fontSize: 14,
+            lineHeight: 20,
+            color: closed ? c.ink : c.inkStrong,
+          }}>
           {urgent && !closed ? <AText style={{ color: c.critical, fontSize: 14, lineHeight: 20 }}>{'● '}</AText> : null}
           {title}
         </AText>

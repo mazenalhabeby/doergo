@@ -87,7 +87,9 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
         ) : (
           /* Loading or offline: the shape holds, the doors below still work. */
           <View style={{ height: 70, marginTop: amazen.space(2.5), justifyContent: 'center' }}>
-            <AText variant="caption" tone="muted">{failed ? t('clientsCard.offline', { defaultValue: 'Needs a connection to see what is due.' }) : ' '}</AText>
+            <AText variant="caption" tone="muted">
+              {failed ? t('clientsCard.offline', { defaultValue: 'Needs a connection to see what is due.' }) : ' '}
+            </AText>
           </View>
         )}
 
@@ -105,7 +107,10 @@ export function ClientsCard({ style }: { style?: StyleProp<ViewStyle> }) {
               lead={<GlyphTile Glyph={ColdGlyph} color={c.warn} tint={c.warnTint} behind={c.well} size={26} glyphSize={15} radius={8} />}
               title={t('clientsCard.cold', { count: due.cold.count })}
               detail={due.cold.longest
-                ? t(due.cold.longest.never ? 'clientsCard.coldNever' : 'clientsCard.coldLongest', { name: due.cold.longest.name, count: due.cold.longest.days })
+                ? t(due.cold.longest.never ? 'clientsCard.coldNever' : 'clientsCard.coldLongest', {
+                    name: due.cold.longest.name,
+                    count: due.cold.longest.days,
+                  })
                 : t('clientsCard.coldRule', { count: due.cold.days })}
             />
           ) : null}

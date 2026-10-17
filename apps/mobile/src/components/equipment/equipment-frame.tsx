@@ -11,7 +11,16 @@ import { Ground, HeaderBack, ScreenHeader } from '../amazen';
 export function EquipmentFrame({ title, onBack, children }: { title: string; onBack?: () => void; children?: React.ReactNode }) {
   return (
     <Ground style={{ flex: 1 }}>
-      <ScreenHeader title={title} leading={<HeaderBack onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.navigate('/(app)/my-assets' as never)))} />} />
+      <ScreenHeader
+        title={title}
+        leading={
+          <HeaderBack
+            onPress={
+              onBack ?? (() => (router.canGoBack() ? router.back() : router.navigate('/(app)/my-assets' as never)))
+            }
+          />
+        }
+      />
       {children}
     </Ground>
   );

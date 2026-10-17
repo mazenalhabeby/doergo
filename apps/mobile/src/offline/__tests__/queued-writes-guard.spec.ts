@@ -139,7 +139,8 @@ const ENGINE_FALLBACKS: Record<string, { calls: Record<string, number>; why: str
     why: 'the customer portal has no outbox',
   },
   // Same portal: its sync push is confined to portal requests, so a language change goes direct.
-  'app/(customer)/(tabs)/profile.tsx': {
+  // (The profile screen's logic moved to its hook in the 2026-10-17 line-length split.)
+  'src/screens/customer/tabs/use-customer-profile.ts': {
     calls: { 'userApi.setLocale': 1 },
     why: 'the customer portal has no outbox for profile changes',
   },

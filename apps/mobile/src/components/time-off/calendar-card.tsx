@@ -50,13 +50,25 @@ export function TimeOffCalendarCard({
   const monthGrid = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
   const hasRangeSelected = rangeStart !== null && rangeEnd !== null;
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const navBtn = { width: 36, height: 36, borderRadius: 18, alignItems: 'center' as const, justifyContent: 'center' as const, backgroundColor: c.tile };
+  const navBtn = {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: c.tile,
+  };
 
   return (
     <Well style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
       <SectionLabel>{t('requests.leaveSection', 'Leave')}</SectionLabel>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-        <Pressable onPress={onPrevMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('time.off.prevMonth', 'Previous month')} style={navBtn}>
+        <Pressable
+          onPress={onPrevMonth}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('time.off.prevMonth', 'Previous month')}
+          style={navBtn}>
           <AText variant="body" tone="strong">‹</AText>
         </Pressable>
         <Pressable onPress={onToday} accessibilityRole="button" style={{ flex: 1 }}>
@@ -64,14 +76,27 @@ export function TimeOffCalendarCard({
             {new Date(viewYear, viewMonth, 1).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' })}
           </AText>
         </Pressable>
-        <Pressable onPress={onNextMonth} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('time.off.nextMonth', 'Next month')} style={navBtn}>
+        <Pressable
+          onPress={onNextMonth}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('time.off.nextMonth', 'Next month')}
+          style={navBtn}>
           <AText variant="body" tone="strong">›</AText>
         </Pressable>
       </View>
 
       <View style={{ flexDirection: 'row' }}>
         {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-          <AText key={i} variant="caption" tone="muted" numeric style={{ flex: 1, textAlign: 'center', fontSize: 10.5 }}>{t(`dayNames.short.${i}`)}</AText>
+          <AText
+            key={i}
+            variant="caption"
+            tone="muted"
+            numeric
+            style={{ flex: 1, textAlign: 'center', fontSize: 10.5 }}
+          >
+            {t(`dayNames.short.${i}`)}
+          </AText>
         ))}
       </View>
 
@@ -100,7 +125,14 @@ export function TimeOffCalendarCard({
                     accessibilityLabel={date.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' })}
                     style={{
                       height: 38, borderRadius: edge ? 12 : 8, alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: edge && isScheduled ? c.accentSolid : inRange && isScheduled ? c.accentTint : approved ? c.accentTint : 'transparent',
+                      backgroundColor:
+                        edge && isScheduled
+                          ? c.accentSolid
+                          : inRange && isScheduled
+                            ? c.accentTint
+                            : approved
+                              ? c.accentTint
+                              : 'transparent',
                       borderWidth: pending && !edge ? 1.5 : isToday && !edge && !inRange ? 1 : 0,
                       borderColor: pending ? c.warn : c.lineField,
                     }}
@@ -125,13 +157,43 @@ export function TimeOffCalendarCard({
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(3), alignItems: 'center' }}>
-        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }} />} label={t('timeOff.calendar.legend.approved')} />
-        <Legend swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />} label={t('timeOff.calendar.legend.pending')} />
-        {scheduleLength > 0 ? <Legend swatch={<AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.4 }}>7</AText>} label={t('timeOff.calendar.legend.offDay')} /> : null}
+        <Legend
+          swatch={
+            <View
+              style={{
+                width: 9,
+                height: 9,
+                borderRadius: 3,
+                backgroundColor: c.accentTint,
+                borderWidth: 1,
+                borderColor: c.accent,
+              }}
+            />
+          }
+          label={t('timeOff.calendar.legend.approved')}
+        />
+        <Legend
+          swatch={<View style={{ width: 9, height: 9, borderRadius: 3, borderWidth: 1.5, borderColor: c.warn }} />}
+          label={t('timeOff.calendar.legend.pending')}
+        />
+        {scheduleLength > 0 ? (
+          <Legend
+            swatch={
+              <AText variant="caption" tone="muted" style={{ fontSize: 10, opacity: 0.4 }}>
+                7
+              </AText>
+            }
+            label={t('timeOff.calendar.legend.offDay')}
+          />
+        ) : null}
       </View>
 
       <AText variant="caption" tone="muted" style={{ textAlign: 'center', fontSize: 12 }}>
-        {isSelecting && rangeStart && !rangeEnd ? t('timeOff.calendar.selectionHint') : !rangeStart ? t('time.off.hintFirst', 'Tap your first day off') : ' '}
+        {isSelecting && rangeStart && !rangeEnd
+          ? t('timeOff.calendar.selectionHint')
+          : !rangeStart
+            ? t('time.off.hintFirst', 'Tap your first day off')
+            : ' '}
       </AText>
     </Well>
   );

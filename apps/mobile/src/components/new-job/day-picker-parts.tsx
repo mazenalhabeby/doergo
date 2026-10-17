@@ -37,13 +37,24 @@ export function DayPickerTop({
         <View style={{ flex: 1 }}><QuietButton label={t('common.tomorrow')} onPress={onTomorrow} /></View>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(2) }}>
-        <Pressable onPress={prevDisabled ? undefined : () => onShift(-1)} disabled={prevDisabled} accessibilityRole="button" accessibilityLabel={t('common.back')} hitSlop={8} style={{ opacity: prevDisabled ? 0.3 : 1, padding: amazen.space(2) }}>
+        <Pressable
+          onPress={prevDisabled ? undefined : () => onShift(-1)}
+          disabled={prevDisabled}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.back')}
+          hitSlop={8}
+          style={{ opacity: prevDisabled ? 0.3 : 1, padding: amazen.space(2) }}>
           <AText variant="body" tone="strong">‹</AText>
         </Pressable>
         <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontFamily: amazen.font.sansMedium }}>
           {`${months?.[month] ?? ''} ${year}`}
         </AText>
-        <Pressable onPress={() => onShift(1)} accessibilityRole="button" accessibilityLabel={t('common.next')} hitSlop={8} style={{ padding: amazen.space(2) }}>
+        <Pressable
+          onPress={() => onShift(1)}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.next')}
+          hitSlop={8}
+          style={{ padding: amazen.space(2) }}>
           <AText variant="body" tone="strong">›</AText>
         </Pressable>
       </View>

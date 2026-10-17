@@ -52,7 +52,10 @@ export function ClientsToday() {
             lead={<GlyphTile Glyph={ColdGlyph} color={c.warn} tint={c.warnTint} behind={c.well} size={26} glyphSize={15} radius={8} />}
             title={t('clientsCard.cold', { count: cold.count })}
             detail={cold.longest
-              ? t(cold.longest.never ? 'clientsCard.coldNever' : 'clientsCard.coldLongest', { name: cold.longest.name, count: cold.longest.days })
+              ? t(cold.longest.never ? 'clientsCard.coldNever' : 'clientsCard.coldLongest', {
+                  name: cold.longest.name,
+                  count: cold.longest.days,
+                })
               : t('clientsCard.coldRule', { count: cold.days })}
           />
         </View>

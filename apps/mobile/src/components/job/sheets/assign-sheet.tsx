@@ -83,7 +83,17 @@ export function AssignSheet({
     } catch {
       // The directory refused — the roster is the answer when there is one.
       if (roster) {
-        setRows(roster.filter((a) => a.user).map((a) => ({ id: a.userId, firstName: a.user!.firstName, lastName: a.user!.lastName, role: null, state: null })));
+        setRows(
+          roster
+            .filter((a) => a.user)
+            .map((a) => ({
+              id: a.userId,
+              firstName: a.user!.firstName,
+              lastName: a.user!.lastName,
+              role: null,
+              state: null,
+            })),
+        );
       } else {
         setFailed(true);
         setRows([]);
@@ -107,7 +117,9 @@ export function AssignSheet({
         <View style={{ paddingVertical: amazen.space(6), alignItems: 'center' }}><ActivityIndicator color={c.accent} /></View>
       ) : (
         <>
-          {(rows?.length ?? 0) > 8 ? <JobField value={q} onChangeText={setQ} placeholder={t('job.assign.search')} autoCorrect={false} /> : null}
+          {(rows?.length ?? 0) > 8 ? (
+            <JobField value={q} onChangeText={setQ} placeholder={t('job.assign.search')} autoCorrect={false} />
+          ) : null}
           {failed ? <AText variant="caption" tone="critical">{t('job.assign.failed')}</AText> : null}
           {!failed && shown.length === 0 ? <AText variant="caption" tone="ink">{t('job.assign.none')}</AText> : null}
           {shown.map((m) => {

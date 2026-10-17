@@ -17,7 +17,7 @@ function LeaveGlyph({ size = 24, color }: GlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={12} cy={12} r={4.6} fill={color} fillOpacity={0.95} />
-      <Path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke={color} strokeOpacity={0.55} strokeWidth={1.8} strokeLinecap="round" />
+      <Path d={"M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 " + "16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"} stroke={color} strokeOpacity={0.55} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   );
 }
@@ -26,7 +26,15 @@ function LeaveGlyph({ size = 24, color }: GlyphProps) {
 function RemoteGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
   return (
     <Svg {...svg(size)}>
-      <Path d="M3 11.2 12 3.6l9 7.6" stroke={color} strokeOpacity={0.5} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <Path
+        d="M3 11.2 12 3.6l9 7.6"
+        stroke={color}
+        strokeOpacity={0.5}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
       <Path d="M5.4 10.2V20a1 1 0 0 0 1 1h11.2a1 1 0 0 0 1-1v-9.8L12 4.8Z" fill={color} fillOpacity={0.95} />
       <Rect x={10.2} y={14.4} width={3.6} height={6.6} rx={0.9} fill={contrast} />
     </Svg>
@@ -48,7 +56,15 @@ function OvertimeGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
   return (
     <Svg {...svg(size)}>
       <Circle cx={10.5} cy={12} r={8.5} fill={color} fillOpacity={0.3} />
-      <Path d="M10.5 7.6V12l2.8 1.8" stroke={color} strokeOpacity={0.8} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <Path
+        d="M10.5 7.6V12l2.8 1.8"
+        stroke={color}
+        strokeOpacity={0.8}
+        strokeWidth={1.9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
       <Circle cx={17.6} cy={17.2} r={4.8} fill={color} fillOpacity={0.95} />
       <Path d="M17.6 15v4.4M15.4 17.2h4.4" stroke={contrast} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
@@ -59,7 +75,7 @@ function OvertimeGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
 function OtherGlyph({ size = 24, color, contrast = '#FFFFFF' }: GlyphProps) {
   return (
     <Svg {...svg(size)}>
-      <Path d="M4.5 4h15A1.5 1.5 0 0 1 21 5.5v10a1.5 1.5 0 0 1-1.5 1.5H10l-4.6 3.6V17h-.9A1.5 1.5 0 0 1 3 15.5v-10A1.5 1.5 0 0 1 4.5 4Z" fill={color} fillOpacity={0.95} />
+      <Path d={"M4.5 4h15A1.5 1.5 0 0 1 21 5.5v10a1.5 1.5 0 0 1-1.5 1.5H10l-4.6 " + "3.6V17h-.9A1.5 1.5 0 0 1 3 15.5v-10A1.5 1.5 0 0 1 4.5 4Z"} fill={color} fillOpacity={0.95} />
       <Path d="M7.2 9h9.6M7.2 12.4h6" stroke={contrast} strokeWidth={1.7} strokeLinecap="round" />
     </Svg>
   );
@@ -88,7 +104,7 @@ export function LeaveTypeMark({ kind, color, size = 20 }: { kind: LeaveMarkKind;
       {kind === 'vacation' ? (
         <>
           <Circle cx={12} cy={12} r={4.6} fill={color} />
-          <Path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8" stroke={color} strokeOpacity={0.55} strokeWidth={1.8} strokeLinecap="round" />
+          <Path d={"M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 " + "16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"} stroke={color} strokeOpacity={0.55} strokeWidth={1.8} strokeLinecap="round" />
         </>
       ) : kind === 'sickLeave' ? (
         <>

@@ -45,7 +45,10 @@ export function JobHandover({
   const pausedLine = task.pausedAt
     ? task.pausedById === meId
       ? t('job.handover.pausedYou', { time: `${formatDueDate(task.pausedAt)} ${formatTime(task.pausedAt, null)}` })
-      : t('job.handover.pausedBy', { name: name(task.pausedBy), time: `${formatDueDate(task.pausedAt)} ${formatTime(task.pausedAt, null)}` })
+      : t('job.handover.pausedBy', {
+          name: name(task.pausedBy),
+          time: `${formatDueDate(task.pausedAt)} ${formatTime(task.pausedAt, null)}`,
+        })
     : null;
 
   if (!latest && !due && !pausedLine) return null;
@@ -92,7 +95,11 @@ export function JobHandover({
           {photos.length ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {photos.map((p) => (
-                <Image key={p.id} source={{ uri: p.fileUrl }} style={{ width: 64, height: 64, borderRadius: amazen.radius.tile, marginRight: amazen.space(2) }} />
+                <Image
+                  key={p.id}
+                  source={{ uri: p.fileUrl }}
+                  style={{ width: 64, height: 64, borderRadius: amazen.radius.tile, marginRight: amazen.space(2) }}
+                />
               ))}
             </ScrollView>
           ) : null}

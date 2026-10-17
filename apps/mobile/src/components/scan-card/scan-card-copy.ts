@@ -19,7 +19,12 @@ export const FIELD_LABEL: Record<CardFieldKey, string> = {
   vat: 'customers.form.vatId',
 };
 
-export const FIELD_INPUT: Partial<Record<CardFieldKey, { keyboardType?: KeyboardTypeOptions; autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters' }>> = {
+export const FIELD_INPUT: Partial<
+  Record<
+    CardFieldKey,
+    { keyboardType?: KeyboardTypeOptions; autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters' }
+  >
+> = {
   company: { autoCapitalize: 'words' },
   name: { autoCapitalize: 'words' },
   email: { keyboardType: 'email-address', autoCapitalize: 'none' },

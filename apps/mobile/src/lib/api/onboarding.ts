@@ -7,7 +7,12 @@ export const onboardingApi = {
     return call(E.onboarding.status);
   },
 
-  createOrganization: async (data: { name: string; address?: string; industry?: string; firstSpaceName?: string }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
+  createOrganization: async (data: {
+    name: string;
+    address?: string;
+    industry?: string;
+    firstSpaceName?: string;
+  }): Promise<{ organization: { id: string; name: string }; joinCode: string; user: User }> => {
     return call(E.onboarding.createOrg, undefined, { body: data });
   },
 
@@ -41,7 +46,12 @@ export const invitationsApi = {
 
 // Push Token API
 export const pushApi = {
-  registerToken: async (input: { token: string; platform: 'ios' | 'android' | 'web'; deviceId?: string; locale?: string }): Promise<{ success: boolean }> => {
+  registerToken: async (input: {
+    token: string;
+    platform: 'ios' | 'android' | 'web';
+    deviceId?: string;
+    locale?: string;
+  }): Promise<{ success: boolean }> => {
     return call(E.users.registerPushToken, undefined, { body: input });
   },
 

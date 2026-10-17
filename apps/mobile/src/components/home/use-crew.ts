@@ -55,7 +55,17 @@ interface CrewData {
 const AS_OF = 'crew-asof';
 const AS_OF_RULES = { sameDay: true } as const;
 
-const EMPTY: CrewData = { people: [], expected: 0, pending: 0, pendingBySpace: {}, notArrived: [], failed: false, loading: true, at: Date.now(), asOf: null };
+const EMPTY: CrewData = {
+  people: [],
+  expected: 0,
+  pending: 0,
+  pendingBySpace: {},
+  notArrived: [],
+  failed: false,
+  loading: true,
+  at: Date.now(),
+  asOf: null,
+};
 
 /** `userId` keys the kept counts — per person, never shared on a shared phone. */
 export function useCrew(enabled: boolean, userId: string | null = null): CrewData & { refresh: () => void } {

@@ -58,19 +58,55 @@ export const ClientRow = memo(function ClientRow({
           borderTopWidth: first ? 0 : 1, borderTopColor: c.lineWell, opacity: pressed ? 0.75 : contact ? 0.62 : 1,
         })}
       >
-        <View style={{ width: 42, height: 42, borderRadius: company ? 13 : 21, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-          <AText variant="caption" style={{ fontSize: 13.5, color: c.accent, fontFamily: amazen.font.sansMedium }}>{personInitials(client.name, '·')}</AText>
+        <View
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: company ? 13 : 21,
+            backgroundColor: c.accentTint,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+          <AText variant="caption" style={{ fontSize: 13.5, color: c.accent, fontFamily: amazen.font.sansMedium }}>
+            {personInitials(client.name, '·')}
+          </AText>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{client.name}</AText>
           <AText variant="caption" numberOfLines={1} style={{ color: c.inkMuted }}>
-            <AText variant="caption" style={{ fontFamily: amazen.font.mono, fontSize: 10.5, letterSpacing: 0.8, color: customer ? c.accent : c.inkMuted }}>{stage.toUpperCase()}</AText>
+            <AText
+              variant="caption"
+              style={{
+                fontFamily: amazen.font.mono,
+                fontSize: 10.5,
+                letterSpacing: 0.8,
+                color: customer ? c.accent : c.inkMuted,
+              }}
+            >
+              {stage.toUpperCase()}
+            </AText>
             {detail ? ` · ${detail}` : ''}
           </AText>
         </View>
         {tag ? (
-          <View style={{ borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3, backgroundColor: tag.tone === 'accent' ? c.accentTint : c.tile }}>
-            <AText variant="caption" style={{ fontFamily: amazen.font.mono, fontSize: 9.5, letterSpacing: 0.8, color: tag.tone === 'accent' ? c.accent : c.ink }}>{tag.label.toUpperCase()}</AText>
+          <View
+            style={{
+              borderRadius: 6,
+              paddingHorizontal: 6,
+              paddingVertical: 3,
+              backgroundColor: tag.tone === 'accent' ? c.accentTint : c.tile,
+            }}>
+            <AText
+              variant="caption"
+              style={{
+                fontFamily: amazen.font.mono,
+                fontSize: 9.5,
+                letterSpacing: 0.8,
+                color: tag.tone === 'accent' ? c.accent : c.ink,
+              }}
+            >
+              {tag.label.toUpperCase()}
+            </AText>
           </View>
         ) : null}
         {phone ? (
@@ -80,7 +116,15 @@ export const ClientRow = memo(function ClientRow({
             hitSlop={6}
             accessibilityRole="button"
             accessibilityLabel={phone}
-            style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, backgroundColor: c.accentSolid, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.85 : 1 })}
+            style={({ pressed }) => ({
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: c.accentSolid,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed ? 0.85 : 1,
+            })}
           >
             <CallGlyph size={17} color={c.accentInk} contrast={isDark ? '#1fc39c' : '#0f9a7c'} />
           </Pressable>

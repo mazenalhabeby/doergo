@@ -81,7 +81,7 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
               {show === 'to' ? r.to.name : show === 'from' ? r.from.name : `${r.from.name} → ${r.to.name}`}
             </AText>
             <AText variant="caption" tone="muted" numberOfLines={2}>
-              {`${r.active ? `${t('approvals.standIn.now')} · ` : ''}${t('approvals.standIn.from', { from: day(r.startsOn), to: day(r.endsOn) })}`}
+              {(`${r.active ? `${t('approvals.standIn.now')} · ` : ''}` + `${t('approvals.standIn.from', { from: day(r.startsOn), to: day(r.endsOn) })}`)}
             </AText>
           </View>
           {r.canEnd ? <GhostButton label={t('approvals.standIn.end')} disabled={busy} onPress={() => void end(r.id)} /> : null}
@@ -100,21 +100,51 @@ export function StandInSheet({ visible, onClose, onChanged }: { visible: boolean
               <>
                 <SectionLabel>{t('approvals.standIn.who')}</SectionLabel>
                 {data.candidates.map((p) => (
-                  <SheetOption key={p.id} label={p.name} tone={toUserId === p.id ? 'accent' : 'strong'} onPress={() => { setTo(p.id); setPicking(false); }} />
+                  <SheetOption
+                    key={p.id}
+                    label={p.name}
+                    tone={toUserId === p.id ? 'accent' : 'strong'}
+                    onPress={() => {
+                      setTo(p.id);
+                      setPicking(false);
+                    }}
+                  />
                 ))}
               </>
             ) : (
               <>
                 <SectionLabel>{t('approvals.standIn.who')}</SectionLabel>
-                <SheetOption label={chosen?.name ?? t('approvals.standIn.pickPerson')} tone={chosen ? 'accent' : 'strong'} onPress={() => setPicking(true)} />
+                <SheetOption
+                  label={chosen?.name ?? t('approvals.standIn.pickPerson')}
+                  tone={chosen ? 'accent' : 'strong'}
+                  onPress={() => setPicking(true)}
+                />
                 <SectionLabel>{t('approvals.standIn.firstDay')}</SectionLabel>
-                <DateField value={startsOn} onChange={(k) => { setStart(k); if (endsOn < k) setEnd(k); }} minDate={new Date()} title={t('approvals.standIn.firstDay')} />
+                <DateField
+                  value={startsOn}
+                  onChange={(k) => {
+                    setStart(k);
+                    if (endsOn < k) setEnd(k);
+                  }}
+                  minDate={new Date()}
+                  title={t('approvals.standIn.firstDay')}
+                />
                 <SectionLabel>{t('approvals.standIn.lastDay')}</SectionLabel>
-                <DateField value={endsOn} onChange={setEnd} minDate={new Date(`${startsOn}T12:00:00`)} title={t('approvals.standIn.lastDay')} />
+                <DateField
+                  value={endsOn}
+                  onChange={setEnd}
+                  minDate={new Date(`${startsOn}T12:00:00`)}
+                  title={t('approvals.standIn.lastDay')}
+                />
                 <AText variant="caption" tone="muted">{t('approvals.standIn.maxDays', { count: DELEGATION_MAX_DAYS })}</AText>
                 <SectionLabel>{t('approvals.standIn.note')}</SectionLabel>
                 <GlassInput value={note} onChangeText={setNote} maxLength={300} />
-                <PrimaryButton label={t('approvals.standIn.save')} loading={busy} disabled={busy || !toUserId || endsOn < startsOn} onPress={() => void save()} />
+                <PrimaryButton
+                  label={t('approvals.standIn.save')}
+                  loading={busy}
+                  disabled={busy || !toUserId || endsOn < startsOn}
+                  onPress={() => void save()}
+                />
               </>
             )
           ) : (

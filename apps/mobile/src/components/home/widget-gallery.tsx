@@ -97,8 +97,27 @@ export function WidgetGallery({
         </View>
 
         {/* Every name at once — a dot for a suggestion, grey for one already on the home. */}
-        <ScrollView ref={names} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: gutter, gap: 6, paddingTop: amazen.space(3.5) }}>
-          <Reanimated.View pointerEvents="none" style={[{ position: 'absolute', left: 0, top: amazen.space(3.5), bottom: 0, borderRadius: 999, backgroundColor: c.accentTint, borderWidth: 1, borderColor: c.accent }, highlight]} />
+        <ScrollView
+          ref={names}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: gutter, gap: 6, paddingTop: amazen.space(3.5) }}>
+          <Reanimated.View
+            pointerEvents="none"
+            style={[
+              {
+                position: 'absolute',
+                left: 0,
+                top: amazen.space(3.5),
+                bottom: 0,
+                borderRadius: 999,
+                backgroundColor: c.accentTint,
+                borderWidth: 1,
+                borderColor: c.accent,
+              },
+              highlight,
+            ]}
+          />
           {shown.map((r) => {
             const on = r.key === current?.key;
             const added = before.has(r.key);
@@ -121,7 +140,12 @@ export function WidgetGallery({
                 {addedNow.includes(r.key)
                   ? <AText variant="caption" tone="accent" style={{ fontSize: 12 }}>✓</AText>
                   : dot ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: c.warn }} /> : null}
-                <AText variant="caption" style={{ fontSize: 12.5, color: on ? c.inkStrong : added ? c.inkMuted : c.ink }}>{widgetTitle(r, t)}</AText>
+                <AText
+                  variant="caption"
+                  style={{ fontSize: 12.5, color: on ? c.inkStrong : added ? c.inkMuted : c.ink }}
+                >
+                  {widgetTitle(r, t)}
+                </AText>
               </Pressable>
             );
           })}
@@ -161,17 +185,30 @@ export function WidgetGallery({
                   ⚠️ `pointerEvents: none` — it is the widget, but it is not
                   being used. A live card here takes a tap meant for Add.
                 */}
-                <View pointerEvents="none" style={{ height: FRAME_H, overflow: 'hidden', borderRadius: 22, backgroundColor: c.well, opacity: added ? 0.55 : 1 }}>
+                <View
+                  pointerEvents="none"
+                  style={{
+                    height: FRAME_H,
+                    overflow: 'hidden',
+                    borderRadius: 22,
+                    backgroundColor: c.well,
+                    opacity: added ? 0.55 : 1,
+                  }}>
                   <View style={{ width: inner / SCALE, transform: [{ scale: SCALE }], transformOrigin: 'top left' }}>
                     <PitchProvider onPitch={hearers[r.key]!}>
                       <row.Component />
                     </PitchProvider>
                   </View>
-                  <LinearGradient colors={[`${colors.card}00`, colors.card]} style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 }} />
+                  <LinearGradient
+                    colors={[`${colors.card}00`, colors.card]}
+                    style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 56 }}
+                  />
                 </View>
 
                 <View>
-                  <AText variant="body" tone="strong" style={{ fontSize: 17, fontFamily: amazen.font.sansMedium }}>{widgetTitle(r, t)}</AText>
+                  <AText variant="body" tone="strong" style={{ fontSize: 17, fontFamily: amazen.font.sansMedium }}>
+                    {widgetTitle(r, t)}
+                  </AText>
                   {r.question ? <AText variant="caption" tone="muted" style={{ marginTop: 2 }}>{t(r.question)}</AText> : null}
                 </View>
               </View>
@@ -204,7 +241,11 @@ export function WidgetGallery({
                   </AText>
                 </Pressable>
               ) : (
-                <PrimaryButton label={t('home.gallery.addName', { name: widgetTitle(current, t) })} onPress={() => toggle(current.key)} style={{ flex: 1 }} />
+                <PrimaryButton
+                  label={t('home.gallery.addName', { name: widgetTitle(current, t) })}
+                  onPress={() => toggle(current.key)}
+                  style={{ flex: 1 }}
+                />
               )}
               {addedNow.length ? (
                 <Pressable
@@ -215,7 +256,9 @@ export function WidgetGallery({
                     borderWidth: 1, borderColor: c.lineGlass, opacity: pressed ? 0.8 : 1,
                   })}
                 >
-                  <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium }}>{t('home.gallery.done', { count: addedNow.length })}</AText>
+                  <AText variant="body" tone="strong" style={{ fontFamily: amazen.font.sansMedium }}>
+                    {t('home.gallery.done', { count: addedNow.length })}
+                  </AText>
                 </Pressable>
               ) : null}
             </Reanimated.View>

@@ -94,7 +94,18 @@ export function MoreScreen() {
         {...tourScroll}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await loadCounts(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await loadCounts();
+              setRefreshing(false);
+            }}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
       >
         {overflow.length ? (
           <TourTarget name="more-tiles" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
@@ -110,11 +121,26 @@ export function MoreScreen() {
                     backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass, opacity: pressed ? 0.85 : 1,
                   })}
                 >
-                  <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+                  <View
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 12,
+                      backgroundColor: c.accentTint,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
                     {G ? <G size={20} color={c.accent} /> : null}
                   </View>
                   <View>
-                    <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5, fontFamily: amazen.font.sansMedium }}>{t(TAB_TITLE_KEY[name] ?? name)}</AText>
+                    <AText
+                      variant="body"
+                      tone="strong"
+                      numberOfLines={1}
+                      style={{ fontSize: 14.5, fontFamily: amazen.font.sansMedium }}
+                    >
+                      {t(TAB_TITLE_KEY[name] ?? name)}
+                    </AText>
                     <AText variant="caption" tone="onGlass" numberOfLines={1}>{t(`more.tab.${name}`, '')}</AText>
                   </View>
                 </Pressable>
@@ -125,7 +151,9 @@ export function MoreScreen() {
 
         {groups.map((g: MoreGroup, gi: number) => (
           <GroupAnchor key={g.key} first={gi === 0}>
-            <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>{t(`more.group.${g.key}`)}</SectionLabel>
+            <SectionLabel style={{ paddingHorizontal: amazen.space(1), paddingTop: amazen.space(1) }}>
+              {t(`more.group.${g.key}`)}
+            </SectionLabel>
             <Well style={{ paddingHorizontal: amazen.space(3.5) }}>
               {g.rows.map((row, i) => {
                 const G = SHORTCUT_GLYPHS[row.labelKey];
@@ -136,10 +164,28 @@ export function MoreScreen() {
                     <Pressable
                       onPress={() => open(row)}
                       accessibilityRole="button"
-                      accessibilityLabel={n ? `${t(row.labelKey)}, ${t('more.waiting', { count: n, defaultValue: '{{count}} waiting' })}` : t(row.labelKey)}
-                      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3), opacity: pressed ? 0.8 : 1 })}
+                      accessibilityLabel={
+                        n
+                          ? `${t(row.labelKey)}, ${t('more.waiting', { count: n, defaultValue: '{{count}} waiting' })}`
+                          : t(row.labelKey)
+                      }
+                      style={({ pressed }) => ({
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: amazen.space(3),
+                        paddingVertical: amazen.space(3),
+                        opacity: pressed ? 0.8 : 1,
+                      })}
                     >
-                      <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+                      <View
+                        style={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: 12,
+                          backgroundColor: c.accentTint,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
                         {G ? <G size={20} color={c.accent} contrast={c.well} /> : null}
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
@@ -147,7 +193,16 @@ export function MoreScreen() {
                         <AText variant="caption" tone="muted" numberOfLines={1}>{t(row.descKey)}</AText>
                       </View>
                       {n ? (
-                        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: c.warnTint, alignItems: 'center', justifyContent: 'center' }}>
+                        <View
+                          style={{
+                            minWidth: 22,
+                            height: 22,
+                            borderRadius: 11,
+                            paddingHorizontal: 6,
+                            backgroundColor: c.warnTint,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
                           <AText variant="caption" tone="warn" numeric>{String(n)}</AText>
                         </View>
                       ) : null}
@@ -161,7 +216,14 @@ export function MoreScreen() {
         ))}
       </ScrollView>
 
-      <ShiftIssueListSheet visible={issuesOpen} onClose={() => setIssuesOpen(false)} onOpen={(id) => { setIssuesOpen(false); setIssueId(id); }} />
+      <ShiftIssueListSheet
+        visible={issuesOpen}
+        onClose={() => setIssuesOpen(false)}
+        onOpen={(id) => {
+          setIssuesOpen(false);
+          setIssueId(id);
+        }}
+      />
       <ShiftIssueThreadSheet
         visible={!!issueId}
         issueId={issueId}

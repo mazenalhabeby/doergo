@@ -54,8 +54,20 @@ function rank(i: StripItem): number {
 
 export function stripItems(input: StripInput, now: number = Date.now()): StripItem[] {
   const items: StripItem[] = [
-    ...input.rejected.map((r) => ({ key: `back:${r.typeId}`, kind: 'sentBack' as const, label: r.label, blocksWork: r.blocksWork, typeId: r.typeId })),
-    ...input.toUpload.map((r) => ({ key: `up:${r.typeId}`, kind: 'upload' as const, label: r.label, blocksWork: r.blocksWork, typeId: r.typeId })),
+    ...input.rejected.map((r) => ({
+      key: `back:${r.typeId}`,
+      kind: 'sentBack' as const,
+      label: r.label,
+      blocksWork: r.blocksWork,
+      typeId: r.typeId,
+    })),
+    ...input.toUpload.map((r) => ({
+      key: `up:${r.typeId}`,
+      kind: 'upload' as const,
+      label: r.label,
+      blocksWork: r.blocksWork,
+      typeId: r.typeId,
+    })),
     ...input.toSign.map((d) => ({
       key: `sign:${d.id}`, kind: d.forMember ? ('countersign' as const) : ('sign' as const),
       label: d.title, blocksWork: false, documentId: d.id, forMember: d.forMember ?? null,

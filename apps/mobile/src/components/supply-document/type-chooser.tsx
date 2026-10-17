@@ -27,8 +27,12 @@ export function OfficeRow({ onContract }: { onContract: () => void }) {
           <Ionicons name="car-outline" size={19} color={colors.textSecondary} />
         </View>
         <View style={s.typeText}>
-          <Text style={[s.typeLabel, { color: colors.textPrimary }]} numberOfLines={1}>{t('documents.supply.contract', 'Contract for a vehicle or equipment')}</Text>
-          <Text style={[s.typeHint, { color: colors.textMuted }]} numberOfLines={1}>{t('documents.supply.contractHint', 'Rental, leasing or purchase — the office adds it')}</Text>
+          <Text style={[s.typeLabel, { color: colors.textPrimary }]} numberOfLines={1}>
+            {t('documents.supply.contract', 'Contract for a vehicle or equipment')}
+          </Text>
+          <Text style={[s.typeHint, { color: colors.textMuted }]} numberOfLines={1}>
+            {t('documents.supply.contractHint', 'Rental, leasing or purchase — the office adds it')}
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </PressableScale>
@@ -54,10 +58,16 @@ export function TypeChooser({
   const { a, colors } = useSupplyPalette();
 
   const askedLine = (row: AskedRow) => {
-    if (row.why === 'sentBack') return row.reason ? t('documents.supply.sentBackWhy', { reason: row.reason, defaultValue: 'Sent back · {{reason}}' }) : t('documents.required.state.REJECTED');
+    if (row.why === 'sentBack')
+      return row.reason
+        ? t('documents.supply.sentBackWhy', { reason: row.reason, defaultValue: 'Sent back · {{reason}}' })
+        : t('documents.required.state.REJECTED');
     if (row.why === 'expired') return t('documents.required.state.EXPIRED');
     if (row.why === 'expiring') return row.expiresOn
-      ? t('documents.supply.expiringOn', { date: formatCalendarDate(row.expiresOn.slice(0, 10)), defaultValue: 'Expires {{date}} · send the renewed one' })
+      ? t('documents.supply.expiringOn', {
+          date: formatCalendarDate(row.expiresOn.slice(0, 10)),
+          defaultValue: 'Expires {{date}} · send the renewed one',
+        })
       : t('documents.required.state.EXPIRING');
     return t('documents.supply.askedMissing', 'Asked for · not sent yet');
   };
@@ -80,8 +90,16 @@ export function TypeChooser({
           o.off && { opacity: 0.6 },
         ]}
       >
-        <View style={[s.typeIcon, { backgroundColor: o.tone === 'crit' ? a.criticalTint : o.tone === 'warn' ? a.warnTint : colors.surface }]}>
-          <Ionicons name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)} size={19} color={o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : on ? a.accent : colors.textSecondary} />
+        <View
+          style={[
+            s.typeIcon,
+            { backgroundColor: o.tone === 'crit' ? a.criticalTint : o.tone === 'warn' ? a.warnTint : colors.surface },
+          ]}>
+          <Ionicons
+            name={o.off ? 'time-outline' : o.tone ? 'add' : documentTypeIcon(full.key)}
+            size={19}
+            color={o.tone === 'crit' ? a.critical : o.tone === 'warn' ? a.warn : on ? a.accent : colors.textSecondary}
+          />
         </View>
         <View style={s.typeText}>
           <Text style={[s.typeLabel, { color: on ? a.accent : colors.textPrimary }]} numberOfLines={1}>{ty.label}</Text>
@@ -106,21 +124,41 @@ export function TypeChooser({
       <Text style={[s.eyebrow, { color: colors.textMuted }]}>
         {t('documents.supply.whatIsIt')}
       </Text>
-      {groups.asked.length ? <Text style={[s.eyebrow, { color: a.warn, marginTop: 0 }]}>{t('documents.supply.groupAsked', { count: groups.asked.length, defaultValue: 'Asked for · {{count}}' })}</Text> : null}
+      {groups.asked.length ? (
+        <Text style={[s.eyebrow, { color: a.warn, marginTop: 0 }]}>
+          {t('documents.supply.groupAsked', { count: groups.asked.length, defaultValue: 'Asked for · {{count}}' })}
+        </Text>
+      ) : null}
       <View style={s.typeList}>
-        {groups.asked.map((row) => typeRow(row.type, askedLine(row), { tone: row.why === 'sentBack' || row.why === 'expired' ? 'crit' : 'warn' }))}
+        {groups.asked.map((row) =>
+          typeRow(row.type, askedLine(row), {
+            tone: row.why === 'sentBack' || row.why === 'expired' ? 'crit' : 'warn',
+          }),
+        )}
       </View>
       {groups.checking.length ? (
         <>
           <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupChecking', 'Being checked')}</Text>
           <View style={s.typeList}>
-            {groups.checking.map((row) => typeRow(row.type, row.onPhone ? t('documents.supply.onPhone', 'On this phone · sends when you are online') : t('documents.supply.checking', 'Sent · the office is checking it'), { off: true }))}
+            {groups.checking.map((row) =>
+              typeRow(
+                row.type,
+                row.onPhone
+                  ? t('documents.supply.onPhone', 'On this phone · sends when you are online')
+                  : t('documents.supply.checking', 'Sent · the office is checking it'),
+                { off: true },
+              ),
+            )}
           </View>
         </>
       ) : null}
       {groups.other.length ? (
         <>
-          {groups.asked.length || groups.checking.length ? <Text style={[s.eyebrow, { color: colors.textMuted }]}>{t('documents.supply.groupOther', 'Something else')}</Text> : null}
+          {groups.asked.length || groups.checking.length ? (
+            <Text style={[s.eyebrow, { color: colors.textMuted }]}>
+              {t('documents.supply.groupOther', 'Something else')}
+            </Text>
+          ) : null}
           <View style={s.typeList}>
             {groups.other.map((ty) => typeRow(ty, ty.description ?? null))}
           </View>

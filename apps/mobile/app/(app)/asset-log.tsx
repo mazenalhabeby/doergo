@@ -18,7 +18,16 @@ import { useToast } from '../../src/island/island-context';
 import { useImagePicker } from '../../src/hooks/useImagePicker';
 import { canScanReceipts, scanReceipt } from '../../src/lib/receipt-scan';
 import { assetsApi, assetRegisterApi, uploadToPresignedUrl, type HeldAsset } from '../../src/lib/api';
-import { normalizeKindShape, findLogType, validateLogValues, moneyToCents, COST_LOG_KEY, type KindLogField, type LogValueProblem, fromCents } from '@hbcfield/shared/client';
+import {
+  normalizeKindShape,
+  findLogType,
+  validateLogValues,
+  moneyToCents,
+  COST_LOG_KEY,
+  type KindLogField,
+  type LogValueProblem,
+  fromCents,
+} from '@hbcfield/shared/client';
 import { COLORS, SPACING, RADIUS, FONT_SIZE, FONT_WEIGHT } from '../../src/lib/constants';
 import { logColor, logTypeLabel } from '../../src/lib/log-display';
 import { useOffline } from '../../src/offline/offline-context';
@@ -107,7 +116,11 @@ function AssetLogScreen() {
             disabled={reading}
             style={[s.secondary, { borderColor: colors.border }]}
           >
-            {reading ? <ActivityIndicator size="small" color={COLORS.primary} /> : <Ionicons name="scan-outline" size={18} color={COLORS.primary} />}
+            {reading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <Ionicons name="scan-outline" size={18} color={COLORS.primary} />
+            )}
             <Text style={[s.secondaryText, { color: COLORS.primary }]}>{tt('logbook.readReceipt', 'Read the amount from a receipt')}</Text>
           </TouchableOpacity>
         )}

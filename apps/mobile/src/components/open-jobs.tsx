@@ -36,16 +36,33 @@ export function OpenJobs({
       {jobs.map((j) => {
         const writing = open === j.id;
         // "Working 2h 15m" — your own share, only time on the clock (shared tasks/job-time.ts).
-        const sub = [j.workedMinutes ? t('shiftEnd.jobs.working', { time: formatDuration(j.workedMinutes) }) : null, j.customer?.name, j.locationAddress].filter(Boolean).join(' · ');
+        const sub = [
+          j.workedMinutes ? t('shiftEnd.jobs.working', { time: formatDuration(j.workedMinutes) }) : null,
+          j.customer?.name,
+          j.locationAddress,
+        ]
+          .filter(Boolean)
+          .join(' · ');
         // The crew carries on: nothing pauses — a note here is for the people still on it.
         const carriesOn = !!j.crewContinues;
         return (
-          <View key={j.id} style={{ backgroundColor: c.tile, borderRadius: amazen.radius.field, padding: amazen.space(3), gap: amazen.space(2) }}>
+          <View
+            key={j.id}
+            style={{
+              backgroundColor: c.tile,
+              borderRadius: amazen.radius.field,
+              padding: amazen.space(3),
+              gap: amazen.space(2),
+            }}>
             <View>
               <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>{j.title}</AText>
               {sub ? <AText variant="caption" tone="muted" numberOfLines={1}>{sub}</AText> : null}
               {carriesOn ? <AText variant="caption" tone="accent" numberOfLines={2}>{t('shiftEnd.jobs.crewCarriesOn')}</AText> : null}
-              {j.myOpenItems ? <AText variant="caption" tone="warn" numberOfLines={2}>{t('shiftEnd.jobs.myOpenItems', { count: j.myOpenItems })}</AText> : null}
+              {j.myOpenItems ? (
+                <AText variant="caption" tone="warn" numberOfLines={2}>
+                  {t('shiftEnd.jobs.myOpenItems', { count: j.myOpenItems })}
+                </AText>
+              ) : null}
             </View>
             {writing ? (
               <TextInput
@@ -73,7 +90,13 @@ export function OpenJobs({
             <View style={{ flexDirection: 'row', gap: amazen.space(4) }}>
               {!writing ? (
                 <Pressable onPress={() => setOpen(j.id)} accessibilityRole="button" hitSlop={8}>
-                  <AText variant="caption" tone="accent">{notes[j.id]?.trim() ? t('shiftEnd.jobs.editNote') : carriesOn ? t('shiftEnd.jobs.noteForCrew') : t('shiftEnd.jobs.leaveNote')}</AText>
+                  <AText variant="caption" tone="accent">
+                    {notes[j.id]?.trim()
+                      ? t('shiftEnd.jobs.editNote')
+                      : carriesOn
+                        ? t('shiftEnd.jobs.noteForCrew')
+                        : t('shiftEnd.jobs.leaveNote')}
+                  </AText>
                 </Pressable>
               ) : null}
               {onFinish ? (

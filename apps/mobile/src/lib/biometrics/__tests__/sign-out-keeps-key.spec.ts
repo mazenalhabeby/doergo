@@ -10,10 +10,11 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../../test-utils/read-source';
 
 const MOBILE = path.resolve(__dirname, '../../../..');
 const read = (p: string) =>
-  fs.readFileSync(path.join(MOBILE, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  readSource(path.join(MOBILE, p), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
 describe('sign-out keeps the device key', () => {
   it('forgets only when the account itself is deleted', () => {

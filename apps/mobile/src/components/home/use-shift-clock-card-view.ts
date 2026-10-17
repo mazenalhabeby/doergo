@@ -45,7 +45,19 @@ export interface ShiftClockCardViewProps {
 }
 
 /** ShiftClockCardView's state and handlers — everything before its markup, moved here unchanged. */
-export function useShiftClockCardView({ shift, style, linkToTime = true, onSetRealTime, openIssueId, totals: given, noShift, onAskMoreTime }: Pick<ShiftClockCardViewProps, 'shift' | 'style' | 'linkToTime' | 'onSetRealTime' | 'openIssueId' | 'totals' | 'noShift' | 'onAskMoreTime'>) {
+export function useShiftClockCardView({
+  shift,
+  style,
+  linkToTime = true,
+  onSetRealTime,
+  openIssueId,
+  totals: given,
+  noShift,
+  onAskMoreTime,
+}: Pick<
+  ShiftClockCardViewProps,
+  'shift' | 'style' | 'linkToTime' | 'onSetRealTime' | 'openIssueId' | 'totals' | 'noShift' | 'onAskMoreTime'
+>) {
   const { user } = useAuth();
   const { amazen } = useTheme();
   const { t } = useTranslation();

@@ -124,7 +124,13 @@ export function worklogView(
     if (o.op !== 'worklog.note' || o.entityId !== entryId || !STILL_MINE.has(o.state)) continue;
     const b = (o.payload.body ?? {}) as { id: string; body?: string; at?: string };
     if (seen.has(b.id)) continue;
-    const note = { id: b.id, timeEntryId: entryId, body: b.body ?? '', at: b.at ?? new Date(o.createdAt).toISOString(), attachments: [] } as unknown as WorkLogNote;
+    const note = {
+      id: b.id,
+      timeEntryId: entryId,
+      body: b.body ?? '',
+      at: b.at ?? new Date(o.createdAt).toISOString(),
+      attachments: [],
+    } as unknown as WorkLogNote;
     items.push(withPhotos(note, true));
   }
   return items.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));

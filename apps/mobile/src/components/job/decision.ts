@@ -249,7 +249,10 @@ export async function patchOptimistic(
     return true;
   } catch {
     const back = before;
-    if (back) apply((items) => items.map((it) => (it.id === id ? { ...it, ...pick(back, Object.keys(patch) as Array<keyof CheckItem>) } : it)));
+    if (back)
+      apply((items) =>
+        items.map((it) => (it.id === id ? { ...it, ...pick(back, Object.keys(patch) as Array<keyof CheckItem>) } : it)),
+      );
     return false;
   }
 }

@@ -106,7 +106,10 @@ export function useCalendarRange(view: CalendarView, anchor: Date, spaceId: stri
         const n = viewRange(view, stepAnchor(view, anchor, dir));
         const nf = dayKey(n.from), nt = dayKey(n.to), nk = calendarPageKey(userId, nf, nt, spaceId, layerKey, lang);
         if (calendarPages.has(nk)) continue;
-        calendarApi.range({ from: nf, to: nt, spaceId, layers: layers ?? undefined, lang }).then((r) => calendarPages.remember(nk, r)).catch(() => undefined);
+        calendarApi
+          .range({ from: nf, to: nt, spaceId, layers: layers ?? undefined, lang })
+          .then((r) => calendarPages.remember(nk, r))
+          .catch(() => undefined);
       }
     }, 600);
     return () => clearTimeout(timer);
@@ -120,7 +123,10 @@ export function useCalendarRange(view: CalendarView, anchor: Date, spaceId: stri
  * Timed items of one day laid out side by side where they overlap: each gets a column and the
  * number of columns in its cluster. Greedy, in start order — a day holds a handful, not hundreds.
  */
-export function layoutDay(items: CalendarItem[], key: string): { item: CalendarItem; startMin: number; endMin: number; col: number; cols: number }[] {
+export function layoutDay(
+  items: CalendarItem[],
+  key: string,
+): { item: CalendarItem; startMin: number; endMin: number; col: number; cols: number }[] {
   const dayStart = fromKey(key).getTime();
   const rows = items
     .filter((i) => !i.allDay)
@@ -134,7 +140,14 @@ export function layoutDay(items: CalendarItem[], key: string): { item: CalendarI
   const out: { item: CalendarItem; startMin: number; endMin: number; col: number; cols: number }[] = [];
   let cluster: typeof out = [];
   let clusterEnd = -1;
-  const flush = () => { const n = Math.max(1, ...cluster.map((c) => c.col + 1)); cluster.forEach((c) => { c.cols = n; }); out.push(...cluster); cluster = []; };
+  const flush = () => {
+    const n = Math.max(1, ...cluster.map((c) => c.col + 1));
+    cluster.forEach((c) => {
+      c.cols = n;
+    });
+    out.push(...cluster);
+    cluster = [];
+  };
   for (const r of rows) {
     if (r.startMin >= clusterEnd && cluster.length) flush();
     const used = new Set(cluster.filter((c) => c.endMin > r.startMin).map((c) => c.col));

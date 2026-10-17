@@ -113,7 +113,12 @@ function PillDot({ color }: { color: string }) {
 export function FilterRow({ children }: { children: React.ReactNode }) {
   const { amazen } = useTheme();
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ flexGrow: 0 }} contentContainerStyle={{ gap: amazen.space(1.5) }}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      style={{ flexGrow: 0 }}
+      contentContainerStyle={{ gap: amazen.space(1.5) }}>
       {children}
     </ScrollView>
   );

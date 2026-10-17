@@ -27,8 +27,23 @@ export function TimeOffStatsRow({ stats }: { stats: TimeOffStats }) {
   return (
     <TourTarget name="timeoff-header" style={{ flexDirection: 'row', gap: 4 }}>
       {tiles.map((tile) => (
-        <View key={tile.key} style={{ flex: 1, borderRadius: 18, paddingVertical: amazen.space(2.5), paddingHorizontal: 8, backgroundColor: c.glass, borderWidth: 1, borderColor: c.lineGlass }}>
-          <AText numeric style={{ fontFamily: amazen.font.mono, fontSize: 22, lineHeight: 28, color: tile.tone ?? c.inkStrong }}>{tile.value}</AText>
+        <View
+          key={tile.key}
+          style={{
+            flex: 1,
+            borderRadius: 18,
+            paddingVertical: amazen.space(2.5),
+            paddingHorizontal: 8,
+            backgroundColor: c.glass,
+            borderWidth: 1,
+            borderColor: c.lineGlass,
+          }}>
+          <AText
+            numeric
+            style={{ fontFamily: amazen.font.mono, fontSize: 22, lineHeight: 28, color: tile.tone ?? c.inkStrong }}
+          >
+            {tile.value}
+          </AText>
           <AText variant="caption" tone="onGlass" numberOfLines={2} style={{ fontSize: 11, lineHeight: 14 }}>{tile.label}</AText>
         </View>
       ))}

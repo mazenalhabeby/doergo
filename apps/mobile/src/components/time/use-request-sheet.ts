@@ -11,7 +11,22 @@ import { useLeaveCost } from '../requests/use-leave-preview';
 import { useRangeText } from './time-off-section-shared';
 
 /** RequestSheet's state and handlers — everything before its markup, moved here unchanged. */
-export function useRequestSheet({ visible, onClose, leave, weekdays, now }: Pick<{ visible: boolean; onClose: () => void; leave: ReturnType<typeof useMyTimeOff>; weekdays: Set<number> | null; now: Date }, 'visible' | 'onClose' | 'leave' | 'weekdays' | 'now'>) {
+export function useRequestSheet({
+  visible,
+  onClose,
+  leave,
+  weekdays,
+  now,
+}: Pick<
+  {
+    visible: boolean;
+    onClose: () => void;
+    leave: ReturnType<typeof useMyTimeOff>;
+    weekdays: Set<number> | null;
+    now: Date;
+  },
+  'visible' | 'onClose' | 'leave' | 'weekdays' | 'now'
+>) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t, i18n } = useTranslation();
@@ -28,7 +43,15 @@ export function useRequestSheet({ visible, onClose, leave, weekdays, now }: Pick
   const taken = useMemo(() => leaveDays(leave.absences), [leave.absences]);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const reset = () => { setA(null); setB(null); setNote(''); setNoteOpen(false); setSent(null); setKind('VACATION'); setMonth(new Date(now.getFullYear(), now.getMonth(), 1)); };
+  const reset = () => {
+    setA(null);
+    setB(null);
+    setNote('');
+    setNoteOpen(false);
+    setSent(null);
+    setKind('VACATION');
+    setMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+  };
   const close = () => { onClose(); setTimeout(reset, 300); };
 
   const works = (d: Date) => !weekdays || weekdays.has(d.getDay());
@@ -40,7 +63,13 @@ export function useRequestSheet({ visible, onClose, leave, weekdays, now }: Pick
   /** The next day this member works, from `from` on. */
   const nextWorking = (from: Date) => { let d = from; for (let i = 0; i < 14 && !works(d); i++) d = addDays(d, 1); return d; };
   const quick = (k: 'tomorrow' | 'nextWeek') => {
-    if (k === 'tomorrow') { const d = nextWorking(addDays(today, 1)); setA(d); setB(null); setMonth(new Date(d.getFullYear(), d.getMonth(), 1)); return; }
+    if (k === 'tomorrow') {
+      const d = nextWorking(addDays(today, 1));
+      setA(d);
+      setB(null);
+      setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+      return;
+    }
     const monday = addDays(today, 7 - ((today.getDay() + 6) % 7));
     const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i)).filter(works);
     const first = days[0] ?? monday;
@@ -71,7 +100,12 @@ export function useRequestSheet({ visible, onClose, leave, weekdays, now }: Pick
       if (!built.ok) { toast.error(t('common.error'), t(`offline.errors.${built.code}`)); return; }
       const outcome = await leave.request(built.body);
       if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.requestForm.failedToSubmit'));
+        toast.error(
+          t('common.error'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('timeOff.requestForm.failedToSubmit'),
+        );
         return;
       }
       setSent({ a, b: end, n, queued: outcome.kind === 'queued' });

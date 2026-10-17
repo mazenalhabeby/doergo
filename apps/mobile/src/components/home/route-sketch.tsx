@@ -71,7 +71,9 @@ export const RouteSketch = memo(function RouteSketch({
     // Stops close together shrink so their numbers stay readable.
     let gap = Infinity;
     const xy = pins.map((p) => [proj.x(p), proj.y(p)] as const);
-    for (let i = 0; i < xy.length; i++) for (let j = i + 1; j < xy.length; j++) gap = Math.min(gap, Math.hypot(xy[i]![0] - xy[j]![0], xy[i]![1] - xy[j]![1]));
+    for (let i = 0; i < xy.length; i++)
+      for (let j = i + 1; j < xy.length; j++)
+        gap = Math.min(gap, Math.hypot(xy[i]![0] - xy[j]![0], xy[i]![1] - xy[j]![1]));
     const pin = Math.max(7, Math.min(PIN, gap / 2.3));
 
     const me = position ? { x: proj.x(position), y: proj.y(position) } : null;
@@ -89,7 +91,13 @@ export const RouteSketch = memo(function RouteSketch({
       accessibilityRole="button"
       accessibilityLabel={t('routeCard.openMap')}
       onLayout={onLayout}
-      style={({ pressed }) => ({ height: HEIGHT, borderRadius: 18, overflow: 'hidden', backgroundColor: ground, opacity: pressed ? 0.85 : 1 })}
+      style={({ pressed }) => ({
+        height: HEIGHT,
+        borderRadius: 18,
+        overflow: 'hidden',
+        backgroundColor: ground,
+        opacity: pressed ? 0.85 : 1,
+      })}
     >
       {drawing ? (
         <Svg width={width} height={HEIGHT}>

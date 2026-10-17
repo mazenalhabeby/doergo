@@ -66,7 +66,9 @@ export function InvitationsScreen() {
   const date = (iso: string) => new Date(iso).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' });
   const expiresIn = (iso: string) => {
     const h = Math.max(0, Math.round((Date.parse(iso) - now) / 3_600_000));
-    return h >= 48 ? t('invites.expiresDays', { count: Math.round(h / 24), defaultValue: 'expires in {{count}} days' }) : t('invites.expiresHours', { count: h, defaultValue: 'expires in {{count}} hours' });
+    return h >= 48
+      ? t('invites.expiresDays', { count: Math.round(h / 24), defaultValue: 'expires in {{count}} days' })
+      : t('invites.expiresHours', { count: h, defaultValue: 'expires in {{count}} hours' });
   };
   const share = (code: string) => void Share.share({ message: t('manage.invitationsScreen.createModal.shareMessage', { code }) });
 
@@ -74,7 +76,12 @@ export function InvitationsScreen() {
     setCreating(true);
     try {
       // Invitations are for employees; what they may do is their role, set after they join.
-      const res = await adminInvitationsApi.create({ targetRole: 'EMPLOYEE', position: title.trim() || undefined, spaceId: spaceId || undefined, expiresInHours: 72 });
+      const res = await adminInvitationsApi.create({
+        targetRole: 'EMPLOYEE',
+        position: title.trim() || undefined,
+        spaceId: spaceId || undefined,
+        expiresInHours: 72,
+      });
       setMade(res.code);
       setTitle('');
       await load();
@@ -110,11 +117,31 @@ export function InvitationsScreen() {
 
   const codeRow = (x: Invitation, tone: 'live' | 'dead', sub: string, right?: React.ReactNode) => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3), paddingVertical: amazen.space(3) }}>
-      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: tone === 'live' ? c.accentTint : c.tile, alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          backgroundColor: tone === 'live' ? c.accentTint : c.tile,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <AText style={{ fontFamily: amazen.font.mono, fontSize: 15, color: tone === 'live' ? c.accent : c.inkMuted }}>#</AText>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <AText numeric selectable numberOfLines={1} style={{ fontFamily: amazen.font.mono, fontSize: 14.5, letterSpacing: 1.5, color: tone === 'live' ? c.inkStrong : c.inkMuted }}>{x.code ?? '••••••••••'}</AText>
+        <AText
+          numeric
+          selectable
+          numberOfLines={1}
+          style={{
+            fontFamily: amazen.font.mono,
+            fontSize: 14.5,
+            letterSpacing: 1.5,
+            color: tone === 'live' ? c.inkStrong : c.inkMuted,
+          }}
+        >
+          {x.code ?? '••••••••••'}
+        </AText>
         <AText variant="caption" tone="muted" numberOfLines={1}>{sub}</AText>
       </View>
       {right}
@@ -132,18 +159,43 @@ export function InvitationsScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12), gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await load();
+              setRefreshing(false);
+            }}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
       >
         <GlassCard style={{ gap: amazen.space(2.5) }}>
           <AText variant="body" tone="strong" style={{ fontSize: 15.5 }}>{t('invites.inviteSomeone', 'Invite someone')}</AText>
           <JobField value={title} onChangeText={setTitle} placeholder={t('invites.jobTitle', 'Job title (optional)')} maxLength={80} />
           {spaces.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: amazen.space(1.5) }} keyboardShouldPersistTaps="handled">
-              {[{ id: null as string | null, name: t('manage.invitationsScreen.createModal.noSpace', 'No workspace') }, ...spaces].map((s) => {
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: amazen.space(1.5) }}
+              keyboardShouldPersistTaps="handled">
+              {[
+                { id: null as string | null, name: t('manage.invitationsScreen.createModal.noSpace', 'No workspace') },
+                ...spaces,
+              ].map((s) => {
                 const on = spaceId === s.id;
                 return (
                   <Pressable key={s.id ?? 'none'} onPress={() => setSpaceId(s.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                    style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}>
+                    style={{
+                      borderRadius: amazen.radius.full,
+                      paddingHorizontal: amazen.space(3),
+                      paddingVertical: amazen.space(1.75),
+                      backgroundColor: on ? c.accentTint : c.tile,
+                      borderWidth: 1.5,
+                      borderColor: on ? c.accent : 'transparent',
+                    }}>
                     <AText variant="caption" numberOfLines={1} style={{ fontSize: 12.5, color: on ? c.accent : c.ink }}>{s.name}</AText>
                   </Pressable>
                 );
@@ -154,9 +206,13 @@ export function InvitationsScreen() {
         </GlassCard>
 
         {items === null ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
+          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
+            {t('common.loading', 'Loading…')}
+          </AText>
         ) : !items.length ? (
-          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4) }}>{t('manage.invitationsScreen.noInvitations')}</AText>
+          <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4) }}>
+            {t('manage.invitationsScreen.noInvitations')}
+          </AText>
         ) : (
           <>
             {section(t('invites.waiting', 'Waiting'), groups.waiting, (x) => codeRow(x, 'live',
@@ -166,9 +222,22 @@ export function InvitationsScreen() {
               </Pressable>,
             ))}
             {section(t('invites.used', 'Used'), groups.used, (x) => codeRow(x, 'dead',
-              [t('invites.usedOn', { defaultValue: 'Used {{date}}', date: date(x.usedAt ?? x.createdAt) }), x.position, spaceName(x.spaceId)].filter(Boolean).join(' · ')))}
+              [
+                t('invites.usedOn', { defaultValue: 'Used {{date}}', date: date(x.usedAt ?? x.createdAt) }),
+                x.position,
+                spaceName(x.spaceId),
+              ]
+                .filter(Boolean)
+                .join(' · ')))}
             {section(t('invites.closed', 'Revoked or expired'), groups.closed, (x) => codeRow(x, 'dead',
-              [x.status === 'REVOKED' ? t('invites.revoked', 'Revoked') : t('invites.expired', { defaultValue: 'Expired {{date}}', date: date(x.expiresAt) }), x.position].filter(Boolean).join(' · ')))}
+              [
+                x.status === 'REVOKED'
+                  ? t('invites.revoked', 'Revoked')
+                  : t('invites.expired', { defaultValue: 'Expired {{date}}', date: date(x.expiresAt) }),
+                x.position,
+              ]
+                .filter(Boolean)
+                .join(' · ')))}
           </>
         )}
       </ScrollView>
@@ -177,9 +246,17 @@ export function InvitationsScreen() {
         {made ? (
           <>
             <Sunken style={{ paddingVertical: amazen.space(5), alignItems: 'center' }}>
-              <AText selectable numeric style={{ fontFamily: amazen.font.mono, fontSize: 30, letterSpacing: 5, color: c.inkStrong }}>{made}</AText>
+              <AText
+                selectable
+                numeric
+                style={{ fontFamily: amazen.font.mono, fontSize: 30, letterSpacing: 5, color: c.inkStrong }}
+              >
+                {made}
+              </AText>
             </Sunken>
-            <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>{t('invites.validFor', 'Valid for 3 days · one person can use it')}</AText>
+            <AText variant="caption" tone="muted" style={{ textAlign: 'center' }}>
+              {t('invites.validFor', 'Valid for 3 days · one person can use it')}
+            </AText>
             <PrimaryButton label={t('joinRequests.share', 'Share')} onPress={() => share(made)} />
             <Pressable onPress={() => setMade(null)} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
               <AText variant="body" tone="muted" style={{ fontSize: 14 }}>{t('common.done', 'Done')}</AText>
@@ -188,10 +265,20 @@ export function InvitationsScreen() {
         ) : null}
       </JobSheet>
 
-      <JobSheet visible={!!revoking} onClose={() => setRevoking(null)} busy={busy} title={t('manage.invitationsScreen.revokeTitle', 'Revoke this code?')}>
-        <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{t('invites.revokeBody', 'Nobody will be able to join with it. People who already joined stay.')}</AText>
+      <JobSheet
+        visible={!!revoking}
+        onClose={() => setRevoking(null)}
+        busy={busy}
+        title={t('manage.invitationsScreen.revokeTitle', 'Revoke this code?')}>
+        <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>
+          {t('invites.revokeBody', 'Nobody will be able to join with it. People who already joined stay.')}
+        </AText>
         <PrimaryButton label={t('invites.keep', 'Keep it')} onPress={() => setRevoking(null)} />
-        <Pressable onPress={() => void revoke()} disabled={busy} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
+        <Pressable
+          onPress={() => void revoke()}
+          disabled={busy}
+          accessibilityRole="button"
+          style={{ alignSelf: 'center', padding: amazen.space(2) }}>
           <AText variant="body" tone="critical" style={{ fontSize: 14.5 }}>{t('common.revoke', 'Revoke')}</AText>
         </Pressable>
       </JobSheet>

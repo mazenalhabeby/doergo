@@ -54,7 +54,9 @@ export function headline(due: Pick<ClientsDue, 'total' | 'counts' | 'items'>): {
 export function rowLines(r: DueReminder): { title: Phrase; reason: Phrase } {
   if (r.kind === 'OTHER') {
     return {
-      title: r.note ? { key: 'clientsCard.row.note', values: { note: r.note } } : { key: 'clientsCard.row.other', values: { name: r.name } },
+      title: r.note
+        ? { key: 'clientsCard.row.note', values: { note: r.note } }
+        : { key: 'clientsCard.row.other', values: { name: r.name } },
       reason: { key: 'clientsCard.row.otherReason', values: { name: r.name } },
     };
   }

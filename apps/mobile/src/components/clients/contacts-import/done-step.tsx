@@ -24,9 +24,26 @@ export function DoneStep({
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: amazen.layout.gutter, gap: amazen.layout.block, paddingTop: amazen.space(8), paddingBottom: amazen.space(6) }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: amazen.layout.gutter,
+          gap: amazen.layout.block,
+          paddingTop: amazen.space(8),
+          paddingBottom: amazen.space(6),
+        }}>
         <View style={{ alignItems: 'center', gap: amazen.space(3.5) }}>
-          <View style={[{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: c.accentSolid }, shadowDiscPrimary(c.accentSolid)]}>
+          <View
+            style={[
+              {
+                width: 72,
+                height: 72,
+                borderRadius: 36,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: c.accentSolid,
+              },
+              shadowDiscPrimary(c.accentSolid),
+            ]}>
             <Svg width={32} height={32} viewBox="0 0 24 24">
               <Path d="m5 12 5 5 9-10" fill="none" stroke={c.accentInk} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
@@ -37,7 +54,11 @@ export function DoneStep({
           <AText variant="body" tone="onGradient" style={{ textAlign: 'center' }}>
             {t('contactsImport.done.sub', { created: result.created, filled: result.filled, existing: result.existing })}
           </AText>
-          {skipped ? <AText variant="caption" tone="warn" style={{ textAlign: 'center' }}>{t('contactsImport.done.skipped', { count: skipped })}</AText> : null}
+          {skipped ? (
+            <AText variant="caption" tone="warn" style={{ textAlign: 'center' }}>
+              {t('contactsImport.done.skipped', { count: skipped })}
+            </AText>
+          ) : null}
         </View>
         {shown.length ? (
           <Well style={{ paddingVertical: amazen.space(1) }}>

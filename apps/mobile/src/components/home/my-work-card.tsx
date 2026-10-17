@@ -101,7 +101,12 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
               onPress={() => router.push((shape === 'shifts' ? '/(app)/(tabs)/attendance' : '/(app)/(tabs)/tasks') as Href)}
               accessibilityRole="button"
               hitSlop={8}
-              style={{ paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.5), borderRadius: amazen.radius.full, backgroundColor: c.tile }}
+              style={{
+                paddingHorizontal: amazen.space(3),
+                paddingVertical: amazen.space(1.5),
+                borderRadius: amazen.radius.full,
+                backgroundColor: c.tile,
+              }}
             >
               <AText variant="caption" tone="strong">{t('myWork.all', { count: pillCount, defaultValue: `All ${pillCount}` })} ›</AText>
             </Pressable>
@@ -131,7 +136,14 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 }}
               >
                 <AText variant="caption" tone={on ? 'strong' : 'muted'}>{weekdayName(d, 'narrow')}</AText>
-                <View style={{ width: 14, height: 3, borderRadius: 2, backgroundColor: bar ? (on ? c.accent : c.inkMuted) : 'transparent' }} />
+                <View
+                  style={{
+                    width: 14,
+                    height: 3,
+                    borderRadius: 2,
+                    backgroundColor: bar ? (on ? c.accent : c.inkMuted) : 'transparent',
+                  }}
+                />
                 <View style={{ flexDirection: 'row', gap: 2, height: 4 }}>
                   {Array.from({ length: n }).map((_, k) => (
                     <View key={k} style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: on ? c.accent : c.ink }} />
@@ -143,14 +155,36 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
         </View>
 
         {phase === 'refused' && shape !== 'shifts' ? (
-          <Sentence tone="critical" title={t('myWork.refused', { defaultValue: 'Could not load your jobs.' })} body={t('myWork.refusedBody', { defaultValue: 'The office refused the request.' })}>
-            <Pressable onPress={() => { setPhase('opening'); void fetchList(); }} accessibilityRole="button" style={{ alignSelf: 'flex-start', marginTop: amazen.space(2), paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.5), borderRadius: amazen.radius.full, backgroundColor: c.tile }}>
+          <Sentence
+            tone="critical"
+            title={t('myWork.refused', { defaultValue: 'Could not load your jobs.' })}
+            body={t('myWork.refusedBody', { defaultValue: 'The office refused the request.' })}>
+            <Pressable
+              onPress={() => {
+                setPhase('opening');
+                void fetchList();
+              }}
+              accessibilityRole="button"
+              style={{
+                alignSelf: 'flex-start',
+                marginTop: amazen.space(2),
+                paddingHorizontal: amazen.space(3),
+                paddingVertical: amazen.space(1.5),
+                borderRadius: amazen.radius.full,
+                backgroundColor: c.tile,
+              }}>
               <AText variant="caption" tone="strong">{t('common.retry', { defaultValue: 'Retry' })}</AText>
             </Pressable>
           </Sentence>
         ) : phase === 'absent' && shape !== 'shifts' ? (
           /* ⚠️ ⑦ — the opposite of "Nothing scheduled". Nothing answered, and this phone never held a copy. */
-          <Sentence tone="warn" title={t('myWork.absent', { defaultValue: 'Your jobs are not on this phone yet.' })} body={t('myWork.absentBody', { defaultValue: 'Connect once and they will be here next time, signal or not.' })} />
+          <Sentence
+            tone="warn"
+            title={t('myWork.absent', { defaultValue: 'Your jobs are not on this phone yet.' })}
+            body={t('myWork.absentBody', {
+              defaultValue: 'Connect once and they will be here next time, signal or not.',
+            })}
+          />
         ) : (
           <>
             <Eyebrow tone="accent">
@@ -162,20 +196,41 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
             </Eyebrow>
 
             {shape === 'shifts' ? (
-              <ShiftList schedule={schedule} selected={selected} today={today} live={todayShift} onOpen={() => router.push('/(app)/(tabs)/attendance' as Href)} />
+              <ShiftList
+                schedule={schedule}
+                selected={selected}
+                today={today}
+                live={todayShift}
+                onOpen={() => router.push('/(app)/(tabs)/attendance' as Href)}
+              />
             ) : phase === 'opening' ? (
               <View style={{ gap: amazen.space(2.5), paddingVertical: amazen.space(1) }}>
                 {[88, 64, 76].map((w) => <View key={w} style={{ width: `${w}%`, height: 12, borderRadius: 6, backgroundColor: c.tile }} />)}
               </View>
             ) : (
               <>
-                {face !== 'executor' ? <Eyebrow tone="muted">{t('myWork.mine', { count: mine.length, defaultValue: `Mine · ${mine.length}` })}</Eyebrow> : null}
+                {face !== 'executor' ? (
+                  <Eyebrow tone="muted">
+                    {t('myWork.mine', { count: mine.length, defaultValue: `Mine · ${mine.length}` })}
+                  </Eyebrow>
+                ) : null}
                 {mine.length === 0 && (face === 'executor' || theirs.length === 0) ? (
                   <Sentence
                     title={sameDay(selected, today)
                       ? t('myWork.nothingToday', { defaultValue: 'Nothing scheduled today.' })
-                      : t('myWork.nothingOn', { day: weekdayName(selected, 'long'), defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.` })}
-                    body={nextJobLine(nextJobAfter(face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)), selected, open), t, clock)}
+                      : t('myWork.nothingOn', {
+                          day: weekdayName(selected, 'long'),
+                          defaultValue: `Nothing scheduled on ${weekdayName(selected, 'long')}.`,
+                        })}
+                    body={nextJobLine(
+                      nextJobAfter(
+                        face === 'executor' ? tasks : tasks.filter((x) => isMine(x, user?.id)),
+                        selected,
+                        open,
+                      ),
+                      t,
+                      clock,
+                    )}
                   />
                 ) : null}
                 {mine.map((task, i) => (
@@ -208,16 +263,29 @@ export function MyWorkCard({ style }: { style?: StyleProp<ViewStyle> }) {
                 {face === 'spaceSupervisor' && theirs.length > 0 ? (
                   <>
                     <Eyebrow tone="muted" style={{ marginTop: amazen.space(2) }}>{siteLabel(theirs, t)}</Eyebrow>
-                    {theirs.slice(0, 3).map((task) => <PlainRow key={task.id} task={task} done={!open(task)} mine={false} clock={clock} onPress={() => openTask(task)} />)}
+                    {theirs.slice(0, 3).map((task) => (
+                      <PlainRow
+                        key={task.id}
+                        task={task}
+                        done={!open(task)}
+                        mine={false}
+                        clock={clock}
+                        onPress={() => openTask(task)}
+                      />
+                    ))}
                     {theirs.length > 3 ? (
                       <Pressable onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} accessibilityRole="button" hitSlop={6}>
-                        <AText variant="caption" tone="accent">{t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}</AText>
+                        <AText variant="caption" tone="accent">
+                          {t('myWork.more', { count: theirs.length - 3, defaultValue: `+${theirs.length - 3} more` })}
+                        </AText>
                       </Pressable>
                     ) : null}
                   </>
                 ) : null}
 
-                {face === 'orgWide' && theirs.length > 0 ? <Figures others={theirs} open={open} onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} /> : null}
+                {face === 'orgWide' && theirs.length > 0 ? (
+                  <Figures others={theirs} open={open} onPress={() => router.push('/(app)/(tabs)/tasks' as Href)} />
+                ) : null}
               </>
             )}
           </>

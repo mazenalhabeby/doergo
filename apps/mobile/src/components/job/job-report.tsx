@@ -59,12 +59,28 @@ export function JobReport({ report, sayNone = true, onLayout }: {
           <WellDivider />
           <View style={{ flexDirection: 'row', gap: amazen.space(4) }}>
             <View style={{ flex: 1 }}>{row(t('job.report.duration'), formatOnJob(report.workDuration ?? 0), true)}</View>
-            <View style={{ flex: 1 }}>{row(t('job.report.completedAt'), report.completedAt ? `${formatDateFull(report.completedAt, null)} ${formatTime(report.completedAt, null)}` : null)}</View>
+            <View style={{ flex: 1 }}>
+              {row(
+                t('job.report.completedAt'),
+                report.completedAt
+                  ? `${formatDateFull(report.completedAt, null)} ${formatTime(report.completedAt, null)}`
+                  : null,
+              )}
+            </View>
           </View>
           {report.customerName ? <WellDivider /> : null}
           {row(t('job.report.customer'), report.customerName)}
           {report.customerSignature?.startsWith('data:image') ? (
-            <View style={{ height: 64, borderRadius: 12, backgroundColor: '#ffffff', overflow: 'hidden', marginBottom: amazen.space(2), borderWidth: 1, borderColor: c.lineWell }}>
+            <View
+              style={{
+                height: 64,
+                borderRadius: 12,
+                backgroundColor: '#ffffff',
+                overflow: 'hidden',
+                marginBottom: amazen.space(2),
+                borderWidth: 1,
+                borderColor: c.lineWell,
+              }}>
               {/* The signature is ink on white by construction — the pad paints white into the picture. */}
               <Image source={{ uri: report.customerSignature }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
             </View>

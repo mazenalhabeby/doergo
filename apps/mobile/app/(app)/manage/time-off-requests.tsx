@@ -79,17 +79,46 @@ export default function RequestsToDecideScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: tabSafe, gap: amazen.space(3) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await load();
+              setRefreshing(false);
+            }}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
       >
         {requests === null ? (
-          <AText variant="caption" tone="onGlass" style={{ paddingVertical: amazen.space(4), textAlign: 'center' }}>{t('common.loading', 'Loading…')}</AText>
+          <AText variant="caption" tone="onGlass" style={{ paddingVertical: amazen.space(4), textAlign: 'center' }}>
+            {t('common.loading', 'Loading…')}
+          </AText>
         ) : filtered.length === 0 ? (
-          <Well style={{ paddingVertical: amazen.space(8), paddingHorizontal: amazen.space(5), alignItems: 'center', gap: amazen.space(2) }}>
-            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
+          <Well
+            style={{
+              paddingVertical: amazen.space(8),
+              paddingHorizontal: amazen.space(5),
+              alignItems: 'center',
+              gap: amazen.space(2),
+            }}>
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: c.accentTint,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
               <AText variant="h2" tone="accent">✓</AText>
             </View>
             <AText variant="body" tone="ink" style={{ textAlign: 'center' }}>
-              {filter !== 'ALL' ? t('manage.timeOffRequestsScreen.noRequests', { filter: filterLabel(filter) }) : t('manage.timeOffRequestsScreen.noRequestsAll')}
+              {filter !== 'ALL'
+                ? t('manage.timeOffRequestsScreen.noRequests', { filter: filterLabel(filter) })
+                : t('manage.timeOffRequestsScreen.noRequestsAll')}
             </AText>
           </Well>
         ) : (
@@ -100,15 +129,27 @@ export default function RequestsToDecideScreen() {
               <Well key={item.id} style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
                   <Initials first={item.technician?.firstName} last={item.technician?.lastName} size={36} />
-                  <AText variant="body" tone="strong" numberOfLines={1} style={{ flex: 1, fontSize: 15, fontFamily: amazen.font.sansMedium }}>
+                  <AText
+                    variant="body"
+                    tone="strong"
+                    numberOfLines={1}
+                    style={{ flex: 1, fontSize: 15, fontFamily: amazen.font.sansMedium }}>
                     {personName(item.technician) || t('shiftReminder.unknownWorker')}
                   </AText>
                 </View>
                 <RequestRow request={item} />
                 {note ? <AText variant="body" tone="ink" numberOfLines={4} style={{ fontSize: 13.5, lineHeight: 20 }}>{note}</AText> : null}
-                {item.rejectionReason ? <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>{item.rejectionReason}</AText> : null}
+                {item.rejectionReason ? (
+                  <AText variant="caption" tone="critical" style={{ fontSize: 13 }}>
+                    {item.rejectionReason}
+                  </AText>
+                ) : null}
                 {pending ? (
-                  <QuietButton tone="accent" label={t('approvals.decideInApprovals')} onPress={() => router.push('/(app)/approvals?kind=request' as Href)} />
+                  <QuietButton
+                    tone="accent"
+                    label={t('approvals.decideInApprovals')}
+                    onPress={() => router.push('/(app)/approvals?kind=request' as Href)}
+                  />
                 ) : null}
               </Well>
             );

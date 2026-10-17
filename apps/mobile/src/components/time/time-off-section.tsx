@@ -21,6 +21,7 @@ import { useRangeText, LeaveRow, Legend, Line } from './time-off-section-shared'
 import { useRequestSheet } from './use-request-sheet';
 import { RequestSheetView } from './request-sheet-view';
 import { RequestSheetOff } from './request-sheet-off';
+import { DetailSheet } from './time-off-detail-sheet';
 
 /**
  * TIME OFF, ON THE TIME TAB — what is coming up, and one button to ask.
@@ -53,11 +54,15 @@ export function TimeOffSection({
     <Well style={{ padding: amazen.space(3.5), gap: amazen.space(1) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: amazen.space(1) }}>
         <SectionLabel>{t('time.off.title', 'Time off')}</SectionLabel>
-        <AText variant="caption" tone="muted" numeric>{t('time.off.used', { count: used, defaultValue: '{{count}} days used this year' })}</AText>
+        <AText variant="caption" tone="muted" numeric>
+          {t('time.off.used', { count: used, defaultValue: '{{count}} days used this year' })}
+        </AText>
       </View>
 
       {ahead.length === 0 ? (
-        <AText variant="caption" tone="muted" style={{ paddingVertical: amazen.space(1.5) }}>{t('time.off.none', 'No time off coming up.')}</AText>
+        <AText variant="caption" tone="muted" style={{ paddingVertical: amazen.space(1.5) }}>
+          {t('time.off.none', 'No time off coming up.')}
+        </AText>
       ) : (
         ahead.map((r, i) => (
           <React.Fragment key={r.id}>
@@ -98,7 +103,19 @@ export function TimeOffSection({
  * Monday request is two days off for somebody who does not work weekends —
  * and calendar days when it is not, because an unknown rota is not an empty one.
  */
-export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visible: boolean; onClose: () => void; leave: ReturnType<typeof useMyTimeOff>; weekdays: Set<number> | null; now: Date }) {
+export function RequestSheet({
+  visible,
+  onClose,
+  leave,
+  weekdays,
+  now,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  leave: ReturnType<typeof useMyTimeOff>;
+  weekdays: Set<number> | null;
+  now: Date;
+}) {
   const vm = useRequestSheet({ visible, onClose, leave, weekdays, now });
   const {
     amazen,
@@ -137,18 +154,41 @@ export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visib
     return (
       <JobSheet visible={visible} onClose={close}>
         <View style={{ alignItems: 'center', gap: amazen.space(2), paddingTop: amazen.space(2) }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: c.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-            <Svg width={30} height={30} viewBox="0 0 24 24"><Path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke={c.accent} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              backgroundColor: c.accentTint,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Svg width={30} height={30} viewBox="0 0 24 24">
+              <Path
+                d="M5 12.5l4.5 4.5L19 7.5"
+                fill="none"
+                stroke={c.accent}
+                strokeWidth={2.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
           </View>
-          <AText variant="h2" tone="strong" style={{ fontFamily: amazen.font.sansLight }}>{sent.queued ? t('time.off.queuedTitle', 'Saved on your phone') : t('time.off.sentTitle', 'Request sent')}</AText>
+          <AText variant="h2" tone="strong" style={{ fontFamily: amazen.font.sansLight }}>
+            {sent.queued ? t('time.off.queuedTitle', 'Saved on your phone') : t('time.off.sentTitle', 'Request sent')}
+          </AText>
           <AText variant="body" tone="ink" style={{ textAlign: 'center', fontSize: 14, lineHeight: 21 }}>
-            {sent.queued ? t('time.off.queuedBody', 'It goes to the office as soon as you have signal.') : t('time.off.sentBody', 'You will get a notification when it is answered.')}
+            {sent.queued
+              ? t('time.off.queuedBody', 'It goes to the office as soon as you have signal.')
+              : t('time.off.sentBody', 'You will get a notification when it is answered.')}
           </AText>
         </View>
         <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(1) }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <AText variant="caption" tone="muted" style={{ fontSize: 13.5 }}>{kindLabel}</AText>
-            <AText variant="caption" tone="ink" numeric style={{ fontSize: 13.5 }}>{t('time.off.days', { count: sent.n, defaultValue: '{{count}} days' })}</AText>
+            <AText variant="caption" tone="ink" numeric style={{ fontSize: 13.5 }}>
+              {t('time.off.days', { count: sent.n, defaultValue: '{{count}} days' })}
+            </AText>
           </View>
           <AText variant="body" tone="strong" style={{ fontSize: 14.5 }}>{range(sent.a, sent.b)}</AText>
         </Sunken>
@@ -164,7 +204,17 @@ export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visib
 
       <View style={{ flexDirection: 'row', gap: amazen.space(1.5) }}>
         {(['tomorrow', 'nextWeek'] as const).map((k) => (
-          <Pressable key={k} onPress={() => quick(k)} accessibilityRole="button" style={({ pressed }) => ({ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: c.tile, opacity: pressed ? 0.75 : 1 })}>
+          <Pressable
+            key={k}
+            onPress={() => quick(k)}
+            accessibilityRole="button"
+            style={({ pressed }) => ({
+              borderRadius: amazen.radius.full,
+              paddingHorizontal: amazen.space(3),
+              paddingVertical: amazen.space(1.75),
+              backgroundColor: c.tile,
+              opacity: pressed ? 0.75 : 1,
+            })}>
             <AText variant="caption" tone="ink" style={{ fontSize: 13 }}>{t(`time.off.quick.${k}`)}</AText>
           </Pressable>
         ))}
@@ -173,14 +223,27 @@ export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visib
       <RequestSheetOff vm={vm} canBack={canBack} grid={grid} weekdays={weekdays} />
 
       <AText variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: -amazen.space(1) }}>
-        {!a ? t('time.off.hintFirst', 'Tap your first day off') : !b ? t('time.off.hintLast', 'Tap your last day, or send just this one') : ' '}
+        {!a
+          ? t('time.off.hintFirst', 'Tap your first day off')
+          : !b
+            ? t('time.off.hintLast', 'Tap your last day, or send just this one')
+            : ' '}
       </AText>
 
       {a && end ? (
-        <Sunken style={{ paddingVertical: amazen.space(3), paddingHorizontal: amazen.space(3.5), flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}>
+        <Sunken
+          style={{
+            paddingVertical: amazen.space(3),
+            paddingHorizontal: amazen.space(3.5),
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: amazen.space(3),
+          }}>
           <AText variant="body" tone="strong" style={{ flex: 1, fontSize: 14 }}>{range(a, end)}</AText>
           <AText variant="caption" tone="ink" numeric style={{ fontSize: 13 }}>
-            {weekdays || (cost && cost.counted !== cost.calendarDays) ? t('time.off.workingDays', { count: n, defaultValue: '{{count}} working days' }) : t('time.off.days', { count: n, defaultValue: '{{count}} days' })}
+            {weekdays || (cost && cost.counted !== cost.calendarDays)
+              ? t('time.off.workingDays', { count: n, defaultValue: '{{count}} working days' })
+              : t('time.off.days', { count: n, defaultValue: '{{count}} days' })}
           </AText>
         </Sunken>
       ) : null}
@@ -196,13 +259,23 @@ export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visib
       {clash ? (
         <View style={{ borderRadius: 16, padding: amazen.space(3), backgroundColor: c.warnTint }}>
           <AText variant="caption" tone="warn" style={{ fontSize: 13, lineHeight: 18 }}>
-            {t('time.off.clash', { defaultValue: 'You already have {{day}} off or asked for it. Choose days around it.', day: range(clash, clash) })}
+            {t('time.off.clash', {
+              defaultValue: 'You already have {{day}} off or asked for it. Choose days around it.',
+              day: range(clash, clash),
+            })}
           </AText>
         </View>
       ) : null}
 
       {noteOpen ? (
-        <JobField value={note} onChangeText={setNote} placeholder={t('time.off.notePlaceholder', 'Anything the office should know (optional)')} multiline maxLength={500} autoFocus />
+        <JobField
+          value={note}
+          onChangeText={setNote}
+          placeholder={t('time.off.notePlaceholder', 'Anything the office should know (optional)')}
+          multiline
+          maxLength={500}
+          autoFocus
+        />
       ) : (
         <QuietButton label={`⊕  ${t('time.off.addNote', 'Add a note · optional')}`} onPress={() => setNoteOpen(true)} />
       )}
@@ -214,64 +287,6 @@ export function RequestSheet({ visible, onClose, leave, weekdays, now }: { visib
         disabled={!a || !!clash || busy}
         loading={busy}
       />
-    </JobSheet>
-  );
-}
-
-/** A request, opened: its days, its state, and — while it waits — Withdraw. */
-function DetailSheet({ request, onClose, leave, weekdays }: { request: MyTimeOffRequest | null; onClose: () => void; leave: ReturnType<typeof useMyTimeOff>; weekdays: Set<number> | null }) {
-  const { amazen } = useTheme();
-  const { t, i18n } = useTranslation();
-  const toast = useToast();
-  const words = useRequestWords();
-  const [busy, setBusy] = useState(false);
-  if (!request) return <JobSheet visible={false} onClose={onClose}><View /></JobSheet>;
-  const a = dayOf(request.startDate);
-  const b = dayOf(request.endDate);
-  const waiting = request.status === 'PENDING';
-  const who = request.approvedBy ? personName(request.approvedBy) : null;
-  const f = (d: Date) => d.toLocaleDateString(i18n.language, { weekday: 'short', day: 'numeric', month: 'short' });
-  const described = words.describe(request);
-  const note = described.note;
-
-  const withdraw = async () => {
-    setBusy(true);
-    try {
-      const outcome = await leave.cancel(request.id);
-      if (outcome.kind === 'refused') {
-        toast.error(t('common.error'), (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('timeOff.failedToCancel'));
-        return;
-      }
-      if (outcome.kind === 'queued') toast.info(t('offline.savedForLater'));
-      onClose();
-    } catch (err) {
-      toast.error(t('common.error'), err instanceof Error ? err.message : t('timeOff.failedToCancel'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <JobSheet
-      visible
-      onClose={onClose}
-      busy={busy}
-      eyebrow={<StateEyebrow tone={waiting ? 'warn' : 'accent'} label={waiting ? t('time.off.waiting', 'Waiting for approval') : who ? t('time.off.approvedBy', { defaultValue: 'Approved by {{name}}', name: who }) : t('time.off.approved', 'Approved')} />}
-      title={described.title}
-    >
-      <Sunken style={{ padding: amazen.space(3.5), gap: amazen.space(2) }}>
-        <Line label={t('time.off.from', 'From')} value={f(a)} />
-        <Line label={t('time.off.to', 'To')} value={f(b)} />
-        <Line strong label={weekdays ? t('time.off.workingDaysLabel', 'Working days') : t('time.off.daysLabel', 'Days')} value={String(daysOff(a, b, weekdays))} />
-        {request.createdAt ? <Line label={t('time.off.sentAt', 'Sent')} value={new Date(request.createdAt).toLocaleDateString(i18n.language, { day: 'numeric', month: 'short' })} /> : null}
-      </Sunken>
-      {note ? <AText variant="body" tone="ink" style={{ fontSize: 14, lineHeight: 21 }}>{note}</AText> : null}
-      <PrimaryButton label={t('common.done', 'Done')} onPress={onClose} />
-      {waiting && !request.pendingSync ? (
-        <Pressable onPress={() => void withdraw()} disabled={busy} accessibilityRole="button" style={{ alignSelf: 'center', padding: amazen.space(2) }}>
-          <AText variant="body" tone="critical" style={{ fontSize: 14 }}>{t('time.off.withdraw', 'Withdraw the request')}</AText>
-        </Pressable>
-      ) : null}
     </JobSheet>
   );
 }

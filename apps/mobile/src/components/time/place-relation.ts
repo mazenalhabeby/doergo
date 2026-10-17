@@ -233,7 +233,10 @@ export function graceCountdown(targetMs: number, nowMs: number): string {
  * (`askedOf`, the own-request rule: a leader's own goes to the administrators).
  * An older server sends no names: the line it always said.
  */
-export function waitingText(overtime: { askedOf?: { names: string[]; more: number } | null }, t: (k: string, o?: Record<string, unknown>) => string): string {
+export function waitingText(
+  overtime: { askedOf?: { names: string[]; more: number } | null },
+  t: (k: string, o?: Record<string, unknown>) => string,
+): string {
   const names = overtime.askedOf?.names ?? [];
   if (names.length === 0) return t('overtime.waitingApproval');
   const others = names.length - 1 + (overtime.askedOf?.more ?? 0);

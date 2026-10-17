@@ -111,7 +111,13 @@ export function AnimatedSplash({ onAnimationComplete }: AnimatedSplashProps) {
     setTimeout(() => {
       Animated.parallel([
         Animated.timing(finalZoom, { toValue: 20, duration: 700, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(containerOpacity, { toValue: 0, duration: 350, delay: 400, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(containerOpacity, {
+          toValue: 0,
+          duration: 350,
+          delay: 400,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
       ]).start(() => onAnimationComplete());
     }, 350);
   };

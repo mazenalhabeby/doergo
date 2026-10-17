@@ -47,7 +47,11 @@ export function RequestsScreen() {
 
   useEffect(() => { if (loaded) { setItems(null); void load('first'); } }, [loaded, load]);
   /* Back from a request just turned into a job — it moves tabs. */
-  useFocusEffect(useCallback(() => { if (loaded && items) void load('refresh'); }, [loaded, load])); // eslint-disable-line react-hooks/exhaustive-deps
+  useFocusEffect(
+    useCallback(() => {
+      if (loaded && items) void load('refresh');
+    }, [loaded, load]),
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = useMemo(() => {
     const n: Record<RequestStage, number> = { waiting: 0, job: 0, done: 0 };
@@ -93,12 +97,25 @@ export function RequestsScreen() {
         ListHeaderComponent={header}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[{ paddingHorizontal: amazen.space(4), paddingBottom: amazen.space(12) }, wide]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load('refresh')} tintColor={c.accent} colors={[c.accent]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load('refresh')}
+            tintColor={c.accent}
+            colors={[c.accent]}
+          />
+        }
         ListEmptyComponent={
           <View style={{ paddingVertical: amazen.space(8), alignItems: 'center' }}>
             {!items || !loaded
               ? <ActivityIndicator color={c.accent} />
-              : <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>{stage === 'waiting' ? t('clientRequests.noneWaiting', 'Nothing is waiting for an answer.') : t('clientRequests.none', 'Nothing here.')}</AText>}
+              : (
+                  <AText variant="body" tone="onGlass" style={{ textAlign: 'center' }}>
+                    {stage === 'waiting'
+                      ? t('clientRequests.noneWaiting', 'Nothing is waiting for an answer.')
+                      : t('clientRequests.none', 'Nothing here.')}
+                  </AText>
+                )}
           </View>
         }
         renderItem={({ item, index }) => (
@@ -107,7 +124,12 @@ export function RequestsScreen() {
             last={index === shown.length - 1}
             title={item.title}
             detail={[item.unitName, item.customerName, formatDay(item.createdAt, i18n.language)].filter(Boolean).join(' · ')}
-            trailing={<Pill label={stageWord(stageOf(item))} tone={stageOf(item) === 'waiting' ? 'warn' : stageOf(item) === 'job' ? 'accent' : 'neutral'} />}
+            trailing={
+              <Pill
+                label={stageWord(stageOf(item))}
+                tone={stageOf(item) === 'waiting' ? 'warn' : stageOf(item) === 'job' ? 'accent' : 'neutral'}
+              />
+            }
             onPress={() => open(item)}
           />
         )}

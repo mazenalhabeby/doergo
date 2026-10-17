@@ -32,7 +32,10 @@ interface CreateInput {
  * same record however many times it arrives. One implementation for every
  * "create" a worker makes; the screens differ only in what they show meanwhile.
  */
-export async function createFromPhone(engine: SyncEngine, input: CreateInput): Promise<{ id: string; opId: string; state: OutboxOp['state']; outcome: ActionOutcome }> {
+export async function createFromPhone(
+  engine: SyncEngine,
+  input: CreateInput,
+): Promise<{ id: string; opId: string; state: OutboxOp['state']; outcome: ActionOutcome }> {
   const id = input.id ?? uuidv7();
   const op = await engine.enqueueAndSettle({
     op: input.op,
@@ -75,7 +78,10 @@ export function pendingCreates<B>(
  * On a build without the offline layer `run` calls `direct` — the API call the
  * screen always made — so a screen needs one code path, not two.
  */
-export function useQueuedCreate<B>(op: SyncOperationName, options: { match?: (o: OutboxOp) => boolean; idField?: string | null; onAccepted?: () => void } = {}) {
+export function useQueuedCreate<B>(
+  op: SyncOperationName,
+  options: { match?: (o: OutboxOp) => boolean; idField?: string | null; onAccepted?: () => void } = {},
+) {
   const { engine } = useOffline();
   const { operations } = useSyncStatus();
 

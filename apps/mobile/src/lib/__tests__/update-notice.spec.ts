@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { readSource } from '../../test-utils/read-source';
 
 /*
   ⚠️ THE 1.0.5 RELEASE WENT UNANNOUNCED, and none of the three reasons were a
@@ -9,7 +10,7 @@ import path from 'path';
 */
 
 const MOBILE = path.join(__dirname, '../..', '..');
-const read = (p: string) => fs.readFileSync(path.join(MOBILE, p), 'utf8');
+const read = (p: string) => readSource(path.join(MOBILE, p), 'utf8');
 const stripComments = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 

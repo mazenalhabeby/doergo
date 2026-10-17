@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { readSource } from '../../test-utils/read-source';
 import { MANAGE_ROWS, MEMBER_ROWS } from '../../lib/manage-rows';
 
 /**
@@ -14,7 +15,7 @@ const catalogues = Object.fromEntries(LOCALES.map((l) => [l, JSON.parse(fs.readF
 const get = (o: unknown, k: string): unknown => k.split('.').reduce<unknown>((a, p) => (a && typeof a === 'object' ? (a as Record<string, unknown>)[p] : undefined), o);
 const vars = (s: string) => [...s.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]).sort();
 
-const CARD = fs.readFileSync(path.resolve(__dirname, '../../components/home/shortcuts-card.tsx'), 'utf8');
+const CARD = readSource(path.resolve(__dirname, '../../components/home/shortcuts-card.tsx'), 'utf8');
 const cardKeys = [...new Set([...CARD.matchAll(/t\('((?:shortcutsCard|widgets|pitch)\.[A-Za-z.]+)'/g)].map((m) => m[1]!))];
 const groupKeys = ['waiting', 'do', 'go', 'manage'].map((g) => `shortcutsCard.group.${g}`);
 const rowKeys = [...MANAGE_ROWS, ...MEMBER_ROWS].flatMap((r) => [r.labelKey, r.descKey]);

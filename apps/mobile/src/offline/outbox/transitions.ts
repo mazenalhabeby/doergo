@@ -40,7 +40,8 @@ export function applyPushResults(
     const error = result.code || result.message
       ? { code: result.code, message: result.message, ...(result.params ? { params: result.params } : {}) }
       : undefined;
-    if (result.code && SETTLED_BY_SERVER.has(result.code)) return settle(op, 'discarded', now, { response: result.body ?? result.current, lastError: error });
+    if (result.code && SETTLED_BY_SERVER.has(result.code))
+      return settle(op, 'discarded', now, { response: result.body ?? result.current, lastError: error });
     switch (outboxOutcomeForResult(result)) {
       case 'done':
         return settle(op, 'done', now, { response: result.body, lastError: undefined });

@@ -33,7 +33,9 @@ export function TimePlaces({ tiles }: { tiles: readonly PlaceTile[] }) {
         <SectionLabel>{t('time.places.title', 'Where you work')}</SectionLabel>
         {tiles.length > 1 ? (
           <Pressable onPress={() => setAll(true)} hitSlop={10} accessibilityRole="button">
-            <AText variant="caption" tone="accent" style={{ fontSize: 12.5 }}>{t('time.places.all', { count: tiles.length, defaultValue: 'All {{count}} ›' })}</AText>
+            <AText variant="caption" tone="accent" style={{ fontSize: 12.5 }}>
+              {t('time.places.all', { count: tiles.length, defaultValue: 'All {{count}} ›' })}
+            </AText>
           </Pressable>
         ) : null}
       </View>
@@ -61,8 +63,17 @@ export function TimePlaces({ tiles }: { tiles: readonly PlaceTile[] }) {
                   </AText>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <AText variant="caption" numeric style={{ color: near(tile.relation) ? c.accent : c.inkMuted }}>{relationLabel(t, tile)}</AText>
-                  {(() => { const rule = noShiftLabel(t, tile, new Date()); return rule ? <AText variant="caption" style={{ color: rule.stop ? c.critical : c.inkMuted }}>{rule.text}</AText> : null; })()}
+                  <AText variant="caption" numeric style={{ color: near(tile.relation) ? c.accent : c.inkMuted }}>
+                    {relationLabel(t, tile)}
+                  </AText>
+                  {(() => {
+                    const rule = noShiftLabel(t, tile, new Date());
+                    return rule ? (
+                      <AText variant="caption" style={{ color: rule.stop ? c.critical : c.inkMuted }}>
+                        {rule.text}
+                      </AText>
+                    ) : null;
+                  })()}
                 </View>
               </View>
             </React.Fragment>
@@ -89,11 +100,22 @@ function relationLabel(t: (k: string, o?: Record<string, unknown>) => string, ti
 }
 
 /** A tile's own no-shift rule, quietly: "2h 42m left", "Limit reached", "Shift only" — or nothing. */
-function noShiftLabel(t: (k: string, o?: Record<string, unknown>) => string, tile: PlaceTile, now: Date): { text: string; stop: boolean } | null {
+function noShiftLabel(
+  t: (k: string, o?: Record<string, unknown>) => string,
+  tile: PlaceTile,
+  now: Date,
+): { text: string; stop: boolean } | null {
   if (tile.relation === 'clockedIn') return null;
   const a = noShiftOf(tile.location, now);
   if (!a) return null;
-  if (a.kind === 'limited') return { text: t('time.places.leftToday', { left: formatDuration(a.remainingMinutes), defaultValue: '{{left}} left today' }), stop: false };
+  if (a.kind === 'limited')
+    return {
+      text: t('time.places.leftToday', {
+        left: formatDuration(a.remainingMinutes),
+        defaultValue: '{{left}} left today',
+      }),
+      stop: false,
+    };
   return a.kind === 'refused' && a.reason === 'SHIFT_ONLY'
     ? { text: t('time.places.shiftOnly', { defaultValue: 'Shift only' }), stop: true }
     : { text: t('time.places.limitReached', { defaultValue: 'Limit reached' }), stop: true };
@@ -125,8 +147,18 @@ function PlaceCard({ tile }: { tile: PlaceTile }) {
       <SiteMark relation={tile.relation} size={32} />
       <View style={{ flex: 1, minWidth: 0 }}>
         <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 13.5, lineHeight: 18 }}>{tile.location.name}</AText>
-        <AText variant="caption" numberOfLines={1} style={{ color: lead ? c.accent : c.inkMuted, fontSize: 11.5 }}>{relationLabel(t, tile)}</AText>
-        {rule ? <AText variant="caption" numberOfLines={1} style={{ color: rule.stop ? c.critical : c.inkMuted, fontSize: 11.5 }}>{rule.text}</AText> : null}
+        <AText variant="caption" numberOfLines={1} style={{ color: lead ? c.accent : c.inkMuted, fontSize: 11.5 }}>
+          {relationLabel(t, tile)}
+        </AText>
+        {rule ? (
+          <AText
+            variant="caption"
+            numberOfLines={1}
+            style={{ color: rule.stop ? c.critical : c.inkMuted, fontSize: 11.5 }}
+          >
+            {rule.text}
+          </AText>
+        ) : null}
       </View>
     </View>
   );

@@ -81,7 +81,8 @@ export function useTeamScreen() {
   useEffect(() => {
     if (!isAuthenticated) return;
     return subscribe(SocketEvents.PRESENCE_CHANGED, (d: { userId: string; presence: string | null }) => {
-      const patch = (prev: Colleague[] | null) => prev?.map((x) => (x.id === d.userId ? { ...x, presence: d.presence as Colleague['presence'] } : x)) ?? prev;
+      const patch = (prev: Colleague[] | null) =>
+        prev?.map((x) => (x.id === d.userId ? { ...x, presence: d.presence as Colleague['presence'] } : x)) ?? prev;
       setColleagues(patch);
       setManagerList((p) => patch(p) ?? p);
     });
@@ -155,13 +156,21 @@ export function useTeamScreen() {
   );
 
   const empty = colleagues === null ? (
-    <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>{t('common.loading', 'Loading…')}</AText>
+    <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(6) }}>
+      {t('common.loading', 'Loading…')}
+    </AText>
   ) : all.length === 0 ? (
     <Well style={{ padding: amazen.space(6), alignItems: 'center', marginTop: amazen.space(3) }}>
       <AText variant="body" tone="ink">{t('team.empty')}</AText>
     </Well>
   ) : (
-    <AText variant="caption" tone="onGlass" style={{ textAlign: 'center', paddingVertical: amazen.space(4), marginTop: amazen.space(3) }}>{t('team.noMatch', 'Nobody matches.')}</AText>
+    <AText
+      variant="caption"
+      tone="onGlass"
+      style={{ textAlign: 'center', paddingVertical: amazen.space(4), marginTop: amazen.space(3) }}
+    >
+      {t('team.noMatch', 'Nobody matches.')}
+    </AText>
   );
 
   const switcher = canChat ? (

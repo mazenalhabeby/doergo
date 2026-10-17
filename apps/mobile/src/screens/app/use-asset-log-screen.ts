@@ -91,7 +91,15 @@ export function useAssetLogScreen() {
       try {
         if (fromRegister) {
           const asset = await assetRegisterApi.get(assetId);
-          if (alive) setHeld({ id: asset.id, assetId: asset.id, startedAt: '', endedAt: null, asset: asset as HeldAsset['asset'], totals: { inCents: 0, outCents: 0, netCents: 0, entries: 0 } });
+          if (alive)
+            setHeld({
+              id: asset.id,
+              assetId: asset.id,
+              startedAt: '',
+              endedAt: null,
+              asset: asset as HeldAsset['asset'],
+              totals: { inCents: 0, outCents: 0, netCents: 0, entries: 0 },
+            });
           return;
         }
         const { periods } = await assetsApi.mine();
@@ -201,10 +209,18 @@ export function useAssetLogScreen() {
           occurredAt: occurredAt.toISOString(), photo,
         });
         if (outcome.kind === 'refused') {
-          toast.error((outcome.code && tt(`offline.errors.${outcome.code}`, '')) || outcome.message || tt('logbook.sendFailed', 'Could not send it'));
+          toast.error(
+            (outcome.code && tt(`offline.errors.${outcome.code}`, '')) ||
+              outcome.message ||
+              tt('logbook.sendFailed', 'Could not send it'),
+          );
           return;
         }
-        toast.success(outcome.kind === 'queued' ? tt('offline.savedForLater', 'Saved — it will send itself') : tt('logbook.sent', 'Logged'));
+        toast.success(
+          outcome.kind === 'queued'
+            ? tt('offline.savedForLater', 'Saved — it will send itself')
+            : tt('logbook.sent', 'Logged'),
+        );
         if (photo) forgetPhoto(photo.uri);
         forgetHeldAssets(); // the profile's count and list read this again
         router.back();

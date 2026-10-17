@@ -65,7 +65,11 @@ export function JobCrewCard({
         : t('job.crew.leads', { name: leader.user.firstName });
 
   const status = (m: CrewMember): { text: string; tone: 'accent' | 'warn' | 'dim' } => {
-    if (m.joined && m.selfBlockedSince) return { text: m.selfBlockReason ? t('job.crew.stoppedWhy', { reason: m.selfBlockReason }) : t('job.crew.stopped'), tone: 'warn' };
+    if (m.joined && m.selfBlockedSince)
+      return {
+        text: m.selfBlockReason ? t('job.crew.stoppedWhy', { reason: m.selfBlockReason }) : t('job.crew.stopped'),
+        tone: 'warn',
+      };
     if (m.joined) return { text: t('job.crew.onSince', { time: m.since ? formatClock(m.since) : '' }), tone: 'accent' };
     if (!m.onClock) return { text: t('job.crew.notClockedIn'), tone: 'dim' };
     return { text: t('job.crew.notOnJob'), tone: 'dim' };
@@ -85,7 +89,10 @@ export function JobCrewCard({
           const s = status(m);
           const leads = m.user.id === view.leader.userId;
           return (
-            <View key={m.user.id} style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }} accessibilityLabel={`${personName(m.user)}. ${s.text}`}>
+            <View
+              key={m.user.id}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(3) }}
+              accessibilityLabel={`${personName(m.user)}. ${s.text}`}>
               <Initials first={m.user.firstName} last={m.user.lastName} size={30} />
               <View style={{ flex: 1, minWidth: 0, gap: 1 }}>
                 <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14.5 }}>
@@ -93,10 +100,22 @@ export function JobCrewCard({
                 </AText>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
                   <Dot tone={s.tone} size={6} />
-                  <AText variant="caption" tone={s.tone === 'warn' ? 'warn' : 'muted'} numberOfLines={1} style={{ flexShrink: 1 }}>{s.text}</AText>
+                  <AText
+                    variant="caption"
+                    tone={s.tone === 'warn' ? 'warn' : 'muted'}
+                    numberOfLines={1}
+                    style={{ flexShrink: 1 }}
+                  >
+                    {s.text}
+                  </AText>
                 </View>
               </View>
-              {leads ? <Pill label={view.leader.acting ? t('job.crew.actingPill') : t('job.crew.leaderPill')} tone={view.leader.acting ? 'warn' : 'accent'} /> : null}
+              {leads ? (
+                <Pill
+                  label={view.leader.acting ? t('job.crew.actingPill') : t('job.crew.leaderPill')}
+                  tone={view.leader.acting ? 'warn' : 'accent'}
+                />
+              ) : null}
             </View>
           );
         })}
@@ -105,9 +124,21 @@ export function JobCrewCard({
       {me ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: amazen.space(2) }}>
           {!me.joined && counting ? (
-            <QuietButton tone="accent" label={leader && !isLeader ? t('job.crew.withThem', { name: leader.user.firstName }) : t('job.crew.join')} onPress={() => void crew.join(!isLeader)} disabled={busy} />
+            <QuietButton
+              tone="accent"
+              label={leader && !isLeader ? t('job.crew.withThem', { name: leader.user.firstName }) : t('job.crew.join')}
+              onPress={() => void crew.join(!isLeader)}
+              disabled={busy}
+            />
           ) : null}
-          {me.joined && me.selfBlockedSince ? <QuietButton tone="accent" label={t('job.crew.backToWork')} onPress={() => void crew.resumeMine()} disabled={busy} /> : null}
+          {me.joined && me.selfBlockedSince ? (
+            <QuietButton
+              tone="accent"
+              label={t('job.crew.backToWork')}
+              onPress={() => void crew.resumeMine()}
+              disabled={busy}
+            />
+          ) : null}
           {me.joined && !me.selfBlockedSince ? <QuietButton label={t('job.crew.myIssue')} onPress={onMyIssue} disabled={busy} /> : null}
           {me.joined ? <QuietButton label={t('job.crew.leave')} onPress={() => void crew.leave()} disabled={busy} /> : null}
           {isLeader ? <QuietButton label={t('job.crew.handOver')} onPress={onHandOver} disabled={busy} /> : null}
@@ -118,7 +149,17 @@ export function JobCrewCard({
 }
 
 /** "My issue" — only this person's time stops; the job and the crew carry on. */
-export function MyIssueSheet({ visible, onClose, busy, onSend }: { visible: boolean; onClose: () => void; busy: boolean; onSend: (reason: string) => Promise<boolean> }) {
+export function MyIssueSheet({
+  visible,
+  onClose,
+  busy,
+  onSend,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  busy: boolean;
+  onSend: (reason: string) => Promise<boolean>;
+}) {
   const { t } = useTranslation();
   const [reason, setReason] = useState('');
   useEffect(() => { if (visible) setReason(''); }, [visible]);
@@ -126,7 +167,12 @@ export function MyIssueSheet({ visible, onClose, busy, onSend }: { visible: bool
     <JobSheet visible={visible} onClose={onClose} title={t('job.crew.myIssueTitle')} busy={busy}>
       <Banner tone="neutral" text={t('job.crew.myIssueHint')} />
       <JobField value={reason} onChangeText={setReason} placeholder={t('job.crew.myIssuePlaceholder')} multiline maxLength={500} />
-      <PrimaryButton label={t('job.crew.myIssueSend')} onPress={() => void onSend(reason.trim()).then((ok) => ok && onClose())} disabled={!reason.trim()} loading={busy} />
+      <PrimaryButton
+        label={t('job.crew.myIssueSend')}
+        onPress={() => void onSend(reason.trim()).then((ok) => ok && onClose())}
+        disabled={!reason.trim()}
+        loading={busy}
+      />
     </JobSheet>
   );
 }
@@ -165,7 +211,14 @@ export function HandOverLeadSheet({
           />
         ))}
       </View>
-      <ChoiceRow options={[{ key: 'TODAY', label: t('job.crew.forToday') }, { key: 'PERMANENT', label: t('job.crew.forGood') }]} value={scope} onChange={setScope} />
+      <ChoiceRow
+        options={[
+          { key: 'TODAY', label: t('job.crew.forToday') },
+          { key: 'PERMANENT', label: t('job.crew.forGood') },
+        ]}
+        value={scope}
+        onChange={setScope}
+      />
       <PrimaryButton
         label={t('job.crew.handOverSend')}
         onPress={() => to && void crew.handOver(to, scope).then((ok) => ok && onClose())}

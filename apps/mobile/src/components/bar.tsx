@@ -15,7 +15,15 @@ import { Hatch } from './clock-out-sheet-shared';
  * track is the shortfall — you see the SHAPE of the shift before you read a
  * figure.
  */
-export function Bar({ view, shift, clockOf }: { view: ReturnType<typeof readClockOut>; shift: ClockOutShift; clockOf: (d: Date) => string }) {
+export function Bar({
+  view,
+  shift,
+  clockOf,
+}: {
+  view: ReturnType<typeof readClockOut>;
+  shift: ClockOutShift;
+  clockOf: (d: Date) => string;
+}) {
   const { amazen } = useTheme();
   const { t } = useTranslation();
   const c = amazen.color;

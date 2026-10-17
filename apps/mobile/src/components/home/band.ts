@@ -250,7 +250,13 @@ export interface CrewEntryInput {
 }
 
 /** One row of `/attendance/breaks/active`. */
-export interface CrewBreakInput { userId?: string; startedAt: string; ruleId?: string | null; timeEntryId?: string; user?: { id: string } | null }
+export interface CrewBreakInput {
+  userId?: string;
+  startedAt: string;
+  ruleId?: string | null;
+  timeEntryId?: string;
+  user?: { id: string } | null;
+}
 
 /** One row of `/attendance/no-shows`. */
 export interface CrewNoShowInput {

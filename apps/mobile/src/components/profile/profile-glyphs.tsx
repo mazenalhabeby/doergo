@@ -97,7 +97,14 @@ function DownloadGlyph({ size = 24, color }: GlyphProps) {
   return (
     <Svg {...box(size)}>
       <Circle cx={12} cy={12} r={9} fill={color} fillOpacity={0.18} />
-      <Path d="M12 7v8M8.5 11.8 12 15.3l3.5-3.5" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+      <Path
+        d="M12 7v8M8.5 11.8 12 15.3l3.5-3.5"
+        fill="none"
+        stroke={color}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }

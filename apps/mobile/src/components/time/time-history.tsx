@@ -37,7 +37,9 @@ export function TimeHistory({ entries, now }: { entries: readonly TimeEntry[]; n
     <Well style={{ padding: amazen.space(3.5), gap: amazen.space(1) }}>
       <SectionLabel style={{ marginBottom: amazen.space(1) }}>{t('time.history.title', 'Recent shifts')}</SectionLabel>
       {recent.length === 0 ? (
-        <AText variant="caption" tone="muted" style={{ paddingVertical: amazen.space(2) }}>{t('time.history.empty', 'Your finished shifts show here.')}</AText>
+        <AText variant="caption" tone="muted" style={{ paddingVertical: amazen.space(2) }}>
+          {t('time.history.empty', 'Your finished shifts show here.')}
+        </AText>
       ) : (
         recent.map((e, i) => (
           <React.Fragment key={e.id}>
@@ -46,7 +48,11 @@ export function TimeHistory({ entries, now }: { entries: readonly TimeEntry[]; n
           </React.Fragment>
         ))
       )}
-      <Pressable onPress={() => setAll(true)} accessibilityRole="button" hitSlop={6} style={{ alignSelf: 'center', paddingTop: amazen.space(2) }}>
+      <Pressable
+        onPress={() => setAll(true)}
+        accessibilityRole="button"
+        hitSlop={6}
+        style={{ alignSelf: 'center', paddingTop: amazen.space(2) }}>
         <AText variant="caption" tone="accent" style={{ fontSize: 13.5 }}>{t('time.history.all', 'See all shifts')}</AText>
       </Pressable>
 
@@ -94,7 +100,9 @@ function ShiftRow({ entry, onPress }: { entry: TimeEntry; onPress: () => void })
         </View>
       }
     >
-      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>{entry.location?.name ?? t('attendance.unknownLocation')}</AText>
+      <AText variant="body" tone="strong" numberOfLines={1} style={{ fontSize: 14, lineHeight: 20 }}>
+        {entry.location?.name ?? t('attendance.unknownLocation')}
+      </AText>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: amazen.space(1.5) }}>
         <AText variant="caption" tone="muted" numeric numberOfLines={1} style={{ flexShrink: 1 }}>
           {`${formatTime(entry.clockInAt, tz)} → ${entry.clockOutAt ? formatTime(entry.clockOutAt, tz) : '…'}`}
@@ -116,7 +124,17 @@ function rangeOf(p: Period, now: Date): [Date, Date] {
   return [new Date(now.getFullYear(), now.getMonth(), 1), addDays(today, 1)];
 }
 
-function AllShiftsSheet({ visible, onClose, now, onOpen }: { visible: boolean; onClose: () => void; now: Date; onOpen: (e: TimeEntry) => void }) {
+function AllShiftsSheet({
+  visible,
+  onClose,
+  now,
+  onOpen,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  now: Date;
+  onOpen: (e: TimeEntry) => void;
+}) {
   const { amazen } = useTheme();
   const c = amazen.color;
   const { t } = useTranslation();
@@ -156,7 +174,14 @@ function AllShiftsSheet({ visible, onClose, now, onOpen }: { visible: boolean; o
               onPress={() => setPeriod(p)}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
-              style={{ borderRadius: amazen.radius.full, paddingHorizontal: amazen.space(3), paddingVertical: amazen.space(1.75), backgroundColor: on ? c.accentTint : c.tile, borderWidth: 1.5, borderColor: on ? c.accent : 'transparent' }}
+              style={{
+                borderRadius: amazen.radius.full,
+                paddingHorizontal: amazen.space(3),
+                paddingVertical: amazen.space(1.75),
+                backgroundColor: on ? c.accentTint : c.tile,
+                borderWidth: 1.5,
+                borderColor: on ? c.accent : 'transparent',
+              }}
             >
               <AText variant="caption" style={{ fontSize: 13, color: on ? c.accent : c.ink }}>{t(`time.history.period.${p}`)}</AText>
             </Pressable>
@@ -170,7 +195,15 @@ function AllShiftsSheet({ visible, onClose, now, onOpen }: { visible: boolean; o
           [String(approved), t('time.history.status.approved')],
           [String(waiting), t('time.history.status.waiting')],
         ].map(([v, l]) => (
-          <View key={l} style={{ flex: 1, borderRadius: 14, backgroundColor: c.tile, paddingVertical: amazen.space(2.25), paddingHorizontal: amazen.space(2.5) }}>
+          <View
+            key={l}
+            style={{
+              flex: 1,
+              borderRadius: 14,
+              backgroundColor: c.tile,
+              paddingVertical: amazen.space(2.25),
+              paddingHorizontal: amazen.space(2.5),
+            }}>
             <AText variant="body" tone="strong" numeric style={{ fontSize: 18, lineHeight: 24 }}>{rows ? v : '—'}</AText>
             <AText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 10.5 }}>{l}</AText>
           </View>

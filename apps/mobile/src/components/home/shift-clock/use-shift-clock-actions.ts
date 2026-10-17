@@ -47,7 +47,9 @@ export function useShiftClockActions({ shift, entryId, clockIn, handovers }: {
       if (outcome.kind === 'refused') {
         toast.error(
           t('common.error'),
-          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) || outcome.message || t('home.fullTime.failedToClockOut'),
+          (outcome.code && t(`offline.errors.${outcome.code}`, { defaultValue: '' })) ||
+            outcome.message ||
+            t('home.fullTime.failedToClockOut'),
         );
         return;
       }

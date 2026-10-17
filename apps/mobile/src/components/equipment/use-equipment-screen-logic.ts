@@ -1,0 +1,73 @@
+import { useEquipmentScreen } from './use-equipment-screen';
+
+/** EquipmentScreen's state and handlers — everything before its markup, moved here unchanged. */
+export function useEquipmentScreenLogic() {
+  const {
+    amazen,
+    c,
+    t,
+    wide,
+    money,
+    day,
+    data,
+    stale,
+    refreshing,
+    opened,
+    setOpened,
+    picking,
+    setPicking,
+    takingBack,
+    setTakingBack,
+    busy,
+    load,
+    held,
+    items,
+    whatOf,
+    stateWords,
+    dueLine,
+    act,
+    actLabel,
+    takeBack,
+    fromSheet,
+    back,
+    offerContract,
+    due,
+    card,
+  } = useEquipmentScreen();
+
+  return {
+    amazen,
+    c,
+    t,
+    wide,
+    money,
+    day,
+    data,
+    stale,
+    refreshing,
+    opened,
+    setOpened,
+    picking,
+    setPicking,
+    takingBack,
+    setTakingBack,
+    busy,
+    load,
+    held,
+    items,
+    whatOf,
+    stateWords,
+    dueLine,
+    act,
+    actLabel,
+    takeBack,
+    fromSheet,
+    back,
+    offerContract,
+    due,
+    card,
+  };
+}
+
+/** What EquipmentScreen and its sections read. */
+export type EquipmentScreenState = ReturnType<typeof useEquipmentScreenLogic>;

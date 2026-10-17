@@ -77,7 +77,15 @@ export function CaptureReviewFoot({
 }
 
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, borderWidth: 1, borderRadius: RADIUS.md, padding: SPACING.md, marginTop: SPACING.lg },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginTop: SPACING.lg,
+  },
   primary: { borderRadius: RADIUS.md, height: 50, alignItems: 'center', justifyContent: 'center', marginTop: SPACING.lg },
   primaryText: { color: '#fff', fontSize: FONT_SIZE.lg, fontWeight: '700' },
   footnote: { fontSize: FONT_SIZE.xs, textAlign: 'center', marginTop: SPACING.md },
