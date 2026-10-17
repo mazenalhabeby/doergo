@@ -22,7 +22,6 @@ export { shiftRuleOf } from './cover-helpers';
 
 @Injectable()
 export class CoverService extends CoverBase {
-
   /**
    * A cover verdict for each of these leave requests.
    *
@@ -54,7 +53,10 @@ export class CoverService extends CoverBase {
     );
 
     const from = requests.map((r) => CoverBase.key(r.startDate)).sort()[0]!;
-    const to = requests.map((r) => CoverBase.key(r.endDate)).sort().at(-1)!;
+    const to = requests
+      .map((r) => CoverBase.key(r.endDate))
+      .sort()
+      .at(-1)!;
     const rosterBySpace = await this.rosters(organizationId, spaceIds, { from, to });
     const rosterIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
     const leave = await this.approvedLeave(rosterIds, from, to);
@@ -114,7 +116,11 @@ export class CoverService extends CoverBase {
     });
     if (!spaces.length) return [];
 
-    const rosterBySpace = await this.rosters(organizationId, spaces.map((s) => s.id), { from, to });
+    const rosterBySpace = await this.rosters(
+      organizationId,
+      spaces.map((s) => s.id),
+      { from, to },
+    );
     const personIds = [...new Set([...rosterBySpace.values()].flat().map((p) => p.id))];
     const leave = await this.approvedLeave(personIds, from, to);
 
@@ -141,12 +147,20 @@ export class CoverService extends CoverBase {
    * the workspace's own day, so the role offer and the panel never disagree
    * about who is working. Two queries for the roster, one for leave.
    */
-  async expectedToday(organizationId: string, spaceId: string, timezone: string | null | undefined): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
+  async expectedToday(
+    organizationId: string,
+    spaceId: string,
+    timezone: string | null | undefined,
+  ): Promise<Map<string, { rostered: boolean; onLeave: boolean }>> {
     const out = new Map<string, { rostered: boolean; onLeave: boolean }>();
     const today = localPartsIn(new Date(), zoneOf(timezone)).dateStr;
     const roster = (await this.rosters(organizationId, [spaceId], { from: today, to: today })).get(spaceId) ?? [];
     if (!roster.length) return out;
-    const leave = await this.approvedLeave(roster.map((p) => p.id), today, today);
+    const leave = await this.approvedLeave(
+      roster.map((p) => p.id),
+      today,
+      today,
+    );
     for (const p of roster) {
       out.set(p.id, {
         rostered: isRosteredOn(p, today),

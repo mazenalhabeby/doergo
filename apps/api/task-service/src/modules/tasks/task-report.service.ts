@@ -50,7 +50,11 @@ export class TaskReportService extends TaskReportSections {
     const copy = parseReportCopy(data.copy);
     if (!copy) throw new BadRequestException({ message: 'Choose the office or the client copy.', code: REPORT_COPY_INVALID });
     const include = parseClientCopyInclude(data.include);
-    if (!include) throw new BadRequestException({ message: 'Unknown part of the report to add to the client copy.', code: REPORT_INCLUDE_INVALID });
+    if (!include)
+      throw new BadRequestException({
+        message: 'Unknown part of the report to add to the client copy.',
+        code: REPORT_INCLUDE_INVALID,
+      });
 
     // Whatever the caller forwarded, this route reads the caller's OWN organization only.
     const facts: TaskAccessFacts = {
@@ -93,7 +97,11 @@ export class TaskReportService extends TaskReportSections {
     ] = await Promise.all([
       this.history(task.id),
       // The origin is the FIRST event, which a long history may have cut — asked on its own.
-      this.prisma.taskEvent.findFirst({ where: { taskId: task.id, eventType: 'CREATED' }, orderBy: { createdAt: 'asc' }, select: { metadata: true } }),
+      this.prisma.taskEvent.findFirst({
+        where: { taskId: task.id, eventType: 'CREATED' },
+        orderBy: { createdAt: 'asc' },
+        select: { metadata: true },
+      }),
       this.jobTime.forTask(task),
       this.query.getSubmissions({ id: task.id, ...facts }).then((r) => r.data),
       on('checklists') ? this.checklist.getChecklist(byTask).then((r) => r.data) : null,
@@ -126,7 +134,15 @@ export class TaskReportService extends TaskReportSections {
     if (report !== undefined) {
       const r = report as any;
       const by = personOf(r?.completedBy);
-      work = r ? { summary: r.summary, workPerformed: r.workPerformed ?? null, customerName: r.customerName ?? null, completedAt: iso(r.completedAt)!, completedBy: by } : null;
+      work = r
+        ? {
+            summary: r.summary,
+            workPerformed: r.workPerformed ?? null,
+            customerName: r.customerName ?? null,
+            completedAt: iso(r.completedAt)!,
+            completedBy: by,
+          }
+        : null;
       parts = ((r?.partsUsed ?? []) as any[]).map((p) => ({
         id: p.id,
         name: p.name,
@@ -137,25 +153,68 @@ export class TaskReportService extends TaskReportSections {
         lineTotal: p.unitCost != null ? Math.round(p.quantity * p.unitCost * 100) / 100 : null,
       }));
       for (const a of (r?.attachments ?? []) as any[]) {
-        photos.push({ ...this.file(a, by), source: a.type === 'AFTER' ? 'AFTER' : 'BEFORE', caption: a.caption ?? null, statusKey: null, fieldLabel: null });
+        photos.push({
+          ...this.file(a, by),
+          source: a.type === 'AFTER' ? 'AFTER' : 'BEFORE',
+          caption: a.caption ?? null,
+          statusKey: null,
+          fieldLabel: null,
+        });
       }
       /*
         ⚠️ The column is free text. Only a PNG/JPEG data URL is passed on
         (safeSignatureDataUrl) — anything else is dropped, not "cleaned".
       */
       const tech = safeSignatureDataUrl(r?.technicianSignature);
-      if (tech) signatures.push({ kind: 'TECHNICIAN', dataUrl: tech, url: null, name: nameOf(by), person: by, signedAt: iso(r.completedAt), statusKey: null, fieldLabel: null });
+      if (tech)
+        signatures.push({
+          kind: 'TECHNICIAN',
+          dataUrl: tech,
+          url: null,
+          name: nameOf(by),
+          person: by,
+          signedAt: iso(r.completedAt),
+          statusKey: null,
+          fieldLabel: null,
+        });
       const cust = safeSignatureDataUrl(r?.customerSignature);
-      if (cust) signatures.push({ kind: 'CUSTOMER', dataUrl: cust, url: null, name: r.customerName ?? null, person: null, signedAt: iso(r.completedAt), statusKey: null, fieldLabel: null });
+      if (cust)
+        signatures.push({
+          kind: 'CUSTOMER',
+          dataUrl: cust,
+          url: null,
+          name: r.customerName ?? null,
+          person: null,
+          signedAt: iso(r.completedAt),
+          statusKey: null,
+          fieldLabel: null,
+        });
     }
 
-    for (const a of taskFiles) if (isImage(a)) photos.push({ ...this.file(a, a.uploadedBy), source: 'TASK', caption: null, statusKey: null, fieldLabel: null });
+    for (const a of taskFiles)
+      if (isImage(a))
+        photos.push({
+          ...this.file(a, a.uploadedBy),
+          source: 'TASK',
+          caption: null,
+          statusKey: null,
+          fieldLabel: null,
+        });
     for (const s of steps) {
       for (const f of s.fields) {
         for (const file of f.files) {
           if (f.type === 'photos') photos.push({ ...file, source: 'STEP', caption: null, statusKey: s.statusKey, fieldLabel: f.label });
           if (f.type === 'signature') {
-            signatures.push({ kind: 'STEP', dataUrl: null, url: file.url, name: null, person: s.submittedBy, signedAt: s.submittedAt, statusKey: s.statusKey, fieldLabel: f.label });
+            signatures.push({
+              kind: 'STEP',
+              dataUrl: null,
+              url: file.url,
+              name: null,
+              person: s.submittedBy,
+              signedAt: s.submittedAt,
+              statusKey: s.statusKey,
+              fieldLabel: f.label,
+            });
           }
         }
       }
@@ -193,8 +252,16 @@ export class TaskReportService extends TaskReportSections {
       comments: ((comments ?? []) as any[])
         .map((c): TaskReportComment => ({ id: c.id, content: c.content, createdAt: iso(c.createdAt)!, author: personOf(c.user) }))
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-      handovers: handovers.map((h) => ({ id: h.id, note: h.note, createdAt: iso(h.createdAt)!, author: personOf(h.author), workedMinutes: h.workedMinutes ?? null })),
-      ...(attachments ? { documents: taskFiles.filter((a) => !isImage(a)).map((a) => this.file(a, a.uploadedBy)) } : {}),
+      handovers: handovers.map((h) => ({
+        id: h.id,
+        note: h.note,
+        createdAt: iso(h.createdAt)!,
+        author: personOf(h.author),
+        workedMinutes: h.workedMinutes ?? null,
+      })),
+      ...(attachments
+        ? { documents: taskFiles.filter((a) => !isImage(a)).map((a) => this.file(a, a.uploadedBy)) }
+        : {}),
       ...(details ? { details: this.details(details as any[]) } : {}),
       signatures,
     };

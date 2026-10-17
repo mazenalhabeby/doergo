@@ -36,7 +36,6 @@ export abstract class AssetLogBase {
     @Inject(OBJECT_STORE) protected readonly store: ObjectStore | null,
   ) {}
 
-
   // ── Shared checks ──────────────────────────────────────────────────────────
 
   protected async loadAsset(id: string, organizationId: string) {
@@ -106,8 +105,8 @@ export abstract class AssetLogBase {
         const type = findLogType(shape, s.key);
         // A rule removed from the kind since the last write says nothing.
         if (!type?.due) return null;
-        const reading = s.meterKey ? state.readings[s.meterKey]?.value ?? null : null;
-        const unit = s.meterKey ? type.fields.find((f) => f.key === s.meterKey)?.unit ?? null : null;
+        const reading = s.meterKey ? (state.readings[s.meterKey]?.value ?? null) : null;
+        const unit = s.meterKey ? (type.fields.find((f) => f.key === s.meterKey)?.unit ?? null) : null;
         return { ...s, label: type.label, color: type.color, unit, reading, ...dueStatus(s, reading, now) };
       })
       .filter(<T>(v: T | null): v is T => v !== null);
@@ -128,7 +127,10 @@ export abstract class AssetLogBase {
   async recompute(db: Db, assetId: string, knownShape?: KindShape, now = new Date()): Promise<AssetLogState> {
     let shape = knownShape;
     if (!shape) {
-      const a = await db.asset.findUnique({ where: { id: assetId }, select: { category: { select: { config: true } } } });
+      const a = await db.asset.findUnique({
+        where: { id: assetId },
+        select: { category: { select: { config: true } } },
+      });
       shape = normalizeKindShape(a?.category?.config);
     }
     const dueTypes = shape.logTypes.filter((t) => t.due);
@@ -152,12 +154,21 @@ export abstract class AssetLogBase {
     ]);
 
     const readings = latestReadings(
-      readingRows.map((r) => ({ id: r.id, occurredAt: r.occurredAt, readings: r.readings as Record<string, number> | null })),
+      readingRows.map((r) => ({
+        id: r.id,
+        occurredAt: r.occurredAt,
+        readings: r.readings as Record<string, number> | null,
+      })),
     );
     const due = dueTypes
       .map((t, i) => {
         const last = lasts[i];
-        return computeNextDue(t, last ? { id: last.id, occurredAt: last.occurredAt, readings: last.readings as Record<string, number> | null } : null);
+        return computeNextDue(
+          t,
+          last
+            ? { id: last.id, occurredAt: last.occurredAt, readings: last.readings as Record<string, number> | null }
+            : null,
+        );
       })
       .filter((s): s is LogDueState => s !== null);
 

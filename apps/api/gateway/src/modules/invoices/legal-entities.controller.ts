@@ -13,12 +13,25 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
-import { Role, CurrentUser, CurrentUserData, isAdmin, accessAllowsAnywhere, type AccessPermissionKey, assertServiceOk } from '@hbcfield/shared';
+import {
+  Role,
+  CurrentUser,
+  CurrentUserData,
+  isAdmin,
+  accessAllowsAnywhere,
+  type AccessPermissionKey,
+  assertServiceOk,
+} from '@hbcfield/shared';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { DenyExternal } from '../../common/decorators';
 
 /** Who needs the NAMES of the companies: whoever invoices, or chooses who invoices a workspace or a client. */
-const READ_KEYS: AccessPermissionKey[] = ['canManageInvoices', 'canManageWorkspaces', 'crmEditInfo', 'crmManageClients'];
+const READ_KEYS: AccessPermissionKey[] = [
+  'canManageInvoices',
+  'canManageWorkspaces',
+  'crmEditInfo',
+  'crmManageClients',
+];
 
 /**
  * Held by this caller: the user's own flag OR the resolved access (org-wide or in any workspace) —

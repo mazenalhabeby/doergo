@@ -65,7 +65,15 @@ export class InvoiceCreateService extends InvoiceServiceBase {
     if (data.spaceId) {
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: data.spaceId, organizationId: data.organizationId },
-        select: { name: true, contactName: true, contactEmail: true, address: true, currency: true, legalEntityId: true, sourceCustomerId: true },
+        select: {
+          name: true,
+          contactName: true,
+          contactEmail: true,
+          address: true,
+          currency: true,
+          legalEntityId: true,
+          sourceCustomerId: true,
+        },
       });
       spaceCurrencyValue = space?.currency ?? null;
       spaceEntityId = space?.legalEntityId ?? null;
@@ -140,7 +148,11 @@ export class InvoiceCreateService extends InvoiceServiceBase {
     if ('error' in issuer) return issuer.error;
 
     // The currency: what the screen sent, else the workspace's, else the company's, else the organization's.
-    const money = await this.currencyFields(data.organizationId, data, currencyOrNull(spaceCurrencyValue) ?? currencyOrNull(issuer.entity.currency));
+    const money = await this.currencyFields(
+      data.organizationId,
+      data,
+      currencyOrNull(spaceCurrencyValue) ?? currencyOrNull(issuer.entity.currency),
+    );
     if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
 
     // ONE rule with the draft screen: rounded lines summed, VAT on the subtotal.

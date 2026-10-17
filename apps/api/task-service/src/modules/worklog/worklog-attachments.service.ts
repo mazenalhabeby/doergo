@@ -8,14 +8,30 @@ import { WorklogBase } from './worklog.base';
 /** Photos and files on a work-log note: an upload link, filing it, deleting it. */
 @Injectable()
 export class WorklogAttachmentsService extends WorklogBase {
-
   // ── Attachments (S3) ────────────────────────────────────────────────────────
 
-  async presignAttachment(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
+  async presignAttachment(data: {
+    organizationId: string;
+    noteId: string;
+    callerUserId: string;
+    canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
-    manageSpaceIds?: string[]; fileName: string; mimeType: string }) {
-    const { te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
-    if (!data.mimeType || !/^[a-z]+\/[a-z0-9\-.+]+$/i.test(data.mimeType) || !ALLOWED_FILE_TYPES.includes(data.mimeType)) {
+    manageSpaceIds?: string[];
+    fileName: string;
+    mimeType: string;
+  }) {
+    const { te } = await this.sessionForNote(
+      data.noteId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    ); // owner or manager (canManage)
+    if (
+      !data.mimeType ||
+      !/^[a-z]+\/[a-z0-9\-.+]+$/i.test(data.mimeType) ||
+      !ALLOWED_FILE_TYPES.includes(data.mimeType)
+    ) {
       throw new BadRequestException('File type not allowed');
     }
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
@@ -34,20 +50,36 @@ export class WorklogAttachmentsService extends WorklogBase {
   }
 
   async confirmAttachment(data: {
-    organizationId: string; noteId: string; callerUserId: string; canManage?: boolean;
+    organizationId: string;
+    noteId: string;
+    callerUserId: string;
+    canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
     manageSpaceIds?: string[];
-    fileKey?: string; fileUrl?: string; fileName: string; fileSize?: number; mimeType: string; width?: number; height?: number;
+    fileKey?: string;
+    fileUrl?: string;
+    fileName: string;
+    fileSize?: number;
+    mimeType: string;
+    width?: number;
+    height?: number;
     /** Made on the phone: a confirm sent twice is still one attachment. */
     id?: string;
   }) {
     const store = requireObjectStore(this.store);
-    const { note, te } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
+    const { note, te } = await this.sessionForNote(
+      data.noteId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    ); // owner or manager (canManage)
     if (data.id) {
       const prior = await this.prisma.timeEntryNoteAttachment.findUnique({ where: { id: data.id } });
       // Already confirmed: answered before any storage check. Somebody else's id is refused.
       if (prior) {
-        if (prior.noteId !== note.id) throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
+        if (prior.noteId !== note.id)
+          throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
         return success(await this.media.sign(prior));
       }
     }
@@ -72,32 +104,45 @@ export class WorklogAttachmentsService extends WorklogBase {
       id: data.id,
       find: (id) => this.prisma.timeEntryNoteAttachment.findUnique({ where: { id } }),
       isSame: (a) => a.noteId === note.id,
-      create: () => this.prisma.timeEntryNoteAttachment.create({
-      data: {
-        ...(data.id ? { id: data.id } : {}),
-        noteId: note.id,
-        organizationId: data.organizationId,
-        fileKey,
-        // Written for app 1.0.5 only; nothing server-side reads it any more.
-        fileUrl: store.privateUrl(fileKey),
-        fileName: data.fileName,
-        fileSize: object.sizeBytes,
-        mimeType: data.mimeType,
-        width: typeof data.width === 'number' ? Math.round(data.width) : null,
-        height: typeof data.height === 'number' ? Math.round(data.height) : null,
-      },
-      }),
+      create: () =>
+        this.prisma.timeEntryNoteAttachment.create({
+          data: {
+            ...(data.id ? { id: data.id } : {}),
+            noteId: note.id,
+            organizationId: data.organizationId,
+            fileKey,
+            // Written for app 1.0.5 only; nothing server-side reads it any more.
+            fileUrl: store.privateUrl(fileKey),
+            fileName: data.fileName,
+            fileSize: object.sizeBytes,
+            mimeType: data.mimeType,
+            width: typeof data.width === 'number' ? Math.round(data.width) : null,
+            height: typeof data.height === 'number' ? Math.round(data.height) : null,
+          },
+        }),
     });
     return success(await this.media.sign(att));
   }
 
-  async deleteAttachment(data: { organizationId: string; attachmentId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
+  async deleteAttachment(data: {
+    organizationId: string;
+    attachmentId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    manageSpaceIds?: string[];
+  }) {
     const att = await this.prisma.timeEntryNoteAttachment.findFirst({
       where: { id: data.attachmentId, organizationId: data.organizationId },
       select: { id: true, fileKey: true, noteId: true },
     });
     if (!att) throw new NotFoundException('Attachment not found');
-    await this.sessionForNote(att.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
+    await this.sessionForNote(
+      att.noteId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    ); // owner or manager (canManage)
     await this.prisma.timeEntryNoteAttachment.delete({ where: { id: att.id } });
     void this.deleteObject(att.fileKey);
     return success({ success: true });

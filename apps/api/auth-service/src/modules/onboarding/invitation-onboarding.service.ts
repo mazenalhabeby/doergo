@@ -3,7 +3,12 @@ import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { BillingService } from '../billing/billing.service';
 import { SERVICE_NAMES, Role, DEFAULT_PERMISSIONS, normalizeAccessProfile, hashCode } from '@hbcfield/shared';
-import { memberFieldsFromInvitation, claimInvitation, InvitationAlreadyClaimedError, applyInvitationPlacement } from '../invitations/invitation-apply';
+import {
+  memberFieldsFromInvitation,
+  claimInvitation,
+  InvitationAlreadyClaimedError,
+  applyInvitationPlacement,
+} from '../invitations/invitation-apply';
 
 /** An existing account accepting an invitation code during onboarding. */
 @Injectable()
@@ -46,7 +51,11 @@ export class InvitationOnboardingService {
     }
 
     if (invitation.status !== 'PENDING') {
-      return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: 'This invitation has already been used or revoked' };
+      return {
+        success: false,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'This invitation has already been used or revoked',
+      };
     }
 
     if (invitation.expiresAt < new Date()) {
@@ -68,13 +77,14 @@ export class InvitationOnboardingService {
     // permission / enabledModules / memberRoleId is silently dropped.
     const accessProfile = isTechnician ? normalizeAccessProfile(invitation.accessProfile) : null;
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const updatedUser = await tx.user.update({
-        where: { id: userId },
-        data: {
-          organizationId: invitation.organizationId,
-          onboardingCompleted: true,
-          /*
+    const result = await this.prisma
+      .$transaction(async (tx) => {
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: {
+            organizationId: invitation.organizationId,
+            onboardingCompleted: true,
+            /*
             Every field the invitation dictates, from the one mapping the
             register path also uses. Written out by hand here until now — and it
             drifted: `isExternal` reached the other copy and this one kept

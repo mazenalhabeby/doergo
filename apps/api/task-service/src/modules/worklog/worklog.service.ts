@@ -12,16 +12,29 @@ import { WorklogBase } from './worklog.base';
  */
 @Injectable()
 export class WorklogService extends WorklogBase {
-
   // ── Notes ──────────────────────────────────────────────────────────────────
 
-  async addNote(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean;
+  async addNote(data: {
+    organizationId: string;
+    timeEntryId: string;
+    callerUserId: string;
+    canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
-    manageSpaceIds?: string[]; body: string; at?: string; taskId?: string;
+    manageSpaceIds?: string[];
+    body: string;
+    at?: string;
+    taskId?: string;
     /** Made on the phone: a note written offline and sent twice is still one note. */
-    id?: string }) {
+    id?: string;
+  }) {
     // Writable by the session owner (the member) OR a manager/responsible party (canManage).
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds);
+    const te = await this.session(
+      data.timeEntryId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    );
     const body = this.cleanBody(data.body);
     const at = this.parseAt(data.at);
     const taskId = await this.keepOrgTaskId(data.taskId, data.organizationId);
@@ -48,10 +61,22 @@ export class WorklogService extends WorklogBase {
   }
 
   /** Offline flush: many notes in one round-trip. Session validated once. */
-  async addNotesBatch(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean;
+  async addNotesBatch(data: {
+    organizationId: string;
+    timeEntryId: string;
+    callerUserId: string;
+    canManage?: boolean;
     /** Spaces the caller oversees; undefined = org-wide, [] = none. */
-    manageSpaceIds?: string[]; notes: Array<{ body: string; at?: string; taskId?: string }> }) {
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
+    manageSpaceIds?: string[];
+    notes: Array<{ body: string; at?: string; taskId?: string }>;
+  }) {
+    const te = await this.session(
+      data.timeEntryId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    ); // owner or manager (canManage)
     const items = Array.isArray(data.notes) ? data.notes.slice(0, BATCH_MAX) : [];
     const rows = [];
     for (const n of items) {
@@ -71,8 +96,20 @@ export class WorklogService extends WorklogBase {
     return success({ inserted: rows.length });
   }
 
-  async listNotes(data: { organizationId: string; timeEntryId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
-    const te = await this.session(data.timeEntryId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds);
+  async listNotes(data: {
+    organizationId: string;
+    timeEntryId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    manageSpaceIds?: string[];
+  }) {
+    const te = await this.session(
+      data.timeEntryId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    );
     const notes = await this.prisma.timeEntryNote.findMany({
       where: { timeEntryId: data.timeEntryId, organizationId: data.organizationId },
       orderBy: { at: 'asc' },
@@ -107,9 +144,24 @@ export class WorklogService extends WorklogBase {
     return success(withUrls);
   }
 
-  async deleteNote(data: { organizationId: string; noteId: string; callerUserId: string; canManage?: boolean; manageSpaceIds?: string[] }) {
-    const { note } = await this.sessionForNote(data.noteId, data.organizationId, data.callerUserId, !!data.canManage, data.manageSpaceIds); // owner or manager (canManage)
-    const atts = await this.prisma.timeEntryNoteAttachment.findMany({ where: { noteId: note.id }, select: { fileKey: true } });
+  async deleteNote(data: {
+    organizationId: string;
+    noteId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    manageSpaceIds?: string[];
+  }) {
+    const { note } = await this.sessionForNote(
+      data.noteId,
+      data.organizationId,
+      data.callerUserId,
+      !!data.canManage,
+      data.manageSpaceIds,
+    ); // owner or manager (canManage)
+    const atts = await this.prisma.timeEntryNoteAttachment.findMany({
+      where: { noteId: note.id },
+      select: { fileKey: true },
+    });
     await this.prisma.timeEntryNote.delete({ where: { id: note.id } }); // cascades attachment rows
     for (const a of atts) void this.deleteObject(a.fileKey);
     return success({ success: true });

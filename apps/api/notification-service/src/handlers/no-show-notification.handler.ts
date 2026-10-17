@@ -21,16 +21,21 @@ export class NoShowNotificationHandler {
   // No-show engine: a worker's shift started but they never clocked in. Nudge the
   // worker (push) + live-update the org dashboard.
   @EventPattern('attendance_noshow_reminder')
-  async handleNoShowReminder(@Payload() data: {
-    instanceId: string;
-    userId: string;
-    userName: string;
-    spaceId: string;
-    expectedClockInAt: string | null;
-    reminderCount: number;
-    organizationId: string;
-  }) {
-    this.logger.log(`No-show reminder: user=${data.userName}, instance=${data.instanceId}, count=${data.reminderCount}`);
+  async handleNoShowReminder(
+    @Payload()
+    data: {
+      instanceId: string;
+      userId: string;
+      userName: string;
+      spaceId: string;
+      expectedClockInAt: string | null;
+      reminderCount: number;
+      organizationId: string;
+    },
+  ) {
+    this.logger.log(
+      `No-show reminder: user=${data.userName}, instance=${data.instanceId}, count=${data.reminderCount}`,
+    );
     try {
       await this.attendancePush.sendNoShowReminderPush({
         userId: data.userId,
@@ -51,17 +56,22 @@ export class NoShowNotificationHandler {
 
   // Reminders exhausted → notify the space leaders that the worker is a no-show.
   @EventPattern('attendance_noshow_escalation')
-  async handleNoShowEscalation(@Payload() data: {
-    instanceId: string;
-    userId: string;
-    userName: string;
-    spaceId: string;
-    expectedClockInAt: string | null;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
+  async handleNoShowEscalation(
+    @Payload()
+    data: {
+      instanceId: string;
+      userId: string;
+      userName: string;
+      spaceId: string;
+      expectedClockInAt: string | null;
+      leaderIds: string[];
+      organizationId: string;
+    },
+  ) {
     const leaderIds = data.leaderIds || [];
-    this.logger.log(`No-show escalation: user=${data.userName}, instance=${data.instanceId}, leaders=${leaderIds.length}`);
+    this.logger.log(
+      `No-show escalation: user=${data.userName}, instance=${data.instanceId}, leaders=${leaderIds.length}`,
+    );
     try {
       await this.attendancePush.sendNoShowEscalationPush({
         leaderIds,
@@ -98,30 +108,44 @@ export class NoShowNotificationHandler {
     at work the whole time.
   */
   @EventPattern('attendance_noshow_resolved')
-  async handleNoShowResolved(@Payload() data: {
-    instanceId: string;
-    userId: string;
-    userName: string;
-    spaceId: string;
-    clockInAt: string;
-    timezone?: string | null;
-    recordedOffline: boolean;
-    leaderIds: string[];
-    organizationId: string;
-  }) {
+  async handleNoShowResolved(
+    @Payload()
+    data: {
+      instanceId: string;
+      userId: string;
+      userName: string;
+      spaceId: string;
+      clockInAt: string;
+      timezone?: string | null;
+      recordedOffline: boolean;
+      leaderIds: string[];
+      organizationId: string;
+    },
+  ) {
     const leaderIds = data.leaderIds || [];
     const facts = { name: data.userName, time: noShowResolvedTime(data.clockInAt, data.timezone) };
     const text: LocalizedText = {
       title: msg('attendance.arrivedAfterAll.title'),
-      body: msg(data.recordedOffline ? 'attendance.arrivedAfterAll.bodyOffline' : 'attendance.arrivedAfterAll.body', facts),
+      body: msg(
+        data.recordedOffline ? 'attendance.arrivedAfterAll.bodyOffline' : 'attendance.arrivedAfterAll.body',
+        facts,
+      ),
     };
-    this.logger.log(`No-show resolved: user=${data.userName}, instance=${data.instanceId}, offline=${data.recordedOffline}, leaders=${leaderIds.length}`);
+    this.logger.log(
+      `No-show resolved: user=${data.userName}, instance=${data.instanceId}, offline=${data.recordedOffline}, leaders=${leaderIds.length}`,
+    );
     try {
       await this.attendancePush.sendNoShowResolvedPush({ leaderIds, text, instanceId: data.instanceId });
     } catch (error) {
       this.logger.error(`Failed to send no-show resolved push: ${error}`);
     }
-    const payload = { instanceId: data.instanceId, userId: data.userId, userName: data.userName, clockInAt: data.clockInAt, timestamp: new Date().toISOString() };
+    const payload = {
+      instanceId: data.instanceId,
+      userId: data.userId,
+      userName: data.userName,
+      clockInAt: data.clockInAt,
+      timestamp: new Date().toISOString(),
+    };
     if (leaderIds.length) {
       for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_noshow_resolved', payload);
     } else {

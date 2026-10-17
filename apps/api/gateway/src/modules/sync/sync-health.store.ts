@@ -1,7 +1,15 @@
 import { Injectable, Logger, OnModuleDestroy, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { SYNC_STUCK_AFTER_MS, syncHealthState, type SyncHealthState, type SyncMemberHealth, type SyncOperationResult, type SyncTelemetry, getRedisConfig } from '@hbcfield/shared';
+import {
+  SYNC_STUCK_AFTER_MS,
+  syncHealthState,
+  type SyncHealthState,
+  type SyncMemberHealth,
+  type SyncOperationResult,
+  type SyncTelemetry,
+  getRedisConfig,
+} from '@hbcfield/shared';
 
 /** A phone that has not reported for this long is no longer counted. */
 const REPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
@@ -46,7 +54,11 @@ export class SyncHealthStore implements OnModuleDestroy {
     this.redis.disconnect();
   }
 
-  async record(member: { userId: string; organizationId: string }, telemetry: SyncTelemetry, now = Date.now()): Promise<void> {
+  async record(
+    member: { userId: string; organizationId: string },
+    telemetry: SyncTelemetry,
+    now = Date.now(),
+  ): Promise<void> {
     // Bounded: the maps come from the phone, and a report is a few numbers, not a store.
     const stored: StoredHealth = {
       ...telemetry,
@@ -127,7 +139,11 @@ export class SyncHealthStore implements OnModuleDestroy {
 }
 
 /** Pure: stored reports → the tab's rows, only this organization's, most urgent first. */
-export function memberHealthView(raw: readonly (string | null)[], organizationId: string, now: number): MemberSyncHealth[] {
+export function memberHealthView(
+  raw: readonly (string | null)[],
+  organizationId: string,
+  now: number,
+): MemberSyncHealth[] {
   const order: Record<SyncHealthState, number> = { stuck: 0, needs_member: 1, sending: 2, silent: 3, up_to_date: 4 };
   const rows: MemberSyncHealth[] = [];
   for (const r of raw) {
@@ -142,7 +158,9 @@ export function memberHealthView(raw: readonly (string | null)[], organizationId
     const { organizationId: _org, ...rest } = report;
     rows.push({ ...rest, state: syncHealthState(report, now) });
   }
-  return rows.sort((a, b) => order[a.state] - order[b.state] || (a.oldestWaitingAt ?? Infinity) - (b.oldestWaitingAt ?? Infinity));
+  return rows.sort(
+    (a, b) => order[a.state] - order[b.state] || (a.oldestWaitingAt ?? Infinity) - (b.oldestWaitingAt ?? Infinity),
+  );
 }
 
 /** At most 20 entries with short keys and finite, non-negative counts. */
@@ -160,7 +178,10 @@ const label = (v: string) => v.replace(/\\/g, '\\\\').replace(/"/g, '\\"').repla
 
 /** Pure, so the text an alert reads is tested without Redis. */
 export function renderMetrics(reports: readonly StoredHealth[], results: Record<string, string>, now: number): string {
-  const byOrg = new Map<string, { devices: number; waiting: number; attention: number; stuck: number; bytes: number }>();
+  const byOrg = new Map<
+    string,
+    { devices: number; waiting: number; attention: number; stuck: number; bytes: number }
+  >();
   for (const r of reports) {
     const o = byOrg.get(r.organizationId) ?? { devices: 0, waiting: 0, attention: 0, stuck: 0, bytes: 0 };
     o.devices++;
@@ -171,7 +192,11 @@ export function renderMetrics(reports: readonly StoredHealth[], results: Record<
     byOrg.set(r.organizationId, o);
   }
   const lines: string[] = [];
-  const gauge = (name: string, help: string, pick: (o: { devices: number; waiting: number; attention: number; stuck: number; bytes: number }) => number) => {
+  const gauge = (
+    name: string,
+    help: string,
+    pick: (o: { devices: number; waiting: number; attention: number; stuck: number; bytes: number }) => number,
+  ) => {
     lines.push(`# HELP ${name} ${help}`, `# TYPE ${name} gauge`);
     for (const [org, o] of byOrg) lines.push(`${name}{organization="${label(org)}"} ${pick(o)}`);
   };
@@ -180,7 +205,11 @@ export function renderMetrics(reports: readonly StoredHealth[], results: Record<
   gauge('hbc_offline_ops_attention', 'Operations refused or in conflict, waiting for the member', (o) => o.attention);
   gauge('hbc_offline_members_stuck', 'Members with work unsent for more than a day', (o) => o.stuck);
   gauge('hbc_offline_bytes_waiting', 'Bytes of photos and documents waiting to upload', (o) => o.bytes);
-  lines.push('# HELP hbc_sync_push_results_total Pushed operations by result', '# TYPE hbc_sync_push_results_total counter');
-  for (const [status, n] of Object.entries(results)) lines.push(`hbc_sync_push_results_total{status="${label(status)}"} ${Number(n) || 0}`);
+  lines.push(
+    '# HELP hbc_sync_push_results_total Pushed operations by result',
+    '# TYPE hbc_sync_push_results_total counter',
+  );
+  for (const [status, n] of Object.entries(results))
+    lines.push(`hbc_sync_push_results_total{status="${label(status)}"} ${Number(n) || 0}`);
   return lines.join('\n') + '\n';
 }

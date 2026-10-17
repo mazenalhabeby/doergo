@@ -9,7 +9,13 @@ export class ApprovalPushService {
   @Inject(PushService) private readonly push!: PushService;
 
   /** An office rule: the first approval is in, and these people must give the second. */
-  async sendApprovalSecondStepPush(data: { recipientIds: string[]; kind: string; itemId: string; firstName: string; subjectName?: string }) {
+  async sendApprovalSecondStepPush(data: {
+    recipientIds: string[];
+    kind: string;
+    itemId: string;
+    firstName: string;
+    subjectName?: string;
+  }) {
     return this.push.sendToUsers(
       data.recipientIds,
       {
@@ -23,7 +29,14 @@ export class ApprovalPushService {
   }
 
   /** Nobody answered: remind the usual deciders, or pass it to the escalation role. */
-  async sendApprovalReminderPush(data: { recipientIds: string[]; kind: 'overtime' | 'request' | 'expense'; itemId: string; stage: 'REMIND' | 'ESCALATE'; subjectName: string; hours: number }) {
+  async sendApprovalReminderPush(data: {
+    recipientIds: string[];
+    kind: 'overtime' | 'request' | 'expense';
+    itemId: string;
+    stage: 'REMIND' | 'ESCALATE';
+    subjectName: string;
+    hours: number;
+  }) {
     const what = msg(`approval.what.${data.kind}`);
     const facts = { subject: data.subjectName, what, hours: data.hours };
     return this.push.sendToUsers(
@@ -62,7 +75,9 @@ export class ApprovalPushService {
     return this.push.sendToUser(
       data.userId,
       {
-        title: msg(approved ? 'attendance.overtimeDecision.titleApproved' : 'attendance.overtimeDecision.titleDeclined'),
+        title: msg(
+          approved ? 'attendance.overtimeDecision.titleApproved' : 'attendance.overtimeDecision.titleDeclined',
+        ),
         body: !approved
           ? msg('attendance.overtimeDecision.bodyDeclined')
           : data.minutes
@@ -85,7 +100,13 @@ export class ApprovalPushService {
    * member's own routing (their Access watchers, then their spaces' notify
    * config), which has nothing to do with holding any particular role.
    */
-  async sendTimeOffRequestPush(data: { recipientIds: string[]; text: LocalizedText; technicianName: string; startDate: string; endDate: string }) {
+  async sendTimeOffRequestPush(data: {
+    recipientIds: string[];
+    text: LocalizedText;
+    technicianName: string;
+    startDate: string;
+    endDate: string;
+  }) {
     return this.push.sendToUsers(data.recipientIds, data.text, {
       type: 'time_off_request',
       technicianName: data.technicianName,

@@ -35,9 +35,14 @@ export class PlatformBillingService {
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
       select: {
-        id: true, name: true, billingMode: true, billingEmail: true, email: true,
+        id: true,
+        name: true,
+        billingMode: true,
+        billingEmail: true,
+        email: true,
         stripeCustomerId: true,
-        invoiceDueDays: true, subscription: { select: { stripeSubscriptionId: true } },
+        invoiceDueDays: true,
+        subscription: { select: { stripeSubscriptionId: true } },
       },
     });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
@@ -75,7 +80,9 @@ export class PlatformBillingService {
           success: false,
           statusCode: 400,
           message:
-            'This organization has no card on file, so charging automatically would fail at the next invoice. Ask an admin to add one from Billing → Payment & invoices first.',
+            'This organization has no card on file, so charging automatically would ' +
+            'fail at the next invoice. Ask an admin to add one from Billing → Payment ' +
+            '& invoices first.',
         } as any;
       }
     }
@@ -173,9 +180,11 @@ export class PlatformBillingService {
       impossible. reconcileSeats swallows Stripe failures and records them as an
       alert, so a Stripe outage cannot lose the agreement itself.
     */
-    await this.billing.reconcileSeats(org.id).catch((e) =>
-      this.logger.error(`[PLATFORM] Agreed price stored but Stripe sync failed for ${org.id}: ${String(e)}`),
-    );
+    await this.billing
+      .reconcileSeats(org.id)
+      .catch((e) =>
+        this.logger.error(`[PLATFORM] Agreed price stored but Stripe sync failed for ${org.id}: ${String(e)}`),
+      );
 
     this.logger.warn(
       `[PLATFORM] Org "${org.name}" (${org.id}) agreed price ` +
@@ -210,8 +219,12 @@ export class PlatformBillingService {
     await this.prisma.organization.update({
       where: { id: org.id },
       data: {
-        agreedMonthlyCents: null, agreedListCents: null, agreedUntil: null,
-        agreedNote: null, agreedSetAt: null, agreedSetById: null,
+        agreedMonthlyCents: null,
+        agreedListCents: null,
+        agreedUntil: null,
+        agreedNote: null,
+        agreedSetAt: null,
+        agreedSetById: null,
       },
     });
     await this.prisma.billingAlert.updateMany({
@@ -222,9 +235,11 @@ export class PlatformBillingService {
       },
       data: { acknowledgedAt: new Date(), acknowledgedBy: data.byUserId ?? 'operator' },
     });
-    await this.billing.reconcileSeats(org.id).catch((e) =>
-      this.logger.error(`[PLATFORM] Agreed price cleared but Stripe sync failed for ${org.id}: ${String(e)}`),
-    );
+    await this.billing
+      .reconcileSeats(org.id)
+      .catch((e) =>
+        this.logger.error(`[PLATFORM] Agreed price cleared but Stripe sync failed for ${org.id}: ${String(e)}`),
+      );
 
     this.logger.warn(
       `[PLATFORM] Org "${org.name}" (${org.id}) agreed price REMOVED ` +

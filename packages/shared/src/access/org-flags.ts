@@ -43,7 +43,14 @@ export const ORG_FLAG_BRIDGES: Partial<Record<AccessPermissionKey, readonly Acce
   canGrantSpaceRoles: ['canManageUsers'],
 };
 
-const CRM_KEYS = new Set<AccessPermissionKey>(['crmViewOwn', 'crmViewAll', 'crmWork', 'crmEditInfo', 'crmCreateClients', 'crmManageClients']);
+const CRM_KEYS = new Set<AccessPermissionKey>([
+  'crmViewOwn',
+  'crmViewAll',
+  'crmWork',
+  'crmEditInfo',
+  'crmCreateClients',
+  'crmManageClients',
+]);
 
 /** Every permission key as an org-wide boolean, bridges applied. */
 export function orgFlagFields(access: ResolvedAccess): Record<AccessPermissionKey, boolean> {

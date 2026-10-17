@@ -52,7 +52,12 @@ export class SyncPushService {
     const seen = new Set<string>();
     operations.forEach((op, index) => {
       if (seen.has(op.id)) {
-        results[index] = { id: op.id, status: 'rejected', code: 'DUPLICATE_OPERATION', message: 'The same operation id appears twice in this batch' };
+        results[index] = {
+          id: op.id,
+          status: 'rejected',
+          code: 'DUPLICATE_OPERATION',
+          message: 'The same operation id appears twice in this batch',
+        };
         return;
       }
       seen.add(op.id);
@@ -75,7 +80,12 @@ export class SyncPushService {
         let blocked = false;
         for (const { op, index } of lane) {
           if (blocked || Date.now() - started > TIME_BUDGET_MS) {
-            record(index, { id: op.id, status: 'retry', code: blocked ? 'LANE_WAITING' : 'TIME_BUDGET', message: 'Not attempted in this push' });
+            record(index, {
+              id: op.id,
+              status: 'retry',
+              code: blocked ? 'LANE_WAITING' : 'TIME_BUDGET',
+              message: 'Not attempted in this push',
+            });
             continue;
           }
           // Dependencies inside this batch must have gone through. Dependencies
@@ -83,9 +93,22 @@ export class SyncPushService {
           const unmet = (op.dependsOn ?? []).filter((d) => inBatch.has(d) && !settled(d));
           if (unmet.length) {
             const waiting = unmet.some((d) => byId.get(d)?.status === 'retry' || !byId.has(d));
-            record(index, waiting
-              ? { id: op.id, status: 'retry', code: 'DEPENDENCY_WAITING', message: 'Waiting for an earlier operation' }
-              : { id: op.id, status: 'skipped', code: 'DEPENDENCY_FAILED', message: 'An earlier step this depends on was not accepted' });
+            record(
+              index,
+              waiting
+                ? {
+                    id: op.id,
+                    status: 'retry',
+                    code: 'DEPENDENCY_WAITING',
+                    message: 'Waiting for an earlier operation',
+                  }
+                : {
+                    id: op.id,
+                    status: 'skipped',
+                    code: 'DEPENDENCY_FAILED',
+                    message: 'An earlier step this depends on was not accepted',
+                  },
+            );
             if (waiting) blocked = true;
             continue;
           }
@@ -123,26 +146,53 @@ export class SyncPushService {
       });
     } catch (err) {
       this.logger.warn(`sync ${op.op} ${op.id}: ${(err as Error).message}`);
-      return { id: op.id, status: 'retry', code: 'UNREACHABLE', message: 'The server could not complete this right now' };
+      return {
+        id: op.id,
+        status: 'retry',
+        code: 'UNREACHABLE',
+        message: 'The server could not complete this right now',
+      };
     }
 
-    const body = await res.json().catch(() => undefined) as any;
+    const body = (await res.json().catch(() => undefined)) as any;
     const code: string | undefined = typeof body?.code === 'string' ? body.code : undefined;
-    const message: string | undefined = typeof body?.message === 'string' ? body.message : Array.isArray(body?.message) ? body.message.join('; ') : undefined;
+    const message: string | undefined =
+      typeof body?.message === 'string'
+        ? body.message
+        : Array.isArray(body?.message)
+          ? body.message.join('; ')
+          : undefined;
     // The figures a coded refusal is written with ("{{distance}} from the job site").
-    const params: Record<string, unknown> | undefined = body?.params && typeof body.params === 'object' && !Array.isArray(body.params) ? body.params : undefined;
+    const params: Record<string, unknown> | undefined =
+      body?.params && typeof body.params === 'object' && !Array.isArray(body.params) ? body.params : undefined;
 
     if (res.ok) {
-      return { id: op.id, status: res.headers.get('idempotent-replayed') === 'true' ? 'replayed' : 'applied', body: body?.data ?? body };
+      return {
+        id: op.id,
+        status: res.headers.get('idempotent-replayed') === 'true' ? 'replayed' : 'applied',
+        body: body?.data ?? body,
+      };
     }
     if (res.status === 409 && code !== 'IDEMPOTENCY_IN_PROGRESS') {
-      return { id: op.id, status: 'conflict', code: code ?? 'CONFLICT', message, current: body?.current ?? body?.params?.current };
+      return {
+        id: op.id,
+        status: 'conflict',
+        code: code ?? 'CONFLICT',
+        message,
+        current: body?.current ?? body?.params?.current,
+      };
     }
     if (res.status === 409 || res.status === 408 || res.status === 425 || res.status === 429 || res.status >= 500) {
       return { id: op.id, status: 'retry', code: code ?? `HTTP_${res.status}`, message };
     }
     // 401 inside an authenticated push means the session ended mid-batch.
     if (res.status === 401) return { id: op.id, status: 'retry', code: 'UNAUTHENTICATED', message };
-    return { id: op.id, status: 'rejected', code: code ?? `HTTP_${res.status}`, message, ...(params ? { params } : {}) };
+    return {
+      id: op.id,
+      status: 'rejected',
+      code: code ?? `HTTP_${res.status}`,
+      message,
+      ...(params ? { params } : {}),
+    };
   }
 }

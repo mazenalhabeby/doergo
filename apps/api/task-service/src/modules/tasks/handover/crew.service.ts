@@ -1,20 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskEventType } from '@prisma/client';
 import {
-  zoneOf,
   CREW_CODES,
   crewPresence,
-  endOfLocalDay,
   mayMoveStep,
   success,
   type ChecklistAuthority,
-  type LeadScope,
   type OccurrenceEvidence,
   personName,
 } from '@hbcfield/shared';
 import { judgeOccurrence } from '../../../common/occurrence.util';
 import { CrewActor, CrewTask, TASK_SELECT, evidenceMeta, cleanReason } from './crew-helpers';
-import { CrewBase } from './crew.base';
+import { CrewLeadBase } from './crew-lead.base';
 
 export { type CrewActor } from './crew-helpers';
 
@@ -30,7 +27,7 @@ export { type CrewActor } from './crew-helpers';
  * act on is a 400 with a code.
  */
 @Injectable()
-export class CrewService extends CrewBase {
+export class CrewService extends CrewLeadBase {
   /**
    * Who may give this job's checklist items to whom (shared tasks/checklist.ts):
    * the crew, the office, and who leads now. The leader is only worked out for
@@ -73,15 +70,32 @@ export class CrewService extends CrewBase {
    * window), the step the job is already in, or the office for somebody
    * (with a reason). Idempotent while joined. The clock gate applies.
    */
-  async join(data: CrewActor & { taskId: string; evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; forUserId?: string; reason?: string }) {
+  async join(
+    data: CrewActor & {
+      taskId: string;
+      evidence?: OccurrenceEvidence;
+      viaLeaderStart?: boolean;
+      forUserId?: string;
+      reason?: string;
+    },
+  ) {
     const task = await this.visibleTaskOf(data.taskId, data);
     const forOther = !!data.forUserId && data.forUserId !== data.userId;
     // Putting somebody ON a job is a decision about who works it: assign rights, not "view all".
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
     const reason = cleanReason(data.reason);
-    if (forOther && !reason) throw new BadRequestException({ message: 'Say why you are adding them to the job.', code: 'OFFICE_START_REASON_REQUIRED' });
+    if (forOther && !reason)
+      throw new BadRequestException({
+        message: 'Say why you are adding them to the job.',
+        code: 'OFFICE_START_REASON_REQUIRED',
+      });
     const who = forOther ? data.forUserId! : data.userId;
-    await this.joinAs(task, who, { evidence: data.evidence, viaLeaderStart: !!data.viaLeaderStart, byUserId: forOther ? data.userId : undefined, reason: forOther ? reason : undefined });
+    await this.joinAs(task, who, {
+      evidence: data.evidence,
+      viaLeaderStart: !!data.viaLeaderStart,
+      byUserId: forOther ? data.userId : undefined,
+      reason: forOther ? reason : undefined,
+    });
     return success(await this.viewOf(task));
   }
 
@@ -96,7 +110,8 @@ export class CrewService extends CrewBase {
     if (forOther && !this.isOffice(data, task, 'canAssignTasks')) throw new NotFoundException('Task not found');
     const who = forOther ? data.forUserId! : data.userId;
     const crew = await this.crewOf(task);
-    if (!crew.some((c) => c.userId === who)) throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
+    if (!crew.some((c) => c.userId === who))
+      throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
 
     const timeline = (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [];
     const presence = crewPresence(timeline, crew.map((c) => c.userId));
@@ -115,8 +130,15 @@ export class CrewService extends CrewBase {
       await tx.$queryRaw`SELECT id FROM "tasks" WHERE id = ${task.id} FOR UPDATE`;
       await tx.taskEvent.create({
         data: {
-          taskId: task.id, userId: who, eventType: TaskEventType.CREW_LEFT,
-          metadata: { at: at.toISOString(), why: forOther ? 'OFFICE' : 'SELF', ...(forOther ? { byUserId: data.userId, reason: cleanReason(data.reason) } : {}), ...evidenceMeta(data.evidence, judged.flags) },
+          taskId: task.id,
+          userId: who,
+          eventType: TaskEventType.CREW_LEFT,
+          metadata: {
+            at: at.toISOString(),
+            why: forOther ? 'OFFICE' : 'SELF',
+            ...(forOther ? { byUserId: data.userId, reason: cleanReason(data.reason) } : {}),
+            ...evidenceMeta(data.evidence, judged.flags),
+          },
         },
       });
     });
@@ -137,13 +159,24 @@ export class CrewService extends CrewBase {
     if (presence.selfBlockedSince != null) return success(await this.viewOf(task));
     const judged = judgeOccurrence(data.evidence, presence.since != null ? new Date(presence.since) : null);
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_BLOCKED, metadata: { at: judged.at.toISOString(), reason, ...evidenceMeta(data.evidence, judged.flags) } },
+      data: {
+        taskId: task.id,
+        userId: data.userId,
+        eventType: TaskEventType.SELF_BLOCKED,
+        metadata: { at: judged.at.toISOString(), reason, ...evidenceMeta(data.evidence, judged.flags) },
+      },
     });
     // The leader is told why one of the crew has stopped.
     const view = await this.viewOf(task);
     if (view.leader.userId && view.leader.userId !== data.userId) {
       const me = view.members.find((m) => m.user.id === data.userId)?.user;
-      this.notifications.emit('task_crew_issue', { taskId: task.id, taskTitle: task.title, leaderId: view.leader.userId, name: personName(me), reason });
+      this.notifications.emit('task_crew_issue', {
+        taskId: task.id,
+        taskTitle: task.title,
+        leaderId: view.leader.userId,
+        name: personName(me),
+        reason,
+      });
     }
     this.changed(task, data.userId);
     return success(view);
@@ -157,83 +190,15 @@ export class CrewService extends CrewBase {
     await this.clockGate.assertWorkerClockedIn(task, data.userId, task.organizationId, true);
     const judged = judgeOccurrence(data.evidence, new Date(presence.selfBlockedSince));
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.SELF_RESUMED, metadata: { at: judged.at.toISOString(), ...evidenceMeta(data.evidence, judged.flags) } },
-    });
-    this.changed(task, data.userId);
-    return success(await this.viewOf(task));
-  }
-
-  // ─────────────────────────── the lead ───────────────────────────
-
-  /**
-   * Hand THIS job's lead to somebody already on its crew — for today, or for
-   * good. The effective leader of this job may; so may the office (assign
-   * tasks, org-wide or in the job's workspace). Nobody is ADDED to a crew
-   * here: that stays behind the assign path and its grant ceiling.
-   */
-  async changeLead(data: CrewActor & { taskId: string; toUserId: string; scope: LeadScope; reason?: string }) {
-    const task = await this.visibleTaskOf(data.taskId, data);
-    const crew = await this.crewOf(task);
-    const ids = crew.map((c) => c.userId);
-    const [timeline, onClock] = await Promise.all([
-      this.jobTime.timelinesOf([task.id]).then((m) => m.get(task.id) ?? []),
-      this.onClock(ids, task.organizationId),
-    ]);
-    const leader = this.leaderFrom(task, crew, timeline, onClock);
-    const office = this.isOffice(data, task, 'canAssignTasks');
-    if (!office && leader.userId !== data.userId) {
-      // A member who can see the job is told why; a stranger learns nothing.
-      if (!ids.includes(data.userId)) throw new NotFoundException('Task not found');
-      throw new ForbiddenException({ message: 'Only the leader of this job, or the office, hands its lead over.', code: CREW_CODES.LEAD_NOT_YOURS });
-    }
-    if (!ids.includes(data.toUserId)) throw new BadRequestException({ message: 'Choose somebody on this job.', code: CREW_CODES.LEAD_TARGET_NOT_ON_CREW });
-    const target = await this.prisma.user.findUnique({ where: { id: data.toUserId }, select: { isExternal: true, organizationId: true, isActive: true } });
-    if (!target || target.isExternal || target.organizationId !== task.organizationId || target.isActive === false) {
-      throw new BadRequestException({ message: 'They cannot lead this job.', code: CREW_CODES.LEAD_TARGET_NOT_ON_CREW });
-    }
-    const scope: LeadScope = data.scope === 'PERMANENT' ? 'PERMANENT' : 'TODAY';
-    // A member standing in for an absent leader hands over for today — never takes the job from them for good.
-    if (scope === 'PERMANENT' && !office && leader.acting) {
-      throw new ForbiddenException({ message: 'Standing in, you can hand the lead over for today only.', code: CREW_CODES.LEAD_NOT_YOURS });
-    }
-    const reason = cleanReason(data.reason);
-
-    if (scope === 'TODAY') {
-      const tz = await this.zoneOf(task);
-      await this.prisma.task.update({ where: { id: task.id }, data: { leadOverrideId: data.toUserId, leadOverrideUntil: endOfLocalDay(new Date(), tz) } });
-    } else {
-      // The same shape the assign path writes: the LEAD row, the legacy column, and no stale override.
-      /*
-        ⚠️ The job's row is locked first: two hand-overs at once each demoted
-        only the LEAD rows they saw and promoted their own pick — two leaders.
-      */
-      await this.prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT id FROM "tasks" WHERE id = ${task.id} FOR UPDATE`;
-        await tx.taskAssignee.updateMany({ where: { taskId: task.id, role: 'LEAD' }, data: { role: 'MEMBER' } });
-        await tx.taskAssignee.upsert({
-          where: { taskId_userId: { taskId: task.id, userId: data.toUserId } },
-          create: { taskId: task.id, userId: data.toUserId, role: 'LEAD' },
-          update: { role: 'LEAD' },
-        });
-        await tx.task.update({ where: { id: task.id }, data: { assignedToId: data.toUserId, leadOverrideId: null, leadOverrideUntil: null } });
-      });
-    }
-    await this.prisma.taskEvent.create({
       data: {
         taskId: task.id,
         userId: data.userId,
-        eventType: TaskEventType.LEAD_CHANGED,
-        // The new leader's name rides along, so the history reads it without a lookup.
-        metadata: { from: leader.userId, to: data.toUserId, toName: await this.nameOf(data.toUserId), scope, by: leader.userId === data.userId ? 'LEADER' : 'OFFICE', ...(reason ? { reason } : {}) },
+        eventType: TaskEventType.SELF_RESUMED,
+        metadata: { at: judged.at.toISOString(), ...evidenceMeta(data.evidence, judged.flags) },
       },
     });
-    if (data.toUserId !== data.userId) {
-      const by = await this.prisma.user.findUnique({ where: { id: data.userId }, select: { firstName: true, lastName: true } });
-      this.notifications.emit('task_lead_changed', { taskId: task.id, taskTitle: task.title, toUserId: data.toUserId, byName: personName(by), scope });
-    }
-    const fresh = await this.taskOf(task.id, task.organizationId);
-    this.changed(fresh, data.userId);
-    return success(await this.viewOf(fresh));
+    this.changed(task, data.userId);
+    return success(await this.viewOf(task));
   }
 
   // ─────────────────────────── hooks for TasksService ───────────────────────────

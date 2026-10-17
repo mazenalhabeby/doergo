@@ -35,7 +35,13 @@ export class RoleStatsService extends RolePoolBase {
         take: 5000,
       }),
       this.prisma.task.findMany({
-        where: { organizationId: data.organizationId, openRoleId: { not: null }, openSpotsLeft: { gt: 0 }, status: { notIn: OVER }, ...spaceWhere },
+        where: {
+          organizationId: data.organizationId,
+          openRoleId: { not: null },
+          openSpotsLeft: { gt: 0 },
+          status: { notIn: OVER },
+          ...spaceWhere,
+        },
         select: { openRoleId: true, openWave: true },
       }),
       this.prisma.taskEvent.findMany({
@@ -55,10 +61,15 @@ export class RoleStatsService extends RolePoolBase {
       if (id) openedBy.set(id, (openedBy.get(id) ?? 0) + 1);
     }
     const roleIds = [...new Set([...openedBy.keys(), ...openNow.map((o) => o.openRoleId!)])];
-    const roles = await this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } });
+    const roles = await this.prisma.accessRole.findMany({
+      where: { id: { in: roleIds } },
+      select: { id: true, name: true },
+    });
     const out = roles.map((r) => {
       const mine = takes.filter((t) => (t.metadata as any)?.roleId === r.id);
-      const waits = mine.map((t) => (t.metadata as any)?.waitedMinutes).filter((n): n is number => typeof n === 'number');
+      const waits = mine
+        .map((t) => (t.metadata as any)?.waitedMinutes)
+        .filter((n): n is number => typeof n === 'number');
       const byPerson = new Map<string, { name: string; count: number }>();
       for (const t of mine) {
         const cur = byPerson.get(t.userId) ?? { name: personName(t.user), count: 0 };

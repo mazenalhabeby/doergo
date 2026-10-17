@@ -49,13 +49,37 @@ export interface EventInput {
   callDirection?: 'OUTGOING' | 'INCOMING' | null;
 }
 
-const MEETING_KEYS = ['meetingMode', 'placeKind', 'placeSpaceId', 'room', 'phone', 'callDirection', 'location', 'meetingUrl'] as const;
+const MEETING_KEYS = [
+  'meetingMode',
+  'placeKind',
+  'placeSpaceId',
+  'room',
+  'phone',
+  'callDirection',
+  'location',
+  'meetingUrl',
+] as const;
 
 type EventRow = {
-  id: string; organizationId: string; spaceId: string | null; createdById: string; kind: 'APPOINTMENT' | 'REMINDER';
-  title: string; description: string | null; location: string | null; meetingUrl: string | null; customerId: string | null;
-  startAt: Date; endAt: Date; allDay: boolean; timezone: string; repeat: unknown; seriesEndAt: Date | null;
-  reminderOffsets: number[]; visibility: 'BUSY' | 'DETAILS'; canceledAt: Date | null;
+  id: string;
+  organizationId: string;
+  spaceId: string | null;
+  createdById: string;
+  kind: 'APPOINTMENT' | 'REMINDER';
+  title: string;
+  description: string | null;
+  location: string | null;
+  meetingUrl: string | null;
+  customerId: string | null;
+  startAt: Date;
+  endAt: Date;
+  allDay: boolean;
+  timezone: string;
+  repeat: unknown;
+  seriesEndAt: Date | null;
+  reminderOffsets: number[];
+  visibility: 'BUSY' | 'DETAILS';
+  canceledAt: Date | null;
 };
 
 function validZone(tz: unknown): tz is string {
@@ -70,12 +94,22 @@ function validZone(tz: unknown): tz is string {
 
 function clean(v: unknown, max: number): string | null {
   if (v === undefined || v === null) return null;
-  const s = String(v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim();
+  const s = String(v)
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+    .trim();
   return s ? s.slice(0, max) : null;
 }
 
-export function reminderEventOf(ev: Pick<EventRow, 'startAt' | 'endAt' | 'repeat' | 'timezone' | 'reminderOffsets'>): ReminderEvent {
-  return { startAt: ev.startAt, endAt: ev.endAt, repeat: (ev.repeat as Repeat | null) ?? null, timezone: ev.timezone, offsets: ev.reminderOffsets };
+export function reminderEventOf(
+  ev: Pick<EventRow, 'startAt' | 'endAt' | 'repeat' | 'timezone' | 'reminderOffsets'>,
+): ReminderEvent {
+  return {
+    startAt: ev.startAt,
+    endAt: ev.endAt,
+    repeat: (ev.repeat as Repeat | null) ?? null,
+    timezone: ev.timezone,
+    offsets: ev.reminderOffsets,
+  };
 }
 
 /** When the last occurrence ends — NULL for a series without an end. */

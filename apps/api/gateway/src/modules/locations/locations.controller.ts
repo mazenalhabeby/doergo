@@ -37,7 +37,6 @@ export { locationListScope, shapeLocationList } from './locations-controller-hel
 @UseInterceptors(LabourCostInterceptor)
 @Controller('locations')
 export class LocationsController extends LocationsControllerBase {
-
   @Post()
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Create a new company location' })
@@ -62,7 +61,11 @@ export class LocationsController extends LocationsControllerBase {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'includeInactive', required: false, type: Boolean })
-  @ApiQuery({ name: 'kind', required: false, description: "PROJECT | COMPANY | CUSTOMER | 'all'. Default hides CUSTOMER spaces from work pickers." })
+  @ApiQuery({
+    name: 'kind',
+    required: false,
+    description: "PROJECT | COMPANY | CUSTOMER | 'all'. Default hides CUSTOMER spaces from " + 'work pickers.',
+  })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -75,7 +78,7 @@ export class LocationsController extends LocationsControllerBase {
       page: page ? Math.max(1, Number(page) || 1) : 1,
       // The workspace pickers ask for the whole directory, hence the higher ceiling.
       limit: clampListLimit(limit, 20, 500),
-      includeInactive: includeInactive === true || includeInactive === 'true' as any,
+      includeInactive: includeInactive === true || includeInactive === ('true' as any),
       // Default (undefined) excludes CUSTOMER; the Spaces directory passes 'all'.
       kind: kind || undefined,
       /*
@@ -101,7 +104,7 @@ export class LocationsController extends LocationsControllerBase {
 
   // NOTE: must be declared before @Get(':id') so 'team' isn't matched as an id.
   @Get('team')
-  @ApiOperation({ summary: 'Colleagues in the requesting user\'s visible spaces' })
+  @ApiOperation({ summary: "Colleagues in the requesting user's visible spaces" })
   async getTeam(@Request() req: any) {
     const team = await this.locationsService.getColleagues({
       userId: req.user.id,
@@ -130,7 +133,10 @@ export class LocationsController extends LocationsControllerBase {
   // path, and a bill rate leaves only for whoever manages that space's people.
   // Cost rates stop at the LabourCostInterceptor on this class.
   async getRosters(@Query('ids') ids: string, @Request() req: any) {
-    const locationIds = (ids || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const locationIds = (ids || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const res: any = await this.locationsService.getLocationAssignmentsBatch({
       locationIds,
       organizationId: req.user.organizationId,
@@ -168,10 +174,14 @@ export class LocationsController extends LocationsControllerBase {
         internal member reads it. An EXTERNAL member reads only the workspaces
         they were given.
       */
-      viewScopeSpaceIds: isAdmin(req.user) || !req.user?.isExternal
-        ? undefined
-        : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? []),
-      mayManage: isAdmin(req.user) || mayManageSpaceMembers(req.user, id) || accessAllows(req.user?.access, 'canManageWorkspaces', id),
+      viewScopeSpaceIds:
+        isAdmin(req.user) || !req.user?.isExternal
+          ? undefined
+          : (spacesGranting(req.user?.access, 'canViewAllTasks') ?? []),
+      mayManage:
+        isAdmin(req.user) ||
+        mayManageSpaceMembers(req.user, id) ||
+        accessAllows(req.user?.access, 'canManageWorkspaces', id),
     });
   }
 
@@ -205,11 +215,7 @@ export class LocationsController extends LocationsControllerBase {
   @Patch(':id')
   @RequirePermission('canManageWorkspaces')
   @ApiOperation({ summary: 'Update a company location' })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateLocationDto,
-    @Request() req: any,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateLocationDto, @Request() req: any) {
     if (Array.isArray((dto as any).enabledModules)) {
       (dto as any).enabledModules = capModulesToCatalogue((dto as any).enabledModules);
     }

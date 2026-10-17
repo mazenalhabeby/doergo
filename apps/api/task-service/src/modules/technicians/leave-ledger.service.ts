@@ -37,7 +37,12 @@ export {
 @Injectable()
 export class LeaveLedgerService extends LeaveLedgerBase {
   /** GET /employees/:id/leave-balance — the leave year containing `on` (default today). */
-  async getBalance(dto: { technicianId: string; organizationId: string; on?: string; year?: number | string }): Promise<LeaveBalanceResponse> {
+  async getBalance(dto: {
+    technicianId: string;
+    organizationId: string;
+    on?: string;
+    year?: number | string;
+  }): Promise<LeaveBalanceResponse> {
     const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
     const on = this.dayFrom(dto, org);
     const y = (await this.years(org, [person], () => on)).get(person.id)!;
@@ -50,12 +55,21 @@ export class LeaveLedgerService extends LeaveLedgerBase {
    * WRITE scope ('ORG', the spaces, or null = none) — only to answer `canEdit`, never the read.
    */
   async listAdjustments(dto: {
-    technicianId: string; organizationId: string; callerId: string;
-    scopeSpaceIds?: string[]; editScope?: 'ORG' | string[] | null; on?: string; year?: number | string;
+    technicianId: string;
+    organizationId: string;
+    callerId: string;
+    scopeSpaceIds?: string[];
+    editScope?: 'ORG' | string[] | null;
+    on?: string;
+    year?: number | string;
   }): Promise<LeaveLedgerResponse> {
     const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
     if (dto.callerId !== dto.technicianId) {
-      await assertMemberInScope(this.prisma as never, { userId: person.id, organizationId: dto.organizationId, scopeSpaceIds: dto.scopeSpaceIds });
+      await assertMemberInScope(this.prisma as never, {
+        userId: person.id,
+        organizationId: dto.organizationId,
+        scopeSpaceIds: dto.scopeSpaceIds,
+      });
     }
     const leaveYear = leaveYearFor(org, person, this.dayFrom(dto, org));
     const [rows, canEdit] = await Promise.all([
@@ -64,13 +78,24 @@ export class LeaveLedgerService extends LeaveLedgerBase {
         orderBy: { createdAt: 'desc' },
         select: this.entrySelect,
       }),
-      this.mayWrite(dto.organizationId, person.id, dto.callerId, dto.editScope === 'ORG' ? undefined : dto.editScope ?? null),
+      this.mayWrite(
+        dto.organizationId,
+        person.id,
+        dto.callerId,
+        dto.editScope === 'ORG' ? undefined : (dto.editScope ?? null),
+      ),
     ]);
     return { leaveYear, items: rows.map((r) => this.entryOf(r)), canEdit };
   }
 
   /** POST /employees/:id/leave-adjustments — a hand-entered line (shared parseLeaveAdjustment). */
-  async addAdjustment(dto: { technicianId: string; organizationId: string; callerId: string; scopeSpaceIds?: string[]; body: unknown }) {
+  async addAdjustment(dto: {
+    technicianId: string;
+    organizationId: string;
+    callerId: string;
+    scopeSpaceIds?: string[];
+    body: unknown;
+  }) {
     const parsed = parseLeaveAdjustment(dto.body);
     if (!parsed.ok) throw new BadRequestException({ code: parsed.code, message: ADJUSTMENT_REFUSALS[parsed.code] });
     const { person, org } = await this.loadPerson(dto.organizationId, dto.technicianId);
@@ -97,16 +122,28 @@ export class LeaveLedgerService extends LeaveLedgerBase {
    * stays in the ledger with who undid it. Claimed with a conditional update, so two clicks undo
    * once. A rule-written line keeps its idempotency key, so the rule does not write it again.
    */
-  async voidAdjustment(dto: { adjustmentId: string; organizationId: string; callerId: string; scopeSpaceIds?: string[] }) {
-    const found = await this.prisma.leaveAdjustment.findUnique({ where: { id: dto.adjustmentId }, select: { id: true, organizationId: true, userId: true, voidedAt: true } });
+  async voidAdjustment(dto: {
+    adjustmentId: string;
+    organizationId: string;
+    callerId: string;
+    scopeSpaceIds?: string[];
+  }) {
+    const found = await this.prisma.leaveAdjustment.findUnique({
+      where: { id: dto.adjustmentId },
+      select: { id: true, organizationId: true, userId: true, voidedAt: true },
+    });
     assertFoundInOrg(found, dto.organizationId, 'Adjustment');
     await this.assertMayWrite(dto.organizationId, found.userId, dto.callerId, dto.scopeSpaceIds);
     const claimed = await this.prisma.leaveAdjustment.updateMany({
       where: { id: found.id, voidedAt: null },
       data: { voidedAt: new Date(), voidedById: dto.callerId },
     });
-    if (claimed.count === 0) throw new BadRequestException({ code: 'ADJUSTMENT_ALREADY_VOIDED', message: 'This line was already undone.' });
-    const row = await this.prisma.leaveAdjustment.findUniqueOrThrow({ where: { id: found.id }, select: this.entrySelect });
+    if (claimed.count === 0)
+      throw new BadRequestException({ code: 'ADJUSTMENT_ALREADY_VOIDED', message: 'This line was already undone.' });
+    const row = await this.prisma.leaveAdjustment.findUniqueOrThrow({
+      where: { id: found.id },
+      select: this.entrySelect,
+    });
     const { person, org } = await this.loadPerson(dto.organizationId, found.userId);
     const start = toISODateString(row.leaveYearStart);
     const y = (await this.years(org, [person], () => start)).get(person.id)!;

@@ -38,19 +38,26 @@ export class AssetCustodyService extends AssetCustodyBase {
    * changes the driver, a contract — so however somebody got the thing, they
    * are told the same way.
    */
-  async announce(input: { organizationId: string; assetId: string; actorId: string; plan: HandoverPlan }): Promise<void> {
+  async announce(input: {
+    organizationId: string;
+    assetId: string;
+    actorId: string;
+    plan: HandoverPlan;
+  }): Promise<void> {
     await this.notifier.handedOver(input);
   }
 
   /**
    * The button: hand this asset to somebody, now or on a past date.
    */
-  async handOver(data: {
-    id: string;
-    to?: CustodyParty[];
-    at?: string;
-    reason?: string;
-  } & AssetActor) {
+  async handOver(
+    data: {
+      id: string;
+      to?: CustodyParty[];
+      at?: string;
+      reason?: string;
+    } & AssetActor,
+  ) {
     // Reassigning the organization's property: management, in the record's own workspace.
     await this.access.assetInScope(data.id, data, 'manage');
 
@@ -116,8 +123,13 @@ export class AssetCustodyService extends AssetCustodyBase {
         .map((p) => (p.userId ? { userId: p.userId } : { customerId: p.customerId! })) as CustodyParty[];
       await this.prisma.$transaction((tx) =>
         this.apply(tx as unknown as Db, {
-          assetId: h.assetId, organizationId, actorId, to: others,
-          reason: 'Member left the organization', limit: Math.max(limit, others.length), strict: false,
+          assetId: h.assetId,
+          organizationId,
+          actorId,
+          to: others,
+          reason: 'Member left the organization',
+          limit: Math.max(limit, others.length),
+          strict: false,
         }),
       );
       released++;
@@ -174,21 +186,30 @@ export class AssetCustodyService extends AssetCustodyBase {
         : Promise.resolve([]),
       customerIds.size
         ? this.prisma.customer.findMany({
-            where: { id: { in: [...customerIds] }, organizationId, ...(withinSpaceId === undefined ? {} : { spaceId: withinSpaceId ?? '__none__' }) },
+            where: {
+              id: { in: [...customerIds] },
+              organizationId,
+              ...(withinSpaceId === undefined ? {} : { spaceId: withinSpaceId ?? '__none__' }),
+            },
             select: { id: true },
           })
         : Promise.resolve([]),
     ]);
     if (members.length !== userIds.size) {
-      throw new BadRequestException(withinSpaceId === undefined ? 'Someone on that list is not in this organization' : 'Someone on that list does not work in this workspace');
+      throw new BadRequestException(
+        withinSpaceId === undefined
+          ? 'Someone on that list is not in this organization'
+          : 'Someone on that list does not work in this workspace',
+      );
     }
     if (clients.length !== customerIds.size) {
-      throw new BadRequestException(withinSpaceId === undefined ? 'A client on that list is not in this organization' : 'A client on that list is not filed in this workspace');
+      throw new BadRequestException(
+        withinSpaceId === undefined
+          ? 'A client on that list is not in this organization'
+          : 'A client on that list is not filed in this workspace',
+      );
     }
 
-    return [
-      ...[...userIds].map((userId) => ({ userId })),
-      ...[...customerIds].map((customerId) => ({ customerId })),
-    ];
+    return [...[...userIds].map((userId) => ({ userId })), ...[...customerIds].map((customerId) => ({ customerId }))];
   }
 }

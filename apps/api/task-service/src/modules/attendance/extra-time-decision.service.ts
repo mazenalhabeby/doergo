@@ -22,7 +22,12 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
    * permission as approving, and nobody removes their own. The request log
    * (audit) records who removed it.
    */
-  async removeApprovedOvertime(data: { actorId: string; overtimeId: string; organizationId: string; scopeSpaceIds?: AttendanceScope }) {
+  async removeApprovedOvertime(data: {
+    actorId: string;
+    overtimeId: string;
+    organizationId: string;
+    scopeSpaceIds?: AttendanceScope;
+  }) {
     const round = await this.prisma.overtimeRequest.findFirst({
       where: { id: data.overtimeId, organizationId: data.organizationId, status: { in: ['APPROVED', 'COMPLETED'] } },
     });
@@ -39,12 +44,16 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       where: { timeEntryId: entry.id, status: { in: ['APPROVED', 'COMPLETED'] }, cycle: { gt: round.cycle } },
     });
     if (later > 0) {
-      throw new BadRequestException({ message: 'A later approved overtime on this shift has to be removed first.', code: 'OVERTIME_LATER_ROUND' });
+      throw new BadRequestException({
+        message: 'A later approved overtime on this shift has to be removed first.',
+        code: 'OVERTIME_LATER_ROUND',
+      });
     }
 
     const minutes = round.maxDurationMinutes ?? 0;
-    const back = round.overtimeStartAt
-      ?? (entry.expectedClockOutAt ? new Date(entry.expectedClockOutAt.getTime() - minutes * 60_000) : null);
+    const back =
+      round.overtimeStartAt ??
+      (entry.expectedClockOutAt ? new Date(entry.expectedClockOutAt.getTime() - minutes * 60_000) : null);
     await this.prisma.$transaction([
       this.prisma.timeEntry.update({ where: { id: entry.id }, data: { expectedClockOutAt: back } }),
       this.prisma.overtimeRequest.delete({ where: { id: round.id } }),
@@ -82,12 +91,24 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       throw new BadRequestException('Overtime minutes must be between 1 and 1440');
     }
     const entry = await this.prisma.timeEntry.findFirst({
-      where: { id: data.entryId, organizationId: data.organizationId, status: TimeEntryStatus.CLOCKED_OUT, ...scopeWhere(data.scopeSpaceIds) },
+      where: {
+        id: data.entryId,
+        organizationId: data.organizationId,
+        status: TimeEntryStatus.CLOCKED_OUT,
+        ...scopeWhere(data.scopeSpaceIds),
+      },
       include: { overtimeRequests: { where: { status: 'PENDING_APPROVAL' }, select: { id: true }, take: 1 } },
     });
     if (!entry || !entry.clockOutAt) throw new NotFoundException('Time entry not found');
     if (entry.overtimeRequests.length) {
-      return this.approveExtraTime({ approverId: data.approverId, entryId: entry.id, minutes, organizationId: data.organizationId, notes: data.reason ?? null, scopeSpaceIds: data.scopeSpaceIds });
+      return this.approveExtraTime({
+        approverId: data.approverId,
+        entryId: entry.id,
+        minutes,
+        organizationId: data.organizationId,
+        notes: data.reason ?? null,
+        scopeSpaceIds: data.scopeSpaceIds,
+      });
     }
 
     const allowed = await this.userCanApproveOvertime(data.approverId, entry.locationId, data.organizationId);
@@ -95,8 +116,18 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
     await this.assertNotSelfOvertimeDecision(data.approverId, entry.userId, data.organizationId);
 
     const now = new Date();
-    const newExpected = overtimeEndFor({ expectedEndAt: entry.expectedClockOutAt, requestStartedAt: null, clockOutAt: entry.clockOutAt, now, minutes });
-    const previous = await this.prisma.overtimeRequest.findFirst({ where: { timeEntryId: entry.id }, orderBy: { cycle: 'desc' }, select: { cycle: true } });
+    const newExpected = overtimeEndFor({
+      expectedEndAt: entry.expectedClockOutAt,
+      requestStartedAt: null,
+      clockOutAt: entry.clockOutAt,
+      now,
+      minutes,
+    });
+    const previous = await this.prisma.overtimeRequest.findFirst({
+      where: { timeEntryId: entry.id },
+      orderBy: { cycle: 'desc' },
+      select: { cycle: true },
+    });
 
     await this.prisma.$transaction([
       this.prisma.timeEntry.update({ where: { id: entry.id }, data: { expectedClockOutAt: newExpected } }),
@@ -129,7 +160,10 @@ export class ExtraTimeDecisionService extends ExtraTimeBase {
       newExpectedClockOutAt: newExpected.toISOString(),
       organizationId: data.organizationId,
     });
-    return success({ entryId: entry.id, minutes, expectedClockOutAt: newExpected.toISOString() }, `Added ${minutes} min of overtime`);
+    return success(
+      { entryId: entry.id, minutes, expectedClockOutAt: newExpected.toISOString() },
+      `Added ${minutes} min of overtime`,
+    );
   }
 
   /** Leader rejects the extra-time request → nudge the worker to clock out now. */

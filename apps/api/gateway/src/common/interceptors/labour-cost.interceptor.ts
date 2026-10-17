@@ -21,10 +21,15 @@ export class LabourCostInterceptor implements NestInterceptor {
     const req = ctx.switchToHttp().getRequest();
     const may = mayViewLabourCost(req?.user);
     const body = req?.body;
-    if (!may && body && typeof body === 'object' && !Array.isArray(body) && (body.costRateCents !== undefined || body.costDayCents !== undefined)) {
+    if (
+      !may &&
+      body &&
+      typeof body === 'object' &&
+      !Array.isArray(body) &&
+      (body.costRateCents !== undefined || body.costDayCents !== undefined)
+    ) {
       throw new ForbiddenException('You cannot set what labour costs');
     }
     return next.handle().pipe(map((res) => stripCostRates(res, may)));
   }
 }
-

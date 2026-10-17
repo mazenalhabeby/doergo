@@ -80,7 +80,9 @@ export class PlatformAdminService {
       this.prisma.organization.count({ where: { suspendedAt: { not: null } } }),
       this.prisma.organization.count({ where: { createdAt: { gte: since30 } } }),
       // One seat per active member, exactly as the invoice counts them.
-      this.prisma.user.count({ where: { isActive: true, organizationId: { not: null }, role: { not: 'CUSTOMER' as any } } }),
+      this.prisma.user.count({
+        where: { isActive: true, organizationId: { not: null }, role: { not: 'CUSTOMER' as any } },
+      }),
       // MRR from ACTIVE, non-suspended orgs only. `lastBilledCents` IS the agreed
       // price once one is set — so MRR stays the truth with no arithmetic of its own.
       this.prisma.subscription.aggregate({
@@ -101,7 +103,10 @@ export class PlatformAdminService {
     const byStatus: Record<string, number> = {};
     for (const g of statusGroups) byStatus[String(g.subStatus).toLowerCase()] = g._count._all;
     const mrrCents = mrr._sum.lastBilledCents ?? 0;
-    const agreedAwayCents = agreed.reduce((sum, o) => sum + Math.max(0, (o.agreedListCents ?? 0) - (o.agreedMonthlyCents ?? 0)), 0);
+    const agreedAwayCents = agreed.reduce(
+      (sum, o) => sum + Math.max(0, (o.agreedListCents ?? 0) - (o.agreedMonthlyCents ?? 0)),
+      0,
+    );
     return success({
       totalOrgs,
       byStatus,
@@ -146,7 +151,11 @@ export class PlatformAdminService {
     const seatMap = await this.seatsByOrg(orgs);
     // Member totals per org in one grouped query (perf).
     const counts = orgs.length
-      ? await this.prisma.user.groupBy({ by: ['organizationId'], where: { organizationId: { in: orgs.map((o) => o.id) } }, _count: { id: true } })
+      ? await this.prisma.user.groupBy({
+          by: ['organizationId'],
+          where: { organizationId: { in: orgs.map((o) => o.id) } },
+          _count: { id: true },
+        })
       : [];
     const memberCount = new Map(counts.map((c) => [c.organizationId, c._count.id]));
     return {
@@ -156,7 +165,7 @@ export class PlatformAdminService {
         memberCount: memberCount.get(o.id) ?? 0,
         seats: seatMap.get(o.id) ?? 0,
       })),
-      nextCursor: rows.length > limit ? orgs[orgs.length - 1]?.id ?? null : null,
+      nextCursor: rows.length > limit ? (orgs[orgs.length - 1]?.id ?? null) : null,
     };
   }
 
@@ -173,7 +182,14 @@ export class PlatformAdminService {
   async orgDetail(organizationId: string, opts: { viewerRole?: string; memberLimit?: number } = {}) {
     const org = (await this.prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { ...ORG_SELECT, billingInterval: true, currentPeriodEnd: true, enabledModules: true, billingEmail: true, email: true },
+      select: {
+        ...ORG_SELECT,
+        billingInterval: true,
+        currentPeriodEnd: true,
+        enabledModules: true,
+        billingEmail: true,
+        email: true,
+      },
     })) as any;
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     const seats = (await this.seatsByOrg([org as LeanOrg])).get(org.id) ?? 0;
@@ -215,7 +231,10 @@ export class PlatformAdminService {
 
   // ── Controls ─────────────────────────────────────────────────────────────────
   async suspend(data: { organizationId: string; byUserId?: string }) {
-    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true },
+    });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: new Date() } });
     this.sessionEvents?.organizationSuspended(org.id);
@@ -231,15 +250,23 @@ export class PlatformAdminService {
    * stops queuing new work.
    */
   async setOfflineMode(data: { organizationId: string; enabled: boolean; byUserId?: string }) {
-    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true },
+    });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     await this.prisma.organization.update({ where: { id: org.id }, data: { offlineMode: !!data.enabled } });
-    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) offline mode ${data.enabled ? 'ON' : 'OFF'} by ${data.byUserId ?? 'operator'}`);
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) offline mode ${data.enabled ? 'ON' : 'OFF'} by ${data.byUserId ?? 'operator'}`,
+    );
     return success({ id: org.id, offlineMode: !!data.enabled });
   }
 
   async reactivate(data: { organizationId: string; byUserId?: string }) {
-    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true },
+    });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     await this.prisma.organization.update({ where: { id: org.id }, data: { suspendedAt: null } });
     this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) REACTIVATED by ${data.byUserId ?? 'operator'}`);

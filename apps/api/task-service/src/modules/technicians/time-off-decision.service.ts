@@ -73,27 +73,40 @@ export class TimeOffDecisionService extends MemberServiceBase {
     });
 
     // Recounted at the decision: a holiday confirmed since the request moves the number once, here.
-    const workingDays = approved && isAbsence(timeOff.kind)
-      ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
-      : undefined;
+    const workingDays =
+      approved && isAbsence(timeOff.kind)
+        ? await this.workingDaysOf(organizationId, timeOff.technicianId, timeOff.startDate, timeOff.endDate, true)
+        : undefined;
 
     // Office rules: past a threshold this approval is step 1 of 2 and the request stays pending.
     if (!approved) await this.rules?.clear(organizationId, 'request', timeOffId);
     if (approved && this.rules) {
-      const days = workingDays ?? (timeOff as { workingDays?: number | null }).workingDays
-        ?? Math.round((timeOff.endDate.getTime() - timeOff.startDate.getTime()) / 86_400_000) + 1;
+      const days =
+        workingDays ??
+        (timeOff as { workingDays?: number | null }).workingDays ??
+        Math.round((timeOff.endDate.getTime() - timeOff.startDate.getTime()) / 86_400_000) + 1;
       const spaceIds = (timeOff as { spaceId?: string | null }).spaceId
         ? [(timeOff as { spaceId: string }).spaceId]
         : timeOff.technician.spaceAssignments.map((a) => a.spaceId);
       // Cover is asked only when a rule cares — it is the wallchart's own verdict (CoverService).
-      const coverShort = isAbsence(timeOff.kind) && (await this.prisma.approvalRule.count({
-        where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true },
-      })) > 0
-        ? ['short', 'skill'].includes(
-            (await this.cover.assessMany(organizationId, [{ id: timeOff.id, technicianId: timeOff.technicianId, startDate: timeOff.startDate, endDate: timeOff.endDate }]))
-              .get(timeOff.id)?.level ?? 'ok',
-          )
-        : false;
+      const coverShort =
+        isAbsence(timeOff.kind) &&
+        (await this.prisma.approvalRule.count({
+          where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true },
+        })) > 0
+          ? ['short', 'skill'].includes(
+              (
+                await this.cover.assessMany(organizationId, [
+                  {
+                    id: timeOff.id,
+                    technicianId: timeOff.technicianId,
+                    startDate: timeOff.startDate,
+                    endDate: timeOff.endDate,
+                  },
+                ])
+              ).get(timeOff.id)?.level ?? 'ok',
+            )
+          : false;
       const verdict = await this.rules.gate({
         organizationId,
         kind: 'request',
@@ -103,7 +116,10 @@ export class TimeOffDecisionService extends MemberServiceBase {
         subjectId: timeOff.technicianId,
       });
       if (!verdict.finalize) {
-        return success({ ...timeOff, stage: 'FIRST_STEP', waitingFor: verdict.roleName }, `Approved — waiting for ${verdict.roleName}`);
+        return success(
+          { ...timeOff, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
+          `Approved — waiting for ${verdict.roleName}`,
+        );
       }
     }
     const updated = await this.prisma.timeOff.update({
@@ -136,16 +152,17 @@ export class TimeOffDecisionService extends MemberServiceBase {
       answer belongs to the person who asked, and to nobody else.
     */
     // Approved automatically: the owner sees it on screen; no push about their own.
-    if (!automatic) this.notificationClient.emit('time_off_decided', {
-      timeOffId: updated.id,
-      organizationId,
-      memberId: updated.technicianId,
-      ...requestFacts(updated),
-      approved,
-      rejectionReason: approved ? null : (rejectionReason ?? null),
-      startDate: toISODateString(updated.startDate),
-      endDate: toISODateString(updated.endDate),
-    });
+    if (!automatic)
+      this.notificationClient.emit('time_off_decided', {
+        timeOffId: updated.id,
+        organizationId,
+        memberId: updated.technicianId,
+        ...requestFacts(updated),
+        approved,
+        rejectionReason: approved ? null : (rejectionReason ?? null),
+        startDate: toISODateString(updated.startDate),
+        endDate: toISODateString(updated.endDate),
+      });
 
     return success(updated);
   }
@@ -232,9 +249,10 @@ export class TimeOffDecisionService extends MemberServiceBase {
       throw new BadRequestException('This overlaps an existing time-off entry for the employee');
     }
 
-    const workingDays = (data.startDate || data.endDate) && isAbsence(timeOff.kind)
-      ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end, true)
-      : undefined;
+    const workingDays =
+      (data.startDate || data.endDate) && isAbsence(timeOff.kind)
+        ? await this.workingDaysOf(data.organizationId, timeOff.technicianId, start, end, true)
+        : undefined;
     const updated = await this.prisma.timeOff.update({
       where: { id: data.timeOffId },
       data: {

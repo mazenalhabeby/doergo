@@ -44,7 +44,10 @@ export type ClockInChoice<T extends ClockInCandidate> =
   /** No workspace at all: the organization's Remote bucket. */
   | { kind: 'none' };
 
-function measure<T extends ClockInCandidate>(location: T, fix: { lat: number; lng: number; accuracy?: number | null } | null): RankedCandidate<T> {
+function measure<T extends ClockInCandidate>(
+  location: T,
+  fix: { lat: number; lng: number; accuracy?: number | null } | null,
+): RankedCandidate<T> {
   if (!fix || location.lat == null || location.lng == null) return { location, distanceM: null, inside: false };
   const zone = {
     lat: location.lat,
@@ -71,12 +74,13 @@ export function rankClockInLocations<T extends ClockInCandidate>(
 ): RankedCandidate<T>[] {
   return locations
     .map((l, i) => ({ ...measure(l, fix), i }))
-    .sort((a, b) =>
-      Number(b.inside) - Number(a.inside) ||
-      Number(!!b.location.shiftToday) - Number(!!a.location.shiftToday) ||
-      Number(!!b.location.isPrimary) - Number(!!a.location.isPrimary) ||
-      (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) ||
-      a.i - b.i,
+    .sort(
+      (a, b) =>
+        Number(b.inside) - Number(a.inside) ||
+        Number(!!b.location.shiftToday) - Number(!!a.location.shiftToday) ||
+        Number(!!b.location.isPrimary) - Number(!!a.location.isPrimary) ||
+        (a.distanceM ?? Infinity) - (b.distanceM ?? Infinity) ||
+        a.i - b.i,
     )
     .map(({ i: _i, ...rest }) => rest);
 }

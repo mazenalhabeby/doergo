@@ -20,7 +20,6 @@ import { SessionTokensBase } from './session-tokens.base';
  */
 @Injectable()
 export class SessionTokensService extends SessionTokensBase {
-
   /*
     Everything after "this is definitely the member" — resolved access, the
     tokens, and the payload the client is built against.
@@ -41,10 +40,19 @@ export class SessionTokensService extends SessionTokensBase {
       clientPlatform?: string;
     },
   ): Promise<AuthResult> {
-    const tokens = await this.generateTokens(user.id, user.email, user.role, user.organizationId, {
-      userAgent: opts.userAgent,
-    ipAddress: opts.ipAddress,
-    }, user.canViewAllTasks, opts.refreshTtl, opts.clientPlatform);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.organizationId,
+      {
+        userAgent: opts.userAgent,
+        ipAddress: opts.ipAddress,
+      },
+      user.canViewAllTasks,
+      opts.refreshTtl,
+      opts.clientPlatform,
+    );
 
     // Audit: successful login (fire-and-forget, never blocks response)
     if (user.organizationId) {
@@ -53,7 +61,7 @@ export class SessionTokensService extends SessionTokensBase {
         userId: user.id,
         organizationId: user.organizationId as string,
         ipAddress: opts.ipAddress,
-      userAgent: opts.userAgent,
+        userAgent: opts.userAgent,
       });
     }
 
@@ -114,7 +122,9 @@ export class SessionTokensService extends SessionTokensBase {
             (user.organization?.enabledModules as string[] | null) ?? [],
           ),
           // Billing tier + subscription status (lowercase) — drives plan gating.
-          subStatus: user.organization?.suspendedAt ? 'canceled' : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+          subStatus: user.organization?.suspendedAt
+            ? 'canceled'
+            : (user.organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: user.organization?.planTier ? user.organization.planTier.toString().toLowerCase() : null,
           // Capabilities the org has BOUGHT — the only thing PlanGuard reads.
           // Resolved here, server-side, so it can never be a client claim.
@@ -159,7 +169,22 @@ export class SessionTokensService extends SessionTokensBase {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
-        organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+        organization: {
+          select: {
+            name: true,
+            timezone: true,
+            profileBadges: true,
+            enabledModules: true,
+            subStatus: true,
+            planTier: true,
+            addOns: true,
+            currency: true,
+            offlineMode: true,
+            usesExternalWorkers: true,
+            suspendedAt: true,
+            ownerId: true,
+          },
+        },
         memberRole: { select: { permissions: true, isActive: true } },
         spaceAssignments: {
           where: {

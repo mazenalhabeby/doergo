@@ -57,12 +57,7 @@ export class TaskSupportService {
   /**
    * Create a task event for audit trail
    */
-  async createTaskEvent(
-    taskId: string,
-    userId: string,
-    eventType: TaskEventType,
-    metadata?: Record<string, any>,
-  ) {
+  async createTaskEvent(taskId: string, userId: string, eventType: TaskEventType, metadata?: Record<string, any>) {
     return this.prisma.taskEvent.create({
       data: {
         taskId,
@@ -99,7 +94,9 @@ export class TaskSupportService {
     // now see different counts, and a key that ignores that serves one of them
     // the other's numbers.
     const scopeKey = viewAllSpaceIds?.length ? `:${[...viewAllSpaceIds].sort().join(',')}` : '';
-    const cacheKey = `status_counts:${groupBy === 'space' ? 'space' : 'status'}:${userRole}:${userId}:${organizationId}${spaceId ? `:${spaceId}` : ''}${scopeKey}`;
+    const cacheKey =
+      `status_counts:${groupBy === 'space' ? 'space' : 'status'}:${userRole}:${userId}:` +
+      `${organizationId}${spaceId ? `:${spaceId}` : ''}${scopeKey}`;
     try {
       const cached = await this.redis.get(cacheKey);
       if (cached) {

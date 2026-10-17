@@ -48,8 +48,7 @@ async function bootstrap() {
     '/sync', // the phone's offline queue replays all of the above
     '/platform/blog', // operator image upload (base64)
   ].map((p) => apiPrefixForBodies + p);
-  const needsLargeBody = (path: string) =>
-    LARGE_BODY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
+  const needsLargeBody = (path: string) => LARGE_BODY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
   // Capture the exact raw request bytes so the Stripe webhook route can verify
   // its HMAC signature over the unparsed body (Stripe requires the raw payload).
   const keepRaw = (req: any, _res: any, buf: Buffer) => {
@@ -81,7 +80,17 @@ async function bootstrap() {
       console.log(`\n→ ${method} ${url}`);
       const isProd = process.env.NODE_ENV === 'production';
       if (!isProd && body && Object.keys(body).length > 0) {
-        const SENSITIVE = ['password', 'currentPassword', 'newPassword', 'refreshToken', 'accessToken', 'token', 'code', 'technicianSignature', 'customerSignature'];
+        const SENSITIVE = [
+          'password',
+          'currentPassword',
+          'newPassword',
+          'refreshToken',
+          'accessToken',
+          'token',
+          'code',
+          'technicianSignature',
+          'customerSignature',
+        ];
         const safeBody = { ...body };
         for (const k of SENSITIVE) if (k in safeBody) safeBody[k] = '***';
         console.log(`  Body:`, safeBody);
@@ -218,9 +227,7 @@ async function bootstrap() {
     from the same import the request path uses, so it cannot say yes while the
     routes use something else.
   */
-  console.log(
-    `[access] space-scoped resolution: ${typeof spacesGranting === 'function' ? 'ON' : 'MISSING'}`,
-  );
+  console.log(`[access] space-scoped resolution: ${typeof spacesGranting === 'function' ? 'ON' : 'MISSING'}`);
   if (!isProduction) {
     console.log(`Swagger docs available at: http://localhost:${port}/docs`);
   }

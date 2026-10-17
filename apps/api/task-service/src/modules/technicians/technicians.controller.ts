@@ -137,12 +137,24 @@ export class TechniciansController {
 
   /** What a leave range would cost — weekends, rota rest days and holidays left out. */
   @MessagePattern({ cmd: 'count_leave' })
-  async countLeave(@Payload() dto: { organizationId: string; technicianId: string; from: string; to: string; callerId?: string; scopeSpaceIds?: string[] }) {
+  async countLeave(
+    @Payload()
+    dto: {
+      organizationId: string;
+      technicianId: string;
+      from: string;
+      to: string;
+      callerId?: string;
+      scopeSpaceIds?: string[];
+    },
+  ) {
     return this.leaveRecords.countLeave(dto);
   }
 
   @MessagePattern({ cmd: 'get_leave_balance' })
-  async getLeaveBalance(@Payload() dto: { technicianId: string; organizationId: string; on?: string; year?: number | string }) {
+  async getLeaveBalance(
+    @Payload() dto: { technicianId: string; organizationId: string; on?: string; year?: number | string },
+  ) {
     return this.leaveRecords.getLeaveBalance(dto);
   }
 
@@ -164,9 +176,7 @@ export class TechniciansController {
   async getCoverRange(
     @Payload() data: { organizationId: string; start: string; end: string; scopeSpaceIds?: string[] },
   ) {
-    return success(
-      await this.coverService.coverRange(data.organizationId, data.start, data.end, data.scopeSpaceIds),
-    );
+    return success(await this.coverService.coverRange(data.organizationId, data.start, data.end, data.scopeSpaceIds));
   }
 
   @MessagePattern({ cmd: 'get_org_time_off' })

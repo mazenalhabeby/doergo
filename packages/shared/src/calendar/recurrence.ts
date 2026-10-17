@@ -39,12 +39,14 @@ export function parseRepeat(input: unknown): Repeat | null {
   if (typeof input !== 'object') throw new Error('REPEAT_INVALID');
   const r = input as Record<string, unknown>;
   const freq = r.freq;
-  if (freq !== 'DAILY' && freq !== 'WEEKLY' && freq !== 'MONTHLY' && freq !== 'YEARLY') throw new Error('REPEAT_INVALID');
+  if (freq !== 'DAILY' && freq !== 'WEEKLY' && freq !== 'MONTHLY' && freq !== 'YEARLY')
+    throw new Error('REPEAT_INVALID');
   const interval = r.interval === undefined ? 1 : Number(r.interval);
   if (!Number.isInteger(interval) || interval < 1 || interval > 52) throw new Error('REPEAT_INVALID');
   let byDay: number[] | undefined;
   if (r.byDay !== undefined && r.byDay !== null) {
-    if (!Array.isArray(r.byDay) || r.byDay.some((d) => !Number.isInteger(d) || (d as number) < 0 || (d as number) > 6)) throw new Error('REPEAT_INVALID');
+    if (!Array.isArray(r.byDay) || r.byDay.some((d) => !Number.isInteger(d) || (d as number) < 0 || (d as number) > 6))
+      throw new Error('REPEAT_INVALID');
     byDay = [...new Set(r.byDay as number[])].sort();
   }
   let until: string | null = null;

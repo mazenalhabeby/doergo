@@ -93,7 +93,11 @@ export function assessOccurrence(
   const occurredAt = new Date(evidence.occurredAt);
   const flags: OccurrenceFlag[] = [];
   if (!evidence.occurredAt || Number.isNaN(occurredAt.getTime())) {
-    return { occurredAt: opts.now, flags, refusal: { code: 'OCCURRED_AT_INVALID', message: 'The time of this action could not be read' } };
+    return {
+      occurredAt: opts.now,
+      flags,
+      refusal: { code: 'OCCURRED_AT_INVALID', message: 'The time of this action could not be read' },
+    };
   }
   const now = opts.now.getTime();
   const at = occurredAt.getTime();
@@ -102,7 +106,10 @@ export function assessOccurrence(
     return {
       occurredAt,
       flags,
-      refusal: { code: 'OCCURRED_IN_FUTURE', message: "This phone's clock is ahead — check its date and time settings" },
+      refusal: {
+        code: 'OCCURRED_IN_FUTURE',
+        message: "This phone's clock is ahead — check its date and time settings",
+      },
     };
   }
   if (opts.previousAt && at < opts.previousAt.getTime()) {
@@ -142,7 +149,13 @@ export function assessFix(
   fix: OccurrenceFix | undefined | null,
   occurredAt: Date,
 ): { ok: true } | { ok: false; code: FixRefusal; message: string } {
-  if (!fix || !Number.isFinite(fix.lat) || !Number.isFinite(fix.lng) || Math.abs(fix.lat) > 90 || Math.abs(fix.lng) > 180) {
+  if (
+    !fix ||
+    !Number.isFinite(fix.lat) ||
+    !Number.isFinite(fix.lng) ||
+    Math.abs(fix.lat) > 90 ||
+    Math.abs(fix.lng) > 180
+  ) {
     return { ok: false, code: 'FIX_MISSING', message: 'Your location could not be determined' };
   }
   // 0,0 is a real point in the Gulf of Guinea, and what a missing fix used to be sent as.
@@ -171,7 +184,14 @@ export function assessFix(
  */
 // APPROVED_REMOTE: away/remote work approved in advance (requests) — said on the entry, decided already.
 // AUTO_*: made by the automatic clock (attendance/auto-clock.ts) — marked, not suspected.
-export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set(['RECORDED_OFFLINE', 'UNANCHORED', 'APPROVED_REMOTE', 'AUTO_CLOCK_IN', 'AUTO_CLOCK_OUT', 'AUTO_REST']);
+export const INFORMATIONAL_FLAGS: ReadonlySet<string> = new Set([
+  'RECORDED_OFFLINE',
+  'UNANCHORED',
+  'APPROVED_REMOTE',
+  'AUTO_CLOCK_IN',
+  'AUTO_CLOCK_OUT',
+  'AUTO_REST',
+]);
 
 /** The flags on an entry that should put it in front of a person. */
 export function flagsForReview(flags: readonly string[]): string[] {
@@ -179,7 +199,12 @@ export function flagsForReview(flags: readonly string[]): string[] {
 }
 
 /** Flags that stop an entry counting on its own until a person looks at it. */
-const NEEDS_A_PERSON: ReadonlySet<string> = new Set(['CLOCK_SUSPECT', 'STALE', 'BOUNDARY_CHANGED', 'ASSIGNMENT_CHANGED']);
+const NEEDS_A_PERSON: ReadonlySet<string> = new Set([
+  'CLOCK_SUSPECT',
+  'STALE',
+  'BOUNDARY_CHANGED',
+  'ASSIGNMENT_CHANGED',
+]);
 
 export function occurrenceNeedsApproval(flags: readonly string[]): boolean {
   return flags.some((f) => NEEDS_A_PERSON.has(f));

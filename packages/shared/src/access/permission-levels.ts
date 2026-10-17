@@ -1,8 +1,4 @@
-import {
-  PERMISSION_KEYS,
-  type AccessPermissionKey,
-  type PermissionSet,
-} from '../types/permissions';
+import { PERMISSION_KEYS, type AccessPermissionKey, type PermissionSet } from '../types/permissions';
 
 /**
  * WHAT SOMEBODY MAY DO IN ONE WORKSPACE — as areas, levels and switches.
@@ -22,13 +18,7 @@ import {
 
 export type PermissionAreaId = 'tasks' | 'attendance' | 'crm' | 'portal' | 'assets';
 export type PermissionSwitchId =
-  | 'overtime'
-  | 'correctAttendance'
-  | 'deleteAttendance'
-  | 'rota'
-  | 'tracking'
-  | 'addPeople'
-  | 'grantRoles';
+  'overtime' | 'correctAttendance' | 'deleteAttendance' | 'rota' | 'tracking' | 'addPeople' | 'grantRoles';
 
 export interface PermissionLevel {
   id: string;
@@ -127,7 +117,10 @@ export type PermissionPresetId = 'observer' | 'supervisor' | 'manager';
  * (`OBSERVER_SEAT_PERMISSIONS`); every other preset is a full seat — the price
  * follows the keys, never the preset's name (billing/seats.ts).
  */
-export const PERMISSION_PRESETS: Record<PermissionPresetId, { levels: Partial<Record<PermissionAreaId, string>>; switches: Partial<Record<PermissionSwitchId, boolean>> }> = {
+export const PERMISSION_PRESETS: Record<
+  PermissionPresetId,
+  { levels: Partial<Record<PermissionAreaId, string>>; switches: Partial<Record<PermissionSwitchId, boolean>> }
+> = {
   observer: { levels: { tasks: 'create' }, switches: {} },
   supervisor: { levels: { tasks: 'view', attendance: 'approve' }, switches: { overtime: true } },
   manager: {
@@ -214,17 +207,30 @@ export function choiceFromPermissions(perms: PermissionSet | null | undefined): 
 /** A preset's choice, with every area and switch filled in. */
 export function choiceOfPreset(id: PermissionPresetId): PermissionChoice {
   const preset = PERMISSION_PRESETS[id];
-  const levels = Object.fromEntries(PERMISSION_AREAS.map((a) => [a.id, preset.levels[a.id] ?? 'none'])) as Record<PermissionAreaId, string>;
-  const switches = Object.fromEntries(PERMISSION_SWITCHES.map((s) => [s.id, preset.switches[s.id] === true])) as Record<PermissionSwitchId, boolean>;
+  const levels = Object.fromEntries(PERMISSION_AREAS.map((a) => [a.id, preset.levels[a.id] ?? 'none'])) as Record<
+    PermissionAreaId,
+    string
+  >;
+  const switches = Object.fromEntries(PERMISSION_SWITCHES.map((s) => [s.id, preset.switches[s.id] === true])) as Record<
+    PermissionSwitchId,
+    boolean
+  >;
   return { levels, switches, extra: [] };
 }
 
 /** Which preset these permissions are exactly, or null for a custom set. */
 export function presetOfPermissions(perms: PermissionSet | null | undefined): PermissionPresetId | null {
-  const held = PERMISSION_KEYS.filter((k) => perms?.[k] === true).sort().join(',');
+  const held = PERMISSION_KEYS.filter((k) => perms?.[k] === true)
+    .sort()
+    .join(',');
   for (const id of Object.keys(PERMISSION_PRESETS) as PermissionPresetId[]) {
     const p = permissionsFromChoice(choiceOfPreset(id));
-    if (PERMISSION_KEYS.filter((k) => p[k] === true).sort().join(',') === held) return id;
+    if (
+      PERMISSION_KEYS.filter((k) => p[k] === true)
+        .sort()
+        .join(',') === held
+    )
+      return id;
   }
   return null;
 }

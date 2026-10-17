@@ -33,14 +33,35 @@ export class LocationController {
 
   @MessagePattern({ cmd: 'update_location' })
   async updateLocation(
-    @Payload() data: { userId: string; lat: number; lng: number; accuracy?: number; taskId?: string; organizationId?: string },
+    @Payload()
+    data: {
+      userId: string;
+      lat: number;
+      lng: number;
+      accuracy?: number;
+      taskId?: string;
+      organizationId?: string;
+    },
   ) {
-    return this.locationService.updateLocation(data.userId, data.lat, data.lng, data.accuracy, data.taskId, data.organizationId);
+    return this.locationService.updateLocation(
+      data.userId,
+      data.lat,
+      data.lng,
+      data.accuracy,
+      data.taskId,
+      data.organizationId,
+    );
   }
 
   @MessagePattern({ cmd: 'update_location_batch' })
   async updateLocationBatch(
-    @Payload() data: { userId: string; taskId?: string; organizationId?: string; points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[] },
+    @Payload()
+    data: {
+      userId: string;
+      taskId?: string;
+      organizationId?: string;
+      points: { lat: number; lng: number; accuracy?: number; timestamp?: string }[];
+    },
   ) {
     return this.batches.updateLocationBatch(data.userId, data.taskId, data.points, data.organizationId);
   }
@@ -65,7 +86,14 @@ export class LocationController {
 
   @MessagePattern({ cmd: 'get_worker_history' })
   async getWorkerHistory(
-    @Payload() data: { workerId: string; startDate?: string; endDate?: string; organizationId?: string; scopeSpaceIds?: string[] },
+    @Payload()
+    data: {
+      workerId: string;
+      startDate?: string;
+      endDate?: string;
+      organizationId?: string;
+      scopeSpaceIds?: string[];
+    },
   ) {
     return this.workerReads.getWorkerHistory(
       data.workerId,
@@ -82,7 +110,9 @@ export class LocationController {
   }
 
   @MessagePattern({ cmd: 'get_worker_current_route' })
-  async getWorkerCurrentRoute(@Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] }) {
+  async getWorkerCurrentRoute(
+    @Payload() data: { workerId: string; organizationId?: string; scopeSpaceIds?: string[] },
+  ) {
     return this.routeReads.getWorkerCurrentRoute(data.workerId, data.organizationId, scopeOf(data));
   }
 }

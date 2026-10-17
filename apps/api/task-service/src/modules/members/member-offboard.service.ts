@@ -39,7 +39,11 @@ export class MemberOffboardService {
    * workspaces and the owner's own people are untouched. Asked by auth-service
    * after it marks the share REVOKED; idempotent, so a retry of the revoke is safe.
    */
-  async releaseSharedSpace(data: { ownerOrgId: string; spaceId: string; guestOrgId: string }): Promise<{ assignmentsRemoved: number }> {
+  async releaseSharedSpace(data: {
+    ownerOrgId: string;
+    spaceId: string;
+    guestOrgId: string;
+  }): Promise<{ assignmentsRemoved: number }> {
     // The space must be the OWNER's — a guest org id alone must never empty somebody else's workspace.
     const space = await this.prisma.companyLocation.findFirst({
       where: { id: data.spaceId, organizationId: data.ownerOrgId },
@@ -58,7 +62,12 @@ export class MemberOffboardService {
    *               leave records go too. A removal by an admin keeps them — the
    *               organization's own record of absences outlives a departure.
    */
-  async offboard(data: { organizationId: string; userId: string; actorId: string; erase?: boolean }): Promise<OffboardResult> {
+  async offboard(data: {
+    organizationId: string;
+    userId: string;
+    actorId: string;
+    erase?: boolean;
+  }): Promise<OffboardResult> {
     const { organizationId, userId, actorId } = data;
     const tasksReleased = await this.tasks.releaseMemberFromOpenWork(organizationId, userId, actorId);
     const assetsReturned = await this.custody.releaseAllHeldBy(organizationId, userId, actorId);
@@ -73,11 +82,16 @@ export class MemberOffboardService {
       data: { effectiveTo: now },
     });
     // The weekly working pattern belongs to a member who works here; a leaver has none.
-    const { count: schedulesRemoved } = await this.prisma.technicianSchedule.deleteMany({ where: { technicianId: userId } });
+    const { count: schedulesRemoved } = await this.prisma.technicianSchedule.deleteMany({
+      where: { technicianId: userId },
+    });
     const { count: timeOffErased } = data.erase
       ? await this.prisma.timeOff.deleteMany({ where: { technicianId: userId } })
       : { count: 0 };
-    this.logger.log(`Offboarded member ${userId}: ${tasksReleased} jobs released, ${assetsReturned} assets returned, ${assignmentsEnded} assignments ended, ${schedulesRemoved} schedules removed${data.erase ? `, ${timeOffErased} leave records erased` : ''}`);
+    this.logger.log(
+      `Offboarded member ${userId}: ${tasksReleased} jobs released, ${assetsReturned} assets returned, ${assignmentsEnded} ` +
+        `assignments ended, ${schedulesRemoved} schedules removed${data.erase ? `, ${timeOffErased} leave records erased` : ''}`,
+    );
     return { tasksReleased, assignmentsEnded, assetsReturned, schedulesRemoved, timeOffErased };
   }
 }

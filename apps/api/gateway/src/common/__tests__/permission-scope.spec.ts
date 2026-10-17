@@ -8,7 +8,10 @@ import { scopeFor, scopeIdsFor } from '../permission-scope';
  * canApproveAttendance) passed the guard and was then narrowed to nothing.
  */
 describe('scopeFor', () => {
-  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({ org, perSpace });
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({
+    org,
+    perSpace,
+  });
 
   it('an administrator is never narrowed', () => {
     expect(scopeFor({ role: 'ADMIN', access: access({}) }, 'canApproveAttendance')).toBeNull();
@@ -20,7 +23,10 @@ describe('scopeFor', () => {
   });
 
   it('a space grant narrows to exactly those spaces', () => {
-    const user = { role: 'EMPLOYEE', access: access({}, { A: { canApproveAttendance: true }, B: { canViewAllTasks: true } }) };
+    const user = {
+      role: 'EMPLOYEE',
+      access: access({}, { A: { canApproveAttendance: true }, B: { canViewAllTasks: true } }),
+    };
     expect(scopeFor(user, 'canApproveAttendance')).toEqual(['A']);
   });
 
@@ -30,12 +36,17 @@ describe('scopeFor', () => {
   });
 
   it('a flat flag set to anything but true does not widen', () => {
-    expect(scopeFor({ role: 'EMPLOYEE', canApproveAttendance: 'true', access: access({}) }, 'canApproveAttendance')).toEqual([]);
+    expect(
+      scopeFor({ role: 'EMPLOYEE', canApproveAttendance: 'true', access: access({}) }, 'canApproveAttendance'),
+    ).toEqual([]);
   });
 });
 
 describe('scopeIdsFor (the shape the services take)', () => {
-  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({ org, perSpace });
+  const access = (org: Record<string, boolean>, perSpace: Record<string, Record<string, boolean>> = {}) => ({
+    org,
+    perSpace,
+  });
 
   it('an org-wide Manager (canViewAllTasks) sees attendance and cover org-wide, not an empty page', () => {
     // canViewSpaceAttendance is bridged from canViewAllTasks; the flag carries it, access.org does not.
@@ -64,7 +75,7 @@ describe('ONE narrowing rule in the gateway', () => {
   const ALLOWED: Record<string, string> = {
     'common/permission-scope.ts': 'the rule itself',
     'common/tracking-visibility.ts': 'also reads the legacy flat column as org-wide',
-    'modules/approvals/approvals.service.ts': 'reads OWN access (a stand-in is never a ceiling)',
+    'modules/approvals/approvals-helpers.ts': 'reads OWN access (a stand-in is never a ceiling)',
     'modules/locations/locations.controller.ts': 'external members only: closed when nothing is granted',
     'modules/technicians/technicians.controller.ts':
       'member card: org-wide is canViewAllTasks/canManageUsers, decided above',

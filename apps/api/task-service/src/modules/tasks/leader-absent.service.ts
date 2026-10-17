@@ -48,7 +48,9 @@ export class LeaderAbsentService {
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async sweepCron(): Promise<void> {
-    await runWithCronLock(this.prisma, { name: 'task:leaderAbsent', ttlSeconds: 1500, logger: this.logger }, () => this.sweep());
+    await runWithCronLock(this.prisma, { name: 'task:leaderAbsent', ttlSeconds: 1500, logger: this.logger }, () =>
+      this.sweep(),
+    );
   }
 
   /** Directly callable, so a test does not have to own a cron lock. */
@@ -56,7 +58,12 @@ export class LeaderAbsentService {
     // Who is off around today, in any zone: one indexed query on approved leave.
     const dayMs = 86_400_000;
     const leave = await this.prisma.timeOff.findMany({
-      where: { status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: new Date(now.getTime() + dayMs) }, endDate: { gte: new Date(now.getTime() - dayMs) } },
+      where: {
+        status: 'APPROVED',
+        ...ABSENCE_WHERE,
+        startDate: { lte: new Date(now.getTime() + dayMs) },
+        endDate: { gte: new Date(now.getTime() - dayMs) },
+      },
       select: { technicianId: true, startDate: true, endDate: true },
       take: 2000,
     });
@@ -81,7 +88,12 @@ export class LeaderAbsentService {
         ],
       },
       select: {
-        id: true, title: true, organizationId: true, assignedToId: true, createdById: true, leadNoticeOn: true,
+        id: true,
+        title: true,
+        organizationId: true,
+        assignedToId: true,
+        createdById: true,
+        leadNoticeOn: true,
         space: { select: { timezone: true } },
         organization: { select: { timezone: true } },
         assignedTo: { select: { firstName: true, lastName: true } },
@@ -116,11 +128,19 @@ export class LeaderAbsentService {
       */
       const creator = job.createdById
         ? await this.prisma.user.findFirst({
-            where: { id: job.createdById, organizationId: job.organizationId, isExternal: false, isActive: true, role: { not: 'CUSTOMER' } },
+            where: {
+              id: job.createdById,
+              organizationId: job.organizationId,
+              isExternal: false,
+              isActive: true,
+              role: { not: 'CUSTOMER' },
+            },
             select: { id: true },
           })
         : null;
-      const recipients = [...new Set([...watchers.ids, ...(creator ? [creator.id] : [])])].filter((id) => id !== job.assignedToId);
+      const recipients = [...new Set([...watchers.ids, ...(creator ? [creator.id] : [])])].filter(
+        (id) => id !== job.assignedToId,
+      );
       if (!recipients.length) continue;
       const acting = view?.leader.acting ? view.members.find((m) => m.user.id === view.leader.userId)?.user : null;
       this.notifications.emit('task_lead_needed', {

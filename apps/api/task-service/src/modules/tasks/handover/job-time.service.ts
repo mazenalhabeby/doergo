@@ -20,7 +20,6 @@ import { JobTimeBase } from './job-time.base';
  */
 @Injectable()
 export class JobTimeService extends JobTimeBase {
-
   /** One job: the total, each worker's share, and what is running now. */
   async forTask(task: TaskRef & { assignedToId: string | null }, until: Date = new Date()) {
     const [kindOf, events, crew] = await Promise.all([
@@ -31,10 +30,18 @@ export class JobTimeService extends JobTimeBase {
     const rows = events.get(task.id) ?? [];
     const timeline = this.timeline(rows);
     const spans = jobSpans(timeline, until, kindOf);
-    const workerIds = this.workersOf(timeline, kindOf, [task.assignedToId, ...crew.map((c) => c.userId)].filter((x): x is string => !!x));
+    const workerIds = this.workersOf(
+      timeline,
+      kindOf,
+      [task.assignedToId, ...crew.map((c) => c.userId)].filter((x): x is string => !!x),
+    );
     const firstAt = rows[0]?.createdAt ?? null;
     const [shares, people] = await Promise.all([
-      Promise.all(workerIds.map((id) => this.timesForWorker(id, task.organizationId, firstAt, until, [task.id]).then((r) => ({ id, ...r })))),
+      Promise.all(
+        workerIds.map((id) =>
+          this.timesForWorker(id, task.organizationId, firstAt, until, [task.id]).then((r) => ({ id, ...r })),
+        ),
+      ),
       this.prisma.user.findMany({ where: { id: { in: workerIds } }, ...PERSON }),
     ]);
     const byId = new Map(shares.map((s) => [s.id, s]));
@@ -54,10 +61,23 @@ export class JobTimeService extends JobTimeBase {
     const onClock = byWorker.filter((w) => w.live).length;
     const started = this.startedBy(rows, kindOf);
     const names = new Map(people.map((p) => [p.id, p]));
-    let startedBy = null as null | { user: { id: string; firstName: string; lastName: string } | null; forUser: { id: string; firstName: string; lastName: string } | null; office: boolean; reason: string | null; at: string };
+    let startedBy = null as null | {
+      user: { id: string; firstName: string; lastName: string } | null;
+      forUser: { id: string; firstName: string; lastName: string } | null;
+      office: boolean;
+      reason: string | null;
+      at: string;
+    };
     if (started) {
-      const by = names.get(started.userId) ?? (await this.prisma.user.findUnique({ where: { id: started.userId }, ...PERSON }));
-      startedBy = { user: by ?? null, forUser: started.forUserId ? names.get(started.forUserId) ?? null : null, office: !!started.forUserId, reason: started.reason, at: started.at };
+      const by =
+        names.get(started.userId) ?? (await this.prisma.user.findUnique({ where: { id: started.userId }, ...PERSON }));
+      startedBy = {
+        user: by ?? null,
+        forUser: started.forUserId ? (names.get(started.forUserId) ?? null) : null,
+        office: !!started.forUserId,
+        reason: started.reason,
+        at: started.at,
+      };
     }
     return {
       asOf: until.toISOString(),
@@ -78,7 +98,13 @@ export class JobTimeService extends JobTimeBase {
   async workedForMany(tasks: TaskRef[], userId: string, until: Date = new Date()): Promise<Map<string, number>> {
     const out = new Map<string, number>();
     if (!tasks.length) return out;
-    const { times } = await this.timesForWorker(userId, tasks[0]!.organizationId, null, until, tasks.map((t) => t.id));
+    const { times } = await this.timesForWorker(
+      userId,
+      tasks[0]!.organizationId,
+      null,
+      until,
+      tasks.map((t) => t.id),
+    );
     for (const t of tasks) out.set(t.id, times.get(t.id)?.working ?? 0);
     return out;
   }
@@ -98,17 +124,28 @@ export class JobTimeService extends JobTimeBase {
       if (time.travel + time.working + time.blocked === 0) return [];
       const started = this.startedBy(evs, kindOf);
       if (started) starters.add(started.userId);
-      const pause = [...evs].reverse().find((e) => e.eventType === TaskEventType.PAUSED && e.userId === userId && inWindow(e.createdAt));
-      const block = [...evs].reverse().find((e) => e.eventType === TaskEventType.STATUS_CHANGED && (e.metadata as MoveMeta | null)?.newStatus === 'BLOCKED' && inWindow(e.createdAt));
-      return [{
-        taskId: t.id,
-        title: t.title,
-        ...time,
-        startedBy: started ? { userId: started.userId, office: !!started.forUserId } : null,
-        officeReason: started?.forUserId === userId ? started.reason : null,
-        pausedAt: pause ? ((pause.metadata as MoveMeta | null)?.at ?? pause.createdAt.toISOString()) : null,
-        blockedReason: block ? ((block.metadata as MoveMeta | null)?.reason ?? null) : null,
-      }];
+      const pause = [...evs]
+        .reverse()
+        .find((e) => e.eventType === TaskEventType.PAUSED && e.userId === userId && inWindow(e.createdAt));
+      const block = [...evs]
+        .reverse()
+        .find(
+          (e) =>
+            e.eventType === TaskEventType.STATUS_CHANGED &&
+            (e.metadata as MoveMeta | null)?.newStatus === 'BLOCKED' &&
+            inWindow(e.createdAt),
+        );
+      return [
+        {
+          taskId: t.id,
+          title: t.title,
+          ...time,
+          startedBy: started ? { userId: started.userId, office: !!started.forUserId } : null,
+          officeReason: started?.forUserId === userId ? started.reason : null,
+          pausedAt: pause ? ((pause.metadata as MoveMeta | null)?.at ?? pause.createdAt.toISOString()) : null,
+          blockedReason: block ? ((block.metadata as MoveMeta | null)?.reason ?? null) : null,
+        },
+      ];
     });
     const people = await this.prisma.user.findMany({ where: { id: { in: [...starters] } }, ...PERSON });
     const names = new Map(people.map((p) => [p.id, p]));
@@ -116,7 +153,10 @@ export class JobTimeService extends JobTimeBase {
     return {
       // On the clock over the period, minus rests — measured on the same spans as job time.
       totals: { ...totals, clock: clockMinutes(shifts, from, until) },
-      rows: rows.map((r) => ({ ...r, startedBy: r.startedBy ? { ...r.startedBy, user: names.get(r.startedBy.userId) ?? null } : null })),
+      rows: rows.map((r) => ({
+        ...r,
+        startedBy: r.startedBy ? { ...r.startedBy, user: names.get(r.startedBy.userId) ?? null } : null,
+      })),
     };
   }
 }

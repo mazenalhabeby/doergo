@@ -46,18 +46,33 @@ export class TimeOffRequestService extends MemberServiceBase {
       const mine = ctx.spaces.find((s) => s.id === value.spaceId);
       if (!mine) {
         // Another organization's workspace (or none) answers the same 404 as a missing one.
-        const space = await this.prisma.companyLocation.findFirst({ where: { id: value.spaceId }, select: { organizationId: true } });
+        const space = await this.prisma.companyLocation.findFirst({
+          where: { id: value.spaceId },
+          select: { organizationId: true },
+        });
         assertFoundInOrg(space, organizationId, 'Workspace');
-        throw new BadRequestException({ code: 'REQUEST_SPACE_NOT_YOURS', message: 'You are not assigned to that workspace.' });
+        throw new BadRequestException({
+          code: 'REQUEST_SPACE_NOT_YOURS',
+          message: 'You are not assigned to that workspace.',
+        });
       }
       if (value.kind === 'REMOTE' && !mine.mayWorkRemotely) {
-        throw new BadRequestException({ code: 'REQUEST_REMOTE_NOT_ALLOWED', message: `You are not set up to work away from ${mine.name}.` });
+        throw new BadRequestException({
+          code: 'REQUEST_REMOTE_NOT_ALLOWED',
+          message: `You are not set up to work away from ${mine.name}.`,
+        });
       }
       if (!mine.kinds.includes(value.kind)) {
-        throw new BadRequestException({ code: 'REQUEST_KIND_NOT_OFFERED', message: `${mine.name} does not take this kind of request.` });
+        throw new BadRequestException({
+          code: 'REQUEST_KIND_NOT_OFFERED',
+          message: `${mine.name} does not take this kind of request.`,
+        });
       }
     } else if (!ctx.kinds.includes(value.kind)) {
-      throw new BadRequestException({ code: 'REQUEST_KIND_NOT_OFFERED', message: 'Your workspaces do not take this kind of request.' });
+      throw new BadRequestException({
+        code: 'REQUEST_KIND_NOT_OFFERED',
+        message: 'Your workspaces do not take this kind of request.',
+      });
     }
   }
 
@@ -72,7 +87,14 @@ export class TimeOffRequestService extends MemberServiceBase {
     // overlap rule, which would otherwise refuse it as overlapping itself.
     const prior = await findPrior({
       id: dto.id,
-      find: (id) => this.prisma.timeOff.findUnique({ where: { id }, include: { technician: { select: { id: true, firstName: true, lastName: true } }, space: { select: SPACE_BRIEF } } }),
+      find: (id) =>
+        this.prisma.timeOff.findUnique({
+          where: { id },
+          include: {
+            technician: { select: { id: true, firstName: true, lastName: true } },
+            space: { select: SPACE_BRIEF },
+          },
+        }),
       isSame: (row) => row.technicianId === technicianId,
     });
     if (prior) return success(prior, 'Time-off request already recorded');
@@ -111,7 +133,11 @@ export class TimeOffRequestService extends MemberServiceBase {
     if (sameKind) {
       throw new BadRequestException({
         code: 'TIMEOFF_OVERLAP',
-        params: { from: toISODateString(sameKind.startDate), to: toISODateString(sameKind.endDate), status: sameKind.status },
+        params: {
+          from: toISODateString(sameKind.startDate),
+          to: toISODateString(sameKind.endDate),
+          status: sameKind.status,
+        },
         message: 'Time-off request overlaps with an existing request',
       });
     }
@@ -119,14 +145,20 @@ export class TimeOffRequestService extends MemberServiceBase {
     if (onLeave) {
       throw new BadRequestException({
         code: 'REQUEST_OVERLAPS_LEAVE',
-        params: { from: toISODateString(onLeave.startDate), to: toISODateString(onLeave.endDate), status: onLeave.status },
+        params: {
+          from: toISODateString(onLeave.startDate),
+          to: toISODateString(onLeave.endDate),
+          status: onLeave.status,
+        },
         message: 'That day falls in leave already asked for or approved.',
       });
     }
 
     // Only a vacation request is refused for falling on days off; sickness is recorded as it came.
     // A request that is not leave costs no allowance at all.
-    const workingDays = leave ? await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION') : null;
+    const workingDays = leave
+      ? await this.workingDaysOf(organizationId, technicianId, start, end, type !== 'VACATION')
+      : null;
 
     const timeOff = await this.prisma.timeOff.create({
       data: {
@@ -164,9 +196,11 @@ export class TimeOffRequestService extends MemberServiceBase {
     */
     // Only leave thins cover; a remote day or changed hours is a day worked.
     const verdict = leave
-      ? (await this.cover.assessMany(organizationId, [
-          { id: timeOff.id, technicianId, startDate: start, endDate: end },
-        ])).get(timeOff.id) ?? null
+      ? ((
+          await this.cover.assessMany(organizationId, [
+            { id: timeOff.id, technicianId, startDate: start, endDate: end },
+          ])
+        ).get(timeOff.id) ?? null)
       : null;
 
     /*

@@ -108,7 +108,9 @@ export const AVAILABLE_ADD_ONS: AddOnDef[] = [
     // contract that gets signed on a phone, and the certificate that stops a
     // technician being sent to a job they are no longer qualified for.
     description:
-      'Give every member their own document file — payslips and contracts they can open on their phone, signed on screen, with certificates that warn you before they expire',
+      'Give every member their own document file — payslips and contracts they ' +
+      'can open on their phone, signed on screen, with certificates that warn ' +
+      'you before they expire',
     // 'work' rather than 'insight': this is part of running the team, not
     // something you read a chart about.
     group: 'work',

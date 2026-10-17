@@ -6,12 +6,12 @@ import { AttendanceService } from './attendance.service';
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
 
-    @MessagePattern({ cmd: 'list_clock_in_locations' })
+  @MessagePattern({ cmd: 'list_clock_in_locations' })
   listClockInLocations(@Payload() d: { userId: string; organizationId: string }) {
     return this.attendanceService.listClockInLocations(d);
   }
 
-@MessagePattern({ cmd: 'get_attendance_status' })
+  @MessagePattern({ cmd: 'get_attendance_status' })
   async getStatus(@Payload() data: { userId: string; organizationId: string }) {
     return this.attendanceService.getStatus(data);
   }
@@ -103,7 +103,18 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'resolve_no_show' })
-  async resolveNoShow(@Payload() data: { id: string; organizationId: string; action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean; excusedById?: string }) {
+  async resolveNoShow(
+    @Payload()
+    data: {
+      id: string;
+      organizationId: string;
+      action: 'excuse' | 'absent' | 'reopen';
+      reasonCode?: string;
+      reason?: string;
+      wholeRun?: boolean;
+      excusedById?: string;
+    },
+  ) {
     return this.attendanceService.resolveNoShow(data);
   }
 
@@ -116,7 +127,12 @@ export class AttendanceController {
   @MessagePattern({ cmd: 'report_geofence_excursion' })
   async reportExcursion(
     @Payload()
-    data: { userId: string; organizationId: string; reason: string; requestedMinutes: number },
+    data: {
+      userId: string;
+      organizationId: string;
+      reason: string;
+      requestedMinutes: number;
+    },
   ) {
     return this.attendanceService.reportExcursion(data);
   }
@@ -124,7 +140,12 @@ export class AttendanceController {
   @MessagePattern({ cmd: 'approve_geofence_excursion' })
   async approveExcursion(
     @Payload()
-    data: { excursionId: string; approverId: string; organizationId: string; grantedMinutes?: number },
+    data: {
+      excursionId: string;
+      approverId: string;
+      organizationId: string;
+      grantedMinutes?: number;
+    },
   ) {
     return this.attendanceService.approveExcursion(data);
   }
@@ -132,7 +153,11 @@ export class AttendanceController {
   @MessagePattern({ cmd: 'reject_geofence_excursion' })
   async rejectExcursion(
     @Payload()
-    data: { excursionId: string; approverId: string; organizationId: string },
+    data: {
+      excursionId: string;
+      approverId: string;
+      organizationId: string;
+    },
   ) {
     return this.attendanceService.rejectExcursion(data);
   }
@@ -140,7 +165,10 @@ export class AttendanceController {
   @MessagePattern({ cmd: 'list_geofence_excursions' })
   async listExcursions(
     @Payload()
-    data: { organizationId: string; status?: 'active' | 'pending' | 'approved' },
+    data: {
+      organizationId: string;
+      status?: 'active' | 'pending' | 'approved';
+    },
   ) {
     return this.attendanceService.listActiveExcursions(data);
   }
@@ -153,9 +181,7 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'request_extra_time' })
-  async requestExtraTime(
-    @Payload() data: { userId: string; entryId: string; organizationId: string },
-  ) {
+  async requestExtraTime(@Payload() data: { userId: string; entryId: string; organizationId: string }) {
     return this.attendanceService.requestExtraTime(data);
   }
 
@@ -168,7 +194,15 @@ export class AttendanceController {
 
   @MessagePattern({ cmd: 'add_overtime_to_entry' })
   async addOvertimeToEntry(
-    @Payload() data: { approverId: string; entryId: string; minutes: number; reason?: string | null; organizationId: string; scopeSpaceIds?: string[] | null },
+    @Payload()
+    data: {
+      approverId: string;
+      entryId: string;
+      minutes: number;
+      reason?: string | null;
+      organizationId: string;
+      scopeSpaceIds?: string[] | null;
+    },
   ) {
     return this.attendanceService.addOvertimeToClosedEntry(data);
   }
@@ -181,21 +215,19 @@ export class AttendanceController {
   }
 
   @MessagePattern({ cmd: 'reject_extra_time' })
-  async rejectExtraTime(
-    @Payload() data: { approverId: string; entryId: string; organizationId: string },
-  ) {
+  async rejectExtraTime(@Payload() data: { approverId: string; entryId: string; organizationId: string }) {
     return this.attendanceService.rejectExtraTime(data);
   }
 
   @MessagePattern({ cmd: 'list_pending_extra_time' })
-  async listPendingExtraTime(
-    @Payload() data: { userId: string; organizationId: string; isAdmin?: boolean },
-  ) {
+  async listPendingExtraTime(@Payload() data: { userId: string; organizationId: string; isAdmin?: boolean }) {
     return this.attendanceService.listPendingExtraTime(data);
   }
 
   @MessagePattern({ cmd: 'get_entry_presence' })
-  async getEntryPresence(@Payload() data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+  async getEntryPresence(
+    @Payload() data: { entryId: string; organizationId: string; scopeSpaceIds?: string[] | null },
+  ) {
     return this.attendanceService.getEntryPresence(data);
   }
 }

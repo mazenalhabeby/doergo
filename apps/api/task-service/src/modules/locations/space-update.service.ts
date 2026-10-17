@@ -114,7 +114,10 @@ export class SpaceUpdateService extends SpaceServiceBase {
     */
     if (data.requestKinds !== undefined) {
       if (!Array.isArray(data.requestKinds) || !data.requestKinds.every(isRequestKind)) {
-        throw new BadRequestException({ code: 'REQUEST_KIND_INVALID', message: 'Unknown request kind for this workspace' });
+        throw new BadRequestException({
+          code: 'REQUEST_KIND_INVALID',
+          message: 'Unknown request kind for this workspace',
+        });
       }
       updateData.requestKinds = REQUEST_KINDS.filter((k) => (data.requestKinds as string[]).includes(k));
     }
@@ -126,7 +129,11 @@ export class SpaceUpdateService extends SpaceServiceBase {
     */
     if (data.autoClock !== undefined) {
       if (existing.isRemote) {
-        throw new BadRequestException({ message: 'The remote bucket has no automatic clock', code: 'AUTO_CLOCK_SETTING_INVALID', params: { field: 'autoClock' } });
+        throw new BadRequestException({
+          message: 'The remote bucket has no automatic clock',
+          code: 'AUTO_CLOCK_SETTING_INVALID',
+          params: { field: 'autoClock' },
+        });
       }
       if (data.autoClock === null) {
         updateData.autoClock = Prisma.DbNull;
@@ -166,7 +173,9 @@ export class SpaceUpdateService extends SpaceServiceBase {
       );
       if (conflict) {
         throw new BadRequestException({
-          message: 'Clocking in only with a shift needs a workspace that schedules shifts. Choose a work model with shifts first, or allow clocking in without one.',
+          message:
+            'Clocking in only with a shift needs a workspace that schedules shifts. ' +
+            'Choose a work model with shifts first, or allow clocking in without one.',
           code: conflict,
         });
       }
@@ -195,7 +204,8 @@ export class SpaceUpdateService extends SpaceServiceBase {
     */
     if (data.currency !== undefined) updateData.currency = spaceCurrency(data.currency);
     // Who invoices it. Issued invoices keep the company frozen on them.
-    if (data.legalEntityId !== undefined) updateData.legalEntityId = await this.spaceCompany(data.organizationId, data.legalEntityId);
+    if (data.legalEntityId !== undefined)
+      updateData.legalEntityId = await this.spaceCompany(data.organizationId, data.legalEntityId);
     /*
       Rates are NOT written here: they go through `writeSpaceRates` below — a
       dated history row and then the column — so a change never re-prices work
@@ -240,9 +250,16 @@ export class SpaceUpdateService extends SpaceServiceBase {
     }
     this.announce('space_changed', data.organizationId, location.id);
     // The workspace's automatic clock switched ON → the members already chosen here learn the switch is there.
-    if (data.autoClock !== undefined && !wasOn && autoClockOffered({ settings: location.autoClock, assignmentAutoClock: true })) {
+    if (
+      data.autoClock !== undefined &&
+      !wasOn &&
+      autoClockOffered({ settings: location.autoClock, assignmentAutoClock: true })
+    ) {
       void this.offerAutoClock(data.organizationId, location.id);
     }
-    return success({ ...location, autoClock: readAutoClock(location.autoClock) }, 'Company location updated successfully');
+    return success(
+      { ...location, autoClock: readAutoClock(location.autoClock) },
+      'Company location updated successfully',
+    );
   }
 }

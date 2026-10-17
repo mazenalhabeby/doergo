@@ -21,7 +21,6 @@ import { AutoClockService } from './auto-clock.service';
  */
 @Injectable()
 export class AutoClockUndoService {
-
   @Inject(AutoClockService) private readonly autoClock!: AutoClockService;
 
   private readonly logger = new Logger(AutoClockUndoService.name);
@@ -30,7 +29,6 @@ export class AutoClockUndoService {
     private readonly prisma: PrismaService,
     @Inject(SERVICE_NAMES.NOTIFICATION) private readonly notificationClient: ClientProxy,
   ) {}
-
 
   /**
    * Take back an automatic clock-in — a drive-past, not an arrival.
@@ -47,18 +45,29 @@ export class AutoClockUndoService {
     const entry = await this.prisma.timeEntry.findFirst({
       where: { id: data.entryId, userId: data.userId, organizationId: data.organizationId },
       select: {
-        id: true, userId: true, locationId: true, status: true, clockInAt: true, clockOutAt: true,
-        flagReasons: true, shiftId: true,
+        id: true,
+        userId: true,
+        locationId: true,
+        status: true,
+        clockInAt: true,
+        clockOutAt: true,
+        flagReasons: true,
+        shiftId: true,
         location: { select: { autoClock: true } },
         _count: { select: { breaks: true, workLog: true } },
       },
     });
     if (!entry) {
-      if (await this.autoClock.wasUndone(data.entryId, data.userId)) return success({ undone: true as const }, 'Already undone');
+      if (await this.autoClock.wasUndone(data.entryId, data.userId))
+        return success({ undone: true as const }, 'Already undone');
       throw new NotFoundException('Time entry not found');
     }
     const refuse = (why: string) =>
-      new BadRequestException({ message: `This clock-in can no longer be undone: ${why}`, code: 'AUTO_CLOCK_UNDO_NOT_ALLOWED', params: { why } });
+      new BadRequestException({
+        message: `This clock-in can no longer be undone: ${why}`,
+        code: 'AUTO_CLOCK_UNDO_NOT_ALLOWED',
+        params: { why },
+      });
 
     if (!(entry.flagReasons ?? []).includes(AUTO_CLOCK_IN_FLAG)) throw refuse('NOT_AUTOMATIC');
     if (entry.status !== TimeEntryStatus.CLOCKED_IN || entry.clockOutAt) throw refuse('CLOSED');
@@ -81,7 +90,10 @@ export class AutoClockUndoService {
         select: { id: true, expectedClockInAt: true },
       });
       for (const inst of instances) {
-        const due = Math.max(Date.now(), inst.expectedClockInAt.getTime() + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000);
+        const due = Math.max(
+          Date.now(),
+          inst.expectedClockInAt.getTime() + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000,
+        );
         await tx.shiftInstance.update({
           where: { id: inst.id },
           data: { state: 'PENDING', timeEntryId: null, nextRemindAt: new Date(due) },
@@ -99,13 +111,21 @@ export class AutoClockUndoService {
           organizationId: data.organizationId,
           metadata: {
             undoneAt: at.toISOString(),
-            entry: { locationId: entry.locationId, clockInAt: entry.clockInAt.toISOString(), flagReasons: entry.flagReasons ?? [] },
+            entry: {
+              locationId: entry.locationId,
+              clockInAt: entry.clockInAt.toISOString(),
+              flagReasons: entry.flagReasons ?? [],
+            },
           } as never,
         },
       });
     });
     this.logger.log(`Automatic clock-in undone: entry=${entry.id}, user=${data.userId}`);
-    this.notificationClient.emit('attendance_changed', { organizationId: data.organizationId, action: 'auto-undo', entryId: entry.id });
+    this.notificationClient.emit('attendance_changed', {
+      organizationId: data.organizationId,
+      action: 'auto-undo',
+      entryId: entry.id,
+    });
     return success({ undone: true as const }, 'Clock-in undone');
   }
 

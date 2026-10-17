@@ -34,7 +34,7 @@ export class CreateWorkflowDto {
   isDefault?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Create it as this space\'s own task type. Omit for one the whole organization can offer.',
+    description: "Create it as this space's own task type. Omit for one the whole organization can offer.",
   })
   @IsString()
   @IsOptional()
@@ -146,7 +146,11 @@ export class CreateWorkflowStatusDto {
   @IsOptional()
   transitions?: string[];
 
-  @ApiPropertyOptional({ description: 'Execution widgets active at this step', example: ['gps', 'timer'], type: [String] })
+  @ApiPropertyOptional({
+    description: 'Execution widgets active at this step',
+    example: ['gps', 'timer'],
+    type: [String],
+  })
   @IsArray()
   @IsIn(TASK_CAPABILITIES, { each: true })
   @IsOptional()
@@ -159,7 +163,11 @@ export class CreateWorkflowStatusDto {
    * sent here is ignored. `null` clears it (back to "not set"); `{ fields: [] }`
    * means "ask nothing", including on a legacy report step.
    */
-  @ApiPropertyOptional({ description: 'The step form (fields asked when a job moves into this step); null clears it', type: Object, nullable: true })
+  @ApiPropertyOptional({
+    description: 'The step form (fields asked when a job moves into this step); null ' + 'clears it',
+    type: Object,
+    nullable: true,
+  })
   @IsOptional()
   @IsObject()
   form?: Record<string, unknown> | null;
@@ -219,7 +227,7 @@ export class UpsertDefinitionOfDoneDto {
  * shape of the resulting state machine is never something a client can dictate.
  */
 export class UseWorkflowTemplateDto {
-  @ApiPropertyOptional({ description: 'Name for the copy. Defaults to the template\'s own name.' })
+  @ApiPropertyOptional({ description: "Name for the copy. Defaults to the template's own name." })
   @IsString()
   @IsOptional()
   @MaxLength(200)
@@ -253,4 +261,3 @@ export class SubmitToLibraryDto {
   @MaxLength(280)
   note?: string;
 }
-

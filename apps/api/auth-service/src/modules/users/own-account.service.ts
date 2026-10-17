@@ -6,12 +6,7 @@ import {
   pickBooleanPrefs,
   normalizeEmail,
 } from '@hbcfield/shared';
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 
@@ -23,9 +18,7 @@ import * as bcrypt from 'bcryptjs';
  */
 @Injectable()
 export class OwnAccountService {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Self-service profile update — a user updating their OWN record. Scoped to
@@ -34,9 +27,25 @@ export class OwnAccountService {
    */
   async updateOwnProfile(
     userId: string,
-    dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string; clockInPick?: string },
+    dto: {
+      firstName?: string;
+      lastName?: string;
+      presence?: string | null;
+      timeFormat?: string;
+      guidesSeen?: boolean;
+      locale?: string;
+      clockInPick?: string;
+    },
   ) {
-    const data: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string; clockInPick?: string } = {};
+    const data: {
+      firstName?: string;
+      lastName?: string;
+      presence?: string | null;
+      timeFormat?: string;
+      guidesSeen?: boolean;
+      locale?: string;
+      clockInPick?: string;
+    } = {};
     if (dto.firstName !== undefined) data.firstName = dto.firstName.trim();
     if (dto.lastName !== undefined) data.lastName = dto.lastName.trim();
     // presence: a value sets the manual override; null clears it back to auto.
@@ -78,10 +87,7 @@ export class OwnAccountService {
    * login identity, so we confirm it's really them) and enforces uniqueness.
    * Everything internal keys off userId, so only login is affected.
    */
-  async updateOwnEmail(
-    userId: string,
-    data: { newEmail: string; currentPassword: string },
-  ) {
+  async updateOwnEmail(userId: string, data: { newEmail: string; currentPassword: string }) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('User not found');

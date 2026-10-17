@@ -15,8 +15,6 @@ import { CHECKLIST_PEOPLE } from './task-checklist.service';
  */
 @Injectable()
 export class TaskDetailService {
-
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly workflowCache: WorkflowConfigCache,
@@ -27,7 +25,6 @@ export class TaskDetailService {
     private readonly crew: CrewService,
     private readonly support: TaskSupportService,
   ) {}
-
 
   /**
    * Find a single task by ID with authorization
@@ -41,7 +38,15 @@ export class TaskDetailService {
     return success({ spaceId: task?.spaceId ?? null });
   }
 
-  async findOne(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string; sharedSpaceIds?: string[]; viewAllSpaceIds?: string[] }) {
+  async findOne(data: {
+    id: string;
+    userId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    organizationId: string;
+    sharedSpaceIds?: string[];
+    viewAllSpaceIds?: string[];
+  }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
       include: {
@@ -194,7 +199,10 @@ export class TaskDetailService {
     return {
       pausedBy: who(task.pausedById),
       handoverDue: task.handoverDueById
-        ? { user: who(task.handoverDueById), workedMinutes: (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null }
+        ? {
+            user: who(task.handoverDueById),
+            workedMinutes: (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null,
+          }
         : null,
     };
   }
@@ -216,7 +224,12 @@ export class TaskDetailService {
   async getJobTimeReport(data: { userId: string; organizationId: string; from: string; to: string }) {
     const from = new Date(data.from);
     const to = new Date(data.to);
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to <= from || to.getTime() - from.getTime() > 93 * 86_400_000) {
+    if (
+      Number.isNaN(from.getTime()) ||
+      Number.isNaN(to.getTime()) ||
+      to <= from ||
+      to.getTime() - from.getTime() > 93 * 86_400_000
+    ) {
       throw new BadRequestException('Choose a period of up to three months.');
     }
     return success(await this.jobTime.report({ userId: data.userId, organizationId: data.organizationId, from, to }));

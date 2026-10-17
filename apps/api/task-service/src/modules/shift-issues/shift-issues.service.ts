@@ -20,11 +20,16 @@ import { ShiftIssuesBase } from './shift-issues.base';
  */
 @Injectable()
 export class ShiftIssuesService extends ShiftIssuesBase {
-
   // ── create ───────────────────────────────────────────────────────────────
   async create(data: {
-    organizationId: string; callerUserId: string; title: string; description?: string;
-    severity?: string; timeEntryId?: string; spaceId?: string; attachments?: Attachment[];
+    organizationId: string;
+    callerUserId: string;
+    title: string;
+    description?: string;
+    severity?: string;
+    timeEntryId?: string;
+    spaceId?: string;
+    attachments?: Attachment[];
     /** Made on the phone: a report sent twice is still one issue. */
     id?: string;
   }) {
@@ -35,7 +40,8 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     if (data.id) {
       const prior = await this.prisma.shiftIssue.findUnique({ where: { id: data.id }, include: { events: true } });
       if (prior) {
-        if (prior.reportedById !== data.callerUserId) throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
+        if (prior.reportedById !== data.callerUserId)
+          throw new ConflictException({ message: 'This id is already in use', code: 'ID_IN_USE' });
         return success(prior);
       }
     }
@@ -46,10 +52,20 @@ export class ShiftIssuesService extends ShiftIssuesBase {
       (or another organization's site) and be routed by it.
     */
     const timeEntryId = data.timeEntryId
-      ? (await this.prisma.timeEntry.findFirst({ where: { id: data.timeEntryId, userId: data.callerUserId, organizationId: data.organizationId }, select: { id: true } }))?.id ?? null
+      ? ((
+          await this.prisma.timeEntry.findFirst({
+            where: { id: data.timeEntryId, userId: data.callerUserId, organizationId: data.organizationId },
+            select: { id: true },
+          })
+        )?.id ?? null)
       : null;
     const spaceId = data.spaceId
-      ? (await this.prisma.companyLocation.findFirst({ where: { id: data.spaceId, organizationId: data.organizationId }, select: { id: true } }))?.id ?? null
+      ? ((
+          await this.prisma.companyLocation.findFirst({
+            where: { id: data.spaceId, organizationId: data.organizationId },
+            select: { id: true },
+          })
+        )?.id ?? null)
       : null;
 
     const issue = await this.prisma.shiftIssue.create({
@@ -80,8 +96,13 @@ export class ShiftIssuesService extends ShiftIssuesBase {
     const recipientIds = await this.watcherIds(data.callerUserId, data.organizationId);
     const reporterName = await this.nameOf(data.callerUserId);
     this.emit('shift_issue_created', {
-      issueId: issue.id, organizationId: data.organizationId, title: issue.title, severity: issue.severity,
-      reporterId: data.callerUserId, reporterName, recipientIds,
+      issueId: issue.id,
+      organizationId: data.organizationId,
+      title: issue.title,
+      severity: issue.severity,
+      reporterId: data.callerUserId,
+      reporterName,
+      recipientIds,
     });
     return success(issue);
   }
@@ -119,51 +140,96 @@ export class ShiftIssuesService extends ShiftIssuesBase {
       take: 200,
     });
     // Enrich with reporter/assignee names + a message count in one pass.
-    const ids = Array.from(new Set(issues.flatMap((i) => [i.reportedById, i.assignedToId].filter(Boolean) as string[])));
-    const users = ids.length ? await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true } }) : [];
+    const ids = Array.from(
+      new Set(issues.flatMap((i) => [i.reportedById, i.assignedToId].filter(Boolean) as string[])),
+    );
+    const users = ids.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
     const nameById = new Map(users.map((u) => [u.id, personName(u)]));
-    const counts = await this.prisma.shiftIssueEvent.groupBy({ by: ['issueId'], where: { issueId: { in: issues.map((i) => i.id) } }, _count: { id: true } });
+    const counts = await this.prisma.shiftIssueEvent.groupBy({
+      by: ['issueId'],
+      where: { issueId: { in: issues.map((i) => i.id) } },
+      _count: { id: true },
+    });
     const countById = new Map(counts.map((c) => [c.issueId, c._count.id]));
-    return success(issues.map((i) => ({
-      ...i,
-      reporterName: nameById.get(i.reportedById) ?? '',
-      assigneeName: i.assignedToId ? nameById.get(i.assignedToId) ?? '' : null,
-      eventCount: countById.get(i.id) ?? 0,
-    })));
+    return success(
+      issues.map((i) => ({
+        ...i,
+        reporterName: nameById.get(i.reportedById) ?? '',
+        assigneeName: i.assignedToId ? (nameById.get(i.assignedToId) ?? '') : null,
+        eventCount: countById.get(i.id) ?? 0,
+      })),
+    );
   }
 
   // ── get (issue + full thread) ────────────────────────────────────────────────
-  async get(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[] }) {
+  async get(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
 
-    const events = await this.prisma.shiftIssueEvent.findMany({ where: { issueId: issue.id }, orderBy: { at: 'asc' }, take: 1000 });
-    const actorIds = Array.from(new Set([issue.reportedById, issue.assignedToId, ...events.map((e) => e.actorId)].filter(Boolean) as string[]));
-    const users = actorIds.length ? await this.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, firstName: true, lastName: true } }) : [];
+    const events = await this.prisma.shiftIssueEvent.findMany({
+      where: { issueId: issue.id },
+      orderBy: { at: 'asc' },
+      take: 1000,
+    });
+    const actorIds = Array.from(
+      new Set([issue.reportedById, issue.assignedToId, ...events.map((e) => e.actorId)].filter(Boolean) as string[]),
+    );
+    const users = actorIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: actorIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
+      : [];
     const nameById = new Map(users.map((u) => [u.id, personName(u)]));
 
-    const thread = await Promise.all(events.map(async (e) => ({
-      ...e,
-      actorName: e.actorId ? nameById.get(e.actorId) ?? '' : '',
-      attachments: await this.signAttachments(issue, e.attachments),
-    })));
+    const thread = await Promise.all(
+      events.map(async (e) => ({
+        ...e,
+        actorName: e.actorId ? (nameById.get(e.actorId) ?? '') : '',
+        attachments: await this.signAttachments(issue, e.attachments),
+      })),
+    );
 
     return success({
       ...issue,
       reporterName: nameById.get(issue.reportedById) ?? '',
-      assigneeName: issue.assignedToId ? nameById.get(issue.assignedToId) ?? '' : null,
+      assigneeName: issue.assignedToId ? (nameById.get(issue.assignedToId) ?? '') : null,
       thread,
     });
   }
 
   // ── attachments (S3) ──────────────────────────────────────────────────────────
-  async presignAttachment(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; fileName: string; mimeType: string }) {
+  async presignAttachment(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+    fileName: string;
+    mimeType: string;
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     if (!ALLOWED_FILE_TYPES.includes(data.mimeType)) throw new BadRequestException('File type not allowed');
     if (!data.fileName || data.fileName.length > 255) throw new BadRequestException('Invalid file name');
     const store = requireObjectStore(this.store);
-    const key = newObjectKey({ organizationId: data.organizationId, kind: 'shift-issues', parentId: issue.id, mime: data.mimeType });
+    const key = newObjectKey({
+      organizationId: data.organizationId,
+      kind: 'shift-issues',
+      parentId: issue.id,
+      mime: data.mimeType,
+    });
     const upload = await store.presignUpload(key, data.mimeType, undefined, UPLOAD_TTL_SECONDS);
     return success({
       uploadUrl: upload.url,

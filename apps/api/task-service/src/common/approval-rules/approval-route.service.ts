@@ -56,7 +56,11 @@ export class ApprovalRouteService {
 
     const [members, told] = await Promise.all([
       this.prisma.user.findMany({
-        where: { organizationId: input.organizationId, isActive: true, id: { notIn: [input.callerId, ...(input.subjectUserId ? [input.subjectUserId] : [])] } },
+        where: {
+          organizationId: input.organizationId,
+          isActive: true,
+          id: { notIn: [input.callerId, ...(input.subjectUserId ? [input.subjectUserId] : [])] },
+        },
         select: {
           id: true,
           firstName: true,
@@ -66,23 +70,39 @@ export class ApprovalRouteService {
           ...ORG_ACCESS_SELECT,
           // Only the workspace in question matters; none for an org-wide kind or an item with no workspace.
           spaceAssignments: input.spaceId
-            ? { where: { spaceId: input.spaceId, ...activeWindow(now) }, select: { spaceId: true, role: { select: { permissions: true, isActive: true } } } }
+            ? {
+                where: { spaceId: input.spaceId, ...activeWindow(now) },
+                select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
+              }
             : { where: { id: '__none__' }, select: { spaceId: true } },
         },
       }),
       input.subjectUserId
-        ? this.routing.resolveWatchers(input.subjectUserId, input.organizationId, 'attendance').catch(() => ({ ids: [] as string[], emails: [] }))
+        ? this.routing
+            .resolveWatchers(input.subjectUserId, input.organizationId, 'attendance')
+            .catch(() => ({ ids: [] as string[], emails: [] }))
         : Promise.resolve({ ids: [] as string[], emails: [] }),
     ]);
 
     // Today's stand-ins: they decide where the leader they cover does — never about that leader.
-    const org = await this.prisma.organization.findUnique({ where: { id: input.organizationId }, select: { timezone: true } });
-    const standIns = await standInsOn(this.prisma as never, input.organizationId, delegationDay(now, org?.timezone)).catch(() => new Map());
+    const org = await this.prisma.organization.findUnique({
+      where: { id: input.organizationId },
+      select: { timezone: true },
+    });
+    const standIns = await standInsOn(
+      this.prisma as never,
+      input.organizationId,
+      delegationDay(now, org?.timezone),
+    ).catch(() => new Map());
     const key = APPROVAL_KIND_SPECS[input.kind].decideKey;
 
     const deciders: ApprovalDecider[] = [];
     for (const m of members) {
-      let via: ApprovalDecider['via'] | null = decideVia({ isAdmin: m.role === 'ADMIN', access: memberAccessOf(m as never) }, input.kind, input.spaceId);
+      let via: ApprovalDecider['via'] | null = decideVia(
+        { isAdmin: m.role === 'ADMIN', access: memberAccessOf(m as never) },
+        input.kind,
+        input.spaceId,
+      );
       const standIn = standIns.get(m.id);
       if (!via && standIn && !standIn.from.some((f: { userId: string }) => f.userId === input.subjectUserId)) {
         const covers = APPROVAL_KIND_SPECS[input.kind].orgWide
@@ -96,7 +116,13 @@ export class ApprovalRouteService {
     // Who of them is away today — said, so an item is not left waiting on somebody on holiday.
     if (deciders.length) {
       const away = await this.prisma.timeOff.findMany({
-        where: { technicianId: { in: deciders.map((d) => d.id) }, status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: today }, endDate: { gte: today } },
+        where: {
+          technicianId: { in: deciders.map((d) => d.id) },
+          status: 'APPROVED',
+          ...ABSENCE_WHERE,
+          startDate: { lte: today },
+          endDate: { gte: today },
+        },
         select: { technicianId: true },
       });
       const off = new Set(away.map((a) => a.technicianId));
@@ -107,7 +133,10 @@ export class ApprovalRouteService {
     const deciderIds = new Set(deciders.map((d) => d.id));
     const toldIds = told.ids.filter((id) => !deciderIds.has(id) && id !== input.callerId);
     const toldPeople = toldIds.length
-      ? await this.prisma.user.findMany({ where: { id: { in: toldIds.slice(0, 20) } }, select: { id: true, firstName: true, lastName: true } })
+      ? await this.prisma.user.findMany({
+          where: { id: { in: toldIds.slice(0, 20) } },
+          select: { id: true, firstName: true, lastName: true },
+        })
       : [];
 
     return {

@@ -32,7 +32,8 @@ export function signLinkEmail(
   const items = data.documents
     .map(
       (d) =>
-        `<li style="color:#1e293b;font-size:14px;margin-bottom:5px;">${escapeHtml(d.title)}${d.forMember ? ` — ${escapeHtml(d.forMember)}` : ''}</li>`,
+        `<li style="color:#1e293b;font-size:14px;margin-bottom:5px;">${escapeHtml(d.title)}` +
+        `${d.forMember ? ` — ${escapeHtml(d.forMember)}` : ''}</li>`,
     )
     .join('');
   const body = `

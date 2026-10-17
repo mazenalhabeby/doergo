@@ -12,7 +12,13 @@ import { INTERNAL_DISPATCH_HEADER, internalDispatchSecret } from './throttler/in
  */
 
 /** Headers of the original request carried onto each call. */
-export const SELF_DISPATCH_FORWARDED_HEADERS = ['authorization', 'x-client-platform', 'x-app-version', 'accept-language', 'user-agent'] as const;
+export const SELF_DISPATCH_FORWARDED_HEADERS = [
+  'authorization',
+  'x-client-platform',
+  'x-app-version',
+  'accept-language',
+  'user-agent',
+] as const;
 
 export interface SelfDispatchCaller {
   headers: Record<string, string | string[] | undefined>;
@@ -25,7 +31,10 @@ export function selfDispatchBase(config: ConfigService): string {
   return `http://127.0.0.1:${port}/${prefix}`;
 }
 
-export function selfDispatchHeaders(caller: SelfDispatchCaller, extra: Record<string, string> = {}): Record<string, string> {
+export function selfDispatchHeaders(
+  caller: SelfDispatchCaller,
+  extra: Record<string, string> = {},
+): Record<string, string> {
   const headers: Record<string, string> = {
     'content-type': 'application/json',
     [INTERNAL_DISPATCH_HEADER]: internalDispatchSecret(),

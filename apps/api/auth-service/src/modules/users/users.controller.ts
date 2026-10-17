@@ -58,16 +58,12 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'update_technician' })
-  async updateEmployee(
-    @Payload() data: { id: string; organizationId: string; dto: UpdateEmployeeDto },
-  ) {
+  async updateEmployee(@Payload() data: { id: string; organizationId: string; dto: UpdateEmployeeDto }) {
     return this.usersService.updateEmployee(data.id, data.organizationId, data.dto);
   }
 
   @MessagePattern({ cmd: 'deactivate_technician' })
-  async deactivateEmployee(
-    @Payload() data: { id: string; organizationId: string },
-  ) {
+  async deactivateEmployee(@Payload() data: { id: string; organizationId: string }) {
     return this.usersService.deactivateEmployee(data.id, data.organizationId);
   }
 
@@ -109,9 +105,7 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'set_member_watchers' })
-  async setMemberWatchers(
-    @Payload() data: { memberId: string; organizationId: string; watcherIds: string[] },
-  ) {
+  async setMemberWatchers(@Payload() data: { memberId: string; organizationId: string; watcherIds: string[] }) {
     return this.usersService.setWatchers(data.memberId, data.organizationId, data.watcherIds || []);
   }
 
@@ -140,9 +134,7 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: 'update_my_notification_prefs' })
-  async updateNotificationPrefs(
-    @Payload() data: { userId: string; prefs: Record<string, boolean> },
-  ) {
+  async updateNotificationPrefs(@Payload() data: { userId: string; prefs: Record<string, boolean> }) {
     return this.usersService.updateNotificationPrefs(data.userId, data.prefs || {});
   }
 
@@ -156,12 +148,7 @@ export class UsersController {
       dto: UpdateMemberProfileDto;
     },
   ) {
-    return this.usersService.updateMemberProfile(
-      data.memberId,
-      data.organizationId,
-      data.requesterId,
-      data.dto,
-    );
+    return this.usersService.updateMemberProfile(data.memberId, data.organizationId, data.requesterId, data.dto);
   }
 
   @MessagePattern({ cmd: 'list_access_roles' })
@@ -171,20 +158,39 @@ export class UsersController {
 
   @MessagePattern({ cmd: 'create_access_role' })
   async createAccessRole(
-    @Payload() data: { organizationId: string; requesterId?: string; name: string; description?: string; color?: string; permissions?: unknown },
+    @Payload()
+    data: {
+      organizationId: string;
+      requesterId?: string;
+      name: string;
+      description?: string;
+      color?: string;
+      permissions?: unknown;
+    },
   ) {
     return this.usersService.createAccessRole(data);
   }
 
   @MessagePattern({ cmd: 'update_access_role' })
   async updateAccessRole(
-    @Payload() data: { organizationId: string; requesterId?: string; roleId: string; name?: string; description?: string; color?: string; permissions?: unknown },
+    @Payload()
+    data: {
+      organizationId: string;
+      requesterId?: string;
+      roleId: string;
+      name?: string;
+      description?: string;
+      color?: string;
+      permissions?: unknown;
+    },
   ) {
     return this.usersService.updateAccessRole(data);
   }
 
   @MessagePattern({ cmd: 'transfer_ownership' })
-  transferOwnership(@Payload() data: any) { return this.usersService.transferOwnership(data); }
+  transferOwnership(@Payload() data: any) {
+    return this.usersService.transferOwnership(data);
+  }
 
   @MessagePattern({ cmd: 'delete_access_role' })
   async deleteAccessRole(@Payload() data: { organizationId: string; requesterId?: string; roleId: string }) {
@@ -193,15 +199,25 @@ export class UsersController {
 
   @MessagePattern({ cmd: 'update_own_profile' })
   async updateOwnProfile(
-    @Payload() data: { userId: string; dto: { firstName?: string; lastName?: string; presence?: string | null; timeFormat?: string; guidesSeen?: boolean; locale?: string; clockInPick?: string } },
+    @Payload()
+    data: {
+      userId: string;
+      dto: {
+        firstName?: string;
+        lastName?: string;
+        presence?: string | null;
+        timeFormat?: string;
+        guidesSeen?: boolean;
+        locale?: string;
+        clockInPick?: string;
+      };
+    },
   ) {
     return this.usersService.updateOwnProfile(data.userId, data.dto);
   }
 
   @MessagePattern({ cmd: 'update_own_email' })
-  async updateOwnEmail(
-    @Payload() data: { userId: string; newEmail: string; currentPassword: string },
-  ) {
+  async updateOwnEmail(@Payload() data: { userId: string; newEmail: string; currentPassword: string }) {
     return this.usersService.updateOwnEmail(data.userId, {
       newEmail: data.newEmail,
       currentPassword: data.currentPassword,
@@ -217,11 +233,7 @@ export class UsersController {
       requesterId: string;
     },
   ) {
-    return this.usersService.adminResetMemberPassword(
-      data.memberId,
-      data.organizationId,
-      data.requesterId,
-    );
+    return this.usersService.adminResetMemberPassword(data.memberId, data.organizationId, data.requesterId);
   }
 
   /**

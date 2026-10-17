@@ -41,7 +41,10 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   @ApiQuery({ name: 'date', required: false, type: String })
   async getLocationEntriesBatch(@Query('ids') ids: string, @Query('date') date?: string, @Request() req?: any) {
     return this.attendanceService.getLocationEntriesBatch({
-      locationIds: (ids || '').split(',').map((s) => s.trim()).filter(Boolean),
+      locationIds: (ids || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
       organizationId: req.user.organizationId,
       date,
       requesterId: req.user.id,
@@ -55,7 +58,12 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   @Get('locations/:id/entries')
   @Roles(Role.ADMIN, Role.EMPLOYEE)
   @ApiOperation({ summary: 'Get time entries for a location (admins, or members of that space)' })
-  @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    description: 'Single day (defaults to today) — ignored when startDate/endDate given',
+  })
   @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'Range end (yyyy-MM-dd)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -102,7 +110,12 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
   @Get('all-entries')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'Get all time entries for the organization' })
-  @ApiQuery({ name: 'date', required: false, type: String, description: 'Single day (defaults to today) — ignored when startDate/endDate given' })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    type: String,
+    description: 'Single day (defaults to today) — ignored when startDate/endDate given',
+  })
   @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Range start (yyyy-MM-dd)' })
   @ApiQuery({ name: 'endDate', required: false, type: String, description: 'Range end (yyyy-MM-dd)' })
   @ApiQuery({ name: 'status', required: false, enum: ['CLOCKED_IN', 'CLOCKED_OUT', 'AUTO_OUT'] })
@@ -149,11 +162,18 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
 
   @Get('no-shows')
   @RequirePermissionInSpace('canViewSpaceAttendance')
-  @ApiOperation({ summary: 'Recent no-shows (scheduled shift, no clock-in); open=true → only the undecided, with their run and facts' })
+  @ApiOperation({
+    summary: 'Recent no-shows (scheduled shift, no clock-in); open=true → only the undecided, with their run and facts',
+  })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'spaceId', required: false, type: String })
   @ApiQuery({ name: 'open', required: false, type: Boolean })
-  async listNoShows(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any, @Query('open') open?: string) {
+  async listNoShows(
+    @Query('days') days?: number,
+    @Query('spaceId') spaceId?: string,
+    @Request() req?: any,
+    @Query('open') open?: string,
+  ) {
     return this.attendanceService.listNoShows({
       organizationId: req.user.organizationId,
       scopeSpaceIds: this.scope(req, 'canViewSpaceAttendance'),
@@ -165,7 +185,9 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
 
   @Get('no-shows/summary')
   @RequirePermissionInSpace('canViewSpaceAttendance')
-  @ApiOperation({ summary: 'The no-show record: one row per person — last planned days, absent / excused / settled / open' })
+  @ApiOperation({
+    summary: 'The no-show record: one row per person — last planned days, absent / excused / settled / open',
+  })
   @ApiQuery({ name: 'days', required: false, type: Number })
   @ApiQuery({ name: 'spaceId', required: false, type: String })
   async noShowSummary(@Query('days') days?: number, @Query('spaceId') spaceId?: string, @Request() req?: any) {
@@ -179,7 +201,9 @@ export class AttendanceRecordsController extends AttendanceControllerBase {
 
   @Patch('no-shows/:id')
   @RequirePermissionInSpace('canReconcileAttendance')
-  @ApiOperation({ summary: 'Decide a no-show: excused (with what happened), absent, or reopen — one day or its whole run' })
+  @ApiOperation({
+    summary: 'Decide a no-show: excused (with what happened), absent, or reopen — one day or its whole run',
+  })
   async resolveNoShow(
     @Param('id') id: string,
     @Body() body: { action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean },

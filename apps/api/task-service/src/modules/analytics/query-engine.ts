@@ -32,24 +32,39 @@ function resolveRange(dr?: ReportDefinition['dateRange']): { from: Date | null; 
   const now = new Date();
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
   switch (dr.preset) {
-    case 'last_7d': return { from: startOfDay(new Date(now.getTime() - 6 * 864e5)), to: null };
-    case 'last_30d': return { from: startOfDay(new Date(now.getTime() - 29 * 864e5)), to: null };
-    case 'last_90d': return { from: startOfDay(new Date(now.getTime() - 89 * 864e5)), to: null };
-    case 'this_month': return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: null };
-    case 'last_month': return { from: new Date(now.getFullYear(), now.getMonth() - 1, 1), to: new Date(now.getFullYear(), now.getMonth(), 1) };
-    case 'this_year': return { from: new Date(now.getFullYear(), 0, 1), to: null };
+    case 'last_7d':
+      return { from: startOfDay(new Date(now.getTime() - 6 * 864e5)), to: null };
+    case 'last_30d':
+      return { from: startOfDay(new Date(now.getTime() - 29 * 864e5)), to: null };
+    case 'last_90d':
+      return { from: startOfDay(new Date(now.getTime() - 89 * 864e5)), to: null };
+    case 'this_month':
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: null };
+    case 'last_month':
+      return {
+        from: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        to: new Date(now.getFullYear(), now.getMonth(), 1),
+      };
+    case 'this_year':
+      return { from: new Date(now.getFullYear(), 0, 1), to: null };
     case 'all':
-    default: return { from: null, to: null };
+    default:
+      return { from: null, to: null };
   }
 }
 
 function aggregate(agg: string, sql: string): string {
   switch (agg) {
-    case 'sum': return `ROUND(SUM(${sql})::numeric, 2)`;
-    case 'avg': return `ROUND(AVG(${sql})::numeric, 2)`;
-    case 'count': return `COUNT(${sql})`;
-    case 'countDistinct': return `COUNT(DISTINCT ${sql})`;
-    default: throw new BadRequestException(`Unknown aggregate: ${agg}`);
+    case 'sum':
+      return `ROUND(SUM(${sql})::numeric, 2)`;
+    case 'avg':
+      return `ROUND(AVG(${sql})::numeric, 2)`;
+    case 'count':
+      return `COUNT(${sql})`;
+    case 'countDistinct':
+      return `COUNT(DISTINCT ${sql})`;
+    default:
+      throw new BadRequestException(`Unknown aggregate: ${agg}`);
   }
 }
 
@@ -60,7 +75,13 @@ interface CompiledQuery {
    * `labelKey` names the column in any language (REPORT_LABELS); `label` is its
    * English name, for a reader that does not translate.
    */
-  columns: Array<{ key: string; labelKey: ReportLabelKey; label: string; kind: 'dimension' | 'measure' | 'period'; format?: string }>;
+  columns: Array<{
+    key: string;
+    labelKey: ReportLabelKey;
+    label: string;
+    kind: 'dimension' | 'measure' | 'period';
+    format?: string;
+  }>;
 }
 
 /**
@@ -118,8 +139,14 @@ export function compile(def: ReportDefinition, organizationId: string, spaceIds?
   }
 
   const { from, to } = resolveRange(def.dateRange);
-  if (from) { params.push(from); where.push(`${ds.dateColumn} >= $${params.length}`); }
-  if (to) { params.push(to); where.push(`${ds.dateColumn} < $${params.length}`); }
+  if (from) {
+    params.push(from);
+    where.push(`${ds.dateColumn} >= $${params.length}`);
+  }
+  if (to) {
+    params.push(to);
+    where.push(`${ds.dateColumn} < $${params.length}`);
+  }
 
   for (const f of def.filters || []) {
     const dim = ds.dimensions[f.field];

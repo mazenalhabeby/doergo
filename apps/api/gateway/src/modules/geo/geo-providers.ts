@@ -29,7 +29,9 @@ export async function lookupAdminPlace(lat: number, lng: number): Promise<AdminP
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
   if (GOOGLE_KEY) {
     try {
-      const url = `${GOOGLE_GEOCODE_BASE}?latlng=${encodeURIComponent(`${lat},${lng}`)}&result_type=administrative_area_level_1|country&language=en&key=${GOOGLE_KEY}`;
+      const url =
+        `${GOOGLE_GEOCODE_BASE}?latlng=${encodeURIComponent(`${lat},${lng}`)}` +
+        `&result_type=administrative_area_level_1|country&language=en&key=${GOOGLE_KEY}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
       if (res.ok) {
         const data: any = await res.json();
@@ -38,7 +40,11 @@ export async function lookupAdminPlace(lat: number, lng: number): Promise<AdminP
         const country = find('country')?.short_name;
         if (typeof country === 'string' && /^[A-Za-z]{2}$/.test(country)) {
           const state = find('administrative_area_level_1');
-          return { country: country.toUpperCase(), stateCode: state?.short_name ?? null, stateName: state?.long_name ?? null };
+          return {
+            country: country.toUpperCase(),
+            stateCode: state?.short_name ?? null,
+            stateName: state?.long_name ?? null,
+          };
         }
       }
     } catch {
@@ -47,9 +53,12 @@ export async function lookupAdminPlace(lat: number, lng: number): Promise<AdminP
   }
   if (!PHOTON_URL) return null;
   try {
-    const res = await fetch(`${PHOTON_URL}/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&lang=en`, {
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    const res = await fetch(
+      `${PHOTON_URL}/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&lang=en`,
+      {
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      },
+    );
     if (!res.ok) return null;
     const p = ((await res.json())?.features || [])[0]?.properties;
     const cc = p?.countrycode;

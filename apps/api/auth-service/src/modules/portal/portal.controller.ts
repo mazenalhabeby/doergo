@@ -135,7 +135,16 @@ export class PortalController {
   }
 
   @MessagePattern({ cmd: 'portal_set_member_apartment' })
-  setMemberApartment(@Payload() data: { organizationId: string; spaceId: string; userId: string; unitId?: string | null; actorId?: string }) {
+  setMemberApartment(
+    @Payload()
+    data: {
+      organizationId: string;
+      spaceId: string;
+      userId: string;
+      unitId?: string | null;
+      actorId?: string;
+    },
+  ) {
     return this.unitWrite.setMemberApartment(data);
   }
 

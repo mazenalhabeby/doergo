@@ -50,7 +50,14 @@ export class HeartbeatBatchService extends HeartbeatBase {
       const hasArea = siteEnforcesZone(zone);
       const points = data.points
         .map((p) => ({ lat: p.lat, lng: p.lng, at: new Date(p.recordedAt) }))
-        .filter(({ at, lat, lng }) => Number.isFinite(lat) && Number.isFinite(lng) && !Number.isNaN(at.getTime()) && at >= entry.clockInAt && at.getTime() <= now.getTime() + 2 * 60_000)
+        .filter(
+          ({ at, lat, lng }) =>
+            Number.isFinite(lat) &&
+            Number.isFinite(lng) &&
+            !Number.isNaN(at.getTime()) &&
+            at >= entry.clockInAt &&
+            at.getTime() <= now.getTime() + 2 * 60_000,
+        )
         .sort((a, b) => a.at.getTime() - b.at.getTime())
         .slice(-500)
         .map((p) => ({ ...p, insideArea: hasArea && isAtSite({ lat: p.lat, lng: p.lng, accuracy: 0 }, zone).inside }));
@@ -64,7 +71,9 @@ export class HeartbeatBatchService extends HeartbeatBase {
     // Only this shift's points, none from the future, in the order they were taken.
     const readings: RingReading[] = data.points
       .map((p) => ({ p, at: new Date(p.recordedAt) }))
-      .filter(({ at }) => !Number.isNaN(at.getTime()) && at >= entry.clockInAt && at.getTime() <= now.getTime() + 2 * 60_000)
+      .filter(
+        ({ at }) => !Number.isNaN(at.getTime()) && at >= entry.clockInAt && at.getTime() <= now.getTime() + 2 * 60_000,
+      )
       .slice(0, 500)
       .map(({ p, at }) => {
         const raw = isAtSite({ lat: p.lat, lng: p.lng, accuracy: 0 }, zone);
@@ -96,10 +105,15 @@ export class HeartbeatBatchService extends HeartbeatBase {
           });
           if (closed.count > 0) {
             returned = true;
-            await this.emitExcursionEvent('geofence_excursion_returned', entry, active, { distanceM: period.maxDistanceM });
+            await this.emitExcursionEvent('geofence_excursion_returned', entry, active, {
+              distanceM: period.maxDistanceM,
+            });
           }
         } else if (period.maxDistanceM && active.lastDistanceM !== period.maxDistanceM) {
-          await this.prisma.geofenceExcursion.update({ where: { id: active.id }, data: { lastDistanceM: period.maxDistanceM } });
+          await this.prisma.geofenceExcursion.update({
+            where: { id: active.id },
+            data: { lastDistanceM: period.maxDistanceM },
+          });
         }
         continue;
       }

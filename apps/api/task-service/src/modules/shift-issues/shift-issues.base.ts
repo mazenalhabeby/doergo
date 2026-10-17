@@ -23,7 +23,6 @@ export abstract class ShiftIssuesBase {
     protected readonly media: MediaSigner,
   ) {}
 
-
   // ── helpers ────────────────────────────────────────────────────────────────
 
   protected async loadIssue(issueId: string, organizationId: string) {
@@ -111,21 +110,59 @@ export abstract class ShiftIssuesBase {
   }
 
   protected emit(event: string, payload: Record<string, unknown>) {
-    try { this.notificationClient.emit(event, payload); } catch (e) { this.logger.warn(`emit ${event} failed: ${e}`); }
+    try {
+      this.notificationClient.emit(event, payload);
+    } catch (e) {
+      this.logger.warn(`emit ${event} failed: ${e}`);
+    }
   }
 
   // Confirm is folded into addMessage/create: the client sends the attachment
   // metadata array with the message. We only validate the prefix here on read.
 
   // ── broadcast: persist bumped + emit socket/push ────────────────────────────────
-  protected async broadcast(issue: { id: string; organizationId: string; reportedById: string; assignedToId: string | null; title: string; severity: string; status: string }, actorId: string, event: { id: string; type: string; body: string | null; at: Date; metadata?: unknown }, extraRecipients: string[] = []) {
+  protected async broadcast(
+    issue: {
+      id: string;
+      organizationId: string;
+      reportedById: string;
+      assignedToId: string | null;
+      title: string;
+      severity: string;
+      status: string;
+    },
+    actorId: string,
+    event: { id: string; type: string; body: string | null; at: Date; metadata?: unknown },
+    extraRecipients: string[] = [],
+  ) {
     const watchers = await this.watcherIds(issue.reportedById, issue.organizationId);
-    const recipientIds = Array.from(new Set([...watchers, issue.reportedById, ...(issue.assignedToId ? [issue.assignedToId] : []), ...extraRecipients])).filter((id) => id !== actorId);
+    const recipientIds = Array.from(
+      new Set([
+        ...watchers,
+        issue.reportedById,
+        ...(issue.assignedToId ? [issue.assignedToId] : []),
+        ...extraRecipients,
+      ]),
+    ).filter((id) => id !== actorId);
     const actorName = await this.nameOf(actorId);
     this.emit('shift_issue_event', {
-      issueId: issue.id, organizationId: issue.organizationId, title: issue.title, severity: issue.severity, status: issue.status,
-      event: { id: event.id, type: event.type, body: event.body, at: event.at, actorId, actorName, metadata: event.metadata ?? null },
-      actorId, actorName, recipientIds,
+      issueId: issue.id,
+      organizationId: issue.organizationId,
+      title: issue.title,
+      severity: issue.severity,
+      status: issue.status,
+      event: {
+        id: event.id,
+        type: event.type,
+        body: event.body,
+        at: event.at,
+        actorId,
+        actorName,
+        metadata: event.metadata ?? null,
+      },
+      actorId,
+      actorName,
+      recipientIds,
     });
   }
 }

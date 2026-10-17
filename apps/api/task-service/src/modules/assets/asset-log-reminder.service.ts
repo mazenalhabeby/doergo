@@ -51,10 +51,8 @@ export class AssetLogReminderService {
   /** Daily, early: a reminder read over breakfast gets a garage booked the same day. */
   @Cron('0 6 * * *')
   async sweepCron(): Promise<void> {
-    await runWithCronLock(
-      this.prisma,
-      { name: 'assets:logDueReminders', ttlSeconds: 600, logger: this.logger },
-      () => this.sweep(),
+    await runWithCronLock(this.prisma, { name: 'assets:logDueReminders', ttlSeconds: 600, logger: this.logger }, () =>
+      this.sweep(),
     );
   }
 
@@ -63,7 +61,10 @@ export class AssetLogReminderService {
     const candidates = await this.prisma.asset.findMany({
       where: { logRemindAt: { lte: now } },
       select: {
-        id: true, name: true, organizationId: true, logState: true,
+        id: true,
+        name: true,
+        organizationId: true,
+        logState: true,
         category: { select: { config: true, spaceId: true } },
       },
       orderBy: { logRemindAt: 'asc' },
@@ -83,7 +84,13 @@ export class AssetLogReminderService {
   }
 
   private async remindOne(
-    asset: { id: string; name: string; organizationId: string; logState: unknown; category: { config: unknown; spaceId: string | null } | null },
+    asset: {
+      id: string;
+      name: string;
+      organizationId: string;
+      logState: unknown;
+      category: { config: unknown; spaceId: string | null } | null;
+    },
     now: Date,
   ): Promise<number> {
     const shape = normalizeKindShape(asset.category?.config);
@@ -94,11 +101,17 @@ export class AssetLogReminderService {
       const type = findLogType(shape, s.key);
       // A rule removed from the kind since the last write: nothing to say.
       if (!type?.due) continue;
-      const reading = s.meterKey ? state.readings[s.meterKey]?.value ?? null : null;
+      const reading = s.meterKey ? (state.readings[s.meterKey]?.value ?? null) : null;
       const status = dueStatus(s, reading, now);
       if (status.stage === 'ok') continue;
 
-      const claimed = await this.claim(asset.organizationId, asset.id, s.key, s.lastEntryId, status.stage === 'overdue' ? 'OVERDUE' : 'SOON');
+      const claimed = await this.claim(
+        asset.organizationId,
+        asset.id,
+        s.key,
+        s.lastEntryId,
+        status.stage === 'overdue' ? 'OVERDUE' : 'SOON',
+      );
       if (!claimed) continue;
       items.push({
         logType: s.key,
@@ -107,7 +120,7 @@ export class AssetLogReminderService {
         dueAt: s.dueAt,
         dueReading: s.dueReading,
         reading,
-        unit: s.meterKey ? type.fields.find((f) => f.key === s.meterKey)?.unit ?? null : null,
+        unit: s.meterKey ? (type.fields.find((f) => f.key === s.meterKey)?.unit ?? null) : null,
         daysLeft: status.daysLeft,
         unitsLeft: status.unitsLeft,
       });
@@ -136,7 +149,13 @@ export class AssetLogReminderService {
   }
 
   /** The claim: true when THIS call inserted the row. */
-  private async claim(organizationId: string, assetId: string, logType: string, windowKey: string, stage: string): Promise<boolean> {
+  private async claim(
+    organizationId: string,
+    assetId: string,
+    logType: string,
+    windowKey: string,
+    stage: string,
+  ): Promise<boolean> {
     try {
       await this.prisma.assetLogReminder.create({ data: { organizationId, assetId, logType, windowKey, stage } });
       return true;

@@ -136,7 +136,12 @@ export class TasksController extends TasksControllerBase {
   @DenyExternal()
   @ApiOperation({ summary: 'Hand a role task back to its role (before the work starts); it is offered again' })
   async returnToRole(@Param('id') id: string, @Body() body: ReturnToRoleDto, @Request() req: any) {
-    return this.tasksService.roleTaskReturn({ taskId: id, userId: req.user.id, organizationId: req.user.organizationId, reason: body.reason ?? null });
+    return this.tasksService.roleTaskReturn({
+      taskId: id,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      reason: body.reason ?? null,
+    });
   }
 
   @Put(':id/open-role')
@@ -144,8 +149,12 @@ export class TasksController extends TasksControllerBase {
   @ApiOperation({ summary: 'Open a task to a work role, change how many it needs, or close it (roleId null)' })
   async setOpenRole(@Param('id') id: string, @Body() body: SetOpenRoleDto, @Request() req: any) {
     return this.tasksService.roleTaskSetOpen({
-      taskId: id, roleId: body.roleId ?? null, spots: body.spots,
-      userId: req.user.id, userRole: req.user.role, organizationId: req.user.organizationId,
+      taskId: id,
+      roleId: body.roleId ?? null,
+      spots: body.spots,
+      userId: req.user.id,
+      userRole: req.user.role,
+      organizationId: req.user.organizationId,
       canAssignTasks: req.user.canAssignTasks,
       assignSpaceIds: assignSpaceIds(req),
     });

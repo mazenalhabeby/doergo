@@ -54,7 +54,16 @@ export class DocumentSendBackService extends DocumentSigningBase {
         // Hidden from its member means not theirs to act on, whatever the route.
         NOT: { userId: data.actor.userId, hiddenFromMember: true },
       },
-      select: { id: true, title: true, userId: true, status: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        status: true,
+        hiddenFromMember: true,
+        rolesOverridden: true,
+        visibleToRoleIds: true,
+        type: { select: { visibleToRoleIds: true } },
+      },
     });
     if (!document) throw new NotFoundException('Document not found');
     assertNotHiddenDraft(data.actor, document);

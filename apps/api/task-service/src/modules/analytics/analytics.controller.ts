@@ -25,7 +25,16 @@ export class AnalyticsController {
   }
 
   @MessagePattern({ cmd: 'analytics_timesheet' })
-  timesheet(@Payload() data: { organizationId: string; userId: string; from?: string; to?: string; scopeSpaceIds?: SpaceScopeIds }) {
+  timesheet(
+    @Payload()
+    data: {
+      organizationId: string;
+      userId: string;
+      from?: string;
+      to?: string;
+      scopeSpaceIds?: SpaceScopeIds;
+    },
+  ) {
     return this.analytics.timesheetDetail(data);
   }
 
@@ -35,12 +44,34 @@ export class AnalyticsController {
   }
 
   @MessagePattern({ cmd: 'analytics_create_saved' })
-  createSaved(@Payload() data: { organizationId: string; userId: string; name: string; description?: string; config: ReportDefinition; isShared?: boolean }) {
+  createSaved(
+    @Payload()
+    data: {
+      organizationId: string;
+      userId: string;
+      name: string;
+      description?: string;
+      config: ReportDefinition;
+      isShared?: boolean;
+    },
+  ) {
     return this.savedReports.createSaved(data);
   }
 
   @MessagePattern({ cmd: 'analytics_update_saved' })
-  updateSaved(@Payload() data: { id: string; organizationId: string; userId: string; isAdmin?: boolean; name?: string; description?: string; config?: ReportDefinition; isShared?: boolean }) {
+  updateSaved(
+    @Payload()
+    data: {
+      id: string;
+      organizationId: string;
+      userId: string;
+      isAdmin?: boolean;
+      name?: string;
+      description?: string;
+      config?: ReportDefinition;
+      isShared?: boolean;
+    },
+  ) {
     return this.savedReports.updateSaved(data);
   }
 

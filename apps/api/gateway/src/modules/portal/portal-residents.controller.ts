@@ -10,7 +10,6 @@ import { PortalAdminControllerBase } from './portal-admin-controller.base';
 @ApiBearerAuth()
 @Controller('portal/admin')
 export class PortalResidentsController extends PortalAdminControllerBase {
-
   // ── Residents (B2C, per portal) ──
 
   @Get('residents')
@@ -19,7 +18,11 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   // who sent a request on the request itself.
   @RequirePermissionInSpace('canManagePortals')
   @ApiOperation({ summary: 'List a portal’s residents' })
-  async residents(@Query('portalId') portalId: string | undefined, @Query('search') search: string | undefined, @Request() req: any) {
+  async residents(
+    @Query('portalId') portalId: string | undefined,
+    @Query('search') search: string | undefined,
+    @Request() req: any,
+  ) {
     const scopeSpaceIds = portalScope(req.user, 'canManagePortals');
     if (scopeSpaceIds !== undefined) {
       // Workspace-scoped: the CRM list below knows nothing about portal reach,
@@ -28,7 +31,13 @@ export class PortalResidentsController extends PortalAdminControllerBase {
       if (!portalId) throw new BadRequestException('Pick a portal');
       await this.assertManageReach(req, { portalId });
     }
-    return this.auth('list_customers', { organizationId: req.user.organizationId, portalResident: true, portalId, search, limit: 100 });
+    return this.auth('list_customers', {
+      organizationId: req.user.organizationId,
+      portalResident: true,
+      portalId,
+      search,
+      limit: 100,
+    });
   }
 
   @Get('portals/:id/available-units')
@@ -59,9 +68,20 @@ export class PortalResidentsController extends PortalAdminControllerBase {
   // app. Workspace-scoped internal managers may, for a portal in reach.
   @RequirePermissionInSpace('canManagePortals')
   @DenyExternal()
-  @ApiOperation({ summary: 'Invite a resident into a portal (assign an existing apartment or create one + invite code)' })
+  @ApiOperation({
+    summary: 'Invite a resident into a portal (assign an existing apartment or create one + invite code)',
+  })
   async inviteResident(
-    @Body() body: { portalId: string; customerId?: string; name?: string; email?: string; unitId?: string; unitName?: string; unitAddress?: string },
+    @Body()
+    body: {
+      portalId: string;
+      customerId?: string;
+      name?: string;
+      email?: string;
+      unitId?: string;
+      unitName?: string;
+      unitAddress?: string;
+    },
     @Request() req: any,
   ) {
     const orgId = req.user.organizationId;
@@ -92,8 +112,11 @@ export class PortalResidentsController extends PortalAdminControllerBase {
     // Assign an EXISTING vacant apartment, or create a new one from free text.
     const unit: any = body.unitId
       ? await this.auth('portal_update_unit', {
-          id: body.unitId, organizationId: orgId,
-          customerId: customer.id, portalId: body.portalId, isPrimary: true,
+          id: body.unitId,
+          organizationId: orgId,
+          customerId: customer.id,
+          portalId: body.portalId,
+          isPrimary: true,
           scopeSpaceIds,
         })
       : await this.auth('portal_create_unit', {

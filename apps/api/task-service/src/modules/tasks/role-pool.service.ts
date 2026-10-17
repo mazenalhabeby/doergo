@@ -39,7 +39,12 @@ export class RolePoolService extends RolePoolBase {
     // The task already exists: nothing here may turn its creation into an error.
     try {
       await this.prisma.taskEvent.create({
-        data: { taskId, userId: actorId, eventType: TaskEventType.OPENED_TO_ROLE, metadata: { roleId: role.id, roleName: role.name, spots } },
+        data: {
+          taskId,
+          userId: actorId,
+          eventType: TaskEventType.OPENED_TO_ROLE,
+          metadata: { roleId: role.id, roleName: role.name, spots },
+        },
       });
       const t = await this.prisma.task.findUnique({ where: { id: taskId }, select: { priority: true } });
       if (t?.priority === 'URGENT') {
@@ -59,7 +64,17 @@ export class RolePoolService extends RolePoolBase {
    * The office opens an existing task to a role, changes how many it needs,
    * or closes it again (`roleId: null`). Asks the same right as assigning.
    */
-  async setOpenRole(data: Facts & { taskId: string; roleId: string | null; spots?: number; userRole: string; canAssignTasks?: boolean; canViewAllTasks?: boolean; assignSpaceIds?: string[] }) {
+  async setOpenRole(
+    data: Facts & {
+      taskId: string;
+      roleId: string | null;
+      spots?: number;
+      userRole: string;
+      canAssignTasks?: boolean;
+      canViewAllTasks?: boolean;
+      assignSpaceIds?: string[];
+    },
+  ) {
     const task = await this.prisma.task.findFirst({
       where: { id: data.taskId, organizationId: data.organizationId },
       select: { id: true, spaceId: true, status: true, openRoleId: true, openSpots: true, openSpotsLeft: true },
@@ -72,7 +87,10 @@ export class RolePoolService extends RolePoolBase {
 
     if (!data.roleId) {
       // Closed to the role: nobody new can take it. Who already took it stays on it.
-      await this.prisma.task.update({ where: { id: task.id }, data: { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 } });
+      await this.prisma.task.update({
+        where: { id: task.id },
+        data: { openRoleId: null, openSpots: null, openSpotsLeft: null, openedAt: null, openWave: 0 },
+      });
       this.notifications.emit('task_updated', { task: { id: task.id, organizationId: data.organizationId } });
       return success({ id: task.id, openRoleId: null });
     }
@@ -157,7 +175,10 @@ export class RolePoolService extends RolePoolBase {
       select: { id: true, status: true, openRoleId: true, openSpots: true, organizationId: true, openRole: { select: { name: true } } },
     });
     const mine = task
-      ? await this.prisma.taskAssignee.findUnique({ where: { taskId_userId: { taskId: task.id, userId: data.userId } }, select: { id: true } })
+      ? await this.prisma.taskAssignee.findUnique({
+          where: { taskId_userId: { taskId: task.id, userId: data.userId } },
+          select: { id: true },
+        })
       : null;
     if (!task || !mine) throw new NotFoundException('Task not found');
     if (!task.openRoleId) {
@@ -169,7 +190,9 @@ export class RolePoolService extends RolePoolBase {
       or this person has joined the crew's work, is.
     */
     const working: string[] = [TaskStatus.EN_ROUTE, TaskStatus.ARRIVED, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED];
-    const joined = await this.prisma.taskEvent.count({ where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.CREW_JOINED } });
+    const joined = await this.prisma.taskEvent.count({
+      where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.CREW_JOINED },
+    });
     if (working.includes(task.status) || joined > 0 || isWorkOver(task.status)) {
       throw new ConflictException({ message: 'The work has started — leave the crew instead', code: 'ROLE_TASK_STARTED' });
     }
@@ -186,7 +209,12 @@ export class RolePoolService extends RolePoolBase {
     // comes back through syncSpots (asked for − people on it), via onAssigneesChanged below.
     await this.prisma.task.update({ where: { id: task.id }, data: { openWave: 0, openedAt: new Date() } });
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: data.userId, eventType: TaskEventType.RETURNED_TO_ROLE, metadata: { roleId: task.openRoleId, roleName: task.openRole?.name ?? null, reason } },
+      data: {
+        taskId: task.id,
+        userId: data.userId,
+        eventType: TaskEventType.RETURNED_TO_ROLE,
+        metadata: { roleId: task.openRoleId, roleName: task.openRole?.name ?? null, reason },
+      },
     });
     await this.tasks.onAssigneesChanged(task.id, [], data.userId);
     // Nobody left on it: back to NEW (the canonical flow only — a custom flow is left as it is).

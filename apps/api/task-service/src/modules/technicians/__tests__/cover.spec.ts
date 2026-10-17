@@ -22,8 +22,13 @@ import {
  */
 
 const person = (over: Partial<CoverPerson> & { id: string }): CoverPerson => ({
-  firstName: over.id, lastName: 'X', spaceId: 's1',
-  specialty: null, position: null, scheduleDows: [], shiftRules: [],
+  firstName: over.id,
+  lastName: 'X',
+  spaceId: 's1',
+  specialty: null,
+  position: null,
+  scheduleDows: [],
+  shiftRules: [],
   ...over,
 });
 
@@ -31,7 +36,9 @@ const WEEKDAYS = [1, 2, 3, 4, 5];
 const space: CoverSpace = { id: 's1', name: 'Warehouse', minCover: 3 };
 
 // 2026-09-14 is a Monday; 2026-09-19 a Saturday.
-const MON = '2026-09-14', TUE = '2026-09-15', SAT = '2026-09-19';
+const MON = '2026-09-14',
+  TUE = '2026-09-15',
+  SAT = '2026-09-19';
 
 describe('who is rostered', () => {
   it('follows the weekly schedule when there is one', () => {
@@ -44,7 +51,16 @@ describe('who is rostered', () => {
     const p = person({
       id: 'noor',
       scheduleDows: WEEKDAYS,
-      shiftRules: [{ recurrence: 'WEEKLY', daysOfWeek: [6], daysOfMonth: [], dates: [], effectiveFrom: '2026-01-01', effectiveTo: null }],
+      shiftRules: [
+        {
+          recurrence: 'WEEKLY',
+          daysOfWeek: [6],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: '2026-01-01',
+          effectiveTo: null,
+        },
+      ],
     });
     expect(isRosteredOn(p, SAT)).toBe(true);
     expect(isRosteredOn(p, MON)).toBe(false);
@@ -63,10 +79,19 @@ describe('who is rostered', () => {
     const p = person({
       id: 'noor',
       scheduleDows: WEEKDAYS,
-      shiftRules: [{ recurrence: 'DAILY', daysOfWeek: [], daysOfMonth: [], dates: [], effectiveFrom: '2026-10-01', effectiveTo: null }],
+      shiftRules: [
+        {
+          recurrence: 'DAILY',
+          daysOfWeek: [],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: '2026-10-01',
+          effectiveTo: null,
+        },
+      ],
     });
-    expect(isRosteredOn(p, MON)).toBe(true);   // September: the week still rules
-    expect(isRosteredOn(p, SAT)).toBe(false);  // …including its days off
+    expect(isRosteredOn(p, MON)).toBe(true); // September: the week still rules
+    expect(isRosteredOn(p, SAT)).toBe(false); // …including its days off
     expect(isRosteredOn(p, '2026-10-03')).toBe(true); // October: the rota rules, and it is DAILY
   });
 
@@ -74,7 +99,16 @@ describe('who is rostered', () => {
     const p = person({
       id: 'ex',
       scheduleDows: WEEKDAYS,
-      shiftRules: [{ recurrence: 'WEEKLY', daysOfWeek: [6], daysOfMonth: [], dates: [], effectiveFrom: '2026-01-01', effectiveTo: '2026-06-30' }],
+      shiftRules: [
+        {
+          recurrence: 'WEEKLY',
+          daysOfWeek: [6],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: '2026-01-01',
+          effectiveTo: '2026-06-30',
+        },
+      ],
     });
     expect(isRosteredOn(p, MON)).toBe(true);
     expect(isRosteredOn(p, SAT)).toBe(false);
@@ -84,7 +118,16 @@ describe('who is rostered', () => {
     const p = person({
       id: 'sat-only',
       scheduleDows: WEEKDAYS,
-      shiftRules: [{ recurrence: 'WEEKLY', daysOfWeek: [6], daysOfMonth: [], dates: [], effectiveFrom: '2026-01-01', effectiveTo: null }],
+      shiftRules: [
+        {
+          recurrence: 'WEEKLY',
+          daysOfWeek: [6],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: '2026-01-01',
+          effectiveTo: null,
+        },
+      ],
     });
     expect(isRosteredOn(p, SAT)).toBe(true);
     expect(isRosteredOn(p, MON)).toBe(false);
@@ -97,7 +140,16 @@ describe('who is rostered', () => {
   it('treats an expired rota with no weekly week as nothing configured', () => {
     const p = person({
       id: 'old',
-      shiftRules: [{ recurrence: 'DAILY', daysOfWeek: [], daysOfMonth: [], dates: [], effectiveFrom: '2026-01-01', effectiveTo: '2026-06-30' }],
+      shiftRules: [
+        {
+          recurrence: 'DAILY',
+          daysOfWeek: [],
+          daysOfMonth: [],
+          dates: [],
+          effectiveFrom: '2026-01-01',
+          effectiveTo: '2026-06-30',
+        },
+      ],
     });
     expect(isRosteredOn(p, MON)).toBe(true);
   });
@@ -137,10 +189,10 @@ describe('cover on a day', () => {
 
 describe('what approving would do', () => {
   const roster = [
-    person({ id: 'mike',  specialty: 'General', scheduleDows: WEEKDAYS }),
+    person({ id: 'mike', specialty: 'General', scheduleDows: WEEKDAYS }),
     person({ id: 'sarah', specialty: 'General', scheduleDows: WEEKDAYS }),
     person({ id: 'david', specialty: 'General', scheduleDows: WEEKDAYS }),
-    person({ id: 'karim', specialty: 'HVAC',    scheduleDows: WEEKDAYS }),
+    person({ id: 'karim', specialty: 'HVAC', scheduleDows: WEEKDAYS }),
   ];
   const req = (id: string, from: string, to: string) => ({ id: 'r1', personId: id, from, to });
 
@@ -292,7 +344,10 @@ describe('the live floor', () => {
 */
 describe('cover is attached only when the gateway said so', () => {
   it('treats a missing withCover flag as no', () => {
-    const src = readFileSync(join(__dirname, '..', 'leave-records.service.ts'), 'utf8');
+    // The org-wide leave list moved to leave-records-org.base.ts (LeaveRecordsService extends it).
+    const src = ['leave-records.service.ts', 'leave-records-org.base.ts']
+      .map((f) => readFileSync(join(__dirname, '..', f), 'utf8'))
+      .join('\n');
     expect(src).toContain('dto.withCover === true');
     // …and the assessment is skipped entirely, so it is not merely hidden.
     expect(src).toContain('withCover ? timeOffs.filter');

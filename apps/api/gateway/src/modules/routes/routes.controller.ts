@@ -33,7 +33,12 @@ export class RoutesController {
   optimize(@Body() dto: OptimizeRouteDto, @Request() req: any) {
     if (!moduleAnywhere(req.user, 'tracking')) {
       throw new HttpException(
-        { statusCode: HttpStatus.PAYMENT_REQUIRED, message: 'The "tracking" module is not switched on in any of your workspaces.', error: 'ModuleDisabled', feature: 'tracking' },
+        {
+          statusCode: HttpStatus.PAYMENT_REQUIRED,
+          message: 'The "tracking" module is not switched on in any of your workspaces.',
+          error: 'ModuleDisabled',
+          feature: 'tracking',
+        },
         HttpStatus.PAYMENT_REQUIRED,
       );
     }

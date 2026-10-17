@@ -33,7 +33,12 @@ export interface SelfDecisionPrisma {
 
 export async function assertNotSelfDecision(
   prisma: SelfDecisionPrisma,
-  params: { deciderId: string | null | undefined; subjectId: string | null | undefined; organizationId: string; message: string },
+  params: {
+    deciderId: string | null | undefined;
+    subjectId: string | null | undefined;
+    organizationId: string;
+    message: string;
+  },
 ): Promise<void> {
   if (!params.deciderId || !params.subjectId) return;
   if (params.deciderId !== params.subjectId) {
@@ -54,7 +59,12 @@ export async function assertNotSelfDecision(
  * who signs their overtime. Judged with a day either side (no time zone lookup
  * on every decision) — it refuses slightly more, never less.
  */
-async function assertNotStandingInFor(prisma: SelfDecisionPrisma, deciderId: string, subjectId: string, organizationId: string): Promise<void> {
+async function assertNotStandingInFor(
+  prisma: SelfDecisionPrisma,
+  deciderId: string,
+  subjectId: string,
+  organizationId: string,
+): Promise<void> {
   if (!prisma.approvalDelegation) return;
   const now = Date.now();
   const covering = await prisma.approvalDelegation.findFirst({
@@ -69,6 +79,9 @@ async function assertNotStandingInFor(prisma: SelfDecisionPrisma, deciderId: str
     select: { id: true },
   });
   if (covering) {
-    throw new ForbiddenException({ message: 'You are standing in for this person — their own requests go to someone else.', code: 'STAND_IN_FOR_SUBJECT' });
+    throw new ForbiddenException({
+      message: 'You are standing in for this person — their own requests go to someone ' + 'else.',
+      code: 'STAND_IN_FOR_SUBJECT',
+    });
   }
 }

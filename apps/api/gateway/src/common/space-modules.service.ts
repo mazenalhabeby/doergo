@@ -1,4 +1,14 @@
-import { Global, HttpException, HttpStatus, Inject, Injectable, Logger, Module, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Global,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  Module,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, timeout } from 'rxjs';
 import { SERVICE_NAMES, formatCents, moduleMonthlyCents } from '@hbcfield/shared';
@@ -77,7 +87,10 @@ export class SpaceModulesService {
    * (`unavailable`). The guard treats both as "unknown"; an explicit check
    * answers them differently — a wrong id is not a reason to "try again".
    */
-  private async lookup(spaceId: string, organizationId: string): Promise<{ modules: string[] } | 'missing' | 'unavailable'> {
+  private async lookup(
+    spaceId: string,
+    organizationId: string,
+  ): Promise<{ modules: string[] } | 'missing' | 'unavailable'> {
     const key = `${organizationId}:${spaceId}`;
     const hit = this.cache.get(key);
     if (hit && hit.expires > Date.now()) return { modules: hit.modules };
@@ -181,9 +194,7 @@ export class SpaceModulesService {
     if (hit && hit.expires > Date.now()) return hit.spaceId;
 
     try {
-      const res: any = await firstValueFrom(
-        this.taskClient.send({ cmd }, { id, organizationId }).pipe(timeout(1_500)),
-      );
+      const res: any = await firstValueFrom(this.taskClient.send({ cmd }, { id, organizationId }).pipe(timeout(1_500)));
       const spaceId: string | null = res?.data?.spaceId ?? null;
       this.rememberSpaceOf(key, spaceId);
       return spaceId;
@@ -216,7 +227,8 @@ export class SpaceModulesService {
   async assertEnabled(spaceId: string, organizationId: string, feature: string): Promise<void> {
     const r = await this.lookup(spaceId, organizationId);
     if (r === 'missing') throw new NotFoundException('Workspace not found');
-    if (r === 'unavailable') throw new ServiceUnavailableException('Could not check this workspace\'s modules — try again');
+    if (r === 'unavailable')
+      throw new ServiceUnavailableException("Could not check this workspace's modules — try again");
     if (!r.modules.includes(feature)) throw moduleRefusal(feature, true);
   }
 

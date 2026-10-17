@@ -73,7 +73,9 @@ export class ApiError extends Error {
     if (init.messages) this.messages = init.messages;
     this.retryable =
       init.retryable ??
-      (init.kind === 'network' || init.kind === 'timeout' || (init.kind === 'http' && RETRYABLE_STATUSES.has(init.status)));
+      (init.kind === 'network' ||
+        init.kind === 'timeout' ||
+        (init.kind === 'http' && RETRYABLE_STATUSES.has(init.status)));
     // Keep `instanceof` working when compiled to ES5-style classes.
     Object.setPrototypeOf(this, new.target.prototype);
   }
@@ -85,7 +87,13 @@ export class ApiError extends Error {
 }
 
 export function isApiError(e: unknown): e is ApiError {
-  return e instanceof ApiError || (!!e && typeof e === 'object' && (e as { name?: unknown }).name === 'ApiError' && typeof (e as { kind?: unknown }).kind === 'string');
+  return (
+    e instanceof ApiError ||
+    (!!e &&
+      typeof e === 'object' &&
+      (e as { name?: unknown }).name === 'ApiError' &&
+      typeof (e as { kind?: unknown }).kind === 'string')
+  );
 }
 
 /**
@@ -112,7 +120,11 @@ export function toApiError(body: unknown, status: number): ApiError {
       message = messages.join(', ');
     }
     code = typeof body.code === 'string' ? body.code : typeof nested?.code === 'string' ? nested.code : undefined;
-    params = isPlainObject(body.params) ? body.params : isPlainObject(nested?.params) ? (nested!.params as Record<string, unknown>) : undefined;
+    params = isPlainObject(body.params)
+      ? body.params
+      : isPlainObject(nested?.params)
+        ? (nested!.params as Record<string, unknown>)
+        : undefined;
     // `error` as a string is the HTTP reason phrase ("Bad Request") — only a last resort.
     if (!message && typeof body.error === 'string') message = body.error;
   }

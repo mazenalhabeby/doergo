@@ -48,7 +48,11 @@ export abstract class LeaveLedgerBase {
 
   /* ================================================================ the balance core */
 
-  async years(org: OrgLeave, people: PersonLeave[], onFor: (p: PersonLeave) => string): Promise<Map<string, PersonLeaveYear>> {
+  async years(
+    org: OrgLeave,
+    people: PersonLeave[],
+    onFor: (p: PersonLeave) => string,
+  ): Promise<Map<string, PersonLeaveYear>> {
     const out = new Map<string, PersonLeaveYear>();
     if (!people.length) return out;
     const windows = new Map(people.map((p) => [p.id, leaveYearFor(org, p, onFor(p))]));
@@ -62,9 +66,12 @@ export abstract class LeaveLedgerBase {
       this.prisma.timeOff.findMany({
         // Leave only, VACATION only: a remote day or a sick day never touches the allowance.
         where: {
-          technicianId: { in: ids }, ...ABSENCE_WHERE, type: 'VACATION' as never,
+          technicianId: { in: ids },
+          ...ABSENCE_WHERE,
+          type: 'VACATION' as never,
           status: { in: ['APPROVED', 'PENDING'] as never[] },
-          startDate: { lte: asDate(maxEnd) }, endDate: { gte: asDate(minStart) },
+          startDate: { lte: asDate(maxEnd) },
+          endDate: { gte: asDate(minStart) },
         },
         select: { technicianId: true, status: true, startDate: true, endDate: true },
       }),
@@ -76,8 +83,12 @@ export abstract class LeaveLedgerBase {
 
     // Calendar rules only for people who have vacation in the window, once for all of them.
     const withLeave = [...new Set(requests.map((r) => r.technicianId))];
-    const rules = withLeave.length ? await this.calendarRules.personRulesMany(org.id, withLeave, minStart, maxEnd) : new Map();
-    const fallback = withLeave.some((id) => !rules.has(id)) ? await this.calendarRules.personRules(org.id, '', minStart, maxEnd) : null;
+    const rules = withLeave.length
+      ? await this.calendarRules.personRulesMany(org.id, withLeave, minStart, maxEnd)
+      : new Map();
+    const fallback = withLeave.some((id) => !rules.has(id))
+      ? await this.calendarRules.personRules(org.id, '', minStart, maxEnd)
+      : null;
 
     const rule = carryRuleOf(org);
     for (const p of people) {
@@ -101,17 +112,21 @@ export abstract class LeaveLedgerBase {
       const mine = requests.filter((r) => r.technicianId === p.id);
       const r = rules.get(p.id) ?? fallback;
       const clipped = mine.map((q) => {
-        const from = toISODateString(q.startDate), to = toISODateString(q.endDate);
+        const from = toISODateString(q.startDate),
+          to = toISODateString(q.endDate);
         return { status: q.status as string, from: from < ly.start ? ly.start : from, to: to > ly.end ? ly.end : to };
       });
       const cost = (from: string, to: string) => (r ? countLeaveDays(from, to, r.rules, r.roster).counted : 0);
-      let taken = 0, pending = 0;
+      let taken = 0,
+        pending = 0;
       for (const c of clipped) {
         if (c.status === 'APPROVED') taken += cost(c.from, c.to);
         else pending += cost(c.from, c.to);
       }
       const adj = adjustments
-        .filter((a) => a.userId === p.id && toISODateString(a.leaveYearStart) === ly.start && isLeaveAdjustmentKind(a.kind))
+        .filter(
+          (a) => a.userId === p.id && toISODateString(a.leaveYearStart) === ly.start && isLeaveAdjustmentKind(a.kind),
+        )
         .map((a) => ({ kind: a.kind as LeaveAdjustmentKind, days: a.days, sourceKey: a.sourceKey }));
       const balance = leaveBalance({ allowance, adjustments: adj, taken, pending });
       const carried = adj.some((a) => a.kind === 'CARRY_OVER' && a.days > 0);
@@ -125,9 +140,10 @@ export abstract class LeaveLedgerBase {
         adjustments: adj,
         balance,
         carryExpiresOn: carried ? carryExpiryDate(ly, rule) : null,
-        takenUpTo: (day) => clipped
-          .filter((c) => c.status === 'APPROVED' && c.from <= day)
-          .reduce((s, c) => s + cost(c.from, c.to > day ? day : c.to), 0),
+        takenUpTo: (day) =>
+          clipped
+            .filter((c) => c.status === 'APPROVED' && c.from <= day)
+            .reduce((s, c) => s + cost(c.from, c.to > day ? day : c.to), 0),
       });
     }
     return out;
@@ -157,7 +173,8 @@ export abstract class LeaveLedgerBase {
 
   protected dayFrom(q: { on?: unknown; year?: unknown }, org: OrgLeave): string {
     const day = leaveYearDayFromQuery(q, this.today(org));
-    if (!day) throw new BadRequestException({ code: 'LEAVE_DAY_INVALID', message: 'Choose a valid day (YYYY-MM-DD) or year' });
+    if (!day)
+      throw new BadRequestException({ code: 'LEAVE_DAY_INVALID', message: 'Choose a valid day (YYYY-MM-DD) or year' });
     return day;
   }
 
@@ -213,8 +230,16 @@ export abstract class LeaveLedgerBase {
   /* ================================================================ the ledger */
 
   protected entryOf(row: {
-    id: string; kind: string; days: number; leaveYearStart: Date; reason: string | null; sourceKey: string | null; createdAt: Date; voidedAt: Date | null;
-    createdBy: { id: string; firstName: string; lastName: string } | null; voidedBy: { id: string; firstName: string; lastName: string } | null;
+    id: string;
+    kind: string;
+    days: number;
+    leaveYearStart: Date;
+    reason: string | null;
+    sourceKey: string | null;
+    createdAt: Date;
+    voidedAt: Date | null;
+    createdBy: { id: string; firstName: string; lastName: string } | null;
+    voidedBy: { id: string; firstName: string; lastName: string } | null;
   }): LeaveLedgerEntry {
     return {
       id: row.id,
@@ -231,8 +256,17 @@ export abstract class LeaveLedgerBase {
   }
 
   protected readonly entrySelect = {
-    id: true, kind: true, days: true, leaveYearStart: true, reason: true, sourceKey: true, createdAt: true, voidedAt: true, userId: true,
-    createdBy: { select: PERSON_BRIEF }, voidedBy: { select: PERSON_BRIEF },
+    id: true,
+    kind: true,
+    days: true,
+    leaveYearStart: true,
+    reason: true,
+    sourceKey: true,
+    createdAt: true,
+    voidedAt: true,
+    userId: true,
+    createdBy: { select: PERSON_BRIEF },
+    voidedBy: { select: PERSON_BRIEF },
   } as const;
 
   /* ================================================================ starting balances */

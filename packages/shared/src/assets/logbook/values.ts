@@ -180,6 +180,7 @@ export function meterFields(type: KindLogType): KindLogField[] {
  */
 export function kindMeters(types: KindLogType[]): Array<{ key: string; label: string; unit?: string }> {
   const seen = new Map<string, { key: string; label: string; unit?: string }>();
-  for (const t of types) for (const f of meterFields(t)) if (!seen.has(f.key)) seen.set(f.key, { key: f.key, label: f.label, unit: f.unit });
+  for (const t of types)
+    for (const f of meterFields(t)) if (!seen.has(f.key)) seen.set(f.key, { key: f.key, label: f.label, unit: f.unit });
   return [...seen.values()];
 }

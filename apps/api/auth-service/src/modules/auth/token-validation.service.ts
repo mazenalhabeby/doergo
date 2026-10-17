@@ -80,7 +80,23 @@ export class TokenValidationService {
           // can scope to it the way they already scope to a unit. Without this
           // req.user.assetId is undefined and the binding does nothing.
           assetId: true,
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, customerPortalEnabled: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+          organization: {
+            select: {
+              name: true,
+              timezone: true,
+              profileBadges: true,
+              enabledModules: true,
+              subStatus: true,
+              planTier: true,
+              addOns: true,
+              currency: true,
+              offlineMode: true,
+              customerPortalEnabled: true,
+              usesExternalWorkers: true,
+              suspendedAt: true,
+              ownerId: true,
+            },
+          },
           // Custom role
           // Unified roles (Phase 2): org-wide role + per-space assignments. Read
           // to build the resolved `access` object. Legacy space memberships are
@@ -141,12 +157,18 @@ export class TokenValidationService {
       // Best-effort "last active" heartbeat. This runs ~once per minute per active
       // user (the gateway caches the validated user for AUTH_CACHE_TTL_SECONDS), so
       // it's naturally throttled — no per-request DB write. Fire-and-forget.
-      this.prisma.user
-        .update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
-        .catch(() => undefined);
+      this.prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } }).catch(() => undefined);
 
       // tokensValidAfter is read for the check above and stays off req.user.
-      const { organization, profileBadges, enabledModules: userModules, memberRole, spaceAssignments, tokensValidAfter: _cutoff, ...userData } = user;
+      const {
+        organization,
+        profileBadges,
+        enabledModules: userModules,
+        memberRole,
+        spaceAssignments,
+        tokensValidAfter: _cutoff,
+        ...userData
+      } = user;
 
       // Cross-org space shares RECEIVED by this user's org (ACTIVE only). Indexed
       // on [guestOrgId, status] → returns 0 rows for the vast majority of users
@@ -156,8 +178,14 @@ export class TokenValidationService {
         ? await this.prisma.spaceShare.findMany({
             where: { guestOrgId: userData.organizationId, status: 'ACTIVE' },
             select: {
-              spaceId: true, ownerOrgId: true, level: true,
-              showWorkers: true, showAttendance: true, showTracking: true, showReports: true, allowRequests: true,
+              spaceId: true,
+              ownerOrgId: true,
+              level: true,
+              showWorkers: true,
+              showAttendance: true,
+              showTracking: true,
+              showReports: true,
+              allowRequests: true,
             },
           })
         : [];
@@ -245,7 +273,9 @@ export class TokenValidationService {
           ),
           // Billing status carried on req.user so the SubscriptionGuard enforces
           // the read-only lock with zero extra DB reads (cached with the user).
-          subStatus: organization?.suspendedAt ? 'canceled' : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
+          subStatus: organization?.suspendedAt
+            ? 'canceled'
+            : (organization?.subStatus ?? 'ACTIVE').toString().toLowerCase(),
           planTier: organization?.planTier ? organization.planTier.toString().toLowerCase() : null,
           // Bought capabilities — PlanGuard reads ONLY this. It has to be set on
           // every path that builds a request context, including this one: an

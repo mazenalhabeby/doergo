@@ -30,8 +30,8 @@ export class OvertimeDecisionService extends OvertimeBase {
       maxDurationMinutes: data.maxDurationMinutes ?? request.maxDurationMinutes ?? 0,
       notes: data.notes ?? request.approverNotes ?? undefined,
       method: confirmsOwnSignature ? 'SIGNATURE' : 'REMOTE',
-      leaderName: confirmsOwnSignature ? request.leaderName ?? undefined : undefined,
-      leaderSignature: confirmsOwnSignature ? request.leaderSignature ?? undefined : undefined,
+      leaderName: confirmsOwnSignature ? (request.leaderName ?? undefined) : undefined,
+      leaderSignature: confirmsOwnSignature ? (request.leaderSignature ?? undefined) : undefined,
     });
   }
 
@@ -96,7 +96,11 @@ export class OvertimeDecisionService extends OvertimeBase {
     // Standing in for a leader who approves overtime everywhere / here today.
     const standIn = orgWide ? null : await standInGrant(this.prisma, approver.id, data.organizationId);
     // A request with no workspace needs the org-wide grant, never "some workspace".
-    const coveredByStandIn = !!standIn && (request.locationId ? grantHolds(standIn, 'canApproveOvertime', request.locationId) : !!standIn.org.canApproveOvertime);
+    const coveredByStandIn =
+      !!standIn &&
+      (request.locationId
+        ? grantHolds(standIn, 'canApproveOvertime', request.locationId)
+        : !!standIn.org.canApproveOvertime);
     if (!orgWide && !coveredByStandIn) {
       // Does a space role grant it where this overtime actually happened?
       const grantedHere = request.locationId
@@ -138,7 +142,9 @@ export class OvertimeDecisionService extends OvertimeBase {
         signedAt,
         // The person who signed is standing there; give them time to confirm before the
         // auto clock-out — ONCE. Signing again must not keep postponing the deadline.
-        ...(request.signedAt ? {} : { approvalTimeoutAt: new Date(signedAt.getTime() + SIGNED_CONFIRM_WINDOW_MINUTES * 60_000) }),
+        ...(request.signedAt
+          ? {}
+          : { approvalTimeoutAt: new Date(signedAt.getTime() + SIGNED_CONFIRM_WINDOW_MINUTES * 60_000) }),
       },
     });
     // Asked once per signer: a repeated signature does not push them again.
@@ -200,7 +206,13 @@ export class OvertimeDecisionService extends OvertimeBase {
     }
 
     // This product's rule: a refusal ends the shift, at the decision.
-    await this.endShift(request.timeEntryId, data.organizationId, `Overtime rejected: ${data.reason}`, 'OFFICE_CLOSE', now);
+    await this.endShift(
+      request.timeEntryId,
+      data.organizationId,
+      `Overtime rejected: ${data.reason}`,
+      'OFFICE_CLOSE',
+      now,
+    );
 
     // Notify technician
     this.notify({

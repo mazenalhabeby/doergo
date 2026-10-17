@@ -31,7 +31,14 @@ export const STEP_FORM_PRESETS: Readonly<Record<StepFormPresetId, StepForm>> = {
   salesVisit: {
     version: 1,
     fields: [
-      { id: 'outcome', type: 'choice', label: 'Outcome', required: true, options: ['Won', 'Follow-up', 'No interest', 'Not reached'], crm: 'outcome' },
+      {
+        id: 'outcome',
+        type: 'choice',
+        label: 'Outcome',
+        required: true,
+        options: ['Won', 'Follow-up', 'No interest', 'Not reached'],
+        crm: 'outcome',
+      },
       { id: 'notes', type: 'note', label: 'Notes', required: false },
       { id: 'follow_up_on', type: 'date', label: 'Follow up on', required: false, crm: 'followUp' },
     ],
@@ -56,7 +63,13 @@ export const STEP_FORM_PRESETS: Readonly<Record<StepFormPresetId, StepForm>> = {
   support: {
     version: 1,
     fields: [
-      { id: 'resolution', type: 'choice', label: 'Resolution', required: true, options: ['Resolved', 'Workaround', 'Escalated', 'Not reproducible'] },
+      {
+        id: 'resolution',
+        type: 'choice',
+        label: 'Resolution',
+        required: true,
+        options: ['Resolved', 'Workaround', 'Escalated', 'Not reproducible'],
+      },
       { id: 'what_you_did', type: 'note', label: 'What you did', required: true },
     ],
   },
@@ -109,7 +122,10 @@ export function resolveStepForm(
 }
 
 /** The form moving INTO this step asks, or null when it asks nothing. */
-export function effectiveStepForm(step: StepFormStep | null | undefined, workflowName?: string | null): StepForm | null {
+export function effectiveStepForm(
+  step: StepFormStep | null | undefined,
+  workflowName?: string | null,
+): StepForm | null {
   return resolveStepForm(step, workflowName).form;
 }
 

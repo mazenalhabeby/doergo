@@ -1,4 +1,11 @@
-import { OPEN_SHIFT_CLOSE, breakTotals, noShiftReminderAt, computeScheduleFlags, endRunningBreaks, flagsAgainstDailyLimit } from '@hbcfield/shared';
+import {
+  OPEN_SHIFT_CLOSE,
+  breakTotals,
+  noShiftReminderAt,
+  computeScheduleFlags,
+  endRunningBreaks,
+  flagsAgainstDailyLimit,
+} from '@hbcfield/shared';
 
 /**
  * The temporary clock-out for a shift left open — pure, so every rule is a test.
@@ -51,7 +58,12 @@ export function isAbandoned(entry: { clockInAt: Date; expectedClockOutAt: Date |
 /** Flags the temporary close added, and that a real clock-out takes away again. */
 export const PROVISIONAL_FLAGS: ReadonlySet<string> = new Set(['MISSED_CLOCK_OUT', 'CLOCK_OUT_PROVISIONAL']);
 /** Flags that depend on the clock-out time, and are worked out again when it changes. */
-export const CLOCK_OUT_TIME_FLAGS: ReadonlySet<string> = new Set(['OVERTIME', 'EARLY_DEPARTURE', 'OUTSIDE_GEOFENCE_OUT', 'PAST_DAILY_LIMIT']);
+export const CLOCK_OUT_TIME_FLAGS: ReadonlySet<string> = new Set([
+  'OVERTIME',
+  'EARLY_DEPARTURE',
+  'OUTSIDE_GEOFENCE_OUT',
+  'PAST_DAILY_LIMIT',
+]);
 
 /**
  * Excursion states that are still "out" — the ones a closed shift must not

@@ -24,15 +24,26 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     });
     const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
     const authors = authorIds.length
-      ? await this.prisma.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, firstName: true, lastName: true } })
+      ? await this.prisma.user.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
       : [];
     const byId = new Map(authors.map((a) => [a.id, a]));
     return { data: rows.map((r) => ({ ...r, author: r.authorId ? (byId.get(r.authorId) ?? null) : null })) };
   }
 
   async addActivity(data: {
-    customerId: string; organizationId: string; type?: string; body?: string; dueAt?: string; authorId?: string;
-    reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string;
+    customerId: string;
+    organizationId: string;
+    type?: string;
+    body?: string;
+    dueAt?: string;
+    authorId?: string;
+    reminderKind?: string;
+    remindBeforeMin?: number;
+    reminderAssigneeId?: string | null;
+    repeat?: string;
     caller?: CrmCaller;
     /** Made on the phone: an activity logged twice is one activity. */
     clientId?: string;
@@ -50,9 +61,10 @@ export class CustomerActivitiesService extends CustomersServiceBase {
     const dueAt = data.dueAt ? new Date(data.dueAt) : null;
     const remindBeforeMin = isReminder ? Math.max(0, Math.floor(data.remindBeforeMin ?? 0)) : null;
     // A reminder assignee must be a member of this org (else drop → all managers).
-    const assigneeId = isReminder && data.reminderAssigneeId
-      ? ((await this.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
-      : null;
+    const assigneeId =
+      isReminder && data.reminderAssigneeId
+        ? ((await this.keepOrgUserIds([data.reminderAssigneeId], data.organizationId))[0] ?? null)
+        : null;
     const activity = await this.prisma.customerActivity.create({
       data: {
         ...(clientId ? { id: clientId } : {}),
@@ -73,14 +85,31 @@ export class CustomerActivitiesService extends CustomersServiceBase {
   }
 
   async updateActivity(data: {
-    id: string; customerId: string; organizationId: string; body?: string; dueAt?: string | null; done?: boolean;
-    reminderKind?: string; remindBeforeMin?: number; reminderAssigneeId?: string | null; repeat?: string;
+    id: string;
+    customerId: string;
+    organizationId: string;
+    body?: string;
+    dueAt?: string | null;
+    done?: boolean;
+    reminderKind?: string;
+    remindBeforeMin?: number;
+    reminderAssigneeId?: string | null;
+    repeat?: string;
     caller?: CrmCaller;
   }) {
     await this.assertCrmReach(data.customerId, data.organizationId, data.caller, { needWork: true });
     const existing = await this.prisma.customerActivity.findFirst({
       where: { id: data.id, customerId: data.customerId },
-      select: { dueAt: true, remindBeforeMin: true, repeat: true, reminderKind: true, body: true, authorId: true, reminderAssigneeId: true, doneAt: true },
+      select: {
+        dueAt: true,
+        remindBeforeMin: true,
+        repeat: true,
+        reminderKind: true,
+        body: true,
+        authorId: true,
+        reminderAssigneeId: true,
+        doneAt: true,
+      },
     });
     if (!existing) throw new NotFoundException('Activity not found');
 

@@ -37,7 +37,9 @@ export class MemberScheduleService extends MemberServiceBase {
       }
       // Validate start < end (prevent inverted schedules)
       if (entry.isActive !== false && entry.startTime >= entry.endTime) {
-        throw new BadRequestException(`Start time (${entry.startTime}) must be before end time (${entry.endTime}) for day ${entry.dayOfWeek}`);
+        throw new BadRequestException(
+          `Start time (${entry.startTime}) must be before end time (${entry.endTime}) for day ${entry.dayOfWeek}`,
+        );
       }
     }
 

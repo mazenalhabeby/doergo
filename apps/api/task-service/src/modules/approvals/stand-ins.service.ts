@@ -79,7 +79,9 @@ export class StandInsService {
       given: all.filter((v) => v.from.id === caller.userId),
       received: all.filter((v) => v.to.id === caller.userId),
       others: all.filter((v) => v.from.id !== caller.userId && v.to.id !== caller.userId),
-      mayHandOver: !(await this.isExternal(caller.userId)) && (await this.holdsSomethingToHandOver(caller.userId, caller.organizationId)),
+      mayHandOver:
+        !(await this.isExternal(caller.userId)) &&
+        (await this.holdsSomethingToHandOver(caller.userId, caller.organizationId)),
       mayArrange: caller.managesPeople,
       candidates: await this.candidates(caller),
       leaders: caller.managesPeople ? await this.leaders(caller.organizationId) : [],
@@ -100,7 +102,13 @@ export class StandInsService {
       spaceFilter = { spaceAssignments: { some: { spaceId: { in: spaceIds }, ...activeWindowWhere(now) } } };
     }
     const people = await this.prisma.user.findMany({
-      where: { organizationId: caller.organizationId, isActive: true, isExternal: false, id: { not: caller.userId }, ...spaceFilter },
+      where: {
+        organizationId: caller.organizationId,
+        isActive: true,
+        isExternal: false,
+        id: { not: caller.userId },
+        ...spaceFilter,
+      },
       select: { id: true, firstName: true, lastName: true },
       orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
       take: 500,
@@ -114,7 +122,10 @@ export class StandInsService {
     const people = await this.prisma.user.findMany({
       where: { organizationId, isActive: true, isExternal: false },
       select: {
-        id: true, firstName: true, lastName: true, ...ORG_ACCESS_SELECT,
+        id: true,
+        firstName: true,
+        lastName: true,
+        ...ORG_ACCESS_SELECT,
         spaceAssignments: {
           where: { ...activeWindowWhere(now) },
           select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
@@ -129,7 +140,10 @@ export class StandInsService {
   async create(caller: StandInCaller, input: StandInInput): Promise<StandInView> {
     const fromUserId = input.fromUserId && input.fromUserId !== caller.userId ? input.fromUserId : caller.userId;
     if (fromUserId !== caller.userId && !caller.managesPeople) {
-      throw new ForbiddenException({ message: 'Only somebody who manages people can arrange a stand-in for someone else.', code: 'STAND_IN_NOT_YOURS' });
+      throw new ForbiddenException({
+        message: 'Only somebody who manages people can arrange a stand-in for someone ' + 'else.',
+        code: 'STAND_IN_NOT_YOURS',
+      });
     }
     if (!input.toUserId || input.toUserId === fromUserId) {
       throw new BadRequestException({ message: 'Choose somebody else to stand in.', code: 'STAND_IN_SELF' });
@@ -137,13 +151,20 @@ export class StandInsService {
     const today = await this.today(caller.organizationId);
     const problem = standInDatesProblem(input.startsOn, input.endsOn, today, DELEGATION_MAX_DAYS);
     if (problem) {
-      throw new BadRequestException({ message: STAND_IN_MESSAGES[problem], code: problem, params: { maxDays: DELEGATION_MAX_DAYS } });
+      throw new BadRequestException({
+        message: STAND_IN_MESSAGES[problem],
+        code: problem,
+        params: { maxDays: DELEGATION_MAX_DAYS },
+      });
     }
     // A hand-over that began earlier starts today: nothing is decided in the past.
     const startsOn = input.startsOn < today ? today : input.startsOn;
 
     const [from, to] = await Promise.all([
-      this.prisma.user.findFirst({ where: { id: fromUserId, organizationId: caller.organizationId, isActive: true }, select: { id: true, isExternal: true } }),
+      this.prisma.user.findFirst({
+        where: { id: fromUserId, organizationId: caller.organizationId, isActive: true },
+        select: { id: true, isExternal: true },
+      }),
       this.prisma.user.findFirst({
         where: { id: input.toUserId, organizationId: caller.organizationId, isActive: true },
         select: { id: true, isExternal: true },
@@ -152,17 +173,29 @@ export class StandInsService {
     if (!from || !to) throw new NotFoundException('Member not found');
     // A leader hands over to somebody they work with; a people manager may choose anybody internal.
     if (!caller.managesPeople && !(await this.candidates(caller)).some((c) => c.id === input.toUserId)) {
-      throw new BadRequestException({ message: 'Choose somebody who works in one of your workspaces.', code: 'STAND_IN_NOT_A_COLLEAGUE' });
+      throw new BadRequestException({
+        message: 'Choose somebody who works in one of your workspaces.',
+        code: 'STAND_IN_NOT_A_COLLEAGUE',
+      });
     }
     // An external member's authority is held for a client's site; it is never handed on.
     if (from.isExternal) {
-      throw new BadRequestException({ message: 'An external member cannot hand their decisions to a stand-in.', code: 'STAND_IN_EXTERNAL' });
+      throw new BadRequestException({
+        message: 'An external member cannot hand their decisions to a stand-in.',
+        code: 'STAND_IN_EXTERNAL',
+      });
     }
     if (to.isExternal) {
-      throw new BadRequestException({ message: 'An external member cannot stand in for one of your leaders.', code: 'STAND_IN_EXTERNAL' });
+      throw new BadRequestException({
+        message: 'An external member cannot stand in for one of your leaders.',
+        code: 'STAND_IN_EXTERNAL',
+      });
     }
     if (!(await this.holdsSomethingToHandOver(fromUserId, caller.organizationId))) {
-      throw new BadRequestException({ message: 'There are no approval decisions to hand over.', code: 'STAND_IN_NOTHING_TO_HAND_OVER' });
+      throw new BadRequestException({
+        message: 'There are no approval decisions to hand over.',
+        code: 'STAND_IN_NOTHING_TO_HAND_OVER',
+      });
     }
     const overlap = await this.prisma.approvalDelegation.findFirst({
       where: {
@@ -175,7 +208,10 @@ export class StandInsService {
       select: { id: true },
     });
     if (overlap) {
-      throw new BadRequestException({ message: 'There is already a stand-in for some of these days. End it first.', code: 'STAND_IN_OVERLAP' });
+      throw new BadRequestException({
+        message: 'There is already a stand-in for some of these days. End it first.',
+        code: 'STAND_IN_OVERLAP',
+      });
     }
 
     const row = await this.prisma.approvalDelegation.create({
@@ -213,7 +249,10 @@ export class StandInsService {
     if (!row || !(caller.managesPeople || row.fromUserId === caller.userId || row.toUserId === caller.userId)) {
       throw new NotFoundException('Stand-in not found');
     }
-    await this.prisma.approvalDelegation.update({ where: { id: row.id }, data: { revokedAt: new Date(), revokedById: caller.userId } });
+    await this.prisma.approvalDelegation.update({
+      where: { id: row.id },
+      data: { revokedAt: new Date(), revokedById: caller.userId },
+    });
     return { ended: true, toUserId: row.toUserId, fromUserId: row.fromUserId };
   }
 
@@ -242,7 +281,10 @@ export class StandInsService {
   }
 
   private async today(organizationId: string): Promise<string> {
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { timezone: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { timezone: true },
+    });
     return delegationDay(new Date(), org?.timezone).toISOString().slice(0, 10);
   }
 }

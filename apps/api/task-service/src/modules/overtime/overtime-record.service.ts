@@ -26,7 +26,6 @@ import { OvertimeRecordBase } from './overtime-record.base';
  */
 @Injectable()
 export class OvertimeRecordService extends OvertimeRecordBase {
-
   async history(data: {
     organizationId: string;
     scopeSpaceIds?: SpaceScopeIds;
@@ -48,7 +47,13 @@ export class OvertimeRecordService extends OvertimeRecordBase {
       ...this.window(data.from, data.to, false),
     };
     const [rows, total] = await Promise.all([
-      this.prisma.overtimeRequest.findMany({ where, select: ROUND_SELECT, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
+      this.prisma.overtimeRequest.findMany({
+        where,
+        select: ROUND_SELECT,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
       this.prisma.overtimeRequest.count({ where }),
     ]);
     const latest = await this.latestCycles(rows.map((r) => r.timeEntryId));
@@ -60,12 +65,27 @@ export class OvertimeRecordService extends OvertimeRecordBase {
   async round(data: { id: string; organizationId: string; scopeSpaceIds?: SpaceScopeIds }) {
     const r = await this.prisma.overtimeRequest.findFirst({
       where: { id: data.id, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds) },
-      select: { ...ROUND_SELECT, leaderSignature: true, rejectedAt: true, technicianTimeoutAt: true, approvalTimeoutAt: true },
+      select: {
+        ...ROUND_SELECT,
+        leaderSignature: true,
+        rejectedAt: true,
+        technicianTimeoutAt: true,
+        approvalTimeoutAt: true,
+      },
     });
     if (!r) throw new NotFoundException('Overtime not found');
     const siblings = await this.prisma.overtimeRequest.findMany({
       where: { timeEntryId: r.timeEntryId },
-      select: { id: true, cycle: true, status: true, maxDurationMinutes: true, overtimeStartAt: true, overtimeEndAt: true, actualEndAt: true, overtimeMinutes: true },
+      select: {
+        id: true,
+        cycle: true,
+        status: true,
+        maxDurationMinutes: true,
+        overtimeStartAt: true,
+        overtimeEndAt: true,
+        actualEndAt: true,
+        overtimeMinutes: true,
+      },
       orderBy: { cycle: 'asc' },
     });
     const latest = new Map([[r.timeEntryId, Math.max(...siblings.map((s) => s.cycle))]]);
@@ -81,7 +101,11 @@ export class OvertimeRecordService extends OvertimeRecordBase {
         id: s.id,
         cycle: s.cycle,
         status: s.status,
-        ...overtimeRoundMinutes({ ...s, clockOutAt: r.timeEntry?.clockOutAt ?? null, superseded: s.cycle < latest.get(r.timeEntryId)! }),
+        ...overtimeRoundMinutes({
+          ...s,
+          clockOutAt: r.timeEntry?.clockOutAt ?? null,
+          superseded: s.cycle < latest.get(r.timeEntryId)!,
+        }),
       })),
     });
   }

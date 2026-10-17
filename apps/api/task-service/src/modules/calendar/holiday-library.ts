@@ -29,7 +29,12 @@ export function validRegion(r: unknown): r is string {
 
 const LANGS = new Set(['en', 'de', 'es', 'fr', 'it']);
 
-export function libraryHolidays(country: string | null, region: string | null, year: number, lang = 'en'): LibraryHoliday[] {
+export function libraryHolidays(
+  country: string | null,
+  region: string | null,
+  year: number,
+  lang = 'en',
+): LibraryHoliday[] {
   if (!validCountry(country) || year < 1970 || year > 2200) return [];
   const l = LANGS.has(lang) ? lang : 'en';
   const reg = region && validRegion(region) ? region : null;
@@ -59,7 +64,12 @@ export function libraryHolidays(country: string | null, region: string | null, y
 }
 
 /** Holidays overlapping [fromYear … toYear]. A range never spans more than two years. */
-export function libraryHolidaysForYears(country: string | null, region: string | null, years: number[], lang?: string): LibraryHoliday[] {
+export function libraryHolidaysForYears(
+  country: string | null,
+  region: string | null,
+  years: number[],
+  lang?: string,
+): LibraryHoliday[] {
   return years.flatMap((y) => libraryHolidays(country, region, y, lang));
 }
 
@@ -67,14 +77,18 @@ const countriesCache: Record<string, Record<string, string>> = {};
 export function countryList(lang = 'en'): { code: string; name: string }[] {
   const l = LANGS.has(lang) ? lang : 'en';
   if (!countriesCache[l]) countriesCache[l] = new Holidays().getCountries(l) || {};
-  return Object.entries(countriesCache[l]!).map(([code, name]) => ({ code, name })).sort((a, b) => a.name.localeCompare(b.name));
+  return Object.entries(countriesCache[l]!)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function regionList(country: string, lang = 'en'): { code: string; name: string }[] {
   if (!validCountry(country)) return [];
   const l = LANGS.has(lang) ? lang : 'en';
   const states = new Holidays().getStates(country, l) || {};
-  return Object.entries(states).map(([code, name]) => ({ code, name: String(name) })).sort((a, b) => a.name.localeCompare(b.name));
+  return Object.entries(states)
+    .map(([code, name]) => ({ code, name: String(name) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** A state name compared without accents, case, punctuation or the usual prefixes ("Canton of", "Land"…). */
@@ -95,10 +109,14 @@ function plain(s: string): string {
 export function matchRegion(country: string, candidates: (string | null | undefined)[]): string | null {
   if (!validCountry(country)) return null;
   const hd = new Holidays();
-  const lists = [hd.getStates(country, 'en'), hd.getStates(country), hd.getStates(country, 'de')].filter(Boolean) as Record<string, string>[];
+  const lists = [hd.getStates(country, 'en'), hd.getStates(country), hd.getStates(country, 'de')].filter(
+    Boolean,
+  ) as Record<string, string>[];
   if (!lists.length) return null;
   const codes = Object.keys(lists[0]!);
-  const asked = candidates.filter((c): c is string => typeof c === 'string' && c.trim().length > 0).map((c) => c.trim());
+  const asked = candidates
+    .filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+    .map((c) => c.trim());
   for (const c of asked) {
     const code = codes.find((k) => k.toUpperCase() === c.toUpperCase());
     if (code) return code;
@@ -112,4 +130,3 @@ export function matchRegion(country: string, candidates: (string | null | undefi
   }
   return null;
 }
-

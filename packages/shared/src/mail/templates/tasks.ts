@@ -92,7 +92,8 @@ export function scheduledReportEmail(
   const th = data.columns
     .map(
       (c) =>
-        `<th style="text-align:${c.align};padding:8px 12px;border-bottom:2px solid #e2e8f0;font-size:12px;color:#64748b;text-transform:uppercase;">${escapeHtml(c.label)}</th>`,
+        `<th style="text-align:${c.align};padding:8px 12px;border-bottom:2px solid #e2e8f0;` +
+        `font-size:12px;color:#64748b;text-transform:uppercase;">${escapeHtml(c.label)}</th>`,
     )
     .join('');
   const trs = data.rows
@@ -101,7 +102,8 @@ export function scheduledReportEmail(
         `<tr>${cells
           .map(
             (cell, i) =>
-              `<td style="text-align:${data.columns[i]?.align ?? 'left'};padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:14px;">${escapeHtml(cell)}</td>`,
+              `<td style="text-align:${data.columns[i]?.align ?? 'left'};padding:8px 12px;` +
+              `border-bottom:1px solid #f1f5f9;font-size:14px;">${escapeHtml(cell)}</td>`,
           )
           .join('')}</tr>`,
     )

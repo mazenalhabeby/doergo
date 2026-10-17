@@ -8,10 +8,22 @@ export class PlatformSupportService extends BaseGatewayService {
   constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, PlatformSupportService.name);
   }
-  inbox(data: any) { return this.send({ cmd: 'support.inbox' }, data); }
-  thread(ticketId: string, scope: SupportAgentScope) { return this.send({ cmd: 'support.thread' }, { ticketId, asAgent: true, scope }); }
-  reply(data: any) { return this.send({ cmd: 'support.addMessage' }, data); }
-  assign(data: any) { return this.send({ cmd: 'support.assign' }, data); }
-  setStatus(data: any) { return this.send({ cmd: 'support.setStatus' }, data); }
-  markRead(ticketId: string, scope: SupportAgentScope) { return this.send({ cmd: 'support.markRead' }, { ticketId, reader: 'AGENT', scope }); }
+  inbox(data: any) {
+    return this.send({ cmd: 'support.inbox' }, data);
+  }
+  thread(ticketId: string, scope: SupportAgentScope) {
+    return this.send({ cmd: 'support.thread' }, { ticketId, asAgent: true, scope });
+  }
+  reply(data: any) {
+    return this.send({ cmd: 'support.addMessage' }, data);
+  }
+  assign(data: any) {
+    return this.send({ cmd: 'support.assign' }, data);
+  }
+  setStatus(data: any) {
+    return this.send({ cmd: 'support.setStatus' }, data);
+  }
+  markRead(ticketId: string, scope: SupportAgentScope) {
+    return this.send({ cmd: 'support.markRead' }, { ticketId, reader: 'AGENT', scope });
+  }
 }

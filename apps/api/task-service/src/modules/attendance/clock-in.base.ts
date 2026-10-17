@@ -94,7 +94,16 @@ export abstract class ClockInBase {
   ): Promise<NoShiftAllowance & { workedTodayMinutes: number }> {
     const policy = effectiveNoShiftPolicy(space.noShiftPolicy, space.workModel);
     if (policy !== 'LIMIT') {
-      return { ...noShiftAllowance({ policy, dailyMinutes: space.noShiftDailyMinutes, workedTodayMinutes: 0, at, extraMinutes }), workedTodayMinutes: 0 };
+      return {
+        ...noShiftAllowance({
+          policy,
+          dailyMinutes: space.noShiftDailyMinutes,
+          workedTodayMinutes: 0,
+          at,
+          extraMinutes,
+        }),
+        workedTodayMinutes: 0,
+      };
     }
     const dayStart = startOfDayIn(at, tz);
     const entries = await this.prisma.timeEntry.findMany({
@@ -180,23 +189,32 @@ export abstract class ClockInBase {
     if (!spaceIds.length) return { assignments, locations: [] };
 
     const locations = await this.prisma.companyLocation.findMany({
-        where: {
-          id: { in: spaceIds },
-          organizationId,
-          isActive: true,
-          isRemote: false,
-        },
-        select: {
-          id: true, name: true, address: true, lat: true, lng: true,
-          geofenceRadius: true, geofencePolygon: true, timezone: true, isDefault: true,
-          // The ceiling. Needed to answer `awayAllowed` below.
-          geofencePolicy: true,
-          // The rule for clocking in with no shift, and what the resolver needs to ask it.
-          workModel: true, noShiftPolicy: true, noShiftDailyMinutes: true,
-          // Whether Time Tracking runs HERE — a space's own list, else the organization's.
-          enabledModules: true,
-          organization: { select: { enabledModules: true } },
-        },
+      where: {
+        id: { in: spaceIds },
+        organizationId,
+        isActive: true,
+        isRemote: false,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        lat: true,
+        lng: true,
+        geofenceRadius: true,
+        geofencePolygon: true,
+        timezone: true,
+        isDefault: true,
+        // The ceiling. Needed to answer `awayAllowed` below.
+        geofencePolicy: true,
+        // The rule for clocking in with no shift, and what the resolver needs to ask it.
+        workModel: true,
+        noShiftPolicy: true,
+        noShiftDailyMinutes: true,
+        // Whether Time Tracking runs HERE — a space's own list, else the organization's.
+        enabledModules: true,
+        organization: { select: { enabledModules: true } },
+      },
       orderBy: { name: 'asc' },
     });
     /*
@@ -205,10 +223,12 @@ export abstract class ClockInBase {
       (the module gate read `spaceId`, the clock-in sends `locationId`). Both
       now ask the workspace — the list must never be looser than the check.
     */
-    const clockable = locations.filter((l) =>
-      // The same answer the job-start gate uses (shared clock-gate.ts).
-      spaceRunsClock(l.enabledModules as string[] | null, l.organization?.enabledModules as string[] | null),
-    ).map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
+    const clockable = locations
+      .filter((l) =>
+        // The same answer the job-start gate uses (shared clock-gate.ts).
+        spaceRunsClock(l.enabledModules as string[] | null, l.organization?.enabledModules as string[] | null),
+      )
+      .map(({ enabledModules: _m, organization: _o, ...rest }) => rest);
     return { assignments, locations: clockable };
   }
 
@@ -230,7 +250,9 @@ export abstract class ClockInBase {
     if (effect.expectedClockInAt) stamp.expectedClockInAt = effect.expectedClockInAt;
     if (effect.expectedClockOutAt) {
       stamp.expectedClockOutAt = effect.expectedClockOutAt;
-      stamp.nextRemindAt = new Date(Math.max(effect.expectedClockOutAt.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000);
+      stamp.nextRemindAt = new Date(
+        Math.max(effect.expectedClockOutAt.getTime(), Date.now()) + SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES * 60_000,
+      );
     }
     if (effect.requestIds.length) {
       this.logger.log(`Approved requests applied at clock-in: [${effect.requestIds.join(',')}]`);

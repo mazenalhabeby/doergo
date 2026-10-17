@@ -1,6 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { BaseGatewayService, SERVICE_NAMES, type ApprovalRuleInput, type ApprovalRuleView, type ApprovalStepView, type RuleKind } from '@hbcfield/shared';
+import {
+  BaseGatewayService,
+  SERVICE_NAMES,
+  type ApprovalRuleInput,
+  type ApprovalRuleView,
+  type ApprovalStepView,
+  type RuleKind,
+} from '@hbcfield/shared';
 
 /** Gateway → task-service for office rules and the open first steps. */
 @Injectable()

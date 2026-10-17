@@ -46,14 +46,18 @@ export interface JobTimeReading {
  * only while somebody credited is on the clock (`live`). A worker reads their
  * OWN share (`meId`) — Mike's time stays Mike's — anybody else the job's total.
  */
-export function jobTimeAt(reading: JobTimeReading | null | undefined, meId: string | null | undefined, now: number): (JobTime & { live: JobTimeKind | null }) | null {
+export function jobTimeAt(
+  reading: JobTimeReading | null | undefined,
+  meId: string | null | undefined,
+  now: number,
+): (JobTime & { live: JobTimeKind | null }) | null {
   if (!reading) return null;
   const minutes = Math.max(0, Math.floor((now - new Date(reading.asOf).getTime()) / 60_000));
   const mine = meId ? reading.byWorker.find((w) => w.user.id === meId) : undefined;
   const perPerson = reading.byWorker.some((w) => w.live !== undefined);
   if (mine) {
     const base: JobTime = { travel: mine.travel, working: mine.working, blocked: mine.blocked };
-    const live = mine.live !== undefined ? mine.live : reading.live?.kind ?? null;
+    const live = mine.live !== undefined ? mine.live : (reading.live?.kind ?? null);
     if (live) base[live] += minutes;
     return { ...base, live };
   }
@@ -75,7 +79,11 @@ export function jobTimeAt(reading: JobTimeReading | null | undefined, meId: stri
  * exceed the other. An open shift or rest runs to `until`.
  */
 export function shiftsWithoutRests(
-  shifts: ReadonlyArray<{ start: Date | string; end: Date | string | null; rests?: ReadonlyArray<{ start: Date | string; end: Date | string | null }> }>,
+  shifts: ReadonlyArray<{
+    start: Date | string;
+    end: Date | string | null;
+    rests?: ReadonlyArray<{ start: Date | string; end: Date | string | null }>;
+  }>,
   until: Date,
 ): ShiftSpan[] {
   const cap = until.getTime();

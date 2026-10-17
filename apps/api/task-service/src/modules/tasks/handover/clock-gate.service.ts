@@ -35,9 +35,18 @@ export class ClockGateService {
           select: { enabledModules: true, organization: { select: { enabledModules: true } } },
         })
       : null;
-    const orgModules = where?.organization?.enabledModules
-      ?? (await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { enabledModules: true } }))?.enabledModules;
-    const jobRunsClock = spaceRunsClock(where?.enabledModules as string[] | null | undefined, orgModules as string[] | null | undefined);
+    const orgModules =
+      where?.organization?.enabledModules ??
+      (
+        await this.prisma.organization.findUnique({
+          where: { id: task.organizationId },
+          select: { enabledModules: true },
+        })
+      )?.enabledModules;
+    const jobRunsClock = spaceRunsClock(
+      where?.enabledModules as string[] | null | undefined,
+      orgModules as string[] | null | undefined,
+    );
 
     let workerIds: string[];
     if (moverIsOnTheJob) {
@@ -94,11 +103,19 @@ export class ClockGateService {
         ...activeAssignmentWhere({ in: workerIds }),
         space: { organizationId, isActive: true, isRemote: false },
       },
-      select: { userId: true, space: { select: { enabledModules: true, organization: { select: { enabledModules: true } } } } },
+      select: {
+        userId: true,
+        space: { select: { enabledModules: true, organization: { select: { enabledModules: true } } } },
+      },
     });
     const withClock = new Set(
       rows
-        .filter((r) => spaceRunsClock(r.space.enabledModules as string[] | null, r.space.organization?.enabledModules as string[] | null))
+        .filter((r) =>
+          spaceRunsClock(
+            r.space.enabledModules as string[] | null,
+            r.space.organization?.enabledModules as string[] | null,
+          ),
+        )
         .map((r) => r.userId),
     );
     return workerIds.filter((id) => withClock.has(id));

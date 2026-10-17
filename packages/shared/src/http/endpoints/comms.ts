@@ -16,7 +16,10 @@ export const chatEndpoints = defineEndpoints('chat', {
   /** The caller's unread total across every thread — one indexed sum, for a badge. */
   badge: endpoint<void, { total: number }>({ method: 'GET', path: () => '/chat/badge' }),
   /** Open (or find) the direct conversation with one person. */
-  openDirect: endpoint<void, ChatConversation, { userId: string }>({ method: 'POST', path: () => '/chat/conversations' }),
+  openDirect: endpoint<void, ChatConversation, { userId: string }>({
+    method: 'POST',
+    path: () => '/chat/conversations',
+  }),
   /**
    * A page of history, newest first. The answer is `{ data, hasMore }` with no
    * `success`: unwrapped it is the messages; `unwrap: 'raw'` keeps `hasMore`.
@@ -112,19 +115,36 @@ export const peopleEndpoints = defineEndpoints('people', {
 
 export const supportEndpoints = defineEndpoints('support', {
   config: endpoint<void, SupportConfig>({ method: 'GET', path: () => '/support/config', keep: true }),
-  tickets: endpoint<{ status?: string } | void, SupportTicket[]>({ method: 'GET', path: (q) => withQuery('/support/tickets', q || undefined), keep: true }),
+  tickets: endpoint<{ status?: string } | void, SupportTicket[]>({
+    method: 'GET',
+    path: (q) => withQuery('/support/tickets', q || undefined),
+    keep: true,
+  }),
   ticket: endpoint<Id, SupportTicket>({ method: 'GET', path: (a) => path`/support/tickets/${a.id}`, keep: true }),
-  create: endpoint<void, SupportTicket, { subject: string; body: string; category?: string; attachments?: SupportAttachment[]; [k: string]: unknown }>({
+  create: endpoint<
+    void,
+    SupportTicket,
+    { subject: string; body: string; category?: string; attachments?: SupportAttachment[]; [k: string]: unknown }
+  >({
     method: 'POST',
     path: () => '/support/tickets',
   }),
-  reply: endpoint<Id, SupportMessage, { body: string; attachments?: SupportAttachment[] }>({ method: 'POST', path: (a) => path`/support/tickets/${a.id}/messages` }),
+  reply: endpoint<Id, SupportMessage, { body: string; attachments?: SupportAttachment[] }>({
+    method: 'POST',
+    path: (a) => path`/support/tickets/${a.id}/messages`,
+  }),
   markRead: endpoint<Id, void>({ method: 'POST', path: (a) => path`/support/tickets/${a.id}/read` }),
 });
 
 export const notificationsEndpoints = defineEndpoints('notifications', {
-  list: endpoint<{ limit?: number } | void, unknown>({ method: 'GET', path: (q) => withQuery('/users/me/notifications', q || undefined) }),
-  markRead: endpoint<void, unknown, { ids?: string[]; all?: boolean; [k: string]: unknown }>({ method: 'POST', path: () => '/users/me/notifications/read' }),
+  list: endpoint<{ limit?: number } | void, unknown>({
+    method: 'GET',
+    path: (q) => withQuery('/users/me/notifications', q || undefined),
+  }),
+  markRead: endpoint<void, unknown, { ids?: string[]; all?: boolean; [k: string]: unknown }>({
+    method: 'POST',
+    path: () => '/users/me/notifications/read',
+  }),
   /** The member's own switches, and which member emails the organization allows at all. */
   prefs: endpoint<void, { prefs: Record<string, boolean>; organizationAllows: Record<string, boolean> }>({
     method: 'GET',
@@ -132,5 +152,8 @@ export const notificationsEndpoints = defineEndpoints('notifications', {
     keep: true,
   }),
   /** Merge-update: only the keys given change. */
-  updatePrefs: endpoint<void, Record<string, boolean>, { prefs: Record<string, boolean> }>({ method: 'PATCH', path: () => '/users/me/notification-prefs' }),
+  updatePrefs: endpoint<void, Record<string, boolean>, { prefs: Record<string, boolean> }>({
+    method: 'PATCH',
+    path: () => '/users/me/notification-prefs',
+  }),
 });

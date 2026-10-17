@@ -164,7 +164,8 @@ import { StorageModule } from './common/storage/storage.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Global guards - Throttler (anonymous per IP) → JwtAuthGuard → MemberThrottler (per user) → RolesGuard → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
+    // Global guards - Throttler (anonymous per IP) → JwtAuthGuard → MemberThrottler (per user) → RolesGuard
+    // → OnboardingCompleteGuard → PermissionsGuard → AccessModuleGuard
     {
       provide: APP_GUARD,
       // Anonymous requests per IP; a bearer request only meets the flood net here.

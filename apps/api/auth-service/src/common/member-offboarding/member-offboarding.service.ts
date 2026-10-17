@@ -18,12 +18,23 @@ export class MemberOffboarding {
 
   constructor(@Inject(SERVICE_NAMES.TASK) private readonly tasks: ClientProxy) {}
 
-  async release(organizationId: string, userId: string, actorId: string, opts: { erase?: boolean } = {}): Promise<void> {
+  async release(
+    organizationId: string,
+    userId: string,
+    actorId: string,
+    opts: { erase?: boolean } = {},
+  ): Promise<void> {
     try {
-      await firstValueFrom(this.tasks.send({ cmd: 'member_offboard' }, { organizationId, userId, actorId, erase: opts.erase === true }).pipe(timeout(30_000)));
+      await firstValueFrom(
+        this.tasks
+          .send({ cmd: 'member_offboard' }, { organizationId, userId, actorId, erase: opts.erase === true })
+          .pipe(timeout(30_000)),
+      );
     } catch (e) {
       this.logger.error(`member_offboard failed for ${userId}: ${(e as Error)?.message ?? e}`);
-      throw new ServiceUnavailableException('Could not release this member’s jobs and equipment. Nothing was changed — try again.');
+      throw new ServiceUnavailableException(
+        'Could not release this member’s jobs and equipment. Nothing was changed — try again.',
+      );
     }
   }
 
@@ -34,10 +45,14 @@ export class MemberOffboarding {
    */
   async releaseSharedSpace(ownerOrgId: string, spaceId: string, guestOrgId: string): Promise<void> {
     try {
-      await firstValueFrom(this.tasks.send({ cmd: 'space_share_release' }, { ownerOrgId, spaceId, guestOrgId }).pipe(timeout(30_000)));
+      await firstValueFrom(
+        this.tasks.send({ cmd: 'space_share_release' }, { ownerOrgId, spaceId, guestOrgId }).pipe(timeout(30_000)),
+      );
     } catch (e) {
       this.logger.error(`space_share_release failed for ${spaceId}/${guestOrgId}: ${(e as Error)?.message ?? e}`);
-      throw new ServiceUnavailableException('The share is revoked, but its people could not be removed from the workspace yet — revoke it again.');
+      throw new ServiceUnavailableException(
+        'The share is revoked, but its people could not be removed from the ' + 'workspace yet — revoke it again.',
+      );
     }
   }
 }

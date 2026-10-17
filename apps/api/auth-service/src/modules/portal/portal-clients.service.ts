@@ -32,7 +32,11 @@ export class PortalClientsService extends PortalServiceBase {
 
   /** Existing CRM customers the office can invite into the portal — the portal's
    *  space customers who aren't portal residents yet. Staff-only (portal-admin). */
-  async listAssignableCustomersForPortal(data: { organizationId: string; portalId: string; scopeSpaceIds?: SpaceScopeIds }) {
+  async listAssignableCustomersForPortal(data: {
+    organizationId: string;
+    portalId: string;
+    scopeSpaceIds?: SpaceScopeIds;
+  }) {
     const portal = await this.prisma.portal.findFirst({
       where: { id: data.portalId, organizationId: data.organizationId, ...scopeWhereOn('spaceId', data.scopeSpaceIds) },
       select: { id: true, spaceId: true },
@@ -80,13 +84,25 @@ export class PortalClientsService extends PortalServiceBase {
 
     await this.prisma.$transaction([
       // Revoke the app login(s).
-      this.prisma.user.updateMany({ where: { customerId: data.customerId, organizationId: data.organizationId }, data: { isActive: false } }),
+      this.prisma.user.updateMany({
+        where: { customerId: data.customerId, organizationId: data.organizationId },
+        data: { isActive: false },
+      }),
       // Detach from the portal — drops off the Clients list, keeps the record.
-      this.prisma.customer.update({ where: { id: data.customerId }, data: { isPortalResident: false, portalId: null } }),
+      this.prisma.customer.update({
+        where: { id: data.customerId },
+        data: { isPortalResident: false, portalId: null },
+      }),
       // Vacate any apartment/unit they occupied.
-      this.prisma.customerUnit.updateMany({ where: { customerId: data.customerId, organizationId: data.organizationId }, data: { customerId: null } }),
+      this.prisma.customerUnit.updateMany({
+        where: { customerId: data.customerId, organizationId: data.organizationId },
+        data: { customerId: null },
+      }),
       // Revoke any still-pending invitation.
-      this.prisma.invitation.updateMany({ where: { customerId: data.customerId, status: 'PENDING' }, data: { status: 'REVOKED' } }),
+      this.prisma.invitation.updateMany({
+        where: { customerId: data.customerId, status: 'PENDING' },
+        data: { status: 'REVOKED' },
+      }),
     ]);
 
     return { data: { success: true, deactivatedUserIds } };

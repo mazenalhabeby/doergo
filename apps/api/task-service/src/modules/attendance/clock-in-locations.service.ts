@@ -33,7 +33,9 @@ export class ClockInLocationsService extends ClockInBase {
    * One shift resolution per workspace (a member has a handful), and ONE read
    * of today's hours per time zone, only for workspaces that limit it.
    */
-  async tagClockInContext<T extends ResolverSpace & { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null }>(
+  async tagClockInContext<
+    T extends ResolverSpace & { noShiftPolicy?: string | null; noShiftDailyMinutes?: number | null },
+  >(
     spaces: T[],
     userId: string,
     now: Date,
@@ -64,12 +66,13 @@ export class ClockInLocationsService extends ClockInBase {
           phone polls — costs nothing here. Wrapped so a resolver that throws,
           however it throws, never takes the list down with it.
         */
-        const hasShiftNow = spaces.length > 1 || limited
-          ? await Promise.resolve()
-              .then(() => this.shiftResolver.resolveForClockIn({ userId, space, clockInAt: now, clockInTz: tz }))
-              .then((r) => !!r)
-              .catch(() => false)
-          : false;
+        const hasShiftNow =
+          spaces.length > 1 || limited
+            ? await Promise.resolve()
+                .then(() => this.shiftResolver.resolveForClockIn({ userId, space, clockInAt: now, clockInTz: tz }))
+                .then((r) => !!r)
+                .catch(() => false)
+            : false;
         const isPrimary = primarySpaceIds.has(space.id);
         if (!limited) return { ...space, noShift: null, shiftToday: hasShiftNow, isPrimary };
         const day = await memberDay(tz);
@@ -78,7 +81,12 @@ export class ClockInLocationsService extends ClockInBase {
         if (policy === 'LIMIT' && !hasShiftNow) {
           overtimeRows ??= approvedRequestsAround(this.prisma, userId, now, ['OVERTIME']);
           extraMinutes = agreedOvertimeMinutes(await overtimeRows, space.id, now, day);
-          worked ??= this.noShiftAllowanceFor(userId, { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel }, now, day).then((a) => a.workedTodayMinutes);
+          worked ??= this.noShiftAllowanceFor(
+            userId,
+            { noShiftPolicy: 'LIMIT', noShiftDailyMinutes: space.noShiftDailyMinutes, workModel: space.workModel },
+            now,
+            day,
+          ).then((a) => a.workedTodayMinutes);
           workedTodayMinutes = await worked;
         }
         const noShift: NoShiftTag = {
@@ -140,7 +148,15 @@ export class ClockInLocationsService extends ClockInBase {
    * offers a workspace the clock-in rejects, and a stricter one hides an option
    * nobody can then find.
    */
-  async tagAwayAllowed<T extends { id: string; lat?: number | null; lng?: number | null; geofencePolicy?: string | null; timezone?: string | null }>(
+  async tagAwayAllowed<
+    T extends {
+      id: string;
+      lat?: number | null;
+      lng?: number | null;
+      geofencePolicy?: string | null;
+      timezone?: string | null;
+    },
+  >(
     spaces: T[],
     userId: string,
     organizationId: string,
@@ -202,7 +218,11 @@ export class ClockInLocationsService extends ClockInBase {
   }
 
   async listClockInLocations(data: { userId: string; organizationId: string }) {
-    const { assignments, locations: clockable } = await this.clockableWorkspaces(data.userId, data.organizationId, new Date());
+    const { assignments, locations: clockable } = await this.clockableWorkspaces(
+      data.userId,
+      data.organizationId,
+      new Date(),
+    );
     if (!clockable.length) return success([]);
 
     // The overrides are already on the assignment rows read above, so tagging

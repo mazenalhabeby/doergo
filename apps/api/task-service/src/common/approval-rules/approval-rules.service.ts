@@ -23,23 +23,27 @@ export { type GateVerdict } from './approval-rules-helpers';
  */
 @Injectable()
 export class ApprovalRulesService extends ApprovalRulesBase {
-
-  async gate(input: {
-    organizationId: string;
-    kind: RuleKind;
-    itemId: string;
-    facts: RuleFacts;
-    deciderId: string;
-    subjectId?: string | null;
-    subjectName?: string | null;
-  }, retried = false): Promise<GateVerdict> {
+  async gate(
+    input: {
+      organizationId: string;
+      kind: RuleKind;
+      itemId: string;
+      facts: RuleFacts;
+      deciderId: string;
+      subjectId?: string | null;
+      subjectName?: string | null;
+    },
+    retried = false,
+  ): Promise<GateVerdict> {
     // Only rules with a SECOND STEP gate a decision; reminder-only rules are the sweep's.
     const rules = await this.prisma.approvalRule.findMany({
       where: { organizationId: input.organizationId, kind: input.kind, isActive: true, secondRoleId: { not: null } },
     });
     const open = await this.openStep(input.organizationId, input.kind, input.itemId);
     // Rules changed since step 1: the step's own rule still governs it, if it exists.
-    const rule = (open && rules.find((r) => r.id === open.ruleId)) || pickRule(rules as never[], input.facts) as (typeof rules)[number] | null;
+    const rule =
+      (open && rules.find((r) => r.id === open.ruleId)) ||
+      (pickRule(rules as never[], input.facts) as (typeof rules)[number] | null);
     if (!rule) {
       if (open) await this.consume(open.id);
       return { finalize: true };
@@ -79,49 +83,84 @@ export class ApprovalRulesService extends ApprovalRulesBase {
     }
 
     if (open.firstById === input.deciderId) {
-      throw new ConflictException({ message: `This needs a second approval by ${roleName}.`, code: 'SECOND_STEP_SAME_PERSON', params: { role: roleName } });
+      throw new ConflictException({
+        message: `This needs a second approval by ${roleName}.`,
+        code: 'SECOND_STEP_SAME_PERSON',
+        params: { role: roleName },
+      });
     }
     if (!(await this.holdsRole(input.organizationId, input.deciderId, secondRoleId, input.facts.spaceIds))) {
-      throw new ForbiddenException({ message: `The second approval is for ${roleName}.`, code: 'SECOND_STEP_REQUIRED', params: { role: roleName } });
+      throw new ForbiddenException({
+        message: `The second approval is for ${roleName}.`,
+        code: 'SECOND_STEP_REQUIRED',
+        params: { role: roleName },
+      });
     }
     // Claimed, not read-then-written: two second approvals cannot both finish it.
-    const { count } = await this.prisma.approvalStep.updateMany({ where: { id: open.id, consumedAt: null }, data: { consumedAt: new Date() } });
-    if (!count) throw new ConflictException({ message: 'Somebody else decided this a moment ago.', code: 'SECOND_STEP_TAKEN' });
+    const { count } = await this.prisma.approvalStep.updateMany({
+      where: { id: open.id, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
+    if (!count)
+      throw new ConflictException({ message: 'Somebody else decided this a moment ago.', code: 'SECOND_STEP_TAKEN' });
     // Overtime: never more than the first person agreed to.
-    const minutes = open.minutes != null && input.facts.minutes != null ? Math.min(open.minutes, input.facts.minutes) : undefined;
+    const minutes =
+      open.minutes != null && input.facts.minutes != null ? Math.min(open.minutes, input.facts.minutes) : undefined;
     return { finalize: true, ...(minutes != null ? { minutes } : {}) };
   }
 
   /** Would a decision like this need a second approval, and by which role? For the member's pre-check. */
   async secondStepFor(organizationId: string, kind: RuleKind, facts: RuleFacts): Promise<string | null> {
-    const rules = await this.prisma.approvalRule.findMany({ where: { organizationId, kind, isActive: true, secondRoleId: { not: null } } });
+    const rules = await this.prisma.approvalRule.findMany({
+      where: { organizationId, kind, isActive: true, secondRoleId: { not: null } },
+    });
     const rule = pickRule(rules as never[], facts) as (typeof rules)[number] | null;
     return rule?.secondRoleId ? this.roleName(rule.secondRoleId) : null;
   }
 
   /** Does any active rule of this kind ask about cover? (Cover is only computed then.) */
   async asksAboutCover(organizationId: string): Promise<boolean> {
-    return (await this.prisma.approvalRule.count({ where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true } })) > 0;
+    return (
+      (await this.prisma.approvalRule.count({
+        where: { organizationId, kind: 'request', isActive: true, whenCoverShort: true },
+      })) > 0
+    );
   }
 
   /** A rejection — by anybody who may decide — ends the two-step for this item. */
   async clear(organizationId: string, kind: RuleKind, itemId: string): Promise<void> {
-    await this.prisma.approvalStep.updateMany({ where: { organizationId, kind, itemId, consumedAt: null }, data: { consumedAt: new Date() } });
+    await this.prisma.approvalStep.updateMany({
+      where: { organizationId, kind, itemId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
   }
 
   /** The open first steps for these items, for the inbox. ONE query each for steps, people and roles. */
   async steps(organizationId: string, items: Array<{ kind: RuleKind; itemId: string }>): Promise<ApprovalStepView[]> {
     if (!items.length) return [];
     const rows = await this.prisma.approvalStep.findMany({
-      where: { organizationId, consumedAt: null, OR: items.slice(0, 2000).map((i) => ({ kind: i.kind, itemId: i.itemId })) },
+      where: {
+        organizationId,
+        consumedAt: null,
+        OR: items.slice(0, 2000).map((i) => ({ kind: i.kind, itemId: i.itemId })),
+      },
       select: { kind: true, itemId: true, firstById: true, ruleId: true },
     });
     if (!rows.length) return [];
     const [people, rules] = await Promise.all([
-      this.prisma.user.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.firstById))] } }, select: { id: true, firstName: true, lastName: true } }),
-      this.prisma.approvalRule.findMany({ where: { id: { in: [...new Set(rows.map((r) => r.ruleId))] } }, select: { id: true, secondRoleId: true } }),
+      this.prisma.user.findMany({
+        where: { id: { in: [...new Set(rows.map((r) => r.firstById))] } },
+        select: { id: true, firstName: true, lastName: true },
+      }),
+      this.prisma.approvalRule.findMany({
+        where: { id: { in: [...new Set(rows.map((r) => r.ruleId))] } },
+        select: { id: true, secondRoleId: true },
+      }),
     ]);
-    const roles = await this.prisma.accessRole.findMany({ where: { id: { in: [...new Set(rules.map((r) => r.secondRoleId).filter(Boolean) as string[])] } }, select: { id: true, name: true } });
+    const roles = await this.prisma.accessRole.findMany({
+      where: { id: { in: [...new Set(rules.map((r) => r.secondRoleId).filter(Boolean) as string[])] } },
+      select: { id: true, name: true },
+    });
     const personById = new Map(people.map((p) => [p.id, personName(p)]));
     const roleByRule = new Map(rules.map((r) => [r.id, roles.find((x) => x.id === r.secondRoleId)?.name ?? '']));
     return rows.map((r) => ({

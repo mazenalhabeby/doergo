@@ -101,7 +101,9 @@ function hoursRunLine(h: HoursEntry, text: string): LabourLine {
  * People in name order; under role headings when `groupByRole`.
  */
 export function buildWorkspaceLines(people: PersonWork[], options: WorkspaceLineOptions = {}): LabourLine[] {
-  const describeHours = options.describeHours ?? ((h, split) => `${h.workerName} · ${round2(h.hours)}h${split ? `, ${h.fromDay} – ${h.toDay}` : ''}`);
+  const describeHours =
+    options.describeHours ??
+    ((h, split) => `${h.workerName} · ${round2(h.hours)}h${split ? `, ${h.fromDay} – ${h.toDay}` : ''}`);
   const describeDays = options.describeDays ?? defaultDescribeDays;
   const anyRole = people.some((p) => p.workRoleId);
   const grouped = options.groupByRole && anyRole;
@@ -117,13 +119,17 @@ export function buildWorkspaceLines(people: PersonWork[], options: WorkspaceLine
     return out;
   };
   const byName = (a: PersonWork, b: PersonWork) => a.workerName.localeCompare(b.workerName);
-  const withWork = people.filter((p) => p.hours.some((h) => h.hours > 0) || p.days.some((d) => d.days > 0) || (options.listJobs && p.jobs.length > 0));
+  const withWork = people.filter(
+    (p) =>
+      p.hours.some((h) => h.hours > 0) || p.days.some((d) => d.days > 0) || (options.listJobs && p.jobs.length > 0),
+  );
 
   if (!grouped) return [...withWork].sort(byName).flatMap(personLines);
 
   const roleKey = (p: PersonWork) => p.workRoleId ?? '';
   const names = new Map<string, string>();
-  for (const p of withWork) if (!names.has(roleKey(p))) names.set(roleKey(p), p.workRoleName || options.noRoleLabel || 'Other');
+  for (const p of withWork)
+    if (!names.has(roleKey(p))) names.set(roleKey(p), p.workRoleName || options.noRoleLabel || 'Other');
   const order = [...names.keys()].sort((a, b) => (!a ? 1 : !b ? -1 : names.get(a)!.localeCompare(names.get(b)!)));
   const lines: LabourLine[] = [];
   for (const k of order) {
@@ -134,15 +140,35 @@ export function buildWorkspaceLines(people: PersonWork[], options: WorkspaceLine
 }
 
 /** Hours and days on a set of lines — the two figures a reader looks for first. */
-export function hoursAndDaysTotals(lines: Array<{ kind?: LabourLine['kind'] | null; lineKind?: LabourLine['kind'] | null; quantity: number; amountCents?: number; amount?: number }>): {
-  hours: number; hoursCents: number; days: number; daysCents: number;
+export function hoursAndDaysTotals(
+  lines: Array<{
+    kind?: LabourLine['kind'] | null;
+    lineKind?: LabourLine['kind'] | null;
+    quantity: number;
+    amountCents?: number;
+    amount?: number;
+  }>,
+): {
+  hours: number;
+  hoursCents: number;
+  days: number;
+  daysCents: number;
 } {
-  let hours = 0, hoursCents = 0, days = 0, daysCents = 0;
+  let hours = 0,
+    hoursCents = 0,
+    days = 0,
+    daysCents = 0;
   for (const l of lines) {
     const kind = l.kind ?? l.lineKind;
     const cents = l.amountCents ?? Math.round((l.amount ?? 0) * 100);
-    if (kind === 'HOURS') { hours += l.quantity; hoursCents += cents; }
-    if (kind === 'DAYS') { days += l.quantity; daysCents += cents; }
+    if (kind === 'HOURS') {
+      hours += l.quantity;
+      hoursCents += cents;
+    }
+    if (kind === 'DAYS') {
+      days += l.quantity;
+      daysCents += cents;
+    }
   }
   return { hours: toMinute(hours), hoursCents, days, daysCents };
 }

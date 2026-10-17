@@ -21,7 +21,16 @@ export class DocumentChainService extends DocumentRoutingBase {
   async documentChain(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, title: true, userId: true, status: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        status: true,
+        hiddenFromMember: true,
+        rolesOverridden: true,
+        visibleToRoleIds: true,
+        type: { select: { visibleToRoleIds: true } },
+      },
     });
     if (!document) throw new NotFoundException('Document not found');
     assertNotHiddenDraft(data.actor, document);
@@ -30,8 +39,13 @@ export class DocumentChainService extends DocumentRoutingBase {
       where: { documentId: document.id },
       orderBy: { order: 'asc' },
       select: {
-        order: true, role: true, status: true, userId: true, eligibleUserIds: true,
-        customerId: true, signedAt: true,
+        order: true,
+        role: true,
+        status: true,
+        userId: true,
+        eligibleUserIds: true,
+        customerId: true,
+        signedAt: true,
         user: { select: { firstName: true, lastName: true } },
         customer: { select: { name: true } },
       },
@@ -140,7 +154,9 @@ export class DocumentChainService extends DocumentRoutingBase {
         firstOpenedAt: true,
         user: { select: { firstName: true, lastName: true } },
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
-        signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
+        signers: {
+          select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true },
+        },
       },
       orderBy: { issuedAt: 'asc' },
       // A backstop, not pagination. Somebody with more than this waiting has a

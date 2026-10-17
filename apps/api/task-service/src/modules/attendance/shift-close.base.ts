@@ -117,12 +117,22 @@ export abstract class ShiftCloseBase {
       same way everywhere a rest counts. Skipped → nothing here; the missed-rest
       rule below flags it as for anybody.
     */
-    const autoRest = this.autoClock && entry.locationId
-      ? await this.autoClock.autoRestAtClose({ ...entry, locationId: entry.locationId }, at)
-      : null;
+    const autoRest =
+      this.autoClock && entry.locationId
+        ? await this.autoClock.autoRestAtClose({ ...entry, locationId: entry.locationId }, at)
+        : null;
     const restRows: RestRow[] = autoRest
-      ? [...(entry.breaks ?? []), { id: '', startedAt: autoRest.startedAt, endedAt: autoRest.endedAt, durationMinutes: autoRest.minutes, isPaid: false }]
-      : entry.breaks ?? [];
+      ? [
+          ...(entry.breaks ?? []),
+          {
+            id: '',
+            startedAt: autoRest.startedAt,
+            endedAt: autoRest.endedAt,
+            durationMinutes: autoRest.minutes,
+            isPaid: false,
+          },
+        ]
+      : (entry.breaks ?? []);
     const rests = endRunningRests(restRows, at, now);
     const counted = await this.countedTime.columnsFor(
       { ...entry, breakMinutes: rests.breakMinutes, unpaidBreakMinutes: rests.unpaidBreakMinutes },
@@ -278,7 +288,8 @@ export abstract class ShiftCloseBase {
       });
 
       this.logger.log(
-        `Pending-approval alert sent: entry=${data.entryId}, user=${user.firstName} ${user.lastName}, flags=[${data.flagReasons.join(',')}]`,
+        `Pending-approval alert sent: entry=${data.entryId}, user=${user.firstName} ` +
+          `${user.lastName}, flags=[${data.flagReasons.join(',')}]`,
       );
     } catch (error) {
       this.logger.error('Failed to send pending-approval alert', error);

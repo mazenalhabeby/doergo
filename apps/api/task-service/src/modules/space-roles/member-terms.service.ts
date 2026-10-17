@@ -77,8 +77,10 @@ export class MemberTermsService extends SpaceRolesBase {
             effectiveFrom: data.effectiveFrom,
             createdById: data.createdById ?? null,
           });
-        if (data.billRateCents !== undefined) patch.billRateCents = (await write('BILL_HOUR', data.billRateCents)).nowCents;
-        if (data.costRateCents !== undefined) patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
+        if (data.billRateCents !== undefined)
+          patch.billRateCents = (await write('BILL_HOUR', data.billRateCents)).nowCents;
+        if (data.costRateCents !== undefined)
+          patch.costRateCents = (await write('COST_HOUR', data.costRateCents)).nowCents;
         if (data.costDayCents !== undefined) await write('COST_DAY', data.costDayCents);
         return tx.spaceAssignment.update({
           where: { id: member.id },
@@ -107,16 +109,32 @@ export class MemberTermsService extends SpaceRolesBase {
       data.target === 'ORGANIZATION'
         ? data.targetId === data.organizationId
         : data.target === 'SPACE'
-          ? !!(await this.prisma.companyLocation.findFirst({ where: { id: data.targetId, organizationId: data.organizationId }, select: { id: true } }))
+          ? !!(await this.prisma.companyLocation.findFirst({
+              where: { id: data.targetId, organizationId: data.organizationId },
+              select: { id: true },
+            }))
           : data.target === 'MEMBER'
-            ? !!(await this.prisma.user.findFirst({ where: { id: data.targetId, organizationId: data.organizationId }, select: { id: true } }))
+            ? !!(await this.prisma.user.findFirst({
+                where: { id: data.targetId, organizationId: data.organizationId },
+                select: { id: true },
+              }))
             : !!(await this.prisma.spaceAssignment.findFirst({
-                where: { id: data.targetId, organizationId: data.organizationId, ...(data.spaceId ? { spaceId: data.spaceId } : {}) },
+                where: {
+                  id: data.targetId,
+                  organizationId: data.organizationId,
+                  ...(data.spaceId ? { spaceId: data.spaceId } : {}),
+                },
                 select: { id: true },
               }));
     if (!owned) throw new NotFoundException('Not found');
     const rows = await this.prisma.rateHistory.findMany({
-      where: { organizationId: data.organizationId, target: data.target, targetId: data.targetId, kind: { in: data.kinds }, spaceId: null },
+      where: {
+        organizationId: data.organizationId,
+        target: data.target,
+        targetId: data.targetId,
+        kind: { in: data.kinds },
+        spaceId: null,
+      },
       orderBy: [{ effectiveFrom: 'asc' }, { createdAt: 'asc' }],
       select: { kind: true, cents: true, effectiveFrom: true },
     });

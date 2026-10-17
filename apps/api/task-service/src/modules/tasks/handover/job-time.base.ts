@@ -56,7 +56,12 @@ export abstract class JobTimeBase {
         flowId = await spaceFlow.get(t.spaceId)!;
       }
       if (!flows.has(flowId)) {
-        flows.set(flowId, this.workflows.getWorkflow(organizationId, flowId).then((wf) => (s: string) => stepTimeKind(s, stepCapabilities(wf, s))));
+        flows.set(
+          flowId,
+          this.workflows
+            .getWorkflow(organizationId, flowId)
+            .then((wf) => (s: string) => stepTimeKind(s, stepCapabilities(wf, s))),
+        );
       }
       return flows.get(flowId)!;
     };
@@ -100,7 +105,14 @@ export abstract class JobTimeBase {
       const personal = PERSONAL_KIND[e.eventType as string];
       if (personal) {
         const m = (e.metadata ?? {}) as { at?: string; reason?: string };
-        return [{ at: m.at ?? e.createdAt, userId: e.userId, kind: personal, ...(personal === 'SELF_BLOCKED' ? { reason: m.reason ?? null } : {}) }];
+        return [
+          {
+            at: m.at ?? e.createdAt,
+            userId: e.userId,
+            kind: personal,
+            ...(personal === 'SELF_BLOCKED' ? { reason: m.reason ?? null } : {}),
+          },
+        ];
       }
       const m = (e.metadata ?? {}) as MoveMeta;
       return [{
@@ -155,23 +167,38 @@ export abstract class JobTimeBase {
    */
   protected workersOf(timeline: WorkTimelineEvent[], kindOf: (s: string) => JobTimeKind | null, assigned: string[]): string[] {
     const ids = new Set(assigned);
-    for (const e of timeline) if (e.kind === 'JOINED' || e.kind === 'RESUMED' || (e.kind === 'STATUS' && kindOf(e.status ?? ''))) ids.add(e.forUserId ?? e.userId);
+    for (const e of timeline)
+      if (e.kind === 'JOINED' || e.kind === 'RESUMED' || (e.kind === 'STATUS' && kindOf(e.status ?? '')))
+        ids.add(e.forUserId ?? e.userId);
     return [...ids];
   }
 
   /** The first move into counted time, and whether the office made it for somebody. */
   protected startedBy(rows: readonly EventRow[], kindOf: (s: string) => JobTimeKind | null) {
-    const first = rows.find((e) => e.eventType === TaskEventType.STATUS_CHANGED && kindOf((e.metadata as MoveMeta | null)?.newStatus ?? ''));
+    const first = rows.find(
+      (e) => e.eventType === TaskEventType.STATUS_CHANGED && kindOf((e.metadata as MoveMeta | null)?.newStatus ?? ''),
+    );
     if (!first) return null;
     const m = (first.metadata ?? {}) as MoveMeta;
-    return { userId: first.userId, forUserId: m.byOffice ? m.forUserId ?? null : null, reason: m.byOffice ? m.officeReason ?? null : null, at: m.occurredAt ?? first.createdAt.toISOString() };
+    return {
+      userId: first.userId,
+      forUserId: m.byOffice ? (m.forUserId ?? null) : null,
+      reason: m.byOffice ? (m.officeReason ?? null) : null,
+      at: m.occurredAt ?? first.createdAt.toISOString(),
+    };
   }
 
   /**
    * The jobs a person could have been working on in [from, until]: the ones
    * they are on or moved, that moved in the window or were still open.
    */
-  protected async workerTasks(userId: string, organizationId: string, from: Date | null, until: Date, include: string[] = []): Promise<Array<TaskRef & { title: string }>> {
+  protected async workerTasks(
+    userId: string,
+    organizationId: string,
+    from: Date | null,
+    until: Date,
+    include: string[] = [],
+  ): Promise<Array<TaskRef & { title: string }>> {
     return this.prisma.task.findMany({
       where: {
         organizationId,
@@ -211,15 +238,33 @@ export abstract class JobTimeBase {
     const tasks = await this.workerTasks(userId, organizationId, from, until, include);
     const kinds = this.kindsFor(organizationId);
     const events = await this.eventsOf(tasks.map((t) => t.id));
-    const jobs = await Promise.all(tasks.map(async (t) => {
-      const rows = events.get(t.id) ?? [];
-      const timeline = this.timeline(rows);
-      const kindOf = await kinds(t);
-      return { task: t, rows, timeline, kindOf, spans: jobSpans(timeline, until, kindOf), joinedAt: joinedJobAt(timeline, userId), windows: jobWindows(timeline, userId) };
-    }));
+    const jobs = await Promise.all(
+      tasks.map(async (t) => {
+        const rows = events.get(t.id) ?? [];
+        const timeline = this.timeline(rows);
+        const kindOf = await kinds(t);
+        return {
+          task: t,
+          rows,
+          timeline,
+          kindOf,
+          spans: jobSpans(timeline, until, kindOf),
+          joinedAt: joinedJobAt(timeline, userId),
+          windows: jobWindows(timeline, userId),
+        };
+      }),
+    );
     const mine = exclusiveSpans(jobs.map((j) => ({ id: j.task.id, spans: j.spans, windows: j.windows })));
     const earliest = Math.min(...jobs.map((j) => j.joinedAt ?? Infinity));
-    const shifts = (await this.shiftsOf([userId], organizationId, from ?? (Number.isFinite(earliest) ? new Date(earliest) : null), until)).get(userId) ?? [];
+    const shifts =
+      (
+        await this.shiftsOf(
+          [userId],
+          organizationId,
+          from ?? (Number.isFinite(earliest) ? new Date(earliest) : null),
+          until,
+        )
+      ).get(userId) ?? [];
     const window = from ? { from, to: until } : { to: until };
     const times = new Map<string, JobTime>();
     // Their own stops ("My issue") turn their share blocked; the job's line is untouched.

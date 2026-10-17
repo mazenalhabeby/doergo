@@ -2,7 +2,8 @@
 import { stripDiacritics } from '../../utils/fold';
 
 /** Suffixes that mark a line as an organisation rather than a person. */
-const LEGAL_FORM = /\b(gmbh|ag|ges\.?m\.?b\.?h|kg|og|e\.?u\.?|ltd|limited|inc|llc|plc|s\.?r\.?o|sp\.?\s?z\.?o\.?o|bv|nv|sa|srl|spa|oy|ab|a\/s|aps)\b/i;
+const LEGAL_FORM =
+  /\b(gmbh|ag|ges\.?m\.?b\.?h|kg|og|e\.?u\.?|ltd|limited|inc|llc|plc|s\.?r\.?o|sp\.?\s?z\.?o\.?o|bv|nv|sa|srl|spa|oy|ab|a\/s|aps)\b/i;
 
 /** Does this text carry a legal form ("GmbH", "AG", "Ltd")? The card reader's rule, for the contacts import too. */
 export function hasLegalForm(text: string): boolean {
@@ -31,7 +32,8 @@ const fold = stripDiacritics;
   name on half the cards in this market — matching it here would rule the NAME
   out as a name and offer it as the job title instead.
 */
-const ROLE = /\b(head|chief|director|manager|lead|leiter|leitung|geschaftsfuhr|prokurist|inhaber|owner|founder|ceo|cto|cfo|coo|president|vp|vice|senior|junior|engineer|ingenieur|techniker|sales|vertrieb|einkauf|purchas|account|consultant|berater|assistant|assistenz|coordinator|koordinator|supervisor|meister|partner|architekt|projekt|project|arzt|arztin|arzte|zahnarzt|physician|anwalt|attorney|lawyer|notar|steuerberater|apotheker|pharmacist|therapeut|therapist|hebamme|trainer|coach)\b/i;
+const ROLE =
+  /\b(head|chief|director|manager|lead|leiter|leitung|geschaftsfuhr|prokurist|inhaber|owner|founder|ceo|cto|cfo|coo|president|vp|vice|senior|junior|engineer|ingenieur|techniker|sales|vertrieb|einkauf|purchas|account|consultant|berater|assistant|assistenz|coordinator|koordinator|supervisor|meister|partner|architekt|projekt|project|arzt|arztin|arzte|zahnarzt|physician|anwalt|attorney|lawyer|notar|steuerberater|apotheker|pharmacist|therapeut|therapist|hebamme|trainer|coach)\b/i;
 
 /*
   ⚠️ German writes a job title as ONE WORD, and `\b` cannot see inside it.
@@ -44,7 +46,8 @@ const ROLE = /\b(head|chief|director|manager|lead|leiter|leitung|geschaftsfuhr|p
   five letters and is not a fragment of an unrelated German word, which is the
   reason short and ambiguous tokens ("lead", "vp", "m") stay above, anchored.
 */
-const ROLE_STEM = /(geschaftsfuhr|leiter|leitung|prokurist|inhaber|vertrieb|einkauf|techniker|ingenieur|anwalt|arzt|apotheker|berater|meister|architekt|koordinator|assistenz|therapeut)/i;
+const ROLE_STEM =
+  /(geschaftsfuhr|leiter|leitung|prokurist|inhaber|vertrieb|einkauf|techniker|ingenieur|anwalt|arzt|apotheker|berater|meister|architekt|koordinator|assistenz|therapeut)/i;
 
 const isRole = (t: string) => {
   const f = fold(t);
@@ -72,7 +75,8 @@ const isRole = (t: string) => {
  * long enough not to be a fragment of an unrelated word, for the same reason
  * `ROLE_STEM` next door is.
  */
-const DEPARTMENT_STEM = /(verwaltung|abteilung|referat|dezernat|sachgebiet|fachbereich|stabsstelle|geschaftsstelle|department|division)/i;
+const DEPARTMENT_STEM =
+  /(verwaltung|abteilung|referat|dezernat|sachgebiet|fachbereich|stabsstelle|geschaftsstelle|department|division)/i;
 
 /**
  * An administrative AUTHORITY: a thing that IS an organisation.
@@ -87,7 +91,8 @@ const DEPARTMENT_STEM = /(verwaltung|abteilung|referat|dezernat|sachgebiet|fachb
  * ordinary German word and would otherwise make an authority of any line
  * carrying it.
  */
-const AUTHORITY = /\b(?!gesamt|insgesamt|allesamt)[a-z]{3,20}amt\b|\b(magistrat|rathaus|behorde|ministerium|stadtgemeinde|marktgemeinde|bezirkshauptmannschaft)\b/i;
+const AUTHORITY =
+  /\b(?!gesamt|insgesamt|allesamt)[a-z]{3,20}amt\b|\b(magistrat|rathaus|behorde|ministerium|stadtgemeinde|marktgemeinde|bezirkshauptmannschaft)\b/i;
 
 /*
   ── Addresses ──────────────────────────────────────────────────────────────
@@ -109,7 +114,8 @@ const AUTHORITY = /\b(?!gesamt|insgesamt|allesamt)[a-z]{3,20}amt\b|\b(magistrat|
  * demanded one matched no German street at all. The TRAILING boundary is what
  * keeps "Bewegung" and "unterwegs" out.
  */
-const STREET = /(?:stra(?:ss|ß)e|str\.|gasse|platz|allee|weg|\bring\b|\broad\b|\bstreet\b|\bst\.|\bave\b|\bavenue\b|\blane\b|\bdrive\b|\bboulevard\b|\bblvd\b|\bsquare\b|\bvia\b|\brue\b|straat|\blaan\b|\bplein\b)/i;
+const STREET =
+  /(?:stra(?:ss|ß)e|str\.|gasse|platz|allee|weg|\bring\b|\broad\b|\bstreet\b|\bst\.|\bave\b|\bavenue\b|\blane\b|\bdrive\b|\bboulevard\b|\bblvd\b|\bsquare\b|\bvia\b|\brue\b|straat|\blaan\b|\bplein\b)/i;
 
 const HOUSE_NUMBER = /(?:^|[\s,])\d{1,4}\s?[a-zA-Z]?(?:$|[\s,\/])/;
 
@@ -129,10 +135,35 @@ const HONORIFIC = /^(dr|ddr|mag|ing|di|dipl|prof|mmag|mr|mrs|ms|herr|frau|msc|bs
 
 /** Mailboxes that belong to a FUNCTION, not to a person. */
 const GENERIC_LOCAL = new Set([
-  'office', 'info', 'kontakt', 'contact', 'mail', 'email', 'e-mail', 'hello',
-  'hallo', 'sales', 'verkauf', 'service', 'support', 'admin', 'buero', 'buro',
-  'team', 'welcome', 'praxis', 'ordination', 'empfang', 'reception', 'post',
-  'anfrage', 'shop', 'billing', 'rechnung', 'noreply', 'no-reply',
+  'office',
+  'info',
+  'kontakt',
+  'contact',
+  'mail',
+  'email',
+  'e-mail',
+  'hello',
+  'hallo',
+  'sales',
+  'verkauf',
+  'service',
+  'support',
+  'admin',
+  'buero',
+  'buro',
+  'team',
+  'welcome',
+  'praxis',
+  'ordination',
+  'empfang',
+  'reception',
+  'post',
+  'anfrage',
+  'shop',
+  'billing',
+  'rechnung',
+  'noreply',
+  'no-reply',
 ]);
 
 /**
@@ -143,11 +174,43 @@ const GENERIC_LOCAL = new Set([
  * this address says nothing about who the person works for.
  */
 const FREE_MAIL_LABEL = new Set([
-  'gmail', 'googlemail', 'outlook', 'hotmail', 'live', 'msn', 'yahoo', 'ymail',
-  'gmx', 'web', 'icloud', 'me', 'mac', 'proton', 'protonmail', 'aol', 'aim',
-  't-online', 'freenet', 'posteo', 'mailbox', 'zoho', 'fastmail', 'hey',
-  'tutanota', 'tuta', 'yandex', 'mail', 'email', 'a1', 'aon', 'chello',
-  'inode', 'kabsi', 'utanet', 'qq', '163',
+  'gmail',
+  'googlemail',
+  'outlook',
+  'hotmail',
+  'live',
+  'msn',
+  'yahoo',
+  'ymail',
+  'gmx',
+  'web',
+  'icloud',
+  'me',
+  'mac',
+  'proton',
+  'protonmail',
+  'aol',
+  'aim',
+  't-online',
+  'freenet',
+  'posteo',
+  'mailbox',
+  'zoho',
+  'fastmail',
+  'hey',
+  'tutanota',
+  'tuta',
+  'yandex',
+  'mail',
+  'email',
+  'a1',
+  'aon',
+  'chello',
+  'inode',
+  'kabsi',
+  'utanet',
+  'qq',
+  '163',
 ]);
 
 /** A card line is text, not a document. Everything downstream is bounded by this. */

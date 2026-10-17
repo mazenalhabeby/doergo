@@ -22,7 +22,6 @@ import { PlatformAuthBase } from './platform-auth.base';
  */
 @Injectable()
 export class PlatformAuthService extends PlatformAuthBase {
-
   // ── Login (2FA-aware) ─────────────────────────────────────────────────────────
   async login(data: { email?: string; password?: string; code?: string }) {
     const email = normalizeEmail(data.email ?? '');
@@ -32,7 +31,8 @@ export class PlatformAuthService extends PlatformAuthBase {
 
     const user = await this.prisma.platformUser.findUnique({ where: { email } });
     if (!user || !user.isActive) return invalid;
-    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) return fail('Account temporarily locked. Try again later.', 423);
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now())
+      return fail('Account temporarily locked. Try again later.', 423);
 
     // Same rule as member sign-in: an EXPIRED lock starts the count again, so
     // one wrong guess after a lock no longer re-locks the account forever.
@@ -40,17 +40,28 @@ export class PlatformAuthService extends PlatformAuthBase {
       await this.prisma.platformUser.update({ where: { id: user.id }, data: nextLockStateAfterFailure(user) });
     };
 
-    if (!(await bcrypt.compare(password, user.passwordHash))) { await bump(); return invalid; }
+    if (!(await bcrypt.compare(password, user.passwordHash))) {
+      await bump();
+      return invalid;
+    }
 
     // Second factor.
     if (user.twoFactorEnabled) {
       if (!data.code) return ok({ needs2fa: true }); // password OK → prompt for the code
-      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) { await bump(); return fail('Invalid authentication code', 401); }
+      if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) {
+        await bump();
+        return fail('Invalid authentication code', 401);
+      }
     }
 
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() } });
+    await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
+    });
     const session = await this.session(user);
-    this.logger.log(`[PLATFORM] login: ${maskEmail(user.email)} (${user.role})${session.user.enrolmentRequired ? ' — 2FA enrolment required' : ''}`);
+    this.logger.log(
+      `[PLATFORM] login: ${maskEmail(user.email)} (${user.role})${session.user.enrolmentRequired ? ' — 2FA enrolment required' : ''}`,
+    );
     return ok(session);
   }
 
@@ -64,9 +75,15 @@ export class PlatformAuthService extends PlatformAuthBase {
    * machine should not depend on which tab pressed it.
    */
   async logout(data: { userId: string; iat?: number }) {
-    const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId }, select: { id: true, email: true } });
+    const user = await this.prisma.platformUser.findUnique({
+      where: { id: data.userId },
+      select: { id: true, email: true },
+    });
     if (!user) return fail('Not found', 404);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { tokensValidAfter: platformLogoutCutoff(data.iat) } });
+    await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { tokensValidAfter: platformLogoutCutoff(data.iat) },
+    });
     this.logger.log(`[PLATFORM] logout: ${maskEmail(user.email)}`);
     return ok({ signedOut: true });
   }
@@ -87,12 +104,16 @@ export class PlatformAuthService extends PlatformAuthBase {
   async changePassword(data: { userId: string; currentPassword?: string; newPassword?: string; authTime?: number }) {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
-    if (!(await bcrypt.compare(data.currentPassword ?? '', user.passwordHash))) return fail('Current password is incorrect', 401);
+    if (!(await bcrypt.compare(data.currentPassword ?? '', user.passwordHash)))
+      return fail('Current password is incorrect', 401);
     if (!data.newPassword || data.newPassword.length < 10) return fail('New password must be at least 10 characters');
     // tokensValidAfter: every operator token already issued — on any machine —
     // stops working now. Changing the password is the answer to "somebody has
     // my session"; a 12-hour token outliving it would make that answer a lie.
-    const updated = await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR), tokensValidAfter: new Date() } });
+    const updated = await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { passwordHash: await bcrypt.hash(data.newPassword, BCRYPT_COST_FACTOR), tokensValidAfter: new Date() },
+    });
     this.logger.log(`[PLATFORM] ${maskEmail(user.email)} changed their password`);
     // Every OTHER session ends; this one continues on a fresh token.
     return ok({ id: user.id, ...(await this.session(updated, data.authTime)) });
@@ -113,7 +134,10 @@ export class PlatformAuthService extends PlatformAuthBase {
         user: { ...this.publicUser(user), ...scope },
         permissions: platformCapsFor(user.role),
         // What logout and refresh need about THIS token (not the account).
-        session: { iat: payload.iat, authTime: typeof payload.auth_time === 'number' ? payload.auth_time : payload.iat },
+        session: {
+          iat: payload.iat,
+          authTime: typeof payload.auth_time === 'number' ? payload.auth_time : payload.iat,
+        },
       };
     } catch {
       return { valid: false };

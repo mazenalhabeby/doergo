@@ -1,5 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsIn, IsInt, IsObject, IsOptional, IsString, Matches, Max, Min, MaxLength, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  Min,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
 import { BILL_BY_VALUES, MAX_RATE_CENTS, type BillByValue } from '@hbcfield/shared';
 
 /** `YYYY-MM-DD`. The shared rule then refuses impossible days and far-off dates. */
@@ -13,7 +25,9 @@ export class SetDayRateDto {
   @Max(MAX_RATE_CENTS)
   cents!: number | null;
 
-  @ApiPropertyOptional({ description: 'First day the rate applies, YYYY-MM-DD. Default today. Earlier days keep their rate.' })
+  @ApiPropertyOptional({
+    description: 'First day the rate applies, YYYY-MM-DD. Default today. Earlier days keep their rate.',
+  })
   @IsOptional()
   @IsString()
   @Matches(DAY)
@@ -21,14 +35,14 @@ export class SetDayRateDto {
 }
 
 export class UpdateMemberRolesDto {
-  @ApiPropertyOptional({ description: 'The member\'s trade here (a WORK role). Null clears it.' })
+  @ApiPropertyOptional({ description: "The member's trade here (a WORK role). Null clears it." })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsString()
   @MaxLength(64)
   workRoleId?: string | null;
 
-  @ApiPropertyOptional({ description: 'The member\'s management role here (permissions). Null clears it.' })
+  @ApiPropertyOptional({ description: "The member's management role here (permissions). Null clears it." })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsString()
@@ -40,13 +54,20 @@ export class UpdateMemberRolesDto {
   @IsBoolean()
   allowSecondRole?: boolean;
 
-  @ApiPropertyOptional({ enum: BILL_BY_VALUES, description: 'How this member is billed here: HOUR, DAY or BOTH. Null = by the hour.' })
+  @ApiPropertyOptional({
+    enum: BILL_BY_VALUES,
+    description: 'How this member is billed here: HOUR, DAY or BOTH. Null = by the hour.',
+  })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsIn(BILL_BY_VALUES as unknown as string[])
   billBy?: BillByValue | null;
 
-  @ApiPropertyOptional({ enum: ['COUNTED', 'CLOCKED', 'SHIFT'], nullable: true, description: "Which hours go on the client's invoice; null = counted" })
+  @ApiPropertyOptional({
+    enum: ['COUNTED', 'CLOCKED', 'SHIFT'],
+    nullable: true,
+    description: "Which hours go on the client's invoice; null = counted",
+  })
   @IsOptional()
   @ValidateIf((_, v) => v !== null)
   @IsIn(['COUNTED', 'CLOCKED', 'SHIFT'])
@@ -121,7 +142,9 @@ export class SetMemberPermissionsDto {
   roleId?: string;
 
   @ApiPropertyOptional({
-    description: 'Permission keys → true. Workspace keys only; an organization-only or unknown key set to true is refused (400), never silently dropped.',
+    description:
+      'Permission keys → true. Workspace keys only; an organization-only or ' +
+      'unknown key set to true is refused (400), never silently dropped.',
     type: 'object',
     additionalProperties: { type: 'boolean' },
   })

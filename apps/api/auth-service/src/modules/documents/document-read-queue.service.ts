@@ -89,8 +89,16 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
       select: {
-        id: true, organizationId: true, userId: true, status: true, storageKey: true, mimeType: true,
-        expiresOn: true, scanVerdict: true, scanData: true, title: true,
+        id: true,
+        organizationId: true,
+        userId: true,
+        status: true,
+        storageKey: true,
+        mimeType: true,
+        expiresOn: true,
+        scanVerdict: true,
+        scanData: true,
+        title: true,
         user: { select: { firstName: true, lastName: true, dateOfBirth: true } },
         type: { select: { label: true } },
       },
@@ -144,7 +152,10 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
       at: new Date().toISOString(),
       attempts: (previous?.attempts ?? 0) + 1,
     };
-    const baseScanData = (doc.scanData && typeof doc.scanData === 'object' ? doc.scanData : {}) as Record<string, unknown>;
+    const baseScanData = (doc.scanData && typeof doc.scanData === 'object' ? doc.scanData : {}) as Record<
+      string,
+      unknown
+    >;
     // A read whose zone PROVES itself replaces an older verdict — that one came
     // from a worse read of the same picture, and showing it would flag a
     // document the arithmetic has just cleared.
@@ -184,7 +195,11 @@ export class DocumentReadQueue implements OnApplicationBootstrap, OnModuleDestro
 /** "Other document", or "IMG_0042" / "scan 3" — a name nobody chose. */
 function isGenericTitle(title: string, typeLabel: string): boolean {
   const t = title.trim();
-  return t === typeLabel.trim() || /^(img|image|scan|photo|dsc|pxl|document|doc|file|whatsapp)[\s_\-]*[\w\s\-.]*$/i.test(t) || /^\d[\d_\-\s]*$/.test(t);
+  return (
+    t === typeLabel.trim() ||
+    /^(img|image|scan|photo|dsc|pxl|document|doc|file|whatsapp)[\s_\-]*[\w\s\-.]*$/i.test(t) ||
+    /^\d[\d_\-\s]*$/.test(t)
+  );
 }
 
 /** PROVEN beats SUGGESTED beats a reading with a zone but no date beats nothing. */

@@ -11,22 +11,57 @@ export const AVAILABLE_MODULES = [
   { key: 'dependencies', label: 'Dependencies', description: 'Define task sequencing and blockers', group: 'task' },
   { key: 'custom_fields', label: 'Custom Fields', description: 'Add custom data fields to tasks', group: 'task' },
   // Field service
-  { key: 'tracking', label: 'Route Tracking', description: 'GPS tracking, route visualization, and progress card', group: 'field' },
-  { key: 'service_reports', label: 'Service Reports', description: 'Completion reports with photos and signatures', group: 'field' },
+  {
+    key: 'tracking',
+    label: 'Route Tracking',
+    description: 'GPS tracking, route visualization, and progress card',
+    group: 'field',
+  },
+  {
+    key: 'service_reports',
+    label: 'Service Reports',
+    description: 'Completion reports with photos and signatures',
+    group: 'field',
+  },
   { key: 'time_tracking', label: 'Time Tracking', description: 'Track estimated and actual hours', group: 'field' },
   // Assets belong to a SPACE: each space defines its own kinds (apartments,
   // vehicles, machines) and holds its own. Nothing is shared between spaces.
-  { key: 'assets', label: 'Assets', description: 'Track what this space owns — apartments, vehicles, machines', group: 'field' },
+  {
+    key: 'assets',
+    label: 'Assets',
+    description: 'Track what this space owns — apartments, vehicles, machines',
+    group: 'field',
+  },
   // Agile
   { key: 'sprints', label: 'Sprints', description: 'Organize work into time-boxed iterations', group: 'agile' },
-  { key: 'story_points', label: 'Story Points', description: 'Estimate task complexity with fibonacci points', group: 'agile' },
+  {
+    key: 'story_points',
+    label: 'Story Points',
+    description: 'Estimate task complexity with fibonacci points',
+    group: 'agile',
+  },
   { key: 'epics', label: 'Epics', description: 'Group related tasks into larger projects', group: 'agile' },
   { key: 'phases', label: 'Phases', description: 'Organize tasks into project phases', group: 'agile' },
   // Clients (customer records + optional app access)
-  { key: 'crm', label: 'CRM', description: 'Customer records, info & history; sales works them with tasks (calls, visits)', group: 'clients' },
-  { key: 'b2c_portal', label: 'B2C Portal', description: 'Invite a customer to the app to make orders & follow their jobs', group: 'clients' },
+  {
+    key: 'crm',
+    label: 'CRM',
+    description: 'Customer records, info & history; sales works them with tasks (calls, ' + 'visits)',
+    group: 'clients',
+  },
+  {
+    key: 'b2c_portal',
+    label: 'B2C Portal',
+    description: 'Invite a customer to the app to make orders & follow their jobs',
+    group: 'clients',
+  },
   // Collaboration
-  { key: 'space_sharing', label: 'Space Sharing', description: 'Share this space with another organisation (view / contribute / control)', group: 'collaboration' },
+  {
+    key: 'space_sharing',
+    label: 'Space Sharing',
+    description: 'Share this space with another organisation (view / contribute / control)',
+    group: 'collaboration',
+  },
 ] as const;
 
 /**
@@ -123,11 +158,51 @@ export function effectiveSpaceModules(spaceModules: unknown, orgModules: unknown
 
 /** One-click module bundles by business type. */
 export const MODULE_PRESETS: { key: string; label: string; modules: string[] }[] = [
-  { key: 'field_service', label: 'Field Service', modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'service_reports', 'time_tracking'] },
-  { key: 'logistics', label: 'Logistics', modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'time_tracking'] },
-  { key: 'project', label: 'Project / Agile', modules: ['subtasks', 'checklists', 'attachments', 'dependencies', 'custom_fields', 'time_tracking', 'sprints', 'story_points', 'epics', 'phases'] },
+  {
+    key: 'field_service',
+    label: 'Field Service',
+    modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'service_reports', 'time_tracking'],
+  },
+  {
+    key: 'logistics',
+    label: 'Logistics',
+    modules: ['subtasks', 'checklists', 'attachments', 'tracking', 'time_tracking'],
+  },
+  {
+    key: 'project',
+    label: 'Project / Agile',
+    modules: [
+      'subtasks',
+      'checklists',
+      'attachments',
+      'dependencies',
+      'custom_fields',
+      'time_tracking',
+      'sprints',
+      'story_points',
+      'epics',
+      'phases',
+    ],
+  },
   { key: 'minimal', label: 'Minimal', modules: ['checklists', 'attachments'] },
-  { key: 'everything', label: 'Everything', modules: ['subtasks', 'checklists', 'attachments', 'dependencies', 'custom_fields', 'tracking', 'service_reports', 'time_tracking', 'sprints', 'story_points', 'epics', 'phases'] },
+  {
+    key: 'everything',
+    label: 'Everything',
+    modules: [
+      'subtasks',
+      'checklists',
+      'attachments',
+      'dependencies',
+      'custom_fields',
+      'tracking',
+      'service_reports',
+      'time_tracking',
+      'sprints',
+      'story_points',
+      'epics',
+      'phases',
+    ],
+  },
 ];
 
 /** Union type of all available module keys */

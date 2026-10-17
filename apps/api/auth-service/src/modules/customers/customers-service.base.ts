@@ -56,7 +56,11 @@ export abstract class CustomersServiceBase {
   }
 
   /** `crmReachesClientIn` for a caller — all-scope where it is filed, or owns / co-manages it there. */
-  canReach(reach: CrmReach, client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] }, caller: CrmCaller | undefined): boolean {
+  canReach(
+    reach: CrmReach,
+    client: { spaceId?: string | null; ownerId?: string | null; managerIds?: string[] },
+    caller: CrmCaller | undefined,
+  ): boolean {
     return crmReachesClientIn(reach, client, caller?.userId);
   }
 
@@ -118,7 +122,10 @@ export abstract class CustomersServiceBase {
         ],
       },
       select: {
-        companyId: true, personId: true, isPrimary: true, role: true,
+        companyId: true,
+        personId: true,
+        isPrimary: true,
+        role: true,
         company: { select: { id: true, name: true } },
         person: { select: { id: true, name: true } },
       },
@@ -144,8 +151,8 @@ export abstract class CustomersServiceBase {
       ...c,
       contactCount: c.type === 'COMPANY' ? (counts.get(c.id as string) ?? 0) : 0,
       // Who to ring at this company — the name the row prints.
-      primaryContact: c.type === 'COMPANY' ? primary.get(c.id as string) ?? null : null,
-      contactOf: c.type === 'COMPANY' ? null : worksAt.get(c.id as string) ?? null,
+      primaryContact: c.type === 'COMPANY' ? (primary.get(c.id as string) ?? null) : null,
+      contactOf: c.type === 'COMPANY' ? null : (worksAt.get(c.id as string) ?? null),
     }));
   }
 
@@ -160,8 +167,15 @@ export abstract class CustomersServiceBase {
     const c = await this.prisma.customer.findFirst({
       where: { id, organizationId },
       select: {
-        id: true, name: true, type: true, spaceId: true, isContact: true, contactName: true,
-        ownerId: true, managerIds: true, isPortalResident: true,
+        id: true,
+        name: true,
+        type: true,
+        spaceId: true,
+        isContact: true,
+        contactName: true,
+        ownerId: true,
+        managerIds: true,
+        isPortalResident: true,
       },
     });
     if (!c) throw notFound();
@@ -181,8 +195,12 @@ export abstract class CustomersServiceBase {
     if (crmCapsIn(reach, spaceId).create) return;
     const scope = crmCreateScope(reach);
     if (!scope.anywhere && !scope.spaceIds.length) throw new ForbiddenException('Not allowed to create clients');
-    if (!spaceId) throw new BadRequestException({ message: 'Choose a workspace for this client.', code: 'CRM_WORKSPACE_REQUIRED' });
-    throw new ForbiddenException({ message: 'Not allowed to add clients in this workspace.', code: 'CRM_WORKSPACE_NOT_ALLOWED' });
+    if (!spaceId)
+      throw new BadRequestException({ message: 'Choose a workspace for this client.', code: 'CRM_WORKSPACE_REQUIRED' });
+    throw new ForbiddenException({
+      message: 'Not allowed to add clients in this workspace.',
+      code: 'CRM_WORKSPACE_NOT_ALLOWED',
+    });
   }
 
   // ── CRM activity timeline ──────────────────────────────────────────────────
@@ -230,11 +248,17 @@ export abstract class CustomersServiceBase {
    *  states. */
   protected async assertRefsInOrg(dto: CustomerInput, organizationId: string) {
     if (dto.spaceId) {
-      const s = await this.prisma.companyLocation.findFirst({ where: { id: dto.spaceId, organizationId, isActive: true }, select: { id: true } });
+      const s = await this.prisma.companyLocation.findFirst({
+        where: { id: dto.spaceId, organizationId, isActive: true },
+        select: { id: true },
+      });
       if (!s) throw new BadRequestException('Invalid space for this organization');
     }
     if (dto.portalId) {
-      const p = await this.prisma.portal.findFirst({ where: { id: dto.portalId, organizationId }, select: { id: true } });
+      const p = await this.prisma.portal.findFirst({
+        where: { id: dto.portalId, organizationId },
+        select: { id: true },
+      });
       if (!p) throw new BadRequestException('Invalid portal for this organization');
     }
   }

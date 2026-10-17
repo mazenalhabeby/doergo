@@ -12,6 +12,14 @@ const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
 const BODY_MAX = 5000;
 
-type Attachment = { fileKey: string; fileUrl: string; fileName: string; fileSize: number; mimeType: string; width?: number | null; height?: number | null };
+type Attachment = {
+  fileKey: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  width?: number | null;
+  height?: number | null;
+};
 
 export { MAX_FILE_SIZE, ALLOWED_FILE_TYPES, UPLOAD_TTL_SECONDS, SEVERITIES, BODY_MAX, Attachment };

@@ -1,4 +1,18 @@
-import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpException, Param, Patch, Post, Query, Request } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  HttpException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { accessAllows, isAdmin, isApprovalKind, ownAccess } from '@hbcfield/shared';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { DecideApprovalDto } from './dto/decide.dto';
@@ -41,18 +55,23 @@ export class ApprovalsController {
   @Get('route')
   @ApiOperation({ summary: 'Who else can decide one item of your inbox, and who is told about the person' })
   async route(@Query('kind') kind: string, @Query('id') id: string, @Request() req: any) {
-    if (!isApprovalKind(kind) || typeof id !== 'string' || !id || id.length > 128) throw new BadRequestException('kind and id are required');
+    if (!isApprovalKind(kind) || typeof id !== 'string' || !id || id.length > 128)
+      throw new BadRequestException('kind and id are required');
     return { success: true, data: await this.routes.route(caller(req), kind, id) };
   }
 
   @Get('stand-ins')
-  @ApiOperation({ summary: 'Stand-ins: mine (I am away), for me (I cover), and — for people managers — everybody else' })
+  @ApiOperation({
+    summary: 'Stand-ins: mine (I am away), for me (I cover), and — for people managers — everybody else',
+  })
   async listStandIns(@Request() req: any) {
     return { success: true, data: await this.standIns.list(req.user) };
   }
 
   @Post('stand-ins')
-  @ApiOperation({ summary: 'Hand approval decisions to a stand-in for whole days (yours, or anybody\'s if you manage people)' })
+  @ApiOperation({
+    summary: "Hand approval decisions to a stand-in for whole days (yours, or anybody's if you manage people)",
+  })
   async createStandIn(@Body() dto: CreateStandInDto, @Request() req: any) {
     return { success: true, data: await this.standIns.create(req.user, dto) };
   }
@@ -98,8 +117,15 @@ export class ApprovalsController {
   @ApiOperation({ summary: "Decide one item through its kind's existing route" })
   async decide(@Body() dto: DecideApprovalDto, @Request() req: any) {
     const r = await this.approvals.decide(caller(req), dto);
-    if (!r.ok) throw new HttpException({ statusCode: r.status, message: r.message ?? r.code, code: r.code, params: r.params }, r.status);
-    return { success: true, data: { decided: true, ...('stage' in r && r.stage ? { stage: r.stage, waitingFor: r.waitingFor } : {}) } };
+    if (!r.ok)
+      throw new HttpException(
+        { statusCode: r.status, message: r.message ?? r.code, code: r.code, params: r.params },
+        r.status,
+      );
+    return {
+      success: true,
+      data: { decided: true, ...('stage' in r && r.stage ? { stage: r.stage, waitingFor: r.waitingFor } : {}) },
+    };
   }
 }
 

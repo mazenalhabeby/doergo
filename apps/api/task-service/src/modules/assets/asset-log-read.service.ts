@@ -17,7 +17,6 @@ import { AssetLogBase } from './asset-log.base';
 /** Reading the logbook: an asset's entries, its summary, what is due for me, and what I logged. */
 @Injectable()
 export class AssetLogReadService extends AssetLogBase {
-
   /**
    * One asset's log, newest first, a page at a time.
    *
@@ -49,10 +48,7 @@ export class AssetLogReadService extends AssetLogBase {
         select: { id: true, occurredAt: true },
       });
       if (at) {
-        where.OR = [
-          { occurredAt: { lt: at.occurredAt } },
-          { occurredAt: at.occurredAt, id: { lt: at.id } },
-        ];
+        where.OR = [{ occurredAt: { lt: at.occurredAt } }, { occurredAt: at.occurredAt, id: { lt: at.id } }];
       }
     }
 
@@ -62,10 +58,13 @@ export class AssetLogReadService extends AssetLogBase {
       take: take + 1,
     });
     const page = rows.slice(0, take);
-    const authors = await this.names(page.map((r) => r.authorId), data.organizationId);
+    const authors = await this.names(
+      page.map((r) => r.authorId),
+      data.organizationId,
+    );
 
     return success({
-      entries: page.map((r) => ({ ...this.present(r), author: r.authorId ? authors.get(r.authorId) ?? null : null })),
+      entries: page.map((r) => ({ ...this.present(r), author: r.authorId ? (authors.get(r.authorId) ?? null) : null })),
       nextCursor: rows.length > take ? page[page.length - 1]!.id : null,
     });
   }
@@ -89,7 +88,8 @@ export class AssetLogReadService extends AssetLogBase {
       throw new BadRequestException('That period could not be read');
     }
     // Bounded: the split is done in memory, and "all time" on a fleet is not one screen.
-    if (to.getTime() - from.getTime() > 400 * 86_400_000) throw new BadRequestException('A period may be at most a year');
+    if (to.getTime() - from.getTime() > 400 * 86_400_000)
+      throw new BadRequestException('A period may be at most a year');
 
     const [row, inPeriod, waiting] = await Promise.all([
       this.prisma.asset.findUnique({ where: { id: data.id }, select: { logState: true } }),
@@ -112,10 +112,19 @@ export class AssetLogReadService extends AssetLogBase {
       due: this.dueFor(state, asset.shape, now),
       waitingCount: waiting,
       byAuthor: [...byAuthor.entries()]
-        .map(([authorId, c]) => ({ authorId: authorId || null, author: authorId ? authors.get(authorId) ?? null : null, ...c }))
+        .map(([authorId, c]) => ({
+          authorId: authorId || null,
+          author: authorId ? (authors.get(authorId) ?? null) : null,
+          ...c,
+        }))
         .sort((a, b) => b.outCents - a.outCents || b.entries - a.entries),
       byType: types
-        .map((t) => ({ logType: t.key, label: t.label, color: t.color, ...(byType.get(t.key) ?? { inCents: 0, outCents: 0, netCents: 0, entries: 0 }) }))
+        .map((t) => ({
+          logType: t.key,
+          label: t.label,
+          color: t.color,
+          ...(byType.get(t.key) ?? { inCents: 0, outCents: 0, netCents: 0, entries: 0 }),
+        }))
         // A type the kind has since removed still has history, and it still counted.
         .concat(
           [...byType.entries()]
@@ -147,7 +156,9 @@ export class AssetLogReadService extends AssetLogBase {
         .filter((d) => d.stage !== 'ok')
         .map((d) => ({ assetId: a.id, assetName: a.name, ...d })),
     );
-    items.sort((x, y) => (x.stage === y.stage ? (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) : x.stage === 'overdue' ? -1 : 1));
+    items.sort((x, y) =>
+      x.stage === y.stage ? (x.daysLeft ?? 1e9) - (y.daysLeft ?? 1e9) : x.stage === 'overdue' ? -1 : 1,
+    );
     return success({ items });
   }
 
@@ -163,8 +174,19 @@ export class AssetLogReadService extends AssetLogBase {
       orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
       take,
       select: {
-        id: true, assetId: true, logType: true, category: true, direction: true, amountCents: true, note: true,
-        values: true, occurredAt: true, status: true, reviewNote: true, reviewedAt: true, receiptKey: true,
+        id: true,
+        assetId: true,
+        logType: true,
+        category: true,
+        direction: true,
+        amountCents: true,
+        note: true,
+        values: true,
+        occurredAt: true,
+        status: true,
+        reviewNote: true,
+        reviewedAt: true,
+        receiptKey: true,
         asset: { select: { id: true, name: true } },
       },
     });

@@ -11,7 +11,16 @@ export class ApprovalNotificationHandler {
 
   /** An office rule's first approval is in: tell the people who give the second. */
   @EventPattern('approval_second_step')
-  async handleSecondStep(@Payload() data: { recipientIds?: string[]; kind: string; itemId: string; firstName?: string; subjectName?: string }) {
+  async handleSecondStep(
+    @Payload()
+    data: {
+      recipientIds?: string[];
+      kind: string;
+      itemId: string;
+      firstName?: string;
+      subjectName?: string;
+    },
+  ) {
     if (!data?.recipientIds?.length) return;
     try {
       await this.approvalPush.sendApprovalSecondStepPush({
@@ -28,12 +37,26 @@ export class ApprovalNotificationHandler {
 
   /** Nobody answered an item under an office rule: a reminder, or it is passed on. */
   @EventPattern('approval_reminder')
-  async handleReminder(@Payload() data: { recipientIds?: string[]; kind: 'overtime' | 'request' | 'expense'; itemId: string; stage: 'REMIND' | 'ESCALATE'; subjectName?: string; hours?: number }) {
+  async handleReminder(
+    @Payload()
+    data: {
+      recipientIds?: string[];
+      kind: 'overtime' | 'request' | 'expense';
+      itemId: string;
+      stage: 'REMIND' | 'ESCALATE';
+      subjectName?: string;
+      hours?: number;
+    },
+  ) {
     if (!data?.recipientIds?.length) return;
     try {
       await this.approvalPush.sendApprovalReminderPush({
-        recipientIds: data.recipientIds, kind: data.kind, itemId: data.itemId, stage: data.stage,
-        subjectName: data.subjectName ?? '', hours: data.hours ?? 0,
+        recipientIds: data.recipientIds,
+        kind: data.kind,
+        itemId: data.itemId,
+        stage: data.stage,
+        subjectName: data.subjectName ?? '',
+        hours: data.hours ?? 0,
       });
     } catch (e) {
       this.logger.error(`approval reminder push failed: ${(e as Error).message}`);

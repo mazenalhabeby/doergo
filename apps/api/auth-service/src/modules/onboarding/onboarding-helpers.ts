@@ -11,7 +11,14 @@ const LEAVE_POLICY_SELECT = {
 } as const;
 
 /** A DATE column read back as its day, never an instant a browser would move a day west. */
-function leavePolicyOf(org: { defaultLeaveAllowance: number; leaveYearMode: string; carryOverMode: string; carryOverMaxDays: number | null; carryExpiresAfterMonths: number | null; leaveTrackingStartedOn: Date | null }) {
+function leavePolicyOf(org: {
+  defaultLeaveAllowance: number;
+  leaveYearMode: string;
+  carryOverMode: string;
+  carryOverMaxDays: number | null;
+  carryExpiresAfterMonths: number | null;
+  leaveTrackingStartedOn: Date | null;
+}) {
   return {
     defaultLeaveAllowance: org.defaultLeaveAllowance,
     leaveYearMode: org.leaveYearMode,

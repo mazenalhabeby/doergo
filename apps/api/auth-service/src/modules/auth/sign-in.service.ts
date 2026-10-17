@@ -37,7 +37,15 @@ export class SignInService {
     private readonly tokens: SessionTokensService,
   ) {}
 
-  async login(data: { email: string; password: string; rememberMe?: boolean; client?: string; clientPlatform?: string; userAgent?: string; ipAddress?: string }): Promise<AuthResult> {
+  async login(data: {
+    email: string;
+    password: string;
+    rememberMe?: boolean;
+    client?: string;
+    clientPlatform?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<AuthResult> {
     try {
       // Normalize email to lowercase for lookup
       const email = normalizeEmail(data.email);
@@ -45,7 +53,22 @@ export class SignInService {
       const user = await this.prisma.user.findUnique({
         where: { email },
         include: {
-          organization: { select: { name: true, timezone: true, profileBadges: true, enabledModules: true, subStatus: true, planTier: true, addOns: true, currency: true, offlineMode: true, usesExternalWorkers: true, suspendedAt: true, ownerId: true } },
+          organization: {
+            select: {
+              name: true,
+              timezone: true,
+              profileBadges: true,
+              enabledModules: true,
+              subStatus: true,
+              planTier: true,
+              addOns: true,
+              currency: true,
+              offlineMode: true,
+              usesExternalWorkers: true,
+              suspendedAt: true,
+              ownerId: true,
+            },
+          },
           // Unified roles (Phase 2) → resolved `access` on the login response.
           // isActive so a deactivated role stops granting (M1). Space grants are
           // filtered to their effective window so expired/future grants don't
@@ -138,7 +161,9 @@ export class SignInService {
         for why it now means "off" rather than "read-only".
       */
       if (isOrganizationSuspended(user.organization)) {
-        this.logger.warn(`[SUSPENDED] Sign-in refused for ${maskEmail(email)} — organization ${user.organizationId} is deactivated`);
+        this.logger.warn(
+          `[SUSPENDED] Sign-in refused for ${maskEmail(email)} — organization ${user.organizationId} is deactivated`,
+        );
         return {
           success: false,
           statusCode: HttpStatus.FORBIDDEN,
@@ -147,11 +172,10 @@ export class SignInService {
         };
       }
 
-      const clientPlatform = String((data as any).clientPlatform ?? '').toLowerCase().trim();
-      if (
-        (clientPlatform === 'web' || clientPlatform === 'mobile') &&
-        !canUsePlatform(user as any, clientPlatform)
-      ) {
+      const clientPlatform = String((data as any).clientPlatform ?? '')
+        .toLowerCase()
+        .trim();
+      if ((clientPlatform === 'web' || clientPlatform === 'mobile') && !canUsePlatform(user as any, clientPlatform)) {
         return {
           success: false,
           statusCode: HttpStatus.FORBIDDEN,
@@ -171,9 +195,7 @@ export class SignInService {
           // Mark active immediately so the user reads as online the moment they
           // sign in (don't wait for the first token-validation ping).
           lastActiveAt: new Date(),
-          ...(user.failedLoginAttempts > 0 || user.lockedUntil
-            ? { failedLoginAttempts: 0, lockedUntil: null }
-            : {}),
+          ...(user.failedLoginAttempts > 0 || user.lockedUntil ? { failedLoginAttempts: 0, lockedUntil: null } : {}),
         },
       });
       user.presence = 'AVAILABLE'; // reflect in the login response below
@@ -207,8 +229,7 @@ export class SignInService {
       // session (24h) on shared machines; MOBILE (or an unknown/legacy client
       // that sends nothing) keeps the env default (90d) so app users stay signed
       // in. Defaulting absent→mobile preserves existing mobile builds.
-      const refreshTtl =
-        data.client === 'web' ? (data.rememberMe ? '30d' : '24h') : undefined;
+      const refreshTtl = data.client === 'web' ? (data.rememberMe ? '30d' : '24h') : undefined;
 
       /*
         Resolve access ONCE for this response.
@@ -225,7 +246,6 @@ export class SignInService {
         refreshTtl,
         clientPlatform,
       });
-
     } catch (error) {
       this.logger.error('Login error:', error);
       return {

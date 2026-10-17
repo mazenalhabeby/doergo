@@ -1,6 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { BaseGatewayService, SERVICE_NAMES, accessAllows, isAdmin, ownAccess, type StandInInput, type StandInView, type StandInsResponse } from '@hbcfield/shared';
+import {
+  BaseGatewayService,
+  SERVICE_NAMES,
+  accessAllows,
+  isAdmin,
+  ownAccess,
+  type StandInInput,
+  type StandInView,
+  type StandInsResponse,
+} from '@hbcfield/shared';
 import { AuthTokenCache } from '../../common/cache/auth-token-cache.service';
 import { ApprovalsService } from './approvals.service';
 
@@ -31,7 +40,10 @@ export class StandInsService extends BaseGatewayService {
   }
 
   async end(user: any, id: string) {
-    const r = await this.sendOnce<{ ended: true; toUserId: string }>({ cmd: 'stand_ins_end' }, { caller: callerOf(user), id });
+    const r = await this.sendOnce<{ ended: true; toUserId: string }>(
+      { cmd: 'stand_ins_end' },
+      { caller: callerOf(user), id },
+    );
     await this.refresh(r.toUserId);
     return { ended: true };
   }

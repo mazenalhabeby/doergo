@@ -88,15 +88,22 @@ export abstract class MemberServiceBase {
       const s = a.space;
       const spaceHasPin = s.lat != null && s.lng != null;
       // Away means something only where there is a site to be away FROM (the clock-in list's rule).
-      const mayHere = spaceHasPin && resolveAwayAccess({
-        spaceHasPin,
-        policy: s.geofencePolicy,
-        userAllowRemote: member.allowRemote,
-        assignmentAllowRemote: a.allowRemote,
-        isAdmin: member.role === 'ADMIN',
-      }).allowed;
+      const mayHere =
+        spaceHasPin &&
+        resolveAwayAccess({
+          spaceHasPin,
+          policy: s.geofencePolicy,
+          userAllowRemote: member.allowRemote,
+          assignmentAllowRemote: a.allowRemote,
+          isAdmin: member.role === 'ADMIN',
+        }).allowed;
       const may = mayHere || !!byId.get(s.id)?.mayWorkRemotely;
-      byId.set(s.id, { id: s.id, name: s.name, mayWorkRemotely: may, kinds: requestKindsOffered({ enabled: s.requestKinds, mayWorkRemotely: may }) });
+      byId.set(s.id, {
+        id: s.id,
+        name: s.name,
+        mayWorkRemotely: may,
+        kinds: requestKindsOffered({ enabled: s.requestKinds, mayWorkRemotely: may }),
+      });
     }
     const spaces = [...byId.values()];
     // A kind tied to no workspace: offered when ANY of their workspaces offers it (none = every kind but REMOTE).
@@ -144,7 +151,10 @@ export abstract class MemberServiceBase {
     lenient = false,
   ): Promise<number> {
     const count = await this.calendarRules.countLeaveFor(
-      organizationId, userId, toISODateString(start), toISODateString(end),
+      organizationId,
+      userId,
+      toISODateString(start),
+      toISODateString(end),
     );
     if (!lenient && count.counted === 0) {
       throw new BadRequestException({

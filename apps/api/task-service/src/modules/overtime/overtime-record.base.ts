@@ -8,9 +8,7 @@ import { DAY, MAX_PERIOD_DAYS, RoundRow } from './overtime-record-helpers';
  */
 @Injectable()
 export abstract class OvertimeRecordBase {
-
   constructor(protected readonly prisma: PrismaService) {}
-
 
   /* ------------------------------------------------------------ helpers */
 
@@ -59,7 +57,11 @@ export abstract class OvertimeRecordBase {
   protected async latestCycles(entryIds: string[]) {
     const ids = [...new Set(entryIds)];
     if (!ids.length) return new Map<string, number>();
-    const rows = await this.prisma.overtimeRequest.groupBy({ by: ['timeEntryId'], where: { timeEntryId: { in: ids } }, _max: { cycle: true } });
+    const rows = await this.prisma.overtimeRequest.groupBy({
+      by: ['timeEntryId'],
+      where: { timeEntryId: { in: ids } },
+      _max: { cycle: true },
+    });
     return new Map(rows.map((g) => [g.timeEntryId, g._max.cycle ?? 1]));
   }
 
@@ -77,7 +79,10 @@ export abstract class OvertimeRecordBase {
       throw new BadRequestException({ code: 'OVERTIME_PERIOD_INVALID', message: 'The period is not valid.' });
     }
     if (end.getTime() - start.getTime() > MAX_PERIOD_DAYS * DAY) {
-      throw new BadRequestException({ code: 'OVERTIME_PERIOD_TOO_LONG', message: `A period is at most ${MAX_PERIOD_DAYS} days.` });
+      throw new BadRequestException({
+        code: 'OVERTIME_PERIOD_TOO_LONG',
+        message: `A period is at most ${MAX_PERIOD_DAYS} days.`,
+      });
     }
     return { from: start, to: end };
   }

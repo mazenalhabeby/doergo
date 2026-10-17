@@ -55,7 +55,10 @@ function refuseInvalid(statusKey: string, errors: StepAnswerError[]): never {
  * moving to a canonical status its workflow does not define) then falls to the
  * shipped field-service preset, exactly as the phone's `needsReport` does.
  */
-function targetStep(workflow: { statuses?: Array<Record<string, unknown>> } | null | undefined, statusKey: string): StepFormStep {
+function targetStep(
+  workflow: { statuses?: Array<Record<string, unknown>> } | null | undefined,
+  statusKey: string,
+): StepFormStep {
   const row = workflow?.statuses?.find((s) => s.key === statusKey) as StepFormStep | undefined;
   return row ?? { key: statusKey };
 }
@@ -94,10 +97,14 @@ export async function prepareStepSubmission(
 
   if (!form) {
     if (!given) return null;
-    if (typeof args.answers !== 'object' || Array.isArray(args.answers)) refuseInvalid(args.statusKey, [{ fieldId: '*', code: 'not_object' }]);
+    if (typeof args.answers !== 'object' || Array.isArray(args.answers))
+      refuseInvalid(args.statusKey, [{ fieldId: '*', code: 'not_object' }]);
     const keys = Object.keys(args.answers as object);
     if (keys.length === 0) return null;
-    refuseInvalid(args.statusKey, keys.map((k) => ({ fieldId: k.slice(0, 40), code: 'unknown_field' as const })));
+    refuseInvalid(
+      args.statusKey,
+      keys.map((k) => ({ fieldId: k.slice(0, 40), code: 'unknown_field' as const })),
+    );
   }
 
   if (source === 'legacy' && !args.isAssignedUser && !given) return null;

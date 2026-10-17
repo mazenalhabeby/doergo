@@ -35,10 +35,7 @@ export class ShiftsService extends ShiftsBase {
     if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
       // Explicit about the three states rather than relying on `[]` being
       // truthy — granted NOWHERE must still narrow, to nothing.
-      where.AND = [
-        ...(where.AND ?? []),
-        { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] },
-      ];
+      where.AND = [...(where.AND ?? []), { OR: [{ spaceId: { in: data.scopeSpaceIds } }, { spaceId: null }] }];
     }
     const shifts = await this.prisma.shift.findMany({
       where,
@@ -69,7 +66,10 @@ export class ShiftsService extends ShiftsBase {
     this.assertTime(data.startLocal, 'start');
     this.assertTime(data.endLocal, 'end');
     if (data.spaceId) {
-      await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, { scope: data.scopeSpaceIds, activeOnly: true });
+      await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId, {
+        scope: data.scopeSpaceIds,
+        activeOnly: true,
+      });
     } else if (data.scopeSpaceIds !== null && data.scopeSpaceIds !== undefined) {
       /*
         ⚠️ The scope used to be checked ONLY when a space was named, so a rota
@@ -93,7 +93,12 @@ export class ShiftsService extends ShiftsBase {
         crossesMidnight: shiftCrossesMidnight(data.startLocal, data.endLocal),
         breakMinutes: this.clampInt(data.breakMinutes, 0, 0, 1440),
         graceMin: this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120),
-        reminderIntervalMin: this.clampInt(data.reminderIntervalMin, SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES, 1, 120),
+        reminderIntervalMin: this.clampInt(
+          data.reminderIntervalMin,
+          SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
+          1,
+          120,
+        ),
         maxReminders: this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10),
         flagToleranceMin: this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240),
       },
@@ -137,10 +142,19 @@ export class ShiftsService extends ShiftsBase {
       patch.endLocal = data.endLocal;
     }
     if (data.breakMinutes !== undefined) patch.breakMinutes = this.clampInt(data.breakMinutes, 0, 0, 1440);
-    if (data.graceMin !== undefined) patch.graceMin = this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120);
-    if (data.reminderIntervalMin !== undefined) patch.reminderIntervalMin = this.clampInt(data.reminderIntervalMin, SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES, 1, 120);
-    if (data.maxReminders !== undefined) patch.maxReminders = this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10);
-    if (data.flagToleranceMin !== undefined) patch.flagToleranceMin = this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240);
+    if (data.graceMin !== undefined)
+      patch.graceMin = this.clampInt(data.graceMin, SHIFT_REMINDER_DEFAULTS.GRACE_MINUTES, 0, 120);
+    if (data.reminderIntervalMin !== undefined)
+      patch.reminderIntervalMin = this.clampInt(
+        data.reminderIntervalMin,
+        SHIFT_REMINDER_DEFAULTS.REMINDER_INTERVAL_MINUTES,
+        1,
+        120,
+      );
+    if (data.maxReminders !== undefined)
+      patch.maxReminders = this.clampInt(data.maxReminders, SHIFT_REMINDER_DEFAULTS.MAX_REMINDERS, 1, 10);
+    if (data.flagToleranceMin !== undefined)
+      patch.flagToleranceMin = this.clampInt(data.flagToleranceMin, SCHEDULE_FLAG_DEFAULT_TOLERANCE_MIN, 0, 240);
     if (data.isActive !== undefined) patch.isActive = data.isActive;
 
     // Recompute crossesMidnight if either time changed.
@@ -156,7 +170,8 @@ export class ShiftsService extends ShiftsBase {
         distinct: ['userId', 'spaceId'],
         take: 500,
       });
-      for (const r of rostered) this.rematch.schedule({ organizationId: data.organizationId, userId: r.userId, spaceId: r.spaceId });
+      for (const r of rostered)
+        this.rematch.schedule({ organizationId: data.organizationId, userId: r.userId, spaceId: r.spaceId });
     }
     return success(updated, 'Shift updated');
   }

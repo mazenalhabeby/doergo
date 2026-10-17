@@ -171,8 +171,7 @@ export class CreateInvitationDto {
   memberRoleId?: string;
 
   @ApiPropertyOptional({
-    description:
-      'Invite somebody who works for a client or partner. Mutually exclusive with memberRoleId.',
+    description: 'Invite somebody who works for a client or partner. Mutually exclusive with memberRoleId.',
   })
   @IsBoolean()
   @IsOptional()
@@ -180,8 +179,11 @@ export class CreateInvitationDto {
 
   @ApiPropertyOptional({
     description:
-      'EXTERNAL invites only, instead of memberRoleId: what they may do in `spaceId` (permission keys → true), built in the permission builder. ' +
-      'Workspace keys inside the external allow-list and within your own permissions there; applied on accept as their personal role (or the shared role it exactly matches).',
+      'EXTERNAL invites only, instead of memberRoleId: what they may do in ' +
+      '`spaceId` (permission keys → true), built in the permission builder. ' +
+      ('Workspace keys inside the external allow-list and within your own ' +
+        'permissions there; applied on accept as their personal role (or the ' +
+        'shared role it exactly matches).'),
     type: 'object',
     additionalProperties: { type: 'boolean' },
   })
@@ -238,9 +240,7 @@ export class AcceptInvitationDto {
   @MinLength(6)
   @MaxLength(16)
   @Matches(/^[A-Za-z0-9]+$/, { message: 'Code must be alphanumeric' })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.toUpperCase().trim() : value,
-  )
+  @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase().trim() : value))
   code: string;
 
   @ApiProperty({ example: 'user@example.com' })

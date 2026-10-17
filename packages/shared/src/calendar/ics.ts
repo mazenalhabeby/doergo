@@ -25,18 +25,35 @@ export interface IcsEvent {
 
 /** "20261027T090000" — the wall clock of an instant in a zone. */
 function localStamp(d: Date, tz: string): string {
-  const f = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const f = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
   const p = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
   const hh = p.hour === '24' ? '00' : p.hour;
   return `${p.year}${p.month}${p.day}T${hh}${p.minute}${p.second}`;
 }
 
 export function icsEscape(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n').replace(/[\u0000-\u0008\u000b-\u001f]/g, '');
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n')
+    .replace(/[\u0000-\u0008\u000b-\u001f]/g, '');
 }
 
 function stamp(d: Date): string {
-  return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  return d
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
 }
 
 /** Lines longer than 75 octets are folded, without splitting a multi-byte character. */
@@ -69,9 +86,15 @@ export function buildIcs(calName: string, events: readonly IcsEvent[], now = new
   for (const e of events) {
     lines.push('BEGIN:VEVENT', `UID:${icsEscape(e.uid)}`, `DTSTAMP:${stamp(e.updatedAt ?? now)}`);
     if (e.allDay) {
-      lines.push(`DTSTART;VALUE=DATE:${String(e.start).replace(/-/g, '')}`, `DTEND;VALUE=DATE:${String(e.end).replace(/-/g, '')}`);
+      lines.push(
+        `DTSTART;VALUE=DATE:${String(e.start).replace(/-/g, '')}`,
+        `DTEND;VALUE=DATE:${String(e.end).replace(/-/g, '')}`,
+      );
     } else if (e.tzid && /^[A-Za-z_]+(\/[A-Za-z0-9_+\-]+){0,2}$/.test(e.tzid)) {
-      lines.push(`DTSTART;TZID=${e.tzid}:${localStamp(e.start as Date, e.tzid)}`, `DTEND;TZID=${e.tzid}:${localStamp(e.end as Date, e.tzid)}`);
+      lines.push(
+        `DTSTART;TZID=${e.tzid}:${localStamp(e.start as Date, e.tzid)}`,
+        `DTEND;TZID=${e.tzid}:${localStamp(e.end as Date, e.tzid)}`,
+      );
     } else {
       lines.push(`DTSTART:${stamp(e.start as Date)}`, `DTEND:${stamp(e.end as Date)}`);
     }

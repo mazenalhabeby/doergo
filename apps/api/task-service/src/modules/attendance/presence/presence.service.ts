@@ -71,17 +71,25 @@ export class PresenceService {
   }): Promise<Record<string, unknown>> {
     try {
       const point = input.point ?? { lat: 0, lng: 0 };
-      const jobs = input.insideArea ? [] : await this.openJobs(input.userId, input.organizationId, input.at, input.timezone);
+      const jobs = input.insideArea
+        ? []
+        : await this.openJobs(input.userId, input.organizationId, input.at, input.timezone);
       const d = decidePresence({ point, insideArea: input.insideArea, jobs, state: { presence: null, anchor: null } });
       return {
         presence: d.presence,
         presenceReason: d.reason,
         presenceAt: input.at,
         presenceChanges: {
-          create: [{
-            organizationId: input.organizationId, at: input.at, presence: d.presence, reason: d.reason, sentLate: input.recordedOffline,
-            ...(input.point ? { anchorLat: d.anchor.lat, anchorLng: d.anchor.lng } : {}),
-          }],
+          create: [
+            {
+              organizationId: input.organizationId,
+              at: input.at,
+              presence: d.presence,
+              reason: d.reason,
+              sentLate: input.recordedOffline,
+              ...(input.point ? { anchorLat: d.anchor.lat, anchorLng: d.anchor.lng } : {}),
+            },
+          ],
         },
       };
     } catch (err) {
@@ -91,12 +99,20 @@ export class PresenceService {
   }
 
   /** One live position for an open entry. */
-  async onPosition(entry: PresenceEntry, point: PresencePoint, insideArea: boolean, at: Date = new Date()): Promise<void> {
+  async onPosition(
+    entry: PresenceEntry,
+    point: PresencePoint,
+    insideArea: boolean,
+    at: Date = new Date(),
+  ): Promise<void> {
     try {
       // Inside the area neither jobs nor movement can change the answer, so neither is read.
       const [jobs, anchor] = insideArea
         ? [[], null]
-        : await Promise.all([this.openJobs(entry.userId, entry.organizationId, at, tzOf(entry)), this.anchorOf(entry.id)]);
+        : await Promise.all([
+            this.openJobs(entry.userId, entry.organizationId, at, tzOf(entry)),
+            this.anchorOf(entry.id),
+          ]);
       const d = decidePresence({ point, insideArea, jobs, state: { presence: presenceOf(entry), anchor } });
       if (d.changed) {
         await this.record(entry, [{ at, presence: d.presence, reason: d.reason, anchor: d.anchor }], at, false);
@@ -114,7 +130,10 @@ export class PresenceService {
    * Positions a phone kept without signal, oldest first. One pass: today's jobs
    * are read once, each change written once, the entry once, one live update.
    */
-  async onBatch(entry: PresenceEntry, points: readonly (PresencePoint & { at: Date; insideArea: boolean })[]): Promise<void> {
+  async onBatch(
+    entry: PresenceEntry,
+    points: readonly (PresencePoint & { at: Date; insideArea: boolean })[],
+  ): Promise<void> {
     if (points.length === 0) return;
     try {
       const newest = points[points.length - 1]!.at;
@@ -138,7 +157,12 @@ export class PresenceService {
    * A job went on its way, or arrived: the member is in the field now, without
    * waiting for the next heartbeat. Only for the assignee's own open entry.
    */
-  async onJobMoved(input: { userId: string; organizationId: string; reason: 'ON_THE_WAY' | 'AT_JOB'; at: Date }): Promise<void> {
+  async onJobMoved(input: {
+    userId: string;
+    organizationId: string;
+    reason: 'ON_THE_WAY' | 'AT_JOB';
+    at: Date;
+  }): Promise<void> {
     try {
       const entry = await this.prisma.timeEntry.findFirst({
         where: { userId: input.userId, organizationId: input.organizationId, status: 'CLOCKED_IN' },
@@ -146,7 +170,12 @@ export class PresenceService {
       });
       if (!entry || entry.presence === 'FIELD') return;
       // No position with a tap: movement stays measured from the last place that counted.
-      await this.record(entry, [{ at: input.at, presence: 'FIELD', reason: input.reason, anchor: await this.anchorOf(entry.id) }], null, false);
+      await this.record(
+        entry,
+        [{ at: input.at, presence: 'FIELD', reason: input.reason, anchor: await this.anchorOf(entry.id) }],
+        null,
+        false,
+      );
     } catch (err) {
       this.logger.warn(`presence on job move skipped for user=${input.userId}: ${err}`);
     }
@@ -181,15 +210,25 @@ export class PresenceService {
       if (res.count === 0) return false;
       await tx.timeEntryPresence.createMany({
         data: changes.map((c) => ({
-          timeEntryId: entry.id, organizationId: entry.organizationId, at: c.at, presence: c.presence, reason: c.reason, sentLate,
-          anchorLat: c.anchor?.lat ?? null, anchorLng: c.anchor?.lng ?? null,
+          timeEntryId: entry.id,
+          organizationId: entry.organizationId,
+          at: c.at,
+          presence: c.presence,
+          reason: c.reason,
+          sentLate,
+          anchorLat: c.anchor?.lat ?? null,
+          anchorLng: c.anchor?.lng ?? null,
         })),
       });
       return true;
     });
     if (!claimed) return;
     // An invalidation, not a payload: each screen refetches through its own scoped read.
-    this.notificationClient.emit('attendance_changed', { organizationId: entry.organizationId, action: 'presence', entryId: entry.id });
+    this.notificationClient.emit('attendance_changed', {
+      organizationId: entry.organizationId,
+      action: 'presence',
+      entryId: entry.id,
+    });
   }
 
   /** Where the newest change with a position happened. One indexed read, (timeEntryId, at). */
@@ -217,7 +256,11 @@ export class PresenceService {
           {
             OR: [
               { status: 'EN_ROUTE' },
-              { locationLat: { not: null }, locationLng: { not: null }, dueDate: { gte: startOfDayIn(at, timezone), lt: endOfDayIn(at, timezone) } },
+              {
+                locationLat: { not: null },
+                locationLng: { not: null },
+                dueDate: { gte: startOfDayIn(at, timezone), lt: endOfDayIn(at, timezone) },
+              },
             ],
           },
         ],

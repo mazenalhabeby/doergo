@@ -23,7 +23,12 @@ export interface ApiResult<T> {
 const FULL_RESPONSE_KEYS = ['status', 'data', 'meta', 'body', 'headers'];
 
 function isFullResponse(v: unknown): v is { status: number; data: unknown } {
-  return !!v && typeof v === 'object' && FULL_RESPONSE_KEYS.every((k) => k in (v as object)) && typeof (v as { status?: unknown }).status === 'number';
+  return (
+    !!v &&
+    typeof v === 'object' &&
+    FULL_RESPONSE_KEYS.every((k) => k in (v as object)) &&
+    typeof (v as { status?: unknown }).status === 'number'
+  );
 }
 
 export async function toResult<T>(promise: Promise<T>, okStatus = 200): Promise<ApiResult<T>> {

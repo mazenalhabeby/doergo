@@ -113,10 +113,20 @@ export abstract class TaskAssignmentBase {
     // A role task's places follow its crew, however the crew changed (the picker too).
     await this.rolePool.syncSpots(taskId);
     // A lead handed over for today ends when that person is no longer on the crew (shared crew.ts).
-    const lead = await this.prisma.task.findUnique({ where: { id: taskId }, select: { leadOverrideId: true, assignedToId: true } });
+    const lead = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      select: { leadOverrideId: true, assignedToId: true },
+    });
     if (lead?.leadOverrideId && lead.leadOverrideId !== lead.assignedToId) {
-      const still = await this.prisma.taskAssignee.findUnique({ where: { taskId_userId: { taskId, userId: lead.leadOverrideId } }, select: { id: true } });
-      if (!still) await this.prisma.task.update({ where: { id: taskId }, data: { leadOverrideId: null, leadOverrideUntil: null } });
+      const still = await this.prisma.taskAssignee.findUnique({
+        where: { taskId_userId: { taskId, userId: lead.leadOverrideId } },
+        select: { id: true },
+      });
+      if (!still)
+        await this.prisma.task.update({
+          where: { id: taskId },
+          data: { leadOverrideId: null, leadOverrideUntil: null },
+        });
     }
     /*
       An OPEN checklist item owned by somebody taken off the crew goes back to
@@ -164,7 +174,16 @@ export abstract class TaskAssignmentBase {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       // What the assignment email shows — it reads "N/A" for a field left out here.
-      select: { id: true, title: true, organizationId: true, status: true, dueDate: true, priority: true, description: true, locationAddress: true },
+      select: {
+        id: true,
+        title: true,
+        organizationId: true,
+        status: true,
+        dueDate: true,
+        priority: true,
+        description: true,
+        locationAddress: true,
+      },
     });
     if (!task) return;
 

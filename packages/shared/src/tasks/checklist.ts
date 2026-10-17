@@ -49,7 +49,11 @@ export type ChecklistVerdict = { ok: true } | { ok: false; code: ChecklistCode }
  *   • the leader and the office give any item to anybody on the crew;
  *   • a member TAKES a free item for themselves, or GIVES BACK their own.
  */
-export function mayChangeChecklistOwner(a: ChecklistAuthority, from: string | null, to: string | null): ChecklistVerdict {
+export function mayChangeChecklistOwner(
+  a: ChecklistAuthority,
+  from: string | null,
+  to: string | null,
+): ChecklistVerdict {
   if (from === to) return { ok: true };
   if (to !== null && !a.crewIds.includes(to)) return { ok: false, code: CHECKLIST_CODES.OWNER_NOT_ON_CREW };
   if (a.isOffice || (a.leaderId !== null && a.leaderId === a.actorId)) return { ok: true };
@@ -92,7 +96,10 @@ export interface ChecklistItemLike {
  * The phone's two groups: MINE first (what is asked of me), then the rest of
  * the crew's. Each keeps the checklist's own order.
  */
-export function splitChecklist<T extends ChecklistItemLike>(items: readonly T[], meId: string | null | undefined): { mine: T[]; crew: T[] } {
+export function splitChecklist<T extends ChecklistItemLike>(
+  items: readonly T[],
+  meId: string | null | undefined,
+): { mine: T[]; crew: T[] } {
   const ordered = [...items].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   if (!meId) return { mine: [], crew: ordered };
   return { mine: ordered.filter((i) => i.assigneeId === meId), crew: ordered.filter((i) => i.assigneeId !== meId) };
@@ -104,6 +111,10 @@ export function openChecklistOf<T extends ChecklistItemLike>(items: readonly T[]
 }
 
 /** Was it ticked by somebody other than its owner? The screens say so instead of hiding it. */
-export function tickedByOther(item: { assigneeId?: string | null; completedById?: string | null; isCompleted: boolean }): boolean {
+export function tickedByOther(item: {
+  assigneeId?: string | null;
+  completedById?: string | null;
+  isCompleted: boolean;
+}): boolean {
   return item.isCompleted && !!item.assigneeId && !!item.completedById && item.assigneeId !== item.completedById;
 }

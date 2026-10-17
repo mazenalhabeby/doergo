@@ -51,7 +51,11 @@ export abstract class EventsBase {
     } catch {
       throw new BadRequestException({ code: 'MEETING_URL_INVALID', message: 'The meeting link must be a web address (https://…).' });
     }
-    if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new BadRequestException({ code: 'MEETING_URL_INVALID', message: 'The meeting link must be a web address (https://…).' });
+    if (u.protocol !== 'https:' && u.protocol !== 'http:')
+      throw new BadRequestException({
+        code: 'MEETING_URL_INVALID',
+        message: 'The meeting link must be a web address (https://…).',
+      });
     return u.toString();
   }
 
@@ -126,11 +130,19 @@ export abstract class EventsBase {
       where: { id: { in: unique }, organizationId: caller.organizationId, isActive: true, isExternal: false, role: { not: 'CUSTOMER' } },
       select: { id: true, firstName: true, lastName: true },
     });
-    if (people.length !== unique.length) throw new BadRequestException({ code: 'EVENT_PERSON_UNKNOWN', message: 'Somebody on the list is not a colleague here.' });
+    if (people.length !== unique.length)
+      throw new BadRequestException({
+        code: 'EVENT_PERSON_UNKNOWN',
+        message: 'Somebody on the list is not a colleague here.',
+      });
     if (!(isAdmin({ role: caller.role } as any) || caller.canManageUsers || caller.orgWideView)) {
       const circle = await this.circleOf(caller);
       const outside = people.filter((p) => !circle.has(p.id));
-      if (outside.length) throw new ForbiddenException({ code: 'EVENT_PERSON_NOT_REACHABLE', message: 'You can invite people you work with in a workspace.' });
+      if (outside.length)
+        throw new ForbiddenException({
+          code: 'EVENT_PERSON_NOT_REACHABLE',
+          message: 'You can invite people you work with in a workspace.',
+        });
     }
     return new Map(people.map((p) => [p.id, p]));
   }
@@ -140,7 +152,13 @@ export abstract class EventsBase {
     const mine = await this.rules.workspacesOf(caller.organizationId, caller.userId);
     if (!mine.length) {
       const loose = await this.prisma.user.findMany({
-        where: { organizationId: caller.organizationId, isActive: true, isExternal: false, role: { not: 'CUSTOMER' }, spaceAssignments: { none: {} } },
+        where: {
+          organizationId: caller.organizationId,
+          isActive: true,
+          isExternal: false,
+          role: { not: 'CUSTOMER' },
+          spaceAssignments: { none: {} },
+        },
         select: { id: true },
       });
       return new Set(loose.map((u) => u.id));
@@ -168,8 +186,13 @@ export abstract class EventsBase {
     if (!client || !caller.crm) return null;
     if (caller.role === 'ADMIN') return { id: client.id, name: client.name };
     // Org-wide CRM, or a CRM grant in the workspace the client is filed in (crm/crm-reach.ts).
-    const row = await this.prisma.user.findFirst({ where: { id: caller.userId, organizationId: caller.organizationId }, select: crmReachSelect() });
-    return crmReachesClientIn(crmReachOfRow(row as never), client, caller.userId) ? { id: client.id, name: client.name } : null;
+    const row = await this.prisma.user.findFirst({
+      where: { id: caller.userId, organizationId: caller.organizationId },
+      select: crmReachSelect(),
+    });
+    return crmReachesClientIn(crmReachOfRow(row as never), client, caller.userId)
+      ? { id: client.id, name: client.name }
+      : null;
   }
 
   /** One shared rule for a name (people/person-name.ts) — never "John null". */
@@ -192,7 +215,15 @@ export abstract class EventsBase {
     const ev = await this.prisma.calendarEvent.findFirst({
       where: { id: dto.eventId, organizationId: dto.organizationId, attendees: { some: { userId: dto.userId } } },
       include: {
-        attendees: { select: { userId: true, response: true, isOrganizer: true, user: { select: { firstName: true, lastName: true, avatarUrl: true } } }, orderBy: { createdAt: 'asc' } },
+        attendees: {
+          select: {
+            userId: true,
+            response: true,
+            isOrganizer: true,
+            user: { select: { firstName: true, lastName: true, avatarUrl: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
         customer: { select: { id: true, name: true, spaceId: true, ownerId: true, managerIds: true } },
         space: { select: { id: true, name: true } },
         placeSpace: { select: { id: true, name: true, address: true, lat: true, lng: true } },

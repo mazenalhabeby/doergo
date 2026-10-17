@@ -23,7 +23,13 @@ export const ORG_LEAVE_SELECT = {
   leaveTrackingStartedOn: true,
 } as const;
 
-export const PERSON_LEAVE_SELECT = { id: true, organizationId: true, leaveAllowance: true, employmentStartDate: true, createdAt: true } as const;
+export const PERSON_LEAVE_SELECT = {
+  id: true,
+  organizationId: true,
+  leaveAllowance: true,
+  employmentStartDate: true,
+  createdAt: true,
+} as const;
 
 export interface OrgLeave {
   id: string;
@@ -70,17 +76,38 @@ const MEMBERS_WHERE = { isActive: true, isExternal: false, role: { not: 'CUSTOME
 
 const PERSON_BRIEF = { id: true, firstName: true, lastName: true } as const;
 
-export function carryRuleOf(org: Pick<OrgLeave, 'carryOverMode' | 'carryOverMaxDays' | 'carryExpiresAfterMonths'>): CarryOverRule {
-  return { mode: org.carryOverMode as CarryOverRule['mode'], maxDays: org.carryOverMaxDays, expiresAfterMonths: org.carryExpiresAfterMonths };
+export function carryRuleOf(
+  org: Pick<OrgLeave, 'carryOverMode' | 'carryOverMaxDays' | 'carryExpiresAfterMonths'>,
+): CarryOverRule {
+  return {
+    mode: org.carryOverMode as CarryOverRule['mode'],
+    maxDays: org.carryOverMaxDays,
+    expiresAfterMonths: org.carryExpiresAfterMonths,
+  };
 }
 
-export function leaveYearFor(org: Pick<OrgLeave, 'leaveYearMode'>, person: Pick<PersonLeave, 'employmentStartDate'>, on: string): LeaveYear {
-  return leaveYearOf({ mode: (org.leaveYearMode as LeaveYearMode) ?? 'CALENDAR', employmentStartDate: dayOf(person.employmentStartDate), on });
+export function leaveYearFor(
+  org: Pick<OrgLeave, 'leaveYearMode'>,
+  person: Pick<PersonLeave, 'employmentStartDate'>,
+  on: string,
+): LeaveYear {
+  return leaveYearOf({
+    mode: (org.leaveYearMode as LeaveYearMode) ?? 'CALENDAR',
+    employmentStartDate: dayOf(person.employmentStartDate),
+    on,
+  });
 }
 
 /** "Müller, Anna" / "anna  müller" → "anna muller". */
 export function nameKey(s: string): string {
-  return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/,/g, ' ').trim().toLowerCase().split(/\s+/).join(' ');
+  return s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/,/g, ' ')
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .join(' ');
 }
 
 const ADJUSTMENT_REFUSALS: Record<string, string> = {
@@ -93,15 +120,24 @@ const ADJUSTMENT_REFUSALS: Record<string, string> = {
 
 /** The table a starting-balances save sends: ≤ 500 people, each once, half days 0–366. */
 export function readOpeningRows(raw: unknown): Array<{ userId: string; used: number; carried: number }> {
-  if (!Array.isArray(raw) || raw.length === 0) throw new BadRequestException({ code: 'OPENING_ROWS_EMPTY', message: 'Nothing to save' });
-  if (raw.length > OPENING_LIMITS.MAX_ROWS) throw new BadRequestException({ code: 'OPENING_TOO_MANY_ROWS', message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time` });
+  if (!Array.isArray(raw) || raw.length === 0)
+    throw new BadRequestException({ code: 'OPENING_ROWS_EMPTY', message: 'Nothing to save' });
+  if (raw.length > OPENING_LIMITS.MAX_ROWS)
+    throw new BadRequestException({
+      code: 'OPENING_TOO_MANY_ROWS',
+      message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time`,
+    });
   const ok = (n: unknown) => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 366 && half(n) === n;
   const seen = new Set<string>();
   return raw.map((r) => {
     const row = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
-    const used = row.used ?? 0, carried = row.carried ?? 0;
+    const used = row.used ?? 0,
+      carried = row.carried ?? 0;
     if (typeof row.userId !== 'string' || !row.userId || seen.has(row.userId) || !ok(used) || !ok(carried)) {
-      throw new BadRequestException({ code: 'OPENING_ROW_INVALID', message: 'Each person once, with days in half days from 0 to 366' });
+      throw new BadRequestException({
+        code: 'OPENING_ROW_INVALID',
+        message: 'Each person once, with days in half days from 0 to 366',
+      });
     }
     seen.add(row.userId);
     return { userId: row.userId, used: used as number, carried: carried as number };

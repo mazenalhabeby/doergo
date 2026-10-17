@@ -8,7 +8,6 @@ import { CustomersControllerBase } from './customers-controller.base';
 @ApiBearerAuth()
 @Controller('customers')
 export class CustomerInviteController extends CustomersControllerBase {
-
   @Post(':id/invite')
   // Bringing a client into the app is the organization's act, not a workspace's.
   @DenyExternal()
@@ -47,19 +46,40 @@ export class CustomerInviteController extends CustomersControllerBase {
       portalId = body.portalId;
     }
     if (!portalId) {
-      const portalRes: any = await this.auth('portal_ensure_for_space', { organizationId: orgId, spaceId: customer.spaceId });
+      const portalRes: any = await this.auth('portal_ensure_for_space', {
+        organizationId: orgId,
+        spaceId: customer.spaceId,
+      });
       portalId = portalRes?.data?.id ?? portalRes?.id;
     }
     if (!unit) {
-      unit = await this.auth('portal_create_unit', { organizationId: orgId, customerId: id, portalId, name: customer.name, address: customer.address });
+      unit = await this.auth('portal_create_unit', {
+        organizationId: orgId,
+        customerId: id,
+        portalId,
+        name: customer.name,
+        address: customer.address,
+      });
     }
     const inviteRes: any = await this.auth('create_invitation', {
-      targetRole: 'CUSTOMER', organizationId: orgId, createdById: req.user.id, creatorRole: req.user.role,
-      customerId: id, unitId: unit.id, portalId, email,
+      targetRole: 'CUSTOMER',
+      organizationId: orgId,
+      createdById: req.user.id,
+      creatorRole: req.user.role,
+      customerId: id,
+      unitId: unit.id,
+      portalId,
+      email,
     });
     // Flip the CRM record into a portal resident + advance the stage to Customer
     // (an invited app user has converted). Status change is auto-logged.
-    await this.auth('update_customer', { id, organizationId: orgId, actorId: req.user.id, caller, dto: { isPortalResident: true, portalId, status: 'CUSTOMER' } });
+    await this.auth('update_customer', {
+      id,
+      organizationId: orgId,
+      actorId: req.user.id,
+      caller,
+      dto: { isPortalResident: true, portalId, status: 'CUSTOMER' },
+    });
     return { data: { code: inviteRes?.data?.code, email } };
   }
 

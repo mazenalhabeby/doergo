@@ -24,8 +24,18 @@ export class TaskUpdateService {
     // The caller's grants come out too, so they can never reach the write or
     // the event's `changes` metadata.
     const {
-      id, userId, userRole, organizationId, access,
-      canCreateTasks, createSpaceIds, canViewAllTasks, viewAllSpaceIds, canAssignTasks, sharedSpaceIds, taskCreationScope,
+      id,
+      userId,
+      userRole,
+      organizationId,
+      access,
+      canCreateTasks,
+      createSpaceIds,
+      canViewAllTasks,
+      viewAllSpaceIds,
+      canAssignTasks,
+      sharedSpaceIds,
+      taskCreationScope,
       ...updateData
     } = data;
     // The open-role columns have their own path (RolePoolService.setOpenRole) — never written raw. (The write
@@ -90,7 +100,10 @@ export class TaskUpdateService {
     }
 
     // A role is a fact about ONE workspace: moving the task closes it to the role (who took it stays on it).
-    const closeRole = updateData.spaceId !== undefined && (updateData.spaceId || null) !== existingTask.spaceId && !!existingTask.openRoleId;
+    const closeRole =
+      updateData.spaceId !== undefined &&
+      (updateData.spaceId || null) !== existingTask.spaceId &&
+      !!existingTask.openRoleId;
 
     // Don't allow updating completed/closed tasks
     if ([TaskStatus.COMPLETED, TaskStatus.CLOSED, TaskStatus.CANCELED].includes(existingTask.status as TaskStatus)) {
@@ -143,7 +156,9 @@ export class TaskUpdateService {
           dueDate: new Date(updateData.dueDate),
           departureNotifiedAt: null,
         }),
-        ...(updateData.startDate !== undefined && { startDate: updateData.startDate ? new Date(updateData.startDate) : null }),
+        ...(updateData.startDate !== undefined && {
+          startDate: updateData.startDate ? new Date(updateData.startDate) : null,
+        }),
         ...(updateData.estimatedHours !== undefined && { estimatedHours: updateData.estimatedHours }),
         ...(updateData.locationLat !== undefined && { locationLat: updateData.locationLat }),
         ...(updateData.locationLng !== undefined && { locationLng: updateData.locationLng }),
@@ -174,7 +189,13 @@ export class TaskUpdateService {
   /**
    * Delete a task (CLIENT only - own tasks)
    */
-  async remove(data: { id: string; userId: string; userRole: string; canViewAllTasks?: boolean; organizationId: string }) {
+  async remove(data: {
+    id: string;
+    userId: string;
+    userRole: string;
+    canViewAllTasks?: boolean;
+    organizationId: string;
+  }) {
     const task = await this.prisma.task.findUnique({
       where: { id: data.id },
     });

@@ -7,23 +7,37 @@ import { PlatformAuthBase } from './platform-auth.base';
 /** The operators themselves: listing, adding, editing, resetting a password, the first owner. */
 @Injectable()
 export class PlatformStaffService extends PlatformAuthBase {
-
   // ── Staff management (OWNER only — enforced at the gateway) ────────────────────
   async listUsers() {
     const users = await this.prisma.platformUser.findMany({ orderBy: [{ isActive: 'desc' }, { createdAt: 'asc' }] });
     return ok(users.map((u) => this.publicUser(u)));
   }
 
-  async createUser(data: { email?: string; password?: string; firstName?: string; lastName?: string; role?: string; byUserId?: string }) {
+  async createUser(data: {
+    email?: string;
+    password?: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    byUserId?: string;
+  }) {
     const email = normalizeEmail(data.email ?? '');
     const role = this.validRole(data.role);
     if (!email || !email.includes('@')) return fail('Valid email required');
     if (!data.password || data.password.length < 10) return fail('Password must be at least 10 characters');
     if (!role) return fail('Invalid role');
-    if (await this.prisma.platformUser.findUnique({ where: { email } })) return fail('A platform user with this email already exists', 409);
+    if (await this.prisma.platformUser.findUnique({ where: { email } }))
+      return fail('A platform user with this email already exists', 409);
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST_FACTOR);
     const user = await this.prisma.platformUser.create({
-      data: { email, passwordHash, firstName: (data.firstName ?? '').trim() || 'Staff', lastName: (data.lastName ?? '').trim() || '', role, createdById: data.byUserId ?? null },
+      data: {
+        email,
+        passwordHash,
+        firstName: (data.firstName ?? '').trim() || 'Staff',
+        lastName: (data.lastName ?? '').trim() || '',
+        role,
+        createdById: data.byUserId ?? null,
+      },
     });
     this.logger.warn(`[PLATFORM] user created: ${maskEmail(email)} (${role}) by ${data.byUserId ?? 'bootstrap'}`);
     return ok(this.publicUser(user));
@@ -45,7 +59,11 @@ export class PlatformStaffService extends PlatformAuthBase {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.id } });
     if (!user) return fail('Not found', 404);
     const patch: { role?: PlatformRole; isActive?: boolean } = {};
-    if (data.role !== undefined) { const r = this.validRole(data.role); if (!r) return fail('Invalid role'); patch.role = r; }
+    if (data.role !== undefined) {
+      const r = this.validRole(data.role);
+      if (!r) return fail('Invalid role');
+      patch.role = r;
+    }
     if (data.isActive !== undefined) patch.isActive = data.isActive === true;
     const self = !!data.byUserId && data.byUserId === user.id;
     if (self && ((patch.role && patch.role !== user.role) || patch.isActive === false)) {
@@ -64,7 +82,9 @@ export class PlatformStaffService extends PlatformAuthBase {
       where: { id: user.id },
       data: { ...patch, ...(changesAccess ? { tokensValidAfter: new Date() } : {}) },
     });
-    this.logger.warn(`[PLATFORM] user ${maskEmail(user.email)} updated (${JSON.stringify(patch)}) by ${data.byUserId ?? 'operator'}`);
+    this.logger.warn(
+      `[PLATFORM] user ${maskEmail(user.email)} updated (${JSON.stringify(patch)}) by ${data.byUserId ?? 'operator'}`,
+    );
     return ok(this.publicUser(updated));
   }
 
@@ -72,7 +92,15 @@ export class PlatformStaffService extends PlatformAuthBase {
     if (!data.password || data.password.length < 10) return fail('Password must be at least 10 characters');
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.id } });
     if (!user) return fail('Not found', 404);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { passwordHash: await bcrypt.hash(data.password, BCRYPT_COST_FACTOR), failedLoginAttempts: 0, lockedUntil: null, tokensValidAfter: new Date() } });
+    await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await bcrypt.hash(data.password, BCRYPT_COST_FACTOR),
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        tokensValidAfter: new Date(),
+      },
+    });
     this.logger.warn(`[PLATFORM] password reset for ${maskEmail(user.email)} by ${data.byUserId ?? 'operator'}`);
     return ok({ id: user.id });
   }

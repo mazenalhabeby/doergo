@@ -37,7 +37,8 @@ export class CustomerWriteService extends CustomersServiceBase {
     const clientId = typeof dto.id === 'string' && CLIENT_ID.test(dto.id) ? dto.id : undefined;
     const prior = await findPrior({
       id: clientId,
-      find: (id) => this.prisma.customer.findUnique({ where: { id }, select: { ...customerSelect, organizationId: true } }),
+      find: (id) =>
+        this.prisma.customer.findUnique({ where: { id }, select: { ...customerSelect, organizationId: true } }),
       isSame: (c) => c.organizationId === organizationId,
     });
     // The replay answers only to somebody who can reach it — an id is not a key.
@@ -93,7 +94,10 @@ export class CustomerWriteService extends CustomersServiceBase {
 
   async update(id: string, organizationId: string, dto: CustomerInput, actorId?: string, caller?: CrmCaller) {
     // `spaceId` is read so a move can be told from a no-op — see the guard below.
-    const existing = await this.prisma.customer.findFirst({ where: { id, organizationId }, select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true, spaceId: true } });
+    const existing = await this.prisma.customer.findFirst({
+      where: { id, organizationId },
+      select: { id: true, status: true, isPortalResident: true, ownerId: true, managerIds: true, spaceId: true },
+    });
     if (!existing) throw new NotFoundException('Customer not found');
 
     // ── CRM access enforcement (server-authoritative), by what's being changed ──
@@ -102,7 +106,26 @@ export class CustomerWriteService extends CustomersServiceBase {
     const touchesPortal = dto.isPortalResident !== undefined || dto.portalId !== undefined;
     const touchesOwnership = dto.ownerId !== undefined || dto.managerIds !== undefined;
     const touchesStatus = dto.status !== undefined;
-    const infoKeys = ['name', 'contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'type', 'details', 'legalName', 'website', 'industry', 'vatId', 'regNumber', 'locale', 'currency', 'legalEntityId'] as const;
+    const infoKeys = [
+      'name',
+      'contactName',
+      'email',
+      'phone',
+      'address',
+      'notes',
+      'isActive',
+      'spaceId',
+      'type',
+      'details',
+      'legalName',
+      'website',
+      'industry',
+      'vatId',
+      'regNumber',
+      'locale',
+      'currency',
+      'legalEntityId',
+    ] as const;
     const touchesInfo = infoKeys.some((k) => dto[k] !== undefined);
     if (existing.isPortalResident || touchesPortal || touchesOwnership) {
       // Portal/app-access + ownership reassignment are manage-level.
@@ -110,7 +133,8 @@ export class CustomerWriteService extends CustomersServiceBase {
     } else {
       const caps = this.capsOn(reach, existing, caller);
       if (touchesStatus && !(caps.work || caps.manage)) throw new ForbiddenException('Not allowed to change stage');
-      if (touchesInfo && !(caps.editInfo || caps.manage)) throw new ForbiddenException('Not allowed to edit client info');
+      if (touchesInfo && !(caps.editInfo || caps.manage))
+        throw new ForbiddenException('Not allowed to edit client info');
     }
     /*
       Moving it to another workspace (or filing it nowhere) is editing it on
@@ -122,7 +146,10 @@ export class CustomerWriteService extends CustomersServiceBase {
     if (dto.spaceId !== undefined && (dto.spaceId || null) !== (existing.spaceId ?? null)) {
       const there = crmCapsIn(reach, dto.spaceId || null);
       if (!(there.editInfo || there.manage)) {
-        throw new ForbiddenException({ message: 'Not allowed to move this client to that workspace.', code: 'CRM_WORKSPACE_NOT_ALLOWED' });
+        throw new ForbiddenException({
+          message: 'Not allowed to move this client to that workspace.',
+          code: 'CRM_WORKSPACE_NOT_ALLOWED',
+        });
       }
     }
 
@@ -145,7 +172,24 @@ export class CustomerWriteService extends CustomersServiceBase {
       throw new BadRequestException('An app user belongs to the workspace that runs their portal.');
     }
 
-    for (const k of ['contactName', 'email', 'phone', 'address', 'notes', 'isActive', 'spaceId', 'ownerId', 'isPortalResident', 'portalId', 'status', 'legalName', 'website', 'industry', 'vatId', 'regNumber'] as const) {
+    for (const k of [
+      'contactName',
+      'email',
+      'phone',
+      'address',
+      'notes',
+      'isActive',
+      'spaceId',
+      'ownerId',
+      'isPortalResident',
+      'portalId',
+      'status',
+      'legalName',
+      'website',
+      'industry',
+      'vatId',
+      'regNumber',
+    ] as const) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
     if (dto.notes !== undefined) data.notes = capText(dto.notes);
@@ -159,10 +203,12 @@ export class CustomerWriteService extends CustomersServiceBase {
     if (company !== undefined) data.legalEntityId = company;
     if (dto.type !== undefined) data.type = dto.type === 'COMPANY' ? 'COMPANY' : 'PERSON';
     if (dto.details !== undefined) data.details = (sanitizeDetails(dto.details) ?? []) as any;
-    if (dto.managerIds !== undefined) data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
+    if (dto.managerIds !== undefined)
+      data.managerIds = await this.keepOrgUserIds(sanitizeIds(dto.managerIds) ?? [], organizationId);
     // Cross-tenant guards: refs (space/portal) and ownerId must belong to the org.
     await this.assertRefsInOrg(dto, organizationId);
-    if (dto.ownerId !== undefined) data.ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
+    if (dto.ownerId !== undefined)
+      data.ownerId = dto.ownerId ? ((await this.keepOrgUserIds([dto.ownerId], organizationId))[0] ?? null) : null;
 
     // ── Smart app-access handoff ──
     // When a customer gains app access, they're self-serve: sales stops working
@@ -175,18 +221,34 @@ export class CustomerWriteService extends CustomersServiceBase {
     }
 
     const finalStatus = (data.status as string | undefined) ?? existing.status;
-    const customer = await this.prisma.customer.update({ where: { id }, data: withContactKeys(data), select: customerSelect });
+    const customer = await this.prisma.customer.update({
+      where: { id },
+      data: withContactKeys(data),
+      select: customerSelect,
+    });
 
     // Auto-log a lifecycle-stage change onto the CRM timeline.
     if (data.status !== undefined && data.status !== existing.status) {
       await this.prisma.customerActivity.create({
-        data: { organizationId, customerId: id, type: 'STATUS', authorId: actorId ?? null, metadata: { from: existing.status, to: finalStatus } },
+        data: {
+          organizationId,
+          customerId: id,
+          type: 'STATUS',
+          authorId: actorId ?? null,
+          metadata: { from: existing.status, to: finalStatus },
+        },
       });
     }
     // Note the handoff explicitly so the timeline explains why managers cleared.
     if (becameApp) {
       await this.prisma.customerActivity.create({
-        data: { organizationId, customerId: id, type: 'SYSTEM', authorId: actorId ?? null, body: 'Gained app access — sales handoff complete, managers unassigned.' },
+        data: {
+          organizationId,
+          customerId: id,
+          type: 'SYSTEM',
+          authorId: actorId ?? null,
+          body: 'Gained app access — sales handoff complete, managers unassigned.',
+        },
       });
     }
     return { data: customer };

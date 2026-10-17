@@ -26,7 +26,16 @@ export class BlogService {
     const posts = await this.prisma.blogPost.findMany({
       where: { status: 'PUBLISHED' },
       orderBy: { publishedAt: 'desc' },
-      select: { slug: true, title: true, description: true, author: true, tags: true, coverUrl: true, publishedAt: true, content: true },
+      select: {
+        slug: true,
+        title: true,
+        description: true,
+        author: true,
+        tags: true,
+        coverUrl: true,
+        publishedAt: true,
+        content: true,
+      },
     });
     return ok(posts);
   }
@@ -51,7 +60,17 @@ export class BlogService {
   async listAll() {
     const posts = await this.prisma.blogPost.findMany({
       orderBy: { publishedAt: 'desc' },
-      select: { id: true, slug: true, title: true, description: true, status: true, publishedAt: true, updatedAt: true, coverUrl: true, tags: true },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        description: true,
+        status: true,
+        publishedAt: true,
+        updatedAt: true,
+        coverUrl: true,
+        tags: true,
+      },
     });
     return ok(posts);
   }
@@ -130,7 +149,8 @@ export class BlogService {
     } catch {
       return fail('Invalid base64');
     }
-    if (buf.length === 0 || buf.length > MAX_IMAGE_BYTES) return fail(`Image must be 1 byte – ${MAX_IMAGE_BYTES / 1024 / 1024}MB`);
+    if (buf.length === 0 || buf.length > MAX_IMAGE_BYTES)
+      return fail(`Image must be 1 byte – ${MAX_IMAGE_BYTES / 1024 / 1024}MB`);
     const img = await this.prisma.blogImage.create({
       data: { mime: data.mime, fileName: data.fileName || null, data: new Uint8Array(buf) },
     });

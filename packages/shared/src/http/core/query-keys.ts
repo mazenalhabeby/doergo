@@ -36,7 +36,10 @@ export function queryKey(def: Endpoint<any, any, any> | string, args?: unknown):
   if (!name) throw new Error('queryKey: this endpoint has no name — define it with defineEndpoints()');
   const parts: unknown[] = name.split('.');
   const stable = stableArgs(args);
-  const empty = stable === undefined || stable === null || (typeof stable === 'object' && !Array.isArray(stable) && Object.keys(stable as object).length === 0);
+  const empty =
+    stable === undefined ||
+    stable === null ||
+    (typeof stable === 'object' && !Array.isArray(stable) && Object.keys(stable as object).length === 0);
   if (!empty) parts.push(stable);
   return parts;
 }

@@ -13,7 +13,12 @@ const TIME_EVENTS = [TaskEventType.STATUS_CHANGED, TaskEventType.PAUSED, TaskEve
 const LEAVE_EVENTS = [TaskEventType.UNASSIGNED, TaskEventType.ASSIGNEE_REMOVED];
 
 /** One person's own presence on a crew job (shared crew.ts). */
-const CREW_EVENTS = [TaskEventType.CREW_JOINED, TaskEventType.CREW_LEFT, TaskEventType.SELF_BLOCKED, TaskEventType.SELF_RESUMED];
+const CREW_EVENTS = [
+  TaskEventType.CREW_JOINED,
+  TaskEventType.CREW_LEFT,
+  TaskEventType.SELF_BLOCKED,
+  TaskEventType.SELF_RESUMED,
+];
 
 /** A job's history is read whole up to this many rows (newest kept) — years of a daily crew. */
 const EVENTS_PER_TASK = 5000;
@@ -32,7 +37,15 @@ const PERSONAL_KIND: Record<string, WorkTimelineEvent['kind']> = {
 };
 
 /** What the office wrote on a move it made for somebody — see TasksService.updateStatus. */
-type MoveMeta = { newStatus?: string; occurredAt?: string; at?: string; byOffice?: boolean; forUserId?: string; officeReason?: string; reason?: string };
+type MoveMeta = {
+  newStatus?: string;
+  occurredAt?: string;
+  at?: string;
+  byOffice?: boolean;
+  forUserId?: string;
+  officeReason?: string;
+  reason?: string;
+};
 
 export {
   TaskRef,

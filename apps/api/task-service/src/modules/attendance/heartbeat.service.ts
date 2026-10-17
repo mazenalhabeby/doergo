@@ -33,13 +33,7 @@ export class HeartbeatService extends HeartbeatBase {
    * pre-OTA mobile clients (`autoClockedOut` is now always false) and adds
    * `inRing` + `activeExcursion` for the new UI.
    */
-  async heartbeat(data: {
-    userId: string;
-    lat: number;
-    lng: number;
-    accuracy?: number;
-    organizationId: string;
-  }) {
+  async heartbeat(data: { userId: string; lat: number; lng: number; accuracy?: number; organizationId: string }) {
     this.logger.debug(`Heartbeat from user ${data.userId} at ${data.lat},${data.lng}`);
 
     // Find active clock-in entry
@@ -56,7 +50,11 @@ export class HeartbeatService extends HeartbeatBase {
       const closedFor = entry
         ? false
         : !!(await this.prisma.timeEntry.findFirst({
-            where: { userId: data.userId, clockOutProvisional: true, clockOutAt: { gte: new Date(Date.now() - 86_400_000) } },
+            where: {
+              userId: data.userId,
+              clockOutProvisional: true,
+              clockOutAt: { gte: new Date(Date.now() - 86_400_000) },
+            },
             select: { id: true },
           }));
       return success(
@@ -170,7 +168,13 @@ export class HeartbeatService extends HeartbeatBase {
         });
       }
       return success(
-        { withinGeofence: false, inRing: false, distance: distanceM, autoClockedOut: false, activeExcursion: { ...active, lastDistanceM: distanceM } },
+        {
+          withinGeofence: false,
+          inRing: false,
+          distance: distanceM,
+          autoClockedOut: false,
+          activeExcursion: { ...active, lastDistanceM: distanceM },
+        },
         `Outside ring (${active.status})`,
       );
     }

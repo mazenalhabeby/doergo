@@ -10,7 +10,15 @@ import {
   runWithCronLock,
   toISODateString,
 } from '@hbcfield/shared';
-import { LeaveLedgerService, ORG_LEAVE_SELECT, PERSON_LEAVE_SELECT, carryRuleOf, leaveYearFor, type OrgLeave, type PersonLeave } from './leave-ledger.service';
+import {
+  LeaveLedgerService,
+  ORG_LEAVE_SELECT,
+  PERSON_LEAVE_SELECT,
+  carryRuleOf,
+  leaveYearFor,
+  type OrgLeave,
+  type PersonLeave,
+} from './leave-ledger.service';
 
 /** People per batch: one set of queries per batch, never one per person. */
 const BATCH = 500;
@@ -52,10 +60,14 @@ export class LeaveCarryOverService {
 
   @Cron('15 */6 * * *')
   async sweepCron(): Promise<void> {
-    await runWithCronLock(this.prisma, { name: 'task:leaveCarryOver', ttlSeconds: 3000, logger: this.logger }, async () => {
-      const written = await this.sweep();
-      if (written) this.logger.log(`Carry-over: ${written} ledger line(s) written`);
-    });
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:leaveCarryOver', ttlSeconds: 3000, logger: this.logger },
+      async () => {
+        const written = await this.sweep();
+        if (written) this.logger.log(`Carry-over: ${written} ledger line(s) written`);
+      },
+    );
   }
 
   /** Directly callable (tests, a one-off run). Returns the number of lines written. */
@@ -98,7 +110,13 @@ export class LeaveCarryOverService {
     return written;
   }
 
-  private async sweepBatch(org: OrgLeave, people: PersonLeave[], today: string, countedSince: string, rule: ReturnType<typeof carryRuleOf>): Promise<number> {
+  private async sweepBatch(
+    org: OrgLeave,
+    people: PersonLeave[],
+    today: string,
+    countedSince: string,
+    rule: ReturnType<typeof carryRuleOf>,
+  ): Promise<number> {
     // This leave year, and the one before it, for everybody — two batched balance reads.
     const current = await this.ledger.years(org, people, () => today);
     const eligible = people.filter((p) => {
@@ -107,9 +125,19 @@ export class LeaveCarryOverService {
       const joined = toISODateString(p.employmentStartDate ?? p.createdAt ?? new Date(0));
       return prevEnd >= countedSince && joined <= prevEnd;
     });
-    const previous = eligible.length ? await this.ledger.years(org, eligible, (p) => dayBefore(current.get(p.id)!.leaveYear.start)) : new Map();
+    const previous = eligible.length
+      ? await this.ledger.years(org, eligible, (p) => dayBefore(current.get(p.id)!.leaveYear.start))
+      : new Map();
 
-    const rows: Array<{ organizationId: string; userId: string; kind: 'CARRY_OVER' | 'CARRY_EXPIRED'; days: number; leaveYearStart: Date; reason: string; sourceKey: string }> = [];
+    const rows: Array<{
+      organizationId: string;
+      userId: string;
+      kind: 'CARRY_OVER' | 'CARRY_EXPIRED';
+      days: number;
+      leaveYearStart: Date;
+      reason: string;
+      sourceKey: string;
+    }> = [];
     for (const p of people) {
       const cur = current.get(p.id)!;
       const start = cur.leaveYear.start;
@@ -122,7 +150,15 @@ export class LeaveCarryOverService {
       if (prev && !openingCarry && !has(leaveSourceKey.carry(p.id, start))) {
         const days = carryOverDays(prev.balance.remaining, rule);
         if (days > 0) {
-          rows.push({ organizationId: org.id, userId: p.id, kind: 'CARRY_OVER', days, leaveYearStart: asDate(start), reason: `Carried over from the leave year ${prev.leaveYear.start} – ${prev.leaveYear.end}`, sourceKey: leaveSourceKey.carry(p.id, start) });
+          rows.push({
+            organizationId: org.id,
+            userId: p.id,
+            kind: 'CARRY_OVER',
+            days,
+            leaveYearStart: asDate(start),
+            reason: `Carried over from the leave year ${prev.leaveYear.start} – ${prev.leaveYear.end}`,
+            sourceKey: leaveSourceKey.carry(p.id, start),
+          });
           carriedNow += days;
         }
       }
@@ -132,7 +168,15 @@ export class LeaveCarryOverService {
       if (expiry && today > expiry && carriedNow > 0 && !has(leaveSourceKey.carryExpired(p.id, start))) {
         const lost = carryExpiredDays({ carried: carriedNow, takenUpToExpiry: cur.takenUpTo(expiry) });
         if (lost > 0) {
-          rows.push({ organizationId: org.id, userId: p.id, kind: 'CARRY_EXPIRED', days: -lost, leaveYearStart: asDate(start), reason: `Carried days not used by ${expiry}`, sourceKey: leaveSourceKey.carryExpired(p.id, start) });
+          rows.push({
+            organizationId: org.id,
+            userId: p.id,
+            kind: 'CARRY_EXPIRED',
+            days: -lost,
+            leaveYearStart: asDate(start),
+            reason: `Carried days not used by ${expiry}`,
+            sourceKey: leaveSourceKey.carryExpired(p.id, start),
+          });
         }
       }
     }

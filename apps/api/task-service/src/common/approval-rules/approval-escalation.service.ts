@@ -54,10 +54,14 @@ export class ApprovalEscalationService {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async sweepCron(): Promise<void> {
-    await runWithCronLock(this.prisma, { name: 'task:approvalEscalation', ttlSeconds: 540, logger: this.logger }, async () => {
-      const sent = await this.sweep();
-      if (sent) this.logger.log(`approval notices sent: ${sent}`);
-    });
+    await runWithCronLock(
+      this.prisma,
+      { name: 'task:approvalEscalation', ttlSeconds: 540, logger: this.logger },
+      async () => {
+        const sent = await this.sweep();
+        if (sent) this.logger.log(`approval notices sent: ${sent}`);
+      },
+    );
   }
 
   async sweep(now = new Date()): Promise<number> {
@@ -65,23 +69,32 @@ export class ApprovalEscalationService {
       where: { isActive: true, OR: [{ remindAfterHours: { not: null } }, { escalateAfterHours: { not: null } }] },
     });
     const groups = new Map<string, typeof rules>();
-    for (const r of rules) groups.set(`${r.organizationId}|${r.kind}`, [...(groups.get(`${r.organizationId}|${r.kind}`) ?? []), r]);
+    for (const r of rules)
+      groups.set(`${r.organizationId}|${r.kind}`, [...(groups.get(`${r.organizationId}|${r.kind}`) ?? []), r]);
 
     let sent = 0;
     for (const [key, group] of groups) {
       const [organizationId, kind] = key.split('|') as [string, RuleKind];
       // Nothing can be due before the shortest wait any of these rules asks for.
-      const shortest = Math.min(...group.flatMap((r) => [r.remindAfterHours, r.escalateAfterHours].filter((h): h is number => h != null)));
+      const shortest = Math.min(
+        ...group.flatMap((r) => [r.remindAfterHours, r.escalateAfterHours].filter((h): h is number => h != null)),
+      );
       const cutoff = new Date(now.getTime() - shortest * 3_600_000);
       try {
-        const items = await this.waiting(organizationId, kind, cutoff, group.some((r) => r.whenCoverShort));
+        const items = await this.waiting(
+          organizationId,
+          kind,
+          cutoff,
+          group.some((r) => r.whenCoverShort),
+        );
         if (!items.length) continue;
         const notices = await this.prisma.approvalNotice.findMany({
           where: { kind, itemId: { in: items.map((i) => i.itemId) } },
           select: { itemId: true, stage: true },
         });
         const sentFor = new Map<string, Set<NoticeStage>>();
-        for (const n of notices) (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
+        for (const n of notices)
+          (sentFor.get(n.itemId) ?? sentFor.set(n.itemId, new Set()).get(n.itemId)!).add(n.stage as NoticeStage);
 
         for (const item of items) {
           const rule = pickRule(group as never[], item.facts) as (typeof group)[number] | null;
@@ -90,13 +103,21 @@ export class ApprovalEscalationService {
           if (!stage) continue;
           // Claimed by the insert: two replicas, or two sweeps, say it once.
           try {
-            await this.prisma.approvalNotice.create({ data: { organizationId, kind, itemId: item.itemId, ruleId: rule.id, stage } });
+            await this.prisma.approvalNotice.create({
+              data: { organizationId, kind, itemId: item.itemId, ruleId: rule.id, stage },
+            });
           } catch {
             continue;
           }
-          let recipientIds = stage === 'ESCALATE'
-            ? await this.rules.holdersOf(organizationId, rule.escalateRoleId!, item.facts.spaceIds, item.subjectId ? [item.subjectId] : [])
-            : [];
+          let recipientIds =
+            stage === 'ESCALATE'
+              ? await this.rules.holdersOf(
+                  organizationId,
+                  rule.escalateRoleId!,
+                  item.facts.spaceIds,
+                  item.subjectId ? [item.subjectId] : [],
+                )
+              : [];
           // Nobody holds the escalation role (here): it must not vanish — the usual deciders hear instead.
           if (!recipientIds.length) recipientIds = await this.usualDeciders(organizationId, kind, item);
           if (!recipientIds.length) continue;
@@ -136,7 +157,14 @@ export class ApprovalEscalationService {
       const rows = await this.prisma.timeOff.findMany({
         where: { status: 'PENDING', createdAt: { lte: cutoff }, technician: { organizationId, isActive: true } },
         select: {
-          id: true, createdAt: true, startDate: true, endDate: true, workingDays: true, kind: true, spaceId: true, technicianId: true,
+          id: true,
+          createdAt: true,
+          startDate: true,
+          endDate: true,
+          workingDays: true,
+          kind: true,
+          spaceId: true,
+          technicianId: true,
           technician: { select: { firstName: true, lastName: true, spaceAssignments: { select: { spaceId: true } } } },
         },
         orderBy: { createdAt: 'asc' },
@@ -164,8 +192,14 @@ export class ApprovalEscalationService {
       });
       // The asset's workspace is its KIND's; the author is a plain id — both read in one query each.
       const [assets, authors] = await Promise.all([
-        this.prisma.asset.findMany({ where: { id: { in: [...new Set(rows.map((m) => m.assetId))] } }, select: { id: true, category: { select: { spaceId: true } } } }),
-        this.prisma.user.findMany({ where: { id: { in: [...new Set(rows.map((m) => m.authorId).filter(Boolean) as string[])] } }, select: { id: true, firstName: true, lastName: true } }),
+        this.prisma.asset.findMany({
+          where: { id: { in: [...new Set(rows.map((m) => m.assetId))] } },
+          select: { id: true, category: { select: { spaceId: true } } },
+        }),
+        this.prisma.user.findMany({
+          where: { id: { in: [...new Set(rows.map((m) => m.authorId).filter(Boolean) as string[])] } },
+          select: { id: true, firstName: true, lastName: true },
+        }),
       ]);
       const spaceOf = new Map(assets.map((a) => [a.id, a.category?.spaceId ?? null]));
       const nameOf = new Map(authors.map((a) => [a.id, personName(a)]));
@@ -173,14 +207,26 @@ export class ApprovalEscalationService {
         itemId: m.id,
         since: m.createdAt,
         subjectId: m.authorId,
-        subjectName: m.authorId ? nameOf.get(m.authorId) ?? '' : '',
+        subjectName: m.authorId ? (nameOf.get(m.authorId) ?? '') : '',
         facts: { spaceIds: spaceOf.get(m.assetId) ? [spaceOf.get(m.assetId)!] : [], amountCents: m.amountCents },
       }));
     }
     // Overtime: the formal round waiting for a leader — keyed by its shift, like the second step.
     const rows = await this.prisma.overtimeRequest.findMany({
-      where: { organizationId, status: 'PENDING_APPROVAL', OR: [{ technicianRespondedAt: { lte: cutoff } }, { technicianRespondedAt: null, createdAt: { lte: cutoff } }] },
-      select: { timeEntryId: true, createdAt: true, technicianRespondedAt: true, locationId: true, maxDurationMinutes: true, technicianId: true, technician: { select: { firstName: true, lastName: true } } },
+      where: {
+        organizationId,
+        status: 'PENDING_APPROVAL',
+        OR: [{ technicianRespondedAt: { lte: cutoff } }, { technicianRespondedAt: null, createdAt: { lte: cutoff } }],
+      },
+      select: {
+        timeEntryId: true,
+        createdAt: true,
+        technicianRespondedAt: true,
+        locationId: true,
+        maxDurationMinutes: true,
+        technicianId: true,
+        technician: { select: { firstName: true, lastName: true } },
+      },
       orderBy: { createdAt: 'asc' },
       take: MAX_ITEMS,
     });
@@ -194,14 +240,24 @@ export class ApprovalEscalationService {
   }
 
   /** The wallchart's verdict for pending LEAVE, only when a rule asks about cover. */
-  private async coverShort(organizationId: string, rows: Array<{ id: string; technicianId: string; startDate: Date; endDate: Date; kind: string }>): Promise<Map<string, boolean>> {
+  private async coverShort(
+    organizationId: string,
+    rows: Array<{ id: string; technicianId: string; startDate: Date; endDate: Date; kind: string }>,
+  ): Promise<Map<string, boolean>> {
     const out = new Map<string, boolean>();
     try {
       // CoverService lives with the technicians; asked through the container, never imported into this module.
       const cover = this.moduleRef.get(CoverService, { strict: false });
       const leave = rows.filter((r) => r.kind === ABSENCE_WHERE.kind);
-      const verdicts = await cover.assessMany(organizationId, leave.map((r) => ({ id: r.id, technicianId: r.technicianId, startDate: r.startDate, endDate: r.endDate })));
-      for (const [id, v] of verdicts) out.set(id, (v as { level?: string } | null)?.level === 'short' || (v as { level?: string } | null)?.level === 'skill');
+      const verdicts = await cover.assessMany(
+        organizationId,
+        leave.map((r) => ({ id: r.id, technicianId: r.technicianId, startDate: r.startDate, endDate: r.endDate })),
+      );
+      for (const [id, v] of verdicts)
+        out.set(
+          id,
+          (v as { level?: string } | null)?.level === 'short' || (v as { level?: string } | null)?.level === 'skill',
+        );
     } catch {
       // Unreadable cover: a cover-only rule does not fire, rather than firing on a guess.
     }

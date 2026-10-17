@@ -23,21 +23,35 @@ export abstract class JobPauseBase {
     protected readonly jobTime: JobTimeService,
   ) {}
 
-
   /**
    * The jobs this person is working right now: on the job (lead or crew), in a
    * step where work runs, not paused. What the clock-out sheet lists, and what
    * the clock-out pauses.
    */
-  async workingJobsOf(userId: string, organizationId: string, opts: { includePaused?: boolean } = {}): Promise<Candidate[]> {
+  async workingJobsOf(
+    userId: string,
+    organizationId: string,
+    opts: { includePaused?: boolean } = {},
+  ): Promise<Candidate[]> {
     const rows = await this.prisma.task.findMany({
       where: {
         organizationId,
         status: { notIn: NEVER_WORKING },
         ...(opts.includePaused ? {} : { pausedAt: null }),
-        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }] },
-      select: { id: true, title: true, status: true, workflowId: true, spaceId: true, organizationId: true, assignedToId: true, pausedAt: true },
-      take: 50 });
+        OR: [{ assignedToId: userId }, { assignees: { some: { userId } } }],
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        workflowId: true,
+        spaceId: true,
+        organizationId: true,
+        assignedToId: true,
+        pausedAt: true,
+      },
+      take: 50,
+    });
     if (rows.length === 0) return [];
 
     // One workflow lookup per distinct flow, from the per-org cache.
@@ -71,18 +85,40 @@ export abstract class JobPauseBase {
     const [timelines, rows] = await Promise.all([
       this.jobTime.timelinesOf(jobs.map((j) => j.id)),
       jobs.length
-        ? this.prisma.taskAssignee.findMany({ where: { taskId: { in: jobs.map((j) => j.id) } }, select: { taskId: true, userId: true } })
+        ? this.prisma.taskAssignee.findMany({
+            where: { taskId: { in: jobs.map((j) => j.id) } },
+            select: { taskId: true, userId: true },
+          })
         : Promise.resolve([] as Array<{ taskId: string; userId: string }>),
     ]);
-    const crewOf = new Map(jobs.map((j) => [j.id, new Set([j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter((x): x is string => !!x))]));
-    const joinedOf = new Map(jobs.map((j) => {
-      const people = [...(crewOf.get(j.id) ?? [])];
-      return [j.id, [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id)] as const;
-    }));
+    const crewOf = new Map(
+      jobs.map((j) => [
+        j.id,
+        new Set(
+          [j.assignedToId, ...rows.filter((r) => r.taskId === j.id).map((r) => r.userId)].filter(
+            (x): x is string => !!x,
+          ),
+        ),
+      ]),
+    );
+    const joinedOf = new Map(
+      jobs.map((j) => {
+        const people = [...(crewOf.get(j.id) ?? [])];
+        return [
+          j.id,
+          [...crewPresence(timelines.get(j.id) ?? [], people)].filter(([, p]) => p.joined).map(([id]) => id),
+        ] as const;
+      }),
+    );
     const others = [...new Set([...joinedOf.values()].flat().filter((id) => id !== userId))];
     const onClock = new Set(
       others.length
-        ? (await this.prisma.timeEntry.findMany({ where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' }, select: { userId: true } })).map((e) => e.userId)
+        ? (
+            await this.prisma.timeEntry.findMany({
+              where: { organizationId, userId: { in: others }, status: 'CLOCKED_IN' },
+              select: { userId: true },
+            })
+          ).map((e) => e.userId)
         : [],
     );
     return { joinedOf, onClock };
@@ -92,6 +128,10 @@ export abstract class JobPauseBase {
   protected async crewCarriesOn(jobs: Candidate[], userId: string, organizationId: string): Promise<Set<string>> {
     if (!jobs.length) return new Set();
     const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
-    return new Set(jobs.filter((j) => !pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock })).map((j) => j.id));
+    return new Set(
+      jobs
+        .filter((j) => !pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }))
+        .map((j) => j.id),
+    );
   }
 }

@@ -16,6 +16,7 @@ export const TASK_SERVICE_FILES = [
   'workflow-resync.service.ts',
   'task-portal.service.ts',
   'task-query.service.ts',
+  'task-query.base.ts',
   'task-detail.service.ts',
   'task-status.service.ts',
   'task-status-gates.ts',

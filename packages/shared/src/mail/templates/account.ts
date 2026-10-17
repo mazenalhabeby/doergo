@@ -92,7 +92,13 @@ export function invitationEmail(
 
 export function geofenceAlertEmail(
   locale: Locale,
-  data: { userName: string; locationName: string; distance: number; allowedRadius: number; action: 'clock_in' | 'clock_out' },
+  data: {
+    userName: string;
+    locationName: string;
+    distance: number;
+    allowedRadius: number;
+    action: 'clock_in' | 'clock_out';
+  },
 ): RenderedEmail {
   const t = emailTranslator(locale);
   const action = data.action === 'clock_out' ? 'clock_out' : 'clock_in';

@@ -21,12 +21,18 @@ export class LoginDto {
   @PasswordField()
   password: string;
 
-  @ApiPropertyOptional({ example: false, description: 'Web only: keep signed in for 30 days (default: false = 24h). Ignored for mobile (90d).' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Web only: keep signed in for 30 days (default: false = 24h). Ignored for ' + 'mobile (90d).',
+  })
   @IsOptional()
   @IsBoolean()
   rememberMe?: boolean;
 
-  @ApiPropertyOptional({ enum: ['web', 'mobile'], description: 'Client platform. web → rememberMe (24h/30d); mobile/absent → 90d.' })
+  @ApiPropertyOptional({
+    enum: ['web', 'mobile'],
+    description: 'Client platform. web → rememberMe (24h/30d); mobile/absent → 90d.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(10)
@@ -41,7 +47,10 @@ export class RegisterDto {
   @EmailField()
   email: string;
 
-  @ApiProperty({ example: 'Password123', description: 'Password (min 8 chars, must include uppercase, lowercase, and number)' })
+  @ApiProperty({
+    example: 'Password123',
+    description: 'Password (min 8 chars, must include uppercase, lowercase, and number)',
+  })
   @StrongPasswordField()
   password: string;
 
@@ -112,7 +121,10 @@ export class ResetPasswordDto {
   @TokenField('Reset token')
   token: string;
 
-  @ApiProperty({ example: 'NewPassword123', description: 'New password (min 8 chars, must include uppercase, lowercase, and number)' })
+  @ApiProperty({
+    example: 'NewPassword123',
+    description: 'New password (min 8 chars, must include uppercase, lowercase, and number)',
+  })
   @StrongPasswordField()
   newPassword: string;
 }
@@ -125,7 +137,10 @@ export class ChangePasswordDto {
   @PasswordField()
   currentPassword: string;
 
-  @ApiProperty({ example: 'NewPassword123', description: 'New password (min 8 chars, must include uppercase, lowercase, and number)' })
+  @ApiProperty({
+    example: 'NewPassword123',
+    description: 'New password (min 8 chars, must include uppercase, lowercase, and number)',
+  })
   @StrongPasswordField()
   newPassword: string;
 }

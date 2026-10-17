@@ -51,7 +51,18 @@ export class MemberSpacesService extends SpaceServiceBase {
         ...notEndedWhere(),
       },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, presence: true, contactable: true } },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            position: true,
+            role: true,
+            presence: true,
+            contactable: true,
+          },
+        },
         space: { select: { id: true, name: true } },
       },
     });

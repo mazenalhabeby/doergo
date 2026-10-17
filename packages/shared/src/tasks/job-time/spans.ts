@@ -107,8 +107,10 @@ export function jobSpans(
     if (PERSONAL.has(e.kind)) continue;
     if (kind && !paused && e.t > since) spans.push({ start: since, end: e.t, kind });
     since = e.t;
-    if (e.kind === 'STATUS') { kind = kindOf(e.status ?? ''); paused = false; }
-    else paused = e.kind === 'PAUSED';
+    if (e.kind === 'STATUS') {
+      kind = kindOf(e.status ?? '');
+      paused = false;
+    } else paused = e.kind === 'PAUSED';
   }
   if (kind && !paused && end > since) spans.push({ start: since, end, kind });
   return spans;
@@ -116,7 +118,10 @@ export function jobSpans(
 
 /** When this person joined the job: their first move on it, or the office's move for them. */
 export function joinedJobAt(events: readonly WorkTimelineEvent[], workerId: string): number | null {
-  const first = sortedEvents(events).find((e) => e.kind !== 'LEFT' && e.kind !== 'SELF_RESUMED' && e.kind !== 'PAUSED' && (e.forUserId ?? e.userId) === workerId);
+  const first = sortedEvents(events).find(
+    (e) =>
+      e.kind !== 'LEFT' && e.kind !== 'SELF_RESUMED' && e.kind !== 'PAUSED' && (e.forUserId ?? e.userId) === workerId,
+  );
   return first ? first.t : null;
 }
 
@@ -131,7 +136,10 @@ export function jobWindows(events: readonly WorkTimelineEvent[], workerId: strin
   let since: number | null = null;
   for (const e of sortedEvents(events)) {
     if (e.kind === 'LEFT') {
-      if (e.userId === workerId && since != null) { out.push([since, e.t]); since = null; }
+      if (e.userId === workerId && since != null) {
+        out.push([since, e.t]);
+        since = null;
+      }
       continue;
     }
     // Pausing a job (a clock-out) or resuming one's own stop is not a way onto it.
@@ -152,7 +160,10 @@ export function selfBlockWindows(events: readonly WorkTimelineEvent[], workerId:
   for (const e of sortedEvents(events)) {
     if (e.userId !== workerId) continue;
     if (e.kind === 'SELF_BLOCKED' && since == null) since = e.t;
-    else if ((e.kind === 'SELF_RESUMED' || e.kind === 'LEFT') && since != null) { out.push([since, e.t]); since = null; }
+    else if ((e.kind === 'SELF_RESUMED' || e.kind === 'LEFT') && since != null) {
+      out.push([since, e.t]);
+      since = null;
+    }
   }
   if (since != null) out.push([since, Infinity]);
   return out;
@@ -199,13 +210,17 @@ export function workerJobTime(
   if (joinedAt == null) return out;
   const lo = Math.max(joinedAt, window.from ? window.from.getTime() : -Infinity);
   const hi = window.to ? window.to.getTime() : Infinity;
-  const clock = shifts?.map((s) => [toMs(s.start), s.end == null ? Infinity : toMs(s.end)] as [number, number])
+  const clock = shifts
+    ?.map((s) => [toMs(s.start), s.end == null ? Infinity : toMs(s.end)] as [number, number])
     .filter(([a, b]) => Number.isFinite(a) && b > a);
   for (const sp of spans) {
     const a = Math.max(sp.start, lo);
     const b = Math.min(sp.end, hi);
     if (b <= a) continue;
-    if (!clock) { out[sp.kind] += b - a; continue; }
+    if (!clock) {
+      out[sp.kind] += b - a;
+      continue;
+    }
     for (const [c, d] of clock) out[sp.kind] += Math.max(0, Math.min(b, d) - Math.max(a, c));
   }
   return {
@@ -225,7 +240,14 @@ export function workerJobTime(
  * Input: each job's spans and when the person joined it. Output: each job's
  * spans with the overlaps given away, already clipped to the join.
  */
-export function exclusiveSpans(jobs: ReadonlyArray<{ id: string; spans: readonly JobSpan[]; joinedAt?: number | null; windows?: ReadonlyArray<[number, number]> }>): Map<string, JobSpan[]> {
+export function exclusiveSpans(
+  jobs: ReadonlyArray<{
+    id: string;
+    spans: readonly JobSpan[];
+    joinedAt?: number | null;
+    windows?: ReadonlyArray<[number, number]>;
+  }>,
+): Map<string, JobSpan[]> {
   type Piece = JobSpan & { id: string; rank: number };
   const all: Piece[] = [];
   for (const j of jobs) {

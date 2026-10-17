@@ -20,11 +20,20 @@ interface PushTarget {
 // ── Texts shared by a push and the bell entry written beside it ──────────────
 // One definition each, so the two cannot drift into saying different things.
 
-export function shiftEscalationText(data: { userName: string; locationName: string; unscheduled?: boolean; hoursOpen?: number }): LocalizedText {
+export function shiftEscalationText(data: {
+  userName: string;
+  locationName: string;
+  unscheduled?: boolean;
+  hoursOpen?: number;
+}): LocalizedText {
   return data.unscheduled
     ? {
         title: msg('attendance.escalation.titleUnscheduled'),
-        body: msg('attendance.escalation.bodyUnscheduled', { name: data.userName, location: data.locationName, hours: data.hoursOpen ?? '?' }),
+        body: msg('attendance.escalation.bodyUnscheduled', {
+          name: data.userName,
+          location: data.locationName,
+          hours: data.hoursOpen ?? '?',
+        }),
       }
     : {
         title: msg('attendance.escalation.title'),
@@ -33,7 +42,10 @@ export function shiftEscalationText(data: { userName: string; locationName: stri
 }
 
 export function noShowEscalationText(userName: string): LocalizedText {
-  return { title: msg('attendance.noShowEscalation.title'), body: msg('attendance.noShowEscalation.body', { name: userName }) };
+  return {
+    title: msg('attendance.noShowEscalation.title'),
+    body: msg('attendance.noShowEscalation.body', { name: userName }),
+  };
 }
 
 export function overtimeRequestText(userName: string, locationName: string): LocalizedText {
@@ -43,7 +55,12 @@ export function overtimeRequestText(userName: string, locationName: string): Loc
   };
 }
 
-export function geofenceAlertText(data: { userName: string; locationName: string; distance: number; action: 'clock_in' | 'clock_out' }): LocalizedText {
+export function geofenceAlertText(data: {
+  userName: string;
+  locationName: string;
+  distance: number;
+  action: 'clock_in' | 'clock_out';
+}): LocalizedText {
   return {
     title: msg('attendance.geofence.title'),
     body: msg(data.action === 'clock_in' ? 'attendance.geofence.bodyIn' : 'attendance.geofence.bodyOut', {
@@ -71,13 +88,31 @@ export function pendingApprovalText(userName: string, flagReasons: string[]): Lo
   // readable, rather than a missing-key error on a manager's lock screen.
   const flags = reasons.length
     ? (locale: SupportedLocale) =>
-        [...new Set(reasons.map((r) => (KNOWN_FLAGS.has(r) ? render(locale, msg(`attendance.flag.${r}` as 'attendance.flag.OVERTIME')) : r.replace(/_/g, ' ').toLowerCase())))].join(', ')
+        [
+          ...new Set(
+            reasons.map((r) =>
+              KNOWN_FLAGS.has(r)
+                ? render(locale, msg(`attendance.flag.${r}` as 'attendance.flag.OVERTIME'))
+                : r.replace(/_/g, ' ').toLowerCase(),
+            ),
+          ),
+        ].join(', ')
     : msg('attendance.flag.needsReview');
   return { title: msg('attendance.approval.title'), body: msg('attendance.approval.body', { name: userName, flags }) };
 }
 
 const KNOWN_STATUSES = new Set([
-  'DRAFT', 'NEW', 'ASSIGNED', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS', 'BLOCKED', 'COMPLETED', 'CANCELED', 'CLOSED',
+  'DRAFT',
+  'NEW',
+  'ASSIGNED',
+  'ACCEPTED',
+  'EN_ROUTE',
+  'ARRIVED',
+  'IN_PROGRESS',
+  'BLOCKED',
+  'COMPLETED',
+  'CANCELED',
+  'CLOSED',
 ]);
 
 /**
@@ -85,7 +120,9 @@ const KNOWN_STATUSES = new Set([
  * was named by the organization, in its own language, and is shown as named.
  */
 export function taskStatus(status: string): Msg | string {
-  return KNOWN_STATUSES.has(status) ? msg(`taskStatus.${status}` as 'taskStatus.NEW') : String(status ?? '').replace(/_/g, ' ');
+  return KNOWN_STATUSES.has(status)
+    ? msg(`taskStatus.${status}` as 'taskStatus.NEW')
+    : String(status ?? '').replace(/_/g, ' ');
 }
 
 /**

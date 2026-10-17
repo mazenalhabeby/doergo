@@ -1,8 +1,31 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested,
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsISO8601,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
 } from 'class-validator';
-import { CALL_DIRECTIONS, EVENT_MAX_ATTENDEES, EVENT_TEXT_MAX, EVENT_TITLE_MAX, HOLIDAY_MAX_DAYS, HOLIDAY_NAME_MAX, MAX_REMINDERS, MEETING_MODES, PLACE_KINDS, ROOM_MAX } from '@hbcfield/shared';
+import {
+  CALL_DIRECTIONS,
+  EVENT_MAX_ATTENDEES,
+  EVENT_TEXT_MAX,
+  EVENT_TITLE_MAX,
+  HOLIDAY_MAX_DAYS,
+  HOLIDAY_NAME_MAX,
+  MAX_REMINDERS,
+  MEETING_MODES,
+  PLACE_KINDS,
+  ROOM_MAX,
+} from '@hbcfield/shared';
 import { CLIENT_ID } from '../../common/dto/upload.dto';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -12,7 +35,13 @@ const ID = /^[A-Za-z0-9_-]{1,64}$/;
 export class RepeatDto {
   @IsIn(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']) freq!: string;
   @IsOptional() @IsInt() @Min(1) @Max(52) interval?: number;
-  @IsOptional() @IsArray() @ArrayMaxSize(7) @IsInt({ each: true }) @Min(0, { each: true }) @Max(6, { each: true }) byDay?: number[];
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  byDay?: number[];
   @IsOptional() @Matches(DATE) until?: string | null;
   @IsOptional() @IsInt() @Min(1) @Max(500) count?: number | null;
 }
@@ -96,7 +125,13 @@ export class PeopleQueryDto {
 }
 
 export class PlaceSettingsDto {
-  @IsOptional() @IsArray() @ArrayMaxSize(7) @IsInt({ each: true }) @Min(0, { each: true }) @Max(6, { each: true }) weekendDays?: number[];
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  weekendDays?: number[];
   @IsOptional() @IsString() @MaxLength(2) holidayCountry?: string | null;
   @IsOptional() @IsString() @MaxLength(10) holidayRegion?: string | null;
 }
@@ -126,4 +161,3 @@ export class LeaveCountQueryDto {
   @Matches(DATE) from!: string;
   @Matches(DATE) to!: string;
 }
-

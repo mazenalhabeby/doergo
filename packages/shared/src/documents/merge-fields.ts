@@ -49,23 +49,47 @@ export const MERGE_FIELDS: MergeFieldDef[] = [
     on file. A template that actually uses it is refused by `renderTemplate`'s
     own unfilled check, which is the precise behaviour.
   */
-  { token: 'member.passportNumber', namespace: 'member', label: 'Passport / ID number', example: 'B0334448', required: false },
+  {
+    token: 'member.passportNumber',
+    namespace: 'member',
+    label: 'Passport / ID number',
+    example: 'B0334448',
+    required: false,
+  },
   { token: 'member.nationality', namespace: 'member', label: 'Nationality', example: 'ECU', required: false },
 
   // ── The employer ─────────────────────────────────────────────────────────
   { token: 'org.legalName', namespace: 'org', label: 'Company name', example: 'HBC Group GmbH', required: true },
-  { token: 'org.address', namespace: 'org', label: 'Company address', example: 'Arbeiterheimstraße 32, 4663 Laakirchen', required: true },
+  {
+    token: 'org.address',
+    namespace: 'org',
+    label: 'Company address',
+    example: 'Arbeiterheimstraße 32, 4663 Laakirchen',
+    required: true,
+  },
   { token: 'org.country', namespace: 'org', label: 'Country', example: 'AT', required: false },
   { token: 'org.email', namespace: 'org', label: 'Company email', example: 'office@hbc-group.eu', required: false },
   { token: 'org.phone', namespace: 'org', label: 'Company phone', example: '+43 7613 12345', required: false },
   // From the member's EMPLOYER company (Settings › Companies), else the main one.
   { token: 'org.vatId', namespace: 'org', label: 'Company VAT ID', example: 'ATU12345678', required: false },
   { token: 'org.taxId', namespace: 'org', label: 'Company tax ID', example: '12-3456789', required: false },
-  { token: 'org.registerNumber', namespace: 'org', label: 'Company register number', example: 'FN 123456a', required: false },
+  {
+    token: 'org.registerNumber',
+    namespace: 'org',
+    label: 'Company register number',
+    example: 'FN 123456a',
+    required: false,
+  },
 
   // ── Where they work ──────────────────────────────────────────────────────
   { token: 'space.name', namespace: 'space', label: 'Workspace', example: 'Laakirchen', required: false },
-  { token: 'space.address', namespace: 'space', label: 'Workspace address', example: 'Arbeiterheimstraße 32', required: false },
+  {
+    token: 'space.address',
+    namespace: 'space',
+    label: 'Workspace address',
+    example: 'Arbeiterheimstraße 32',
+    required: false,
+  },
 
   // ── The terms ────────────────────────────────────────────────────────────
   { token: 'contract.startDate', namespace: 'contract', label: 'Start date', example: '01.09.2026', required: true },
@@ -90,9 +114,27 @@ export const MERGE_FIELDS: MergeFieldDef[] = [
     somebody presents at a border.
   */
   { token: 'contract.endDate', namespace: 'contract', label: 'End date', example: '11.12.2026', required: false },
-  { token: 'contract.siteName', namespace: 'contract', label: 'Site / project', example: 'Binderholz Enfield LLC', required: false },
-  { token: 'contract.siteAddress', namespace: 'contract', label: 'Site address', example: '260 Piper Lane, Enfield, NC 27823', required: false },
-  { token: 'contract.rotation', namespace: 'contract', label: 'Rotation', example: 'three (3) months on assignment followed by two (2) weeks at home', required: false },
+  {
+    token: 'contract.siteName',
+    namespace: 'contract',
+    label: 'Site / project',
+    example: 'Binderholz Enfield LLC',
+    required: false,
+  },
+  {
+    token: 'contract.siteAddress',
+    namespace: 'contract',
+    label: 'Site address',
+    example: '260 Piper Lane, Enfield, NC 27823',
+    required: false,
+  },
+  {
+    token: 'contract.rotation',
+    namespace: 'contract',
+    label: 'Rotation',
+    example: 'three (3) months on assignment followed by two (2) weeks at home',
+    required: false,
+  },
 
   // ── Who signs it ─────────────────────────────────────────────────────────
   /*
@@ -172,9 +214,7 @@ export function renderTemplate(
  * Separate from `renderTemplate`'s `missing` on purpose: an optional token left
  * blank is fine and should render as nothing, while a required one is a refusal.
  */
-export function missingRequired(
-  values: Record<string, string | number | null | undefined>,
-): string[] {
+export function missingRequired(values: Record<string, string | number | null | undefined>): string[] {
   return MERGE_FIELDS.filter((f) => f.required)
     .filter((f) => {
       const v = values[f.token];

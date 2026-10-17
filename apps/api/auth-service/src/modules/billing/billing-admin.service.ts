@@ -37,7 +37,10 @@ export class BillingAdminService extends BillingBase {
    * the trial, exactly as setting a tier did.
    */
   async adminSetOrgAddOns(data: { organizationId: string; addOns: string[]; byUserId?: string }) {
-    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true },
+    });
     if (!org) {
       return { success: false, statusCode: HttpStatus.NOT_FOUND, message: 'Organization not found' };
     }
@@ -54,7 +57,9 @@ export class BillingAdminService extends BillingBase {
       },
       select: { id: true, name: true, addOns: true, subStatus: true },
     });
-    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) add-ons set to [${updated.addOns.join(', ')}] by ${data.byUserId ?? 'operator'}`);
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) add-ons set to [${updated.addOns.join(', ')}] by ${data.byUserId ?? 'operator'}`,
+    );
     return { success: true, data: updated };
   }
 }

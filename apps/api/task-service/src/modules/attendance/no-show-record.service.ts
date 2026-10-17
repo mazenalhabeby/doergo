@@ -25,8 +25,13 @@ import { NoShowRecordBase } from './no-show-record.base';
  */
 @Injectable()
 export class NoShowRecordService extends NoShowRecordBase {
-
-  async list(data: { organizationId: string; days?: number; spaceId?: string; scopeSpaceIds?: AttendanceScope; open?: boolean }) {
+  async list(data: {
+    organizationId: string;
+    days?: number;
+    spaceId?: string;
+    scopeSpaceIds?: AttendanceScope;
+    open?: boolean;
+  }) {
     const now = new Date();
     const since = new Date(now.getTime() - (data.days ?? 7) * DAY);
     const rows = await this.prisma.shiftInstance.findMany({
@@ -49,7 +54,10 @@ export class NoShowRecordService extends NoShowRecordBase {
         where: { id: { in: userIds } },
         select: { id: true, firstName: true, lastName: true, avatarUrl: true, lastActiveAt: true },
       }),
-      this.spaceRows(data.organizationId, rows.flatMap((r) => [r.spaceId, r.settledSpaceId])),
+      this.spaceRows(
+        data.organizationId,
+        rows.flatMap((r) => [r.spaceId, r.settledSpaceId]),
+      ),
       this.runsFor(openRows, now),
       this.monthFacts(openRows),
     ]);
@@ -76,7 +84,7 @@ export class NoShowRecordService extends NoShowRecordBase {
           excuseReason: r.excuseReason ?? null,
           closeReason: r.closeReason ?? null,
           closedAutomatically: r.closedAutomatically,
-          settledSpaceName: r.settledSpaceId ? spaces.get(r.settledSpaceId)?.name ?? null : null,
+          settledSpaceName: r.settledSpaceId ? (spaces.get(r.settledSpaceId)?.name ?? null) : null,
           ...(isOpenNoShow(r.state)
             ? {
                 lastActiveAt: u?.lastActiveAt ?? null,
@@ -84,7 +92,7 @@ export class NoShowRecordService extends NoShowRecordBase {
                 run: run && run.count > 1 ? { count: run.count, from: run.from, to: run.to } : null,
                 // The inbox shows one item per run: the newest.
                 runLatest: !run || run.latestId === r.id,
-                hint: run && run.count > 1 ? hints.get(run.latestId) ?? null : null,
+                hint: run && run.count > 1 ? (hints.get(run.latestId) ?? null) : null,
               }
             : {}),
         };
@@ -115,17 +123,31 @@ export class NoShowRecordService extends NoShowRecordBase {
     });
 
     if (data.action === 'reopen') {
-      if (inst.state !== 'EXCUSED' && inst.state !== 'ABSENT') throw new BadRequestException({ code: 'NO_SHOW_NOT_DECIDED', message: 'Only a decided no-show can be reopened.' });
+      if (inst.state !== 'EXCUSED' && inst.state !== 'ABSENT')
+        throw new BadRequestException({
+          code: 'NO_SHOW_NOT_DECIDED',
+          message: 'Only a decided no-show can be reopened.',
+        });
       // Back to waiting for a decision — never back to nudging the person about an old day.
       const updated = await this.prisma.shiftInstance.update({
         where: { id: inst.id },
-        data: { state: 'ESCALATED', nextRemindAt: null, excuseReason: null, excusedById: null, closeReason: null, closedAutomatically: false, decidedAt: null, settledSpaceId: null },
+        data: {
+          state: 'ESCALATED',
+          nextRemindAt: null,
+          excuseReason: null,
+          excusedById: null,
+          closeReason: null,
+          closedAutomatically: false,
+          decidedAt: null,
+          settledSpaceId: null,
+        },
       });
       return success(updated);
     }
 
-    if (!isOpenNoShow(inst.state)) throw new BadRequestException({ code: 'NO_SHOW_ALREADY_DECIDED', message: 'This no-show was already decided.' });
-    const ids = data.wholeRun ? (await this.runsFor([inst], new Date())).get(inst.id)?.ids ?? [inst.id] : [inst.id];
+    if (!isOpenNoShow(inst.state))
+      throw new BadRequestException({ code: 'NO_SHOW_ALREADY_DECIDED', message: 'This no-show was already decided.' });
+    const ids = data.wholeRun ? ((await this.runsFor([inst], new Date())).get(inst.id)?.ids ?? [inst.id]) : [inst.id];
     const now = new Date();
     const excuse = data.action === 'excuse';
     const res = await this.prisma.shiftInstance.updateMany({

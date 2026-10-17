@@ -41,7 +41,10 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
         status: TimeEntryStatus.CLOCKED_IN,
         OR: [
           { expectedClockOutAt: { lte: new Date(now.getTime() - OPEN_SHIFT_CLOSE.AFTER_SHIFT_END_HOURS * 3_600_000) } },
-          { expectedClockOutAt: null, clockInAt: { lte: new Date(now.getTime() - OPEN_SHIFT_CLOSE.UNPLANNED_AFTER_HOURS * 3_600_000) } },
+          {
+            expectedClockOutAt: null,
+            clockInAt: { lte: new Date(now.getTime() - OPEN_SHIFT_CLOSE.UNPLANNED_AFTER_HOURS * 3_600_000) },
+          },
         ],
       },
       orderBy: { clockInAt: 'asc' },
@@ -90,7 +93,11 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
     const dueIds = candidates
       .filter((c) => {
         const s = settings.get(c.id);
-        return !!s && !!c.expectedClockOutAt && now.getTime() - c.expectedClockOutAt.getTime() >= s.closeAfterMinutes * 60_000;
+        return (
+          !!s &&
+          !!c.expectedClockOutAt &&
+          now.getTime() - c.expectedClockOutAt.getTime() >= s.closeAfterMinutes * 60_000
+        );
       })
       .slice(0, OPEN_SHIFT_CLOSE.BATCH)
       .map((c) => c.id);
@@ -132,7 +139,11 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
     const presenceIds = candidates
       .filter((c) => {
         const s = settings.get(c.id);
-        return !!s && clocksByPresence(s, c) && now.getTime() >= presenceSessionEnd(c.clockInAt, s).getTime() + s.closeAfterMinutes * 60_000;
+        return (
+          !!s &&
+          clocksByPresence(s, c) &&
+          now.getTime() >= presenceSessionEnd(c.clockInAt, s).getTime() + s.closeAfterMinutes * 60_000
+        );
       })
       .slice(0, OPEN_SHIFT_CLOSE.BATCH)
       .map((c) => c.id);
@@ -152,7 +163,8 @@ export class ShiftCloseSweepService extends ShiftCloseBase {
         lastSeenAt: entry.lastSeenAt ?? null,
         presence: entry.presence ?? null,
       });
-      if (verdict.due && (await this.closeProvisionally(entry, now, { lastSeenOnSiteAt: verdict.lastSeenOnSiteAt }))) closed++;
+      if (verdict.due && (await this.closeProvisionally(entry, now, { lastSeenOnSiteAt: verdict.lastSeenOnSiteAt })))
+        closed++;
     }
     return closed;
   }

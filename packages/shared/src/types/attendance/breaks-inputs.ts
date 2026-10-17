@@ -75,7 +75,10 @@ export interface ClockInInput {
   lat: number;
   lng: number;
   accuracy?: number;
-  /** AUTO = made by the automatic clock (attendance/auto-clock.ts). The server re-checks it; not allowed → recorded as a manual clock-in. */
+  /**
+   * AUTO = made by the automatic clock (attendance/auto-clock.ts). The server re-checks it;
+   * not allowed → recorded as a manual clock-in.
+   */
   trigger?: 'MANUAL' | 'AUTO';
 }
 

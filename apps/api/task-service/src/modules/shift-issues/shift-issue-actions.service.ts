@@ -7,11 +7,18 @@ import { ShiftIssuesBase } from './shift-issues.base';
 /** Working an issue: a message, acknowledging it, giving it to somebody, changing its status. */
 @Injectable()
 export class ShiftIssueActionsService extends ShiftIssuesBase {
-
   // ── add a message to the thread ───────────────────────────────────────────────
-  async addMessage(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; body?: string; attachments?: Attachment[];
+  async addMessage(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+    body?: string;
+    attachments?: Attachment[];
     /** Made on the phone: a message sent twice is still one message. */
-    id?: string }) {
+    id?: string;
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     this.assertParticipant(issue, data.callerUserId, !!data.canManage, data.ledSpaceIds);
     const body = (data.body ?? '').trim();
@@ -24,52 +31,106 @@ export class ShiftIssueActionsService extends ShiftIssuesBase {
       isSame: (e) => e.issueId === issue.id && e.actorId === data.callerUserId,
       create: () =>
         this.prisma.shiftIssueEvent.create({
-          data: { ...(data.id ? { id: data.id } : {}), issueId: issue.id, type: 'MESSAGE', actorId: data.callerUserId, body: body.slice(0, BODY_MAX) || null, attachments: attachments as any },
+          data: {
+            ...(data.id ? { id: data.id } : {}),
+            issueId: issue.id,
+            type: 'MESSAGE',
+            actorId: data.callerUserId,
+            body: body.slice(0, BODY_MAX) || null,
+            attachments: attachments as any,
+          },
         }),
     });
     if (!created) {
-      return success({ ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) });
+      return success({
+        ...event,
+        attachments: await this.signAttachments(issue, event.attachments),
+        actorName: await this.nameOf(data.callerUserId),
+      });
     }
     await this.prisma.shiftIssue.update({ where: { id: issue.id }, data: { updatedAt: new Date() } });
     await this.broadcast(issue, data.callerUserId, event);
-    const signed = { ...event, attachments: await this.signAttachments(issue, event.attachments), actorName: await this.nameOf(data.callerUserId) };
+    const signed = {
+      ...event,
+      attachments: await this.signAttachments(issue, event.attachments),
+      actorName: await this.nameOf(data.callerUserId),
+    };
     return success(signed);
   }
 
   // ── acknowledge ──────────────────────────────────────────────────────────────
-  async acknowledge(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[] }) {
+  async acknowledge(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
-    if (!data.canManage && issue.assignedToId !== data.callerUserId) throw new ForbiddenException('Only the responsible can acknowledge');
+    if (!data.canManage && issue.assignedToId !== data.callerUserId)
+      throw new ForbiddenException('Only the responsible can acknowledge');
     const updated = await this.prisma.shiftIssue.update({
       where: { id: issue.id },
-      data: { status: issue.status === 'OPEN' ? 'ACKNOWLEDGED' : issue.status, acknowledgedById: issue.acknowledgedById ?? data.callerUserId, acknowledgedAt: issue.acknowledgedAt ?? new Date() },
+      data: {
+        status: issue.status === 'OPEN' ? 'ACKNOWLEDGED' : issue.status,
+        acknowledgedById: issue.acknowledgedById ?? data.callerUserId,
+        acknowledgedAt: issue.acknowledgedAt ?? new Date(),
+      },
     });
-    const event = await this.prisma.shiftIssueEvent.create({ data: { issueId: issue.id, type: 'ACKNOWLEDGED', actorId: data.callerUserId } });
+    const event = await this.prisma.shiftIssueEvent.create({
+      data: { issueId: issue.id, type: 'ACKNOWLEDGED', actorId: data.callerUserId },
+    });
     await this.broadcast(updated, data.callerUserId, event);
     return success(updated);
   }
 
   // ── assign / dispatch someone ─────────────────────────────────────────────────
-  async assign(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; assignToId: string }) {
+  async assign(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+    assignToId: string;
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     if (!data.canManage) throw new ForbiddenException('Only the responsible can dispatch');
-    const assignee = await this.prisma.user.findFirst({ where: { id: data.assignToId, organizationId: data.organizationId }, select: { id: true, firstName: true, lastName: true } });
+    const assignee = await this.prisma.user.findFirst({
+      where: { id: data.assignToId, organizationId: data.organizationId },
+      select: { id: true, firstName: true, lastName: true },
+    });
     if (!assignee) throw new BadRequestException('Assignee not found');
     const assignedToName = personName(assignee);
 
     const updated = await this.prisma.shiftIssue.update({
       where: { id: issue.id },
-      data: { assignedToId: assignee.id, status: issue.status === 'OPEN' || issue.status === 'ACKNOWLEDGED' ? 'IN_PROGRESS' : issue.status },
+      data: {
+        assignedToId: assignee.id,
+        status: issue.status === 'OPEN' || issue.status === 'ACKNOWLEDGED' ? 'IN_PROGRESS' : issue.status,
+      },
     });
     const event = await this.prisma.shiftIssueEvent.create({
-      data: { issueId: issue.id, type: 'ASSIGNED', actorId: data.callerUserId, metadata: { assignedToId: assignee.id, assignedToName } as any },
+      data: {
+        issueId: issue.id,
+        type: 'ASSIGNED',
+        actorId: data.callerUserId,
+        metadata: { assignedToId: assignee.id, assignedToName } as any,
+      },
     });
     await this.broadcast(updated, data.callerUserId, event, [assignee.id]);
     return success({ ...updated, assigneeName: assignedToName });
   }
 
   // ── status change / resolve ───────────────────────────────────────────────────
-  async setStatus(data: { organizationId: string; issueId: string; callerUserId: string; canManage?: boolean; ledSpaceIds?: string[]; status: string; note?: string }) {
+  async setStatus(data: {
+    organizationId: string;
+    issueId: string;
+    callerUserId: string;
+    canManage?: boolean;
+    ledSpaceIds?: string[];
+    status: string;
+    note?: string;
+  }) {
     const issue = await this.loadIssue(data.issueId, data.organizationId);
     // Reporter can only cancel their own; managers/assignee can drive the rest.
     const isAssignee = issue.assignedToId === data.callerUserId;

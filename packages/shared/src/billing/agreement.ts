@@ -126,7 +126,10 @@ export function validateAgreedPrice(input: {
   }
   if (cents < 0) return { ok: false, message: 'The agreed price cannot be negative.' };
   if (cents > AGREED_PRICE_MAX_CENTS) {
-    return { ok: false, message: `That is over €${(AGREED_PRICE_MAX_CENTS / 100).toLocaleString()} a month — check the amount is in euros, not cents.` };
+    return {
+      ok: false,
+      message: `That is over €${(AGREED_PRICE_MAX_CENTS / 100).toLocaleString()} a month — check the amount is in euros, not cents.`,
+    };
   }
 
   let until: Date | null = null;
@@ -198,9 +201,10 @@ export function agreementEndsWithin(
  * because they are what the organization is getting — and a billing page that
  * deleted them to show one number would read as though the product had shrunk.
  */
-export function applyAgreement<
-  T extends { monthlyCents: number; listMonthlyCents: number; agreement?: unknown },
->(bill: T, agreement: PriceAgreement | null | undefined): T {
+export function applyAgreement<T extends { monthlyCents: number; listMonthlyCents: number; agreement?: unknown }>(
+  bill: T,
+  agreement: PriceAgreement | null | undefined,
+): T {
   if (!agreementApplies(agreement)) return bill;
   const a = agreement!;
   return {

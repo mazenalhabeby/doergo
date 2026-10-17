@@ -22,7 +22,6 @@ export abstract class SessionTokensBase {
     protected readonly auditLog: AuditLogService,
   ) {}
 
-
   /**
    * Every feature module switched on in a workspace this member can see.
    *
@@ -82,7 +81,16 @@ export abstract class SessionTokensBase {
     }
   }
 
-  async generateTokens(userId: string, email: string, role: string, organizationId?: string | null, deviceInfo?: { userAgent?: string; ipAddress?: string }, canViewAllTasks = false, refreshTtl?: string, plat?: string) {
+  async generateTokens(
+    userId: string,
+    email: string,
+    role: string,
+    organizationId?: string | null,
+    deviceInfo?: { userAgent?: string; ipAddress?: string },
+    canViewAllTasks = false,
+    refreshTtl?: string,
+    plat?: string,
+  ) {
     // organizationId is embedded so downstream services (e.g. the Socket.IO
     // gateway) can scope rooms from the verified token instead of trusting a
     // client-supplied org id.
@@ -103,7 +111,8 @@ export abstract class SessionTokensBase {
     const accessExpiration = this.configService.get('JWT_ACCESS_EXPIRATION') || '15m';
     // Typed loose (like accessExpiration, which is any from configService) so the
     // jsonwebtoken `expiresIn` StringValue overload accepts it.
-    const refreshExpiration: any = refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || DEFAULT_REFRESH_TOKEN_TTL;
+    const refreshExpiration: any =
+      refreshTtl || this.configService.get('JWT_REFRESH_EXPIRATION') || DEFAULT_REFRESH_TOKEN_TTL;
 
     this.logger.log(`Generating tokens with refreshExpiration=${refreshExpiration}`);
 

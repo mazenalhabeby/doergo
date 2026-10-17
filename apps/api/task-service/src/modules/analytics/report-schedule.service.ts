@@ -1,6 +1,11 @@
 import {
-  Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject,
-  NotFoundException, BadRequestException,
+  Injectable,
+  Logger,
+  OnModuleInit,
+  OnModuleDestroy,
+  Inject,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -55,20 +60,32 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Next UTC run time for a cadence, strictly after `from`. */
-  computeNextRun(cadence: Cadence, hour: number, dayOfWeek: number | null | undefined, dayOfMonth: number | null | undefined, from = new Date()): Date {
+  computeNextRun(
+    cadence: Cadence,
+    hour: number,
+    dayOfWeek: number | null | undefined,
+    dayOfMonth: number | null | undefined,
+    from = new Date(),
+  ): Date {
     const h = Math.min(Math.max(hour ?? 7, 0), 23);
     const d = new Date(from);
     d.setUTCHours(h, 0, 0, 0);
     if (cadence === 'daily') {
       if (d <= from) d.setUTCDate(d.getUTCDate() + 1);
     } else if (cadence === 'weekly') {
-      const target = ((dayOfWeek ?? 1) % 7 + 7) % 7;
+      const target = (((dayOfWeek ?? 1) % 7) + 7) % 7;
       let guard = 0;
-      while ((d.getUTCDay() !== target || d <= from) && guard < 8) { d.setUTCDate(d.getUTCDate() + 1); guard++; }
+      while ((d.getUTCDay() !== target || d <= from) && guard < 8) {
+        d.setUTCDate(d.getUTCDate() + 1);
+        guard++;
+      }
     } else {
       const dom = Math.min(Math.max(dayOfMonth ?? 1, 1), 28);
       d.setUTCDate(dom);
-      if (d <= from) { d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(dom); }
+      if (d <= from) {
+        d.setUTCMonth(d.getUTCMonth() + 1);
+        d.setUTCDate(dom);
+      }
     }
     return d;
   }
@@ -133,7 +150,10 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
       const { subject, html } = scheduledReportEmail(locale, {
         reportName: schedule.reportDefinition.name,
         generatedAt,
-        columns: data.columns.map((c) => ({ label: reportLabel(locale, c.labelKey, c.label), align: c.kind === 'measure' ? 'right' : 'left' })),
+        columns: data.columns.map((c) => ({
+          label: reportLabel(locale, c.labelKey, c.label),
+          align: c.kind === 'measure' ? 'right' : 'left',
+        })),
         rows: data.rows.slice(0, 200).map((r) => data.columns.map((c) => this.fmt(r[c.key], c.format, locale))),
       });
       this.notificationClient.emit('report_email', { recipients: group, subject, html });
@@ -143,7 +163,8 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   private fmt(v: unknown, format: string | undefined, locale: SupportedLocale): string {
     if (v == null) return '—';
     if (format === 'hours') return formatHours(Number(v));
-    if (format === 'currency') return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(Number(v));
+    if (format === 'currency')
+      return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(Number(v));
     if (format === 'percent') return `${formatNumberFor(locale, Number(v), 2)}%`;
     if (format === 'number') return formatNumberFor(locale, Number(v), 2);
     const s = String(v);
@@ -160,16 +181,21 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
     const r = normalizeRecipients(raw);
     if (r.ok) return r.recipients;
     const message =
-      r.code === 'RECIPIENTS_REQUIRED' ? 'At least one recipient is required'
-      : r.code === 'RECIPIENTS_TOO_MANY' ? 'Too many recipients (at most 20)'
-      : `Not a valid email address: ${r.invalid}`;
+      r.code === 'RECIPIENTS_REQUIRED'
+        ? 'At least one recipient is required'
+        : r.code === 'RECIPIENTS_TOO_MANY'
+          ? 'Too many recipients (at most 20)'
+          : `Not a valid email address: ${r.invalid}`;
     throw new BadRequestException({ message, code: r.code });
   }
 
   // ── CRUD ────────────────────────────────────────────────────────────────────
   async list(data: { organizationId: string; reportDefinitionId?: string }) {
     const items = await this.prisma.reportSchedule.findMany({
-      where: { organizationId: data.organizationId, ...(data.reportDefinitionId ? { reportDefinitionId: data.reportDefinitionId } : {}) },
+      where: {
+        organizationId: data.organizationId,
+        ...(data.reportDefinitionId ? { reportDefinitionId: data.reportDefinitionId } : {}),
+      },
       orderBy: { createdAt: 'desc' },
     });
     return { data: items };
@@ -178,7 +204,11 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   async create(data: { organizationId: string; userId: string; reportDefinitionId: string } & ScheduleInput) {
     // Only a report the caller can see: shared, or their own private one.
     const report = await this.prisma.reportDefinition.findFirst({
-      where: { id: data.reportDefinitionId, organizationId: data.organizationId, OR: [{ isShared: true }, { createdById: data.userId }] },
+      where: {
+        id: data.reportDefinitionId,
+        organizationId: data.organizationId,
+        OR: [{ isShared: true }, { createdById: data.userId }],
+      },
       select: { id: true },
     });
     if (!report) throw new NotFoundException('Report not found');
@@ -203,7 +233,9 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   }
 
   async update(data: { id: string; organizationId: string } & Partial<ScheduleInput>) {
-    const existing = await this.prisma.reportSchedule.findFirst({ where: { id: data.id, organizationId: data.organizationId } });
+    const existing = await this.prisma.reportSchedule.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+    });
     if (!existing) throw new NotFoundException('Schedule not found');
     const patch: Record<string, unknown> = {};
     if (data.cadence !== undefined) {
@@ -229,7 +261,10 @@ export class ReportScheduleService implements OnModuleInit, OnModuleDestroy {
   }
 
   async remove(data: { id: string; organizationId: string }) {
-    const existing = await this.prisma.reportSchedule.findFirst({ where: { id: data.id, organizationId: data.organizationId }, select: { id: true } });
+    const existing = await this.prisma.reportSchedule.findFirst({
+      where: { id: data.id, organizationId: data.organizationId },
+      select: { id: true },
+    });
     if (!existing) throw new NotFoundException('Schedule not found');
     await this.prisma.reportSchedule.delete({ where: { id: data.id } });
     return { success: true };

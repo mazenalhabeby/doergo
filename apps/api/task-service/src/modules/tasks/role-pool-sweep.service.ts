@@ -11,7 +11,9 @@ export class RolePoolSweepService extends RolePoolBase {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async sweepCron(): Promise<void> {
-    await runWithCronLock(this.prisma, { name: 'task:roleOffers', ttlSeconds: 55, logger: this.logger }, () => this.sweep());
+    await runWithCronLock(this.prisma, { name: 'task:roleOffers', ttlSeconds: 55, logger: this.logger }, () =>
+      this.sweep(),
+    );
   }
 
   /**
@@ -23,7 +25,13 @@ export class RolePoolSweepService extends RolePoolBase {
     const open = await this.prisma.task.findMany({
       where: { openRoleId: { not: null }, openSpotsLeft: { gt: 0 }, openWave: { lt: 2 }, status: { notIn: OVER } },
       select: {
-        id: true, status: true, priority: true, openedAt: true, openWave: true, openRoleId: true, openSpotsLeft: true,
+        id: true,
+        status: true,
+        priority: true,
+        openedAt: true,
+        openWave: true,
+        openRoleId: true,
+        openSpotsLeft: true,
         space: { select: { roleOfferWidenMin: true, roleOfferAlertMin: true } },
       },
       orderBy: { openedAt: 'asc' },
@@ -33,12 +41,18 @@ export class RolePoolSweepService extends RolePoolBase {
     for (const t of open) {
       if (!t.openedAt || !isOpenToRole(t)) {
         // Finished by a name the query cannot know ("DONE"…): out of the queue, so it never blocks the oldest-first window.
-        await this.prisma.task.updateMany({ where: { id: t.id, openWave: t.openWave }, data: { openWave: ROLE_WAVE_CLOSED, openSpotsLeft: 0 } });
+        await this.prisma.task.updateMany({
+          where: { id: t.id, openWave: t.openWave },
+          data: { openWave: ROLE_WAVE_CLOSED, openSpotsLeft: 0 },
+        });
         continue;
       }
       const due = dueWave({ openedAt: t.openedAt, priority: t.priority }, now, roleOfferTimings(t.space));
       if (due <= t.openWave) continue;
-      const claimed = await this.prisma.task.updateMany({ where: { id: t.id, openWave: t.openWave }, data: { openWave: due } });
+      const claimed = await this.prisma.task.updateMany({
+        where: { id: t.id, openWave: t.openWave },
+        data: { openWave: due },
+      });
       if (claimed.count === 0) continue;
       moved++;
       try {
@@ -56,14 +70,29 @@ export class RolePoolSweepService extends RolePoolBase {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       select: {
-        id: true, title: true, organizationId: true, spaceId: true, createdById: true, openedAt: true,
-        openRoleId: true, openSpotsLeft: true, status: true, locationLat: true, locationLng: true,
+        id: true,
+        title: true,
+        organizationId: true,
+        spaceId: true,
+        createdById: true,
+        openedAt: true,
+        openRoleId: true,
+        openSpotsLeft: true,
+        status: true,
+        locationLat: true,
+        locationLng: true,
         openRole: { select: { name: true } },
       },
     });
     if (!task || !task.spaceId || !isOpenToRole(task)) return;
-    const ranked = await this.candidates(task.organizationId, task.spaceId, task.openRoleId!, { lat: task.locationLat, lng: task.locationLng });
-    const best = ranked.filter((c) => c.state === 'FREE' || c.state === 'BUSY').slice(0, 3).map((c) => c.name);
+    const ranked = await this.candidates(task.organizationId, task.spaceId, task.openRoleId!, {
+      lat: task.locationLat,
+      lng: task.locationLng,
+    });
+    const best = ranked
+      .filter((c) => c.state === 'FREE' || c.state === 'BUSY')
+      .slice(0, 3)
+      .map((c) => c.name);
     this.notifications.emit('role_task_unclaimed', {
       task: { id: task.id, title: task.title, organizationId: task.organizationId },
       roleName: task.openRole?.name ?? '',

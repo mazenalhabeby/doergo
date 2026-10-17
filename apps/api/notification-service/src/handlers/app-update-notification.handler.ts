@@ -21,26 +21,38 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
     lazyConnect: true,
   });
 
-  constructor(private readonly prisma: PrismaService, private readonly push: PushService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly push: PushService,
+  ) {}
 
-  onModuleDestroy() { this.redis.disconnect(); }
+  onModuleDestroy() {
+    this.redis.disconnect();
+  }
 
   @MessagePattern({ cmd: 'app_update_notice' })
   async notify(@Payload() data: { version: string; dryRun?: boolean }) {
     const version = String(data?.version ?? '').trim();
-    if (!/^\d+\.\d+\.\d+$/.test(version)) return { success: false, statusCode: 400, message: 'A version like 1.0.7 is required' };
+    if (!/^\d+\.\d+\.\d+$/.test(version))
+      return { success: false, statusCode: 400, message: 'A version like 1.0.7 is required' };
     const key = `app-update-notice:${version}`;
 
     const users = await this.prisma.user.findMany({
       where: { isActive: true, lastAppVersion: { not: null } },
       select: {
-        id: true, firstName: true, lastName: true, lastAppVersion: true, lastAppPlatform: true,
+        id: true,
+        firstName: true,
+        lastName: true,
+        lastAppVersion: true,
+        lastAppPlatform: true,
         organization: { select: { name: true, suspendedAt: true } },
         _count: { select: { pushTokens: true } },
       },
     });
     const told = new Set(await this.redis.smembers(key).catch(() => [] as string[]));
-    const older = users.filter((u) => u.lastAppVersion && compareAppVersions(u.lastAppVersion, version) < 0 && !u.organization?.suspendedAt);
+    const older = users.filter(
+      (u) => u.lastAppVersion && compareAppVersions(u.lastAppVersion, version) < 0 && !u.organization?.suspendedAt,
+    );
     const due = older.filter((u) => !told.has(u.id) && u._count.pushTokens > 0);
     const list = (xs: typeof older) =>
       xs.map((u) => ({
@@ -52,8 +64,11 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
 
     if (data.dryRun !== false) {
       return {
-        success: true, dryRun: true, version,
-        olderApps: older.length, wouldNotify: list(due),
+        success: true,
+        dryRun: true,
+        version,
+        olderApps: older.length,
+        wouldNotify: list(due),
         alreadyTold: older.filter((u) => told.has(u.id)).length,
         noNotifications: list(older.filter((u) => u._count.pushTokens === 0)),
       };
@@ -65,7 +80,11 @@ export class AppUpdateNotificationHandler implements OnModuleDestroy {
       { type: 'app_update', version },
     );
     const reached = result.reached ?? [];
-    if (reached.length) await this.redis.sadd(key, ...reached).then(() => this.redis.expire(key, 180 * 86400)).catch((e) => this.logger.warn(`Could not record who was told: ${e.message}`));
+    if (reached.length)
+      await this.redis
+        .sadd(key, ...reached)
+        .then(() => this.redis.expire(key, 180 * 86400))
+        .catch((e) => this.logger.warn(`Could not record who was told: ${e.message}`));
     this.logger.log(`[APP_UPDATE] ${version}: ${result.sent} sent, ${result.failed} failed, ${reached.length} people`);
     return { success: true, dryRun: false, version, sent: result.sent, failed: result.failed, people: reached.length };
   }

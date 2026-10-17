@@ -19,7 +19,6 @@ export abstract class WorklogBase {
     protected readonly media: MediaSigner,
   ) {}
 
-
   // ── Ownership ──────────────────────────────────────────────────────────────
 
   /**
@@ -53,7 +52,13 @@ export abstract class WorklogBase {
     return te;
   }
 
-  protected async sessionForNote(noteId: string, organizationId: string, callerUserId: string, canManage: boolean, manageSpaceIds?: string[]) {
+  protected async sessionForNote(
+    noteId: string,
+    organizationId: string,
+    callerUserId: string,
+    canManage: boolean,
+    manageSpaceIds?: string[],
+  ) {
     const note = await this.prisma.timeEntryNote.findFirst({
       where: { id: noteId, organizationId },
       select: { id: true, timeEntryId: true },

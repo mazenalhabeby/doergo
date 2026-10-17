@@ -23,13 +23,25 @@ export abstract class DocumentRoutingBase {
   protected noSignerMessage(role: DocumentSignerRole, order: number): string {
     switch (role) {
       case 'RESPONSIBLE':
-        return `Step ${order} needs the person who signs off for this member, and nobody is set. Choose one under “Signs off for …” on their space membership.`;
+        return (
+          `Step ${order} needs the person who signs off for this member, and nobody ` +
+          `is set. Choose one under “Signs off for …” on their space membership.`
+        );
       case 'ORG_REPRESENTATIVE':
-        return `Step ${order} needs somebody signing for the organisation, and nobody in it can. Give a member the right to manage people, or remove the step from this document type.`;
+        return (
+          `Step ${order} needs somebody signing for the organisation, and nobody in it can. Give ` +
+          `a member the right to manage people, or remove the step from this document type.`
+        );
       case 'SITE_SUPERVISOR':
-        return `Step ${order} needs the client's supervisor on a space this member works in, and none is assigned. Invite their supervisor as an external member of that space, or remove the step from this document type.`;
+        return (
+          `Step ${order} needs the client's supervisor on a space this member works in, and none is assigned. ` +
+          `Invite their supervisor as an external member of that space, or remove the step from this document type.`
+        );
       case 'CUSTOMER':
-        return `Step ${order} needs the client of a space this member works in, and there is none. Add the client to the space, or remove the step from this document type.`;
+        return (
+          `Step ${order} needs the client of a space this member works in, and there is ` +
+          `none. Add the client to the space, or remove the step from this document type.`
+        );
       default:
         return `Step ${order} of this document has no possible signer.`;
     }
@@ -198,12 +210,17 @@ export abstract class DocumentRoutingBase {
     const spaces = await this.prisma.spaceAssignment.findMany({
       where: { userId: memberId, organizationId },
       select: {
-        space: { select: { id: true, name: true, kind: true, contactName: true, contactEmail: true, enabledModules: true } },
+        space: {
+          select: { id: true, name: true, kind: true, contactName: true, contactEmail: true, enabledModules: true },
+        },
       },
     });
     if (spaces.length === 0) return [];
 
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { enabledModules: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { enabledModules: true },
+    });
 
     const out: SignerCandidate[] = [];
     const crmSpaceIds: string[] = [];

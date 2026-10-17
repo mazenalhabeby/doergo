@@ -96,13 +96,23 @@ export class SpaceRolesController {
   }
 
   @MessagePattern({ cmd: 'remove_space_member' })
-  removeMember(@Payload() data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null }) {
+  removeMember(
+    @Payload() data: { organizationId: string; spaceId: string; memberId: string; outrankPerms?: PermissionSet | null },
+  ) {
     return this.memberRoles.removeMember(data);
   }
 
   // ── One person's permissions here (the builder) ──
   @MessagePattern({ cmd: 'get_space_member_permissions' })
-  getMemberPermissions(@Payload() data: { organizationId: string; spaceId: string; assignmentId: string; requesterPerms?: PermissionSet | null }) {
+  getMemberPermissions(
+    @Payload()
+    data: {
+      organizationId: string;
+      spaceId: string;
+      assignmentId: string;
+      requesterPerms?: PermissionSet | null;
+    },
+  ) {
     return this.memberRoles.getMemberPermissions(data);
   }
 

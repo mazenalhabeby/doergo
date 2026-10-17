@@ -55,13 +55,23 @@ export class SiteTimeService {
       userId: string;
       hoursBasis?: string | null;
       workRole: { id: string; name: string; kind: string } | null;
-      user: { id: string; firstName: string | null; lastName: string | null; isExternal: boolean; billRateCents: number | null; costRateCents: number | null } | null;
+      user: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        isExternal: boolean;
+        billRateCents: number | null;
+        costRateCents: number | null;
+      } | null;
     }>;
     /** People who finished jobs here, by name — billed by the hour if they hold no assignment. */
     jobWorkers: Map<string, string>;
     billByOf: (userId: string) => BillByValue;
     book: Awaited<ReturnType<typeof loadRateBook>>;
-    ratesFor: (worker: { id?: string; billRateCents?: number | null; costRateCents?: number | null } | null, day: string) => { billRateCents: number | null; costRateCents: number | null };
+    ratesFor: (
+      worker: { id?: string; billRateCents?: number | null; costRateCents?: number | null } | null,
+      day: string,
+    ) => { billRateCents: number | null; costRateCents: number | null };
     billedTasks: Set<string>;
   }): Promise<{ hourEntries: HoursEntry[]; dayEntries: DayEntry[]; workDays: string[] }> {
     const { organizationId, spaceId, tz, assignments, billByOf, book, ratesFor } = args;
@@ -166,7 +176,13 @@ export class SiteTimeService {
     } as const;
     const key = (d: Date | null) => (d ? toISODateString(d) : null);
     const alreadyBilled = (userId: string, kind: 'HOURS' | 'DAYS', d: string) =>
-      billedRuns.some((r) => r.workerId === userId && r.lineKind === kind && key(r.dayFrom)! <= d && d <= (key(r.dayTo) ?? key(r.dayFrom))!);
+      billedRuns.some(
+        (r) =>
+          r.workerId === userId &&
+          r.lineKind === kind &&
+          key(r.dayFrom)! <= d &&
+          d <= (key(r.dayTo) ?? key(r.dayFrom))!,
+      );
     const inPeriod = (d: string) => (!fromDay || d >= fromDay) && (!toDay || d <= toDay);
 
     const hourEntries: HoursEntry[] = [];

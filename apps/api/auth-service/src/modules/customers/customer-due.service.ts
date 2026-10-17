@@ -28,12 +28,30 @@ export class CustomerDueService extends CustomersServiceBase {
    * and the server does not know which timezone they are standing in. Bounded
    * so a caller cannot widen the window into a full dump.
    */
-  async due(data: { organizationId: string; caller?: CrmCaller; crmOn?: boolean; dayStart?: string; dayEnd?: string; limit?: number }) {
+  async due(data: {
+    organizationId: string;
+    caller?: CrmCaller;
+    crmOn?: boolean;
+    dayStart?: string;
+    dayEnd?: string;
+    limit?: number;
+  }) {
     const me = data.caller?.userId;
     const counts = { call: 0, email: 0, other: 0, overdue: 0 };
     // `crmOn === false` only: an older gateway sends nothing and keeps today's answer.
-    const reach = data.crmOn === false ? crmReachOrgOnly(NO_CRM_CAPS) : await this.crmReachFor(data.caller, data.organizationId);
-    if (!crmCapsAnywhere(reach).canAccess || !me) return { data: { allowed: false, items: [], total: 0, counts, cold: { count: 0, days: CRM_COLD_DAYS, longest: null }, book: 0 } };
+    const reach =
+      data.crmOn === false ? crmReachOrgOnly(NO_CRM_CAPS) : await this.crmReachFor(data.caller, data.organizationId);
+    if (!crmCapsAnywhere(reach).canAccess || !me)
+      return {
+        data: {
+          allowed: false,
+          items: [],
+          total: 0,
+          counts,
+          cold: { count: 0, days: CRM_COLD_DAYS, longest: null },
+          book: 0,
+        },
+      };
 
     const now = Date.now();
     const DAY = 86_400_000;
@@ -61,26 +79,29 @@ export class CustomerDueService extends CustomersServiceBase {
     const limit = Number.isFinite(asked) ? Math.min(Math.max(Math.floor(asked), 1), 20) : 5;
 
     const book: Record<string, unknown> = {
-      organizationId: data.organizationId, isActive: true, isContact: false, isPortalResident: false,
+      organizationId: data.organizationId,
+      isActive: true,
+      isContact: false,
+      isPortalResident: false,
       // The book the member can reach — org-wide, and the workspaces they hold CRM in.
       ...this.reachableWhere(reach, data.caller),
     };
 
     const dueWhere = {
-        organizationId: data.organizationId,
-        type: 'REMINDER',
-        doneAt: null,
-        dueAt: { lt: dayEnd },
-        AND: [
-          { customer: book },
-          {
-            OR: [
-              { reminderAssigneeId: me },
-              { reminderAssigneeId: null, customer: ownedBy(me) },
-              { reminderAssigneeId: null, authorId: me, customer: { ownerId: null, managerIds: { isEmpty: true } } },
-            ],
-          },
-        ],
+      organizationId: data.organizationId,
+      type: 'REMINDER',
+      doneAt: null,
+      dueAt: { lt: dayEnd },
+      AND: [
+        { customer: book },
+        {
+          OR: [
+            { reminderAssigneeId: me },
+            { reminderAssigneeId: null, customer: ownedBy(me) },
+            { reminderAssigneeId: null, authorId: me, customer: { ownerId: null, managerIds: { isEmpty: true } } },
+          ],
+        },
+      ],
     } as never as Record<string, unknown>;
     const rows = await this.prisma.customerActivity.findMany({
       where: dueWhere as never,
@@ -88,7 +109,12 @@ export class CustomerDueService extends CustomersServiceBase {
       // Bounded: the card shows a handful and counts the rest (see the total below).
       take: DUE_ROWS,
       select: {
-        id: true, customerId: true, body: true, dueAt: true, reminderKind: true, reminderAssigneeId: true,
+        id: true,
+        customerId: true,
+        body: true,
+        dueAt: true,
+        reminderKind: true,
+        reminderAssigneeId: true,
         customer: { select: { name: true, type: true, phone: true, email: true, ownerId: true, managerIds: true } },
       },
     });
@@ -111,8 +137,8 @@ export class CustomerDueService extends CustomersServiceBase {
         dueAt: r.dueAt,
         // Everybody who manages this client has this row; one call clears all of them.
         shared: !r.reminderAssigneeId && managers.size > 1 ? managers.size : 0,
-        phone: kind === 'CALL' ? r.customer.phone ?? null : null,
-        email: kind === 'EMAIL' ? r.customer.email ?? null : null,
+        phone: kind === 'CALL' ? (r.customer.phone ?? null) : null,
+        email: kind === 'EMAIL' ? (r.customer.email ?? null) : null,
       };
     });
 
@@ -167,7 +193,11 @@ export class CustomerDueService extends CustomersServiceBase {
     let dueTotal = items.length;
     if (rows.length === DUE_ROWS) {
       const [byKind, overdue] = await Promise.all([
-        this.prisma.customerActivity.groupBy({ by: ['reminderKind'], where: dueWhere as never, _count: { _all: true } }),
+        this.prisma.customerActivity.groupBy({
+          by: ['reminderKind'],
+          where: dueWhere as never,
+          _count: { _all: true },
+        }),
         this.prisma.customerActivity.count({ where: { ...dueWhere, dueAt: { lt: dayStart } } as never }),
       ]);
       counts.call = counts.email = counts.other = 0;

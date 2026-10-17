@@ -62,7 +62,12 @@ export abstract class ExtraTimeBase {
       // Scoped as well as checked below: `userCanApproveOvertime` already tests
       // this entry's own space, and the two agreeing is the point — the guard
       // now admits a space-scoped caller, so nothing here may assume org-wide.
-      where: { id: data.entryId, organizationId: data.organizationId, ...scopeWhere(data.scopeSpaceIds), ...decidableExtraTimeWhere(new Date()) },
+      where: {
+        id: data.entryId,
+        organizationId: data.organizationId,
+        ...scopeWhere(data.scopeSpaceIds),
+        ...decidableExtraTimeWhere(new Date()),
+      },
       include: { shift: { select: { graceMin: true } } },
     });
     if (!entry) throw new BadRequestException('No matching open shift found');
@@ -106,7 +111,10 @@ export abstract class ExtraTimeBase {
         subjectId: entry.userId,
       });
       if (!verdict.finalize) {
-        return success({ entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName }, `Approved — waiting for ${verdict.roleName}`);
+        return success(
+          { entryId: entry.id, stage: 'FIRST_STEP', waitingFor: verdict.roleName },
+          `Approved — waiting for ${verdict.roleName}`,
+        );
       }
       if (verdict.minutes != null) minutes = verdict.minutes;
     }
@@ -168,14 +176,15 @@ export abstract class ExtraTimeBase {
     if (closed) await this.countedTime.recomputeClosed({ ...entry, expectedClockOutAt: newExpected });
 
     // Approved automatically: the owner asked and is answered on screen, not pushed about their own.
-    if (!automatic) this.notificationClient.emit('attendance_overtime_decision', {
-      entryId: entry.id,
-      userId: entry.userId,
-      decision: 'approved',
-      minutes,
-      newExpectedClockOutAt: newExpected.toISOString(),
-      organizationId: data.organizationId,
-    });
+    if (!automatic)
+      this.notificationClient.emit('attendance_overtime_decision', {
+        entryId: entry.id,
+        userId: entry.userId,
+        decision: 'approved',
+        minutes,
+        newExpectedClockOutAt: newExpected.toISOString(),
+        organizationId: data.organizationId,
+      });
 
     return success(
       { entryId: entry.id, minutes, expectedClockOutAt: newExpected.toISOString() },

@@ -79,7 +79,6 @@ export function plannedShiftEnd(e: ClockInForHours): Date | null {
   return ends.length ? new Date(Math.min(...ends)) : null;
 }
 
-
 /** Counted minutes of one clock-in — the timesheet's figure. */
 export function countedMinutesOf(e: ClockInForHours): number {
   if (e.paidMinutes != null) return Math.max(0, e.paidMinutes);
@@ -99,8 +98,15 @@ export function minutesByBasis(e: ClockInForHours, basis: HoursBasis): { minutes
   if (basis === 'COUNTED' || !e.clockOutAt) return { minutes: counted, fellBack: false };
   const unpaid = Math.max(0, Math.round(e.unpaidBreakMinutes ?? 0));
   if (basis === 'CLOCKED') {
-    return { minutes: Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / MIN) - unpaid), fellBack: false };
+    return {
+      minutes: Math.max(0, Math.round((e.clockOutAt.getTime() - e.clockInAt.getTime()) / MIN) - unpaid),
+      fellBack: false,
+    };
   }
-  const shift = expectedPaidMinutes({ expectedStartAt: e.expectedClockInAt, expectedEndAt: plannedShiftEnd(e), unpaidBreakMinutes: unpaid });
+  const shift = expectedPaidMinutes({
+    expectedStartAt: e.expectedClockInAt,
+    expectedEndAt: plannedShiftEnd(e),
+    unpaidBreakMinutes: unpaid,
+  });
   return shift == null ? { minutes: counted, fellBack: true } : { minutes: shift, fellBack: false };
 }

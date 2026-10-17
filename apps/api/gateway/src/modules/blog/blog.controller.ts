@@ -1,5 +1,18 @@
 import { assertServiceOk } from '@hbcfield/shared';
-import { BadRequestException, Body, Controller, Delete, Get, HttpStatus, Param, Patch, Post, Res, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Res,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -42,10 +55,14 @@ export class BlogController {
   // ── Public reads ────────────────────────────────────────────────────────────
 
   @Get('blog/posts')
-  async list() { return this.unwrap(await this.svc.listPublished()); }
+  async list() {
+    return this.unwrap(await this.svc.listPublished());
+  }
 
   @Get('blog/posts/:slug')
-  async bySlug(@Param('slug') slug: string) { return this.unwrap(await this.svc.getBySlug(slug)); }
+  async bySlug(@Param('slug') slug: string) {
+    return this.unwrap(await this.svc.getBySlug(slug));
+  }
 
   @Get('blog/images/:id')
   async image(@Param('id') id: string, @Res() res: Response) {
@@ -74,13 +91,17 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
-  async listAll() { return this.unwrap(await this.svc.listAll()); }
+  async listAll() {
+    return this.unwrap(await this.svc.listAll());
+  }
 
   @Post('platform/blog/posts')
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async create(@Body() body: any) { return this.unwrap(await this.svc.create(body ?? {})); }
+  async create(@Body() body: any) {
+    return this.unwrap(await this.svc.create(body ?? {}));
+  }
 
   @Patch('platform/blog/posts/:id')
   @UseGuards(PlatformAdminGuard)
@@ -94,7 +115,9 @@ export class BlogController {
   @UseGuards(PlatformAdminGuard)
   @UseInterceptors(PlatformAuditInterceptor)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  async remove(@Param('id') id: string) { return this.unwrap(await this.svc.remove(id)); }
+  async remove(@Param('id') id: string) {
+    return this.unwrap(await this.svc.remove(id));
+  }
 
   @Post('platform/blog/images')
   @UseGuards(PlatformAdminGuard)

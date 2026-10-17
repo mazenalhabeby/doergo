@@ -34,7 +34,9 @@ export class AuthMailService {
       tx: nodemailer.createTransport(r.options),
     }));
     if (this.mailRoutes.length) {
-      this.logger.log(`SMTP routes: ${this.mailRoutes.map((r) => `${r.label}:${r.options.port} secure=${r.options.secure}`).join(' → ')}`);
+      this.logger.log(
+        `SMTP routes: ${this.mailRoutes.map((r) => `${r.label}:${r.options.port} secure=${r.options.secure}`).join(' → ')}`,
+      );
     } else {
       this.logger.warn('SMTP not configured - password reset emails will not be sent');
     }
@@ -93,7 +95,10 @@ export class AuthMailService {
    */
   async mailHealth() {
     if (!this.mailRoutes.length) {
-      return { success: true, data: { configured: false, ok: false, routes: [], host: null, port: null, error: 'SMTP is not configured' } };
+      return {
+        success: true,
+        data: { configured: false, ok: false, routes: [], host: null, port: null, error: 'SMTP is not configured' },
+      };
     }
     // Every route is checked even after one succeeds: with a fallback in place
     // the product keeps working while the primary is broken, and "email works"
@@ -104,7 +109,13 @@ export class AuthMailService {
           await r.tx.verify();
           return { label: r.label, host: r.options.host, port: r.options.port, ok: true, error: null as string | null };
         } catch (err) {
-          return { label: r.label, host: r.options.host, port: r.options.port, ok: false, error: (err as Error).message };
+          return {
+            label: r.label,
+            host: r.options.host,
+            port: r.options.port,
+            ok: false,
+            error: (err as Error).message,
+          };
         }
       }),
     );
@@ -181,7 +192,10 @@ export class AuthMailService {
         return {
           success: false,
           statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-          message: 'We cannot send email at the moment, so we could not send a reset link. This is a problem on our side — please try again shortly or contact support.',
+          message:
+            'We cannot send email at the moment, so we could not send a reset link. ' +
+            'This is a problem on our side — please try again shortly or contact ' +
+            'support.',
         };
       }
 

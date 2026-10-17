@@ -20,13 +20,11 @@ import { ContractFields, ContractActor } from './asset-contract-helpers';
  */
 @Injectable()
 export abstract class AssetContractBase {
-
   constructor(
     protected readonly prisma: PrismaService,
     protected readonly access: AssetAccessService,
     protected readonly custody: AssetCustodyService,
   ) {}
-
 
   /**
    * Is a kind in a workspace this caller may manage?
@@ -85,13 +83,15 @@ export abstract class AssetContractBase {
    * something the apply refuses — which would show somebody a plan and then
    * decline to carry it out.
    */
-  protected async resolve(data: {
-    categoryId: string;
-    typeId?: string;
-    holderUserId: string;
-    fields: ContractFields;
-    retireReplaced?: boolean;
-  } & ContractActor): Promise<{
+  protected async resolve(
+    data: {
+      categoryId: string;
+      typeId?: string;
+      holderUserId: string;
+      fields: ContractFields;
+      retireReplaced?: boolean;
+    } & ContractActor,
+  ): Promise<{
     proposal: ContractProposal;
     shape: KindShape;
     holding: Array<{ assetId: string; assetName: string }>;
@@ -132,7 +132,10 @@ export abstract class AssetContractBase {
       },
       select: { id: true },
     });
-    if (!member) throw new BadRequestException(narrow ? 'That person does not work in this workspace' : 'That person is not in this organization');
+    if (!member)
+      throw new BadRequestException(
+        narrow ? 'That person does not work in this workspace' : 'That person is not in this organization',
+      );
 
     if (data.typeId) {
       const type = await this.prisma.assetType.findFirst({
@@ -157,7 +160,12 @@ export abstract class AssetContractBase {
         asset: { categoryId: kind.id },
       },
       select: {
-        id: true, assetId: true, userId: true, customerId: true, startedAt: true, endedAt: true,
+        id: true,
+        assetId: true,
+        userId: true,
+        customerId: true,
+        startedAt: true,
+        endedAt: true,
         asset: { select: { id: true, name: true } },
       },
     });

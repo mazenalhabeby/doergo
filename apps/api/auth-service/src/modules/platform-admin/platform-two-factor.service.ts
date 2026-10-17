@@ -10,7 +10,6 @@ import { PlatformAuthBase } from './platform-auth.base';
  */
 @Injectable()
 export class PlatformTwoFactorService extends PlatformAuthBase {
-
   // ── Self-service: 2FA (TOTP) ──────────────────────────────────────────────────
   /**
    * Start enrolling an authenticator.
@@ -28,7 +27,11 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
     const user = await this.prisma.platformUser.findUnique({ where: { id: data.userId } });
     if (!user) return fail('Not found', 404);
     if (user.twoFactorEnabled) {
-      if (!data.code) return { ...fail('Enter a current code from your authenticator to replace it', 400), code: 'PLATFORM_2FA_CODE_REQUIRED' };
+      if (!data.code)
+        return {
+          ...fail('Enter a current code from your authenticator to replace it', 400),
+          code: 'PLATFORM_2FA_CODE_REQUIRED',
+        };
       if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
     }
     const secret = generateBase32Secret();
@@ -71,7 +74,10 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
     if (!user) return fail('Not found', 404);
     if (!user.twoFactorEnabled) return fail('Two-factor authentication is not on', 400);
     if (!(await this.consumeTotp(user.id, user.twoFactorSecret, data.code))) return fail('Invalid code', 400);
-    await this.prisma.platformUser.update({ where: { id: user.id }, data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null } });
+    await this.prisma.platformUser.update({
+      where: { id: user.id },
+      data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null },
+    });
     this.logger.warn(`[PLATFORM] ${maskEmail(user.email)} disabled 2FA`);
     return ok({ twoFactorEnabled: false, ...(await this.rotateSessions(user.id, data.authTime)) });
   }
@@ -83,12 +89,22 @@ export class PlatformTwoFactorService extends PlatformAuthBase {
    * Ends every session of that operator; their next sign-in is enrolment-only.
    */
   async reset2fa(data: { id: string; byUserId?: string }) {
-    if (!data.byUserId || data.id === data.byUserId) return fail('Use Security → Disable 2FA for your own account', 400);
-    const user = await this.prisma.platformUser.findUnique({ where: { id: data.id }, select: { id: true, email: true } });
+    if (!data.byUserId || data.id === data.byUserId)
+      return fail('Use Security → Disable 2FA for your own account', 400);
+    const user = await this.prisma.platformUser.findUnique({
+      where: { id: data.id },
+      select: { id: true, email: true },
+    });
     if (!user) return fail('Not found', 404);
     await this.prisma.platformUser.update({
       where: { id: user.id },
-      data: { twoFactorEnabled: false, twoFactorSecret: null, twoFactorPendingSecret: null, twoFactorLastStep: null, tokensValidAfter: new Date() },
+      data: {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorPendingSecret: null,
+        twoFactorLastStep: null,
+        tokensValidAfter: new Date(),
+      },
     });
     this.logger.warn(`[PLATFORM] 2FA reset for ${maskEmail(user.email)} by ${data.byUserId}`);
     return ok({ id: user.id, twoFactorEnabled: false });

@@ -12,7 +12,6 @@ import { AccessRolesBase } from './access-roles.base';
 /** Changing the organization's roles: adding one, editing it (within the grant ceiling), deleting it. */
 @Injectable()
 export class AccessRoleWriteService extends AccessRolesBase {
-
   /** Create a custom ORG-wide role. Permissions are whitelisted to known keys. */
   async createAccessRole(data: {
     organizationId: string;
@@ -76,7 +75,10 @@ export class AccessRoleWriteService extends AccessRolesBase {
       a role beyond your own is not yours to edit.
     */
     if (data.requesterId) {
-      const { isAdmin, perms } = await this.accessChecks.resolveRequesterOrgPerms(data.requesterId, data.organizationId);
+      const { isAdmin, perms } = await this.accessChecks.resolveRequesterOrgPerms(
+        data.requesterId,
+        data.organizationId,
+      );
       if (!isAdmin && permissionsExceed(perms, permissionsFromOrgRole(role.permissions))) {
         return {
           success: false as const,
@@ -123,7 +125,8 @@ export class AccessRoleWriteService extends AccessRolesBase {
             success: false as const,
             statusCode: HttpStatus.CONFLICT,
             message:
-              `You hold this role, so removing ${losing.length === 1 ? 'that permission' : 'those permissions'} would take away your own access. ` +
+              `You hold this role, so removing ${losing.length === 1 ? 'that permission' : 'those permissions'} ` +
+              `would take away your own access. ` +
               `Ask an admin, or move yourself to another role first.`,
           };
         }
@@ -162,8 +165,12 @@ export class AccessRoleWriteService extends AccessRolesBase {
         adds to it again (see syncBuiltInRoles). Saving the same set is not a
         change — a rename or a colour does not stop a role following its definition.
       */
-      const granted = (x: unknown) => Object.entries((x ?? {}) as Record<string, unknown>)
-        .filter(([, v]) => v === true).map(([k]) => k).sort().join(',');
+      const granted = (x: unknown) =>
+        Object.entries((x ?? {}) as Record<string, unknown>)
+          .filter(([, v]) => v === true)
+          .map(([k]) => k)
+          .sort()
+          .join(',');
       if (role.isSystem && granted(patch.permissions) !== granted(role.permissions)) patch.isCustomized = true;
     }
     const updated = await this.prisma.accessRole.update({
@@ -201,7 +208,10 @@ export class AccessRoleWriteService extends AccessRolesBase {
     // Ceiling guard (S4): a non-admin may only delete a role whose permissions are
     // within their own — consistent with create/update authoring.
     if (data.requesterId) {
-      const { isAdmin, perms } = await this.accessChecks.resolveRequesterOrgPerms(data.requesterId, data.organizationId);
+      const { isAdmin, perms } = await this.accessChecks.resolveRequesterOrgPerms(
+        data.requesterId,
+        data.organizationId,
+      );
       if (!isAdmin && permissionsExceed(perms, permissionsFromOrgRole(role.permissions))) {
         return refuse(HttpStatus.FORBIDDEN, 'You cannot delete a role with permissions beyond your own');
       }

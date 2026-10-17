@@ -16,7 +16,6 @@ export abstract class ApprovalRulesBase {
     @Inject(SERVICE_NAMES.NOTIFICATION) protected readonly notifications: ClientProxy,
   ) {}
 
-
   // ── helpers ───────────────────────────────────────────────────────────
 
   protected openStep(organizationId: string, kind: RuleKind, itemId: string) {
@@ -24,7 +23,10 @@ export abstract class ApprovalRulesBase {
   }
 
   protected async closeStepsOf(organizationId: string, ruleId: string) {
-    await this.prisma.approvalStep.updateMany({ where: { organizationId, ruleId, consumedAt: null }, data: { consumedAt: new Date() } });
+    await this.prisma.approvalStep.updateMany({
+      where: { organizationId, ruleId, consumedAt: null },
+      data: { consumedAt: new Date() },
+    });
   }
 
   protected async consume(id: string) {
@@ -36,10 +38,18 @@ export abstract class ApprovalRulesBase {
   }
 
   /** Holds the role org-wide, or as a workspace role in one of the item's workspaces — and it is active. */
-  protected async holdsRole(organizationId: string, userId: string, roleId: string, spaceIds: string[]): Promise<boolean> {
+  protected async holdsRole(
+    organizationId: string,
+    userId: string,
+    roleId: string,
+    spaceIds: string[],
+  ): Promise<boolean> {
     const now = new Date();
     const [org, space] = await Promise.all([
-      this.prisma.user.findFirst({ where: { id: userId, organizationId, isActive: true, memberRoleId: roleId, memberRole: { isActive: true } }, select: { id: true } }),
+      this.prisma.user.findFirst({
+        where: { id: userId, organizationId, isActive: true, memberRoleId: roleId, memberRole: { isActive: true } },
+        select: { id: true },
+      }),
       spaceIds.length
         ? this.prisma.spaceAssignment.findFirst({
             where: {
@@ -58,7 +68,12 @@ export abstract class ApprovalRulesBase {
   }
 
   /** Active holders of a role — org-wide, or as a workspace role in one of these workspaces. */
-  async holdersOf(organizationId: string, roleId: string, spaceIds: string[], exclude: string[] = []): Promise<string[]> {
+  async holdersOf(
+    organizationId: string,
+    roleId: string,
+    spaceIds: string[],
+    exclude: string[] = [],
+  ): Promise<string[]> {
     const now = new Date();
     const holders = await this.prisma.user.findMany({
       where: {
@@ -85,9 +100,24 @@ export abstract class ApprovalRulesBase {
   }
 
   /** Push the holders of the second role (never the first approver or the person it is about). */
-  protected async tellSecondStep(roleId: string, input: { organizationId: string; kind: RuleKind; itemId: string; facts: RuleFacts; deciderId: string; subjectId?: string | null; subjectName?: string | null }, firstName: string) {
+  protected async tellSecondStep(
+    roleId: string,
+    input: {
+      organizationId: string;
+      kind: RuleKind;
+      itemId: string;
+      facts: RuleFacts;
+      deciderId: string;
+      subjectId?: string | null;
+      subjectName?: string | null;
+    },
+    firstName: string,
+  ) {
     try {
-      const recipientIds = await this.holdersOf(input.organizationId, roleId, input.facts.spaceIds, [input.deciderId, ...(input.subjectId ? [input.subjectId] : [])]);
+      const recipientIds = await this.holdersOf(input.organizationId, roleId, input.facts.spaceIds, [
+        input.deciderId,
+        ...(input.subjectId ? [input.subjectId] : []),
+      ]);
       if (!recipientIds.length) return;
       this.notifications.emit('approval_second_step', {
         organizationId: input.organizationId,

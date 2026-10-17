@@ -73,7 +73,29 @@ export class OrgProfileService {
   async updateOrgProfile(organizationId: string, updates: any) {
     // `usesExternalWorkers` (the in-house/external field-worker capability) is
     // settable directly by the Settings toggle.
-    const allowedFields = ['name', 'industry', 'usesExternalWorkers', 'crewMode', 'address', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country', 'phone', 'email', 'website', 'timezone', 'logoUrl', 'vatId', 'billableRateCents', 'costRateCents', 'enabledModules', 'currency'];
+    const allowedFields = [
+      'name',
+      'industry',
+      'usesExternalWorkers',
+      'crewMode',
+      'address',
+      'addressLine1',
+      'addressLine2',
+      'city',
+      'state',
+      'postalCode',
+      'country',
+      'phone',
+      'email',
+      'website',
+      'timezone',
+      'logoUrl',
+      'vatId',
+      'billableRateCents',
+      'costRateCents',
+      'enabledModules',
+      'currency',
+    ];
     const data: any = {};
 
     for (const key of allowedFields) {
@@ -135,17 +157,43 @@ export class OrgProfileService {
             cents,
             effectiveFrom: updates?.rateEffectiveFrom,
           });
-        if (rates.billableRateCents !== undefined) rateCols.billableRateCents = (await write('BILL_HOUR', rates.billableRateCents)).nowCents;
-        if (rates.costRateCents !== undefined) rateCols.costRateCents = (await write('COST_HOUR', rates.costRateCents)).nowCents;
+        if (rates.billableRateCents !== undefined)
+          rateCols.billableRateCents = (await write('BILL_HOUR', rates.billableRateCents)).nowCents;
+        if (rates.costRateCents !== undefined)
+          rateCols.costRateCents = (await write('COST_HOUR', rates.costRateCents)).nowCents;
         return tx.organization.update({
           where: { id: organizationId },
           data: { ...data, ...rateCols },
-          select: { id: true, name: true, industry: true, usesExternalWorkers: true, crewMode: true, address: true, addressLine1: true, addressLine2: true, city: true, state: true, postalCode: true, country: true, phone: true, email: true, website: true, timezone: true, logoUrl: true, vatId: true, billableRateCents: true, costRateCents: true, enabledModules: true, currency: true },
+          select: {
+            id: true,
+            name: true,
+            industry: true,
+            usesExternalWorkers: true,
+            crewMode: true,
+            address: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            postalCode: true,
+            country: true,
+            phone: true,
+            email: true,
+            website: true,
+            timezone: true,
+            logoUrl: true,
+            vatId: true,
+            billableRateCents: true,
+            costRateCents: true,
+            enabledModules: true,
+            currency: true,
+          },
         });
       });
       return { success: true, data: org };
     } catch (e) {
-      if (e instanceof RateChangeError) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: e.message };
+      if (e instanceof RateChangeError)
+        return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: e.message };
       throw e;
     }
   }

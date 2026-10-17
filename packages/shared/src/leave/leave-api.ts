@@ -155,8 +155,24 @@ export interface LeaveOpeningSaveResponse {
 
 /** POST /employees/leave-opening/match */
 export interface LeaveOpeningMatchResponse {
-  matched: Array<{ line: number; person: string; userId: string; firstName: string; lastName: string; email: string; used: number; carried: number; by: 'EMAIL' | 'NAME' }>;
-  unmatched: Array<{ line: number; person: string; used: number; carried: number; reason: 'NOT_FOUND' | 'AMBIGUOUS' | 'DUPLICATE' }>;
+  matched: Array<{
+    line: number;
+    person: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    used: number;
+    carried: number;
+    by: 'EMAIL' | 'NAME';
+  }>;
+  unmatched: Array<{
+    line: number;
+    person: string;
+    used: number;
+    carried: number;
+    reason: 'NOT_FOUND' | 'AMBIGUOUS' | 'DUPLICATE';
+  }>;
   errors: Array<{ line: number; text: string }>;
 }
 
@@ -185,7 +201,9 @@ export type LeavePolicyError =
  * allowance — still means what it meant); at least one must be present. UP_TO needs a
  * maximum; the other modes clear it.
  */
-export function parseLeavePolicy(raw: unknown): { ok: true; value: LeavePolicyInput } | { ok: false; code: LeavePolicyError } {
+export function parseLeavePolicy(
+  raw: unknown,
+): { ok: true; value: LeavePolicyInput } | { ok: false; code: LeavePolicyError } {
   const b = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const out: LeavePolicyInput = {};
   const has = (k: string) => b[k] !== undefined;
@@ -195,11 +213,13 @@ export function parseLeavePolicy(raw: unknown): { ok: true; value: LeavePolicyIn
     out.defaultLeaveAllowance = d;
   }
   if (has('leaveYearMode')) {
-    if (!(LEAVE_YEAR_MODES as readonly unknown[]).includes(b.leaveYearMode)) return { ok: false, code: 'LEAVE_YEAR_MODE_INVALID' };
+    if (!(LEAVE_YEAR_MODES as readonly unknown[]).includes(b.leaveYearMode))
+      return { ok: false, code: 'LEAVE_YEAR_MODE_INVALID' };
     out.leaveYearMode = b.leaveYearMode as LeaveYearMode;
   }
   if (has('carryOverMode')) {
-    if (!(CARRY_OVER_MODES as readonly unknown[]).includes(b.carryOverMode)) return { ok: false, code: 'CARRY_OVER_MODE_INVALID' };
+    if (!(CARRY_OVER_MODES as readonly unknown[]).includes(b.carryOverMode))
+      return { ok: false, code: 'CARRY_OVER_MODE_INVALID' };
     out.carryOverMode = b.carryOverMode as CarryOverMode;
   }
   if (has('carryOverMaxDays')) {

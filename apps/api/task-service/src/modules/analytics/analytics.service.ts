@@ -50,7 +50,13 @@ export class AnalyticsService {
    * per-day status: Worked · <leave reason> · Absent (scheduled, no clock-in) ·
    * Off (not scheduled). All values are bound parameters; org scope enforced.
    */
-  async timesheetDetail(data: { organizationId: string; userId: string; from?: string; to?: string; scopeSpaceIds?: SpaceScopeIds }) {
+  async timesheetDetail(data: {
+    organizationId: string;
+    userId: string;
+    from?: string;
+    to?: string;
+    scopeSpaceIds?: SpaceScopeIds;
+  }) {
     /*
       ⚠️ A day-by-day sheet of ONE person — their hours, leave reasons and notes.
       It was org-scoped only, so anybody admitted to reports, in any one
@@ -60,7 +66,11 @@ export class AnalyticsService {
       sites does not bring the other site's day along.
     */
     const scope = data.scopeSpaceIds ?? undefined;
-    await assertMemberInScope(this.prisma as any, { userId: data.userId, organizationId: data.organizationId, scopeSpaceIds: scope });
+    await assertMemberInScope(this.prisma as any, {
+      userId: data.userId,
+      organizationId: data.organizationId,
+      scopeSpaceIds: scope,
+    });
     const user = await this.prisma.user.findFirst({
       where: { id: data.userId, organizationId: data.organizationId },
       select: { firstName: true, lastName: true },
@@ -216,7 +226,14 @@ export class AnalyticsService {
       ORDER BY d.day ASC
     `;
 
-    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, data.userId, fromStr, toStr, data.organizationId, scope ?? null);
+    const rows = await this.prisma.$queryRawUnsafe<Record<string, unknown>[]>(
+      sql,
+      data.userId,
+      fromStr,
+      toStr,
+      data.organizationId,
+      scope ?? null,
+    );
     const numKeys = ['hours', 'hoursInShift', 'plannedInShift', 'late', 'break', 'overtime', 'jobs'];
     const normalized = rows.map((r) => {
       const o = { ...r };
@@ -226,8 +243,13 @@ export class AnalyticsService {
 
     // Named by key like every other report column (REPORT_LABELS), so the
     // day-by-day sheet reads in the viewer's language too.
-    const column = (key: string, labelKey: ReportLabelKey, kind: 'dimension' | 'measure', format?: string) =>
-      ({ key, labelKey, label: reportLabelEn(labelKey), kind, ...(format ? { format } : {}) });
+    const column = (key: string, labelKey: ReportLabelKey, kind: 'dimension' | 'measure', format?: string) => ({
+      key,
+      labelKey,
+      label: reportLabelEn(labelKey),
+      kind,
+      ...(format ? { format } : {}),
+    });
     const columns = [
       column('date', 'col.date', 'dimension'),
       column('day', 'col.day', 'dimension'),

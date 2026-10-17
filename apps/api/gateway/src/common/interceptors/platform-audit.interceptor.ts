@@ -20,10 +20,16 @@ export function staticKeyAgent(req: any): string | null {
  *   STATIC_KEY  — the shared PLATFORM_ADMIN_KEY matched (PlatformAdminGuard set `platformKeyVerified`)
  *   ANONYMOUS   — neither: a sign-in attempt, or a refused key
  */
-export function platformActor(req: any): { actorType: 'STAFF' | 'STATIC_KEY' | 'ANONYMOUS'; actorId: string | null; actorLabel: string | null; actorRole: string | null } {
+export function platformActor(req: any): {
+  actorType: 'STAFF' | 'STATIC_KEY' | 'ANONYMOUS';
+  actorId: string | null;
+  actorLabel: string | null;
+  actorRole: string | null;
+} {
   const u = req?.platformUser;
   if (u?.id) return { actorType: 'STAFF', actorId: u.id, actorLabel: u.email ?? null, actorRole: u.role ?? null };
-  if (req?.platformKeyVerified) return { actorType: 'STATIC_KEY', actorId: null, actorLabel: staticKeyAgent(req) ?? 'static-key', actorRole: null };
+  if (req?.platformKeyVerified)
+    return { actorType: 'STATIC_KEY', actorId: null, actorLabel: staticKeyAgent(req) ?? 'static-key', actorRole: null };
   return { actorType: 'ANONYMOUS', actorId: null, actorLabel: null, actorRole: null };
 }
 
@@ -93,7 +99,7 @@ export class PlatformAuditInterceptor implements NestInterceptor {
       targetOrganizationId: platformTargetOrg(normalized, resourceId, req.body),
       summary: body === undefined ? undefined : { body },
       ok,
-      statusCode: ok ? req.res?.statusCode ?? 200 : err?.status || err?.statusCode || 500,
+      statusCode: ok ? (req.res?.statusCode ?? 200) : err?.status || err?.statusCode || 500,
       error: ok ? null : String(err?.message ?? 'error').slice(0, 500),
     };
   }

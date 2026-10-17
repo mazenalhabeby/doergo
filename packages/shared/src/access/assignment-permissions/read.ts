@@ -93,7 +93,13 @@ export async function readAssignmentPermissions(
     select: { id: true, name: true, color: true, isSystem: true, permissions: true },
   });
   const assignableRoles: AssignableRole[] = pool
-    .map((r) => ({ id: r.id, name: r.name, color: r.color ?? null, isSystem: r.isSystem === true, permissions: permissionsFromOrgRole(r.permissions) }))
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      color: r.color ?? null,
+      isSystem: r.isSystem === true,
+      permissions: permissionsFromOrgRole(r.permissions),
+    }))
     .filter((r) => !isExternal || externalForbiddenIn(r.permissions).length === 0)
     .filter((r) => !input.ceiling || !permissionsExceed(input.ceiling, r.permissions));
 

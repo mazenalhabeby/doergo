@@ -13,7 +13,6 @@ import { SupportBase } from './support.base';
 /** Reading support: a customer's tickets, one thread, and the agents' inbox. */
 @Injectable()
 export class SupportInboxService extends SupportBase {
-
   // ── reads ──────────────────────────────────────────────────────────────────
   async listForCustomer(data: { createdById: string; status?: string; page?: number; limit?: number }) {
     const page = clampListPage(data.page);
@@ -33,7 +32,13 @@ export class SupportInboxService extends SupportBase {
     return paginated(enriched, { page, limit, total });
   }
 
-  async getThread(data: { ticketId: string; organizationId?: string; userId?: string; asAgent?: boolean; scope?: SupportAgentScope }) {
+  async getThread(data: {
+    ticketId: string;
+    organizationId?: string;
+    userId?: string;
+    asAgent?: boolean;
+    scope?: SupportAgentScope;
+  }) {
     if (data.asAgent) await this.agentTicket(data.ticketId, data.scope);
     const ticket = await this.prisma.supportTicket.findUnique({
       where: { id: data.ticketId },
@@ -53,14 +58,21 @@ export class SupportInboxService extends SupportBase {
     }
     if (!data.asAgent) return { success: true, data: ticket };
     // Agents see who handled it by NAME; the id stays for the "mine" match.
-    const names = await this.agentNames([ticket.assignedAgentId, ...ticket.messages.filter((m) => m.authorType === 'AGENT').map((m) => m.authorId)]);
+    const names = await this.agentNames([
+      ticket.assignedAgentId,
+      ...ticket.messages.filter((m) => m.authorType === 'AGENT').map((m) => m.authorId),
+    ]);
     return {
       success: true,
       data: {
         ...ticket,
-        assignedAgentName: ticket.assignedAgentId ? names.get(ticket.assignedAgentId) ?? ticket.assignedAgentId : null,
+        assignedAgentName: ticket.assignedAgentId
+          ? (names.get(ticket.assignedAgentId) ?? ticket.assignedAgentId)
+          : null,
         messages: ticket.messages.map((m) =>
-          m.authorType === 'AGENT' ? { ...m, authorName: (m.authorId && names.get(m.authorId)) || m.authorId || 'agent' } : m,
+          m.authorType === 'AGENT'
+            ? { ...m, authorName: (m.authorId && names.get(m.authorId)) || m.authorId || 'agent' }
+            : m,
         ),
       },
     };
@@ -94,7 +106,11 @@ export class SupportInboxService extends SupportBase {
 
     // ── Access scoping ────────────────────────────────────────────────────────
     // The SAME rule every single-ticket action asks (agentTicket above).
-    const scope = normalizeSupportScope({ isSupervisor: data.isSupervisor, teamIds: data.teamIds, platformUserId: data.agentId });
+    const scope = normalizeSupportScope({
+      isSupervisor: data.isSupervisor,
+      teamIds: data.teamIds,
+      platformUserId: data.agentId,
+    });
     const allowed = supportScopeWhere(scope);
     const teamIds = scope.teamIds;
 
@@ -123,7 +139,10 @@ export class SupportInboxService extends SupportBase {
     const enriched = await this.attachUnread(rows, 'AGENT');
     const names = await this.agentNames(rows.map((r) => r.assignedAgentId));
     return paginated(
-      enriched.map((r) => ({ ...r, assignedAgentName: r.assignedAgentId ? names.get(r.assignedAgentId) ?? r.assignedAgentId : null })),
+      enriched.map((r) => ({
+        ...r,
+        assignedAgentName: r.assignedAgentId ? (names.get(r.assignedAgentId) ?? r.assignedAgentId) : null,
+      })),
       { page, limit, total },
     );
   }

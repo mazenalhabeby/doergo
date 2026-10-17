@@ -32,7 +32,6 @@ export class AutoClockPlanService {
     private readonly shiftResolver: ShiftResolverService,
   ) {}
 
-
   // ── The plan the phone arms from ────────────────────────────────────────
 
   /**
@@ -60,7 +59,8 @@ export class AutoClockPlanService {
     });
     const consentAt = user?.autoClockConsentAt ?? null;
     const consentIso = consentAt ? consentAt.toISOString() : null;
-    if (!user || user.isExternal) return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
+    if (!user || user.isExternal)
+      return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
 
     const tomorrow = new Date(now.getTime() + 86_400_000);
     const assignments = await this.prisma.spaceAssignment.findMany({
@@ -73,7 +73,8 @@ export class AutoClockPlanService {
     const spaceIds = [...new Set(assignments.map((a) => a.spaceId))];
     // How this member is clocked in each workspace (PRESENCE wins when any active row says so).
     const assignmentFor = (spaceId: string) =>
-      assignments.find((a) => a.spaceId === spaceId && a.autoClockMode === 'PRESENCE') ?? assignments.find((a) => a.spaceId === spaceId)!;
+      assignments.find((a) => a.spaceId === spaceId && a.autoClockMode === 'PRESENCE') ??
+      assignments.find((a) => a.spaceId === spaceId)!;
     if (!spaceIds.length) return success({ consentAt: consentIso, places: [], generatedAt, offered: 0, offeredIn: [] });
 
     const locations = await this.prisma.companyLocation.findMany({
@@ -87,8 +88,18 @@ export class AutoClockPlanService {
         autoClock: { not: Prisma.DbNull },
       },
       select: {
-        id: true, name: true, lat: true, lng: true, geofenceRadius: true, geofencePolygon: true,
-        timezone: true, workModel: true, autoClock: true, enabledModules: true, noShiftDailyMinutes: true, noShiftPolicy: true,
+        id: true,
+        name: true,
+        lat: true,
+        lng: true,
+        geofenceRadius: true,
+        geofencePolygon: true,
+        timezone: true,
+        workModel: true,
+        autoClock: true,
+        enabledModules: true,
+        noShiftDailyMinutes: true,
+        noShiftPolicy: true,
         organization: { select: { enabledModules: true } },
       },
       orderBy: { name: 'asc' },
@@ -113,8 +124,10 @@ export class AutoClockPlanService {
         };
       })
       // The clock-in refuses where Time Tracking is off — never arm a site that cannot clock.
-      .filter((x): x is { l: (typeof locations)[number]; settings: MemberAutoClockSettings } =>
-        !!x.settings && spaceRunsClock(x.l.enabledModules as string[] | null, x.l.organization?.enabledModules as string[] | null),
+      .filter(
+        (x): x is { l: (typeof locations)[number]; settings: MemberAutoClockSettings } =>
+          !!x.settings &&
+          spaceRunsClock(x.l.enabledModules as string[] | null, x.l.organization?.enabledModules as string[] | null),
       );
     const offered = chosen.length;
     const offeredIn = chosen.map((x) => x.l.name);
@@ -165,13 +178,23 @@ export class AutoClockPlanService {
         name: l.name,
         lat: l.lat!,
         lng: l.lng!,
-        radius: geofenceArmRadius({ lat: l.lat, lng: l.lng, geofenceRadius: l.geofenceRadius, geofencePolygon: polygon }),
+        radius: geofenceArmRadius({
+          lat: l.lat,
+          lng: l.lng,
+          geofenceRadius: l.geofenceRadius,
+          geofencePolygon: polygon,
+        }),
         polygon,
         settings,
         shifts,
         presence:
           settings.mode === 'PRESENCE'
-            ? { startWindow: settings.startWindow, timezone: tz, noShiftMinutes: settings.noShiftMinutes, noShiftLimit: settings.noShiftLimit }
+            ? {
+                startWindow: settings.startWindow,
+                timezone: tz,
+                noShiftMinutes: settings.noShiftMinutes,
+                noShiftLimit: settings.noShiftLimit,
+              }
             : null,
       };
     });

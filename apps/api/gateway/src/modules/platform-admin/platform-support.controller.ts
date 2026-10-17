@@ -38,27 +38,55 @@ export class PlatformSupportController {
   }
 
   @Get('inbox')
-  async inbox(@Request() req: any, @Query('status') status?: string, @Query('tier') tier?: string, @Query('atRisk') atRisk?: string, @Query('view') view?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+  async inbox(
+    @Request() req: any,
+    @Query('status') status?: string,
+    @Query('tier') tier?: string,
+    @Query('atRisk') atRisk?: string,
+    @Query('view') view?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const scope = supportScopeOf(req);
-    return this.unwrap(await this.svc.inbox({
-      status, tier, atRisk: atRisk === 'true', view,
-      page: page ? Number(page) : 1, limit: limit ? Number(limit) : 50,
-      isSupervisor: scope.isSupervisor,
-      teamIds: scope.teamIds,
-      agentId: scope.platformUserId,
-    }));
+    return this.unwrap(
+      await this.svc.inbox({
+        status,
+        tier,
+        atRisk: atRisk === 'true',
+        view,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 50,
+        isSupervisor: scope.isSupervisor,
+        teamIds: scope.teamIds,
+        agentId: scope.platformUserId,
+      }),
+    );
   }
 
   @Get('tickets/:id')
-  async thread(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.thread(id, supportScopeOf(req))); }
+  async thread(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.thread(id, supportScopeOf(req)));
+  }
 
   @Post('tickets/:id/messages')
-  async reply(@Param('id') id: string, @Body() body: { body?: string; attachments?: any[]; isInternalNote?: boolean }, @Request() req: any) {
+  async reply(
+    @Param('id') id: string,
+    @Body() body: { body?: string; attachments?: any[]; isInternalNote?: boolean },
+    @Request() req: any,
+  ) {
     const scope = supportScopeOf(req);
-    return this.unwrap(await this.svc.reply({
-      ticketId: id, authorId: scope.platformUserId, authorType: 'AGENT', body: body?.body, attachments: body?.attachments,
-      isInternalNote: !!body?.isInternalNote, asAgent: true, scope,
-    }));
+    return this.unwrap(
+      await this.svc.reply({
+        ticketId: id,
+        authorId: scope.platformUserId,
+        authorType: 'AGENT',
+        body: body?.body,
+        attachments: body?.attachments,
+        isInternalNote: !!body?.isInternalNote,
+        asAgent: true,
+        scope,
+      }),
+    );
   }
 
   @Post('tickets/:id/status')
@@ -67,11 +95,18 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/assign')
-  async assign(@Param('id') id: string, @Body() body: { agentId?: string | null; teamId?: string | null }, @Request() req: any) {
+  async assign(
+    @Param('id') id: string,
+    @Body() body: { agentId?: string | null; teamId?: string | null },
+    @Request() req: any,
+  ) {
     const scope = supportScopeOf(req);
     // Build a sparse patch: only keys present are changed. With neither field the
     // acting agent self-claims the ticket.
-    const payload: { ticketId: string; agentId?: string | null; teamId?: string | null; scope: SupportAgentScope } = { ticketId: id, scope };
+    const payload: { ticketId: string; agentId?: string | null; teamId?: string | null; scope: SupportAgentScope } = {
+      ticketId: id,
+      scope,
+    };
     if (body && 'teamId' in body) payload.teamId = body.teamId ?? null;
     if (body && 'agentId' in body) payload.agentId = body.agentId ?? null;
     else if (!(body && 'teamId' in body)) payload.agentId = scope.platformUserId; // self-claim
@@ -79,5 +114,7 @@ export class PlatformSupportController {
   }
 
   @Post('tickets/:id/read')
-  async read(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.markRead(id, supportScopeOf(req))); }
+  async read(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.markRead(id, supportScopeOf(req)));
+  }
 }

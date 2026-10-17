@@ -17,24 +17,49 @@ export class PortalUnitsService extends PortalServiceBase {
   }
 
   async listUnitActivities(data: { id: string; organizationId: string; scopeSpaceIds?: string[] }) {
-    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) }, select: { id: true } });
+    const unit = await this.prisma.customerUnit.findFirst({
+      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
+      select: { id: true },
+    });
     if (!unit) throw new NotFoundException('Unit not found');
-    const rows = await this.prisma.unitActivity.findMany({ where: { unitId: data.id }, orderBy: { createdAt: 'desc' }, take: 200 });
+    const rows = await this.prisma.unitActivity.findMany({
+      where: { unitId: data.id },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
     const authorIds = [...new Set(rows.map((r) => r.authorId).filter(Boolean) as string[])];
     const authors = authorIds.length
-      ? await this.prisma.user.findMany({ where: { id: { in: authorIds } }, select: { id: true, firstName: true, lastName: true } })
+      ? await this.prisma.user.findMany({
+          where: { id: { in: authorIds } },
+          select: { id: true, firstName: true, lastName: true },
+        })
       : [];
     const byId = new Map(authors.map((a) => [a.id, a]));
     return { data: rows.map((r) => ({ ...r, author: r.authorId ? (byId.get(r.authorId) ?? null) : null })) };
   }
 
-  async addUnitActivity(data: { id: string; organizationId: string; body?: string; authorId?: string; scopeSpaceIds?: SpaceScopeIds }) {
-    const unit = await this.prisma.customerUnit.findFirst({ where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) }, select: { id: true } });
+  async addUnitActivity(data: {
+    id: string;
+    organizationId: string;
+    body?: string;
+    authorId?: string;
+    scopeSpaceIds?: SpaceScopeIds;
+  }) {
+    const unit = await this.prisma.customerUnit.findFirst({
+      where: { id: data.id, organizationId: data.organizationId, ...this.unitScope(data.scopeSpaceIds) },
+      select: { id: true },
+    });
     if (!unit) throw new NotFoundException('Unit not found');
     const body = (data.body ?? '').trim().slice(0, 5000);
     if (!body) throw new NotFoundException('Note body required');
     const activity = await this.prisma.unitActivity.create({
-      data: { organizationId: data.organizationId, unitId: data.id, type: 'NOTE', body, authorId: data.authorId ?? null },
+      data: {
+        organizationId: data.organizationId,
+        unitId: data.id,
+        type: 'NOTE',
+        body,
+        authorId: data.authorId ?? null,
+      },
     });
     return { data: activity };
   }
@@ -49,7 +74,13 @@ export class PortalUnitsService extends PortalServiceBase {
   }
 
   /** Make a unit the customer's primary address (unsets the siblings). */
-  async setPrimaryUnit(data: { id: string; organizationId: string; customerId?: string; crmCaller?: CrmCaller; scopeSpaceId?: string }) {
+  async setPrimaryUnit(data: {
+    id: string;
+    organizationId: string;
+    customerId?: string;
+    crmCaller?: CrmCaller;
+    scopeSpaceId?: string;
+  }) {
     if (data.crmCaller) {
       if (!data.customerId) throw new BadRequestException('A client is required');
       await this.assertClientAddressesEditable(data.organizationId, data.customerId, data.crmCaller);
@@ -67,7 +98,12 @@ export class PortalUnitsService extends PortalServiceBase {
     if (!unit) throw new NotFoundException('Unit not found');
     await this.prisma.$transaction([
       ...(unit.customerId
-        ? [this.prisma.customerUnit.updateMany({ where: { customerId: unit.customerId, id: { not: unit.id } }, data: { isPrimary: false } })]
+        ? [
+            this.prisma.customerUnit.updateMany({
+              where: { customerId: unit.customerId, id: { not: unit.id } },
+              data: { isPrimary: false },
+            }),
+          ]
         : []),
       this.prisma.customerUnit.update({ where: { id: unit.id }, data: { isPrimary: true } }),
     ]);

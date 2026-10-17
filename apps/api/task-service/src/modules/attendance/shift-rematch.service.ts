@@ -128,7 +128,9 @@ export class ShiftRematchService implements OnModuleDestroy {
     }
 
     if (matched > 0) {
-      this.logger.log(`Re-matched ${matched}/${entries.length} unscheduled entries for user=${scope.userId} org=${scope.organizationId}`);
+      this.logger.log(
+        `Re-matched ${matched}/${entries.length} unscheduled entries for user=${scope.userId} org=${scope.organizationId}`,
+      );
       try {
         this.notificationClient.emit('attendance_changed', { organizationId: scope.organizationId, action: 'rematch' });
       } catch (err) {
@@ -168,7 +170,9 @@ export class ShiftRematchService implements OnModuleDestroy {
       expectedClockInAt: resolved.expectedClockInAt,
       expectedClockOutAt: resolved.expectedClockOutAt,
     };
-    const counted = entry.clockOutAt ? await this.countedTime.columnsFor(stamped, entry.clockOutAt, toleranceMin) : null;
+    const counted = entry.clockOutAt
+      ? await this.countedTime.columnsFor(stamped, entry.clockOutAt, toleranceMin)
+      : null;
 
     // Still open: the reminders and the rests follow the shift from now on.
     const open = entry.status === 'CLOCKED_IN';
@@ -196,7 +200,8 @@ export class ShiftRematchService implements OnModuleDestroy {
         approvedAt: null,
         approvalNotes: appendNote(
           entry.approvalNotes,
-          `Matched to its shift after the rota changed; counted time ${fmt(entry.paidMinutes)} → ${fmt(counted!.paidMinutes)}. Was ${entry.approvalStatus.toLowerCase()}, needs a new decision.`,
+          `Matched to its shift after the rota changed; counted time ${fmt(entry.paidMinutes)} → ` +
+            `${fmt(counted!.paidMinutes)}. Was ${entry.approvalStatus.toLowerCase()}, needs a new decision.`,
         ),
       };
     } else {
@@ -222,11 +227,14 @@ export class ShiftRematchService implements OnModuleDestroy {
 
     // The entry's edit history — the same rows the "Edit history" table reads.
     const shiftName = resolved.shiftId
-      ? (await this.prisma.shift.findUnique({ where: { id: resolved.shiftId }, select: { name: true } }))?.name ?? 'Shift'
+      ? ((await this.prisma.shift.findUnique({ where: { id: resolved.shiftId }, select: { name: true } }))?.name ??
+        'Shift')
       : 'Weekly schedule';
     const changes = [
       { field: 'shift', from: null, to: shiftName },
-      ...(counted && countedChanged ? [{ field: 'countedMinutes', from: String(entry.paidMinutes ?? ''), to: String(counted.paidMinutes ?? '') }] : []),
+      ...(counted && countedChanged
+        ? [{ field: 'countedMinutes', from: String(entry.paidMinutes ?? ''), to: String(counted.paidMinutes ?? '') }]
+        : []),
       ...(approval.approvalStatus && approval.approvalStatus !== entry.approvalStatus
         ? [{ field: 'approvalStatus', from: entry.approvalStatus, to: String(approval.approvalStatus) }]
         : []),

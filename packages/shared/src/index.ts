@@ -99,7 +99,6 @@ export * from './access/workflow-status-label';
 // Step forms — what a workflow step asks when a job moves into it. Pure; phone, web and server judge alike.
 export * from './workflows/step-form';
 
-
 // SMTP connection settings — one decision, both sending services.
 export * from './mail/transport';
 // Email words, per recipient language — templates, catalogue and the address
@@ -209,7 +208,8 @@ export * from './access/permission-levels';
 export * from './access/org-flags';
 // One person's permissions in one workspace, as a role nobody else may hold (access/personal-role.ts)
 export * from './access/personal-role';
-// Put a shared role or a set of keys on one workspace assignment — the builder's and the invitation's one writer (access/assignment-permissions.ts)
+// Put a shared role or a set of keys on one workspace assignment — the builder's and the
+// invitation's one writer (access/assignment-permissions.ts)
 export * from './access/assignment-permissions';
 // A member's org-wide access from their row, resolved like the session (access/org-access.ts).
 export * from './access/org-access';

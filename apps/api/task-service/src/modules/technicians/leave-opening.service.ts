@@ -30,7 +30,11 @@ import { LeaveLedgerBase } from './leave-ledger.base';
 @Injectable()
 export class LeaveOpeningService extends LeaveLedgerBase {
   /** GET /employees/leave-opening — everybody in the caller's scope, with what is saved for the leave year containing `on`. */
-  async getOpening(dto: { organizationId: string; scopeSpaceIds?: string[]; on?: string }): Promise<LeaveOpeningResponse> {
+  async getOpening(dto: {
+    organizationId: string;
+    scopeSpaceIds?: string[];
+    on?: string;
+  }): Promise<LeaveOpeningResponse> {
     const org = await this.loadOrg(dto.organizationId);
     const on = dto.on ? this.dayFrom({ on: dto.on }, org) : (dayOf(org.leaveTrackingStartedOn) ?? this.today(org));
     const people = await this.membersInScope(dto.organizationId, dto.scopeSpaceIds);
@@ -43,7 +47,11 @@ export class LeaveOpeningService extends LeaveLedgerBase {
       rows: people.map((p) => {
         const y = years.get(p.id)!;
         return {
-          userId: p.id, firstName: p.firstName, lastName: p.lastName, email: p.email, avatarUrl: p.avatarUrl ?? null,
+          userId: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          email: p.email,
+          avatarUrl: p.avatarUrl ?? null,
           leaveYear: y.leaveYear,
           used: -keyed(y, leaveSourceKey.opening(p.id, y.leaveYear.start)),
           carried: keyed(y, leaveSourceKey.openingCarry(p.id, y.leaveYear.start)),
@@ -60,32 +68,63 @@ export class LeaveOpeningService extends LeaveLedgerBase {
    * never an edit: the old line is undone (its key renamed so the new one can take it) and a new
    * line written. A number that did not change writes nothing, so saving twice is a no-op.
    */
-  async saveOpening(dto: { organizationId: string; callerId: string; scopeSpaceIds?: string[]; on?: unknown; rows?: unknown }): Promise<LeaveOpeningSaveResponse> {
+  async saveOpening(dto: {
+    organizationId: string;
+    callerId: string;
+    scopeSpaceIds?: string[];
+    on?: unknown;
+    rows?: unknown;
+  }): Promise<LeaveOpeningSaveResponse> {
     const org = await this.loadOrg(dto.organizationId);
-    if (typeof dto.on !== 'string' || !dto.on) throw new BadRequestException({ code: 'LEAVE_DAY_INVALID', message: 'Choose the day you started counting leave in HBCField' });
+    if (typeof dto.on !== 'string' || !dto.on)
+      throw new BadRequestException({
+        code: 'LEAVE_DAY_INVALID',
+        message: 'Choose the day you started counting leave in HBCField',
+      });
     const on = this.dayFrom({ on: dto.on }, org);
     const rows = readOpeningRows(dto.rows);
     const ids = rows.map((r) => r.userId);
 
     // Every person: in this organization, a member, in the caller's scope. Anything else is 404.
     const people = await this.prisma.user.findMany({
-      where: { id: { in: ids }, organizationId: dto.organizationId, ...MEMBERS_WHERE, ...memberScopeFilter(dto.scopeSpaceIds) },
+      where: {
+        id: { in: ids },
+        organizationId: dto.organizationId,
+        ...MEMBERS_WHERE,
+        ...memberScopeFilter(dto.scopeSpaceIds),
+      },
       select: PERSON_LEAVE_SELECT,
     });
-    if (people.length !== ids.length) throw new NotFoundException({ code: 'MEMBER_NOT_FOUND', message: 'Employee not found' });
+    if (people.length !== ids.length)
+      throw new NotFoundException({ code: 'MEMBER_NOT_FOUND', message: 'Employee not found' });
     if (ids.includes(dto.callerId)) {
       await assertNotSelfDecision(this.prisma as never, {
-        deciderId: dto.callerId, subjectId: dto.callerId, organizationId: dto.organizationId,
+        deciderId: dto.callerId,
+        subjectId: dto.callerId,
+        organizationId: dto.organizationId,
         message: 'You cannot set your own starting balance. Ask a manager or an administrator.',
       });
     }
 
     const byId = new Map(people.map((p) => [p.id, p]));
-    const wanted = new Map<string, { userId: string; kind: 'OPENING_USED' | 'CARRY_OVER'; days: number; start: string }>();
+    const wanted = new Map<
+      string,
+      { userId: string; kind: 'OPENING_USED' | 'CARRY_OVER'; days: number; start: string }
+    >();
     for (const r of rows) {
       const start = leaveYearFor(org, byId.get(r.userId)!, on).start;
-      wanted.set(leaveSourceKey.opening(r.userId, start), { userId: r.userId, kind: 'OPENING_USED', days: r.used ? -r.used : 0, start });
-      wanted.set(leaveSourceKey.openingCarry(r.userId, start), { userId: r.userId, kind: 'CARRY_OVER', days: r.carried, start });
+      wanted.set(leaveSourceKey.opening(r.userId, start), {
+        userId: r.userId,
+        kind: 'OPENING_USED',
+        days: r.used ? -r.used : 0,
+        start,
+      });
+      wanted.set(leaveSourceKey.openingCarry(r.userId, start), {
+        userId: r.userId,
+        kind: 'CARRY_OVER',
+        days: r.carried,
+        start,
+      });
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -96,14 +135,29 @@ export class LeaveOpeningService extends LeaveLedgerBase {
       const current = new Map(existing.map((e) => [e.sourceKey!, e]));
       const release: string[] = [];
       const voidNow: string[] = [];
-      const create: Array<{ key: string; userId: string; kind: 'OPENING_USED' | 'CARRY_OVER'; days: number; start: string }> = [];
+      const create: Array<{
+        key: string;
+        userId: string;
+        kind: 'OPENING_USED' | 'CARRY_OVER';
+        days: number;
+        start: string;
+      }> = [];
       let unchanged = 0;
       for (const [key, w] of wanted) {
         const e = current.get(key);
         const live = e && !e.voidedAt;
-        if (live && e.days === w.days) { unchanged++; continue; }
-        if (!live && w.days === 0) { unchanged++; continue; }
-        if (e) { release.push(e.id); if (live) voidNow.push(e.id); }
+        if (live && e.days === w.days) {
+          unchanged++;
+          continue;
+        }
+        if (!live && w.days === 0) {
+          unchanged++;
+          continue;
+        }
+        if (e) {
+          release.push(e.id);
+          if (live) voidNow.push(e.id);
+        }
         if (w.days !== 0) create.push({ key, ...w });
       }
       if (release.length) {
@@ -137,9 +191,21 @@ export class LeaveOpeningService extends LeaveLedgerBase {
         One column, only while it is still empty; changing it later is the leave policy's
         (PATCH /organizations/leave-policy, ADMIN, auth-service).
       */
-      await tx.organization.updateMany({ where: { id: dto.organizationId, leaveTrackingStartedOn: null }, data: { leaveTrackingStartedOn: asDate(on) } });
-      const after = await tx.organization.findUnique({ where: { id: dto.organizationId }, select: { leaveTrackingStartedOn: true } });
-      return { on, trackingStartedOn: dayOf(after?.leaveTrackingStartedOn), written: create.length, voided: voidNow.length, unchanged };
+      await tx.organization.updateMany({
+        where: { id: dto.organizationId, leaveTrackingStartedOn: null },
+        data: { leaveTrackingStartedOn: asDate(on) },
+      });
+      const after = await tx.organization.findUnique({
+        where: { id: dto.organizationId },
+        select: { leaveTrackingStartedOn: true },
+      });
+      return {
+        on,
+        trackingStartedOn: dayOf(after?.leaveTrackingStartedOn),
+        written: create.length,
+        voided: voidNow.length,
+        unchanged,
+      };
     });
   }
 
@@ -148,11 +214,24 @@ export class LeaveOpeningService extends LeaveLedgerBase {
    * find each person among the members the caller may set: by email first (case-insensitive),
    * then by full name. The server never trusts an id from a paste; nothing is written.
    */
-  async matchOpening(dto: { organizationId: string; scopeSpaceIds?: string[]; text?: unknown }): Promise<LeaveOpeningMatchResponse> {
-    if (typeof dto.text !== 'string' || !dto.text.trim()) throw new BadRequestException({ code: 'OPENING_TEXT_EMPTY', message: 'Paste the table first' });
-    if (dto.text.length > OPENING_LIMITS.MAX_TEXT) throw new BadRequestException({ code: 'OPENING_TOO_MANY_ROWS', message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time` });
+  async matchOpening(dto: {
+    organizationId: string;
+    scopeSpaceIds?: string[];
+    text?: unknown;
+  }): Promise<LeaveOpeningMatchResponse> {
+    if (typeof dto.text !== 'string' || !dto.text.trim())
+      throw new BadRequestException({ code: 'OPENING_TEXT_EMPTY', message: 'Paste the table first' });
+    if (dto.text.length > OPENING_LIMITS.MAX_TEXT)
+      throw new BadRequestException({
+        code: 'OPENING_TOO_MANY_ROWS',
+        message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time`,
+      });
     const { rows, errors } = parseOpeningBalances(dto.text);
-    if (rows.length > OPENING_LIMITS.MAX_ROWS) throw new BadRequestException({ code: 'OPENING_TOO_MANY_ROWS', message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time` });
+    if (rows.length > OPENING_LIMITS.MAX_ROWS)
+      throw new BadRequestException({
+        code: 'OPENING_TOO_MANY_ROWS',
+        message: `At most ${OPENING_LIMITS.MAX_ROWS} people at a time`,
+      });
     const people = await this.membersInScope(dto.organizationId, dto.scopeSpaceIds);
     const byEmail = new Map(people.map((p) => [p.email.trim().toLowerCase(), p]));
     const byName = new Map<string, typeof people>();
@@ -168,7 +247,13 @@ export class LeaveOpeningService extends LeaveLedgerBase {
       const named = email ? null : (byName.get(nameKey(r.person)) ?? []);
       const hit = email ?? (named && named.length === 1 ? named[0] : null);
       if (!hit) {
-        out.unmatched.push({ line: r.line, person: r.person, used: r.used, carried: r.carried, reason: named && named.length > 1 ? 'AMBIGUOUS' : 'NOT_FOUND' });
+        out.unmatched.push({
+          line: r.line,
+          person: r.person,
+          used: r.used,
+          carried: r.carried,
+          reason: named && named.length > 1 ? 'AMBIGUOUS' : 'NOT_FOUND',
+        });
         continue;
       }
       if (seen.has(hit.id)) {
@@ -176,7 +261,17 @@ export class LeaveOpeningService extends LeaveLedgerBase {
         continue;
       }
       seen.add(hit.id);
-      out.matched.push({ line: r.line, person: r.person, userId: hit.id, firstName: hit.firstName, lastName: hit.lastName, email: hit.email, used: r.used, carried: r.carried, by: email ? 'EMAIL' : 'NAME' });
+      out.matched.push({
+        line: r.line,
+        person: r.person,
+        userId: hit.id,
+        firstName: hit.firstName,
+        lastName: hit.lastName,
+        email: hit.email,
+        used: r.used,
+        carried: r.carried,
+        by: email ? 'EMAIL' : 'NAME',
+      });
     }
     return out;
   }

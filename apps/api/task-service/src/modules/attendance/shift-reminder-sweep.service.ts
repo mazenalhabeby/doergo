@@ -30,7 +30,6 @@ export class ShiftReminderSweepService {
     @Optional() private readonly autoClock?: AutoClockService,
   ) {}
 
-
   /**
    * Shift reminder engine — replaces the old force-close auto-clock-out.
    *
@@ -84,7 +83,9 @@ export class ShiftReminderSweepService {
     for (const entry of dueEntries) {
       const auto = autoByEntry.get(entry.id);
       // Clocked by arriving and leaving with no shift: its course is the workspace's hours, read now.
-      const plannedEnd = entry.expectedClockOutAt ?? (auto && clocksByPresence(auto, entry) ? presenceSessionEnd(entry.clockInAt, auto) : null);
+      const plannedEnd =
+        entry.expectedClockOutAt ??
+        (auto && clocksByPresence(auto, entry) ? presenceSessionEnd(entry.clockInAt, auto) : null);
       if (auto && plannedEnd) {
         const leaderAt = new Date(plannedEnd.getTime() + auto.leaderAfterMinutes * 60_000);
         if (now.getTime() < leaderAt.getTime()) rearm.push({ id: entry.id, at: leaderAt });

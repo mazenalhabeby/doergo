@@ -43,7 +43,9 @@ export type CandidateState = 'FREE' | 'BUSY' | 'NOT_WORKING' | 'ON_LEAVE';
  * BUSY = at work but on a job (may still take one for afterwards).
  * NOT_WORKING = not clocked in, or not rostered today.
  */
-export function candidateState(c: Pick<RoleCandidate, 'clockedIn' | 'onActiveJob' | 'onLeave' | 'rosteredToday'>): CandidateState {
+export function candidateState(
+  c: Pick<RoleCandidate, 'clockedIn' | 'onActiveJob' | 'onLeave' | 'rosteredToday'>,
+): CandidateState {
   if (c.onLeave) return 'ON_LEAVE';
   if (!c.clockedIn) return 'NOT_WORKING';
   if (c.onActiveJob) return 'BUSY';
@@ -63,13 +65,14 @@ export function rankCandidates<T extends RoleCandidate>(list: readonly T[]): (T 
   const km = (c: RoleCandidate) => (c.distanceKm == null ? Number.POSITIVE_INFINITY : c.distanceKm);
   return list
     .map((c) => ({ ...c, state: candidateState(c) }))
-    .sort((a, b) =>
-      STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
-      Number(b.rosteredToday) - Number(a.rosteredToday) ||
-      km(a) - km(b) ||
-      a.jobsToday - b.jobsToday ||
-      a.takenThisWeek - b.takenThisWeek ||
-      a.name.localeCompare(b.name),
+    .sort(
+      (a, b) =>
+        STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+        Number(b.rosteredToday) - Number(a.rosteredToday) ||
+        km(a) - km(b) ||
+        a.jobsToday - b.jobsToday ||
+        a.takenThisWeek - b.takenThisWeek ||
+        a.name.localeCompare(b.name),
     );
 }
 
@@ -82,9 +85,13 @@ export const ROLE_OFFER_MAX_MINUTES = 24 * 60;
 /** People one task may ask of a role. */
 export const ROLE_SPOTS_MAX = 20;
 
-export function roleOfferTimings(space: { roleOfferWidenMin?: number | null; roleOfferAlertMin?: number | null } | null | undefined): { widenMin: number; alertMin: number } {
+export function roleOfferTimings(
+  space: { roleOfferWidenMin?: number | null; roleOfferAlertMin?: number | null } | null | undefined,
+): { widenMin: number; alertMin: number } {
   const clamp = (v: number | null | undefined, d: number) =>
-    v == null || !Number.isFinite(v) ? d : Math.min(ROLE_OFFER_MAX_MINUTES, Math.max(ROLE_OFFER_MIN_MINUTES, Math.round(v)));
+    v == null || !Number.isFinite(v)
+      ? d
+      : Math.min(ROLE_OFFER_MAX_MINUTES, Math.max(ROLE_OFFER_MIN_MINUTES, Math.round(v)));
   const widenMin = clamp(space?.roleOfferWidenMin, ROLE_OFFER_WIDEN_MIN);
   // The alert never comes before the widening — the wider wave deserves its chance.
   const alertMin = Math.max(widenMin, clamp(space?.roleOfferAlertMin, ROLE_OFFER_ALERT_MIN));
@@ -122,19 +129,28 @@ export function waveRecipients<T extends RoleCandidate>(
 ): string[] {
   return ranked
     .filter((c) => !exclude.has(c.userId))
-    .filter((c) => (wave === 0 ? c.state === 'FREE' : c.state !== 'ON_LEAVE' && (c.state !== 'NOT_WORKING' || c.rosteredToday)))
+    .filter((c) =>
+      wave === 0 ? c.state === 'FREE' : c.state !== 'ON_LEAVE' && (c.state !== 'NOT_WORKING' || c.rosteredToday),
+    )
     .map((c) => c.userId);
 }
 
 /** Is this task still asking its role for people? */
-export function isOpenToRole(t: { openRoleId?: string | null; openSpotsLeft?: number | null; status?: string | null }): boolean {
+export function isOpenToRole(t: {
+  openRoleId?: string | null;
+  openSpotsLeft?: number | null;
+  status?: string | null;
+}): boolean {
   if (!t.openRoleId || (t.openSpotsLeft ?? 0) <= 0) return false;
   // Finished by any name a workflow gives it (the shared rule, not a list of three).
   return !isWorkOver(String(t.status ?? ''));
 }
 
 /** "1 of 2 taken" — for a screen. */
-export function spotsTaken(t: { openSpots?: number | null; openSpotsLeft?: number | null }): { taken: number; of: number } {
+export function spotsTaken(t: { openSpots?: number | null; openSpotsLeft?: number | null }): {
+  taken: number;
+  of: number;
+} {
   const of = Math.max(0, t.openSpots ?? 0);
   return { taken: Math.max(0, of - Math.max(0, t.openSpotsLeft ?? 0)), of };
 }

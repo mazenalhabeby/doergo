@@ -41,7 +41,8 @@ describe('offlineMode on the request context', () => {
   });
 
   it('is read by every organization select that feeds a context', () => {
-    const selects = src.match(/organization: \{ select: \{[^}]*addOns: true[^}]*\}/g) ?? [];
+    // Whitespace-tolerant: Prettier puts a long select on several lines.
+    const selects = src.match(/organization:\s*\{\s*select:\s*\{[^}]*addOns: true[^}]*\}/g) ?? [];
     expect(selects.length).toBeGreaterThan(0);
     for (const sel of selects) expect(sel).toContain('offlineMode: true');
   });

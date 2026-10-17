@@ -118,19 +118,44 @@ export abstract class InvitationServiceBase {
    * outsider straight into a role above their own.
    */
   protected async checkExternalSpaceGrant(
-    data: { organizationId: string; createdById: string; targetRole: string; spaceId?: string; memberRoleId?: string; spacePermissions?: unknown },
+    data: {
+      organizationId: string;
+      createdById: string;
+      targetRole: string;
+      spaceId?: string;
+      memberRoleId?: string;
+      spacePermissions?: unknown;
+    },
     creatorIsAdmin: boolean,
     inviteIsExternal: boolean,
   ): Promise<
     | { memberRoleId: string | null; spacePermissions: PermissionSet | null }
-    | { refusal: { success: false; statusCode: number; message: string; code?: string; params?: Record<string, unknown> } }
+    | {
+        refusal: {
+          success: false;
+          statusCode: number;
+          message: string;
+          code?: string;
+          params?: Record<string, unknown>;
+        };
+      }
   > {
     const refuse = (statusCode: number, message: string, code?: string, params?: Record<string, unknown>) => ({
-      refusal: { success: false as const, statusCode, message, ...(code ? { code } : {}), ...(params ? { params } : {}) },
+      refusal: {
+        success: false as const,
+        statusCode,
+        message,
+        ...(code ? { code } : {}),
+        ...(params ? { params } : {}),
+      },
     });
     const hasKeys = data.spacePermissions != null;
     if (hasKeys && (!inviteIsExternal || data.targetRole !== Role.EMPLOYEE)) {
-      return refuse(HttpStatus.BAD_REQUEST, 'Workspace permissions are for an external member', 'SPACE_PERMISSIONS_EXTERNAL_ONLY');
+      return refuse(
+        HttpStatus.BAD_REQUEST,
+        'Workspace permissions are for an external member',
+        'SPACE_PERMISSIONS_EXTERNAL_ONLY',
+      );
     }
     if (hasKeys && data.memberRoleId) {
       return refuse(HttpStatus.BAD_REQUEST, 'Send either a role or a set of permissions', 'PERMISSIONS_CHOICE_INVALID');
@@ -148,12 +173,19 @@ export abstract class InvitationServiceBase {
     const checkGrant = async (perms: PermissionSet) => {
       const forbidden = externalForbiddenIn(perms);
       if (forbidden.length) {
-        return refuse(HttpStatus.BAD_REQUEST, 'An external member cannot be given these permissions', 'EXTERNAL_PERMISSION_FORBIDDEN', { keys: forbidden });
+        return refuse(
+          HttpStatus.BAD_REQUEST,
+          'An external member cannot be given these permissions',
+          'EXTERNAL_PERMISSION_FORBIDDEN',
+          { keys: forbidden },
+        );
       }
       const ceiling = await ceilingOf();
       if (ceiling && permissionsExceed(ceiling, perms)) {
         const over = PERMISSION_KEYS.filter((k) => perms[k] === true && ceiling[k] !== true);
-        return refuse(HttpStatus.FORBIDDEN, 'You cannot grant permissions beyond your own', 'GRANT_EXCEEDS_OWN', { keys: over });
+        return refuse(HttpStatus.FORBIDDEN, 'You cannot grant permissions beyond your own', 'GRANT_EXCEEDS_OWN', {
+          keys: over,
+        });
       }
       return null;
     };
@@ -161,7 +193,11 @@ export abstract class InvitationServiceBase {
     if (hasKeys) {
       // Permissions in a workspace need the workspace — one of THIS organization, still open.
       if (!data.spaceId) {
-        return refuse(HttpStatus.BAD_REQUEST, 'Choose the workspace these permissions are for', 'SPACE_PERMISSIONS_NEED_SPACE');
+        return refuse(
+          HttpStatus.BAD_REQUEST,
+          'Choose the workspace these permissions are for',
+          'SPACE_PERMISSIONS_NEED_SPACE',
+        );
       }
       const space = await this.prisma.companyLocation.findFirst({
         where: { id: data.spaceId, organizationId: data.organizationId, isActive: true },
@@ -178,7 +214,12 @@ export abstract class InvitationServiceBase {
         .filter(([k, v]) => typeof v !== 'boolean' || (v === true && !spaceKeys.has(k)))
         .map(([k]) => k);
       if (wrong.length) {
-        return refuse(HttpStatus.BAD_REQUEST, 'These permissions cannot be given in a workspace', 'PERMISSION_KEY_NOT_IN_SPACE', { keys: wrong });
+        return refuse(
+          HttpStatus.BAD_REQUEST,
+          'These permissions cannot be given in a workspace',
+          'PERMISSION_KEY_NOT_IN_SPACE',
+          { keys: wrong },
+        );
       }
       const perms = whitelistPermissions(raw, 'space');
       if (!Object.keys(perms).length) {

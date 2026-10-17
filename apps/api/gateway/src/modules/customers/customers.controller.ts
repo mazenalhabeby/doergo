@@ -39,7 +39,6 @@ import { CustomersControllerBase } from './customers-controller.base';
 */
 @Controller('customers')
 export class CustomersController extends CustomersControllerBase {
-
   // CRM read/work endpoints are authorization-enforced IN the service against the
   // caller's CRM caps + per-record ownership (see customers.service). We pass the
   // caller and drop the flat @RequirePermission so scoped CRM members (not just
@@ -112,7 +111,9 @@ export class CustomersController extends CustomersControllerBase {
   @Get('match-keys')
   @DenyExternal()
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  @ApiOperation({ summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact" })
+  @ApiOperation({
+    summary: "Hashed keys of the organization's clients — the phone marks 'already a client' without sending a contact",
+  })
   matchKeys(@Request() req: any) {
     return this.auth('customer_match_keys', { organizationId: req.user.organizationId, caller: this.caller(req) });
   }
@@ -121,16 +122,25 @@ export class CustomersController extends CustomersControllerBase {
   @DenyExternal()
   // An import is up to 200 clients in one go; a member does this a few times, not a few hundred.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @ApiOperation({ summary: 'Import picked phone contacts as clients — one transaction, duplicates matched on the server' })
+  @ApiOperation({
+    summary: 'Import picked phone contacts as clients — one transaction, duplicates matched on the server',
+  })
   async importContacts(@Body() body: unknown, @Request() req: any) {
     // Refused here without a round trip; the service parses again — it is the boundary.
     const parsed = parseContactImport(body);
     if (!parsed.ok) {
-      throw new BadRequestException({ message: CONTACT_IMPORT_MESSAGES[parsed.problem], code: `CONTACT_IMPORT_${parsed.problem}` });
+      throw new BadRequestException({
+        message: CONTACT_IMPORT_MESSAGES[parsed.problem],
+        code: `CONTACT_IMPORT_${parsed.problem}`,
+      });
     }
     const orgId = req.user.organizationId;
     await this.requireSpaceModule(parsed.value.spaceId, orgId, 'crm');
-    return this.authMutation('import_customer_contacts', { organizationId: orgId, body: parsed.value, caller: this.caller(req) }, orgId);
+    return this.authMutation(
+      'import_customer_contacts',
+      { organizationId: orgId, body: parsed.value, caller: this.caller(req) },
+      orgId,
+    );
   }
 
   /*
@@ -196,13 +206,22 @@ export class CustomersController extends CustomersControllerBase {
     // Moving a customer into a space requires that space to have the CRM module
     // (parity with create; the service also validates the space belongs to org).
     if (dto.spaceId) await this.requireSpaceModule(dto.spaceId, req.user.organizationId, 'crm');
-    return this.authMutation('update_customer', { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) }, req.user.organizationId, id);
+    return this.authMutation(
+      'update_customer',
+      { id, organizationId: req.user.organizationId, dto, actorId: req.user.id, caller: this.caller(req) },
+      req.user.organizationId,
+      id,
+    );
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Deactivate a customer (soft delete; revokes any app login)' })
   async remove(@Param('id') id: string, @Request() req: any) {
-    const result: any = await this.auth('delete_customer', { id, organizationId: req.user.organizationId, caller: this.caller(req) });
+    const result: any = await this.auth('delete_customer', {
+      id,
+      organizationId: req.user.organizationId,
+      caller: this.caller(req),
+    });
     // Instantly revoke the deactivated portal logins (don't wait for the 60s
     // token-cache TTL) — consistent with every other access-change path.
     const ids: string[] = result?.deactivatedUserIds ?? [];

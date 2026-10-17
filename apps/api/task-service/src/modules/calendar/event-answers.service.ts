@@ -19,18 +19,31 @@ export class EventAnswersService extends EventsBase {
   }
 
   async respond(dto: Caller & { eventId: string; response: RsvpResponse }) {
-    if (!['ACCEPTED', 'MAYBE', 'DECLINED'].includes(dto.response)) throw new BadRequestException('Answer accept, maybe or decline');
+    if (!['ACCEPTED', 'MAYBE', 'DECLINED'].includes(dto.response))
+      throw new BadRequestException('Answer accept, maybe or decline');
     const row = await this.myRow(dto, dto.eventId);
-    if (row.isOrganizer) throw new BadRequestException({ code: 'EVENT_ORGANIZER_ANSWERS', message: 'You made it — you are going.' });
-    const next = dto.response === 'DECLINED' ? null : nextReminder(reminderEventOf(row.event as unknown as EventRow), new Date());
+    if (row.isOrganizer)
+      throw new BadRequestException({ code: 'EVENT_ORGANIZER_ANSWERS', message: 'You made it — you are going.' });
+    const next =
+      dto.response === 'DECLINED' ? null : nextReminder(reminderEventOf(row.event as unknown as EventRow), new Date());
     await this.prisma.calendarAttendee.update({
       where: { id: row.id },
-      data: { response: dto.response, respondedAt: new Date(), nextRemindAt: next?.at ?? null, remindOccurrence: next?.occurrence ?? null },
+      data: {
+        response: dto.response,
+        respondedAt: new Date(),
+        nextRemindAt: next?.at ?? null,
+        remindOccurrence: next?.occurrence ?? null,
+      },
     });
     if (row.response !== dto.response) {
       this.notify('calendar_responded', {
-        organizationId: dto.organizationId, eventId: row.eventId, title: row.event.title,
-        organizerId: row.event.createdById, responderId: dto.userId, responderName: await this.nameOf(dto.userId), response: dto.response,
+        organizationId: dto.organizationId,
+        eventId: row.eventId,
+        title: row.event.title,
+        organizerId: row.event.createdById,
+        responderId: dto.userId,
+        responderName: await this.nameOf(dto.userId),
+        response: dto.response,
       });
     }
     this.refresh(dto.organizationId, [dto.userId, row.event.createdById]);
@@ -47,8 +60,14 @@ export class EventAnswersService extends EventsBase {
     if (claimed && ISO.test(claimed)) {
       const at = new Date(claimed);
       const dur = Math.max(ev.endAt.getTime() - ev.startAt.getTime(), 0);
-      const hit = occurrences(ev.startAt, dur, (ev.repeat as Repeat | null) ?? null, ev.timezone, new Date(at.getTime() - 60000), new Date(at.getTime() + 60000))
-        .find((o) => o.getTime() === at.getTime());
+      const hit = occurrences(
+        ev.startAt,
+        dur,
+        (ev.repeat as Repeat | null) ?? null,
+        ev.timezone,
+        new Date(at.getTime() - 60000),
+        new Date(at.getTime() + 60000),
+      ).find((o) => o.getTime() === at.getTime());
       if (hit) return hit;
     }
     return row.remindOccurrence ?? ev.startAt;
@@ -59,15 +78,25 @@ export class EventAnswersService extends EventsBase {
     const row = await this.myRow(dto, dto.eventId);
     const minutes = [5, 10, 15, 30, 60].includes(Number(dto.minutes)) ? Number(dto.minutes) : SNOOZE_MINUTES;
     const at = new Date(Date.now() + minutes * 60000);
-    await this.prisma.calendarAttendee.update({ where: { id: row.id }, data: { nextRemindAt: at, remindOccurrence: this.occurrenceOf(row, dto.occurrence) } });
+    await this.prisma.calendarAttendee.update({
+      where: { id: row.id },
+      data: { nextRemindAt: at, remindOccurrence: this.occurrenceOf(row, dto.occurrence) },
+    });
     return success({ nextRemindAt: at.toISOString() });
   }
 
   /** "Done" on the reminder: nothing more about THIS occurrence; the next one is planned. */
   async done(dto: Caller & { eventId: string; occurrence?: string }) {
     const row = await this.myRow(dto, dto.eventId);
-    const next = nextReminder(reminderEventOf(row.event as unknown as EventRow), new Date(), this.occurrenceOf(row, dto.occurrence));
-    await this.prisma.calendarAttendee.update({ where: { id: row.id }, data: { nextRemindAt: next?.at ?? null, remindOccurrence: next?.occurrence ?? null } });
+    const next = nextReminder(
+      reminderEventOf(row.event as unknown as EventRow),
+      new Date(),
+      this.occurrenceOf(row, dto.occurrence),
+    );
+    await this.prisma.calendarAttendee.update({
+      where: { id: row.id },
+      data: { nextRemindAt: next?.at ?? null, remindOccurrence: next?.occurrence ?? null },
+    });
     return success({ nextRemindAt: next?.at.toISOString() ?? null });
   }
 
@@ -80,7 +109,10 @@ export class EventAnswersService extends EventsBase {
   async sweepDue(now = new Date()): Promise<number> {
     const due = await this.prisma.calendarAttendee.findMany({
       where: { nextRemindAt: { lte: now } },
-      include: { event: true, user: { select: { isActive: true, organizationId: true, organization: { select: { suspendedAt: true } } } } },
+      include: {
+        event: true,
+        user: { select: { isActive: true, organizationId: true, organization: { select: { suspendedAt: true } } } },
+      },
       orderBy: { nextRemindAt: 'asc' },
       take: 200,
     });
@@ -88,7 +120,8 @@ export class EventAnswersService extends EventsBase {
     for (const row of due) {
       const ev = row.event as unknown as EventRow;
       // A member who left, was switched off, or whose organization is suspended is not reminded.
-      const gone = !row.user?.isActive || row.user.organizationId !== row.organizationId || !!row.user.organization?.suspendedAt;
+      const gone =
+        !row.user?.isActive || row.user.organizationId !== row.organizationId || !!row.user.organization?.suspendedAt;
       const stale = ev.canceledAt || row.response === 'DECLINED' || gone;
       const next = stale ? null : nextReminder(reminderEventOf(ev), now);
       const claimed = await this.prisma.calendarAttendee.updateMany({
@@ -100,8 +133,14 @@ export class EventAnswersService extends EventsBase {
       // A reminder for something already over is dropped silently — the phone was off, not the person.
       if (occurrence.getTime() + Math.max(ev.endAt.getTime() - ev.startAt.getTime(), 0) < now.getTime()) continue;
       this.notify('calendar_reminder', {
-        organizationId: ev.organizationId, userId: row.userId, eventId: ev.id, kind: ev.kind,
-        title: ev.title, occurrence: occurrence.toISOString(), allDay: ev.allDay, timezone: ev.timezone,
+        organizationId: ev.organizationId,
+        userId: row.userId,
+        eventId: ev.id,
+        kind: ev.kind,
+        title: ev.title,
+        occurrence: occurrence.toISOString(),
+        allDay: ev.allDay,
+        timezone: ev.timezone,
         minutes: Math.max(0, Math.round((occurrence.getTime() - now.getTime()) / 60000)),
         meetingUrl: ev.meetingUrl,
       });

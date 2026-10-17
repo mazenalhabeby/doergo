@@ -56,19 +56,41 @@ export class SearchController {
       // The task gate's own caller (common/task-actor.ts): a supervisor granted
       // "view all tasks" in a SPACE finds that space's tasks, and a guest the
       // tasks of a space shared with them — the same set GET /tasks lists.
-      call<{ tasks?: unknown[]; spaces?: unknown[] }>(this.taskClient, 'search_tasks_and_spaces', {
-        query, limit: LIMIT, ...taskActor(req, { crossOrgRead: true }),
-      }, {}),
+      call<{ tasks?: unknown[]; spaces?: unknown[] }>(
+        this.taskClient,
+        'search_tasks_and_spaces',
+        {
+          query,
+          limit: LIMIT,
+          ...taskActor(req, { crossOrgRead: true }),
+        },
+        {},
+      ),
       canAll
-        ? call<{ members?: unknown[]; customers?: unknown[] }>(this.authClient, 'search_people_and_customers', { query, organizationId: org, limit: LIMIT }, {})
+        ? call<{ members?: unknown[]; customers?: unknown[] }>(
+            this.authClient,
+            'search_people_and_customers',
+            { query, organizationId: org, limit: LIMIT },
+            {},
+          )
         : Promise.resolve({}),
     ]);
 
     return {
       tasks: rows((taskRes as any).tasks).map((t) => ({ id: t.id, title: t.title, status: t.status })),
-      members: rows((authRes as any).members).map((m) => ({ id: m.id, firstName: m.firstName ?? '', lastName: m.lastName ?? '', email: m.email ?? null, avatarUrl: m.avatarUrl ?? null })),
+      members: rows((authRes as any).members).map((m) => ({
+        id: m.id,
+        firstName: m.firstName ?? '',
+        lastName: m.lastName ?? '',
+        email: m.email ?? null,
+        avatarUrl: m.avatarUrl ?? null,
+      })),
       spaces: rows((taskRes as any).spaces).map((s) => ({ id: s.id, name: s.name, address: s.address ?? null })),
-      customers: rows((authRes as any).customers).map((c) => ({ id: c.id, name: c.name, contactName: c.contactName ?? null })),
+      customers: rows((authRes as any).customers).map((c) => ({
+        id: c.id,
+        name: c.name,
+        contactName: c.contactName ?? null,
+      })),
     };
   }
 }

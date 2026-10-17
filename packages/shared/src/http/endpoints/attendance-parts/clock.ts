@@ -1,0 +1,298 @@
+/** The clock, rests and the review surface — moved here unchanged from attendance.ts. */
+import type {
+  AttendanceHistoryParams,
+  AttendanceStatus,
+  Break,
+  BreakStatus,
+  BreakType,
+  ClockInInput,
+  ClockOutInput,
+  CompanyLocation,
+  GeofenceExcursion,
+  TimeEntry,
+} from '../../../types';
+import { defineEndpoints, endpoint } from '../../core/define';
+import type { AutoClockPlan } from '../../../attendance/auto-clock';
+import type { OccurrenceEvidence } from '../../../sync/occurrence';
+import { path, withQuery } from '../../core/path';
+import type { NoShowPersonSummary } from '../../../attendance/no-show';
+
+type Id = { id: string };
+
+type Q = Record<string, string | number | boolean | undefined>;
+
+/** A scheduled shift with no clock-in — what `/attendance/no-shows` answers. */
+export interface NoShow {
+  id: string;
+  userId: string;
+  userName: string;
+  avatarUrl?: string | null;
+  spaceId: string;
+  spaceName: string;
+  expectedClockInAt: string;
+  expectedClockOutAt: string;
+  state: string;
+  reminderCount: number;
+  localDate: string;
+  excuseReason?: string | null;
+  /** How it ended: a leader's reason or the proof the system found (attendance/no-show.ts). */
+  closeReason?: string | null;
+  closedAutomatically?: boolean;
+  settledSpaceName?: string | null;
+}
+
+export interface HeartbeatResult {
+  withinGeofence: boolean;
+  inRing: boolean;
+  distance: number;
+  /** Always false now — kept for older builds. */
+  autoClockedOut: boolean;
+  activeExcursion: GeofenceExcursion | null;
+}
+
+export interface AllEntriesQuery {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  search?: string;
+  spaceId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export const attendanceEndpoints = defineEndpoints('attendance', {
+  // ── my clock ──
+  /** The caller's running shift. Never kept: read offline through the phone's own store. */
+  status: endpoint<void, AttendanceStatus>({ method: 'GET', path: () => '/attendance/status', keep: false }),
+  /** Where the CALLER may clock in right now (not `GET /locations`, which is what they can see). */
+  clockInLocations: endpoint<void, CompanyLocation[]>({
+    method: 'GET',
+    path: () => '/attendance/clock-in-locations',
+    keep: true,
+  }),
+  clockIn: endpoint<void, TimeEntry, ClockInInput>({ method: 'POST', path: () => '/attendance/clock-in' }),
+  clockOut: endpoint<void, TimeEntry, ClockOutInput>({ method: 'POST', path: () => '/attendance/clock-out' }),
+  // ── the automatic clock (attendance/auto-clock.ts) ──
+  /** Where the phone arms geofences for the caller, today and tomorrow. Kept: the phone arms offline. */
+  autoClockPlan: endpoint<void, AutoClockPlan>({
+    method: 'GET',
+    path: () => '/attendance/auto-clock/plan',
+    keep: true,
+  }),
+  /** The member's own consent (ArbVG §96); `consent: false` withdraws it and the phone disarms. */
+  autoClockConsent: endpoint<void, { consentAt: string | null }, { consent: boolean }>({
+    method: 'POST',
+    path: () => '/attendance/auto-clock/consent',
+  }),
+  /** Undo an automatic clock-in (a drive-past) — own entry, AUTO_CLOCK_IN, within AUTO_CLOCK_UNDO_MINUTES, nothing recorded on it. */
+  autoClockUndo: endpoint<Id, { undone: true }, { evidence?: OccurrenceEvidence }>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/auto-undo`,
+  }),
+  /** "Still working" on the planned automatic rest — the server then applies no automatic rest to this shift. */
+  autoClockSkipRest: endpoint<Id, { skipped: true }, { evidence?: OccurrenceEvidence }>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/auto-rest/skip`,
+  }),
+  heartbeat: endpoint<void, HeartbeatResult, { lat: number; lng: number; accuracy?: number }>({
+    method: 'POST',
+    path: () => '/attendance/heartbeat',
+  }),
+  /** Check-ins kept while the phone had no signal, each with the moment it was taken. */
+  heartbeatBatch: endpoint<
+    void,
+    { recorded: number; opened: boolean; returned: boolean },
+    { points: Array<{ lat: number; lng: number; accuracy?: number; recordedAt: string }> }
+  >({
+    method: 'POST',
+    path: () => '/attendance/heartbeat/batch',
+  }),
+  history: endpoint<AttendanceHistoryParams | void, TimeEntry[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/history', q || undefined),
+    keep: true,
+  }),
+  forgotClockOut: endpoint<Id, TimeEntry, { clockOutAt: string }>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/forgot-clock-out`,
+  }),
+  requestExtraTime: endpoint<Id, { entryId: string; status: string }>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/request-extra-time`,
+  }),
+
+  // ── rests ──
+  startBreak: endpoint<{ type?: BreakType } | void, Break, { notes?: string; ruleId?: string }>({
+    method: 'POST',
+    path: (q) => withQuery('/attendance/breaks/start', q || undefined),
+  }),
+  /** "Later." The count is kept by the SERVER, or a phone that is off would silence the alarm. */
+  snoozeBreak: endpoint<void, { state: string; dueAt?: string; snoozeCount: number }, { ruleId?: string }>({
+    method: 'POST',
+    path: () => '/attendance/breaks/snooze',
+  }),
+  endBreak: endpoint<void, Break, { notes?: string }>({ method: 'POST', path: () => '/attendance/breaks/end' }),
+  breakStatus: endpoint<void, BreakStatus>({ method: 'GET', path: () => '/attendance/breaks/status', keep: false }),
+  activeBreaks: endpoint<void, Array<{ userId: string; [k: string]: unknown }>>({
+    method: 'GET',
+    path: () => '/attendance/breaks/active',
+    keep: false,
+  }),
+  endBreakFor: endpoint<Id, Break>({ method: 'POST', path: (a) => path`/attendance/breaks/${a.id}/end` }),
+  removeBreak: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/attendance/breaks/${a.id}` }),
+  breaksHistory: endpoint<Q | void, Break[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/breaks/history', q || undefined),
+    keep: true,
+  }),
+  breaksSummary: endpoint<Q, unknown>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/breaks/summary', q),
+    keep: true,
+  }),
+  breakRules: endpoint<{ spaceId?: string; shiftId?: string } | void, unknown[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/break-rules', q || undefined),
+    keep: true,
+  }),
+  createBreakRule: endpoint<void, unknown, Record<string, unknown>>({
+    method: 'POST',
+    path: () => '/attendance/break-rules',
+  }),
+  updateBreakRule: endpoint<Id, unknown, Record<string, unknown>>({
+    method: 'PATCH',
+    path: (a) => path`/attendance/break-rules/${a.id}`,
+  }),
+  removeBreakRule: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/attendance/break-rules/${a.id}` }),
+
+  // ── entries (the review surface; the server narrows to the caller's spaces) ──
+  /**
+   * Time entries in the caller's spaces. ⚠️ With `status: 'CLOCKED_IN'` this is
+   * PRESENCE (the Crew card) and is never kept offline.
+   */
+  allEntries: endpoint<AllEntriesQuery | void, TimeEntry[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/all-entries', q || undefined),
+    keep: (q) => !(q && (q as AllEntriesQuery).status === 'CLOCKED_IN'),
+  }),
+  /** Who is clocked in RIGHT NOW, org-wide. Presence — never kept. */
+  activeEntries: endpoint<void, TimeEntry[]>({ method: 'GET', path: () => '/attendance/active-entries', keep: false }),
+  entries: endpoint<{ ids: string[]; date?: string }, TimeEntry[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/entries', { ids: q.ids, date: q.date }),
+    keep: true,
+  }),
+  locationEntries: endpoint<{ locationId: string } & Q, TimeEntry[]>({
+    method: 'GET',
+    path: ({ locationId, ...q }) => withQuery(path`/attendance/locations/${locationId}/entries`, q),
+    keep: true,
+  }),
+  manualEntry: endpoint<void, TimeEntry, Record<string, unknown>>({
+    method: 'POST',
+    path: () => '/attendance/entries/manual',
+  }),
+  /** Correct a shift's times or note. `reason` is required and kept with the entry. */
+  editEntry: endpoint<
+    Id,
+    TimeEntry,
+    { clockInAt?: string; clockOutAt?: string; notes?: string; timezone?: string; reason: string }
+  >({
+    method: 'PUT',
+    path: (a) => path`/attendance/entries/${a.id}/edit`,
+  }),
+  removeEntry: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/attendance/entries/${a.id}` }),
+  entryHistory: endpoint<Id, unknown[]>({
+    method: 'GET',
+    path: (a) => path`/attendance/entries/${a.id}/history`,
+    keep: true,
+  }),
+  entryBreaks: endpoint<Id, Break[]>({
+    method: 'GET',
+    path: (a) => path`/attendance/entries/${a.id}/breaks`,
+    keep: true,
+  }),
+  addEntryBreak: endpoint<Id, Break, Record<string, unknown>>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/breaks`,
+  }),
+  entryPresence: endpoint<Id, unknown>({
+    method: 'GET',
+    path: (a) => path`/attendance/entries/${a.id}/presence`,
+    keep: false,
+  }),
+  entryOvertime: endpoint<Id, unknown, Record<string, unknown>>({
+    method: 'POST',
+    path: (a) => path`/attendance/entries/${a.id}/overtime`,
+  }),
+  removeOvertime: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/attendance/overtime/${a.id}` }),
+
+  // ── approvals ──
+  /**
+   * Completed entries waiting for a decision. ⚠️ `summary: true` answers the
+   * COUNTS only (`{ total, bySpace }`) — a number beside presence, never kept.
+   */
+  pendingApprovals: endpoint<{ page?: number; limit?: number; spaceId?: string; summary?: boolean } | void, unknown>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/approvals/pending', q || undefined),
+    keep: (q) => !(q && (q as { summary?: boolean }).summary),
+  }),
+  approve: endpoint<Id, TimeEntry, { notes?: string }>({
+    method: 'POST',
+    path: (a) => path`/attendance/approvals/${a.id}/approve`,
+  }),
+  reject: endpoint<Id, TimeEntry, { reason: string }>({
+    method: 'POST',
+    path: (a) => path`/attendance/approvals/${a.id}/reject`,
+  }),
+
+  // ── away from the site ──
+  reportExcursion: endpoint<void, GeofenceExcursion, { reason: string; requestedMinutes: number }>({
+    method: 'POST',
+    path: () => '/attendance/excursions/report',
+  }),
+  excursions: endpoint<{ status?: string } | void, GeofenceExcursion[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/excursions', q || undefined),
+    keep: true,
+  }),
+  approveExcursion: endpoint<Id, GeofenceExcursion, Record<string, unknown>>({
+    method: 'PATCH',
+    path: (a) => path`/attendance/excursions/${a.id}/approve`,
+  }),
+  rejectExcursion: endpoint<Id, GeofenceExcursion, Record<string, unknown>>({
+    method: 'PATCH',
+    path: (a) => path`/attendance/excursions/${a.id}/reject`,
+  }),
+
+  // ── no-shows and extra time ──
+  /** Scheduled shifts nobody clocked in for. Presence — never kept. */
+  noShows: endpoint<{ days?: number; spaceId?: string; open?: boolean } | void, NoShow[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/no-shows', q || undefined),
+    keep: false,
+  }),
+  /** The no-show record: one row per person (attendance/no-show.ts). */
+  noShowSummary: endpoint<{ days?: number; spaceId?: string } | void, NoShowPersonSummary[]>({
+    method: 'GET',
+    path: (q) => withQuery('/attendance/no-shows/summary', q || undefined),
+    keep: false,
+  }),
+  resolveNoShow: endpoint<
+    Id,
+    NoShow,
+    { action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean }
+  >({ method: 'PATCH', path: (a) => path`/attendance/no-shows/${a.id}` }),
+  extraTimePending: endpoint<void, TimeEntry[]>({
+    method: 'GET',
+    path: () => '/attendance/extra-time/pending',
+    keep: true,
+  }),
+  approveExtraTime: endpoint<Id, unknown, { minutes: number }>({
+    method: 'POST',
+    path: (a) => path`/attendance/extra-time/${a.id}/approve`,
+  }),
+  rejectExtraTime: endpoint<Id, unknown>({ method: 'POST', path: (a) => path`/attendance/extra-time/${a.id}/reject` }),
+});
+
+export type { Id };

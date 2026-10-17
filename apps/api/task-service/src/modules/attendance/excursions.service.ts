@@ -151,7 +151,11 @@ export class ExcursionsService extends HeartbeatBase {
   }
 
   /** Approver surface: active (PENDING/APPROVED) excursions for the org. */
-  async listActiveExcursions(data: { organizationId: string; status?: 'active' | 'pending' | 'approved'; scopeSpaceIds?: AttendanceScope }) {
+  async listActiveExcursions(data: {
+    organizationId: string;
+    status?: 'active' | 'pending' | 'approved';
+    scopeSpaceIds?: AttendanceScope;
+  }) {
     const statusFilter =
       data.status === 'pending'
         ? (['PENDING'] as const)

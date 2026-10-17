@@ -24,7 +24,12 @@ export class ExtraTimeGatewayService extends BaseGatewayService {
   }
 
   /** Worker requests to keep working past the shift end (routes to a leader). */
-  async requestExtraTime(data: { userId: string; entryId: string; organizationId: string; occurredAt?: string | null }) {
+  async requestExtraTime(data: {
+    userId: string;
+    entryId: string;
+    organizationId: string;
+    occurredAt?: string | null;
+  }) {
     // A write: `send` retries on a slow reply and would open a second round.
     return this.sendOnce({ cmd: 'request_extra_time' }, data);
   }
@@ -44,12 +49,24 @@ export class ExtraTimeGatewayService extends BaseGatewayService {
   }
 
   /** A manager adds overtime to a closed shift. A write: never retried. */
-  async addOvertimeToEntry(data: { approverId: string; entryId: string; minutes: number; reason?: string | null; organizationId: string; scopeSpaceIds?: string[] | null }) {
+  async addOvertimeToEntry(data: {
+    approverId: string;
+    entryId: string;
+    minutes: number;
+    reason?: string | null;
+    organizationId: string;
+    scopeSpaceIds?: string[] | null;
+  }) {
     return this.sendOnce({ cmd: 'add_overtime_to_entry' }, data);
   }
 
   /** Remove an approved overtime as if it never was. A write: never retried. */
-  async removeApprovedOvertime(data: { actorId: string; overtimeId: string; organizationId: string; scopeSpaceIds?: string[] | null }) {
+  async removeApprovedOvertime(data: {
+    actorId: string;
+    overtimeId: string;
+    organizationId: string;
+    scopeSpaceIds?: string[] | null;
+  }) {
     return this.sendOnce({ cmd: 'remove_approved_overtime' }, data);
   }
 

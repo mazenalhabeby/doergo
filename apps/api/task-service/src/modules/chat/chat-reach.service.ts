@@ -137,7 +137,16 @@ export class ChatReachService extends ChatReachBase {
         ? Promise.resolve(knownOther)
         : this.prisma.user.findFirst({
             where: { id: otherUserId, organizationId },
-            select: { id: true, firstName: true, lastName: true, avatarUrl: true, position: true, role: true, contactable: true, canManageUsers: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+              position: true,
+              role: true,
+              contactable: true,
+              canManageUsers: true,
+            },
           }),
     ]);
     // `other.id` must match exactly — findFirst with a bad id could otherwise

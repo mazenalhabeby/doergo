@@ -21,7 +21,15 @@ export type PlatformCapability =
 export const PLATFORM_ROLES: PlatformRole[] = ['OWNER', 'CONTROLLER', 'SUPPORT', 'BILLING'];
 
 const ALL: PlatformCapability[] = [
-  'view', 'extendTrial', 'manageOrgs', 'editPricing', 'billingOps', 'manageSupport', 'manageSupportTeams', 'manageLibrary', 'managePlatformUsers',
+  'view',
+  'extendTrial',
+  'manageOrgs',
+  'editPricing',
+  'billingOps',
+  'manageSupport',
+  'manageSupportTeams',
+  'manageLibrary',
+  'managePlatformUsers',
   'viewPlatformAudit',
 ];
 

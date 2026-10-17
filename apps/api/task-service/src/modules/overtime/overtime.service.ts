@@ -128,7 +128,13 @@ export class OvertimeService extends OvertimeBase {
         data: { status: 'EXPIRED_NO_RESPONSE' },
       });
       if (claim.count === 0) continue;
-      await this.endShift(req.timeEntryId, req.organizationId, 'Auto clock-out: no response to overtime prompt', 'AUTO_CLOSE', now);
+      await this.endShift(
+        req.timeEntryId,
+        req.organizationId,
+        'Auto clock-out: no response to overtime prompt',
+        'AUTO_CLOSE',
+        now,
+      );
 
       this.notify({
         recipientIds: [req.technicianId],
@@ -159,7 +165,13 @@ export class OvertimeService extends OvertimeBase {
         in time. The shift ends at the sweep — and what COUNTS still stops at the
         planned end, because a request nobody approved never moved it.
       */
-      await this.endShift(req.timeEntryId, req.organizationId, 'Auto clock-out: overtime approval expired', 'AUTO_CLOSE', now);
+      await this.endShift(
+        req.timeEntryId,
+        req.organizationId,
+        'Auto clock-out: overtime approval expired',
+        'AUTO_CLOSE',
+        now,
+      );
 
       this.notify({
         recipientIds: [req.technicianId],
@@ -215,10 +227,20 @@ export class OvertimeService extends OvertimeBase {
       ),
     });
     const people = ask.ids.length
-      ? await this.prisma.user.findMany({ where: { id: { in: ask.ids.slice(0, 3) } }, select: { firstName: true, lastName: true }, orderBy: { firstName: 'asc' } })
+      ? await this.prisma.user.findMany({
+          where: { id: { in: ask.ids.slice(0, 3) } },
+          select: { firstName: true, lastName: true },
+          orderBy: { firstName: 'asc' },
+        })
       : [];
     return success(
-      { ...request, askedOf: { names: people.map((p) => p.firstName || personName(p)), more: Math.max(0, ask.ids.length - people.length) } },
+      {
+        ...request,
+        askedOf: {
+          names: people.map((p) => p.firstName || personName(p)),
+          more: Math.max(0, ask.ids.length - people.length),
+        },
+      },
       'Active overtime request found',
     );
   }

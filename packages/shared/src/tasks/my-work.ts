@@ -218,5 +218,12 @@ export function slotHeldBy<T extends { id: string; status: string; assignedToId?
   tasks: readonly T[],
 ): T | null {
   if (!userId) return null;
-  return tasks.find((t) => t.id !== taskId && t.assignedToId === userId && (ONE_AT_A_TIME_STATUSES as readonly string[]).includes(t.status)) ?? null;
+  return (
+    tasks.find(
+      (t) =>
+        t.id !== taskId &&
+        t.assignedToId === userId &&
+        (ONE_AT_A_TIME_STATUSES as readonly string[]).includes(t.status),
+    ) ?? null
+  );
 }

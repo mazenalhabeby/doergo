@@ -30,7 +30,6 @@ export const DELEGATABLE_KEYS = [
   'canViewSpaceAttendance',
 ] as const satisfies readonly AccessPermissionKey[];
 
-
 export interface DelegatedGrant {
   org: Partial<Record<AccessPermissionKey, true>>;
   perSpace: Record<string, Partial<Record<AccessPermissionKey, true>>>;
@@ -95,7 +94,9 @@ export function withStandIn(
 /** The member's OWN access — what every grant ceiling must read. */
 export function ownAccess<T extends ResolvedAccess | null | undefined>(access: T): T {
   const own = (access as AccessWithStandIn | null | undefined)?.own;
-  return (own ? { ...access, org: own.org, perSpace: own.perSpace, own: undefined, standingInFor: undefined } : access) as T;
+  return (
+    own ? { ...access, org: own.org, perSpace: own.perSpace, own: undefined, standingInFor: undefined } : access
+  ) as T;
 }
 
 /** "Today" as the organization reads it — the date the stand-in's days are compared with. */
@@ -114,7 +115,10 @@ interface DelegationPrisma {
 }
 
 const LEADER_SELECT = (now: Date) => ({
-  id: true, firstName: true, lastName: true, ...ORG_ACCESS_SELECT,
+  id: true,
+  firstName: true,
+  lastName: true,
+  ...ORG_ACCESS_SELECT,
   spaceAssignments: {
     where: { ...activeWindowWhere(now) },
     select: { spaceId: true, role: { select: { permissions: true, isActive: true } } },
@@ -135,7 +139,12 @@ export async function standInsOn(
   toUserId?: string,
 ): Promise<Map<string, { grant: DelegatedGrant; from: Array<{ userId: string; name: string }> }>> {
   const rows = await prisma.approvalDelegation.findMany({
-    where: { organizationId, ...(toUserId ? { toUserId } : {}), ...activeDelegationWhere(day), fromUser: { isActive: true, organizationId } },
+    where: {
+      organizationId,
+      ...(toUserId ? { toUserId } : {}),
+      ...activeDelegationWhere(day),
+      fromUser: { isActive: true, organizationId },
+    },
     select: { toUserId: true, fromUser: { select: LEADER_SELECT(new Date()) } },
   });
   const byTo = new Map<string, { grants: DelegatedGrant[]; from: Array<{ userId: string; name: string }> }>();
@@ -156,7 +165,12 @@ export async function standInFor(
   organizationId: string,
   day: Date,
 ): Promise<{ grant: DelegatedGrant; from: Array<{ userId: string; name: string }> }> {
-  return (await standInsOn(prisma, organizationId, day, userId)).get(userId) ?? { grant: { org: {}, perSpace: {} }, from: [] };
+  return (
+    (await standInsOn(prisma, organizationId, day, userId)).get(userId) ?? {
+      grant: { org: {}, perSpace: {} },
+      from: [],
+    }
+  );
 }
 
 /** Does a stand-in grant hold `key` here (or anywhere, with no workspace)? */

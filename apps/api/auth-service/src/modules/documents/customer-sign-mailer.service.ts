@@ -44,7 +44,10 @@ export class CustomerSignMailerService {
     private readonly config: ConfigService,
     private readonly links: CustomerSignLinkService,
   ) {
-    this.routes = mailRoutesFromConfig((key) => this.config.get<string>(key)).map((r) => ({ ...r, tx: nodemailer.createTransport(r.options) }));
+    this.routes = mailRoutesFromConfig((key) => this.config.get<string>(key)).map((r) => ({
+      ...r,
+      tx: nodemailer.createTransport(r.options),
+    }));
 
     if (!this.routes.length) {
       this.logger.warn('SMTP not configured — clients cannot be sent signing links');
@@ -146,9 +149,7 @@ export class CustomerSignMailerService {
     // not theirs yet, and naming it in an email invites a countersignature on
     // work the supplier has not finished approving.
     const live = rows.filter((r) => {
-      const pending = r.document.signers
-        .filter((s) => s.status === 'PENDING')
-        .sort((a, b) => a.order - b.order);
+      const pending = r.document.signers.filter((s) => s.status === 'PENDING').sort((a, b) => a.order - b.order);
       return pending[0]?.order === r.order;
     });
 
@@ -223,8 +224,12 @@ export class CustomerSignMailerService {
   /** The re-issue mail: same page, no document list — they asked for the way
    *  back, not for news. */
   async sendReissue(data: {
-    to: string; token: string; expiresAt: Date; organizationName: string;
-    organizationId: string; customerId?: string | null;
+    to: string;
+    token: string;
+    expiresAt: Date;
+    organizationName: string;
+    organizationId: string;
+    customerId?: string | null;
   }): Promise<boolean> {
     return this.send(
       data.to,

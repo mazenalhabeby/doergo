@@ -34,28 +34,45 @@ export class ShiftsController {
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'List shift definitions (optionally scoped to a space)' })
   listShifts(@Query('spaceId') spaceId: string | undefined, @Request() req: any) {
-    return this.service.listShifts({ organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota'), spaceId });
+    return this.service.listShifts({
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+      spaceId,
+    });
   }
 
   @Post('shifts')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Create a shift definition' })
   createShift(@Body() body: any, @Request() req: any) {
-    return this.service.createShift({ ...body, organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.createShift({
+      ...body,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+    });
   }
 
   @Patch('shifts/:id')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Update a shift definition' })
   updateShift(@Param('id') shiftId: string, @Body() body: any, @Request() req: any) {
-    return this.service.updateShift({ ...body, shiftId, organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.updateShift({
+      ...body,
+      shiftId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+    });
   }
 
   @Delete('shifts/:id')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Delete a shift definition' })
   deleteShift(@Param('id') shiftId: string, @Request() req: any) {
-    return this.service.deleteShift({ shiftId, organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.deleteShift({
+      shiftId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+    });
   }
 
   // ── Rota (assignments) ──
@@ -71,7 +88,11 @@ export class ShiftsController {
   @Get('rota/week')
   @RequirePermissionInSpace('canViewSpaceAttendance')
   @ApiOperation({ summary: 'A workspace week: each member, each day, as the clock-in resolves it' })
-  weekRota(@Query('spaceId') spaceId: string | undefined, @Query('from') from: string | undefined, @Request() req: any) {
+  weekRota(
+    @Query('spaceId') spaceId: string | undefined,
+    @Query('from') from: string | undefined,
+    @Request() req: any,
+  ) {
     return this.service.weekRota({
       organizationId: req.user.organizationId,
       viewScope: this.scope(req, 'canViewSpaceAttendance'),
@@ -84,8 +105,11 @@ export class ShiftsController {
   /** Change one person's day: a shift or off, that day only or that weekday from then on. */
   @Post('rota/day')
   @RequirePermissionInSpace('canManageRota')
-  @ApiOperation({ summary: 'Set one member\'s shift for one day, once or weekly' })
-  setRotaDay(@Body() body: { spaceId: string; userId: string; date: string; shiftId?: string | null; repeat: 'once' | 'weekly' }, @Request() req: any) {
+  @ApiOperation({ summary: "Set one member's shift for one day, once or weekly" })
+  setRotaDay(
+    @Body() body: { spaceId: string; userId: string; date: string; shiftId?: string | null; repeat: 'once' | 'weekly' },
+    @Request() req: any,
+  ) {
     return this.service.setRotaDay({
       organizationId: req.user.organizationId,
       editScope: this.scope(req, 'canManageRota'),
@@ -131,13 +155,23 @@ export class ShiftsController {
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Update a rota assignment' })
   updateAssignment(@Param('id') assignmentId: string, @Body() body: any, @Request() req: any) {
-    return this.service.updateAssignment({ ...body, assignmentId, organizationId: req.user.organizationId, actorId: req.user.id, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.updateAssignment({
+      ...body,
+      assignmentId,
+      organizationId: req.user.organizationId,
+      actorId: req.user.id,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+    });
   }
 
   @Delete('rota/:id')
   @RequirePermissionInSpace('canManageRota')
   @ApiOperation({ summary: 'Remove a rota assignment' })
   deleteAssignment(@Param('id') assignmentId: string, @Request() req: any) {
-    return this.service.deleteAssignment({ assignmentId, organizationId: req.user.organizationId, scopeSpaceIds: this.scope(req, 'canManageRota') });
+    return this.service.deleteAssignment({
+      assignmentId,
+      organizationId: req.user.organizationId,
+      scopeSpaceIds: this.scope(req, 'canManageRota'),
+    });
   }
 }

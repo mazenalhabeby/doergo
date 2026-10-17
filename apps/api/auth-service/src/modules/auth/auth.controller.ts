@@ -104,7 +104,17 @@ export class AuthController {
     boundary that must not be bypassed.
   */
   @MessagePattern({ cmd: 'biometric_enroll' })
-  async biometricEnroll(@Payload() data: { userId: string; deviceId: string; publicKey: string; label: string; platform: string; secureHardware?: boolean }) {
+  async biometricEnroll(
+    @Payload()
+    data: {
+      userId: string;
+      deviceId: string;
+      publicKey: string;
+      label: string;
+      platform: string;
+      secureHardware?: boolean;
+    },
+  ) {
     return this.biometric.enroll(data.userId, data);
   }
 
@@ -114,7 +124,9 @@ export class AuthController {
   }
 
   @MessagePattern({ cmd: 'biometric_verify' })
-  async biometricVerify(@Payload() data: { deviceId: string; signature: string; userAgent?: string; ipAddress?: string }) {
+  async biometricVerify(
+    @Payload() data: { deviceId: string; signature: string; userAgent?: string; ipAddress?: string },
+  ) {
     return this.biometric.verify(data, { userAgent: data.userAgent, ipAddress: data.ipAddress });
   }
 
@@ -127,5 +139,4 @@ export class AuthController {
   async biometricRevoke(@Payload() data: { userId: string; deviceId: string }) {
     return this.biometric.revoke(data.userId, data.deviceId);
   }
-
 }

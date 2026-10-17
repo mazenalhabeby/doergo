@@ -9,7 +9,6 @@ import { ChatServiceBase } from './chat-service.base';
 /** Inside one conversation: its history, sending (with an attachment), marking read, muting. */
 @Injectable()
 export class ChatMessagesService extends ChatServiceBase {
-
   // ── message history: a page OLDER than the cursor, newest first then reversed ─
   // The cursor is "createdAt|id" (shared historyCursor), so two messages written
   // in the same millisecond are never skipped or repeated between pages.
@@ -100,7 +99,10 @@ export class ChatMessagesService extends ChatServiceBase {
     const now = new Date();
     // Kept only when it differs from now: the future is refused as a claim, not stored.
     const written = data.sentAt ? new Date(data.sentAt) : null;
-    const sentAt = written && !Number.isNaN(written.getTime()) && written < now && now.getTime() - written.getTime() > 60_000 ? written : null;
+    const sentAt =
+      written && !Number.isNaN(written.getTime()) && written < now && now.getTime() - written.getTime() > 60_000
+        ? written
+        : null;
     // The id is known before the write, so the conversation row can name it in the same transaction.
     const messageId = data.id ?? randomUUID();
     const [created] = await this.prisma.$transaction([

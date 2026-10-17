@@ -18,7 +18,10 @@ export class SubscriptionService extends BillingBase {
    * the bill.
    */
   async getSubscription(organizationId: string) {
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { subscription: true },
+    });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
 
     const status = statusFromPrisma(org.subStatus);
@@ -74,7 +77,10 @@ export class SubscriptionService extends BillingBase {
       is read rather than the old boolean.
     */
     if (!billsThroughStripe(org.billingMode)) {
-      return fail(HttpStatus.CONFLICT, 'This organization is billed by agreement — talk to us rather than paying by card.');
+      return fail(
+        HttpStatus.CONFLICT,
+        'This organization is billed by agreement — talk to us rather than paying by card.',
+      );
     }
 
     const bill = await this.bill.compute(organizationId);
@@ -137,7 +143,8 @@ export class SubscriptionService extends BillingBase {
       if (!org.country) {
         return fail(
           HttpStatus.BAD_REQUEST,
-          'Add this organization’s address — country included — in Settings → General before invoicing it. Tax cannot be calculated without it.',
+          'Add this organization’s address — country included — in Settings → General ' +
+            'before invoicing it. Tax cannot be calculated without it.',
         );
       }
       try {
@@ -222,7 +229,10 @@ export class SubscriptionService extends BillingBase {
   */
 
   async cancel(organizationId: string) {
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, include: { subscription: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: { subscription: true },
+    });
     if (!org) return fail(HttpStatus.NOT_FOUND, 'Organization not found');
     if (org.subscription?.stripeSubscriptionId && this.stripe.isConfigured) {
       await this.stripe.cancelAtPeriodEnd(org.subscription.stripeSubscriptionId);

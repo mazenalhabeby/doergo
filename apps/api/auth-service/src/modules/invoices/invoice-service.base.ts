@@ -9,7 +9,9 @@ import {
   CURRENCY_INVALID_MESSAGE,
   EXCHANGE_RATE_INVALID_MESSAGE,
   isHoursBasis,
-  nextInvoiceNumber, invoiceNumberPrefix, type IssuerSnapshot,
+  nextInvoiceNumber,
+  invoiceNumberPrefix,
+  type IssuerSnapshot,
   toISODateString,
   todayKey,
   workspaceZone,
@@ -34,7 +36,10 @@ export abstract class InvoiceServiceBase {
 
   /** The organization's currency — what costs, statements and margins are in. */
   protected async organizationCurrency(organizationId: string): Promise<string> {
-    const org = await this.prisma.organization.findUnique({ where: { id: organizationId }, select: { currency: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { currency: true },
+    });
     return currencyOrNull(org?.currency) ?? DEFAULT_CURRENCY;
   }
 
@@ -57,7 +62,13 @@ export abstract class InvoiceServiceBase {
    */
   protected async currencyFields(
     organizationId: string,
-    input: { currency?: string; exchangeRate?: unknown; exchangeRateSource?: string | null; exchangeRateDate?: string | null; issueDate?: string | Date | null },
+    input: {
+      currency?: string;
+      exchangeRate?: unknown;
+      exchangeRateSource?: string | null;
+      exchangeRateDate?: string | null;
+      issueDate?: string | Date | null;
+    },
     fallbackCurrency: string | null,
   ): Promise<
     | { error: string }
@@ -83,11 +94,21 @@ export abstract class InvoiceServiceBase {
     const typed = parseExchangeRate(input.exchangeRate);
     if (!typed.ok) return { error: EXCHANGE_RATE_INVALID_MESSAGE };
     const issued = input.issueDate ? new Date(input.issueDate) : null;
-    const issueDay = issued && !Number.isNaN(issued.getTime()) ? toISODateString(issued) : await this.todayFor(organizationId);
+    const issueDay =
+      issued && !Number.isNaN(issued.getTime()) ? toISODateString(issued) : await this.todayFor(organizationId);
     if (typed.rate != null) {
       const source = input.exchangeRateSource === 'ECB' ? 'ECB' : 'MANUAL';
-      const day = input.exchangeRateDate && /^\d{4}-\d{2}-\d{2}$/.test(input.exchangeRateDate) ? input.exchangeRateDate : issueDay;
-      return { currency, baseCurrency, exchangeRate: typed.rate, exchangeRateSource: source, exchangeRateDate: new Date(`${day}T00:00:00Z`) };
+      const day =
+        input.exchangeRateDate && /^\d{4}-\d{2}-\d{2}$/.test(input.exchangeRateDate)
+          ? input.exchangeRateDate
+          : issueDay;
+      return {
+        currency,
+        baseCurrency,
+        exchangeRate: typed.rate,
+        exchangeRateSource: source,
+        exchangeRateDate: new Date(`${day}T00:00:00Z`),
+      };
     }
     if (input.exchangeRate === null) {
       // Cleared on purpose: no margin for this invoice.
@@ -95,7 +116,8 @@ export abstract class InvoiceServiceBase {
     }
     const ecb = await this.rates.rate(currency, baseCurrency, issueDay);
     return {
-      currency, baseCurrency,
+      currency,
+      baseCurrency,
       exchangeRate: ecb?.rate ?? null,
       exchangeRateSource: ecb ? 'ECB' : null,
       exchangeRateDate: ecb ? new Date(`${ecb.date}T00:00:00Z`) : null,
@@ -119,7 +141,8 @@ export abstract class InvoiceServiceBase {
     dayTo?: string | null;
     hoursBasis?: string | null;
   }) {
-    const lineKind = item.lineKind && LINE_KINDS.has(item.lineKind) ? (item.lineKind as 'HOURS' | 'DAYS' | 'HEADING') : null;
+    const lineKind =
+      item.lineKind && LINE_KINDS.has(item.lineKind) ? (item.lineKind as 'HOURS' | 'DAYS' | 'HEADING') : null;
     const isDays = lineKind === 'DAYS';
     // A run of time on site — hours or days — names whose time and which days.
     const isRun = isDays || (lineKind === 'HOURS' && typeof item.workerId === 'string' && !!item.dayFrom);
@@ -134,7 +157,10 @@ export abstract class InvoiceServiceBase {
       workerId: isRun && typeof item.workerId === 'string' ? item.workerId : null,
       taskIds:
         lineKind === 'HOURS' && Array.isArray(item.taskIds)
-          ? [...new Set(item.taskIds.filter((x): x is string => typeof x === 'string' && x.length <= 64))].slice(0, 2000)
+          ? [...new Set(item.taskIds.filter((x): x is string => typeof x === 'string' && x.length <= 64))].slice(
+              0,
+              2000,
+            )
           : [],
       // Which hours an hours run billed — kept with the line; anything else is no basis.
       hoursBasis: lineKind === 'HOURS' && isRun && isHoursBasis(item.hoursBasis) ? item.hoursBasis : null,
@@ -164,7 +190,11 @@ export abstract class InvoiceServiceBase {
     ]);
     return tasks === taskIds.length && reports === reportIds.length
       ? null
-      : { success: false as const, message: 'A line names a job or report outside this organization', statusCode: HttpStatus.BAD_REQUEST };
+      : {
+          success: false as const,
+          message: 'A line names a job or report outside this organization',
+          statusCode: HttpStatus.BAD_REQUEST,
+        };
   }
 
   protected async unknownWorker(organizationId: string, items: Array<{ workerId: string | null }>) {
@@ -173,7 +203,11 @@ export abstract class InvoiceServiceBase {
     const found = await this.prisma.user.count({ where: { id: { in: ids }, organizationId } });
     return found === ids.length
       ? null
-      : { success: false as const, message: 'A day line names somebody outside this organization', statusCode: HttpStatus.BAD_REQUEST };
+      : {
+          success: false as const,
+          message: 'A day line names somebody outside this organization',
+          statusCode: HttpStatus.BAD_REQUEST,
+        };
   }
 
   /**
@@ -204,10 +238,23 @@ export abstract class InvoiceServiceBase {
     const refused = await this.entities.assertUsable(organizationId, chosen);
     if (refused) return { error: refused };
     const client = customerId
-      ? (await this.prisma.customer.findFirst({ where: { id: customerId, organizationId }, select: { legalEntityId: true } }))?.legalEntityId ?? null
+      ? ((
+          await this.prisma.customer.findFirst({
+            where: { id: customerId, organizationId },
+            select: { legalEntityId: true },
+          })
+        )?.legalEntityId ?? null)
       : null;
     const entity = await this.entities.resolveIssuer(organizationId, { invoice: chosen ?? null, workspace, client });
-    if (!entity) return { error: { success: false as const, statusCode: HttpStatus.BAD_REQUEST, code: 'COMPANY_MISSING', message: 'No company is set up to issue invoices.' } };
+    if (!entity)
+      return {
+        error: {
+          success: false as const,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'COMPANY_MISSING',
+          message: 'No company is set up to issue invoices.',
+        },
+      };
     return { entity };
   }
 

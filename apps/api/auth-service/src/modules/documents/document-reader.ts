@@ -75,7 +75,13 @@ export class OcrRulesReader implements DocumentReader {
 
   async read({ bytes, mimeType, member }: ReadInput): Promise<DocumentReading> {
     const nothing = (unreadable: DocumentReading['unreadable']): DocumentReading => ({
-      expiresOn: null, certainty: null, source: null, label: null, engine: this.name, scan: null, unreadable,
+      expiresOn: null,
+      certainty: null,
+      source: null,
+      label: null,
+      engine: this.name,
+      scan: null,
+      unreadable,
     });
     if (isHeic(bytes)) return nothing('HEIC');
     if (!mimeType.startsWith('image/')) return nothing('NOT_AN_IMAGE');
@@ -87,11 +93,27 @@ export class OcrRulesReader implements DocumentReader {
 
     // The zone agrees with its own arithmetic: the one date that is a fact.
     if (scan.raw?.allChecksPassed && scan.extracted.dateOfExpiry) {
-      return { expiresOn: scan.extracted.dateOfExpiry, certainty: 'PROVEN', source: 'MRZ', label: null, engine: this.name, scan, unreadable: null };
+      return {
+        expiresOn: scan.extracted.dateOfExpiry,
+        certainty: 'PROVEN',
+        source: 'MRZ',
+        label: null,
+        engine: this.name,
+        scan,
+        unreadable: null,
+      };
     }
     // A barcode is decoded, not guessed — but carries no proof.
     if (!scan.raw && scan.format && scan.extracted.dateOfExpiry) {
-      return { expiresOn: scan.extracted.dateOfExpiry, certainty: 'SUGGESTED', source: 'BARCODE', label: null, engine: this.name, scan, unreadable: null };
+      return {
+        expiresOn: scan.extracted.dateOfExpiry,
+        certainty: 'SUGGESTED',
+        source: 'BARCODE',
+        label: null,
+        engine: this.name,
+        scan,
+        unreadable: null,
+      };
     }
 
     /*
@@ -99,7 +121,9 @@ export class OcrRulesReader implements DocumentReader {
       printed date is usually higher, so read the whole page before the rules
       look for a label.
     */
-    const page = scan.raw ? await this.ocr.read(bytes, mimeType, { wholeFrame: true, timeoutMs: BACKGROUND_READ_TIMEOUT_MS }) : text;
+    const page = scan.raw
+      ? await this.ocr.read(bytes, mimeType, { wholeFrame: true, timeoutMs: BACKGROUND_READ_TIMEOUT_MS })
+      : text;
     const found = suggestExpiry(page ?? text);
     return {
       expiresOn: found?.iso ?? null,
@@ -112,7 +136,6 @@ export class OcrRulesReader implements DocumentReader {
     };
   }
 }
-
 
 /**
  * PDFs members upload: the text layer, read exactly — a certificate emailed as
@@ -127,7 +150,13 @@ export class PdfTextReader implements DocumentReader {
 
   async read({ bytes, mimeType, member }: ReadInput): Promise<DocumentReading> {
     const nothing = (unreadable: DocumentReading['unreadable']): DocumentReading => ({
-      expiresOn: null, certainty: null, source: null, label: null, engine: this.name, scan: null, unreadable,
+      expiresOn: null,
+      certainty: null,
+      source: null,
+      label: null,
+      engine: this.name,
+      scan: null,
+      unreadable,
     });
     if (mimeType !== 'application/pdf') return nothing('NOT_AN_IMAGE');
     let pdfjs: any;
@@ -147,7 +176,16 @@ export class PdfTextReader implements DocumentReader {
     // A PDF may carry a zone too (a scanned passport exported with OCR).
     const scan = checkScan({ mrzText: text, member });
     if (scan.raw?.allChecksPassed && scan.extracted.dateOfExpiry) {
-      return { expiresOn: scan.extracted.dateOfExpiry, certainty: 'PROVEN', source: 'MRZ', label: null, engine: this.name, scan, unreadable: null, title };
+      return {
+        expiresOn: scan.extracted.dateOfExpiry,
+        certainty: 'PROVEN',
+        source: 'MRZ',
+        label: null,
+        engine: this.name,
+        scan,
+        unreadable: null,
+        title,
+      };
     }
     const found = suggestExpiry(text);
     return {

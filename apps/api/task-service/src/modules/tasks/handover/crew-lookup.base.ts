@@ -41,7 +41,6 @@ export abstract class CrewLookupBase {
     protected readonly taskAccess: TaskAccessService,
   ) {}
 
-
   // ─────────────────────────── reads ───────────────────────────
 
   /** A job of the caller's organization, or 404. Crew actions never reach across organizations. */
@@ -96,7 +95,8 @@ export abstract class CrewLookupBase {
 
   /** How each step of this job counts. */
   protected async kindOf(task: Pick<CrewTask, 'organizationId' | 'workflowId' | 'spaceId'>) {
-    const flowId = task.workflowId ?? (task.spaceId ? await resolveSpaceDefaultWorkflowId(this.prisma, task.spaceId) : null);
+    const flowId =
+      task.workflowId ?? (task.spaceId ? await resolveSpaceDefaultWorkflowId(this.prisma, task.spaceId) : null);
     const wf = await this.workflows.getWorkflow(task.organizationId, flowId);
     return { kind: (s: string) => stepTimeKind(s, stepCapabilities(wf, s)) };
   }
@@ -109,7 +109,10 @@ export abstract class CrewLookupBase {
     onClock: Map<string, Date>,
     now = Date.now(),
   ): EffectiveLeader {
-    const presence = crewPresence(timeline, crew.map((c) => c.userId));
+    const presence = crewPresence(
+      timeline,
+      crew.map((c) => c.userId),
+    );
     const joinedInOrder = [...presence]
       .filter(([, p]) => p.joined)
       .sort((a, b) => (a[1].since ?? 0) - (b[1].since ?? 0))
@@ -117,12 +120,17 @@ export abstract class CrewLookupBase {
     const leadId = crew.find((c) => c.role === 'LEAD')?.userId ?? task.assignedToId ?? null;
     return effectiveLeader({
       leadId,
-      today: task.leadOverrideId && task.leadOverrideUntil ? { userId: task.leadOverrideId, until: task.leadOverrideUntil.getTime() } : null,
+      today:
+        task.leadOverrideId && task.leadOverrideUntil
+          ? { userId: task.leadOverrideId, until: task.leadOverrideUntil.getTime() }
+          : null,
       now,
       onClock: new Set(onClock.keys()),
       joinedInOrder,
       // Before anybody joined, the crew itself (leader row first) — a job with a sick leader can still start.
-      crewInOrder: [...crew].sort((a, b) => (a.role === 'LEAD' ? -1 : 0) - (b.role === 'LEAD' ? -1 : 0)).map((c) => c.userId),
+      crewInOrder: [...crew]
+        .sort((a, b) => (a.role === 'LEAD' ? -1 : 0) - (b.role === 'LEAD' ? -1 : 0))
+        .map((c) => c.userId),
     });
   }
 
@@ -155,9 +163,10 @@ export abstract class CrewLookupBase {
     return {
       crewMode: !!org?.crewMode,
       leader: { userId: leader.userId, acting: leader.acting, source: leader.source },
-      today: task.leadOverrideId && task.leadOverrideUntil && task.leadOverrideUntil.getTime() > Date.now()
-        ? { userId: task.leadOverrideId, until: task.leadOverrideUntil.toISOString() }
-        : null,
+      today:
+        task.leadOverrideId && task.leadOverrideUntil && task.leadOverrideUntil.getTime() > Date.now()
+          ? { userId: task.leadOverrideId, until: task.leadOverrideUntil.toISOString() }
+          : null,
       members: crew.map((c) => {
         const p = presence.get(c.userId);
         return {
@@ -182,9 +191,14 @@ export abstract class CrewLookupBase {
 
   /** The zone the work is in — what "today" means for a hand-over. */
   protected async zoneOf(task: Pick<CrewTask, 'spaceId' | 'organizationId'>): Promise<string> {
-    const space = task.spaceId ? await this.prisma.companyLocation.findUnique({ where: { id: task.spaceId }, select: { timezone: true } }) : null;
+    const space = task.spaceId
+      ? await this.prisma.companyLocation.findUnique({ where: { id: task.spaceId }, select: { timezone: true } })
+      : null;
     if (space?.timezone) return space.timezone;
-    const org = await this.prisma.organization.findUnique({ where: { id: task.organizationId }, select: { timezone: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: task.organizationId },
+      select: { timezone: true },
+    });
     return zoneOf(org?.timezone);
   }
 }

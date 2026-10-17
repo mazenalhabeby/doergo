@@ -9,15 +9,20 @@ import { ApprovalRulesBase } from './approval-rules.base';
  */
 @Injectable()
 export class ApprovalRulesAdminService extends ApprovalRulesBase {
-
   // ── The office's rules ────────────────────────────────────────────────
 
   async listRules(organizationId: string): Promise<ApprovalRuleView[]> {
-    const rules = await this.prisma.approvalRule.findMany({ where: { organizationId }, orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }] });
+    const rules = await this.prisma.approvalRule.findMany({
+      where: { organizationId },
+      orderBy: [{ kind: 'asc' }, { createdAt: 'asc' }],
+    });
     const roleIds = [...new Set(rules.flatMap((r) => [r.secondRoleId, r.escalateRoleId]).filter(Boolean) as string[])];
     const [roles, spaces] = await Promise.all([
       this.prisma.accessRole.findMany({ where: { id: { in: roleIds } }, select: { id: true, name: true } }),
-      this.prisma.companyLocation.findMany({ where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } }, select: { id: true, name: true } }),
+      this.prisma.companyLocation.findMany({
+        where: { id: { in: rules.map((r) => r.spaceId).filter(Boolean) as string[] } },
+        select: { id: true, name: true },
+      }),
     ]);
     return rules.map((r) => ({
       id: r.id,
@@ -38,24 +43,36 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
     }));
   }
 
-  async saveRule(organizationId: string, userId: string, input: ApprovalRuleInput, id?: string): Promise<{ id: string }> {
+  async saveRule(
+    organizationId: string,
+    userId: string,
+    input: ApprovalRuleInput,
+    id?: string,
+  ): Promise<{ id: string }> {
     const problem = ruleInputProblem(input);
     if (problem) throw new BadRequestException({ message: RULE_MESSAGES[problem], code: problem });
     // Any of the organization's SHARED roles — never somebody's personal role.
-    const sharedRole = (id: string) => this.prisma.accessRole.findFirst({ where: { id, organizationId, personalAssignmentId: null }, select: { id: true } });
+    const sharedRole = (id: string) =>
+      this.prisma.accessRole.findFirst({
+        where: { id, organizationId, personalAssignmentId: null },
+        select: { id: true },
+      });
     const [second, escalate, space] = await Promise.all([
       input.secondRoleId ? sharedRole(input.secondRoleId) : Promise.resolve({ id: null }),
       input.escalateRoleId ? sharedRole(input.escalateRoleId) : Promise.resolve({ id: null }),
-      input.spaceId ? this.prisma.companyLocation.findFirst({ where: { id: input.spaceId, organizationId }, select: { id: true } }) : Promise.resolve({ id: null }),
+      input.spaceId
+        ? this.prisma.companyLocation.findFirst({ where: { id: input.spaceId, organizationId }, select: { id: true } })
+        : Promise.resolve({ id: null }),
     ]);
-    if (!second || !escalate) throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
+    if (!second || !escalate)
+      throw new BadRequestException({ message: RULE_MESSAGES.RULE_ROLE_REQUIRED, code: 'RULE_ROLE_REQUIRED' });
     if (!space) throw new NotFoundException('Workspace not found');
     const data = {
       kind: input.kind,
       spaceId: input.spaceId ?? null,
-      minMinutes: input.kind === 'overtime' ? input.minMinutes ?? null : null,
-      minDays: input.kind === 'request' ? input.minDays ?? null : null,
-      minAmountCents: input.kind === 'expense' ? input.minAmountCents ?? null : null,
+      minMinutes: input.kind === 'overtime' ? (input.minMinutes ?? null) : null,
+      minDays: input.kind === 'request' ? (input.minDays ?? null) : null,
+      minAmountCents: input.kind === 'expense' ? (input.minAmountCents ?? null) : null,
       whenCoverShort: input.kind === 'request' ? input.whenCoverShort === true : false,
       secondRoleId: input.secondRoleId || null,
       remindAfterHours: input.remindAfterHours ?? null,
@@ -70,7 +87,10 @@ export class ApprovalRulesAdminService extends ApprovalRulesBase {
       if (!data.isActive) await this.closeStepsOf(organizationId, id);
       return { id };
     }
-    return this.prisma.approvalRule.create({ data: { ...data, organizationId, createdById: userId }, select: { id: true } });
+    return this.prisma.approvalRule.create({
+      data: { ...data, organizationId, createdById: userId },
+      select: { id: true },
+    });
   }
 
   async deleteRule(organizationId: string, id: string): Promise<{ deleted: true }> {

@@ -9,9 +9,7 @@ import { RUN_DAYS, DAY, Instance } from './no-show-record-helpers';
  */
 @Injectable()
 export abstract class NoShowRecordBase {
-
   constructor(protected readonly prisma: PrismaService) {}
-
 
   /* ------------------------------------------------------------ helpers */
 
@@ -22,7 +20,10 @@ export abstract class NoShowRecordBase {
   protected async spaceRows(organizationId: string, ids: (string | null)[]) {
     const unique = [...new Set(ids.filter((v): v is string => !!v))];
     if (!unique.length) return new Map<string, { name: string; timezone: string | null }>();
-    const rows = await this.prisma.companyLocation.findMany({ where: { id: { in: unique }, organizationId }, select: { id: true, name: true, timezone: true } });
+    const rows = await this.prisma.companyLocation.findMany({
+      where: { id: { in: unique }, organizationId },
+      select: { id: true, name: true, timezone: true },
+    });
     return new Map(rows.map((s) => [s.id, { name: s.name, timezone: s.timezone }]));
   }
 
@@ -66,11 +67,16 @@ export abstract class NoShowRecordBase {
    * one), or nowhere since a date. Keyed by the run's newest id.
    */
   protected async runHints(open: Instance[], runs: Map<string, NoShowRun>, organizationId: string) {
-    const out = new Map<string, { kind: 'ELSEWHERE'; spaceName: string; days: number } | { kind: 'NOT_SEEN'; since: string | null }>();
+    const out = new Map<
+      string,
+      { kind: 'ELSEWHERE'; spaceName: string; days: number } | { kind: 'NOT_SEEN'; since: string | null }
+    >();
     const latest = open.filter((r) => runs.get(r.id)?.latestId === r.id && (runs.get(r.id)?.count ?? 0) > 1);
     if (!latest.length) return out;
     const userIds = [...new Set(latest.map((r) => r.userId))];
-    const from = new Date(Math.min(...latest.map((r) => new Date(`${runs.get(r.id)!.from}T00:00:00.000Z`).getTime())) - DAY);
+    const from = new Date(
+      Math.min(...latest.map((r) => new Date(`${runs.get(r.id)!.from}T00:00:00.000Z`).getTime())) - DAY,
+    );
     const entries = await this.prisma.timeEntry.findMany({
       where: { userId: { in: userIds }, clockInAt: { gte: from }, approvalStatus: { not: 'REJECTED' } },
       select: { userId: true, locationId: true, clockInAt: true },
@@ -81,7 +87,10 @@ export abstract class NoShowRecordBase {
       _max: { clockInAt: true },
     });
     const lastBy = new Map(last.map((l) => [l.userId, l._max.clockInAt]));
-    const names = await this.spaceNames(organizationId, entries.map((e) => e.locationId));
+    const names = await this.spaceNames(
+      organizationId,
+      entries.map((e) => e.locationId),
+    );
     for (const r of latest) {
       const run = runs.get(r.id)!;
       const start = new Date(`${run.from}T00:00:00.000Z`).getTime() - 14 * 3_600_000;

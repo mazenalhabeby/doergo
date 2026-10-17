@@ -67,7 +67,11 @@ export abstract class TaskReportParties {
 
     const entity = entities.find((e) => e.id === issuerId) ?? null;
     // The LEAD row; a job assigned before crews existed names its lead only on `assignedToId`.
-    const lead = (task.assignees.find((a: any) => a.role === 'LEAD') ?? task.assignees.find((a: any) => a.userId === task.assignedToId))?.user ?? null;
+    const lead =
+      (
+        task.assignees.find((a: any) => a.role === 'LEAD') ??
+        task.assignees.find((a: any) => a.userId === task.assignedToId)
+      )?.user ?? null;
 
     return {
       taskId: task.id,
@@ -82,11 +86,23 @@ export abstract class TaskReportParties {
       unit: task.unit ?? null,
       asset: task.asset
         ? {
-            id: task.asset.id, name: task.asset.name, serialNumber: task.asset.serialNumber ?? null, model: task.asset.model ?? null,
-            manufacturer: task.asset.manufacturer ?? null, category: task.asset.category?.name ?? null, type: task.asset.type?.name ?? null,
+            id: task.asset.id,
+            name: task.asset.name,
+            serialNumber: task.asset.serialNumber ?? null,
+            model: task.asset.model ?? null,
+            manufacturer: task.asset.manufacturer ?? null,
+            category: task.asset.category?.name ?? null,
+            type: task.asset.type?.name ?? null,
           }
         : null,
-      workspace: task.space ? { id: task.space.id, name: task.space.name, address: task.space.address ?? null, timezone: task.space.timezone } : null,
+      workspace: task.space
+        ? {
+            id: task.space.id,
+            name: task.space.name,
+            address: task.space.address ?? null,
+            timezone: task.space.timezone,
+          }
+        : null,
       createdAt: iso(task.createdAt)!,
       createdBy: personOf(task.createdBy),
       dueDate: iso(task.dueDate),
@@ -96,9 +112,17 @@ export abstract class TaskReportParties {
       taskType: workflowName,
       totalMinutes: time.total.travel + time.total.working + time.total.blocked,
       lead: personOf(lead),
-      crew: task.assignees.map((a: any) => ({ person: personOf(a.user)!, role: a.role === 'LEAD' ? 'LEAD' : 'MEMBER' })),
+      crew: task.assignees.map((a: any) => ({
+        person: personOf(a.user)!,
+        role: a.role === 'LEAD' ? 'LEAD' : 'MEMBER',
+      })),
       statuses,
-      currency: resolveInvoiceCurrency({ space: task.space, customer: task.customer, company: entity, organization: task.organization }).currency,
+      currency: resolveInvoiceCurrency({
+        space: task.space,
+        customer: task.customer,
+        company: entity,
+        organization: task.organization,
+      }).currency,
     };
   }
 
@@ -125,15 +149,28 @@ export abstract class TaskReportParties {
   protected issuer(entity: any, org: any): TaskReportIssuer {
     if (entity) {
       return {
-        name: entity.legalName, logoUrl: entity.logoUrl ?? org.logoUrl ?? null, addressLines: issuerAddressLines(entity),
-        vatId: entity.vatId ?? null, taxId: entity.taxId ?? null, registerNumber: entity.registerNumber ?? null,
-        email: entity.email ?? null, phone: entity.phone ?? null, website: entity.website ?? null,
+        name: entity.legalName,
+        logoUrl: entity.logoUrl ?? org.logoUrl ?? null,
+        addressLines: issuerAddressLines(entity),
+        vatId: entity.vatId ?? null,
+        taxId: entity.taxId ?? null,
+        registerNumber: entity.registerNumber ?? null,
+        email: entity.email ?? null,
+        phone: entity.phone ?? null,
+        website: entity.website ?? null,
       };
     }
     const lines = issuerAddressLines(org);
     return {
-      name: org.name, logoUrl: org.logoUrl ?? null, addressLines: lines.length ? lines : org.address ? [org.address] : [],
-      vatId: org.vatId ?? null, taxId: null, registerNumber: null, email: org.email ?? null, phone: org.phone ?? null, website: org.website ?? null,
+      name: org.name,
+      logoUrl: org.logoUrl ?? null,
+      addressLines: lines.length ? lines : org.address ? [org.address] : [],
+      vatId: org.vatId ?? null,
+      taxId: null,
+      registerNumber: null,
+      email: org.email ?? null,
+      phone: org.phone ?? null,
+      website: org.website ?? null,
     };
   }
 
@@ -150,13 +187,19 @@ export abstract class TaskReportParties {
   ): Promise<boolean> {
     if (!customer) return false;
     if (isAdmin({ role: facts.userRole })) return true;
-    const row = await this.prisma.user.findFirst({ where: { id: facts.userId, organizationId: facts.organizationId }, select: crmReachSelect() });
+    const row = await this.prisma.user.findFirst({
+      where: { id: facts.userId, organizationId: facts.organizationId },
+      select: crmReachSelect(),
+    });
     return crmReachesClientIn(crmReachOfRow(row as never), customer, facts.userId);
   }
 
   protected client(c: any, shown: boolean) {
     return {
-      id: c.id, name: c.name, type: c.type, restricted: !shown,
+      id: c.id,
+      name: c.name,
+      type: c.type,
+      restricted: !shown,
       legalName: shown ? (c.legalName ?? null) : null,
       vatId: shown ? (c.vatId ?? null) : null,
       address: shown ? (c.address ?? null) : null,
@@ -172,12 +215,19 @@ export abstract class TaskReportParties {
         where: { companyId: task.customer.id, isPrimary: true },
         select: { role: true, person: { select: { name: true, phone: true, email: true } } },
       });
-      if (primary) return { name: primary.person.name, role: primary.role ?? null, phone: primary.person.phone ?? null, email: primary.person.email ?? null };
+      if (primary)
+        return {
+          name: primary.person.name,
+          role: primary.role ?? null,
+          phone: primary.person.phone ?? null,
+          email: primary.person.email ?? null,
+        };
     }
     if (task.unit?.contactName || task.unit?.contactPhone) {
       return { name: task.unit.contactName ?? null, role: null, phone: task.unit.contactPhone ?? null, email: null };
     }
-    if (clientShown && task.customer?.contactName) return { name: task.customer.contactName, role: null, phone: null, email: null };
+    if (clientShown && task.customer?.contactName)
+      return { name: task.customer.contactName, role: null, phone: null, email: null };
     return null;
   }
 }

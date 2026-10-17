@@ -18,7 +18,6 @@ import { CrewLookupBase } from './crew-lookup.base';
  */
 @Injectable()
 export abstract class CrewBase extends CrewLookupBase {
-
   /**
    * The join itself — also how a crew member's tap on the step the job is
    * already in counts. Writes only; answers whether a join was written.
@@ -29,8 +28,12 @@ export abstract class CrewBase extends CrewLookupBase {
     opts: { evidence?: OccurrenceEvidence; viaLeaderStart?: boolean; byUserId?: string; reason?: string },
   ): Promise<boolean> {
     const crew = await this.crewOf(task);
-    if (!crew.some((c) => c.userId === who)) throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
-    const person = await this.prisma.user.findUnique({ where: { id: who }, select: { isExternal: true, organizationId: true } });
+    if (!crew.some((c) => c.userId === who))
+      throw new BadRequestException({ message: 'They are not on this job.', code: CREW_CODES.NOT_ON_CREW });
+    const person = await this.prisma.user.findUnique({
+      where: { id: who },
+      select: { isExternal: true, organizationId: true },
+    });
     // External members hold no clock and work no job of ours (EXTERNAL_FORBIDDEN_MODULES).
     if (!person || person.isExternal || person.organizationId !== task.organizationId) {
       throw new BadRequestException({ message: 'They cannot join this job.', code: CREW_CODES.NOT_ON_CREW });
@@ -41,7 +44,8 @@ export abstract class CrewBase extends CrewLookupBase {
 
     const { kind } = await this.kindOf(task);
     // Not under way: a paused job is picked up with Resume; one not started with its first step.
-    if (task.pausedAt || !kind(task.status)) throw new BadRequestException({ message: 'The job is not under way.', code: CREW_CODES.JOB_NOT_STARTED });
+    if (task.pausedAt || !kind(task.status))
+      throw new BadRequestException({ message: 'The job is not under way.', code: CREW_CODES.JOB_NOT_STARTED });
 
     // On the clock, as for any way onto a job; the tap's own time, never before the clock-in.
     const clock = await this.clockGate.assertWorkerClockedIn(task, who, task.organizationId, true);
@@ -57,7 +61,11 @@ export abstract class CrewBase extends CrewLookupBase {
     */
     const floor = Math.max(runStart ?? -Infinity, presence?.lastLeftAt ?? -Infinity);
     const at = Math.max(
-      joinMoment({ tapAt, leaderStartAt: opts.viaLeaderStart ? runStart : null, clockInAt: clock?.clockInAt ? clock.clockInAt.getTime() : null }),
+      joinMoment({
+        tapAt,
+        leaderStartAt: opts.viaLeaderStart ? runStart : null,
+        clockInAt: clock?.clockInAt ? clock.clockInAt.getTime() : null,
+      }),
       floor,
     );
 
@@ -88,8 +96,10 @@ export abstract class CrewBase extends CrewLookupBase {
     let status: string | undefined;
     let paused = false;
     for (const e of [...timeline].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())) {
-      if (e.kind === 'STATUS') { status = e.status; paused = false; }
-      else if (e.kind === 'PAUSED') paused = true;
+      if (e.kind === 'STATUS') {
+        status = e.status;
+        paused = false;
+      } else if (e.kind === 'PAUSED') paused = true;
       else if (e.kind === 'RESUMED') paused = false;
       else continue;
       const now = !paused && !!kind(status ?? '');
@@ -111,23 +121,33 @@ export abstract class CrewBase extends CrewLookupBase {
     const left = others.filter((j) => crewPresence(timelines.get(j.id) ?? [], [userId]).get(userId)?.joined);
     if (!left.length) return;
     await this.prisma.taskEvent.createMany({
-      data: left.map((j) => ({ taskId: j.id, userId, eventType: TaskEventType.CREW_LEFT, metadata: { at: at.toISOString(), why: 'OTHER_JOB' } })),
+      data: left.map((j) => ({
+        taskId: j.id,
+        userId,
+        eventType: TaskEventType.CREW_LEFT,
+        metadata: { at: at.toISOString(), why: 'OTHER_JOB' },
+      })),
     });
   }
 
   protected async mustBeJoined(task: CrewTask, userId: string) {
     const crew = await this.crewOf(task);
-    if (!crew.some((c) => c.userId === userId)) throw new BadRequestException({ message: 'You are not on this job.', code: CREW_CODES.NOT_ON_CREW });
+    if (!crew.some((c) => c.userId === userId))
+      throw new BadRequestException({ message: 'You are not on this job.', code: CREW_CODES.NOT_ON_CREW });
     const timeline = (await this.jobTime.timelinesOf([task.id])).get(task.id) ?? [];
     const presence = crewPresence(timeline, [userId]).get(userId)!;
-    if (!presence.joined) throw new BadRequestException({ message: 'Join the job first.', code: CREW_CODES.NOT_JOINED });
+    if (!presence.joined)
+      throw new BadRequestException({ message: 'Join the job first.', code: CREW_CODES.NOT_JOINED });
     return { presence };
   }
 
   /** Every open screen on this job redraws: the board, the job page, the phones. */
   protected changed(task: Pick<CrewTask, 'id' | 'organizationId'>, actorId: string) {
-    void this.prisma.task.findUnique({ where: { id: task.id } }).then((t) => {
-      if (t) this.notifications.emit('task_updated', { task: t, actorId });
-    }).catch(() => undefined);
+    void this.prisma.task
+      .findUnique({ where: { id: task.id } })
+      .then((t) => {
+        if (t) this.notifications.emit('task_updated', { task: t, actorId });
+      })
+      .catch(() => undefined);
   }
 }

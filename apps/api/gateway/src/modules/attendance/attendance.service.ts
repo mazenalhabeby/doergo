@@ -4,9 +4,7 @@ import { SERVICE_NAMES, BaseGatewayService } from '@hbcfield/shared';
 
 @Injectable()
 export class AttendanceService extends BaseGatewayService {
-  constructor(
-    @Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy,
-  ) {
+  constructor(@Inject(SERVICE_NAMES.TASK) taskClient: ClientProxy) {
     super(taskClient, AttendanceService.name);
   }
 
@@ -44,13 +42,27 @@ export class AttendanceService extends BaseGatewayService {
     answer, and a retried write lands twice — the batch route has no ids to
     catch it. Reads and presigns keep the retrying `send`.
   */
-  worklogAddNote(data: any) { return this.sendOnce({ cmd: 'worklog_add_note' }, data); }
-  worklogAddNotesBatch(data: any) { return this.sendOnce({ cmd: 'worklog_add_notes_batch' }, data); }
-  worklogList(data: any) { return this.send({ cmd: 'worklog_list' }, data); }
-  worklogDeleteNote(data: any) { return this.sendOnce({ cmd: 'worklog_delete_note' }, data); }
-  worklogPresignAttachment(data: any) { return this.send({ cmd: 'worklog_presign_attachment' }, data); }
-  worklogConfirmAttachment(data: any) { return this.sendOnce({ cmd: 'worklog_confirm_attachment' }, data); }
-  worklogDeleteAttachment(data: any) { return this.sendOnce({ cmd: 'worklog_delete_attachment' }, data); }
+  worklogAddNote(data: any) {
+    return this.sendOnce({ cmd: 'worklog_add_note' }, data);
+  }
+  worklogAddNotesBatch(data: any) {
+    return this.sendOnce({ cmd: 'worklog_add_notes_batch' }, data);
+  }
+  worklogList(data: any) {
+    return this.send({ cmd: 'worklog_list' }, data);
+  }
+  worklogDeleteNote(data: any) {
+    return this.sendOnce({ cmd: 'worklog_delete_note' }, data);
+  }
+  worklogPresignAttachment(data: any) {
+    return this.send({ cmd: 'worklog_presign_attachment' }, data);
+  }
+  worklogConfirmAttachment(data: any) {
+    return this.sendOnce({ cmd: 'worklog_confirm_attachment' }, data);
+  }
+  worklogDeleteAttachment(data: any) {
+    return this.sendOnce({ cmd: 'worklog_delete_attachment' }, data);
+  }
 
   /**
    * Get time entries for a location (admin view)
@@ -111,22 +123,50 @@ export class AttendanceService extends BaseGatewayService {
     return this.send({ cmd: 'get_active_entries' }, data);
   }
 
-  async listNoShows(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string; open?: boolean }) {
+  async listNoShows(data: {
+    organizationId: string;
+    scopeSpaceIds?: string[] | null;
+    days?: number;
+    spaceId?: string;
+    open?: boolean;
+  }) {
     return this.send({ cmd: 'list_no_shows' }, data);
   }
 
-  async resolveNoShow(data: { id: string; organizationId: string; scopeSpaceIds?: string[] | null; action: 'excuse' | 'absent' | 'reopen'; reasonCode?: string; reason?: string; wholeRun?: boolean; excusedById?: string }) {
+  async resolveNoShow(data: {
+    id: string;
+    organizationId: string;
+    scopeSpaceIds?: string[] | null;
+    action: 'excuse' | 'absent' | 'reopen';
+    reasonCode?: string;
+    reason?: string;
+    wholeRun?: boolean;
+    excusedById?: string;
+  }) {
     return this.send({ cmd: 'resolve_no_show' }, data);
   }
 
-  async noShowSummary(data: { organizationId: string; scopeSpaceIds?: string[] | null; days?: number; spaceId?: string }) {
+  async noShowSummary(data: {
+    organizationId: string;
+    scopeSpaceIds?: string[] | null;
+    days?: number;
+    spaceId?: string;
+  }) {
     return this.send({ cmd: 'no_show_summary' }, data);
   }
 
   // ── The automatic clock (attendance/auto-clock.ts) — the caller's own, always ──
   // Writes through `sendOnce`: a retried consent is harmless, a retried undo is not worth the doubt.
-  autoClockPlan(data: { userId: string; organizationId: string }) { return this.send({ cmd: 'auto_clock_plan' }, data); }
-  autoClockConsent(data: { userId: string; organizationId: string; consent: boolean }) { return this.sendOnce({ cmd: 'auto_clock_consent' }, data); }
-  autoClockUndo(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) { return this.sendOnce({ cmd: 'auto_clock_undo' }, data); }
-  autoClockSkipRest(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) { return this.sendOnce({ cmd: 'auto_clock_skip_rest' }, data); }
+  autoClockPlan(data: { userId: string; organizationId: string }) {
+    return this.send({ cmd: 'auto_clock_plan' }, data);
+  }
+  autoClockConsent(data: { userId: string; organizationId: string; consent: boolean }) {
+    return this.sendOnce({ cmd: 'auto_clock_consent' }, data);
+  }
+  autoClockUndo(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) {
+    return this.sendOnce({ cmd: 'auto_clock_undo' }, data);
+  }
+  autoClockSkipRest(data: { userId: string; organizationId: string; entryId: string; evidence?: unknown }) {
+    return this.sendOnce({ cmd: 'auto_clock_skip_rest' }, data);
+  }
 }

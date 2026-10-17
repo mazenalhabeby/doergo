@@ -87,7 +87,13 @@ export function logValueLines(
   const fields = type?.fields ?? [];
   return [
     ...fields
-      .filter((f) => f.type !== 'photo' && f.type !== 'money' && values[f.key] !== undefined && !(entry.logType === 'cost' && f.key === 'category'))
+      .filter(
+        (f) =>
+          f.type !== 'photo' &&
+          f.type !== 'money' &&
+          values[f.key] !== undefined &&
+          !(entry.logType === 'cost' && f.key === 'category'),
+      )
       .map((f) => {
         const v = values[f.key]!;
         const text = typeof v === 'number' ? formatNumber(v) : v;

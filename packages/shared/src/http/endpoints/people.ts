@@ -32,10 +32,17 @@ type Id = { id: string };
 
 export const employeesEndpoints = defineEndpoints('employees', {
   /** A page of members; use `client.page` / `unwrap: 'page'` for the total. */
-  list: endpoint<EmployeesQueryParams | void, EmployeeListItem[]>({ method: 'GET', path: (q) => withQuery('/employees', q || undefined), keep: true }),
+  list: endpoint<EmployeesQueryParams | void, EmployeeListItem[]>({
+    method: 'GET',
+    path: (q) => withQuery('/employees', q || undefined),
+    keep: true,
+  }),
   get: endpoint<Id, EmployeeProfile>({ method: 'GET', path: (a) => path`/employees/${a.id}`, keep: true }),
   create: endpoint<void, EmployeeProfile, CreateEmployeeInput>({ method: 'POST', path: () => '/employees' }),
-  update: endpoint<Id, EmployeeProfile, UpdateEmployeeInput>({ method: 'PATCH', path: (a) => path`/employees/${a.id}` }),
+  update: endpoint<Id, EmployeeProfile, UpdateEmployeeInput>({
+    method: 'PATCH',
+    path: (a) => path`/employees/${a.id}`,
+  }),
   performance: endpoint<Id & { period?: string; startDate?: string; endDate?: string }, unknown>({
     method: 'GET',
     path: ({ id, ...q }) => withQuery(path`/employees/${id}/performance`, q),
@@ -51,8 +58,16 @@ export const employeesEndpoints = defineEndpoints('employees', {
     path: ({ id, ...q }) => withQuery(path`/employees/${id}/attendance`, q),
     keep: true,
   }),
-  assignments: endpoint<Id, unknown[]>({ method: 'GET', path: (a) => path`/employees/${a.id}/assignments`, keep: true }),
-  schedule: endpoint<Id, ScheduleEntry[]>({ method: 'GET', path: (a) => path`/employees/${a.id}/schedule`, keep: true }),
+  assignments: endpoint<Id, unknown[]>({
+    method: 'GET',
+    path: (a) => path`/employees/${a.id}/assignments`,
+    keep: true,
+  }),
+  schedule: endpoint<Id, ScheduleEntry[]>({
+    method: 'GET',
+    path: (a) => path`/employees/${a.id}/schedule`,
+    keep: true,
+  }),
   setSchedule: endpoint<Id, ScheduleEntry[], { schedules: unknown[] } | Record<string, unknown>>({
     method: 'POST',
     path: (a) => path`/employees/${a.id}/schedule`,
@@ -70,7 +85,11 @@ export const employeesEndpoints = defineEndpoints('employees', {
     keep: true,
   }),
   /** A hand-entered line (OPENING_USED / CORRECTION / GRANT — shared parseLeaveAdjustment). */
-  addLeaveAdjustment: endpoint<Id, LeaveAdjustmentWriteResponse, { kind: string; days: number; on: string; reason?: string | null }>({
+  addLeaveAdjustment: endpoint<
+    Id,
+    LeaveAdjustmentWriteResponse,
+    { kind: string; days: number; on: string; reason?: string | null }
+  >({
     method: 'POST',
     path: (a) => path`/employees/${a.id}/leave-adjustments`,
   }),
@@ -85,7 +104,11 @@ export const employeesEndpoints = defineEndpoints('employees', {
     path: (q) => withQuery('/employees/leave-opening', q || undefined),
     keep: false,
   }),
-  saveLeaveOpening: endpoint<void, LeaveOpeningSaveResponse, { on: string; rows: Array<{ userId: string; used: number; carried: number }> }>({
+  saveLeaveOpening: endpoint<
+    void,
+    LeaveOpeningSaveResponse,
+    { on: string; rows: Array<{ userId: string; used: number; carried: number }> }
+  >({
     method: 'POST',
     path: () => '/employees/leave-opening',
   }),
@@ -100,7 +123,11 @@ export const employeesEndpoints = defineEndpoints('employees', {
     path: (q) => withQuery('/employees/availability', q),
     keep: true,
   }),
-  coverRange: endpoint<{ start: string; end: string }, unknown[]>({ method: 'GET', path: (q) => withQuery('/employees/cover-range', q), keep: true }),
+  coverRange: endpoint<{ start: string; end: string }, unknown[]>({
+    method: 'GET',
+    path: (q) => withQuery('/employees/cover-range', q),
+    keep: true,
+  }),
   /** Who is on the floor now. Presence — never kept. */
   floorNow: endpoint<void, unknown[]>({ method: 'GET', path: () => '/employees/floor-now', keep: false }),
 });
@@ -117,31 +144,57 @@ export const timeOffEndpoints = defineEndpoints('timeOff', {
     path: ({ employeeId, ...q }) => withQuery(path`/employees/${employeeId}/time-off`, q),
     keep: true,
   }),
-  request: endpoint<{ employeeId: string }, TimeOffRequest, Omit<RequestInput, 'kind'> & { kind?: RequestKind; [k: string]: unknown }>({
+  request: endpoint<
+    { employeeId: string },
+    TimeOffRequest,
+    Omit<RequestInput, 'kind'> & { kind?: RequestKind; [k: string]: unknown }
+  >({
     method: 'POST',
     path: (a) => path`/employees/${a.employeeId}/time-off`,
   }),
   /** What the caller may request (kinds) and at which workspaces a remote day. Only their own. */
-  requestOptions: endpoint<void, RequestKindOptions>({ method: 'GET', path: () => '/employees/me/request-options', keep: true }),
+  requestOptions: endpoint<void, RequestKindOptions>({
+    method: 'GET',
+    path: () => '/employees/me/request-options',
+    keep: true,
+  }),
   /** What a leader would check, for the caller's own request before it is sent. Online only (advice, never kept). */
-  requestPrecheck: endpoint<void, RequestPrecheck, Record<string, unknown>>({ method: 'POST', path: () => '/employees/me/requests/precheck' }),
+  requestPrecheck: endpoint<void, RequestPrecheck, Record<string, unknown>>({
+    method: 'POST',
+    path: () => '/employees/me/requests/precheck',
+  }),
   /** What a leave range COSTS in working days (≤ 1 year); `byLeaveYear` is keyed by leave-year start. */
-  count: endpoint<{ employeeId: string; from: string; to: string }, LeaveCount & { byLeaveYear?: Record<string, number> }>({
+  count: endpoint<
+    { employeeId: string; from: string; to: string },
+    LeaveCount & { byLeaveYear?: Record<string, number> }
+  >({
     method: 'GET',
     path: ({ employeeId, ...q }) => withQuery(path`/employees/${employeeId}/time-off/count`, q),
     keep: true,
   }),
   /** The member cancels their own. */
-  cancel: endpoint<{ timeOffId: string }, void>({ method: 'DELETE', path: (a) => path`/employees/time-off/${a.timeOffId}` }),
-  update: endpoint<{ timeOffId: string }, TimeOffRequest, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/employees/time-off/${a.timeOffId}` }),
+  cancel: endpoint<{ timeOffId: string }, void>({
+    method: 'DELETE',
+    path: (a) => path`/employees/time-off/${a.timeOffId}`,
+  }),
+  update: endpoint<{ timeOffId: string }, TimeOffRequest, Record<string, unknown>>({
+    method: 'PATCH',
+    path: (a) => path`/employees/time-off/${a.timeOffId}`,
+  }),
   approve: endpoint<{ timeOffId: string }, TimeOffRequest, { approved: boolean; rejectionReason?: string }>({
     method: 'PATCH',
     path: (a) => path`/employees/time-off/${a.timeOffId}/approve`,
   }),
   /** The office removes a request. */
-  removeManaged: endpoint<{ timeOffId: string }, void>({ method: 'DELETE', path: (a) => path`/employees/time-off/${a.timeOffId}/manage` }),
+  removeManaged: endpoint<{ timeOffId: string }, void>({
+    method: 'DELETE',
+    path: (a) => path`/employees/time-off/${a.timeOffId}/manage`,
+  }),
   /** Leave entered by the office for somebody. */
-  manual: endpoint<void, TimeOffRequest, Record<string, unknown>>({ method: 'POST', path: () => '/employees/time-off/manual' }),
+  manual: endpoint<void, TimeOffRequest, Record<string, unknown>>({
+    method: 'POST',
+    path: () => '/employees/time-off/manual',
+  }),
 });
 
 export interface RotaCellShift {
@@ -163,14 +216,29 @@ export interface RotaWeek {
   space: { id: string; name: string; timezone: string; tracksAttendance: boolean } | null;
   days: string[];
   shifts: Array<{ id: string; name: string; color: string | null; startLocal: string; endLocal: string }>;
-  people: Array<{ userId: string; firstName: string; lastName: string; avatarUrl: string | null; position: string | null; days: RotaCell[] }>;
+  people: Array<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    position: string | null;
+    days: RotaCell[];
+  }>;
   canEdit: boolean;
 }
 
 export const rotaEndpoints = defineEndpoints('rota', {
   /** A workspace's week as the clock-in resolves it. */
-  week: endpoint<{ spaceId?: string; from?: string } | void, RotaWeek>({ method: 'GET', path: (q) => withQuery('/rota/week', q || undefined), keep: false /* other people's staffing: a stale week is a wrong one */ }),
-  setDay: endpoint<void, { ok: true }, { spaceId: string; userId: string; date: string; shiftId: string | null; repeat: 'once' | 'weekly' }>({
+  week: endpoint<{ spaceId?: string; from?: string } | void, RotaWeek>({
+    method: 'GET',
+    path: (q) => withQuery('/rota/week', q || undefined),
+    keep: false /* other people's staffing: a stale week is a wrong one */,
+  }),
+  setDay: endpoint<
+    void,
+    { ok: true },
+    { spaceId: string; userId: string; date: string; shiftId: string | null; repeat: 'once' | 'weekly' }
+  >({
     method: 'POST',
     path: () => '/rota/day',
   }),
@@ -178,13 +246,19 @@ export const rotaEndpoints = defineEndpoints('rota', {
     method: 'GET',
     path: ({ spaceId, ...q }) => withQuery(path`/spaces/${spaceId}/rota`, q),
   }),
-  createForSpace: endpoint<{ spaceId: string }, ShiftAssignment, Record<string, unknown>>({ method: 'POST', path: (a) => path`/spaces/${a.spaceId}/rota` }),
+  createForSpace: endpoint<{ spaceId: string }, ShiftAssignment, Record<string, unknown>>({
+    method: 'POST',
+    path: (a) => path`/spaces/${a.spaceId}/rota`,
+  }),
   update: endpoint<Id, ShiftAssignment, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/rota/${a.id}` }),
   remove: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/rota/${a.id}` }),
 });
 
 export const shiftsEndpoints = defineEndpoints('shifts', {
-  list: endpoint<{ spaceId?: string } | void, Shift[]>({ method: 'GET', path: (q) => withQuery('/shifts', q || undefined) }),
+  list: endpoint<{ spaceId?: string } | void, Shift[]>({
+    method: 'GET',
+    path: (q) => withQuery('/shifts', q || undefined),
+  }),
   create: endpoint<void, Shift, Record<string, unknown>>({ method: 'POST', path: () => '/shifts' }),
   update: endpoint<Id, Shift, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/shifts/${a.id}` }),
   remove: endpoint<Id, void>({ method: 'DELETE', path: (a) => path`/shifts/${a.id}` }),

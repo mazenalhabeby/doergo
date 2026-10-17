@@ -1,9 +1,22 @@
-import { CanActivate, ExecutionContext, Injectable, Inject, UnauthorizedException, ForbiddenException, NotFoundException, SetMetadata } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  ForbiddenException,
+  NotFoundException,
+  SetMetadata,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import {
-  SERVICE_NAMES, platformCan, platformHostAllowed, PLATFORM_2FA_ENROLMENT_REQUIRED, type PlatformCapability,
+  SERVICE_NAMES,
+  platformCan,
+  platformHostAllowed,
+  PLATFORM_2FA_ENROLMENT_REQUIRED,
+  type PlatformCapability,
 } from '@hbcfield/shared';
 
 const PLATFORM_PERM_KEY = 'platform_required_perm';
@@ -70,7 +83,10 @@ export class PlatformAuthGuard implements CanActivate {
     req.platformSession = result.session ?? {};
 
     const targets = [ctx.getHandler(), ctx.getClass()];
-    if (result.user?.enrolmentRequired && !this.reflector.getAllAndOverride<boolean>(PLATFORM_ENROLMENT_OK_KEY, targets)) {
+    if (
+      result.user?.enrolmentRequired &&
+      !this.reflector.getAllAndOverride<boolean>(PLATFORM_ENROLMENT_OK_KEY, targets)
+    ) {
       throw new ForbiddenException({
         message: 'Set up two-factor authentication before using the console',
         code: PLATFORM_2FA_ENROLMENT_REQUIRED,

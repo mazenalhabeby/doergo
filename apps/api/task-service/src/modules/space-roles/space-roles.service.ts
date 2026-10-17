@@ -52,7 +52,10 @@ export class SpaceRolesService extends SpaceRolesBase {
       include: { _count: { select: { spaceAssignments: true, workAssignments: true } } },
     });
     return success(
-      roles.map(({ _count, ...r }) => ({ ...r, _count: { members: _count.spaceAssignments + _count.workAssignments } })),
+      roles.map(({ _count, ...r }) => ({
+        ...r,
+        _count: { members: _count.spaceAssignments + _count.workAssignments },
+      })),
     );
   }
 
@@ -67,15 +70,24 @@ export class SpaceRolesService extends SpaceRolesBase {
     await assertSpaceInOrg(this.prisma, data.spaceId, data.organizationId);
     await this.ensureBuiltInRoles(data.organizationId);
     const usedHere = new Set(
-      (await this.prisma.companyLocation.findUnique({ where: { id: data.spaceId }, select: { workRoleIds: true } }))?.workRoleIds ?? [],
+      (await this.prisma.companyLocation.findUnique({ where: { id: data.spaceId }, select: { workRoleIds: true } }))
+        ?.workRoleIds ?? [],
     );
     const [roles, assignments] = await Promise.all([
       this.prisma.accessRole.findMany({
         where: { organizationId: data.organizationId, scope: { in: ['SPACE', 'BOTH'] }, ...SHARED_ROLE_WHERE },
         orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
         select: {
-          id: true, name: true, slug: true, color: true, description: true, permissions: true,
-          kind: true, isSystem: true, isActive: true, scope: true,
+          id: true,
+          name: true,
+          slug: true,
+          color: true,
+          description: true,
+          permissions: true,
+          kind: true,
+          isSystem: true,
+          isActive: true,
+          scope: true,
           _count: { select: { spaceAssignments: true, workAssignments: true } },
         },
       }),
@@ -86,7 +98,10 @@ export class SpaceRolesService extends SpaceRolesBase {
       }),
     ]);
     const workRoleIds = roles.filter((r) => r.kind === 'WORK').map((r) => r.id);
-    const book = await loadRateBook(this.prisma, data.organizationId, { roleIds: workRoleIds, roleSpaceId: data.spaceId });
+    const book = await loadRateBook(this.prisma, data.organizationId, {
+      roleIds: workRoleIds,
+      roleSpaceId: data.spaceId,
+    });
     const today = utcTodayKey();
 
     return success(
@@ -98,7 +113,11 @@ export class SpaceRolesService extends SpaceRolesBase {
         const timeline = isWork ? book.timeline('ROLE', r.id, 'BILL_DAY', data.spaceId) : [];
         const defaults = isWork ? book.timeline('ROLE', r.id, 'BILL_DAY', null) : [];
         const asHistory = (rows: typeof timeline) =>
-          rows.map((row) => ({ cents: row.cents, effectiveFrom: row.effectiveFrom, state: row.effectiveFrom > today ? 'scheduled' : 'past' }));
+          rows.map((row) => ({
+            cents: row.cents,
+            effectiveFrom: row.effectiveFrom,
+            state: row.effectiveFrom > today ? 'scheduled' : 'past',
+          }));
         return {
           ...r,
           holders,
@@ -135,7 +154,10 @@ export class SpaceRolesService extends SpaceRolesBase {
     const kind: RoleKindValue = isRoleKind(data.kind) ? data.kind : 'MANAGEMENT';
     await this.assertNameFree(data.organizationId, name);
     const slug = await this.uniqueSlug(data.organizationId, name);
-    const max = await this.prisma.accessRole.aggregate({ where: { organizationId: data.organizationId }, _max: { position: true } });
+    const max = await this.prisma.accessRole.aggregate({
+      where: { organizationId: data.organizationId },
+      _max: { position: true },
+    });
     const role = await this.prisma.accessRole.create({
       data: {
         organizationId: data.organizationId,

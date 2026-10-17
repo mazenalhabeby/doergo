@@ -79,7 +79,10 @@ export class RotaService extends ShiftsBase {
     ]);
 
     // Everyone in the space, and anyone rostered in it without a membership row.
-    const people = new Map<string, { id: string; firstName: string; lastName: string; avatarUrl: string | null; position: string | null }>();
+    const people = new Map<
+      string,
+      { id: string; firstName: string; lastName: string; avatarUrl: string | null; position: string | null }
+    >();
     for (const m of members) people.set(m.user.id, m.user);
     for (const a of assignments) if (a.user?.isActive !== false && a.user) people.set(a.user.id, a.user);
     const ids = [...people.keys()];
@@ -87,11 +90,20 @@ export class RotaService extends ShiftsBase {
     const tracks = workspaceSchedulesShifts(space.workModel);
     const [weekly, leave] = await Promise.all([
       tracks && ids.length
-        ? this.prisma.technicianSchedule.findMany({ where: { technicianId: { in: ids }, isActive: true }, select: { technicianId: true, dayOfWeek: true, startTime: true, endTime: true } })
+        ? this.prisma.technicianSchedule.findMany({
+            where: { technicianId: { in: ids }, isActive: true },
+            select: { technicianId: true, dayOfWeek: true, startTime: true, endTime: true },
+          })
         : Promise.resolve([] as Array<{ technicianId: string; dayOfWeek: number; startTime: string; endTime: string }>),
       ids.length
         ? this.prisma.timeOff.findMany({
-            where: { technicianId: { in: ids }, status: 'APPROVED', ...ABSENCE_WHERE, startDate: { lte: new Date(`${last}T00:00:00.000Z`) }, endDate: { gte: new Date(`${first}T00:00:00.000Z`) } },
+            where: {
+              technicianId: { in: ids },
+              status: 'APPROVED',
+              ...ABSENCE_WHERE,
+              startDate: { lte: new Date(`${last}T00:00:00.000Z`) },
+              endDate: { gte: new Date(`${first}T00:00:00.000Z`) },
+            },
             select: { technicianId: true, startDate: true, endDate: true },
           })
         : Promise.resolve([] as Array<{ technicianId: string; startDate: Date; endDate: Date }>),
@@ -195,7 +207,11 @@ export class RotaService extends ShiftsBase {
       ops = planRotaDay(existing as never[], { date: data.date, shiftId: data.shiftId, repeat: data.repeat });
     } catch (e) {
       if (e instanceof RotaDayRefused) {
-        throw new BadRequestException({ code: e.code, message: 'A single day off from a standing shift is time off — approve leave for it, or set it off every week.' });
+        throw new BadRequestException({
+          code: e.code,
+          message:
+            'A single day off from a standing shift is time off — approve leave for ' + 'it, or set it off every week.',
+        });
       }
       throw e;
     }
@@ -240,7 +256,10 @@ export class RotaService extends ShiftsBase {
       });
       const decided = rotaFor(after as never[], data.date) as { shiftId: string } | null;
       if ((decided?.shiftId ?? null) !== data.shiftId) {
-        throw new BadRequestException({ code: 'OUTRANKED_BY_RULE', message: 'Another rule decides this day (daily or monthly). Change it in the workspace rota on the web.' });
+        throw new BadRequestException({
+          code: 'OUTRANKED_BY_RULE',
+          message: 'Another rule decides this day (daily or monthly). Change it in the ' + 'workspace rota on the web.',
+        });
       }
     });
     if (data.shiftId) {

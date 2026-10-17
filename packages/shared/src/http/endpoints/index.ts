@@ -15,9 +15,24 @@ import { calendarEndpoints } from './calendar';
 import { chatEndpoints, notificationsEndpoints, peopleEndpoints, supportEndpoints } from './comms';
 import { customersEndpoints } from './customers';
 import { documentsEndpoints, signLinkEndpoints } from './documents';
-import { invitationsEndpoints, joinRequestsEndpoints, locationsEndpoints, onboardingEndpoints, organizationsEndpoints, appEndpoints } from './organization';
+import {
+  invitationsEndpoints,
+  joinRequestsEndpoints,
+  locationsEndpoints,
+  onboardingEndpoints,
+  organizationsEndpoints,
+  appEndpoints,
+} from './organization';
 import { employeesEndpoints, rotaEndpoints, shiftsEndpoints, timeOffEndpoints } from './people';
-import { authEndpoints, billingEndpoints, geoEndpoints, routesEndpoints, syncEndpoints, trackingEndpoints, usersEndpoints } from './platform';
+import {
+  authEndpoints,
+  billingEndpoints,
+  geoEndpoints,
+  routesEndpoints,
+  syncEndpoints,
+  trackingEndpoints,
+  usersEndpoints,
+} from './platform';
 import { portalEndpoints } from './portal';
 import { reportsEndpoints, tasksEndpoints } from './tasks';
 import {

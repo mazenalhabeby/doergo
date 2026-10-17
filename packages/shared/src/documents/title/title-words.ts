@@ -1,0 +1,191 @@
+/** Moved here unchanged from doc-title.ts. */
+
+export interface TitleLine {
+  text: string;
+  /** Font size, when the source has it (a PDF's text layer). */
+  size?: number;
+}
+
+/** Words that make a line a document's name, in the five languages. */
+const DOC_WORDS = [
+  // en
+  'agreement',
+  'contract',
+  'letter',
+  'confirmation',
+  'certificate',
+  'authorization',
+  'authorisation',
+  'checklist',
+  'policy',
+  'notice',
+  'statement',
+  'invitation',
+  'declaration',
+  'terms',
+  'rules',
+  'addendum',
+  'amendment',
+  'annex',
+  'appendix',
+  'exhibit',
+  'schedule',
+  'form',
+  'report',
+  'invoice',
+  'receipt',
+  'payslip',
+  'pay slip',
+  'offer',
+  'termination',
+  'resignation',
+  'reference',
+  'record',
+  'licence',
+  'license',
+  'permit',
+  'consent',
+  'acknowledgement',
+  'acknowledgment',
+  'handbook',
+  'instruction',
+  'briefing',
+  'minutes',
+  'protocol',
+  'plan',
+  'request',
+  'application',
+  // de
+  'vertrag',
+  'vereinbarung',
+  'bestatigung',
+  'bescheinigung',
+  'kundigung',
+  'zeugnis',
+  'erklarung',
+  'anlage',
+  'nachtrag',
+  'zusatz',
+  'einladung',
+  'richtlinie',
+  'hausordnung',
+  'belehrung',
+  'unterweisung',
+  'abrechnung',
+  'lohnzettel',
+  'gehaltsabrechnung',
+  'genehmigung',
+  'vollmacht',
+  'nachweis',
+  'protokoll',
+  'antrag',
+  'formular',
+  // fr
+  'contrat',
+  'accord',
+  'attestation',
+  'lettre',
+  'avenant',
+  'certificat',
+  'reglement',
+  'autorisation',
+  'bulletin',
+  // it
+  'contratto',
+  'lettera',
+  'certificato',
+  'dichiarazione',
+  'regolamento',
+  'autorizzazione',
+  'allegato',
+  // es
+  'contrato',
+  'carta',
+  'certificado',
+  'constancia',
+  'declaracion',
+  'autorizacion',
+  'anexo',
+  'reglamento',
+];
+
+/** "ANNEX B", "Appendix 1", "Anlage 2" — a line that names a PART, to be joined to the title below it. */
+const PART_LABEL =
+  /^(annex|appendix|exhibit|schedule|attachment|anlage|anhang|annexe|allegato|anexo)\s+[A-Z0-9]{1,3}\.?$/i;
+
+/** Lines that are never the name, whatever their size. */
+const NOT_A_TITLE = [
+  /^(to whom it may concern|dear\b|att\.?:|attn\.?:|prepared for|re:|betreff|sehr geehrte)/i,
+  /@|https?:\/\/|www\./i,
+  /\b(tel|phone|fax|telefon)\b.*\d/i,
+  /^page \d+|^seite \d+/i,
+  /\b\d{4,5}\s+[A-Z][a-z]+/, // a postcode and a town
+];
+
+/** Company forms: the letterhead line, not the title. */
+const COMPANY = /\b(inc|llc|ltd|gmbh|ag|kg|corp|co|sa|sarl|srl|spa|bv|plc|e\.?u)\.?$/i;
+
+/** Kept in capitals when a heading is re-cased. */
+const ACRONYMS = new Set([
+  'USA',
+  'US',
+  'NDA',
+  'EU',
+  'UK',
+  'HR',
+  'ID',
+  'GPS',
+  'PPE',
+  'HSE',
+  'CDL',
+  'DOT',
+  'OSHA',
+  'HBC',
+  'LLC',
+  'AG',
+]);
+
+const SMALL_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'as',
+  'at',
+  'by',
+  'for',
+  'from',
+  'in',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'with',
+  'und',
+  'der',
+  'die',
+  'das',
+  'des',
+  'den',
+  'dem',
+  'zur',
+  'zum',
+  'fur',
+  'von',
+  'mit',
+  'im',
+  'de',
+  'du',
+  'la',
+  'le',
+  'les',
+  'et',
+  'di',
+  'del',
+  'della',
+  'e',
+  'el',
+  'y',
+]);
+
+export { DOC_WORDS, PART_LABEL, NOT_A_TITLE, COMPANY, ACRONYMS, SMALL_WORDS };

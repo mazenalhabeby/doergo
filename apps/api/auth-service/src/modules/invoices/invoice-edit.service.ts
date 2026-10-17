@@ -56,12 +56,17 @@ export class InvoiceEditService extends InvoiceServiceBase {
     if (data.clientAddress !== undefined) updateData.clientAddress = data.clientAddress;
     // Currency or its rate changed (or the issue day, which the ECB rate follows
     // when nobody typed one): work the pair out again, through the same rule.
-    const ratesFollowDay = data.issueDate !== undefined && invoice.exchangeRateSource !== 'MANUAL' && data.exchangeRate === undefined;
+    const ratesFollowDay =
+      data.issueDate !== undefined && invoice.exchangeRateSource !== 'MANUAL' && data.exchangeRate === undefined;
     if (data.currency !== undefined || data.exchangeRate !== undefined || ratesFollowDay) {
-      const money = await this.currencyFields(organizationId, {
-        ...data,
-        issueDate: data.issueDate ?? invoice.issueDate,
-      }, invoice.currency);
+      const money = await this.currencyFields(
+        organizationId,
+        {
+          ...data,
+          issueDate: data.issueDate ?? invoice.issueDate,
+        },
+        invoice.currency,
+      );
       if ('error' in money) return { success: false, statusCode: HttpStatus.BAD_REQUEST, message: money.error };
       Object.assign(updateData, money);
     }
@@ -90,13 +95,23 @@ export class InvoiceEditService extends InvoiceServiceBase {
     let renumber: string | null = null;
     if (data.legalEntityId !== undefined) {
       const space = invoice.spaceId
-        ? await this.prisma.companyLocation.findFirst({ where: { id: invoice.spaceId, organizationId }, select: { legalEntityId: true, sourceCustomerId: true } })
+        ? await this.prisma.companyLocation.findFirst({
+            where: { id: invoice.spaceId, organizationId },
+            select: { legalEntityId: true, sourceCustomerId: true },
+          })
         : null;
-      const issuer = await this.issuingEntity(organizationId, data.legalEntityId, space?.legalEntityId ?? null, space?.sourceCustomerId ?? null);
+      const issuer = await this.issuingEntity(
+        organizationId,
+        data.legalEntityId,
+        space?.legalEntityId ?? null,
+        space?.sourceCustomerId ?? null,
+      );
       if ('error' in issuer) return issuer.error;
       if (issuer.entity.id !== invoice.legalEntityId) {
         updateData.legalEntityId = issuer.entity.id;
-        if (!invoice.invoiceNumber.startsWith(invoiceNumberPrefix(issuer.entity.invoicePrefix, new Date().getFullYear()))) {
+        if (
+          !invoice.invoiceNumber.startsWith(invoiceNumberPrefix(issuer.entity.invoicePrefix, new Date().getFullYear()))
+        ) {
           renumber = issuer.entity.invoicePrefix;
         }
       }
@@ -194,7 +209,12 @@ export class InvoiceEditService extends InvoiceServiceBase {
     if (status === 'ISSUED') {
       const live = await this.issuerFor({ ...invoice, issuer: null });
       if (!live) {
-        return { success: false, statusCode: HttpStatus.BAD_REQUEST, code: 'COMPANY_MISSING', message: 'This invoice has no company to issue it — choose one first.' };
+        return {
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          code: 'COMPANY_MISSING',
+          message: 'This invoice has no company to issue it — choose one first.',
+        };
       }
       updateData.issuer = live;
       updateData.legalEntityId = live.legalEntityId;

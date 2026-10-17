@@ -46,7 +46,10 @@ export abstract class RolePoolBase {
    */
   async resolveOpenRole(organizationId: string, spaceId: string | null | undefined, roleId: string): Promise<OpenRole> {
     if (!spaceId) {
-      throw new BadRequestException({ message: 'Choose a workspace to open a task to a role', code: 'ROLE_TASK_NEEDS_SPACE' });
+      throw new BadRequestException({
+        message: 'Choose a workspace to open a task to a role',
+        code: 'ROLE_TASK_NEEDS_SPACE',
+      });
     }
     const [role, space] = await Promise.all([
       this.prisma.accessRole.findFirst({
@@ -67,7 +70,10 @@ export abstract class RolePoolBase {
         select: { id: true },
       });
       if (!holder) {
-        throw new BadRequestException({ message: `${role.name} is not used in this workspace`, code: 'ROLE_TASK_ROLE_NOT_HERE' });
+        throw new BadRequestException({
+          message: `${role.name} is not used in this workspace`,
+          code: 'ROLE_TASK_ROLE_NOT_HERE',
+        });
       }
     }
     return role;
@@ -127,7 +133,10 @@ export abstract class RolePoolBase {
     const tz = zoneOf(space?.timezone);
     const today = dayKeyIn(now, tz);
     const [clocked, active, dueSoon, taken, positions, expected] = await Promise.all([
-      this.prisma.timeEntry.findMany({ where: { userId: { in: ids }, status: 'CLOCKED_IN' }, select: { userId: true } }),
+      this.prisma.timeEntry.findMany({
+        where: { userId: { in: ids }, status: 'CLOCKED_IN' },
+        select: { userId: true },
+      }),
       this.prisma.task.findMany({
         where: { organizationId, assignedToId: { in: ids }, status: { in: [...ONE_AT_A_TIME_STATUSES] } },
         select: { assignedToId: true },
@@ -144,11 +153,18 @@ export abstract class RolePoolBase {
       }),
       this.prisma.taskEvent.groupBy({
         by: ['userId'],
-        where: { userId: { in: ids }, eventType: TaskEventType.TAKEN, createdAt: { gte: new Date(now.getTime() - 7 * DAY_MS) } },
+        where: {
+          userId: { in: ids },
+          eventType: TaskEventType.TAKEN,
+          createdAt: { gte: new Date(now.getTime() - 7 * DAY_MS) },
+        },
         _count: { _all: true },
       }),
       at?.lat != null && at?.lng != null
-        ? this.prisma.workerLastLocation.findMany({ where: { userId: { in: ids } }, select: { userId: true, lat: true, lng: true } })
+        ? this.prisma.workerLastLocation.findMany({
+            where: { userId: { in: ids } },
+            select: { userId: true, lat: true, lng: true },
+          })
         : Promise.resolve([] as { userId: string; lat: number; lng: number }[]),
       this.cover.expectedToday(organizationId, spaceId, tz),
     ]);
@@ -176,7 +192,10 @@ export abstract class RolePoolBase {
           onLeave: e?.onLeave ?? false,
           // Not on this workspace's roster at all (e.g. a role held elsewhere too) counts as rostered.
           rosteredToday: e?.rostered ?? true,
-          distanceKm: p && at?.lat != null && at?.lng != null ? Math.round(kmBetween(p, { lat: at.lat, lng: at.lng }) * 10) / 10 : null,
+          distanceKm:
+            p && at?.lat != null && at?.lng != null
+              ? Math.round(kmBetween(p, { lat: at.lat, lng: at.lng }) * 10) / 10
+              : null,
           jobsToday: todayCount.get(id) ?? 0,
           takenThisWeek: takenBy.get(id) ?? 0,
         };
@@ -187,7 +206,15 @@ export abstract class RolePoolBase {
   // ── Taking and handing back ──────────────────────────────────────────
 
   /** Does this person hold the task's open role in its workspace, right now? (role-holder.ts — one rule) */
-  async holdsOpenRole(task: { openRoleId?: string | null; spaceId?: string | null; openSpotsLeft?: number | null; status?: string | null }, userId: string): Promise<boolean> {
+  async holdsOpenRole(
+    task: {
+      openRoleId?: string | null;
+      spaceId?: string | null;
+      openSpotsLeft?: number | null;
+      status?: string | null;
+    },
+    userId: string,
+  ): Promise<boolean> {
     return holdsOpenRoleRule(this.prisma as never, task, userId);
   }
 
@@ -199,20 +226,37 @@ export abstract class RolePoolBase {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       select: {
-        id: true, title: true, status: true, organizationId: true, spaceId: true, createdById: true,
-        openRoleId: true, openSpotsLeft: true, openedAt: true, locationLat: true, locationLng: true,
+        id: true,
+        title: true,
+        status: true,
+        organizationId: true,
+        spaceId: true,
+        createdById: true,
+        openRoleId: true,
+        openSpotsLeft: true,
+        openedAt: true,
+        locationLat: true,
+        locationLng: true,
         openRole: { select: { name: true } },
         assignees: { select: { userId: true } },
       },
     });
     if (!task || !task.spaceId || !isOpenToRole(task)) return [];
-    const ranked = await this.candidates(task.organizationId, task.spaceId, task.openRoleId!, { lat: task.locationLat, lng: task.locationLng });
+    const ranked = await this.candidates(task.organizationId, task.spaceId, task.openRoleId!, {
+      lat: task.locationLat,
+      lng: task.locationLng,
+    });
     const already = await this.offeredTo(task.id, task.openedAt);
     const exclude = new Set([...already, ...alsoExclude, ...task.assignees.map((a) => a.userId), task.createdById]);
     const userIds = waveRecipients(ranked, wave, exclude);
     if (!userIds.length) return [];
     await this.prisma.taskEvent.create({
-      data: { taskId: task.id, userId: task.createdById, eventType: TaskEventType.OFFERED, metadata: { wave, userIds } },
+      data: {
+        taskId: task.id,
+        userId: task.createdById,
+        eventType: TaskEventType.OFFERED,
+        metadata: { wave, userIds },
+      },
     });
     this.notifications.emit('role_task_offered', {
       task: { id: task.id, title: task.title, organizationId: task.organizationId },

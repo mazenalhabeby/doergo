@@ -45,7 +45,10 @@ export class WorkspacePlaceDetector implements OnModuleInit, OnModuleDestroy {
 
   /** A workspace was saved: look it up now rather than at the next sweep. Never throws, never waits. */
   nudge(): void {
-    if (this.running) { this.again = true; return; }
+    if (this.running) {
+      this.again = true;
+      return;
+    }
     void this.sweep();
   }
 
@@ -55,20 +58,25 @@ export class WorkspacePlaceDetector implements OnModuleInit, OnModuleDestroy {
     let done = 0;
     try {
       for (let round = 0; round < 10; round++) {
-        const res: any = await firstValueFrom(this.taskClient.send({ cmd: 'calendar_places_to_detect' }, { limit: PAGE }).pipe(timeout(10_000)));
+        const res: any = await firstValueFrom(
+          this.taskClient.send({ cmd: 'calendar_places_to_detect' }, { limit: PAGE }).pipe(timeout(10_000)),
+        );
         const rows: { id: string; organizationId: string; lat: number; lng: number }[] = res?.data ?? [];
         if (!rows.length) break;
         for (const r of rows) {
           const place = await lookupAdminPlace(Number(r.lat), Number(r.lng));
           await firstValueFrom(
             this.taskClient
-              .send({ cmd: 'calendar_set_detected_place' }, {
-                organizationId: r.organizationId,
-                spaceId: r.id,
-                country: place?.country ?? null,
-                stateCode: place?.stateCode ?? null,
-                stateName: place?.stateName ?? null,
-              })
+              .send(
+                { cmd: 'calendar_set_detected_place' },
+                {
+                  organizationId: r.organizationId,
+                  spaceId: r.id,
+                  country: place?.country ?? null,
+                  stateCode: place?.stateCode ?? null,
+                  stateName: place?.stateName ?? null,
+                },
+              )
               .pipe(timeout(10_000)),
           );
           done++;
@@ -81,7 +89,10 @@ export class WorkspacePlaceDetector implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Holiday place sweep stopped: ${(e as Error).message}`);
     } finally {
       this.running = false;
-      if (this.again) { this.again = false; void this.sweep(); }
+      if (this.again) {
+        this.again = false;
+        void this.sweep();
+      }
     }
     return done;
   }

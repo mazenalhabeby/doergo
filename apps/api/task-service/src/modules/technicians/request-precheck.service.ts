@@ -59,12 +59,22 @@ export class RequestPrecheckService {
     let balance: RequestPrecheck['balance'] = null;
     let cover: RequestPrecheck['cover'] = null;
     if (leave) {
-      workingDays = await this.technicians.countWorkingDays(data.organizationId, data.userId, start, end).catch(() => null);
+      workingDays = await this.technicians
+        .countWorkingDays(data.organizationId, data.userId, start, end)
+        .catch(() => null);
       if ((value.type ?? 'VACATION') === 'VACATION' && workingDays != null) {
-        const b = await this.ledger.getBalance({ technicianId: data.userId, organizationId: data.organizationId, on: value.startDate }).catch(() => null);
+        const b = await this.ledger
+          .getBalance({ technicianId: data.userId, organizationId: data.organizationId, on: value.startDate })
+          .catch(() => null);
         if (b) balance = { before: b.remaining, after: b.remaining - workingDays };
       }
-      const verdict = (await this.cover.assessMany(data.organizationId, [{ id: 'precheck', technicianId: data.userId, startDate: start, endDate: end }]).catch(() => null))?.get('precheck');
+      const verdict = (
+        await this.cover
+          .assessMany(data.organizationId, [
+            { id: 'precheck', technicianId: data.userId, startDate: start, endDate: end },
+          ])
+          .catch(() => null)
+      )?.get('precheck');
       cover = (verdict?.level as RequestPrecheck['cover']) ?? null;
     }
 
@@ -81,18 +91,25 @@ export class RequestPrecheckService {
 
     const ruleKind = value.kind === 'OVERTIME' ? 'overtime' : 'request';
     const secondApproval = this.rules
-      ? await this.rules.secondStepFor(data.organizationId, ruleKind, {
-          spaceIds,
-          days: workingDays ?? undefined,
-          minutes: value.minutes ?? undefined,
-          coverShort: cover === 'short' || cover === 'skill',
-        }).catch(() => null)
+      ? await this.rules
+          .secondStepFor(data.organizationId, ruleKind, {
+            spaceIds,
+            days: workingDays ?? undefined,
+            minutes: value.minutes ?? undefined,
+            coverShort: cover === 'short' || cover === 'skill',
+          })
+          .catch(() => null)
       : null;
 
     return {
       workingDays,
       balance,
-      clashes: clashes.map((c) => ({ kind: c.kind, startDate: toISODateString(c.startDate), endDate: toISODateString(c.endDate), status: c.status })),
+      clashes: clashes.map((c) => ({
+        kind: c.kind,
+        startDate: toISODateString(c.startDate),
+        endDate: toISODateString(c.endDate),
+        status: c.status,
+      })),
       cover,
       dailyLimit,
       secondApproval,
@@ -118,7 +135,9 @@ export class RequestPrecheckService {
       const windows = await resolver.plannedWindows(userId, spaces as never, () => [day]);
       let minutes = 0;
       for (const list of windows.values()) {
-        for (const w of list) if (w.dateStr === day) minutes += Math.round((w.expectedClockOutAt.getTime() - w.expectedClockInAt.getTime()) / 60_000);
+        for (const w of list)
+          if (w.dateStr === day)
+            minutes += Math.round((w.expectedClockOutAt.getTime() - w.expectedClockInAt.getTime()) / 60_000);
       }
       return minutes;
     } catch {

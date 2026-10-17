@@ -50,7 +50,10 @@ export abstract class PortalServiceBase extends PortalGuards {
     const effective =
       (space?.enabledModules as string[] | null) ?? (space?.organization?.enabledModules as string[] | null) ?? [];
     if (!effective.includes('assets')) {
-      throw new BadRequestException('Switch on the Assets module for this workspace before using the Apartment entity — that is where apartments live.');
+      throw new BadRequestException(
+        'Switch on the Assets module for this workspace before using the ' +
+          'Apartment entity — that is where apartments live.',
+      );
     }
   }
 
@@ -72,7 +75,10 @@ export abstract class PortalServiceBase extends PortalGuards {
   protected async withResidentUsers<T extends { residentUserId?: string | null }>(units: T[]) {
     const ids = Array.from(new Set(units.map((u) => u.residentUserId).filter(Boolean) as string[]));
     if (!ids.length) return units.map((u) => ({ ...u, residentUser: null }));
-    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } });
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+    });
     const byId = new Map(users.map((u) => [u.id, u]));
     return units.map((u) => ({ ...u, residentUser: u.residentUserId ? (byId.get(u.residentUserId) ?? null) : null }));
   }
@@ -108,11 +114,17 @@ export abstract class PortalServiceBase extends PortalGuards {
     organizationId: string,
   ): Promise<string | null> {
     if (residentUserId) {
-      const u = await this.prisma.user.findFirst({ where: { id: residentUserId, organizationId }, select: { firstName: true, lastName: true } });
+      const u = await this.prisma.user.findFirst({
+        where: { id: residentUserId, organizationId },
+        select: { firstName: true, lastName: true },
+      });
       return u ? personName(u) : null;
     }
     if (customerId) {
-      const c = await this.prisma.customer.findFirst({ where: { id: customerId, organizationId }, select: { name: true } });
+      const c = await this.prisma.customer.findFirst({
+        where: { id: customerId, organizationId },
+        select: { name: true },
+      });
       return c?.name ?? null;
     }
     return null;

@@ -25,7 +25,9 @@ export const REPORT_ISSUER_INVALID = 'REPORT_ISSUER_INVALID';
  * built-in COMPLETED / CLOSED. One rule for the report's gate, its "finished"
  * time and the button that offers it.
  */
-export function finishedStatusKeys(statuses: ReadonlyArray<{ key: string; isFinal?: boolean | null; isCanceled?: boolean | null }>): Set<string> {
+export function finishedStatusKeys(
+  statuses: ReadonlyArray<{ key: string; isFinal?: boolean | null; isCanceled?: boolean | null }>,
+): Set<string> {
   return statuses.length
     ? new Set(statuses.filter((s) => s.isFinal && !s.isCanceled).map((s) => s.key))
     : new Set(['COMPLETED', 'CLOSED']);
@@ -95,7 +97,15 @@ export const CLIENT_COPY_HIDDEN = {
  * report, and the server still cuts everything not chosen — the choice travels as
  * `?include=`, it never widens what the reader could see in the office copy.
  */
-export const CLIENT_COPY_OPTIONS = ['personTime', 'stopReasons', 'partPrices', 'route', 'comments', 'handovers', 'fullHistory'] as const;
+export const CLIENT_COPY_OPTIONS = [
+  'personTime',
+  'stopReasons',
+  'partPrices',
+  'route',
+  'comments',
+  'handovers',
+  'fullHistory',
+] as const;
 
 export type ClientCopyOption = (typeof CLIENT_COPY_OPTIONS)[number];
 

@@ -27,7 +27,12 @@ export type MeetingProvider = 'TEAMS' | 'MEET' | 'ZOOM' | 'WEBEX' | 'WHEREBY' | 
 
 /** Display names — product names, the same in every language. */
 export const MEETING_PROVIDER_NAMES: Record<MeetingProvider, string> = {
-  TEAMS: 'Microsoft Teams', MEET: 'Google Meet', ZOOM: 'Zoom', WEBEX: 'Webex', WHEREBY: 'Whereby', JITSI: 'Jitsi Meet',
+  TEAMS: 'Microsoft Teams',
+  MEET: 'Google Meet',
+  ZOOM: 'Zoom',
+  WEBEX: 'Webex',
+  WHEREBY: 'Whereby',
+  JITSI: 'Jitsi Meet',
 };
 
 const PROVIDER_HOSTS: [RegExp, MeetingProvider][] = [
@@ -89,7 +94,16 @@ export interface MeetingFields {
  * Legacy events (no mode) keep their location and link as they were.
  */
 export function meetingFieldsFor(f: MeetingFields): MeetingFields {
-  const none: MeetingFields = { mode: f.mode, place: null, placeSpaceId: null, room: null, location: null, meetingUrl: null, phone: null, callDirection: null };
+  const none: MeetingFields = {
+    mode: f.mode,
+    place: null,
+    placeSpaceId: null,
+    room: null,
+    location: null,
+    meetingUrl: null,
+    phone: null,
+    callDirection: null,
+  };
   switch (f.mode) {
     case 'ONLINE':
       return { ...none, meetingUrl: f.meetingUrl };
@@ -97,7 +111,8 @@ export function meetingFieldsFor(f: MeetingFields): MeetingFields {
       return { ...none, phone: f.phone, callDirection: f.callDirection ?? 'OUTGOING' };
     case 'IN_PERSON': {
       const place = f.place ?? 'ADDRESS';
-      if (place === 'OFFICE') return { ...none, place, placeSpaceId: f.placeSpaceId, room: f.room, location: f.location };
+      if (place === 'OFFICE')
+        return { ...none, place, placeSpaceId: f.placeSpaceId, room: f.room, location: f.location };
       return { ...none, place, location: f.location };
     }
     default:
@@ -106,12 +121,17 @@ export function meetingFieldsFor(f: MeetingFields): MeetingFields {
 }
 
 /** One line for a list or a push: "Main Office · Room 1", "Microsoft Teams", "Call +43 1 234". */
-export function meetingSummary(f: Pick<MeetingFields, 'mode' | 'place' | 'room' | 'location' | 'meetingUrl' | 'phone'> & { spaceName?: string | null }): string | null {
+export function meetingSummary(
+  f: Pick<MeetingFields, 'mode' | 'place' | 'room' | 'location' | 'meetingUrl' | 'phone'> & {
+    spaceName?: string | null;
+  },
+): string | null {
   if (f.mode === 'ONLINE') {
     const p = meetingProvider(f.meetingUrl);
     return p ? MEETING_PROVIDER_NAMES[p] : f.meetingUrl ? 'Online' : null;
   }
   if (f.mode === 'PHONE') return f.phone ?? null;
-  if (f.mode === 'IN_PERSON' && f.place === 'OFFICE') return [f.spaceName, f.room].filter(Boolean).join(' · ') || f.location || null;
+  if (f.mode === 'IN_PERSON' && f.place === 'OFFICE')
+    return [f.spaceName, f.room].filter(Boolean).join(' · ') || f.location || null;
   return f.location ?? null;
 }

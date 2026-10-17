@@ -78,8 +78,14 @@ export function nextReminder(ev: ReminderEvent, after: Date, skipOccurrence?: Da
 export function firstReminder(ev: ReminderEvent, now: Date): NextReminder | null {
   const next = nextReminder(ev, now);
   const duration = Math.max(ev.endAt.getTime() - ev.startAt.getTime(), 0);
-  const soon = occurrences(ev.startAt, duration, ev.repeat, ev.timezone, now, new Date(now.getTime() + Math.max(...ev.offsets, 0) * 60000 + 1))
-    .find((o) => o.getTime() > now.getTime());
+  const soon = occurrences(
+    ev.startAt,
+    duration,
+    ev.repeat,
+    ev.timezone,
+    now,
+    new Date(now.getTime() + Math.max(...ev.offsets, 0) * 60000 + 1),
+  ).find((o) => o.getTime() > now.getTime());
   if (soon && (!next || next.occurrence.getTime() !== soon.getTime())) {
     return { at: now, occurrence: soon, offset: Math.round((soon.getTime() - now.getTime()) / 60000) };
   }

@@ -66,8 +66,14 @@ export class ShiftSweepService {
     });
     if (!context || escalated.length === 0) return;
 
-    const member = await this.prisma.user.findUnique({ where: { id: userId }, select: { firstName: true, lastName: true } });
-    const leaderIds = await this.routing.notifyTargetsFor({ spaceId, organizationId: context.organizationId, userId }, 'canReconcileAttendance');
+    const member = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true },
+    });
+    const leaderIds = await this.routing.notifyTargetsFor(
+      { spaceId, organizationId: context.organizationId, userId },
+      'canReconcileAttendance',
+    );
     for (const inst of escalated) {
       this.notificationClient.emit('attendance_noshow_resolved', {
         instanceId: inst.id,

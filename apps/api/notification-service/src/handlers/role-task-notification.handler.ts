@@ -26,7 +26,15 @@ export class RoleTaskNotificationHandler {
     not buzzed (pushCategory → tasks).
   */
   @EventPattern('role_task_offered')
-  async handleRoleTaskOffered(@Payload() data: { task: { id: string; title: string; organizationId: string }; roleName: string; userIds: string[]; wave: number }) {
+  async handleRoleTaskOffered(
+    @Payload()
+    data: {
+      task: { id: string; title: string; organizationId: string };
+      roleName: string;
+      userIds: string[];
+      wave: number;
+    },
+  ) {
     const ids = [...new Set(data.userIds ?? [])];
     if (ids.length === 0) return;
     this.logger.log(`Role task offered: ${data.task.id} wave ${data.wave} to ${ids.length}`);
@@ -51,7 +59,14 @@ export class RoleTaskNotificationHandler {
   }
 
   @EventPattern('role_task_taken')
-  async handleRoleTaskTaken(@Payload() data: { task: { id: string; title: string; organizationId: string }; takerName: string; notifyIds: string[] }) {
+  async handleRoleTaskTaken(
+    @Payload()
+    data: {
+      task: { id: string; title: string; organizationId: string };
+      takerName: string;
+      notifyIds: string[];
+    },
+  ) {
     const ids = [...new Set(data.notifyIds ?? [])];
     if (ids.length === 0) return;
     const text: LocalizedText = {
@@ -74,7 +89,16 @@ export class RoleTaskNotificationHandler {
   }
 
   @EventPattern('role_task_unclaimed')
-  async handleRoleTaskUnclaimed(@Payload() data: { task: { id: string; title: string; organizationId: string }; roleName: string; minutes: number; names: string[]; notifyIds: string[] }) {
+  async handleRoleTaskUnclaimed(
+    @Payload()
+    data: {
+      task: { id: string; title: string; organizationId: string };
+      roleName: string;
+      minutes: number;
+      names: string[];
+      notifyIds: string[];
+    },
+  ) {
     const ids = [...new Set(data.notifyIds ?? [])];
     if (ids.length === 0) return;
     const names = (data.names ?? []).slice(0, 3).join(', ');

@@ -30,7 +30,20 @@ export class CustomersController {
   }
 
   @MessagePattern({ cmd: 'list_customers' })
-  async list(@Payload() data: { organizationId: string; search?: string; status?: 'active' | 'inactive' | 'all'; portalResident?: boolean; portalId?: string; spaceId?: string; page?: number; limit?: number; caller?: CrmCaller }) {
+  async list(
+    @Payload()
+    data: {
+      organizationId: string;
+      search?: string;
+      status?: 'active' | 'inactive' | 'all';
+      portalResident?: boolean;
+      portalId?: string;
+      spaceId?: string;
+      page?: number;
+      limit?: number;
+      caller?: CrmCaller;
+    },
+  ) {
     return this.customersService.list(data);
   }
 
@@ -45,7 +58,9 @@ export class CustomersController {
   }
 
   @MessagePattern({ cmd: 'update_customer' })
-  async update(@Payload() data: { id: string; organizationId: string; dto: CustomerInput; actorId?: string; caller?: CrmCaller }) {
+  async update(
+    @Payload() data: { id: string; organizationId: string; dto: CustomerInput; actorId?: string; caller?: CrmCaller },
+  ) {
     return this.customerWrite.update(data.id, data.organizationId, data.dto, data.actorId, data.caller);
   }
 

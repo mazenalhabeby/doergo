@@ -22,20 +22,44 @@ export class CalendarController {
     private readonly feed: FeedService,
   ) {}
 
-  @MessagePattern({ cmd: 'calendar_items' }) items(@Payload() d: ItemsQuery) { return this.calendar.items(d); }
-  @MessagePattern({ cmd: 'calendar_team' }) team(@Payload() d: any) { return this.calendar.team(d); }
+  @MessagePattern({ cmd: 'calendar_items' }) items(@Payload() d: ItemsQuery) {
+    return this.calendar.items(d);
+  }
+  @MessagePattern({ cmd: 'calendar_team' }) team(@Payload() d: any) {
+    return this.calendar.team(d);
+  }
 
-  @MessagePattern({ cmd: 'calendar_settings' }) settings(@Payload() d: any) { return this.holidays.settings(d); }
-  @MessagePattern({ cmd: 'calendar_countries' }) countries(@Payload() d: { lang?: string }) { return this.holidays.countries(d); }
-  @MessagePattern({ cmd: 'calendar_regions' }) regions(@Payload() d: { country: string; lang?: string }) { return this.holidays.regions(d); }
-  @MessagePattern({ cmd: 'calendar_update_org' }) updateOrg(@Payload() d: any) { return this.holidays.updateOrganization(d); }
-  @MessagePattern({ cmd: 'calendar_update_space' }) updateSpace(@Payload() d: any) { return this.holidays.updateWorkspace(d); }
-  @MessagePattern({ cmd: 'calendar_holidays' }) holidaysList(@Payload() d: any) { return this.holidays.list(d); }
-  @MessagePattern({ cmd: 'calendar_holiday_save' }) holidaySave(@Payload() d: any) { return this.holidays.save(d); }
-  @MessagePattern({ cmd: 'calendar_holiday_remove' }) holidayRemove(@Payload() d: any) { return this.holidays.remove(d); }
+  @MessagePattern({ cmd: 'calendar_settings' }) settings(@Payload() d: any) {
+    return this.holidays.settings(d);
+  }
+  @MessagePattern({ cmd: 'calendar_countries' }) countries(@Payload() d: { lang?: string }) {
+    return this.holidays.countries(d);
+  }
+  @MessagePattern({ cmd: 'calendar_regions' }) regions(@Payload() d: { country: string; lang?: string }) {
+    return this.holidays.regions(d);
+  }
+  @MessagePattern({ cmd: 'calendar_update_org' }) updateOrg(@Payload() d: any) {
+    return this.holidays.updateOrganization(d);
+  }
+  @MessagePattern({ cmd: 'calendar_update_space' }) updateSpace(@Payload() d: any) {
+    return this.holidays.updateWorkspace(d);
+  }
+  @MessagePattern({ cmd: 'calendar_holidays' }) holidaysList(@Payload() d: any) {
+    return this.holidays.list(d);
+  }
+  @MessagePattern({ cmd: 'calendar_holiday_save' }) holidaySave(@Payload() d: any) {
+    return this.holidays.save(d);
+  }
+  @MessagePattern({ cmd: 'calendar_holiday_remove' }) holidayRemove(@Payload() d: any) {
+    return this.holidays.remove(d);
+  }
   // Internal only — the gateway's geocoder, never a client route.
-  @MessagePattern({ cmd: 'calendar_set_detected_place' }) setDetectedPlace(@Payload() d: any) { return this.holidays.setDetectedPlace(d); }
-  @MessagePattern({ cmd: 'calendar_places_to_detect' }) placesToDetect(@Payload() d: any) { return this.holidays.placesToDetect(d ?? {}); }
+  @MessagePattern({ cmd: 'calendar_set_detected_place' }) setDetectedPlace(@Payload() d: any) {
+    return this.holidays.setDetectedPlace(d);
+  }
+  @MessagePattern({ cmd: 'calendar_places_to_detect' }) placesToDetect(@Payload() d: any) {
+    return this.holidays.placesToDetect(d ?? {});
+  }
 
   @MessagePattern({ cmd: 'calendar_event_create' }) create(
     @Payload() d: Caller & { input: EventInput; clientId?: string },
@@ -72,8 +96,16 @@ export class CalendarController {
     return this.freeBusy.freeSlots(d);
   }
 
-  @MessagePattern({ cmd: 'calendar_feed_status' }) feedStatus(@Payload() d: any) { return this.feed.status(d); }
-  @MessagePattern({ cmd: 'calendar_feed_rotate' }) feedRotate(@Payload() d: any) { return this.feed.rotate(d); }
-  @MessagePattern({ cmd: 'calendar_feed_revoke' }) feedRevoke(@Payload() d: any) { return this.feed.revoke(d); }
-  @MessagePattern({ cmd: 'calendar_feed_render' }) async feedRender(@Payload() d: { token: string }) { return success({ ics: await this.feed.render(d) }); }
+  @MessagePattern({ cmd: 'calendar_feed_status' }) feedStatus(@Payload() d: any) {
+    return this.feed.status(d);
+  }
+  @MessagePattern({ cmd: 'calendar_feed_rotate' }) feedRotate(@Payload() d: any) {
+    return this.feed.rotate(d);
+  }
+  @MessagePattern({ cmd: 'calendar_feed_revoke' }) feedRevoke(@Payload() d: any) {
+    return this.feed.revoke(d);
+  }
+  @MessagePattern({ cmd: 'calendar_feed_render' }) async feedRender(@Payload() d: { token: string }) {
+    return success({ ics: await this.feed.render(d) });
+  }
 }

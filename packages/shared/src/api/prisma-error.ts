@@ -69,8 +69,10 @@ export function sanitizeErrorMessage(
   const raw = (message ?? '').trim();
   if (!raw) return { status: fallbackStatus, message: 'Something went wrong. Please try again.' };
   if (/unique constraint failed/i.test(raw)) return { status: 409, message: 'That name or value is already in use.' };
-  if (/record to (update|delete)/i.test(raw)) return { status: 404, message: 'That item no longer exists — it may have been removed.' };
-  if (/foreign key constraint/i.test(raw)) return { status: 409, message: 'This can’t be done because the item is still linked to other records.' };
+  if (/record to (update|delete)/i.test(raw))
+    return { status: 404, message: 'That item no longer exists — it may have been removed.' };
+  if (/foreign key constraint/i.test(raw))
+    return { status: 409, message: 'This can’t be done because the item is still linked to other records.' };
   if (PRISMA_DUMP.test(raw)) return { status: 500, message: 'Something went wrong. Please try again.' };
   return { status: fallbackStatus, message: raw };
 }

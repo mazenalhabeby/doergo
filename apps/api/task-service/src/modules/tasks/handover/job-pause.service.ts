@@ -28,7 +28,6 @@ export { type ClockOutHandover } from './job-pause-helpers';
  */
 @Injectable()
 export class JobPauseService extends JobPauseBase {
-
   /**
    * A shift ended at `at`: pause what this person was working on, and keep the
    * notes they wrote. A job somebody else on its crew is still clocked in for
@@ -61,14 +60,25 @@ export class JobPauseService extends JobPauseBase {
     if (args.since) {
       await this.prisma.task.updateMany({
         where: { organizationId, pausedById: userId, pausedAt: { gte: args.since } },
-        data: { pausedAt: at } });
+        data: { pausedAt: at },
+      });
       // The leave this shift's end already wrote moves with it.
       const lefts = await this.prisma.taskEvent.findMany({
-        where: { userId, eventType: TaskEventType.CREW_LEFT, createdAt: { gte: args.since }, task: { organizationId }, metadata: { path: ['why'], equals: 'CLOCK_OUT' } },
+        where: {
+          userId,
+          eventType: TaskEventType.CREW_LEFT,
+          createdAt: { gte: args.since },
+          task: { organizationId },
+          metadata: { path: ['why'], equals: 'CLOCK_OUT' },
+        },
         select: { id: true, metadata: true },
-        take: 50 });
+        take: 50,
+      });
       for (const l of lefts) {
-        await this.prisma.taskEvent.update({ where: { id: l.id }, data: { metadata: { ...((l.metadata ?? {}) as object), at: at.toISOString() } } });
+        await this.prisma.taskEvent.update({
+          where: { id: l.id },
+          data: { metadata: { ...((l.metadata ?? {}) as object), at: at.toISOString() } },
+        });
       }
     }
 
@@ -80,13 +90,21 @@ export class JobPauseService extends JobPauseBase {
       the clock keeps it running, and is not stopped under.
     */
     const { joinedOf, onClock } = await this.crewOnJobs(jobs, userId, organizationId);
-    const toPause = jobs.filter((j) => pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }));
+    const toPause = jobs.filter((j) =>
+      pausesAtClockOut({ leaverId: userId, joined: joinedOf.get(j.id) ?? [], onClock }),
+    );
 
     // Clocking out is leaving every job they were on — tomorrow they join again.
     const leftOn = jobs.filter((j) => (joinedOf.get(j.id) ?? []).includes(userId));
     if (leftOn.length) {
       await this.prisma.taskEvent.createMany({
-        data: leftOn.map((j) => ({ taskId: j.id, userId, eventType: TaskEventType.CREW_LEFT, metadata: { at: at.toISOString(), why: 'CLOCK_OUT' } })) });
+        data: leftOn.map((j) => ({
+          taskId: j.id,
+          userId,
+          eventType: TaskEventType.CREW_LEFT,
+          metadata: { at: at.toISOString(), why: 'CLOCK_OUT' },
+        })),
+      });
     }
 
     const notes = new Map<string, ClockOutHandover>();
@@ -98,17 +116,31 @@ export class JobPauseService extends JobPauseBase {
     for (const job of toPause) {
       const claimed = await this.prisma.task.updateMany({
         where: { id: job.id, pausedAt: null, status: job.status },
-        data: { pausedAt: at, pausedById: userId, handoverDueById: notes.has(job.id) ? null : userId } });
+        data: { pausedAt: at, pausedById: userId, handoverDueById: notes.has(job.id) ? null : userId },
+      });
       if (claimed.count === 0) continue;
       paused.push(job.id);
       const workedMinutes = worked.get(job.id) ?? 0;
       await this.prisma.taskEvent.create({
-        data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: args.reason, at: at.toISOString(), workedMinutes } } });
+        data: {
+          taskId: job.id,
+          userId,
+          eventType: TaskEventType.PAUSED,
+          metadata: { reason: args.reason, at: at.toISOString(), workedMinutes },
+        },
+      });
     }
 
     // The notes — for paused jobs, and for any job they are on that kept running.
     for (const h of notes.values()) {
-      await this.addHandover({ id: h.id, taskId: h.taskId, note: h.note, attachmentIds: h.attachmentIds, userId, organizationId }).catch((err) =>
+      await this.addHandover({
+        id: h.id,
+        taskId: h.taskId,
+        note: h.note,
+        attachmentIds: h.attachmentIds,
+        userId,
+        organizationId,
+      }).catch((err) =>
         this.logger.warn(`Handover at clock-out not saved (task=${h.taskId}): ${(err as Error).message}`),
       );
     }
@@ -130,10 +162,17 @@ export class JobPauseService extends JobPauseBase {
     const workedMinutes = (await this.jobTime.workedForMany([job], userId, at)).get(job.id) ?? 0;
     const claimed = await this.prisma.task.updateMany({
       where: { id: job.id, pausedAt: null, status: job.status },
-      data: { pausedAt: at, pausedById: userId, handoverDueById: userId } });
+      data: { pausedAt: at, pausedById: userId, handoverDueById: userId },
+    });
     if (claimed.count === 0) return false;
     await this.prisma.taskEvent.create({
-      data: { taskId: job.id, userId, eventType: TaskEventType.PAUSED, metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes } } });
+      data: {
+        taskId: job.id,
+        userId,
+        eventType: TaskEventType.PAUSED,
+        metadata: { reason: 'LEFT', at: at.toISOString(), workedMinutes },
+      },
+    });
     this.notifications.emit('tasks_paused', { taskIds: [job.id], userId, organizationId, reason: 'LEFT' });
     return true;
   }
@@ -154,29 +193,53 @@ export class JobPauseService extends JobPauseBase {
     const note = cleanHandoverNote(data.note);
     const task = await this.prisma.task.findUnique({
       where: { id: data.taskId },
-      select: { id: true, title: true, organizationId: true, assignedToId: true, pausedById: true, handoverDueById: true } });
+      select: {
+        id: true,
+        title: true,
+        organizationId: true,
+        assignedToId: true,
+        pausedById: true,
+        handoverDueById: true,
+      },
+    });
     // Another organization's job is not there, as far as this caller knows.
     assertFoundInOrg(task, data.organizationId, 'Task');
     const onTheJob =
       task.assignedToId === data.userId ||
       task.handoverDueById === data.userId ||
       task.pausedById === data.userId ||
-      !!(await this.prisma.taskAssignee.findFirst({ where: { taskId: task.id, userId: data.userId }, select: { id: true } }));
+      !!(await this.prisma.taskAssignee.findFirst({
+        where: { taskId: task.id, userId: data.userId },
+        select: { id: true },
+      }));
     if (!onTheJob) {
-      throw new ForbiddenException({ message: 'Only somebody on this job can write its handover', code: HANDOVER_CODES.NOT_ON_THE_JOB });
+      throw new ForbiddenException({
+        message: 'Only somebody on this job can write its handover',
+        code: HANDOVER_CODES.NOT_ON_THE_JOB,
+      });
     }
-    if (!note) throw new ForbiddenException({ message: 'Write what you did and what is left', code: 'HANDOVER_NOTE_REQUIRED' });
+    if (!note)
+      throw new ForbiddenException({ message: 'Write what you did and what is left', code: 'HANDOVER_NOTE_REQUIRED' });
 
     // Photos are the job's own attachments — never another job's, whatever was sent.
-    const wanted = [...new Set((data.attachmentIds ?? []).filter((x) => typeof x === 'string'))].slice(0, HANDOVER_PHOTOS_MAX);
+    const wanted = [...new Set((data.attachmentIds ?? []).filter((x) => typeof x === 'string'))].slice(
+      0,
+      HANDOVER_PHOTOS_MAX,
+    );
     const attachmentIds = wanted.length
-      ? (await this.prisma.attachment.findMany({ where: { id: { in: wanted }, taskId: task.id }, select: { id: true } })).map((a) => a.id)
+      ? (
+          await this.prisma.attachment.findMany({
+            where: { id: { in: wanted }, taskId: task.id },
+            select: { id: true },
+          })
+        ).map((a) => a.id)
       : [];
 
     const lastPause = await this.prisma.taskEvent.findFirst({
       where: { taskId: task.id, userId: data.userId, eventType: TaskEventType.PAUSED },
       orderBy: { createdAt: 'desc' },
-      select: { metadata: true } });
+      select: { metadata: true },
+    });
     const workedMinutes = (lastPause?.metadata as { workedMinutes?: number } | null)?.workedMinutes ?? null;
 
     const include = { author: AUTHOR } as const;
@@ -193,28 +256,41 @@ export class JobPauseService extends JobPauseBase {
             authorId: data.userId,
             note,
             attachmentIds,
-            workedMinutes },
-          include }) });
+            workedMinutes,
+          },
+          include,
+        }),
+    });
     if (!created) return success(row);
 
-    await this.prisma.task.updateMany({ where: { id: task.id, handoverDueById: data.userId }, data: { handoverDueById: null } });
+    await this.prisma.task.updateMany({
+      where: { id: task.id, handoverDueById: data.userId },
+      data: { handoverDueById: null },
+    });
     await this.prisma.taskEvent.create({
       data: {
         taskId: task.id,
         userId: data.userId,
         eventType: TaskEventType.HANDOVER_ADDED,
-        metadata: { handoverId: row.id, content: note.length > 100 ? `${note.slice(0, 100)}...` : note } } });
+        metadata: { handoverId: row.id, content: note.length > 100 ? `${note.slice(0, 100)}...` : note },
+      },
+    });
 
     // Whoever has the job now hears it — including a note written after they were given it.
     const crew = await this.prisma.taskAssignee.findMany({ where: { taskId: task.id }, select: { userId: true } });
-    const recipientIds = [...new Set([task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id && id !== data.userId))];
+    const recipientIds = [
+      ...new Set(
+        [task.assignedToId, ...crew.map((c) => c.userId)].filter((id): id is string => !!id && id !== data.userId),
+      ),
+    ];
     this.notifications.emit('task_handover_added', {
       taskId: task.id,
       taskTitle: task.title,
       authorId: data.userId,
       authorName: personName(row.author),
       recipientIds,
-      organizationId: task.organizationId });
+      organizationId: task.organizationId,
+    });
     return success(row);
   }
 }

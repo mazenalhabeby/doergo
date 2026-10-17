@@ -73,7 +73,10 @@ export class StripeWebhookService extends BillingBase {
     }
   }
 
-  private async setStatusByCustomer(customer: string | Stripe.Customer | Stripe.DeletedCustomer | null, status: PrismaStatus): Promise<string | null> {
+  private async setStatusByCustomer(
+    customer: string | Stripe.Customer | Stripe.DeletedCustomer | null,
+    status: PrismaStatus,
+  ): Promise<string | null> {
     const orgId = await this.orgIdByCustomer(customer);
     if (!orgId) return null;
     await this.prisma.organization.update({ where: { id: orgId }, data: { subStatus: status } });

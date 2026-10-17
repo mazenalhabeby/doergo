@@ -68,13 +68,16 @@ export class EmployeeTimeOffController {
       throw new ForbiddenException('You can only view your own leave balance');
     }
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'get_leave_balance' }, {
-        technicianId: id,
-        organizationId: user?.organizationId,
-        // The leave year containing `on` (default today); `year` = the one starting in that year.
-        on: typeof on === 'string' ? on.slice(0, 10) : undefined,
-        year,
-      }),
+      this.taskClient.send(
+        { cmd: 'get_leave_balance' },
+        {
+          technicianId: id,
+          organizationId: user?.organizationId,
+          // The leave year containing `on` (default today); `year` = the one starting in that year.
+          on: typeof on === 'string' ? on.slice(0, 10) : undefined,
+          year,
+        },
+      ),
     );
   }
 
@@ -86,9 +89,20 @@ export class EmployeeTimeOffController {
     // Your own, or somebody you manage: an admin or org-wide view reaches everyone, the rota
     // permission held in a workspace reaches that workspace's people (narrowed in the service).
     const scope = leaveReadScope(user);
-    if (user?.id !== id && scope !== undefined && scope.length === 0) throw new ForbiddenException('You can only count your own leave');
+    if (user?.id !== id && scope !== undefined && scope.length === 0)
+      throw new ForbiddenException('You can only count your own leave');
     return firstValueFrom(
-      this.taskClient.send({ cmd: 'count_leave' }, { technicianId: id, organizationId: user.organizationId, from: q.from, to: q.to, callerId: user.id, scopeSpaceIds: scope }),
+      this.taskClient.send(
+        { cmd: 'count_leave' },
+        {
+          technicianId: id,
+          organizationId: user.organizationId,
+          from: q.from,
+          to: q.to,
+          callerId: user.id,
+          scopeSpaceIds: scope,
+        },
+      ),
     );
   }
 

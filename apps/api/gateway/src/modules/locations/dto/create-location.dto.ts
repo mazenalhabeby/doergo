@@ -16,7 +16,14 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ATTENDANCE_CONSTANTS, GEOFENCE_POLYGON_LIMITS, WorkModel, SpaceKind } from '@hbcfield/shared';
-import { GEOFENCE_POLICIES, DEFAULT_GEOFENCE_POLICY, MIN_COVER_MAX, NO_SHIFT_POLICIES, NO_SHIFT_LIMIT, REQUEST_KINDS } from '@hbcfield/shared';
+import {
+  GEOFENCE_POLICIES,
+  DEFAULT_GEOFENCE_POLICY,
+  MIN_COVER_MAX,
+  NO_SHIFT_POLICIES,
+  NO_SHIFT_LIMIT,
+  REQUEST_KINDS,
+} from '@hbcfield/shared';
 
 /** One corner of a drawn site boundary. */
 class GeoPointDto {
@@ -185,7 +192,11 @@ export class CreateLocationDto {
   @IsOptional()
   noShiftPolicy?: string;
 
-  @ApiPropertyOptional({ description: 'Daily limit for LIMIT, in minutes', minimum: NO_SHIFT_LIMIT.MIN_MINUTES, maximum: NO_SHIFT_LIMIT.MAX_MINUTES })
+  @ApiPropertyOptional({
+    description: 'Daily limit for LIMIT, in minutes',
+    minimum: NO_SHIFT_LIMIT.MIN_MINUTES,
+    maximum: NO_SHIFT_LIMIT.MAX_MINUTES,
+  })
   @IsInt()
   @Min(NO_SHIFT_LIMIT.MIN_MINUTES)
   @Max(NO_SHIFT_LIMIT.MAX_MINUTES)
@@ -219,13 +230,20 @@ export class CreateLocationDto {
   @MaxLength(50)
   contactPhone?: string;
 
-  @ApiPropertyOptional({ description: "What this workspace's client is billed in (ISO code). Null or empty = the organization's currency. Every rate here is in it." })
+  @ApiPropertyOptional({
+    description:
+      "What this workspace's client is billed in (ISO code). Null or empty = " +
+      "the organization's currency. Every rate here is in it.",
+  })
   @IsOptional()
   @IsString()
   @MaxLength(3)
   currency?: string | null;
 
-  @ApiPropertyOptional({ description: "The company (legal entity) that invoices this workspace. Null or empty = the organization's main company." })
+  @ApiPropertyOptional({
+    description:
+      'The company (legal entity) that invoices this workspace. Null or empty = ' + "the organization's main company.",
+  })
   @IsOptional()
   @IsString()
   @MaxLength(40)

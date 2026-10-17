@@ -5,8 +5,20 @@ import { Role, CurrentUser, CurrentUserData, crmReachOf, crmCanAccess, moduleAny
 import { DenyExternal, RequirePermission, Roles } from '../../common/decorators';
 import { CalendarGatewayService } from './calendar.service';
 import {
-  AvailabilityDto, CreateEventDto, EventDto, FreeSlotsDto, HolidayDto, HolidaysQueryDto, ItemsQueryDto,
-  DoneDto, OrgCalendarSettingsDto, PeopleQueryDto, PlaceSettingsDto, RespondDto, SnoozeDto, TeamQueryDto,
+  AvailabilityDto,
+  CreateEventDto,
+  EventDto,
+  FreeSlotsDto,
+  HolidayDto,
+  HolidaysQueryDto,
+  ItemsQueryDto,
+  DoneDto,
+  OrgCalendarSettingsDto,
+  PeopleQueryDto,
+  PlaceSettingsDto,
+  RespondDto,
+  SnoozeDto,
+  TeamQueryDto,
 } from './calendar.dto';
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -39,7 +51,9 @@ export class CalendarController {
       // A client on an event is shown (and may be set) only for somebody who reads the client book —
       // org-wide or in a workspace (crm/crm-reach.ts). A coarse gate: task-service then asks the
       // reach from the database for the client's own workspace, module included.
-      crm: crmCanAccess(crmReachOf(String(u.role), u.access as any, { crmSpaces: () => moduleAnywhere(u as any, 'crm') })),
+      crm: crmCanAccess(
+        crmReachOf(String(u.role), u.access as any, { crmSpaces: () => moduleAnywhere(u as any, 'crm') }),
+      ),
       // Whose leave the caller may be told about — availability hides the reason from everyone else.
       teamSpaces: this.teamSpaces(u),
     };
@@ -63,16 +77,27 @@ export class CalendarController {
   @ApiOperation({ summary: 'Every calendar item the caller may see, for a window (≤ 62 days)' })
   items(@Query() q: ItemsQueryDto, @CurrentUser() u: CurrentUserData) {
     return this.svc.read('calendar_items', {
-      ...this.caller(u), from: q.from, to: q.to, spaceId: q.spaceId ?? null, lang: q.lang,
+      ...this.caller(u),
+      from: q.from,
+      to: q.to,
+      spaceId: q.spaceId ?? null,
+      lang: q.lang,
       layers: q.layers ? q.layers.split(',').filter(Boolean) : undefined,
-      viewTaskSpaces: this.viewTaskSpaces(u), teamSpaces: this.teamSpaces(u),
+      viewTaskSpaces: this.viewTaskSpaces(u),
+      teamSpaces: this.teamSpaces(u),
     });
   }
 
   @Get('team')
-  @ApiOperation({ summary: 'A workspace\'s days (weekend, holidays) for the team view' })
+  @ApiOperation({ summary: "A workspace's days (weekend, holidays) for the team view" })
   team(@Query() q: TeamQueryDto, @CurrentUser() u: CurrentUserData) {
-    return this.svc.read('calendar_team', { ...this.caller(u), spaceId: q.spaceId, from: q.from, to: q.to, teamSpaces: this.teamSpaces(u) });
+    return this.svc.read('calendar_team', {
+      ...this.caller(u),
+      spaceId: q.spaceId,
+      from: q.from,
+      to: q.to,
+      teamSpaces: this.teamSpaces(u),
+    });
   }
 
   @Get('people')
@@ -96,18 +121,28 @@ export class CalendarController {
   @Get('holidays')
   @ApiOperation({ summary: 'One year of holidays for the organization or a workspace' })
   holidays(@Query() q: HolidaysQueryDto, @CurrentUser() u: CurrentUserData) {
-    return this.svc.read('calendar_holidays', { organizationId: u.organizationId, spaceId: q.spaceId ?? null, year: q.year, lang: q.lang });
+    return this.svc.read('calendar_holidays', {
+      organizationId: u.organizationId,
+      spaceId: q.spaceId ?? null,
+      year: q.year,
+      lang: q.lang,
+    });
   }
 
   @Get('countries')
   countries(@Query('lang') lang?: string) {
-    return this.svc.read('calendar_countries', { lang: ['en', 'de', 'es', 'fr', 'it'].includes(lang ?? '') ? lang : 'en' });
+    return this.svc.read('calendar_countries', {
+      lang: ['en', 'de', 'es', 'fr', 'it'].includes(lang ?? '') ? lang : 'en',
+    });
   }
 
   @Get('countries/:code/regions')
   regions(@Param('code') code: string, @Query('lang') lang?: string) {
     if (!/^[A-Za-z]{2}$/.test(code)) throw new ForbiddenException('Unknown country');
-    return this.svc.read('calendar_regions', { country: code.toUpperCase(), lang: ['en', 'de', 'es', 'fr', 'it'].includes(lang ?? '') ? lang : 'en' });
+    return this.svc.read('calendar_regions', {
+      country: code.toUpperCase(),
+      lang: ['en', 'de', 'es', 'fr', 'it'].includes(lang ?? '') ? lang : 'en',
+    });
   }
 
   // ─── events ─────────────────────────────────────────────────────────────
@@ -141,7 +176,12 @@ export class CalendarController {
 
   @Post('events/:id/snooze')
   snooze(@Param('id') eventId: string, @Body() b: SnoozeDto, @CurrentUser() u: CurrentUserData) {
-    return this.svc.write('calendar_event_snooze', { ...this.caller(u), eventId: id(eventId), minutes: b.minutes, occurrence: b.occurrence });
+    return this.svc.write('calendar_event_snooze', {
+      ...this.caller(u),
+      eventId: id(eventId),
+      minutes: b.minutes,
+      occurrence: b.occurrence,
+    });
   }
 
   @Post('events/:id/done')
@@ -198,7 +238,12 @@ export class CalendarController {
   @Patch('holidays/:id')
   @RequirePermission('canManageWorkspaces')
   editHoliday(@Param('id') hid: string, @Body() b: HolidayDto, @CurrentUser() u: CurrentUserData) {
-    return this.svc.write('calendar_holiday_save', { organizationId: u.organizationId, userId: u.id, ...b, id: id(hid) });
+    return this.svc.write('calendar_holiday_save', {
+      organizationId: u.organizationId,
+      userId: u.id,
+      ...b,
+      id: id(hid),
+    });
   }
 
   @Delete('holidays/:id')

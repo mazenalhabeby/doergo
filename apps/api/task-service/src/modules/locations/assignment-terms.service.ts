@@ -2,7 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { Prisma } from '@prisma/client';
 import {
   zoneOf,
-  success, assertFoundInOrg,
+  success,
+  assertFoundInOrg,
   isAutoClockMode,
   parseAutoClockStartWindow,
   suggestStartWindow,
@@ -83,7 +84,10 @@ export class AssignmentTermsService extends SpaceServiceBase {
     }
     // An external member holds no clock, automatic or not.
     if (data.autoClock === true && assignment.user?.isExternal) {
-      throw new BadRequestException({ message: 'External members do not use the clock', code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL' });
+      throw new BadRequestException({
+        message: 'External members do not use the clock',
+        code: 'AUTO_CLOCK_NOT_FOR_EXTERNAL',
+      });
     }
 
     // Validate schedule days if provided
@@ -111,23 +115,29 @@ export class AssignmentTermsService extends SpaceServiceBase {
     const updateData: any = {};
     if (data.isPrimary !== undefined) updateData.isPrimary = data.isPrimary;
     if (data.schedule !== undefined) updateData.schedule = data.schedule;
-    if (data.effectiveFrom !== undefined)
-      updateData.effectiveFrom = new Date(data.effectiveFrom);
-    if (data.effectiveTo !== undefined)
-      updateData.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
+    if (data.effectiveFrom !== undefined) updateData.effectiveFrom = new Date(data.effectiveFrom);
+    if (data.effectiveTo !== undefined) updateData.effectiveTo = data.effectiveTo ? new Date(data.effectiveTo) : null;
     // Tri-state on purpose: true / false / null-meaning-follow-the-account.
     if (data.allowRemote !== undefined) updateData.allowRemote = data.allowRemote;
     if (data.autoClock !== undefined) updateData.autoClock = data.autoClock === true;
     if (data.autoClockMode !== undefined) {
       if (!isAutoClockMode(data.autoClockMode)) {
-        throw new BadRequestException({ message: 'Unknown automatic clock mode', code: 'AUTO_CLOCK_SETTING_INVALID', params: { field: 'mode' } });
+        throw new BadRequestException({
+          message: 'Unknown automatic clock mode',
+          code: 'AUTO_CLOCK_SETTING_INVALID',
+          params: { field: 'mode' },
+        });
       }
       updateData.autoClockMode = data.autoClockMode;
     }
     if (data.autoClockStartWindow !== undefined) {
       const parsed = parseAutoClockStartWindow(data.autoClockStartWindow, { strict: true });
       if (!parsed.ok) {
-        throw new BadRequestException({ message: 'Usual start hours must be two different times, HH:MM', code: parsed.code, params: { field: parsed.field } });
+        throw new BadRequestException({
+          message: 'Usual start hours must be two different times, HH:MM',
+          code: parsed.code,
+          params: { field: parsed.field },
+        });
       }
       updateData.autoClockStartWindow = parsed.value ?? Prisma.DbNull;
     } else if (data.autoClockMode === 'PRESENCE' && assignment.autoClockMode !== 'PRESENCE') {
@@ -143,7 +153,10 @@ export class AssignmentTermsService extends SpaceServiceBase {
         space: true,
         user: {
           select: {
-            id: true, firstName: true, lastName: true, email: true,
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
             avatarUrl: true,
           },
         },

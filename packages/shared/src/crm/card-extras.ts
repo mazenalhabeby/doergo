@@ -36,7 +36,10 @@ export type SocialKey = (typeof SOCIAL_NETWORKS)[number]['key'];
 
 /** The host of a URL-ish string, without protocol, `www.`, path or port. */
 export function hostOf(value: string): string | null {
-  const trimmed = value.trim().replace(/^[a-z]+:\/\//i, '').replace(/^www\./i, '');
+  const trimmed = value
+    .trim()
+    .replace(/^[a-z]+:\/\//i, '')
+    .replace(/^www\./i, '');
   const host = trimmed.split(/[/?#]/)[0]?.split(':')[0];
   if (!host || !host.includes('.')) return null;
   // A host is letters, digits, hyphens and dots — nothing else, and no spaces.
@@ -71,7 +74,11 @@ export const isSocialLink = (value: string): boolean => socialOf(value) !== null
 export const EXTRA_PATTERNS = [
   { key: 'iban', re: /\b[A-Z]{2}\d{2}[\sA-Z0-9]{10,32}\b/, labelKey: 'customers.extra.iban' },
   { key: 'bic', re: /\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/, labelKey: 'customers.extra.bic' },
-  { key: 'hours', re: /\b(?:mo|di|mi|do|fr|sa|so|mon|tue|wed|thu|fri|sat|sun)\b[^\n]{0,20}\d{1,2}[:.]\d{2}/i, labelKey: 'customers.extra.hours' },
+  {
+    key: 'hours',
+    re: /\b(?:mo|di|mi|do|fr|sa|so|mon|tue|wed|thu|fri|sat|sun)\b[^\n]{0,20}\d{1,2}[:.]\d{2}/i,
+    labelKey: 'customers.extra.hours',
+  },
   // Here the capture IS deliberate: the handle, not the word "Skype".
   { key: 'skype', re: /\bskype\b[\s:]+([\w.@-]+)/i, labelKey: 'customers.extra.skype' },
 ] as const;

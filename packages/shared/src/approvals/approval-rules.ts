@@ -79,7 +79,10 @@ export interface RuleFacts {
 }
 
 /** Does this rule apply? Strictly MORE than the threshold; no threshold = always. */
-type RuleShape = Pick<ApprovalRuleView, 'kind' | 'spaceId' | 'minMinutes' | 'minDays' | 'minAmountCents' | 'isActive'> & { whenCoverShort?: boolean };
+type RuleShape = Pick<
+  ApprovalRuleView,
+  'kind' | 'spaceId' | 'minMinutes' | 'minDays' | 'minAmountCents' | 'isActive'
+> & { whenCoverShort?: boolean };
 
 export function ruleMatches(rule: RuleShape, facts: RuleFacts): boolean {
   if (!rule.isActive) return false;
@@ -99,14 +102,24 @@ export function ruleMatches(rule: RuleShape, facts: RuleFacts): boolean {
 /** Of several rules that apply, the one to follow: a workspace's own before every-workspace, then the highest threshold. */
 export function pickRule<R extends RuleShape>(rules: R[], facts: RuleFacts): R | null {
   const threshold = (r: R) => r.minMinutes ?? r.minDays ?? r.minAmountCents ?? -1;
-  return rules
-    .filter((r) => ruleMatches(r, facts))
-    .sort((a, b) => Number(!!b.spaceId) - Number(!!a.spaceId) || threshold(b) - threshold(a))[0] ?? null;
+  return (
+    rules
+      .filter((r) => ruleMatches(r, facts))
+      .sort((a, b) => Number(!!b.spaceId) - Number(!!a.spaceId) || threshold(b) - threshold(a))[0] ?? null
+  );
 }
 
 /** A rule as entered, checked the same on both ends. Null = fine, else the refusal code. */
-export function ruleInputProblem(input: ApprovalRuleInput):
-  | null | 'RULE_KIND_INVALID' | 'RULE_THRESHOLD_INVALID' | 'RULE_ROLE_REQUIRED' | 'RULE_EMPTY' | 'RULE_HOURS_INVALID' | 'RULE_ESCALATE_ROLE_REQUIRED' {
+export function ruleInputProblem(
+  input: ApprovalRuleInput,
+):
+  | null
+  | 'RULE_KIND_INVALID'
+  | 'RULE_THRESHOLD_INVALID'
+  | 'RULE_ROLE_REQUIRED'
+  | 'RULE_EMPTY'
+  | 'RULE_HOURS_INVALID'
+  | 'RULE_ESCALATE_ROLE_REQUIRED' {
   if (!isRuleKind(input.kind)) return 'RULE_KIND_INVALID';
   const hours = (h: number | null | undefined) => h == null || (Number.isInteger(h) && h >= 1 && h <= 720);
   if (!hours(input.remindAfterHours) || !hours(input.escalateAfterHours)) return 'RULE_HOURS_INVALID';
@@ -114,7 +127,8 @@ export function ruleInputProblem(input: ApprovalRuleInput):
   if (input.escalateRoleId && input.escalateAfterHours == null) return 'RULE_HOURS_INVALID';
   // It must DO something: a second step, a reminder, or an escalation.
   if (!input.secondRoleId && input.remindAfterHours == null && input.escalateAfterHours == null) return 'RULE_EMPTY';
-  const n = input.kind === 'overtime' ? input.minMinutes : input.kind === 'request' ? input.minDays : input.minAmountCents;
+  const n =
+    input.kind === 'overtime' ? input.minMinutes : input.kind === 'request' ? input.minDays : input.minAmountCents;
   const max = input.kind === 'overtime' ? 1440 : input.kind === 'request' ? 366 : 100_000_000;
   if (n != null && (!Number.isInteger(n) || n < 0 || n > max)) return 'RULE_THRESHOLD_INVALID';
   return null;
@@ -143,7 +157,14 @@ export function noticeDue(
   sent: ReadonlySet<NoticeStage>,
 ): NoticeStage | null {
   const hours = (now.getTime() - waitingSince.getTime()) / 3_600_000;
-  if (rule.escalateAfterHours != null && rule.escalateRoleId && hours >= rule.escalateAfterHours && !sent.has('ESCALATE')) return 'ESCALATE';
-  if (rule.remindAfterHours != null && hours >= rule.remindAfterHours && !sent.has('REMIND') && !sent.has('ESCALATE')) return 'REMIND';
+  if (
+    rule.escalateAfterHours != null &&
+    rule.escalateRoleId &&
+    hours >= rule.escalateAfterHours &&
+    !sent.has('ESCALATE')
+  )
+    return 'ESCALATE';
+  if (rule.remindAfterHours != null && hours >= rule.remindAfterHours && !sent.has('REMIND') && !sent.has('ESCALATE'))
+    return 'REMIND';
   return null;
 }

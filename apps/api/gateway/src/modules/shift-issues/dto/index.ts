@@ -28,28 +28,45 @@ class ShiftIssueAttachmentDto extends MediaAttachmentDto {}
 
 export class CreateShiftIssueDto {
   @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same issue' })
-  @IsOptional() @IsString() @Matches(CLIENT_ID) id?: string;
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
 
   @ApiProperty() @IsString() @IsNotEmpty() @MaxLength(200) title: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(5000) description?: string;
-  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] }) @IsOptional() @IsIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT']) severity?: string;
+  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] })
+  @IsOptional()
+  @IsIn(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+  severity?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @Matches(ID) timeEntryId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @Matches(ID) spaceId?: string;
 
   /** Sent by the web; photos are posted as the first message once the issue exists. Accepted and not stored here. */
   @ApiPropertyOptional({ type: () => [ShiftIssueAttachmentDto] })
-  @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => ShiftIssueAttachmentDto)
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => ShiftIssueAttachmentDto)
   attachments?: ShiftIssueAttachmentDto[];
 }
 
 export class ShiftIssueMessageDto {
   @ApiPropertyOptional({ description: 'Id made on the phone; a resend returns the same message' })
-  @IsOptional() @IsString() @Matches(CLIENT_ID) id?: string;
+  @IsOptional()
+  @IsString()
+  @Matches(CLIENT_ID)
+  id?: string;
 
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(5000) body?: string;
 
   @ApiPropertyOptional({ type: [ShiftIssueAttachmentDto] })
-  @IsOptional() @IsArray() @ArrayMaxSize(10) @ValidateNested({ each: true }) @Type(() => ShiftIssueAttachmentDto)
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ValidateNested({ each: true })
+  @Type(() => ShiftIssueAttachmentDto)
   attachments?: ShiftIssueAttachmentDto[];
 }
 
@@ -58,7 +75,10 @@ export class AssignShiftIssueDto {
 }
 
 export class ShiftIssueStatusDto {
-  @ApiProperty() @IsString() @IsIn(['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELED']) status: string;
+  @ApiProperty()
+  @IsString()
+  @IsIn(['OPEN', 'ACKNOWLEDGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'CANCELED'])
+  status: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(5000) note?: string;
 }
 

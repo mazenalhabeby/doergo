@@ -63,7 +63,14 @@ export abstract class HeartbeatBase {
       | 'geofence_excursion_returned'
       | 'geofence_excursion_expired',
     entry: { userId: string; organizationId: string; locationId: string; location?: { name?: string } | null },
-    excursion: { id: string; status: string; reason?: string | null; requestedMinutes?: number | null; grantedMinutes?: number | null; expiresAt?: Date | null },
+    excursion: {
+      id: string;
+      status: string;
+      reason?: string | null;
+      requestedMinutes?: number | null;
+      grantedMinutes?: number | null;
+      expiresAt?: Date | null;
+    },
     ctx: { distanceM?: number },
   ) {
     try {

@@ -8,6 +8,12 @@ import { path } from '../../core/path';
 
 export const spaceUnitsWebEndpoints = defineEndpoints('spaceUnits', {
   list: endpoint<{ spaceId: string }, unknown>({ method: 'GET', path: (a) => path`/spaces/${a.spaceId}/units` }),
-  create: endpoint<{ spaceId: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/spaces/${a.spaceId}/units` }),
-  update: endpoint<{ spaceId: string; unitId: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/spaces/${a.spaceId}/units/${a.unitId}` }),
+  create: endpoint<{ spaceId: string }, unknown, unknown>({
+    method: 'POST',
+    path: (a) => path`/spaces/${a.spaceId}/units`,
+  }),
+  update: endpoint<{ spaceId: string; unitId: string }, unknown, unknown>({
+    method: 'PATCH',
+    path: (a) => path`/spaces/${a.spaceId}/units/${a.unitId}`,
+  }),
 });

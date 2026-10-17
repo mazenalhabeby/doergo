@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Query, Request, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  Request,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAuthGuard, RequirePlatformPerm } from '../../common/guards/platform-auth.guard';
@@ -44,11 +56,15 @@ export class PlatformAdminController {
   private unwrap<T>(result: any): T {
     return assertServiceOk(result) as T;
   }
-  private actor(req: any): string | undefined { return req.platformUser?.id; }
+  private actor(req: any): string | undefined {
+    return req.platformUser?.id;
+  }
 
   @Get('overview')
   @RequirePlatformPerm('view')
-  async overview() { return this.unwrap(await this.svc.overview()); }
+  async overview() {
+    return this.unwrap(await this.svc.overview());
+  }
 
   /**
    * Is outbound email working?
@@ -61,7 +77,9 @@ export class PlatformAdminController {
    */
   @Get('mail')
   @RequirePlatformPerm('view')
-  async mail() { return this.unwrap(await this.svc.mailStatus()); }
+  async mail() {
+    return this.unwrap(await this.svc.mailStatus());
+  }
 
   /** One page of organizations; `nextCursor` in the reply asks for the next. */
   @Get('orgs')
@@ -72,7 +90,14 @@ export class PlatformAdminController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.unwrap(await this.svc.listOrgs({ search, status, cursor: cursor || undefined, limit: limit ? Number(limit) : undefined }));
+    return this.unwrap(
+      await this.svc.listOrgs({
+        search,
+        status,
+        cursor: cursor || undefined,
+        limit: limit ? Number(limit) : undefined,
+      }),
+    );
   }
 
   /** The viewer's ROLE travels so the service can leave member emails out for support readers. */
@@ -94,13 +119,22 @@ export class PlatformAdminController {
     @Query('actorId') actorId?: string,
     @Query('organizationId') organizationId?: string,
   ) {
-    return this.unwrap(await this.svc.auditList({ cursor: cursor || undefined, limit: limit ? Number(limit) : undefined, actorId: actorId || undefined, organizationId: organizationId || undefined }));
+    return this.unwrap(
+      await this.svc.auditList({
+        cursor: cursor || undefined,
+        limit: limit ? Number(limit) : undefined,
+        actorId: actorId || undefined,
+        organizationId: organizationId || undefined,
+      }),
+    );
   }
 
   @Post('orgs/:id/extend-trial')
   @RequirePlatformPerm('extendTrial')
   async extendTrial(@Param('id') id: string, @Body() body: { days?: number }, @Request() req: any) {
-    return this.unwrap(await this.svc.extendTrial({ organizationId: id, days: Number(body?.days) || 14, byUserId: this.actor(req) }));
+    return this.unwrap(
+      await this.svc.extendTrial({ organizationId: id, days: Number(body?.days) || 14, byUserId: this.actor(req) }),
+    );
   }
 
   /** End a trial now — the mirror of extend, and the operator's cue to the customer. */
@@ -149,13 +183,17 @@ export class PlatformAdminController {
 
   @Post('orgs/:id/suspend')
   @RequirePlatformPerm('manageOrgs')
-  async suspend(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.suspend({ organizationId: id, byUserId: this.actor(req) })); }
+  async suspend(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.suspend({ organizationId: id, byUserId: this.actor(req) }));
+  }
 
   /** The offline-first mobile app, on or off for one organization — the staged rollout. */
   @Post('orgs/:id/offline-mode')
   @RequirePlatformPerm('manageOrgs')
   async setOfflineMode(@Param('id') id: string, @Body() body: OfflineModeDto, @Request() req: any) {
-    const result = this.unwrap(await this.svc.setOfflineMode({ organizationId: id, enabled: body.enabled, byUserId: this.actor(req) }));
+    const result = this.unwrap(
+      await this.svc.setOfflineMode({ organizationId: id, enabled: body.enabled, byUserId: this.actor(req) }),
+    );
     // The gateway caches sessions per organization; drop them so the change is read now.
     await this.authCache.invalidateOrganization(id).catch(() => undefined);
     return result;
@@ -163,7 +201,9 @@ export class PlatformAdminController {
 
   @Post('orgs/:id/reactivate')
   @RequirePlatformPerm('manageOrgs')
-  async reactivate(@Param('id') id: string, @Request() req: any) { return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) })); }
+  async reactivate(@Param('id') id: string, @Request() req: any) {
+    return this.unwrap(await this.svc.reactivate({ organizationId: id, byUserId: this.actor(req) }));
+  }
 
   /**
    * Bills that fell materially. The one thing on this console that nobody
@@ -230,7 +270,9 @@ export class PlatformAdminController {
   @Post('orgs/:id/add-ons')
   @RequirePlatformPerm('billingOps')
   async setAddOns(@Param('id') id: string, @Body() body: SetAddOnsDto, @Request() req: any) {
-    const result = this.unwrap(await this.svc.setAddOns({ organizationId: id, addOns: body.addOns, byUserId: this.actor(req) }));
+    const result = this.unwrap(
+      await this.svc.setAddOns({ organizationId: id, addOns: body.addOns, byUserId: this.actor(req) }),
+    );
     await this.authCache.invalidateOrganization(id).catch(() => undefined);
     return result;
   }

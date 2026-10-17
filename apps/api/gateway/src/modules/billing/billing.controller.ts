@@ -53,7 +53,9 @@ export class BillingController {
   @ApiOperation({ summary: 'Get the org subscription/billing status' })
   async getSubscription(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
-      await firstValueFrom(this.authClient.send({ cmd: 'billing_get_subscription' }, { organizationId: user.organizationId })),
+      await firstValueFrom(
+        this.authClient.send({ cmd: 'billing_get_subscription' }, { organizationId: user.organizationId }),
+      ),
     );
   }
 
@@ -78,7 +80,10 @@ export class BillingController {
     // ever change what their own organization has bought.
     const result = this.unwrap(
       await firstValueFrom(
-        this.authClient.send({ cmd: 'billing_set_addons' }, { organizationId: user.organizationId, addOns: dto.addOns }),
+        this.authClient.send(
+          { cmd: 'billing_set_addons' },
+          { organizationId: user.organizationId, addOns: dto.addOns },
+        ),
       ),
     );
     /*
@@ -123,7 +128,10 @@ export class BillingController {
   async portal(@CurrentUser() user: CurrentUserData) {
     return this.unwrap(
       await firstValueFrom(
-        this.authClient.send({ cmd: 'billing_create_portal' }, { organizationId: user.organizationId, returnUrl: `${this.webBase()}/settings/billing` }),
+        this.authClient.send(
+          { cmd: 'billing_create_portal' },
+          { organizationId: user.organizationId, returnUrl: `${this.webBase()}/settings/billing` },
+        ),
       ),
     );
   }
@@ -204,10 +212,7 @@ export class BillingController {
   @Post('admin/org-add-ons')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Operator: grant an org its capabilities (secret-gated, not a customer route)' })
-  async adminSetOrgAddOns(
-    @Body() dto: { organizationId?: string; addOns?: string[] },
-    @Req() req: any,
-  ) {
+  async adminSetOrgAddOns(@Body() dto: { organizationId?: string; addOns?: string[] }, @Req() req: any) {
     this.assertPlatformKey(req);
     if (!dto?.organizationId) {
       throw new HttpException({ message: 'organizationId is required' }, HttpStatus.BAD_REQUEST);

@@ -13,8 +13,14 @@ export const invoicesWebEndpoints = defineEndpoints('invoices', {
   create: endpoint<void, unknown, unknown>({ method: 'POST', path: () => '/invoices' }),
   exchangeRate: endpoint<void, unknown>({ method: 'GET', path: () => '/invoices/exchange-rate' }),
   update: endpoint<{ id: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/invoices/${a.id}` }),
-  updateStatus: endpoint<{ id: string }, unknown, unknown>({ method: 'PATCH', path: (a) => path`/invoices/${a.id}/status` }),
+  updateStatus: endpoint<{ id: string }, unknown, unknown>({
+    method: 'PATCH',
+    path: (a) => path`/invoices/${a.id}/status`,
+  }),
   delete: endpoint<{ id: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/invoices/${a.id}` }),
   addItem: endpoint<{ id: string }, unknown, unknown>({ method: 'POST', path: (a) => path`/invoices/${a.id}/items` }),
-  removeItem: endpoint<{ id: string; itemId: string }, unknown, unknown>({ method: 'DELETE', path: (a) => path`/invoices/${a.id}/items/${a.itemId}` }),
+  removeItem: endpoint<{ id: string; itemId: string }, unknown, unknown>({
+    method: 'DELETE',
+    path: (a) => path`/invoices/${a.id}/items/${a.itemId}`,
+  }),
 });

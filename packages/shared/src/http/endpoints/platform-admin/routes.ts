@@ -45,7 +45,11 @@ export const platformAuthEndpoints = defineEndpoints('platformAuth', {
   logout: endpoint<void, { signedOut: boolean }, Empty>({ method: 'POST', path: () => '/platform/auth/logout' }),
   /** Slides the session forward (capped server-side at PLATFORM_SESSION_MAX_SECONDS from sign-in). */
   refresh: endpoint<void, PlatformSessionResponse, Empty>({ method: 'POST', path: () => '/platform/auth/refresh' }),
-  changePassword: endpoint<void, PlatformSessionResponse & { id: string }, { currentPassword: string; newPassword: string }>({
+  changePassword: endpoint<
+    void,
+    PlatformSessionResponse & { id: string },
+    { currentPassword: string; newPassword: string }
+  >({
     method: 'POST',
     path: () => '/platform/auth/change-password',
   }),
@@ -54,20 +58,32 @@ export const platformAuthEndpoints = defineEndpoints('platformAuth', {
     method: 'POST',
     path: () => '/platform/auth/2fa/setup',
   }),
-  enable2fa: endpoint<void, PlatformSessionResponse, { code: string }>({ method: 'POST', path: () => '/platform/auth/2fa/enable' }),
-  disable2fa: endpoint<void, PlatformSessionResponse, { code: string }>({ method: 'POST', path: () => '/platform/auth/2fa/disable' }),
+  enable2fa: endpoint<void, PlatformSessionResponse, { code: string }>({
+    method: 'POST',
+    path: () => '/platform/auth/2fa/enable',
+  }),
+  disable2fa: endpoint<void, PlatformSessionResponse, { code: string }>({
+    method: 'POST',
+    path: () => '/platform/auth/2fa/disable',
+  }),
 });
 
 /** Organizations: the overview, the cursor list, one org, and the operator's switches (platform-admin.controller). */
 export const platformOrgsEndpoints = defineEndpoints('platformOrgs', {
   overview: endpoint<void, PlatformOverview>({ method: 'GET', path: () => '/platform/overview' }),
   /** ⚠️ `unwrap: 'raw'` — see the file header. */
-  list: endpoint<{ search?: string; status?: string; cursor?: string; limit?: number }, PlatformCursorPage<PlatformOrgRow>>({
+  list: endpoint<
+    { search?: string; status?: string; cursor?: string; limit?: number },
+    PlatformCursorPage<PlatformOrgRow>
+  >({
     method: 'GET',
     path: (q) => withQuery('/platform/orgs', q),
   }),
   detail: endpoint<Id, PlatformOrgDetail>({ method: 'GET', path: (a) => path`/platform/orgs/${a.id}` }),
-  extendTrial: endpoint<Id, unknown, { days?: number }>({ method: 'POST', path: (a) => path`/platform/orgs/${a.id}/extend-trial` }),
+  extendTrial: endpoint<Id, unknown, { days?: number }>({
+    method: 'POST',
+    path: (a) => path`/platform/orgs/${a.id}/extend-trial`,
+  }),
   endTrial: endpoint<Id, unknown, Empty>({ method: 'POST', path: (a) => path`/platform/orgs/${a.id}/end-trial` }),
   suspend: endpoint<Id, unknown, Empty>({ method: 'POST', path: (a) => path`/platform/orgs/${a.id}/suspend` }),
   reactivate: endpoint<Id, unknown, Empty>({ method: 'POST', path: (a) => path`/platform/orgs/${a.id}/reactivate` }),
@@ -101,12 +117,27 @@ export const platformPricingEndpoints = defineEndpoints('platformPricing', {
 
 /** The support inbox (platform-support.controller). */
 export const platformSupportEndpoints = defineEndpoints('platformSupport', {
-  inbox: endpoint<{ view?: PlatformInboxView }, PlatformTicket[]>({ method: 'GET', path: (q) => withQuery('/platform/support/inbox', q) }),
-  ticket: endpoint<Id, PlatformTicket & { messages?: PlatformTicketMessage[] }>({ method: 'GET', path: (a) => path`/platform/support/tickets/${a.id}` }),
-  reply: endpoint<Id, unknown, { body: string; isInternalNote: boolean }>({ method: 'POST', path: (a) => path`/platform/support/tickets/${a.id}/messages` }),
-  setStatus: endpoint<Id, unknown, { status: string }>({ method: 'POST', path: (a) => path`/platform/support/tickets/${a.id}/status` }),
+  inbox: endpoint<{ view?: PlatformInboxView }, PlatformTicket[]>({
+    method: 'GET',
+    path: (q) => withQuery('/platform/support/inbox', q),
+  }),
+  ticket: endpoint<Id, PlatformTicket & { messages?: PlatformTicketMessage[] }>({
+    method: 'GET',
+    path: (a) => path`/platform/support/tickets/${a.id}`,
+  }),
+  reply: endpoint<Id, unknown, { body: string; isInternalNote: boolean }>({
+    method: 'POST',
+    path: (a) => path`/platform/support/tickets/${a.id}/messages`,
+  }),
+  setStatus: endpoint<Id, unknown, { status: string }>({
+    method: 'POST',
+    path: (a) => path`/platform/support/tickets/${a.id}/status`,
+  }),
   /** `{}` self-claims; `{ teamId }` re-routes (null = triage). */
-  assign: endpoint<Id, unknown, { teamId?: string | null }>({ method: 'POST', path: (a) => path`/platform/support/tickets/${a.id}/assign` }),
+  assign: endpoint<Id, unknown, { teamId?: string | null }>({
+    method: 'POST',
+    path: (a) => path`/platform/support/tickets/${a.id}/assign`,
+  }),
   markRead: endpoint<Id, unknown, Empty>({ method: 'POST', path: (a) => path`/platform/support/tickets/${a.id}/read` }),
 });
 
@@ -130,21 +161,43 @@ export const platformSupportTeamsEndpoints = defineEndpoints('platformSupportTea
     method: 'DELETE',
     path: (a) => path`/platform/support/teams/${a.teamId}/members/${a.platformUserId}`,
   }),
-  upsertRule: endpoint<TeamId, unknown, Partial<PlatformRoutingRule> & { conditions: PlatformRoutingRule['conditions'] }>({
+  upsertRule: endpoint<
+    TeamId,
+    unknown,
+    Partial<PlatformRoutingRule> & { conditions: PlatformRoutingRule['conditions'] }
+  >({
     method: 'POST',
     path: (a) => path`/platform/support/teams/${a.teamId}/rules`,
   }),
-  deleteRule: endpoint<{ ruleId: string }, unknown>({ method: 'DELETE', path: (a) => path`/platform/support/teams/rules/${a.ruleId}` }),
-  pinnedOrgs: endpoint<TeamId, PlatformPinnedOrg[]>({ method: 'GET', path: (a) => path`/platform/support/teams/${a.teamId}/pinned-orgs` }),
-  pinOrg: endpoint<void, unknown, { organizationId: string; teamId: string | null }>({ method: 'POST', path: () => '/platform/support/teams/pin-org' }),
+  deleteRule: endpoint<{ ruleId: string }, unknown>({
+    method: 'DELETE',
+    path: (a) => path`/platform/support/teams/rules/${a.ruleId}`,
+  }),
+  pinnedOrgs: endpoint<TeamId, PlatformPinnedOrg[]>({
+    method: 'GET',
+    path: (a) => path`/platform/support/teams/${a.teamId}/pinned-orgs`,
+  }),
+  pinOrg: endpoint<void, unknown, { organizationId: string; teamId: string | null }>({
+    method: 'POST',
+    path: () => '/platform/support/teams/pin-org',
+  }),
 });
 
 /** The workflow template library every tenant copies from (platform-library.controller). */
 export const platformLibraryEndpoints = defineEndpoints('platformLibrary', {
   list: endpoint<void, PlatformTemplate[]>({ method: 'GET', path: () => '/platform/library/templates' }),
-  create: endpoint<void, PlatformTemplate, Record<string, unknown>>({ method: 'POST', path: () => '/platform/library/templates' }),
-  update: endpoint<Id, PlatformTemplate, Record<string, unknown>>({ method: 'PATCH', path: (a) => path`/platform/library/templates/${a.id}` }),
-  publish: endpoint<Id, unknown, { isPublished: boolean }>({ method: 'PATCH', path: (a) => path`/platform/library/templates/${a.id}/publish` }),
+  create: endpoint<void, PlatformTemplate, Record<string, unknown>>({
+    method: 'POST',
+    path: () => '/platform/library/templates',
+  }),
+  update: endpoint<Id, PlatformTemplate, Record<string, unknown>>({
+    method: 'PATCH',
+    path: (a) => path`/platform/library/templates/${a.id}`,
+  }),
+  publish: endpoint<Id, unknown, { isPublished: boolean }>({
+    method: 'PATCH',
+    path: (a) => path`/platform/library/templates/${a.id}/publish`,
+  }),
   remove: endpoint<Id, unknown>({ method: 'DELETE', path: (a) => path`/platform/library/templates/${a.id}` }),
   importFromOrg: endpoint<{ workflowId: string }, unknown, Empty>({
     method: 'POST',
@@ -155,19 +208,32 @@ export const platformLibraryEndpoints = defineEndpoints('platformLibrary', {
 /** The console's own staff (platform-auth.controller, `managePlatformUsers`). */
 export const platformStaffEndpoints = defineEndpoints('platformStaff', {
   list: endpoint<void, PlatformStaffUser[]>({ method: 'GET', path: () => '/platform/users' }),
-  create: endpoint<void, PlatformStaffUser, { email: string; firstName: string; lastName: string; role: string; password: string }>({
+  create: endpoint<
+    void,
+    PlatformStaffUser,
+    { email: string; firstName: string; lastName: string; role: string; password: string }
+  >({
     method: 'POST',
     path: () => '/platform/users',
   }),
-  update: endpoint<Id, PlatformStaffUser, { role?: string; isActive?: boolean }>({ method: 'PATCH', path: (a) => path`/platform/users/${a.id}` }),
-  resetPassword: endpoint<Id, unknown, { password: string }>({ method: 'POST', path: (a) => path`/platform/users/${a.id}/reset-password` }),
+  update: endpoint<Id, PlatformStaffUser, { role?: string; isActive?: boolean }>({
+    method: 'PATCH',
+    path: (a) => path`/platform/users/${a.id}`,
+  }),
+  resetPassword: endpoint<Id, unknown, { password: string }>({
+    method: 'POST',
+    path: (a) => path`/platform/users/${a.id}/reset-password`,
+  }),
   reset2fa: endpoint<Id, unknown, Empty>({ method: 'POST', path: (a) => path`/platform/users/${a.id}/reset-2fa` }),
 });
 
 /** Who did what on this console (platform-admin.controller, `viewPlatformAudit`). */
 export const platformAuditEndpoints = defineEndpoints('platformAudit', {
   /** ⚠️ `unwrap: 'raw'` — see the file header. */
-  list: endpoint<{ cursor?: string; limit?: number; actorId?: string; organizationId?: string }, PlatformCursorPage<PlatformAuditRow>>({
+  list: endpoint<
+    { cursor?: string; limit?: number; actorId?: string; organizationId?: string },
+    PlatformCursorPage<PlatformAuditRow>
+  >({
     method: 'GET',
     path: (q) => withQuery('/platform/audit', q),
   }),

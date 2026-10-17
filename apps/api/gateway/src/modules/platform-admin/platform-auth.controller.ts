@@ -4,7 +4,10 @@ import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../common/decorators';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import {
-  PlatformAuthGuard, PlatformEnrolmentAllowed, PlatformHostGuard, RequirePlatformPerm,
+  PlatformAuthGuard,
+  PlatformEnrolmentAllowed,
+  PlatformHostGuard,
+  RequirePlatformPerm,
 } from '../../common/guards/platform-auth.guard';
 import { PlatformAuditInterceptor } from '../../common/interceptors/platform-audit.interceptor';
 import { PlatformAdminService } from './platform-admin.service';
@@ -23,7 +26,14 @@ export function pickStaffPatch(id: string, body: any, byUserId: string | undefin
 /** The fields a new staff member is created from — nothing else in the body travels. */
 export function pickStaffCreate(body: any, byUserId: string | undefined) {
   const s = (v: unknown) => (typeof v === 'string' ? v : undefined);
-  return { email: s(body?.email), password: s(body?.password), firstName: s(body?.firstName), lastName: s(body?.lastName), role: s(body?.role), byUserId };
+  return {
+    email: s(body?.email),
+    password: s(body?.password),
+    firstName: s(body?.firstName),
+    lastName: s(body?.lastName),
+    role: s(body?.role),
+    byUserId,
+  };
 }
 
 @Controller('platform')
@@ -36,26 +46,36 @@ export class PlatformAuthController {
   private unwrap<T>(result: any): T {
     return assertServiceOk(result) as T;
   }
-  private actor(req: any): string | undefined { return req.platformUser?.id; }
-  private session(req: any): { iat?: number; authTime?: number } { return req.platformSession ?? {}; }
+  private actor(req: any): string | undefined {
+    return req.platformUser?.id;
+  }
+  private session(req: any): { iat?: number; authTime?: number } {
+    return req.platformSession ?? {};
+  }
 
   /** Staff login — open but tightly rate-limited (brute-force + lockout in the service). */
   @Post('auth/login')
   @Throttle({ default: { limit: 8, ttl: 60_000 } })
   async login(@Body() body: { email?: string; password?: string; code?: string }) {
-    return this.unwrap(await this.svc.login({ email: body?.email ?? '', password: body?.password ?? '', code: body?.code }));
+    return this.unwrap(
+      await this.svc.login({ email: body?.email ?? '', password: body?.password ?? '', code: body?.code }),
+    );
   }
 
   /** Break-glass: create the first OWNER — gated by the shared PLATFORM_ADMIN_KEY. */
   @Post('auth/bootstrap')
   @UseGuards(PlatformAdminGuard)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  async bootstrap(@Body() body: any) { return this.unwrap(await this.svc.bootstrapOwner(pickStaffCreate(body, undefined))); }
+  async bootstrap(@Body() body: any) {
+    return this.unwrap(await this.svc.bootstrapOwner(pickStaffCreate(body, undefined)));
+  }
 
   @Get('auth/me')
   @UseGuards(PlatformAuthGuard)
   @PlatformEnrolmentAllowed()
-  async me(@Request() req: any) { return this.unwrap(await this.svc.me({ userId: this.actor(req)! })); }
+  async me(@Request() req: any) {
+    return this.unwrap(await this.svc.me({ userId: this.actor(req)! }));
+  }
 
   /**
    * Sign out on the SERVER: this operator's tokens stop working now, rather
@@ -83,7 +103,14 @@ export class PlatformAuthController {
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async changePassword(@Body() body: { currentPassword?: string; newPassword?: string }, @Request() req: any) {
-    return this.unwrap(await this.svc.changePassword({ userId: this.actor(req), currentPassword: body?.currentPassword, newPassword: body?.newPassword, authTime: this.session(req).authTime }));
+    return this.unwrap(
+      await this.svc.changePassword({
+        userId: this.actor(req),
+        currentPassword: body?.currentPassword,
+        newPassword: body?.newPassword,
+        authTime: this.session(req).authTime,
+      }),
+    );
   }
 
   /** While 2FA is on, re-keying needs a current `code` (the service refuses without one). */
@@ -92,7 +119,9 @@ export class PlatformAuthController {
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async setup2fa(@Body() body: { code?: string }, @Request() req: any) {
-    return this.unwrap(await this.svc.setup2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }));
+    return this.unwrap(
+      await this.svc.setup2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
+    );
   }
 
   @Post('auth/2fa/enable')
@@ -100,7 +129,9 @@ export class PlatformAuthController {
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async enable2fa(@Body() body: { code?: string }, @Request() req: any) {
-    return this.unwrap(await this.svc.enable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }));
+    return this.unwrap(
+      await this.svc.enable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
+    );
   }
 
   @Post('auth/2fa/disable')
@@ -108,19 +139,25 @@ export class PlatformAuthController {
   @PlatformEnrolmentAllowed()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   async disable2fa(@Body() body: { code?: string }, @Request() req: any) {
-    return this.unwrap(await this.svc.disable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }));
+    return this.unwrap(
+      await this.svc.disable2fa({ userId: this.actor(req), code: body?.code, authTime: this.session(req).authTime }),
+    );
   }
 
   // ── Staff management (managePlatformUsers = OWNER) ──
   @Get('users')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async listUsers() { return this.unwrap(await this.svc.listUsers()); }
+  async listUsers() {
+    return this.unwrap(await this.svc.listUsers());
+  }
 
   @Post('users')
   @UseGuards(PlatformAuthGuard)
   @RequirePlatformPerm('managePlatformUsers')
-  async createUser(@Body() body: any, @Request() req: any) { return this.unwrap(await this.svc.createUser(pickStaffCreate(body, this.actor(req)))); }
+  async createUser(@Body() body: any, @Request() req: any) {
+    return this.unwrap(await this.svc.createUser(pickStaffCreate(body, this.actor(req))));
+  }
 
   @Patch('users/:id')
   @UseGuards(PlatformAuthGuard)

@@ -47,7 +47,8 @@ export class RoleAdminService extends SpaceRolesBase {
       });
       const moveIds = fromRows.filter((r) => !priced.has(r.spaceId ?? '__default__')).map((r) => r.id);
       const dropIds = fromRows.filter((r) => priced.has(r.spaceId ?? '__default__')).map((r) => r.id);
-      if (moveIds.length) await tx.rateHistory.updateMany({ where: { id: { in: moveIds } }, data: { targetId: into.id } });
+      if (moveIds.length)
+        await tx.rateHistory.updateMany({ where: { id: { in: moveIds } }, data: { targetId: into.id } });
       if (dropIds.length) await tx.rateHistory.deleteMany({ where: { id: { in: dropIds } } });
       // Where the merged role was PRICED, the kept role is now used — even if the
       // merged one had been switched off there in the meantime.
@@ -57,8 +58,12 @@ export class RoleAdminService extends SpaceRolesBase {
       // Any list that names the role by id names the kept one instead.
       // The workspaces that used the merged role now use the kept one — once each.
       await tx.$executeRawUnsafe(
-        `UPDATE "company_locations" SET "workRoleIds" = ARRAY(SELECT DISTINCT unnest(array_replace("workRoleIds", $1, $2))) WHERE "organizationId" = $3 AND $1 = ANY("workRoleIds")`,
-        from.id, into.id, data.organizationId,
+        `UPDATE "company_locations" SET "workRoleIds" = ARRAY(SELECT DISTINCT ` +
+          `unnest(array_replace("workRoleIds", $1, $2))) WHERE "organizationId" = ` +
+          `$3 AND $1 = ANY("workRoleIds")`,
+        from.id,
+        into.id,
+        data.organizationId,
       );
       for (const [table, cols] of [
         ['company_locations', ['notifyRoleIds', 'contactRoleIds', 'approveRoleIds']],
@@ -68,8 +73,11 @@ export class RoleAdminService extends SpaceRolesBase {
       ] as const) {
         for (const col of cols) {
           await tx.$executeRawUnsafe(
-            `UPDATE "${table}" SET "${col}" = array_remove(array_replace("${col}", $1, $2), NULL) WHERE "organizationId" = $3 AND $1 = ANY("${col}")`,
-            from.id, into.id, data.organizationId,
+            `UPDATE "${table}" SET "${col}" = array_remove(array_replace("${col}", ` +
+              `$1, $2), NULL) WHERE "organizationId" = $3 AND $1 = ANY("${col}")`,
+            from.id,
+            into.id,
+            data.organizationId,
           );
         }
       }
@@ -100,7 +108,8 @@ export class RoleAdminService extends SpaceRolesBase {
       }
       await this.prisma.$executeRawUnsafe(
         `UPDATE "company_locations" SET "workRoleIds" = array_remove("workRoleIds", $1) WHERE "id" = $2`,
-        role.id, data.spaceId,
+        role.id,
+        data.spaceId,
       );
     }
     return success({ roleId: role.id, spaceId: data.spaceId, active: data.active });
@@ -115,10 +124,15 @@ export class RoleAdminService extends SpaceRolesBase {
     if (inUse > 0) throw new BadRequestException(`This role is assigned to ${inUse} member(s). Reassign them first.`);
     // Nothing of it may linger: its dated day rates, and its place in every workspace's list.
     await this.prisma.$transaction(async (tx) => {
-      await tx.rateHistory.deleteMany({ where: { organizationId: data.organizationId, target: 'ROLE', targetId: role.id } });
+      await tx.rateHistory.deleteMany({
+        where: { organizationId: data.organizationId, target: 'ROLE', targetId: role.id },
+      });
       await tx.$executeRawUnsafe(
-        `UPDATE "company_locations" SET "workRoleIds" = array_remove("workRoleIds", $1) WHERE "organizationId" = $2 AND $1 = ANY("workRoleIds")`,
-        role.id, data.organizationId,
+        `UPDATE "company_locations" SET "workRoleIds" = ` +
+          `array_remove("workRoleIds", $1) WHERE "organizationId" = $2 AND $1 = ` +
+          `ANY("workRoleIds")`,
+        role.id,
+        data.organizationId,
       );
       await tx.accessRole.delete({ where: { id: role.id } });
     });

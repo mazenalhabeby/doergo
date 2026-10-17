@@ -39,8 +39,10 @@ export class UnitWriteService extends PortalServiceBase {
       { anchor: true },
     );
     // Resident is a MEMBER or a CLIENT, never both. A valid member wins.
-    const residentUserId = data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null;
-    const clientId = residentUserId ? null : (data.customerId || null);
+    const residentUserId = data.residentUserId
+      ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null)
+      : null;
+    const clientId = residentUserId ? null : data.customerId || null;
     const c = await this.assertCustomerInOrg(data.organizationId, clientId || undefined);
     data.customerId = clientId || undefined;
     // First address for a customer becomes primary automatically.
@@ -72,9 +74,23 @@ export class UnitWriteService extends PortalServiceBase {
     // A member lives in exactly one apartment per space — vacate any prior one.
     if (residentUserId) await this.clearMemberElsewhere(residentUserId, data.spaceId, data.organizationId, created.id);
     // Activity: created + initial resident (best-effort, never blocks).
-    await this.logUnitActivity({ unitId: created.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: 'Apartment created' });
+    await this.logUnitActivity({
+      unitId: created.id,
+      organizationId: data.organizationId,
+      type: 'SYSTEM',
+      authorId: data.actorId,
+      body: 'Apartment created',
+    });
     const rn = await this.residentDisplayName(residentUserId, clientId, data.organizationId);
-    if (rn) await this.logUnitActivity({ unitId: created.id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: `Resident set to ${rn}`, metadata: { resident: rn } });
+    if (rn)
+      await this.logUnitActivity({
+        unitId: created.id,
+        organizationId: data.organizationId,
+        type: 'SYSTEM',
+        authorId: data.actorId,
+        body: `Resident set to ${rn}`,
+        metadata: { resident: rn },
+      });
     return created;
   }
 
@@ -135,7 +151,10 @@ export class UnitWriteService extends PortalServiceBase {
       ? (data.residentUserId ? ((await this.keepOrgUserIds([data.residentUserId], data.organizationId))[0] ?? null) : null)
       : undefined;
     if (data.isPrimary && existing.customerId) {
-      await this.prisma.customerUnit.updateMany({ where: { customerId: existing.customerId, id: { not: existing.id } }, data: { isPrimary: false } });
+      await this.prisma.customerUnit.updateMany({
+        where: { customerId: existing.customerId, id: { not: existing.id } },
+        data: { isPrimary: false },
+      });
     }
     const updated = await this.prisma.customerUnit.update({
       where: { id: data.id },
@@ -209,15 +228,33 @@ export class UnitWriteService extends PortalServiceBase {
     const toClear = currentIds.filter((id) => id !== targetId);
 
     const ops: any[] = [];
-    if (toClear.length) ops.push(this.prisma.customerUnit.updateMany({ where: { id: { in: toClear } }, data: { residentUserId: null } }));
-    if (targetId && !currentIds.includes(targetId)) ops.push(this.prisma.customerUnit.update({ where: { id: targetId }, data: { residentUserId: uid, customerId: null } }));
+    if (toClear.length)
+      ops.push(this.prisma.customerUnit.updateMany({ where: { id: { in: toClear } }, data: { residentUserId: null } }));
+    if (targetId && !currentIds.includes(targetId))
+      ops.push(
+        this.prisma.customerUnit.update({ where: { id: targetId }, data: { residentUserId: uid, customerId: null } }),
+      );
     if (ops.length) await this.prisma.$transaction(ops);
 
     // Activity (best-effort, never blocks the write).
-    for (const id of toClear) void this.logUnitActivity({ unitId: id, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: 'Resident removed' });
+    for (const id of toClear)
+      void this.logUnitActivity({
+        unitId: id,
+        organizationId: data.organizationId,
+        type: 'SYSTEM',
+        authorId: data.actorId,
+        body: 'Resident removed',
+      });
     if (targetId && !currentIds.includes(targetId)) {
       const rn = await this.residentDisplayName(uid, null, data.organizationId);
-      void this.logUnitActivity({ unitId: targetId, organizationId: data.organizationId, type: 'SYSTEM', authorId: data.actorId, body: rn ? `Resident set to ${rn}` : 'Resident set', metadata: rn ? { resident: rn } : undefined });
+      void this.logUnitActivity({
+        unitId: targetId,
+        organizationId: data.organizationId,
+        type: 'SYSTEM',
+        authorId: data.actorId,
+        body: rn ? `Resident set to ${rn}` : 'Resident set',
+        metadata: rn ? { resident: rn } : undefined,
+      });
     }
     return { data: { success: true, unitId: targetId } };
   }

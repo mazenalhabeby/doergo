@@ -54,7 +54,12 @@ export class StripeSyncService {
       const found = live.get(e.lookupKey);
       if (!found) missing.push({ lookupKey: e.lookupKey, cents: e.unitAmountCents, productName: e.productName });
       else if (found.unit_amount !== e.unitAmountCents) {
-        mismatched.push({ lookupKey: e.lookupKey, codeCents: e.unitAmountCents, stripeCents: found.unit_amount ?? 0, priceId: found.id });
+        mismatched.push({
+          lookupKey: e.lookupKey,
+          codeCents: e.unitAmountCents,
+          stripeCents: found.unit_amount ?? 0,
+          priceId: found.id,
+        });
       } else matched++;
     }
 
@@ -66,7 +71,10 @@ export class StripeSyncService {
       .map(([lookupKey, p]) => ({ lookupKey, cents: p.unit_amount ?? 0, interval: p.interval ?? '?', priceId: p.id }));
 
     if (mismatched.length) {
-      this.logger.error(`[PLATFORM] ${mismatched.length} Stripe price(s) disagree with the code — customers may be charged an amount the app does not quote`);
+      this.logger.error(
+        `[PLATFORM] ${mismatched.length} Stripe price(s) disagree with the ` +
+          `code — customers may be charged an amount the app does not quote`,
+      );
     }
 
     return ok({ configured: true, expected: catalog.length, matched, missing, mismatched, orphaned });

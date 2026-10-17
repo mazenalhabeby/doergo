@@ -22,13 +22,25 @@ export class CrewNotificationHandler {
    * the job now hear it, including a note written after it was given to them.
    */
   @EventPattern('task_handover_added')
-  async handleHandoverAdded(@Payload() data: { taskId: string; taskTitle: string; authorName: string; recipientIds: string[]; organizationId: string }) {
+  async handleHandoverAdded(
+    @Payload()
+    data: {
+      taskId: string;
+      taskTitle: string;
+      authorName: string;
+      recipientIds: string[];
+      organizationId: string;
+    },
+  ) {
     this.websocketGateway.emitToOrganization(data.organizationId, 'task.handoverAdded', { taskId: data.taskId });
     if (!data.recipientIds?.length) return;
     try {
       await this.pushService.sendToUsers(
         data.recipientIds,
-        { title: msg('task.handover.title', { name: data.authorName }), body: msg('task.handover.body', { name: data.authorName, task: data.taskTitle }) },
+        {
+          title: msg('task.handover.title', { name: data.authorName }),
+          body: msg('task.handover.body', { name: data.authorName, task: data.taskTitle }),
+        },
         { type: 'task_handover', taskId: data.taskId },
       );
     } catch (error) {
@@ -38,11 +50,24 @@ export class CrewNotificationHandler {
 
   /** The office started somebody's job for them — they hear who, and why. */
   @EventPattern('task_started_for_you')
-  async handleStartedForYou(@Payload() data: { taskId: string; taskTitle: string; userId: string; byName: string; reason: string; organizationId: string }) {
+  async handleStartedForYou(
+    @Payload()
+    data: {
+      taskId: string;
+      taskTitle: string;
+      userId: string;
+      byName: string;
+      reason: string;
+      organizationId: string;
+    },
+  ) {
     try {
       await this.pushService.sendToUser(
         data.userId,
-        { title: msg('task.startedForYou.title', { name: data.byName }), body: msg('task.startedForYou.body', { task: data.taskTitle, reason: data.reason }) },
+        {
+          title: msg('task.startedForYou.title', { name: data.byName }),
+          body: msg('task.startedForYou.body', { task: data.taskTitle, reason: data.reason }),
+        },
         { type: 'task_started_for_you', taskId: data.taskId },
       );
     } catch (error) {
@@ -56,12 +81,17 @@ export class CrewNotificationHandler {
    * the start (shared crew.ts joinMoment). The category carries the button.
    */
   @EventPattern('task_crew_started')
-  async handleCrewStarted(@Payload() d: { taskId: string; taskTitle: string; starterName: string; startedAt: string; memberIds: string[] }) {
+  async handleCrewStarted(
+    @Payload() d: { taskId: string; taskTitle: string; starterName: string; startedAt: string; memberIds: string[] },
+  ) {
     if (!d.memberIds?.length) return;
     try {
       await this.pushService.sendToUsers(
         d.memberIds,
-        { title: msg('task.crewStarted.title', { name: d.starterName, task: d.taskTitle }), body: msg('task.crewStarted.body', { name: d.starterName }) },
+        {
+          title: msg('task.crewStarted.title', { name: d.starterName, task: d.taskTitle }),
+          body: msg('task.crewStarted.body', { name: d.starterName }),
+        },
         { type: 'task_crew_started', taskId: d.taskId, startedAt: d.startedAt, category: 'crew_join' },
       );
     } catch (error) {
@@ -71,11 +101,18 @@ export class CrewNotificationHandler {
 
   /** The lead of one job was handed to somebody — they are told, and for how long. */
   @EventPattern('task_lead_changed')
-  async handleLeadChanged(@Payload() d: { taskId: string; taskTitle: string; toUserId: string; byName: string; scope: 'TODAY' | 'PERMANENT' }) {
+  async handleLeadChanged(
+    @Payload() d: { taskId: string; taskTitle: string; toUserId: string; byName: string; scope: 'TODAY' | 'PERMANENT' },
+  ) {
     try {
       await this.pushService.sendToUser(
         d.toUserId,
-        { title: msg('task.leadChanged.title', { task: d.taskTitle }), body: msg(d.scope === 'TODAY' ? 'task.leadChanged.bodyToday' : 'task.leadChanged.bodyPermanent', { name: d.byName }) },
+        {
+          title: msg('task.leadChanged.title', { task: d.taskTitle }),
+          body: msg(d.scope === 'TODAY' ? 'task.leadChanged.bodyToday' : 'task.leadChanged.bodyPermanent', {
+            name: d.byName,
+          }),
+        },
         { type: 'task_lead_changed', taskId: d.taskId },
       );
     } catch (error) {
@@ -85,14 +122,25 @@ export class CrewNotificationHandler {
 
   /** The morning notice: a job's leader has approved time off today. */
   @EventPattern('task_lead_needed')
-  async handleLeadNeeded(@Payload() d: { taskId: string; taskTitle: string; recipientIds: string[]; leaderName: string; actingName?: string | null }) {
+  async handleLeadNeeded(
+    @Payload()
+    d: {
+      taskId: string;
+      taskTitle: string;
+      recipientIds: string[];
+      leaderName: string;
+      actingName?: string | null;
+    },
+  ) {
     if (!d.recipientIds?.length) return;
     try {
       await this.pushService.sendToUsers(
         d.recipientIds,
         {
           title: msg('task.leadNeeded.title', { name: d.leaderName }),
-          body: d.actingName ? msg('task.leadNeeded.bodyActing', { task: d.taskTitle, acting: d.actingName }) : msg('task.leadNeeded.bodyNone', { task: d.taskTitle }),
+          body: d.actingName
+            ? msg('task.leadNeeded.bodyActing', { task: d.taskTitle, acting: d.actingName })
+            : msg('task.leadNeeded.bodyNone', { task: d.taskTitle }),
         },
         { type: 'task_lead_needed', taskId: d.taskId },
       );
@@ -103,11 +151,16 @@ export class CrewNotificationHandler {
 
   /** A crew member stopped on their own ("My issue") — the leader is told why. */
   @EventPattern('task_crew_issue')
-  async handleCrewIssue(@Payload() d: { taskId: string; taskTitle: string; leaderId: string; name: string; reason: string }) {
+  async handleCrewIssue(
+    @Payload() d: { taskId: string; taskTitle: string; leaderId: string; name: string; reason: string },
+  ) {
     try {
       await this.pushService.sendToUser(
         d.leaderId,
-        { title: msg('task.crewIssue.title', { name: d.name, task: d.taskTitle }), body: msg('task.crewIssue.body', { reason: d.reason }) },
+        {
+          title: msg('task.crewIssue.title', { name: d.name, task: d.taskTitle }),
+          body: msg('task.crewIssue.body', { reason: d.reason }),
+        },
         { type: 'task_crew_issue', taskId: d.taskId },
       );
     } catch (error) {
@@ -118,6 +171,9 @@ export class CrewNotificationHandler {
   /** Jobs paused at a clock-out — the office's boards refresh and show them paused. */
   @EventPattern('tasks_paused')
   async handleTasksPaused(@Payload() data: { taskIds: string[]; userId: string; organizationId: string }) {
-    this.websocketGateway.emitToOrganization(data.organizationId, 'tasks.paused', { taskIds: data.taskIds, userId: data.userId });
+    this.websocketGateway.emitToOrganization(data.organizationId, 'tasks.paused', {
+      taskIds: data.taskIds,
+      userId: data.userId,
+    });
   }
 }

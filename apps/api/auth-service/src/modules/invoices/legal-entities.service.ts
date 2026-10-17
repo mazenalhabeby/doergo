@@ -18,10 +18,25 @@ const IDENTITY = {
   state: true, country: true, vatId: true, taxId: true, registerNumber: true, email: true, phone: true,
   website: true, logoUrl: true, currency: true, invoicePrefix: true,
 } as const;
-const BANK = { label: true, holder: true, bankName: true, iban: true, bic: true, accountNumber: true, routingNumber: true, currency: true, isDefault: true } as const;
+const BANK = {
+  label: true,
+  holder: true,
+  bankName: true,
+  iban: true,
+  bic: true,
+  accountNumber: true,
+  routingNumber: true,
+  currency: true,
+  isDefault: true,
+} as const;
 
 type Fail = { success: false; statusCode: number; message: string; code?: string };
-const fail = (statusCode: number, message: string, code?: string): Fail => ({ success: false, statusCode, message, ...(code ? { code } : {}) });
+const fail = (statusCode: number, message: string, code?: string): Fail => ({
+  success: false,
+  statusCode,
+  message,
+  ...(code ? { code } : {}),
+});
 
 const PROBLEM_TEXT: Record<string, string> = {
   LEGAL_NAME_REQUIRED: 'Give the company its legal name.',
@@ -55,15 +70,43 @@ export class LegalEntitiesService {
     if (main) return main.id;
     const o = await this.prisma.organization.findUnique({
       where: { id: organizationId },
-      select: { name: true, address: true, addressLine1: true, addressLine2: true, postalCode: true, city: true, state: true, country: true, vatId: true, email: true, phone: true, website: true, logoUrl: true, currency: true },
+      select: {
+        name: true,
+        address: true,
+        addressLine1: true,
+        addressLine2: true,
+        postalCode: true,
+        city: true,
+        state: true,
+        country: true,
+        vatId: true,
+        email: true,
+        phone: true,
+        website: true,
+        logoUrl: true,
+        currency: true,
+      },
     });
     if (!o) throw new Error('Organization not found');
     try {
       const created = await this.prisma.legalEntity.create({
         data: {
-          organizationId, legalName: o.name, addressLine1: o.addressLine1 ?? o.address, addressLine2: o.addressLine2, postalCode: o.postalCode,
-          city: o.city, state: o.state, country: o.country, vatId: o.vatId, email: o.email, phone: o.phone, website: o.website,
-          logoUrl: o.logoUrl, currency: o.currency, invoicePrefix: 'INV', isMain: true,
+          organizationId,
+          legalName: o.name,
+          addressLine1: o.addressLine1 ?? o.address,
+          addressLine2: o.addressLine2,
+          postalCode: o.postalCode,
+          city: o.city,
+          state: o.state,
+          country: o.country,
+          vatId: o.vatId,
+          email: o.email,
+          phone: o.phone,
+          website: o.website,
+          logoUrl: o.logoUrl,
+          currency: o.currency,
+          invoicePrefix: 'INV',
+          isMain: true,
         },
         select: { id: true },
       });
@@ -124,7 +167,14 @@ export class LegalEntitiesService {
       if (banks && banks.ok) {
         await tx.legalEntityBankAccount.deleteMany({ where: { legalEntityId: own.id } });
         if (banks.value.length) {
-          await tx.legalEntityBankAccount.createMany({ data: banks.value.map((b, i) => ({ ...b, position: i, legalEntityId: own.id, organizationId: data.organizationId })) });
+          await tx.legalEntityBankAccount.createMany({
+            data: banks.value.map((b, i) => ({
+              ...b,
+              position: i,
+              legalEntityId: own.id,
+              organizationId: data.organizationId,
+            })),
+          });
         }
       }
     });
@@ -147,7 +197,12 @@ export class LegalEntitiesService {
   async setActive(data: { organizationId: string; id: string; active: boolean }) {
     const own = await this.owned(data.organizationId, data.id);
     if (!own) return fail(HttpStatus.NOT_FOUND, 'Company not found');
-    if (own.isMain && !data.active) return fail(HttpStatus.BAD_REQUEST, 'The main company cannot be switched off — make another one main first.', 'COMPANY_IS_MAIN');
+    if (own.isMain && !data.active)
+      return fail(
+        HttpStatus.BAD_REQUEST,
+        'The main company cannot be switched off — make another one main first.',
+        'COMPANY_IS_MAIN',
+      );
     await this.prisma.legalEntity.update({ where: { id: own.id }, data: { isActive: data.active } });
     return this.one(data.organizationId, own.id);
   }
@@ -176,11 +231,23 @@ export class LegalEntitiesService {
   }
 
   /** The issuer as an invoice shows it — frozen copy when issued, live (not frozen) for a draft. */
-  snapshotOf(entity: (LegalEntityIdentity & { bankAccounts: (BankAccountDetails & { isDefault: boolean })[] }), currency: string | null): IssuerSnapshot {
+  snapshotOf(
+    entity: LegalEntityIdentity & { bankAccounts: (BankAccountDetails & { isDefault: boolean })[] },
+    currency: string | null,
+  ): IssuerSnapshot {
     const { bankAccounts, ...identity } = entity;
     const bank = bankForInvoice(bankAccounts, currency);
     const bankOut: BankAccountDetails | null = bank
-      ? { label: bank.label, holder: bank.holder, bankName: bank.bankName, iban: bank.iban, bic: bank.bic, accountNumber: bank.accountNumber, routingNumber: bank.routingNumber, currency: bank.currency }
+      ? {
+          label: bank.label,
+          holder: bank.holder,
+          bankName: bank.bankName,
+          iban: bank.iban,
+          bic: bank.bic,
+          accountNumber: bank.accountNumber,
+          routingNumber: bank.routingNumber,
+          currency: bank.currency,
+        }
       : null;
     return issuerSnapshotOf(identity, bankOut);
   }

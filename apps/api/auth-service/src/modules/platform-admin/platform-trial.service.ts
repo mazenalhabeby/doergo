@@ -33,7 +33,9 @@ export class PlatformTrialService {
     const org = await this.prisma.organization.findUnique({
       where: { id: data.organizationId },
       select: {
-        id: true, name: true, subStatus: true,
+        id: true,
+        name: true,
+        subStatus: true,
         subscription: { select: { stripeSubscriptionId: true } },
       },
     });
@@ -65,13 +67,18 @@ export class PlatformTrialService {
   }
 
   async extendTrial(data: { organizationId: string; days: number; byUserId?: string }) {
-    const org = await this.prisma.organization.findUnique({ where: { id: data.organizationId }, select: { id: true, name: true, trialEndsAt: true } });
+    const org = await this.prisma.organization.findUnique({
+      where: { id: data.organizationId },
+      select: { id: true, name: true, trialEndsAt: true },
+    });
     if (!org) return { success: false, statusCode: 404, message: 'Organization not found' } as any;
     const days = Math.max(1, Math.min(365, Math.floor(data.days || 0)));
     const base = org.trialEndsAt && org.trialEndsAt.getTime() > Date.now() ? org.trialEndsAt.getTime() : Date.now();
     const trialEndsAt = new Date(base + days * 86_400_000);
     await this.prisma.organization.update({ where: { id: org.id }, data: { trialEndsAt, subStatus: 'TRIALING' } });
-    this.logger.warn(`[PLATFORM] Org "${org.name}" (${org.id}) trial extended +${days}d → ${trialEndsAt.toISOString()} by ${data.byUserId ?? 'operator'}`);
+    this.logger.warn(
+      `[PLATFORM] Org "${org.name}" (${org.id}) trial extended +${days}d → ${trialEndsAt.toISOString()} by ${data.byUserId ?? 'operator'}`,
+    );
     return success({ id: org.id, trialEndsAt });
   }
 }

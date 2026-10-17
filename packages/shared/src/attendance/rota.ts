@@ -37,7 +37,10 @@ export function dowOfDay(dateStr: string): number {
 }
 
 /** Does this assignment's recurrence land on this calendar day? */
-export function rotaRunsOn(a: Pick<RotaAssignmentLike, 'recurrence' | 'daysOfWeek' | 'daysOfMonth' | 'dates'>, dateStr: string): boolean {
+export function rotaRunsOn(
+  a: Pick<RotaAssignmentLike, 'recurrence' | 'daysOfWeek' | 'daysOfMonth' | 'dates'>,
+  dateStr: string,
+): boolean {
   switch (a.recurrence) {
     case 'DAILY':
       return true;
@@ -55,7 +58,10 @@ export function rotaRunsOn(a: Pick<RotaAssignmentLike, 'recurrence' | 'daysOfWee
 }
 
 /** Is the assignment in force on this day (its effective window covers it)? */
-export function rotaInForceOn(a: Pick<RotaAssignmentLike, 'effectiveFrom' | 'effectiveTo' | 'isActive'>, dateStr: string): boolean {
+export function rotaInForceOn(
+  a: Pick<RotaAssignmentLike, 'effectiveFrom' | 'effectiveTo' | 'isActive'>,
+  dateStr: string,
+): boolean {
   if (!a.isActive) return false;
   if (dayOf(a.effectiveFrom) > dateStr) return false;
   return !a.effectiveTo || dayOf(a.effectiveTo) >= dateStr;
@@ -90,8 +96,22 @@ export type RotaDayChange = {
 };
 
 export type RotaOp =
-  | { kind: 'create'; data: { recurrence: 'ONE_OFF' | 'WEEKLY'; shiftId: string; daysOfWeek: number[]; dates: string[]; effectiveFrom: string; priority: number } }
-  | { kind: 'update'; id: string; data: { daysOfWeek?: number[]; dates?: string[]; effectiveTo?: string; isActive?: boolean } }
+  | {
+      kind: 'create';
+      data: {
+        recurrence: 'ONE_OFF' | 'WEEKLY';
+        shiftId: string;
+        daysOfWeek: number[];
+        dates: string[];
+        effectiveFrom: string;
+        priority: number;
+      };
+    }
+  | {
+      kind: 'update';
+      id: string;
+      data: { daysOfWeek?: number[]; dates?: string[]; effectiveTo?: string; isActive?: boolean };
+    }
   | { kind: 'clone'; fromId: string; data: { daysOfWeek: number[]; effectiveFrom: string } };
 
 export class RotaDayRefused extends Error {
@@ -131,13 +151,27 @@ export function planRotaDay(existing: readonly RotaAssignmentLike[], change: Rot
     const dates = a.dates.map(dayOf);
     if (!dates.includes(date)) continue;
     const left = dates.filter((d) => d !== date);
-    ops.push(left.length ? { kind: 'update', id: a.id, data: { dates: left } } : { kind: 'update', id: a.id, data: { isActive: false } });
+    ops.push(
+      left.length
+        ? { kind: 'update', id: a.id, data: { dates: left } }
+        : { kind: 'update', id: a.id, data: { isActive: false } },
+    );
   }
 
   if (repeat === 'once') {
     if (shiftId) {
       // Above every standing rule, so it wins this one day.
-      ops.push({ kind: 'create', data: { recurrence: 'ONE_OFF', shiftId, daysOfWeek: [], dates: [date], effectiveFrom: date, priority: topPriority + 1 } });
+      ops.push({
+        kind: 'create',
+        data: {
+          recurrence: 'ONE_OFF',
+          shiftId,
+          daysOfWeek: [],
+          dates: [date],
+          effectiveFrom: date,
+          priority: topPriority + 1,
+        },
+      });
       return ops;
     }
     const standing = existing.filter((a) => a.recurrence !== 'ONE_OFF');
@@ -146,7 +180,9 @@ export function planRotaDay(existing: readonly RotaAssignmentLike[], change: Rot
   }
 
   // Weekly: take this weekday out of every standing weekly rule in force from this day…
-  const weekly = existing.filter((a) => a.recurrence === 'WEEKLY' && a.isActive && (!a.effectiveTo || dayOf(a.effectiveTo) >= date));
+  const weekly = existing.filter(
+    (a) => a.recurrence === 'WEEKLY' && a.isActive && (!a.effectiveTo || dayOf(a.effectiveTo) >= date),
+  );
   const target = shiftId ? weekly.find((a) => a.shiftId === shiftId) : undefined;
   for (const a of weekly) {
     const has = a.daysOfWeek.includes(dow);
@@ -163,7 +199,10 @@ export function planRotaDay(existing: readonly RotaAssignmentLike[], change: Rot
   }
   // …and give it to the shift chosen, as a new weekly rule when there was none.
   if (shiftId && !target) {
-    ops.push({ kind: 'create', data: { recurrence: 'WEEKLY', shiftId, daysOfWeek: [dow], dates: [], effectiveFrom: date, priority: 0 } });
+    ops.push({
+      kind: 'create',
+      data: { recurrence: 'WEEKLY', shiftId, daysOfWeek: [dow], dates: [], effectiveFrom: date, priority: 0 },
+    });
   }
   return ops;
 }

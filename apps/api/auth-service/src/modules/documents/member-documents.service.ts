@@ -81,7 +81,9 @@ export class MemberDocumentsService {
         type: { select: { key: true, label: true, signatureMode: true, isCredential: true } },
         // Only what deciding "is this waiting on you" needs. Selected with the
         // documents so the list does not become one query per row.
-        signers: { select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true } },
+        signers: {
+          select: { order: true, role: true, status: true, userId: true, eligibleUserIds: true, customerId: true },
+        },
       },
       orderBy: [{ periodYear: 'desc' }, { periodMonth: 'desc' }, { issuedAt: 'desc' }],
       // A personnel file is small by nature; this is a backstop against a
@@ -131,8 +133,8 @@ export class MemberDocumentsService {
         forMember: personName(d.user),
       })),
       ...documents.map((d) => ({
-      ...listRow(d),
-      /*
+        ...listRow(d),
+        /*
         "Needs your signature" has to mean YOURS.
 
         A document with a route stays AWAITING_SIGNATURE until the whole chain
@@ -141,13 +143,13 @@ export class MemberDocumentsService {
         chain knows better: where there are steps, this is true only while the
         pending one is theirs.
       */
-      needsSignature: waitingOnViewer(d),
-      // Their OWN upload (nobody issued it) — on an "either" type, the copy they may replace.
-      suppliedByMember: d.issuedById === null,
-      // Only ever set on something the member supplied. Shown to them verbatim:
-      // "rejected" with no reason is an instruction to upload the same photo.
-      rejectionReason: d.rejectionReason,
-      /*
+        needsSignature: waitingOnViewer(d),
+        // Their OWN upload (nobody issued it) — on an "either" type, the copy they may replace.
+        suppliedByMember: d.issuedById === null,
+        // Only ever set on something the member supplied. Shown to them verbatim:
+        // "rejected" with no reason is an instruction to upload the same photo.
+        rejectionReason: d.rejectionReason,
+        /*
         No standing until it counts.
 
         A PENDING_VERIFICATION licence with a 2030 date is not "valid" — the
@@ -155,12 +157,12 @@ export class MemberDocumentsService {
         misleading thing this list could show, because it says the opposite of
         what happens when the person is assigned to work.
       */
-      standing:
-        d.type.isCredential && d.status !== 'PENDING_VERIFICATION' && d.status !== 'REJECTED'
-          ? credentialStanding(d.expiresOn, now)
-          : null,
-      // Their own file: the document is about them, so there is nobody to name.
-      forMember: null as string | null,
+        standing:
+          d.type.isCredential && d.status !== 'PENDING_VERIFICATION' && d.status !== 'REJECTED'
+            ? credentialStanding(d.expiresOn, now)
+            : null,
+        // Their own file: the document is about them, so there is nobody to name.
+        forMember: null as string | null,
       })),
     ];
   }
@@ -169,7 +171,15 @@ export class MemberDocumentsService {
   async listEvents(data: { actor: DocumentActor; documentId: string }) {
     const document = await this.prisma.document.findFirst({
       where: { id: data.documentId, organizationId: data.actor.organizationId },
-      select: { id: true, userId: true, status: true, hiddenFromMember: true, rolesOverridden: true, visibleToRoleIds: true, type: { select: { visibleToRoleIds: true } } },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        hiddenFromMember: true,
+        rolesOverridden: true,
+        visibleToRoleIds: true,
+        type: { select: { visibleToRoleIds: true } },
+      },
     });
     if (!document) throw new NotFoundException('Document not found');
     assertNotHiddenDraft(data.actor, document);

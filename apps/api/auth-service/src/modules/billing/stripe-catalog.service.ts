@@ -12,9 +12,16 @@ import { StripeBase } from './stripe.base';
 export class StripeCatalogService extends StripeBase {
   // ── C3 pricing-sync primitives ──────────────────────────────────────────────
   /** Current unit amount (cents) + product of a live Stripe price (read-only). */
-  async getPriceInfo(priceId: string): Promise<{ unitAmount: number | null; product: string; currency: string; active: boolean }> {
+  async getPriceInfo(
+    priceId: string,
+  ): Promise<{ unitAmount: number | null; product: string; currency: string; active: boolean }> {
     const p = await this.stripe.prices.retrieve(priceId);
-    return { unitAmount: p.unit_amount ?? null, product: typeof p.product === 'string' ? p.product : (p.product as any)?.id, currency: p.currency, active: p.active };
+    return {
+      unitAmount: p.unit_amount ?? null,
+      product: typeof p.product === 'string' ? p.product : (p.product as any)?.id,
+      currency: p.currency,
+      active: p.active,
+    };
   }
 
   /** Create a NEW recurring price on a product (immutable). Does NOT change any
@@ -30,7 +37,12 @@ export class StripeCatalogService extends StripeBase {
     return this.stripe.prices.list({ limit: 100, active: true });
   }
 
-  async createRecurringPrice(params: { product: string; unitAmount: number; interval: 'month' | 'year'; currency?: string }): Promise<string> {
+  async createRecurringPrice(params: {
+    product: string;
+    unitAmount: number;
+    interval: 'month' | 'year';
+    currency?: string;
+  }): Promise<string> {
     const price = await this.stripe.prices.create({
       product: params.product,
       unit_amount: params.unitAmount,
@@ -149,7 +161,11 @@ export class StripeCatalogService extends StripeBase {
     const findItem = (priceId: string) => sub.items.data.find((i) => i.price.id === priceId);
 
     const office = findItem(lines.officePriceId);
-    items.push(office ? { id: office.id, quantity: Math.max(1, lines.officeQty) } : { price: lines.officePriceId, quantity: Math.max(1, lines.officeQty) });
+    items.push(
+      office
+        ? { id: office.id, quantity: Math.max(1, lines.officeQty) }
+        : { price: lines.officePriceId, quantity: Math.max(1, lines.officeQty) },
+    );
 
     // A field line is added/updated when its quantity is > 0, or deleted when it
     // drops to 0 (so a fully-external or fully-in-house org has no stray line).
@@ -164,8 +180,9 @@ export class StripeCatalogService extends StripeBase {
     syncField(lines.fieldPriceId, lines.fieldQty);
     syncField(lines.fieldInhousePriceId, lines.fieldInhouseQty);
 
-    const proration_behavior: Stripe.SubscriptionUpdateParams.ProrationBehavior =
-      opts?.invoiceNow ? 'always_invoice' : 'create_prorations';
+    const proration_behavior: Stripe.SubscriptionUpdateParams.ProrationBehavior = opts?.invoiceNow
+      ? 'always_invoice'
+      : 'create_prorations';
 
     return this.stripe.subscriptions.update(
       subscriptionId,

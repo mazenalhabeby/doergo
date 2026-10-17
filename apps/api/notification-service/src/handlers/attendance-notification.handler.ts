@@ -219,9 +219,16 @@ export class AttendanceNotificationHandler {
     } catch (error) {
       this.logger.error(`Failed to send provisional clock-out email: ${error}`);
     }
-    this.websocketGateway.emitToUser(data.userId, 'attendance_shift_closed_provisionally', { entryId: data.entryId, clockOutAt: data.clockOutAt });
+    this.websocketGateway.emitToUser(data.userId, 'attendance_shift_closed_provisionally', {
+      entryId: data.entryId,
+      clockOutAt: data.clockOutAt,
+    });
     // Boards refresh: the same org-wide signal a clock-out sends.
-    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', { userId: data.userId, entryId: data.entryId, reason: 'provisional_clock_out' });
+    this.websocketGateway.emitToOrganization(data.organizationId, 'attendance.changed', {
+      userId: data.userId,
+      entryId: data.entryId,
+      reason: 'provisional_clock_out',
+    });
     await this.store.record({
       recipientIds: [data.userId],
       organizationId: data.organizationId,
@@ -263,7 +270,13 @@ export class AttendanceNotificationHandler {
     } catch (error) {
       this.logger.error(`Failed to send shift-escalation resolved push: ${error}`);
     }
-    const payload = { entryId: data.entryId, userId: data.userId, userName: data.userName, clockOutAt: data.clockOutAt, timestamp: new Date().toISOString() };
+    const payload = {
+      entryId: data.entryId,
+      userId: data.userId,
+      userName: data.userName,
+      clockOutAt: data.clockOutAt,
+      timestamp: new Date().toISOString(),
+    };
     if (leaderIds.length) {
       for (const id of leaderIds) this.websocketGateway.emitToUser(id, 'attendance_shift_escalation_resolved', payload);
     } else {

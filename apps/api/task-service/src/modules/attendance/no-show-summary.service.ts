@@ -16,7 +16,6 @@ import { NoShowRecordBase } from './no-show-record.base';
 /** The no-show record as a summary: one row per person, in a period. */
 @Injectable()
 export class NoShowSummaryService extends NoShowRecordBase {
-
   /** The Attendance → No-shows record: one row per person who missed a planned shift in the period. */
   async summary(data: { organizationId: string; days?: number; spaceId?: string; scopeSpaceIds?: AttendanceScope }) {
     const now = new Date();
@@ -28,7 +27,13 @@ export class NoShowSummaryService extends NoShowRecordBase {
     };
     // Who had anything to do with a no-show: missed, decided, or came in only after being chased.
     const touched = await this.prisma.shiftInstance.findMany({
-      where: { ...scope, OR: [{ state: { in: [...NO_SHOW_OPEN_STATES, 'EXCUSED', 'ABSENT'] } }, { state: 'PRESENT', reminderCount: { gt: 0 } }] },
+      where: {
+        ...scope,
+        OR: [
+          { state: { in: [...NO_SHOW_OPEN_STATES, 'EXCUSED', 'ABSENT'] } },
+          { state: 'PRESENT', reminderCount: { gt: 0 } },
+        ],
+      },
       select: { userId: true },
       distinct: ['userId'],
       take: 500,
@@ -41,8 +46,14 @@ export class NoShowSummaryService extends NoShowRecordBase {
     })) as Instance[];
     const entryIds = all.map((r) => r.timeEntryId).filter((v): v is string => !!v);
     const [users, spaces, entries] = await Promise.all([
-      this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } }),
-      this.spaceNames(data.organizationId, all.map((r) => r.spaceId)),
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+      }),
+      this.spaceNames(
+        data.organizationId,
+        all.map((r) => r.spaceId),
+      ),
       entryIds.length
         ? this.prisma.timeEntry.findMany({ where: { id: { in: entryIds } }, select: { id: true, clockInAt: true } })
         : Promise.resolve([]),
@@ -53,18 +64,24 @@ export class NoShowSummaryService extends NoShowRecordBase {
     for (const u of users) {
       const mine = all.filter((r) => r.userId === u.id);
       const byDay = new Map<string, { mark: NoShowDayMark; instanceId: string }>();
-      let absent = 0, excused = 0, settled = 0, open = 0;
+      let absent = 0,
+        excused = 0,
+        settled = 0,
+        open = 0;
       for (const r of mine) {
         const mark = noShowDayMark(r, r.timeEntryId ? clockIn.get(r.timeEntryId) : null);
         const prev = byDay.get(r.localDate);
         if (!prev || MARK_RANK[mark] < MARK_RANK[prev.mark]) byDay.set(r.localDate, { mark, instanceId: r.id });
         if (r.state === 'ABSENT') absent++;
-        else if (r.state === 'EXCUSED') (r.closedAutomatically ? settled++ : excused++);
+        else if (r.state === 'EXCUSED') r.closedAutomatically ? settled++ : excused++;
         else if (isOpenNoShow(r.state)) open++;
         else if (r.state === 'PRESENT' && r.reminderCount > 0) settled++;
       }
       if (absent + excused + settled + open === 0) continue;
-      const days = [...byDay.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).slice(-7).map(([localDate, d]) => ({ localDate, ...d }));
+      const days = [...byDay.entries()]
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .slice(-7)
+        .map(([localDate, d]) => ({ localDate, ...d }));
       out.push({
         userId: u.id,
         userName: personName(u),

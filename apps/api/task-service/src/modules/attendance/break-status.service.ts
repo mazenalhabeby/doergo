@@ -229,7 +229,8 @@ export class BreakStatusService {
     });
 
     this.logger.log(
-      `Admin ${data.adminId} ended break ${data.breakId} for user ${breakRecord.timeEntry.user.firstName} ${breakRecord.timeEntry.user.lastName}`,
+      `Admin ${data.adminId} ended break ${data.breakId} ` +
+        `for user ${breakRecord.timeEntry.user.firstName} ${breakRecord.timeEntry.user.lastName}`,
     );
 
     return success(updatedBreak, `Break ended by admin (${durationMinutes} minutes)`);

@@ -42,13 +42,16 @@ const minutesOf = (hhmm: string) => {
 export function parseAutoClockStartWindow(
   raw: unknown,
   opts: { strict?: boolean } = {},
-): { ok: true; value: AutoClockStartWindow | null } | { ok: false; code: AutoClockSettingsError; field: 'startWindow' } {
+):
+  { ok: true; value: AutoClockStartWindow | null } | { ok: false; code: AutoClockSettingsError; field: 'startWindow' } {
   if (raw == null) return { ok: true, value: null };
   const b = typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
   const from = typeof b.from === 'string' ? b.from : '';
   const to = typeof b.to === 'string' ? b.to : '';
   if (HHMM.test(from) && HHMM.test(to) && from !== to) return { ok: true, value: { from, to } };
-  return opts.strict ? { ok: false, code: 'AUTO_CLOCK_SETTING_INVALID', field: 'startWindow' } : { ok: true, value: null };
+  return opts.strict
+    ? { ok: false, code: 'AUTO_CLOCK_SETTING_INVALID', field: 'startWindow' }
+    : { ok: true, value: null };
 }
 
 /** A stored start window as every reader takes it: never fails, a malformed one reads as any time. */
@@ -73,7 +76,11 @@ export interface MemberAutoClockSettings extends AutoClockSettings {
 }
 
 /** One window instance as instants: the one holding `at`, in the workspace's zone; null when `at` is outside it. */
-export function startWindowAround(window: AutoClockStartWindow, tz: string, at: Date): { start: Date; end: Date } | null {
+export function startWindowAround(
+  window: AutoClockStartWindow,
+  tz: string,
+  at: Date,
+): { start: Date; end: Date } | null {
   const from = minutesOf(window.from);
   const to = minutesOf(window.to);
   if (!Number.isFinite(from) || !Number.isFinite(to) || from === to) return null;
@@ -157,7 +164,8 @@ export function presenceCloseDue(input: {
 }): { due: boolean; lastSeenOnSiteAt: Date | null } {
   const graceMs = input.settings.closeAfterMinutes * 60_000;
   const lastSeenOnSiteAt = input.presence === 'ON_SITE' ? input.lastSeenAt : null;
-  if (input.now.getTime() < presenceSessionEnd(input.clockInAt, input.settings).getTime() + graceMs) return { due: false, lastSeenOnSiteAt };
+  if (input.now.getTime() < presenceSessionEnd(input.clockInAt, input.settings).getTime() + graceMs)
+    return { due: false, lastSeenOnSiteAt };
   const silent = !input.lastSeenAt || input.now.getTime() - input.lastSeenAt.getTime() >= graceMs;
   const gone = !!input.leftSiteAt || input.presence !== 'ON_SITE' || silent;
   return { due: gone, lastSeenOnSiteAt };
@@ -168,7 +176,10 @@ export function presenceCloseDue(input: {
  * and the entry matched no planned shift (`expectedClockInAt` is set only by a
  * shift). On a rota day the shift's rules apply, as for anyone.
  */
-export function clocksByPresence(settings: Pick<MemberAutoClockSettings, 'mode'> | null | undefined, entry: { expectedClockInAt?: Date | string | null }): boolean {
+export function clocksByPresence(
+  settings: Pick<MemberAutoClockSettings, 'mode'> | null | undefined,
+  entry: { expectedClockInAt?: Date | string | null },
+): boolean {
   return settings?.mode === 'PRESENCE' && !entry.expectedClockInAt;
 }
 
@@ -181,7 +192,9 @@ export function clocksByPresence(settings: Pick<MemberAutoClockSettings, 'mode'>
 export const START_WINDOW_MIN_SAMPLES = 5;
 
 export function suggestStartWindow(localMinutes: readonly number[]): AutoClockStartWindow | null {
-  const xs = [...new Set(localMinutes.filter((m) => Number.isFinite(m)).map((m) => ((Math.round(m) % 1440) + 1440) % 1440))].sort((a, b) => a - b);
+  const xs = [
+    ...new Set(localMinutes.filter((m) => Number.isFinite(m)).map((m) => ((Math.round(m) % 1440) + 1440) % 1440)),
+  ].sort((a, b) => a - b);
   if (localMinutes.length < START_WINDOW_MIN_SAMPLES || !xs.length) return null;
   // The widest gap between neighbours (wrapping) is what the window leaves out.
   let gapAfter = xs.length - 1;

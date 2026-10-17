@@ -60,7 +60,10 @@ export class NoShowSettleService {
       const where = { id, state: { in: ['PENDING', ...NO_SHOW_OPEN_STATES] } };
       writes.push(
         v.state === 'PRESENT'
-          ? this.prisma.shiftInstance.updateMany({ where, data: { state: 'PRESENT', timeEntryId: v.timeEntryId, nextRemindAt: null } })
+          ? this.prisma.shiftInstance.updateMany({
+              where,
+              data: { state: 'PRESENT', timeEntryId: v.timeEntryId, nextRemindAt: null },
+            })
           : this.prisma.shiftInstance.updateMany({
               where,
               data: {
@@ -149,7 +152,10 @@ export class NoShowSettleService {
         },
         select: { technicianId: true, startDate: true, endDate: true },
       }),
-      this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, isActive: true, organizationId: true } }),
+      this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, isActive: true, organizationId: true },
+      }),
       this.prisma.shiftAssignment.findMany({
         where: { userId: { in: userIds }, shiftId: { in: shiftIds }, isActive: true },
         select: {
@@ -174,10 +180,15 @@ export class NoShowSettleService {
       const inEnd = inst.expectedClockOutAt.getTime();
       const inStart = inst.expectedClockInAt.getTime();
       const overlapping = entries
-        .filter((e) => e.userId === inst.userId && e.clockInAt.getTime() < inEnd && (e.clockOutAt ?? now).getTime() > inStart)
+        .filter(
+          (e) => e.userId === inst.userId && e.clockInAt.getTime() < inEnd && (e.clockOutAt ?? now).getTime() > inStart,
+        )
         .map((e) => ({ timeEntryId: e.id, spaceId: e.locationId }));
       const onLeave = leaves.some(
-        (l) => l.technicianId === inst.userId && toISODateString(l.startDate) <= inst.localDate && toISODateString(l.endDate) >= inst.localDate,
+        (l) =>
+          l.technicianId === inst.userId &&
+          toISODateString(l.startDate) <= inst.localDate &&
+          toISODateString(l.endDate) >= inst.localDate,
       );
       const u = userById.get(inst.userId);
       const memberGone = !u || !u.isActive || u.organizationId !== inst.organizationId;
@@ -201,7 +212,11 @@ export class NoShowSettleService {
   }
 
   /** Full public holidays (and company days off) per workspace, in the window. Three queries per organization. */
-  private async holidayDays(instances: readonly NoShowInstance[], from: string, to: string): Promise<Map<string, Set<string>>> {
+  private async holidayDays(
+    instances: readonly NoShowInstance[],
+    from: string,
+    to: string,
+  ): Promise<Map<string, Set<string>>> {
     const out = new Map<string, Set<string>>();
     if (!this.calendar) return out;
     const spacesByOrg = new Map<string, Set<string>>();

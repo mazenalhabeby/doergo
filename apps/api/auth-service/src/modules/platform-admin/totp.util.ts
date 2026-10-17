@@ -16,7 +16,10 @@ export function generateBase32Secret(bytes = 20): string {
 }
 
 function base32Decode(s: string): Buffer {
-  const clean = s.replace(/=+$/, '').toUpperCase().replace(/[^A-Z2-7]/g, '');
+  const clean = s
+    .replace(/=+$/, '')
+    .toUpperCase()
+    .replace(/[^A-Z2-7]/g, '');
   let bits = '';
   for (const c of clean) bits += B32.indexOf(c).toString(2).padStart(5, '0');
   const bytes: number[] = [];
@@ -29,7 +32,11 @@ function hotp(secret: Buffer, counter: number): string {
   buf.writeBigInt64BE(BigInt(counter));
   const hmac = createHmac('sha1', secret).update(buf).digest();
   const offset = hmac[hmac.length - 1] & 0xf;
-  const code = ((hmac[offset] & 0x7f) << 24) | ((hmac[offset + 1] & 0xff) << 16) | ((hmac[offset + 2] & 0xff) << 8) | (hmac[offset + 3] & 0xff);
+  const code =
+    ((hmac[offset] & 0x7f) << 24) |
+    ((hmac[offset + 1] & 0xff) << 16) |
+    ((hmac[offset + 2] & 0xff) << 8) |
+    (hmac[offset + 3] & 0xff);
   return (code % 1_000_000).toString().padStart(6, '0');
 }
 
